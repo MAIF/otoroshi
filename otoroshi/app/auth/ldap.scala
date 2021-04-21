@@ -687,7 +687,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     }
   }
   override def boLogout(request: RequestHeader,  user: BackOfficeUser, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env) =
-    FastFuture.successful(None)
+    FastFuture.successful(Right(None))
 
   override def boCallback(
       request: Request[AnyContent],

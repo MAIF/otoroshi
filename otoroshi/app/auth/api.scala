@@ -34,7 +34,7 @@ trait AuthModule {
   def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Option[String]]
+  ): Future[Either[Result, Option[String]]]
   def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit
       ec: ExecutionContext,
       env: Env
@@ -200,7 +200,8 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           name  = "New auth. module",
           desc  = "New auth. module",
           tags  = Seq.empty,
-          idpUrl = "",
+          singleSignOnUrl = "",
+          singleLogoutUrl = "",
           issuer = ""
         )
       case _                     =>

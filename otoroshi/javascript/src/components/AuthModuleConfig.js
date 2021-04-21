@@ -1504,9 +1504,11 @@ export class SamlModuleConfig extends Component {
     "id",
     "name",
     "desc",
-    "idpUrl",
     // "assertionConsumerServiceUrl",
-    "protocolBinding",
+    "singleSignOnUrl",
+    "ssoProtocolBinding",
+    "singleLogoutUrl",
+    "singleLogoutProtocolBinding",
     "credentials",
     // "credentials.signingKey.certificate",
     // 'credentials.signingKey.privateKey',
@@ -1518,6 +1520,7 @@ export class SamlModuleConfig extends Component {
     "relyingPartyIdentifier",
     "issuer",
     "validateSignature",
+    "validateAssertions",
     "validatingCertificates"
   ];
 
@@ -1554,18 +1557,37 @@ export class SamlModuleConfig extends Component {
       type: 'string',
       props: { label: 'Description', placeholder: 'New SAML Description' }
     },
-    idpUrl: {
-      type: 'string',
-      props: { label: 'IDP url' }
-    },
     // assertionConsumerServiceUrl: {
     //   type: 'string',
     //   props: { label: 'URL of the Assertion Consumer Service' }
     // },
-    protocolBinding: {
+    singleSignOnUrl: {
+      type: 'string',
+      props: {
+        label: "Single sign on URL"
+      }
+    },
+    ssoProtocolBinding: {
       type: 'select',
       props: {
-        label: 'The protocol binding URI for the request',
+        label: 'The protocol binding for the login request',
+        defaultValue: 'post',
+        possibleValues: [
+          { value: 'post', label: 'Post' },
+          { value: 'redirect', label: 'Redirect' }
+        ],
+      },
+    },
+    singleLogoutUrl: {
+      type: 'string',
+      props: {
+        label: "Single Logout URL"
+      }
+    },
+    singleLogoutProtocolBinding: {
+      type: 'select',
+      props: {
+        label: 'The protocol binding for the logout request',
         defaultValue: 'post',
         possibleValues: [
           { value: 'post', label: 'Post' },
@@ -1580,10 +1602,12 @@ export class SamlModuleConfig extends Component {
     // }
     'credentials': {
       type: ({ }) => {
-        const [rawSigningPEM, setSigningRawPEM] = useState(false);
-        const [rawEncryptionPEM, setRawEncryptionPEM] = useState(false);
+        const [rawSigningPEM, setSigningRawPEM] = useState(signingKey && signingKey.certId !== "" ? false : true);
+        const [rawEncryptionPEM, setRawEncryptionPEM] = useState(encryptionKey && encryptionKey.certId !== "" ? false : true);
 
         const { signingKey, encryptionKey } = this.props.value.credentials;
+
+        console.log(this.props.value.credentials)
 
         const configs = [
           {
@@ -1709,7 +1733,14 @@ export class SamlModuleConfig extends Component {
       props: {
         label: 'Validate Signature',
         help: 'Enable/disable signature validation of SAML responses'
-      },
+      }
+    },
+    validateAssertions: {
+      type: 'bool',
+      props: {
+        label: 'Validate Assertions Signature',
+        help: 'Enable/disable signature validation of SAML assertions'
+      }
     },
     validatingCertificates: {
       type: 'array',

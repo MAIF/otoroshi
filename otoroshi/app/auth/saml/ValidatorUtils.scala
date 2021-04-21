@@ -4,6 +4,7 @@ import org.opensaml.saml.common.SignableSAMLObject
 import org.opensaml.saml.saml2.core.{LogoutRequest, RequestAbstractType, Response, StatusCode, StatusResponseType}
 import org.opensaml.xmlsec.signature.Signature
 import org.opensaml.xmlsec.signature.support.SignatureValidator
+import play.api.Logger
 
 import scala.util.Try
 
@@ -11,11 +12,14 @@ object ValidatorUtils {
 
   import org.opensaml.security.credential.Credential
 
-  def validate(response: Response, responseIssuer: String, credentials: List[Credential], validateSign: Boolean)
+  lazy val logger: Logger = Logger("otoroshi-saml-validator-utils")
+
+  def validate(response: Response, responseIssuer: String,
+               credentials: List[Credential], validateSign: Boolean, validateAssertions: Boolean)
   : Either[String, Unit] =
     validateResponse(response, responseIssuer) match {
       case Left(value)  => Left(value)
-      case Right(_)     => validateAssertion(response, responseIssuer) match {
+      case Right(_)     => validateAssertion(response, responseIssuer, credentials, validateAssertions) match {
         case Left(value)  => Left(value)
         case Right(_)     => validateSignature(response, credentials, validateSign)
       }
@@ -31,21 +35,23 @@ object ValidatorUtils {
     }
     
     def validateIssuer(response: StatusResponseType, responseIssuer: String): Either[String, Unit] = {
-      println(response.getIssuer.getValue)
-      println(responseIssuer)
-      if (response.getIssuer.getValue.equals(responseIssuer))
+      if (response.getIssuer.getValue.equals(responseIssuer)) {
+        logger.error(s"Response Issuer validated : $responseIssuer")
         Right()
-      else
+      } else
         Left("The response issuer didn't match the expected value")
     }
 
   def validateIssuer(request: RequestAbstractType, requestIssuer: String): Either[String, Unit] =
-      if (!request.getIssuer.getValue.equals(requestIssuer))
+      if (!request.getIssuer.getValue.equals(requestIssuer)) {
+        logger.error(s"Request Issuer validated : $requestIssuer")
         Right()
-      else
+      } else
         Left("The request issuer didn't match the expected value")
 
-    def validateAssertion(response: Response, responseIssuer: String): Either[String, Unit] = {
+    def validateAssertion(response: Response, responseIssuer: String,
+                          credentials: List[Credential], validateAssertions: Boolean)
+    : Either[String, Unit] = {
       if (response.getAssertions.size() != 1)
         Left("The response doesn't contain exactly 1 assertion")
       else {
@@ -54,17 +60,24 @@ object ValidatorUtils {
           Left("The assertion issuer didn't match the expected value")
         else if (assertion.getSubject.getNameID == null)
           Left("The NameID value is missing from the SAML response this is likely an IDP configuration issue")
+        else if (!validate(assertion.getSignature, credentials, validateAssertions))
+          Left("The assertion signature is invalid : wrong certificate")
         else
           Right()
-      }
+        }
     }
 
     def validateSignature(response: SignableSAMLObject, credentials: List[Credential], validateSign: Boolean)
     : Either[String, Unit] = {
       if (response.getSignature != null && !validate(response.getSignature, credentials, validateSign))
         Left("The response signature is invalid")
-      else
+      else {
+        if (validateSign)
+          logger.error(s"Response Signature validated")
+        else
+          logger.error(s"Validation of Response Signature not required")
         Right()
+      }
     }
 
     def validate(signature: Signature, credentials: List[Credential], validateSign: Boolean): Boolean = {

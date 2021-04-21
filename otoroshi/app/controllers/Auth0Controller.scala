@@ -403,26 +403,34 @@ class AuthController(
                     )
                   case Some(oauth) =>
                     oauth.authModule(config).boLogout(ctx.request, ctx.user, config).flatMap {
-                      case None            => {
+                      case Left(body) =>
                         ctx.user.delete().map { _ =>
                           Alerts.send(
                             AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua)
                           )
-                          val userRedirect = redirect.getOrElse(routes.BackOfficeController.index().url)
-                          Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
+                          body.removingFromSession("bousr", "bo-redirect-after-login")
                         }
-                      }
-                      case Some(logoutUrl) => {
-                        val userRedirect      = redirect.getOrElse(s"http://${request.theHost}/")
-                        val actualRedirectUrl =
-                          logoutUrl.replace("${redirect}", URLEncoder.encode(userRedirect, "UTF-8"))
-                        ctx.user.delete().map { _ =>
-                          Alerts.send(
-                            AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua)
-                          )
-                          Redirect(actualRedirectUrl).removingFromSession("bousr", "bo-redirect-after-login")
+                      case Right(value) =>
+                        value match {
+                          case None =>
+                            ctx.user.delete().map { _ =>
+                              Alerts.send(
+                                AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua)
+                              )
+                              val userRedirect = redirect.getOrElse(routes.BackOfficeController.index().url)
+                              Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
+                            }
+                          case Some(logoutUrl) =>
+                            val userRedirect = redirect.getOrElse(s"http://${request.theHost}/")
+                            val actualRedirectUrl =
+                              logoutUrl.replace("${redirect}", URLEncoder.encode(userRedirect, "UTF-8"))
+                            ctx.user.delete().map { _ =>
+                              Alerts.send(
+                                AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua)
+                              )
+                              Redirect(actualRedirectUrl).removingFromSession("bousr", "bo-redirect-after-login")
+                            }
                         }
-                      }
                     }
                 }
               }

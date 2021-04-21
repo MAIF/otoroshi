@@ -260,13 +260,14 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Option[String]] = {
+  ): Future[Either[Result, Option[String]]] = {
     Option(authConfig.logoutUrl)
       .filterNot(_.isEmpty)
       .map {
-        case url if url.contains("?") => s"$url&client_id=${authConfig.clientId}"
-        case url                      => s"$url?client_id=${authConfig.clientId}"
+        case url if url.contains("?") => Right(Some(s"$url&client_id=${authConfig.clientId}"))
+        case url                      => Right(Some(s"$url?client_id=${authConfig.clientId}"))
       }
+      .getOrElse(Right(None))
       .asFuture
   }
 
