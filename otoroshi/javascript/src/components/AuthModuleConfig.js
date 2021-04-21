@@ -1504,20 +1504,12 @@ export class SamlModuleConfig extends Component {
     "id",
     "name",
     "desc",
-    // "assertionConsumerServiceUrl",
     "singleSignOnUrl",
     "ssoProtocolBinding",
     "singleLogoutUrl",
     "singleLogoutProtocolBinding",
     "credentials",
-    // "credentials.signingKey.certificate",
-    // 'credentials.signingKey.privateKey',
-    // 'credentials.encryptionKey.certificate',
-    // 'credentials.encryptionKey.privateKey',
-    // 'signature.canocalizationMethod',
-    // 'signature.algorithm',
     "nameIDFormat",
-    "relyingPartyIdentifier",
     "issuer",
     "validateSignature",
     "validateAssertions",
@@ -1557,10 +1549,6 @@ export class SamlModuleConfig extends Component {
       type: 'string',
       props: { label: 'Description', placeholder: 'New SAML Description' }
     },
-    // assertionConsumerServiceUrl: {
-    //   type: 'string',
-    //   props: { label: 'URL of the Assertion Consumer Service' }
-    // },
     singleSignOnUrl: {
       type: 'string',
       props: {
@@ -1602,40 +1590,42 @@ export class SamlModuleConfig extends Component {
     // }
     'credentials': {
       type: ({ }) => {
-        const [rawSigningPEM, setSigningRawPEM] = useState(signingKey && signingKey.certId !== "" ? false : true);
-        const [rawEncryptionPEM, setRawEncryptionPEM] = useState(encryptionKey && encryptionKey.certId !== "" ? false : true);
-
         const { signingKey, encryptionKey } = this.props.value.credentials;
 
-        console.log(this.props.value.credentials)
+        // const [rawSigningPEM, setSigningRawPEM] = useState(signingKey.useOtoroshiCertificate);
+        // const [rawEncryptionPEM, setRawEncryptionPEM] = useState(encryptionKey.useOtoroshiCertificate);
 
         const configs = [
           {
             element: 'documents',
             switch: {
-              value: rawSigningPEM,
-              setValue: setSigningRawPEM
+              value: signingKey.useOtoroshiCertificate,
+              setValue: value => {
+                this.changeTheValue('credentials.signingKey.useOtoroshiCertificate', value)
+              }
             },
             key: "Signing",
             path: "credentials.signingKey",
             value: {
-              certificate: signingKey ? signingKey.certificate : "",
-              privateKey: signingKey ? signingKey.privateKey : "",
-              certId: signingKey ? signingKey.certId : ""
+              certificate: signingKey.certificate,
+              privateKey: signingKey.privateKey,
+              certId: signingKey.certId
             }
           },
           {
             element: 'assertions',
             switch: {
-              value: rawEncryptionPEM,
-              setValue: setRawEncryptionPEM
+              value: encryptionKey.useOtoroshiCertificate,
+              setValue: value => {
+                this.changeTheValue('credentials.encryptionKey.useOtoroshiCertificate', value)
+              }
             },
             key: "Encryption",
             path: "credentials.encryptionKey",
             value: {
-              certificate: encryptionKey ? encryptionKey.certificate : "",
-              privateKey: encryptionKey ? encryptionKey.privateKey : "",
-              certId: encryptionKey ? encryptionKey.certId : ""
+              certificate: encryptionKey.certificate,
+              privateKey: encryptionKey.privateKey,
+              certId: encryptionKey.certId
             }
           }
         ]
@@ -1644,11 +1634,11 @@ export class SamlModuleConfig extends Component {
           configs.map((config, i) => (
             <div key={`config${i}`}>
               <BooleanInput
-                label={`Sign ${config.element} with custom PEM/Private Key`}
+                label={`Sign ${config.element} with Otoroshi certificate`}
                 value={config.switch.value}
                 onChange={() => config.switch.setValue(!config.switch.value)}
               />
-              {config.switch.value ?
+              {!config.switch.value ?
                 <div>
                   <TextareaInput
                     label={`${config.key} Certificate`}
@@ -1716,12 +1706,6 @@ export class SamlModuleConfig extends Component {
         ],
       },
     },
-    // relyingPartyIdentifier: {
-    //   type: 'string',
-    //   props: {
-    //     label: 'IDP Initiated SSO Relay State'
-    //   }
-    // },
     issuer: {
       type: 'string',
       props: {

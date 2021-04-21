@@ -36,7 +36,7 @@ object ValidatorUtils {
     
     def validateIssuer(response: StatusResponseType, responseIssuer: String): Either[String, Unit] = {
       if (response.getIssuer.getValue.equals(responseIssuer)) {
-        logger.error(s"Response Issuer validated : $responseIssuer")
+        logger.debug(s"Response Issuer validated : $responseIssuer")
         Right()
       } else
         Left("The response issuer didn't match the expected value")
@@ -44,7 +44,7 @@ object ValidatorUtils {
 
   def validateIssuer(request: RequestAbstractType, requestIssuer: String): Either[String, Unit] =
       if (!request.getIssuer.getValue.equals(requestIssuer)) {
-        logger.error(s"Request Issuer validated : $requestIssuer")
+        logger.debug(s"Request Issuer validated : $requestIssuer")
         Right()
       } else
         Left("The request issuer didn't match the expected value")
@@ -73,9 +73,9 @@ object ValidatorUtils {
         Left("The response signature is invalid")
       else {
         if (validateSign)
-          logger.error(s"Response Signature validated")
+          logger.debug(s"Response Signature validated")
         else
-          logger.error(s"Validation of Response Signature not required")
+          logger.debug(s"Validation of Response Signature not required")
         Right()
       }
     }

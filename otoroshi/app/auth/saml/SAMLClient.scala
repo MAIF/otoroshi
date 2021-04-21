@@ -17,7 +17,6 @@ import org.opensaml.saml.metadata.resolver.impl.DOMMetadataResolver
 import org.opensaml.saml.saml2.core._
 import org.opensaml.saml.saml2.encryption.Decrypter
 import org.opensaml.saml.saml2.metadata.EntityDescriptor
-import org.opensaml.security.credential.UsageType
 import org.opensaml.security.x509.BasicX509Credential
 import org.opensaml.xmlsec.SignatureSigningParameters
 import org.opensaml.xmlsec.encryption.support.InlineEncryptedKeyResolver
@@ -26,17 +25,18 @@ import org.opensaml.xmlsec.keyinfo.impl.{ChainingKeyInfoCredentialResolver, Stat
 import org.opensaml.xmlsec.signature.Signature
 import org.opensaml.xmlsec.signature.impl.SignatureBuilder
 import org.opensaml.xmlsec.signature.support.{SignatureConstants, SignatureException, SignatureSupport}
+import org.w3c.dom.ls.DOMImplementationLS
+import org.w3c.dom.{Document, Node}
 import otoroshi.auth.{AuthModule, AuthModuleConfig, SessionCookieValues}
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.security.IdGenerator
-import otoroshi.utils.future.Implicits.EnhancedObject
 import play.api.Logger
-import play.api.libs.json.{Format, JsArray, JsError, JsNull, JsString, JsSuccess, JsValue, Json}
+import play.api.libs.json.{Format, JsArray, JsError, JsString, JsSuccess, JsValue, Json}
 import play.api.mvc.Results.{BadRequest, Ok, Redirect}
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 
-import java.io.{ByteArrayInputStream, InputStreamReader, Reader, StringWriter}
+import java.io.{ByteArrayInputStream, InputStreamReader, Reader, StringWriter, Writer}
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.security.cert.X509Certificate
@@ -71,7 +71,6 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
         if (samlConfig.ssoProtocolBinding == SAMLProtocolBinding.Post)
           Ok(otoroshi.views.html.oto.saml(encoded, samlConfig.singleSignOnUrl, env))
         else {
-          println(encoded)
           Redirect(s"${samlConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
             .addingToSession("hash" -> env.sign(s"${samlConfig.id}:::backoffice"))(request)
         }
@@ -81,7 +80,6 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
   override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)
                        (implicit ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = {
 
-    println("CALL LOGOUT")
     getLogoutRequest(env, samlConfig, user.metadata.getOrElse("saml-id", "")).map {
       case Left(_) => Right(None)
       case Right(encoded) =>
@@ -104,9 +102,6 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
     request.body.asFormUrlEncoded match {
       case Some(body) =>
         val samlResponse = body("SAMLResponse").head
-
-        println("REPONSE FROM HTTP POST")
-        println(samlResponse)
 
         decodeAndValidateSamlResponse(env, samlConfig, samlResponse, "") match {
           case Left(value)        =>
@@ -211,8 +206,6 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
             .getOrElse(NameIDFormat.Transient),
           validateAssertions = (json \ "validateAssertions").as[Boolean],
           signature = (json \ "signature").as[SAMLSignature](SAMLSignature.fmt)
-          // assertionConsumerServiceUrl = (json \ "assertionConsumerServiceUrl").as[String],
-          // relyingPartyIdentifier = (json \ "relyingPartyIdentifier").as[String],
         )
       )
     } recover {
@@ -314,20 +307,23 @@ object NameIDFormat {
       case "transient"    => Some(Transient)
       case "kerberos"     => Some(Kerberos)
       case "entity"       => Some(Entity)
-      case "emailAddress" => Some(EmailAddress)
+      case "emailaddress" => Some(EmailAddress)
       case "unspecified"  => Some(Unspecified)
+      case _              => Some(Unspecified)
     }
   }
 }
 
-case class Credential (certificate: Option[String], privateKey: Option[String], certId: Option[String])
+case class Credential(certificate: Option[String] = None, privateKey: Option[String] = None,
+                        certId: Option[String] = None, useOtoroshiCertificate: Boolean = false)
 
 object Credential {
   def fmt = new Format[Credential] {
     override def writes(o: Credential) = Json.obj(
       "certificate" -> o.certificate,
       "privateKey"  -> o.privateKey,
-      "certId" -> o.certId
+      "certId" -> o.certId,
+      "useOtoroshiCertificate" -> o.useOtoroshiCertificate
     )
     override def reads(json: JsValue) =
       Try {
@@ -335,7 +331,8 @@ object Credential {
           Credential(
             certificate = (json \ "certificate").asOpt[String],
             privateKey = (json \ "privateKey").asOpt[String],
-            certId = (json \ "certId").asOpt[String]
+            certId = (json \ "certId").asOpt[String],
+            useOtoroshiCertificate = (json \ "useOtoroshiCertificate").asOpt[Boolean].getOrElse(false)
           )
         )
       } recover { case e =>
@@ -490,28 +487,26 @@ object SAMLSignature {
 }
 
 case class SamlAuthModuleConfig (
-                        id: String,
-                        name: String,
-                        desc: String,
-                        sessionMaxAge: Int = 86400,
-                        singleSignOnUrl: String,
-                        singleLogoutUrl: String,
-                        ssoProtocolBinding: SAMLProtocolBinding = SAMLProtocolBinding.Redirect,
-                        singleLogoutProtocolBinding: SAMLProtocolBinding = SAMLProtocolBinding.Redirect,
-                        credentials: SAMLCredentials = SAMLCredentials(Credential(None, None, None), Credential(None, None, None)),
-                        signature: SAMLSignature = SAMLSignature(
-                          canocalizationMethod = SAMLCanocalizationMethod.Exclusive,
-                          algorithm = SAMLSignatureAlgorithm.RSA_SHA256
-                        ),
-                        nameIDFormat: NameIDFormat = NameIDFormat.Unspecified,
-                        tags: Seq[String],
-                        issuer: String,
-                        location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
-                        validatingCertificates: List[String] = List.empty,
-                        validateSignature: Boolean = false,
-                        validateAssertions: Boolean = false
-                        // assertionConsumerServiceUrl: String,
-                        // relyingPartyIdentifier: String,
+                                  id: String,
+                                  name: String,
+                                  desc: String,
+                                  sessionMaxAge: Int = 86400,
+                                  singleSignOnUrl: String,
+                                  singleLogoutUrl: String,
+                                  ssoProtocolBinding: SAMLProtocolBinding = SAMLProtocolBinding.Redirect,
+                                  singleLogoutProtocolBinding: SAMLProtocolBinding = SAMLProtocolBinding.Redirect,
+                                  credentials: SAMLCredentials = SAMLCredentials(Credential(), Credential()),
+                                  signature: SAMLSignature = SAMLSignature(
+                                    canocalizationMethod = SAMLCanocalizationMethod.Exclusive,
+                                    algorithm = SAMLSignatureAlgorithm.RSA_SHA256
+                                  ),
+                                  nameIDFormat: NameIDFormat = NameIDFormat.Unspecified,
+                                  tags: Seq[String],
+                                  issuer: String,
+                                  location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
+                                  validatingCertificates: List[String] = List.empty,
+                                  validateSignature: Boolean = false,
+                                  validateAssertions: Boolean = false
  ) extends AuthModuleConfig {
   def theDescription: String = desc
   def theMetadata: Map[String,String] = metadata
@@ -527,7 +522,6 @@ case class SamlAuthModuleConfig (
       "sessionMaxAge"               -> this.sessionMaxAge,
       "singleSignOnUrl"             -> this.singleSignOnUrl,
       "singleLogoutUrl"             -> this.singleLogoutUrl,
-      // "assertionConsumerServiceUrl" -> this.assertionConsumerServiceUrl,
       "credentials"                 -> SAMLCredentials.fmt.writes(this.credentials),
       "tags"                        -> JsArray(tags.map(JsString.apply)),
       "sessionCookieValues"         -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
@@ -578,7 +572,7 @@ object SAMLModule {
 
     request.setProtocolBinding(samlConfig.ssoProtocolBinding.value)
     request.setDestination(samlConfig.singleSignOnUrl)
-    request.setAssertionConsumerServiceURL("http://otoroshi.oto.tools:9999/backoffice/auth0/callback")
+    // request.setAssertionConsumerServiceURL("http://otoroshi.oto.tools:9999/backoffice/auth0/callback")
 
     val nameIDPolicy = buildObject(NameIDPolicy.DEFAULT_ELEMENT_NAME).asInstanceOf[NameIDPolicy]
     nameIDPolicy.setFormat(samlConfig.nameIDFormat.value)
@@ -606,7 +600,6 @@ object SAMLModule {
     request.setIssueInstant(ZonedDateTime.now().toInstant)
 
     val issuer = buildObject(Issuer.DEFAULT_ELEMENT_NAME).asInstanceOf[Issuer]
-//    issuer.setValue(samlConfig.relyingPartyIdentifier)
     request.setIssuer(issuer)
 
     val nameIDPolicy = buildObject(NameID.DEFAULT_ELEMENT_NAME).asInstanceOf[NameID]
@@ -678,19 +671,18 @@ object SAMLModule {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
     credential match {
-      case Credential(None, None, Some(certId))                  =>
+      case Credential(_, _, Some(certId), true)                  =>
         env.datastores.certificatesDataStore.findById(certId) (ec, env)
           .map { optCert =>
             optCert.map { cert =>
+              logger.debug("Using certificate from store")
               Right(Some(new BasicX509Credential(
                 cert.certificate.get,
-                KeyFactory
-                  .getInstance("RSA")
-                  .generatePrivate(new PKCS8EncodedKeySpec(cert.privateKey.getBytes))
+                getPrivateKey(cert.privateKey)
               )))
             }.getOrElse(Left("Certificate not found"))
           }
-      case Credential(Some(certificate), Some(privateKey), None) =>
+      case Credential(Some(certificate), Some(privateKey), _, false) =>
         FastFuture.successful(Right(Some(new BasicX509Credential(
           encodedCertToX509Certificate(certificate),
           getPrivateKey(privateKey)
@@ -751,7 +743,7 @@ object SAMLModule {
 
     if (response.getEncryptedAssertions.size () > 0)
       samlConfig.credentials.encryptionKey match {
-        case Credential(Some(certificate), Some(privateKey), None) =>
+        case Credential(Some(certificate), Some(privateKey), _, false) =>
             val encodedCert = Base64.getDecoder.decode(certificate)
             val cert = X509CertUtils.parse (encodedCert)
 
@@ -761,19 +753,16 @@ object SAMLModule {
 
             decodeAssertionWithCertificate(response, new BasicX509Credential(cert, kf.generatePrivate(keySpec)))
 
-        case Credential(None, None, Some(certId)) =>
+        case Credential(_, _, Some(certId), true) =>
           env.datastores.certificatesDataStore.findById(certId) (ec, env)
             .map { optCert =>
               optCert.map { cert =>
                 decodeAssertionWithCertificate(response, new BasicX509Credential(
                   cert.certificate.get,
-                  KeyFactory
-                    .getInstance("RSA")
-                    .generatePrivate(new PKCS8EncodedKeySpec(cert.privateKey.getBytes))
+                  getPrivateKey(cert.privateKey)
                 ))
               }
             }
-        case Credential(None, None, None) => FastFuture.successful(())
         case _ => FastFuture.successful(())
       }
   }
@@ -814,6 +803,23 @@ object SAMLModule {
   }
 }
 
+object XMLHelper {
+  def writeNode(node: Node, output: Writer): Unit = {
+    val domImplLS = (node match {
+      case n: Document => n.getImplementation
+      case n => n.getOwnerDocument.getImplementation
+    })
+      .getFeature("LS", "3.0")
+      .asInstanceOf[DOMImplementationLS]
+
+    val serializer = domImplLS.createLSSerializer()
+
+    val serializerOut = domImplLS.createLSOutput()
+    serializerOut.setCharacterStream(output)
+
+    serializer.write(node, serializerOut)
+  }
+}
 
 
 
