@@ -1,4 +1,4 @@
-import React, { Component, Suspense, useState } from 'react';
+import React, { Component, Suspense } from 'react';
 
 import {
   TextInput,
@@ -1508,8 +1508,11 @@ export class SamlModuleConfig extends Component {
     "ssoProtocolBinding",
     "singleLogoutUrl",
     "singleLogoutProtocolBinding",
+    "credentials.signedDocuments",
+    "credentials.encryptedAssertions",
     "credentials",
     "nameIDFormat",
+    "usedNameIDAsEmail",
     "issuer",
     "validateSignature",
     "validateAssertions",
@@ -1566,7 +1569,7 @@ export class SamlModuleConfig extends Component {
         ],
       },
     },
-    singleLogoutUrl: {
+    singleLogoutUrl: {
       type: 'string',
       props: {
         label: "Single Logout URL"
@@ -1583,17 +1586,23 @@ export class SamlModuleConfig extends Component {
         ],
       },
     },
-    // 'credentials.signingKey.certificate': 
-    // type: 'text',
-    // props: {
-    //   label: 'Signing certificate'
-    // }
+    "credentials.signedDocuments": {
+      type: 'bool',
+      props: {
+        label: 'Sign documents',
+        help: 'Should SAML Request be signed by Otoroshi ?'
+      }
+    },
+    "credentials.encryptedAssertions": {
+      type: 'bool',
+      props: {
+        label: 'Validate Assertions Signature',
+        help: 'Should SAML Assertions to be decrypted ?'
+      }
+    },
     'credentials': {
       type: ({ }) => {
-        const { signingKey, encryptionKey } = this.props.value.credentials;
-
-        // const [rawSigningPEM, setSigningRawPEM] = useState(signingKey.useOtoroshiCertificate);
-        // const [rawEncryptionPEM, setRawEncryptionPEM] = useState(encryptionKey.useOtoroshiCertificate);
+        const { signingKey, encryptionKey, signedDocuments, encryptedAssertions } = this.props.value.credentials;
 
         const configs = [
           {
@@ -1610,7 +1619,8 @@ export class SamlModuleConfig extends Component {
               certificate: signingKey.certificate,
               privateKey: signingKey.privateKey,
               certId: signingKey.certId
-            }
+            },
+            show: signedDocuments
           },
           {
             element: 'assertions',
@@ -1626,15 +1636,16 @@ export class SamlModuleConfig extends Component {
               certificate: encryptionKey.certificate,
               privateKey: encryptionKey.privateKey,
               certId: encryptionKey.certId
-            }
+            },
+            show: encryptedAssertions
           }
         ]
 
         return (
           configs.map((config, i) => (
-            <div key={`config${i}`}>
+            config.show && <div key={`config${i}`}>
               <BooleanInput
-                label={`Sign ${config.element} with Otoroshi certificate`}
+                label={`${i === 0 ? 'Sign' : 'Validate'} ${config.element} with Otoroshi certificate`}
                 value={config.switch.value}
                 onChange={() => config.switch.setValue(!config.switch.value)}
               />
@@ -1705,6 +1716,28 @@ export class SamlModuleConfig extends Component {
           { value: 'entity', label: 'Entity' }
         ],
       },
+    },
+    usedNameIDAsEmail: {
+      type: ({ }) => {
+        const { emailAttributeName, usedNameIDAsEmail } = this.props.value;
+        return (
+          <div>
+            <BooleanInput
+              label={`Use NameID format as email`}
+              value={usedNameIDAsEmail}
+              onChange={v => this.changeTheValue('.usedNameIDAsEmail', v)}
+            />
+            {!this.props.value.usedNameIDAsEmail &&
+              <TextInput
+                label="Name of email attribute"
+                value={emailAttributeName}
+                help="..."
+                onChange={(v) => this.changeTheValue('emailAttributeName', v)}
+              />
+            }
+          </div>
+        )
+      }
     },
     issuer: {
       type: 'string',

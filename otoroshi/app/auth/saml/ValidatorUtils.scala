@@ -93,7 +93,7 @@ object ValidatorUtils {
                 SignatureValidator.validate(signature, credential)
                 true
               } recover {
-                case err: Throwable => false
+                case _: Throwable => false
               } get
             })
       }

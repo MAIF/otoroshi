@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
+import auth.saml.SamlAuthModuleConfig
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, GenericOauth2ModuleConfig}
 import otoroshi.env.Env
 import otoroshi.events._
@@ -36,11 +37,10 @@ class AuthController(
       f: AuthModuleConfig => Future[Result]
   ): Future[Result] = {
     val hash     = req.getQueryString("hash").orElse(req.session.get("hash")).getOrElse("--")
-    val expected = env.sign(s"${auth.id}:::${descId}")
-    // TODO - a voir
-   /* if (hash != "--" && hash == expected) {*/
+    val expected = env.sign(s"${auth.id}:::$descId")
+    if ((hash != "--" && hash == expected) || auth.isInstanceOf[SamlAuthModuleConfig])
       f(auth)
-   /* } else {
+    else
       Errors.craftResponseResult(
         "Auth. config. bad signature",
         Results.BadRequest,
@@ -49,7 +49,6 @@ class AuthController(
         Some("errors.auth.bad.signature"),
         attrs = TypedMap.empty
       )
-    }*/
   }
 
   def withAuthConfig(descriptor: ServiceDescriptor, req: RequestHeader)(
@@ -522,7 +521,7 @@ class AuthController(
                                 BadRequest(
                                   otoroshi.views.html.oto
                                     .error(
-                                      message = s"You're not authorized here: ${error}",
+                                      message = s"You're not authorized here: ${err}",
                                       _env = env,
                                       title = "Authorization error"
                                     )
