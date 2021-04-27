@@ -295,10 +295,10 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
   }
 
-  override def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paLogout(request: RequestHeader, user: Option[PrivateAppsUser], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
       env: Env
-  ) = FastFuture.successful(None)
+  ) = FastFuture.successful(Right(None))
 
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,

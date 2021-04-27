@@ -21,10 +21,10 @@ trait AuthModule {
       ec: ExecutionContext,
       env: Env
   ): Future[Result]
-  def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  def paLogout(request: RequestHeader, user: Option[PrivateAppsUser], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Option[String]]
+  ): Future[Either[Result, Option[String]]]
   def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
       env: Env
@@ -202,7 +202,8 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           tags  = Seq.empty,
           singleSignOnUrl = "",
           singleLogoutUrl = "",
-          issuer = ""
+          issuer = "",
+          sessionCookieValues = SessionCookieValues()
         )
       case _                     =>
         BasicAuthModuleConfig(

@@ -328,7 +328,7 @@ class CertificateValid extends Component {
               valid: payload.valid,
               loading: false,
               error: null,
-              revoked: cert.revoked,
+              // revoked: cert.revoked,
             });
           }
         })
@@ -465,7 +465,6 @@ export class CertificatesPage extends Component {
       props: {
         label: 'Certificate status',
         defaultValue: RevocationReason.VALID.value,
-        // value: () => (this.props.value || RevocationReason.VALID.value),
         possibleValues: Object.values(RevocationReason),
       },
     },
@@ -773,7 +772,10 @@ export class CertificatesPage extends Component {
   };
 
   updateCertificate = (cert) => {
-    if (cert.revoked === RevocationReason.VALID) delete cert.metadata.revocationReason;
+    if (cert.revoked === RevocationReason.VALID.value || cert.revoked === false) {
+      cert.revoked = false
+      delete cert.metadata.revocationReason;
+    }
     else {
       cert.metadata.revocationReason = cert.revoked;
       cert.revoked = true;

@@ -519,7 +519,6 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                     hasOverrideRightsForEmailAndTenant(user.email) match {
                       case Some(rightOverride) => UserRights(Seq(rightOverride))
                       case None =>
-                        println(user.userRights)
                         UserRights(
                           Seq(userRight.rights.find(f => f.tenant.containsWildcard ||
                           f.tenant.value.equals(authConfig.location.tenant.value)).get)
@@ -596,10 +595,10 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paLogout(request: RequestHeader, user: Option[PrivateAppsUser], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
       env: Env
-  ) = FastFuture.successful(None)
+  ) = FastFuture.successful(Right(None))
 
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,

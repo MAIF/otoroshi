@@ -1,11 +1,14 @@
 @import otoroshi.env.Env
 
-@(samlRequest: String, idpUrl: String, _env: Env)
+@(samlRequest: String, idpUrl: String, _env: Env, relayState: Option[String] = None)
 
 @main("HTTP-POST binding", _env) {
     <div>
         <form id="samlId" action="@(idpUrl)" method="POST">
             <input type="hidden" id="SAMLRequest" value="@(samlRequest)" />
+            @if(relayState){
+                <input type="hidden" id="RelayState" value="@(relayState)" />
+            }
         </form>
         <script type='text/javascript'>document.getElementById('samlId').submit();</script>
     </div>

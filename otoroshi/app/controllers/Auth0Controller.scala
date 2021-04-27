@@ -6,6 +6,7 @@ import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsActi
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import auth.saml.SamlAuthModuleConfig
+import cats.implicits.catsSyntaxOptionId
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, GenericOauth2ModuleConfig}
 import otoroshi.env.Env
 import otoroshi.events._
@@ -13,7 +14,7 @@ import otoroshi.gateway.Errors
 import otoroshi.models.{BackOfficeUser, CorsSettings, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.utils.TypedMap
 import play.api.Logger
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, __}
 import play.api.mvc._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.future.Implicits._
@@ -227,7 +228,7 @@ class AuthController(
 
       def saveUser(user: PrivateAppsUser, auth: AuthModuleConfig, descriptor: ServiceDescriptor, webauthn: Boolean)(
           implicit req: RequestHeader
-      ) = {
+      ): Future[Result] = {
         user
           .save(Duration(auth.sessionMaxAge, TimeUnit.SECONDS))
           .map { paUser =>
@@ -236,56 +237,92 @@ class AuthController(
             Alerts.send(
               UserLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, paUser, ctx.from, ctx.ua, auth.id)
             )
-            ctx.request.session
-              .get(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}")
-              .getOrElse(
-                routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
-              ) match {
-              case "urn:ietf:wg:oauth:2.0:oob" => {
-                val redirection =
-                  s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
-                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
-                val hash        = env.sign(redirection)
-                Redirect(
-                  s"$redirection&hash=$hash"
-                ).removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
-                  .withCookies(env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth): _*)
-              }
-              case redirectTo                  => {
-                val url                = new java.net.URL(redirectTo)
-                val host               = url.getHost
-                val scheme             = url.getProtocol
-                val setCookiesRedirect = url.getPort match {
-                  case -1   =>
-                    val redirection =
-                      s"$scheme://$host/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
-                    val hash        = env.sign(redirection)
-                    s"$redirection&hash=$hash"
-                  case port =>
-                    val redirection =
-                      s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
-                    val hash        = env.sign(redirection)
-                    s"$redirection&hash=$hash"
-                }
-                if (webauthn) {
-                  Ok(Json.obj("location" -> setCookiesRedirect))
+
+            ctx.request.body.asFormUrlEncoded match {
+              case Some(body) if body("RelayState").nonEmpty =>
+                  val queryParams = body("RelayState").head.split("&").map { qParam => (qParam.split("=")(0), qParam.split("=")(1)) }
+                  val params = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
+
+                  val redirectTo = params.getOrElse("redirect_uri", routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps))
+
+                  val url                = new java.net.URL(redirectTo)
+                  val host               = url.getHost
+
+                 /* Ok(Json.obj(
+                    "redirectTo" -> redirectTo,
+                    "cookies" -> env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth).toList.toString()
+                  ))*/
+                 Redirect(redirectTo)
                     .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                     .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth): _*)
-                } else {
-                  Redirect(setCookiesRedirect)
-                    .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
-                    .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth): _*)
+
+              case None =>
+                ctx.request.session
+                  .get(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}")
+                  .getOrElse(
+                    routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
+                  ) match {
+                  case "urn:ietf:wg:oauth:2.0:oob" =>
+                    val redirection =
+                      s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
+                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
+                    val hash        = env.sign(redirection)
+                    Redirect(
+                      s"$redirection&hash=$hash"
+                    ).removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
+                      .withCookies(env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth): _*)
+                  case redirectTo                  =>
+                    val url                = new java.net.URL(redirectTo)
+                    val host               = url.getHost
+                    val scheme             = url.getProtocol
+                    val setCookiesRedirect = url.getPort match {
+                      case -1   =>
+                        val redirection =
+                          s"$scheme://$host/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
+                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
+                        val hash        = env.sign(redirection)
+                        s"$redirection&hash=$hash"
+                      case port =>
+                        val redirection =
+                          s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
+                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
+                        val hash        = env.sign(redirection)
+                        s"$redirection&hash=$hash"
+                    }
+                    if (webauthn) {
+                      Ok(Json.obj("location" -> setCookiesRedirect))
+                        .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
+                        .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth): _*)
+                    } else {
+                      Redirect(setCookiesRedirect)
+                        .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
+                        .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth): _*)
+                    }
                 }
-              }
             }
           }
       }
 
-      ctx.request.getQueryString("desc").orElse(ctx.request.session.get("desc")) match {
+      var desc = ctx.request.getQueryString("desc").orElse(ctx.request.session.get("desc"))
+
+      ctx.request.body.asFormUrlEncoded match {
+        case Some(body) =>
+          if (body("RelayState").nonEmpty) {
+            val queryParams = body("RelayState").head.split("&").map { qParam => (qParam.split("=")(0), qParam.split("=")(1)) }
+            val params = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
+
+            if (!params.contains("hash") || !params.contains("redirect_uri") || !params.contains("desc"))
+              NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
+            else
+              desc = params("desc").some
+          }
+
+        case None =>
+      }
+
+      desc match {
         case None            => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
-        case Some(serviceId) => {
+        case Some(serviceId) =>
           env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
             case None                                                                                      => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
             case Some(descriptor) if !descriptor.privateApp                                                =>
@@ -335,7 +372,6 @@ class AuthController(
             }
             case _                                                                                         => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).asFuture
           }
-        }
       }
     }
 
