@@ -248,10 +248,6 @@ class AuthController(
                   val url                = new java.net.URL(redirectTo)
                   val host               = url.getHost
 
-                 /* Ok(Json.obj(
-                    "redirectTo" -> redirectTo,
-                    "cookies" -> env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth).toList.toString()
-                  ))*/
                  Redirect(redirectTo)
                     .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                     .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth): _*)
