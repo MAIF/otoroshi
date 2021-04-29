@@ -1,7 +1,6 @@
 package otoroshi.storage.drivers.lettuce
 
 import java.util.concurrent.atomic.AtomicReference
-
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
