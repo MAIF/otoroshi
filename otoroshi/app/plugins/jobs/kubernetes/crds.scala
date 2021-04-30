@@ -507,18 +507,18 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
           case Some(obj) => handleTargetFrom(obj, serviceDesc)
         }
       )
-      .applyOn(s =>
-        (s \ "group").asOpt[String] match {
-          case None    => s
-          case Some(v) => s.as[JsObject] - "group" ++ Json.obj("groups" -> Json.arr(v))
-        }
-      )
-      .applyOn(s =>
-        (s \ "groups").asOpt[String] match {
-          case None    => s.as[JsObject] ++ Json.obj("groups" -> Json.arr("default"))
-          case Some(_) => s
-        }
-      )
+      // .applyOn(s =>
+      //   (s \ "group").asOpt[String] match {
+      //     case None    => s
+      //     case Some(v) => s.as[JsObject] - "group" ++ Json.obj("groups" -> Json.arr(v))
+      //   }
+      // )
+      // .applyOn(s =>
+      //   (s \ "groups").asOpt[String] match {
+      //     case None    => s.as[JsObject] ++ Json.obj("groups" -> Json.arr("default"))
+      //     case Some(_) => s
+      //   }
+      // )
       .applyOn { s =>
         val enabledAdditionalHosts = (s \ "enabledAdditionalHosts").asOpt[Boolean].getOrElse(true)
         (s \ "hosts").asOpt[JsArray] match {
@@ -549,18 +549,18 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
           case Some(_) => s
         }
       )
-      .applyOn(s =>
-        (s \ "group").asOpt[String] match {
-          case None    => s
-          case Some(v) => s.as[JsObject] - "group" ++ Json.obj("authorizedEntities" -> Json.arr("group_" + v))
-        }
-      )
-      .applyOn(s =>
-        (s \ "authorizedEntities").asOpt[String] match {
-          case None    => s.as[JsObject] ++ Json.obj("authorizedEntities" -> Json.arr("group_default"))
-          case Some(v) => s
-        }
-      )
+      // .applyOn(s =>
+      //   (s \ "group").asOpt[String] match {
+      //     case None    => s
+      //     case Some(v) => s.as[JsObject] - "group" ++ Json.obj("authorizedEntities" -> Json.arr("group_" + v))
+      //   }
+      // )
+      // .applyOn(s =>
+      //   (s \ "authorizedEntities").asOpt[String] match {
+      //     case None    => s.as[JsObject] ++ Json.obj("authorizedEntities" -> Json.arr("group_default"))
+      //     case Some(v) => s
+      //   }
+      // )
       .applyOn { s =>
         dkApkOpt match {
           case None      => s

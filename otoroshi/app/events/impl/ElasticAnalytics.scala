@@ -512,7 +512,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       )
     ).map { resp =>
       Json.obj(
-        "count" -> (resp \ "hits" \ "total").asOpt[Int]
+        "count" -> (resp \ "hits" \ "total").asOpt[Int].orElse((resp \ "hits" \ "total" \ "value").asOpt[Int])
       )
     }.map(Some.apply)
   }
