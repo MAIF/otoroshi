@@ -224,7 +224,7 @@ object Oauth1AuthModule {
 }
 
 case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
-  
+
   import auth.Oauth1AuthModule._
 
   override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
@@ -289,8 +289,6 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
                            config: GlobalConfig
                          )(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] = {
 
-    println(request.queryString)
-
     val method = authConfig.provider.methods.accessToken
     val queries = mapOfSeqToMap(request.queryString)
 
@@ -308,14 +306,16 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
       get(env, s"${authConfig.accessTokenURL}?${baseParams.map(t => (t._1, encodeURI(t._2)).productIterator.mkString("=")).mkString("&")}&oauth_signature=$signature")
     })
       .flatMap { result =>
-        val oauth_token = result.body.split("&")(0).split("=")(1)
+        val bodyParams = strBodyToMap(result.body)
+
+        val oauth_token = bodyParams("oauth_token")
 
         val userParams = getOauth1TemplateRequest(None) ++ Map(
-          "oauth_consumer_key"    -> authConfig.consumerKey,
-          "oauth_token"           -> oauth_token,
+          "oauth_consumer_key" -> authConfig.consumerKey,
+          "oauth_token" -> oauth_token,
         )
 
-        val oauthTokenSecret = result.body.split("&")(1).split("=")(1)
+        val oauthTokenSecret = bodyParams("oauth_token_secret")
 
         val signature = sign(userParams, authConfig.profileURL, "GET", authConfig.consumerSecret, Some(oauthTokenSecret))
 
@@ -323,34 +323,51 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
           .addHttpHeaders(("Authorization", s"""OAuth oauth_consumer_key="${authConfig.consumerKey}",oauth_token="$oauth_token",oauth_signature_method="HMAC-SHA1",oauth_signature="$signature",oauth_timestamp="${userParams("oauth_timestamp")}",oauth_nonce="${userParams("oauth_nonce")}",oauth_version="1.0""""))
           .get()
           .flatMap { result =>
-            val userJson = Json.parse(result.body)
-            val email =  (userJson \ "email").asOpt[String].getOrElse("no.name@oto.tools")
-
-            FastFuture.successful(Right(BackOfficeUser(
-              randomId = IdGenerator.token(64),
-              name = (userJson \ "name").asOpt[String].getOrElse("No name"),
-              email = email,
-              profile = userJson,
-              simpleLogin = false,
-              authConfigId = authConfig.id,
-              tags = Seq.empty,
-              metadata = Map.empty,
-              rights = authConfig.rightsOverride.getOrElse(
-                  email,
-                  UserRights(
-                    Seq(
-                      UserRight(
-                        TenantAccess(authConfig.location.tenant.value),
-                        authConfig.location.teams.map(t => TeamAccess(t.value))
+            (result.header("Content-Type") match {
+              case Some("application/json") =>
+                val userJson = Json.parse(result.body)
+                Some(Map(
+                  "profile" -> userJson,
+                  "email" -> (userJson \ "email").asOpt[String].getOrElse("no.name@oto.tools"),
+                  "name" -> (userJson \ "name").asOpt[String].getOrElse("No name")
+                ))
+              case Some(value) if value.contains("text/plain")  =>
+                val fields = strBodyToMap(result.body)
+                Some(Map(
+                  "profile" -> Json.toJson(fields),
+                  "email" -> fields.getOrElse("email", fields.getOrElse("mail", "no.name@oto.tools")),
+                  "name" -> fields.getOrElse("fullname", fields.getOrElse("username", fields.getOrElse("name", "No name")))
+                ))
+              case _ => None
+            })
+              .map { data =>
+                FastFuture.successful(Right(BackOfficeUser(
+                  randomId = IdGenerator.token(64),
+                  name = data("name").toString,
+                  email = data("email").toString,
+                  profile = data("profile").asInstanceOf[JsObject],
+                  simpleLogin = false,
+                  authConfigId = authConfig.id,
+                  tags = Seq.empty,
+                  metadata = Map.empty,
+                  rights = authConfig.rightsOverride.getOrElse(
+                    data("email").toString,
+                    UserRights(
+                      Seq(
+                        UserRight(
+                          TenantAccess(authConfig.location.tenant.value),
+                          authConfig.location.teams.map(t => TeamAccess(t.value))
+                        )
                       )
                     )
-                  )
-                ),
-              location = authConfig.location
-            )))
+                  ),
+                  location = authConfig.location
+                )))
+              }
+              .getOrElse(FastFuture.successful(Left("Missing content type from provider")))
           }
           .recover {
-            case e: Throwable =>     Left(e.getMessage)
+            case e: Throwable => Left(e.getMessage)
           }
       }
   }

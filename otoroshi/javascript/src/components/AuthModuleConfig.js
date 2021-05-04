@@ -1846,6 +1846,7 @@ export class SamlModuleConfig extends Component {
 export class OAuth1ModuleConfig extends Component {
   flow = [
     "id",
+    "provider",
     "name",
     "desc",
     "consumerKey",
@@ -1853,7 +1854,10 @@ export class OAuth1ModuleConfig extends Component {
     // "signatureMethod",
     "requestTokenURL",
     "authorizeURL",
-    "accessTokenURL"
+    "accessTokenURL",
+    "profileURL",
+    "callbackURL",
+    "rightsOverride"
   ];
 
   changeTheValue = (name, value) => {
@@ -1869,6 +1873,17 @@ export class OAuth1ModuleConfig extends Component {
 
   schema = {
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
+    provider: {
+      type: 'select',
+      props: {
+        label: 'Provider',
+        help: 'Clever cloud used POST method to request and get access tokens meanwhile generic used GET',
+        possibleValues: [
+          { value: 'clever', label: 'Clever Cloud'},
+          { value: 'generic', label: 'Generic'}
+        ]
+      }
+    },
     name: {
       type: 'string',
       props: { label: 'Name', placeholder: 'New OAuth1 config' }
@@ -1908,6 +1923,31 @@ export class OAuth1ModuleConfig extends Component {
     accessTokenURL: {
       type: 'string',
       props: { label: 'Access token URL', placeholder: 'Access token URL' }
+    },
+    profileURL: {
+      type: 'string',
+      props: { label: 'Profile URL', placeholder: 'Profile URL' }
+    },
+    callbackURL: {
+      type: 'string',
+      props: { 
+        label: 'Callback URL', 
+        placeholder: 'Callback URL',
+        help: "Endpoint used to get back user after authentication on provider"
+      }
+    },
+    rightsOverride: {
+      type: ({}) => (
+        <JsonObjectAsCodeInput
+          label="Rights override"
+          mode="json"
+          value={this.props.value.rightsOverride || {}}
+          onChange={(e) => this.changeTheValue(path + '.rightsOverride', e)}
+        />
+      ),
+      props: {
+        label: 'Override rights'
+      }
     }
   };
 
