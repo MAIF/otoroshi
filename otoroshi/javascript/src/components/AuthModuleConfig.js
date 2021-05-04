@@ -1456,13 +1456,14 @@ export class AuthModuleConfig extends Component {
           { label: 'OAuth2 / OIDC provider', value: 'oauth2' },
           { label: 'In memory auth. provider', value: 'basic' },
           { label: 'Ldap auth. provider', value: 'ldap' },
-          { label: 'SAML provider', value: 'saml' }
+          { label: 'SAML provider', value: 'saml' },
+          { label: 'OAuth1', value: 'oauth1' }
         ]}
         help="The type of settings to log into your app."
       />
     );
 
-    if (!['oauth2', 'basic', 'ldap', 'saml'].includes(settings.type)) {
+    if (!['oauth2', 'basic', 'ldap', 'saml', 'oauth1'].includes(settings.type)) {
       return <h3>Unknown config type ...</h3>;
     }
 
@@ -1481,6 +1482,7 @@ export class AuthModuleConfig extends Component {
         {settings.type === 'basic' && <BasicModuleConfig {...this.props} />}
         {settings.type === 'ldap' && <LdapModuleConfig {...this.props} />}
         {settings.type === 'saml' && <SamlModuleConfig {...this.props} />}
+        {settings.type === 'oauth1' && <OAuth1ModuleConfig {...this.props} />}
         <Separator title="Module metadata" />
         <ArrayInput
           label="Tags"
@@ -1830,6 +1832,88 @@ export class SamlModuleConfig extends Component {
             </button>
           </div>
         </div>
+        <Form
+          value={this.props.value}
+          onChange={this.props.onChange}
+          flow={this.flow}
+          schema={this.schema}
+        />
+      </div>
+    );
+  }
+}
+
+export class OAuth1ModuleConfig extends Component {
+  flow = [
+    "id",
+    "name",
+    "desc",
+    "consumerKey",
+    "consumerSecret",
+    // "signatureMethod",
+    "requestTokenURL",
+    "authorizeURL",
+    "accessTokenURL"
+  ];
+
+  changeTheValue = (name, value) => {
+    if (this.props.onChange)
+      this.props.onChange(deepSet(
+        _.cloneDeep(this.props.value || this.props.settings),
+        name.startsWith('.') ? name.substr(1) : name,
+        value
+      ));
+    else
+      this.props.changeTheValue(name, value);
+  };
+
+  schema = {
+    id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
+    name: {
+      type: 'string',
+      props: { label: 'Name', placeholder: 'New OAuth1 config' }
+    },
+    desc: {
+      type: 'string',
+      props: { label: 'Description', placeholder: 'New OAuth1 Description' }
+    },
+    consumerKey: {
+      type: 'string',
+      props: { label: 'Consumer key', placeholder: 'Consumer Key' }
+    },
+    consumerSecret: {
+      type: 'string',
+      props: { label: 'Consumer secret', placeholder: 'Consumer secret' }
+    },
+    // signatureMethod: {
+    //   type: 'select',
+    //   props: { 
+    //     label: 'Signature method', 
+    //     defaultValue: 'HMAC-SHA1',
+    //     possibleValues: [
+    //       { value: 'HmacSHA1', label: 'HMAC-SHA1' },
+    //       { value: 'RSA-SHA1', label: 'RSA-SHA1' },
+    //       { value: 'PLAINTEXT', label: 'PLAINTEXT' }
+    //     ],
+    //   }
+    // },
+    requestTokenURL: {
+      type: 'string',
+      props: { label: 'Request Token URL', placeholder: 'Request Token URL' }
+    },
+    authorizeURL: {
+      type: 'string',
+      props: { label: 'Authorize URL', placeholder: 'Authorize URL' }
+    },
+    accessTokenURL: {
+      type: 'string',
+      props: { label: 'Access token URL', placeholder: 'Access token URL' }
+    }
+  };
+
+  render() {
+    return (
+      <div>
         <Form
           value={this.props.value}
           onChange={this.props.onChange}
