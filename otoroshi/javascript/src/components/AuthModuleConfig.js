@@ -1846,7 +1846,7 @@ export class SamlModuleConfig extends Component {
 export class OAuth1ModuleConfig extends Component {
   flow = [
     "id",
-    "provider",
+    "httpMethod",
     "name",
     "desc",
     "consumerKey",
@@ -1873,14 +1873,14 @@ export class OAuth1ModuleConfig extends Component {
 
   schema = {
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
-    provider: {
+    httpMethod: {
       type: 'select',
       props: {
-        label: 'Provider',
-        help: 'Clever cloud used POST method to request and get access tokens meanwhile generic used GET',
+        label: 'Http Method',
+        help: 'Method used to get request_token and access token',
         possibleValues: [
-          { value: 'clever', label: 'Clever Cloud'},
-          { value: 'generic', label: 'Generic'}
+          { value: 'post', label: 'POST'},
+          { value: 'get', label: 'GET'}
         ]
       }
     },

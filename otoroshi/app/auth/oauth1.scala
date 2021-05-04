@@ -57,10 +57,10 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
           consumerKey = (json \ "consumerKey").as[String],
           consumerSecret = (json \ "consumerSecret").as[String],
           //signatureMethod = (json \ "signatureMethod").as[String],
-          provider = (json \ "provider")
+          httpMethod = (json \ "httpMethod")
             .asOpt[String]
             .map(OAuth1Provider(_))
-            .getOrElse(OAuth1Provider.CleverCloud),
+            .getOrElse(OAuth1Provider.Post),
           requestTokenURL = (json \ "requestTokenURL").as[String],
           authorizeURL = (json \ "authorizeURL").as[String],
           profileURL = (json \ "profileURL")
@@ -95,15 +95,15 @@ sealed trait OAuth1Provider {
 case class OAuth1ProviderMethods (requestToken: String, accessToken: String)
 
 object OAuth1Provider {
-  case object CleverCloud extends OAuth1Provider {
-    val name = "clever"
+  case object Post extends OAuth1Provider {
+    val name = "post"
     val methods: OAuth1ProviderMethods = OAuth1ProviderMethods(
       requestToken   = "POST",
       accessToken    = "POST",
     )
   }
-  case object Generic extends OAuth1Provider {
-    val name = "generic"
+  case object Get extends OAuth1Provider {
+    val name = "get"
     val methods: OAuth1ProviderMethods = OAuth1ProviderMethods(
       requestToken   = "GET",
       accessToken    = "GET"
@@ -111,9 +111,9 @@ object OAuth1Provider {
   }
 
   def apply(value: String): OAuth1Provider = value match {
-    case "clever"   => CleverCloud
-    case "generic"  => Generic
-    case _          => CleverCloud
+    case "post"     => Post
+    case "get"      => Get
+    case _          => Post
   }
 }
 
@@ -124,7 +124,7 @@ case class Oauth1ModuleConfig(
                                  sessionMaxAge: Int = 86400,
                                  consumerKey: String,
                                  consumerSecret: String,
-                                 provider: OAuth1Provider = OAuth1Provider.CleverCloud,
+                                 httpMethod: OAuth1Provider = OAuth1Provider.Post,
                                  requestTokenURL: String,
                                  authorizeURL: String,
                                  accessTokenURL: String,
@@ -162,7 +162,7 @@ case class Oauth1ModuleConfig(
       "metadata"            -> metadata,
       "tags"                -> JsArray(tags.map(JsString.apply)),
       "rightsOverride"      -> JsObject(rightsOverride.mapValues(_.json)),
-      "provider"            -> provider.name,
+      "httpMethod"          -> httpMethod.name,
       "sessionCookieValues" -> SessionCookieValues.fmt.writes(this.sessionCookieValues)
     )
 
@@ -235,9 +235,9 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
 
     val baseParams: Map[String, String] = getOauth1TemplateRequest(Some(authConfig.callbackURL)) ++ Map("oauth_consumer_key" -> authConfig.consumerKey)
 
-    val signature = sign(baseParams, authConfig.requestTokenURL, authConfig.provider.methods.requestToken, authConfig.consumerSecret)
+    val signature = sign(baseParams, authConfig.requestTokenURL, authConfig.httpMethod.methods.requestToken, authConfig.consumerSecret)
 
-    (if (authConfig.provider.methods.requestToken == "POST") {
+    (if (authConfig.httpMethod.methods.requestToken == "POST") {
       post(env, authConfig.requestTokenURL, baseParams ++ Map("oauth_signature" -> signature))
     } else {
       get(env, s"${authConfig.requestTokenURL}?${baseParams.map(t => (t._1, encodeURI(t._2)).productIterator.mkString("=")).mkString("&")}&oauth_signature=$signature")
@@ -288,9 +288,9 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
 
     val baseParams: Map[String, String] = getOauth1TemplateRequest(Some(authConfig.callbackURL)) ++ Map("oauth_consumer_key" -> authConfig.consumerKey)
 
-    val signature = sign(baseParams, authConfig.requestTokenURL, authConfig.provider.methods.requestToken, authConfig.consumerSecret)
+    val signature = sign(baseParams, authConfig.requestTokenURL, authConfig.httpMethod.methods.requestToken, authConfig.consumerSecret)
 
-    (if (authConfig.provider.methods.requestToken == "POST") {
+    (if (authConfig.httpMethod.methods.requestToken == "POST") {
       post(env, authConfig.requestTokenURL, baseParams ++ Map("oauth_signature" -> signature))
     } else {
       get(env, s"${authConfig.requestTokenURL}?${baseParams.map(t => (t._1, encodeURI(t._2)).productIterator.mkString("=")).mkString("&")}&oauth_signature=$signature")
@@ -332,7 +332,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
                         descriptor: Option[ServiceDescriptor] = None
                       )(implicit ec: ExecutionContext, env: Env): Future[Either[String, RefreshableUser]] = {
 
-    val method = authConfig.provider.methods.accessToken
+    val method = authConfig.httpMethod.methods.accessToken
     val queries = mapOfSeqToMap(request.queryString)
 
     val baseParams = getOauth1TemplateRequest(None) ++ Map(
