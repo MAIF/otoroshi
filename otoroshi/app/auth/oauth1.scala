@@ -4,7 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import otoroshi.auth.{AuthModule, AuthModuleConfig, SessionCookieValues}
 import otoroshi.controllers.routes
 import otoroshi.env.Env
-import otoroshi.models.{BackOfficeUser, FromJson, GlobalConfig, PrivateAppsUser, ServiceDescriptor, TeamAccess, TenantAccess, UserRight, UserRights}
+import otoroshi.models.{BackOfficeUser, FromJson, GlobalConfig, PrivateAppsUser, RefreshableUser, ServiceDescriptor, TeamAccess, TenantAccess, UserRight, UserRights}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.crypto.Signatures
 import play.api.Logger
@@ -67,7 +67,7 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
             .asOpt[String]
             .getOrElse("https://api.clever-cloud.com/v2/self"),
           accessTokenURL = (json \ "accessTokenURL").as[String],
-          callbackURL = (json \ "callbackUrl")
+          callbackURL = (json \ "callbackURL")
             .asOpt[String]
             .getOrElse("http://otoroshi.oto.tools:9999/backoffice/auth0/callback"),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
@@ -230,7 +230,44 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
   override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
                                                                                                         ec: ExecutionContext,
                                                                                                         env: Env
-  ): Future[Result] = ???
+  ): Future[Result] = {
+    implicit val _r: RequestHeader = request
+
+    val baseParams: Map[String, String] = getOauth1TemplateRequest(Some(authConfig.callbackURL)) ++ Map("oauth_consumer_key" -> authConfig.consumerKey)
+
+    val signature = sign(baseParams, authConfig.requestTokenURL, authConfig.provider.methods.requestToken, authConfig.consumerSecret)
+
+    (if (authConfig.provider.methods.requestToken == "POST") {
+      post(env, authConfig.requestTokenURL, baseParams ++ Map("oauth_signature" -> signature))
+    } else {
+      get(env, s"${authConfig.requestTokenURL}?${baseParams.map(t => (t._1, encodeURI(t._2)).productIterator.mkString("=")).mkString("&")}&oauth_signature=$signature")
+    })
+      .map { result =>
+        if (result.status > 300) {
+            env.logger.error("result.body")
+            Ok(otoroshi.views.html.oto.error("OAuth request token call failed", env))
+        } else {
+          val parameters = strBodyToMap(result.body)
+
+          if (parameters("oauth_callback_confirmed") == "true") {
+            val redirect      = request.getQueryString("redirect")
+            val hash          = env.sign(s"${authConfig.id}:::backoffice")
+            val oauth_token   = parameters("oauth_token")
+            Redirect(s"${authConfig.authorizeURL}?oauth_token=$oauth_token&perms=read")
+              .addingToSession(
+                "oauth_token_secret" -> parameters("oauth_token_secret"),
+                s"desc"                                                           -> descriptor.id,
+                "hash"                                                            -> hash,
+                s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
+                  routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
+                )
+              )
+          }
+          else
+            Ok(otoroshi.views.html.oto.error("OAuth request token call failed", env))
+        }
+      }
+  }
 
   override def paLogout(request: RequestHeader, user: Option[PrivateAppsUser], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
                                                                                                                                     ec: ExecutionContext,
@@ -240,7 +277,8 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
                                                                                                              ec: ExecutionContext,
                                                                                                              env: Env
-  ): Future[Either[String, PrivateAppsUser]] = ???
+  ): Future[Either[String, PrivateAppsUser]] = callback(request, config, isBoLogin = false, Some(descriptor))
+    .asInstanceOf[Future[Either[String, PrivateAppsUser]]]
 
   override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
                                                                          ec: ExecutionContext,
@@ -258,7 +296,6 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
       get(env, s"${authConfig.requestTokenURL}?${baseParams.map(t => (t._1, encodeURI(t._2)).productIterator.mkString("=")).mkString("&")}&oauth_signature=$signature")
     })
       .map { result =>
-        println(result.body)
         val parameters = strBodyToMap(result.body)
 
         if (parameters("oauth_callback_confirmed") == "true") {
@@ -284,10 +321,16 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
   override def boLogout(request: RequestHeader,  user: BackOfficeUser, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env) =
     FastFuture.successful(Right(None))
 
-  override def boCallback(
-                           request: Request[AnyContent],
-                           config: GlobalConfig
-                         )(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] = {
+  override def boCallback(request: Request[AnyContent], config: GlobalConfig)
+                         (implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] =
+    callback(request, config, isBoLogin = true).asInstanceOf[Future[Either[String, BackOfficeUser]]]
+
+  private def callback(
+                        request: Request[AnyContent],
+                        config: GlobalConfig,
+                        isBoLogin: Boolean,
+                        descriptor: Option[ServiceDescriptor] = None
+                      )(implicit ec: ExecutionContext, env: Env): Future[Either[String, RefreshableUser]] = {
 
     val method = authConfig.provider.methods.accessToken
     val queries = mapOfSeqToMap(request.queryString)
@@ -341,28 +384,45 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
               case _ => None
             })
               .map { data =>
-                FastFuture.successful(Right(BackOfficeUser(
-                  randomId = IdGenerator.token(64),
-                  name = data("name").toString,
-                  email = data("email").toString,
-                  profile = data("profile").asInstanceOf[JsObject],
-                  simpleLogin = false,
-                  authConfigId = authConfig.id,
-                  tags = Seq.empty,
-                  metadata = Map.empty,
-                  rights = authConfig.rightsOverride.getOrElse(
-                    data("email").toString,
-                    UserRights(
-                      Seq(
-                        UserRight(
-                          TenantAccess(authConfig.location.tenant.value),
-                          authConfig.location.teams.map(t => TeamAccess(t.value))
+                FastFuture.successful(Right(
+                  if(isBoLogin)
+                    BackOfficeUser(
+                      randomId = IdGenerator.token(64),
+                      name = data("name").toString,
+                      email = data("email").toString,
+                      profile = data("profile").asInstanceOf[JsObject],
+                      simpleLogin = false,
+                      authConfigId = authConfig.id,
+                      tags = Seq.empty,
+                      metadata = Map.empty,
+                      rights = authConfig.rightsOverride.getOrElse(
+                        data("email").toString,
+                        UserRights(
+                          Seq(
+                            UserRight(
+                              TenantAccess(authConfig.location.tenant.value),
+                              authConfig.location.teams.map(t => TeamAccess(t.value))
+                            )
+                          )
                         )
-                      )
+                      ),
+                      location = authConfig.location
                     )
-                  ),
-                  location = authConfig.location
-                )))
+                  else {
+                    PrivateAppsUser(
+                      randomId = IdGenerator.token(64),
+                      name = data("name").toString,
+                      email = data("email").toString,
+                      profile = data("profile").asInstanceOf[JsObject],
+                      authConfigId = authConfig.id,
+                      tags = Seq.empty,
+                      metadata = Map.empty,
+                      location = authConfig.location,
+                      realm = authConfig.cookieSuffix(descriptor.get),
+                      otoroshiData = None
+                    )
+                  }
+                ))
               }
               .getOrElse(FastFuture.successful(Left("Missing content type from provider")))
           }
