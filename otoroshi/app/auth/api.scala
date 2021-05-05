@@ -1,5 +1,6 @@
 package otoroshi.auth
 
+import auth.saml.{SAMLModule, SamlAuthModuleConfig}
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.models.{UserRight, UserRights}
@@ -20,20 +21,20 @@ trait AuthModule {
       ec: ExecutionContext,
       env: Env
   ): Future[Result]
-  def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  def paLogout(request: RequestHeader, user: Option[PrivateAppsUser], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Option[String]]
+  ): Future[Either[Result, Option[String]]]
   def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Either[String, PrivateAppsUser]]
 
   def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Result]
-  def boLogout(request: RequestHeader, config: GlobalConfig)(implicit
+  def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Option[String]]
+  ): Future[Either[Result, Option[String]]]
   def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit
       ec: ExecutionContext,
       env: Env
@@ -104,6 +105,7 @@ object AuthModuleConfig {
         case "oauth2-global" => GenericOauth2ModuleConfig._fmt.reads(json)
         case "basic"         => BasicAuthModuleConfig._fmt.reads(json)
         case "ldap"          => LdapAuthModuleConfig._fmt.reads(json)
+        case "saml"          => SamlAuthModuleConfig._fmt.reads(json)
         case _               => JsError("Unknown auth. config type")
       }
     override def writes(o: AuthModuleConfig): JsValue             = o.asJson
@@ -190,6 +192,17 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           adminPassword = Some("password"),
           tags = Seq.empty,
           metadata = Map.empty,
+          sessionCookieValues = SessionCookieValues()
+        )
+      case Some("saml")          =>
+        SamlAuthModuleConfig(
+          id    = IdGenerator.token,
+          name  = "New auth. module",
+          desc  = "New auth. module",
+          tags  = Seq.empty,
+          singleSignOnUrl = "",
+          singleLogoutUrl = "",
+          issuer = "",
           sessionCookieValues = SessionCookieValues()
         )
       case _                     =>

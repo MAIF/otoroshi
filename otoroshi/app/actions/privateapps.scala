@@ -35,6 +35,7 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
       block: (PrivateAppsActionContext[A]) => Future[Result]
   ): Future[Result] = {
     val host = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
+
     host match {
       case env.privateAppsHost => {
         env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
