@@ -13540,43 +13540,19 @@
   "components" : {
     "schemas" : {
       "otoroshi.models.ElasticAnalyticsConfig" : {
-        "type" : "object",
         "description" : "Settings for connection to an elastic cluster",
+        "type" : "object",
         "properties" : {
+          "clusterUri" : {
+            "description" : "Cluster URL",
+            "type" : "string"
+          },
           "headers" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
             "description" : "Additionnal headers in the http request"
-          },
-          "clusterUri" : {
-            "description" : "Cluster URL",
-            "type" : "string"
-          },
-          "type" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string"
-            } ],
-            "description" : "Object type"
-          },
-          "user" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string"
-            } ],
-            "description" : "Elastic user"
-          },
-          "index" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string"
-            } ],
-            "description" : "Index name"
           },
           "password" : {
             "oneOf" : [ {
@@ -13589,12 +13565,38 @@
           "mtlsConfig" : {
             "description" : "TLS settings for the http client",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
+          },
+          "index" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "Index name"
+          },
+          "type" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "Object type",
+            "type" : "string",
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+          },
+          "user" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "Elastic user"
           }
         }
       },
       "otoroshi.models.CorsSettings" : {
-        "type" : "object",
         "description" : "Settings for CORS support",
+        "type" : "object",
         "properties" : {
           "enabled" : {
             "description" : "Whether or not cors is enabled",
@@ -13647,8 +13649,8 @@
         }
       },
       "otoroshi.models.LargeResponseFaultConfig" : {
-        "type" : "object",
         "description" : "Settings for a large response fault (chaos engineering)",
+        "type" : "object",
         "properties" : {
           "ratio" : {
             "format" : "double",
@@ -13663,8 +13665,8 @@
         }
       },
       "otoroshi.models.MappingSettings" : {
-        "type" : "object",
         "description" : "Settings to transform a jwt token",
+        "type" : "object",
         "properties" : {
           "map" : {
             "type" : "object",
@@ -13687,8 +13689,8 @@
         }
       },
       "otoroshi.models.VerificationSettings" : {
-        "type" : "object",
         "description" : "jwt token verification settings",
+        "type" : "object",
         "properties" : {
           "fields" : {
             "type" : "object",
@@ -13717,9 +13719,14 @@
         }
       },
       "otoroshi.models.RegionMatch" : {
-        "type" : "object",
         "description" : "Match a target if in the same region",
+        "type" : "object",
         "properties" : {
+          "type" : {
+            "description" : "the kind of predicate",
+            "type" : "string",
+            "enum" : [ "AlwaysMatch", "NetworkLocationMatch", "GeolocationMatch" ]
+          },
           "region" : {
             "description" : "Region name",
             "type" : "string"
@@ -13733,8 +13740,8 @@
         }
       },
       "otoroshi.auth.GroupRights" : {
-        "type" : "object",
         "description" : "User rights associated with a group",
+        "type" : "object",
         "properties" : {
           "userRights" : {
             "description" : "The user rights associated with this group",
@@ -13750,8 +13757,8 @@
         }
       },
       "otoroshi.utils.http.MtlsConfig" : {
-        "type" : "object",
         "description" : "TLS settings for the http client",
+        "type" : "object",
         "properties" : {
           "mtls" : {
             "description" : "Enabled",
@@ -13782,8 +13789,8 @@
         }
       },
       "otoroshi.models.RefJwtVerifier" : {
-        "type" : "object",
         "description" : "Reference to a jwt verifier",
+        "type" : "object",
         "properties" : {
           "excludedPatterns" : {
             "type" : "array",
@@ -13792,16 +13799,21 @@
             },
             "description" : "Verifier excluded paths"
           },
-          "enabled" : {
-            "description" : "Verifier enabled",
-            "type" : "boolean"
-          },
           "ids" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Verifiers ids"
+          },
+          "type" : {
+            "description" : "the kind of verifier",
+            "type" : "string",
+            "enum" : [ "global", "local", "ref" ]
+          },
+          "enabled" : {
+            "description" : "Verifier enabled",
+            "type" : "boolean"
           }
         }
       },
@@ -13821,8 +13833,8 @@
         }
       },
       "otoroshi.models.WeightedBestResponseTime" : {
-        "type" : "object",
         "description" : "Loadbalancing policy that route to best response time targets with a weight",
+        "type" : "object",
         "properties" : {
           "ratio" : {
             "format" : "double",
@@ -13836,8 +13848,8 @@
         "description" : "PEM encoded certificate"
       },
       "otoroshi.models.CustomTimeouts" : {
-        "type" : "object",
         "description" : "Settings for custom timeouts for a specific path",
+        "type" : "object",
         "properties" : {
           "path" : {
             "description" : "path on which this configuration works",
@@ -13871,8 +13883,8 @@
         }
       },
       "otoroshi.models.BasicAuthConstraints" : {
-        "type" : "object",
         "description" : "Settings to extract apikey from a basic auth header like",
+        "type" : "object",
         "properties" : {
           "enabled" : {
             "description" : "Constraint enabled",
@@ -13897,13 +13909,9 @@
         }
       },
       "otoroshi.models.Transform" : {
-        "type" : "object",
         "description" : "jwt token transformation policy settings",
+        "type" : "object",
         "properties" : {
-          "verificationSettings" : {
-            "description" : "Verification settings",
-            "$ref" : "#/components/schemas/otoroshi.models.VerificationSettings"
-          },
           "transformSettings" : {
             "description" : "Transformation settings",
             "$ref" : "#/components/schemas/otoroshi.models.TransformSettings"
@@ -13911,16 +13919,30 @@
           "algoSettings" : {
             "description" : "Algorithm settings for re-signing token",
             "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
+          },
+          "verificationSettings" : {
+            "description" : "Verification settings",
+            "$ref" : "#/components/schemas/otoroshi.models.VerificationSettings"
+          },
+          "type" : {
+            "description" : "the kind of strategy",
+            "type" : "string",
+            "enum" : [ "PassThrough", "Sign", "Transform", "DefaultToken" ]
           }
         }
       },
       "otoroshi.models.KidAlgoSettings" : {
-        "type" : "object",
         "description" : "Settings to find keypair based on header kid for verification",
+        "type" : "object",
         "properties" : {
           "onlyExposedCerts" : {
             "description" : "Use only exposed certs",
             "type" : "boolean"
+          },
+          "type" : {
+            "description" : "the kind of algosettings",
+            "type" : "string",
+            "enum" : [ "HSAlgoSettings", "RSAlgoSettings", "ESAlgoSettings", "JWKSAlgoSettings", "RSAKPAlgoSettings", "ESKPAlgoSettings", "KidAlgoSettings" ]
           }
         }
       },
@@ -13937,6 +13959,11 @@
       "otoroshi.models.TenantId" : {
         "type" : "string",
         "description" : "organization id"
+      },
+      "otoroshi.auth.SAMLCanocalizationMethod" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : { }
       },
       "Done" : {
         "type" : "object",
@@ -13956,8 +13983,8 @@
         }
       },
       "otoroshi.utils.mailer.MailgunSettings" : {
-        "type" : "object",
         "description" : "Settings for the mailgun mailer",
+        "type" : "object",
         "properties" : {
           "eu" : {
             "description" : "European tenant",
@@ -13977,12 +14004,17 @@
               "$ref" : "#/components/schemas/otoroshi.utils.mailer.EmailLocation"
             },
             "description" : "Destination email address"
+          },
+          "type" : {
+            "description" : "the kind of mailer",
+            "type" : "string",
+            "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
           }
         }
       },
       "otoroshi.models.FileSettings" : {
-        "type" : "object",
         "description" : "Settings for a file data exporter",
+        "type" : "object",
         "properties" : {
           "path" : {
             "description" : "File path",
@@ -13992,16 +14024,26 @@
             "format" : "int32",
             "description" : "Max file size in bytes",
             "type" : "integer"
+          },
+          "type" : {
+            "description" : "the kind of exporter",
+            "type" : "string",
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
           }
         }
       },
       "otoroshi.models.InfraProviderMatch" : {
-        "type" : "object",
         "description" : "Match a target if in the same infrastructure",
+        "type" : "object",
         "properties" : {
           "provider" : {
             "description" : "provider name",
             "type" : "string"
+          },
+          "type" : {
+            "description" : "the kind of predicate",
+            "type" : "string",
+            "enum" : [ "AlwaysMatch", "NetworkLocationMatch", "GeolocationMatch" ]
           }
         }
       },
@@ -14041,9 +14083,56 @@
         } ]
       },
       "otoroshi.auth.LdapAuthModuleConfig" : {
-        "type" : "object",
         "description" : "Authentication module that works with LDAP",
+        "type" : "object",
         "properties" : {
+          "groupFilters" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.auth.GroupFilter"
+            },
+            "description" : "LDAP group filters"
+          },
+          "metadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "Metadata of the module"
+          },
+          "allowEmptyPassword" : {
+            "description" : "Allow empty password access",
+            "type" : "boolean"
+          },
+          "basicAuth" : {
+            "description" : "Use standard basic auth or web login form",
+            "type" : "boolean"
+          },
+          "searchBase" : {
+            "description" : "LDAP search base",
+            "type" : "string"
+          },
+          "nameField" : {
+            "description" : "Field name to get name from user profile",
+            "type" : "string"
+          },
+          "emailField" : {
+            "description" : "Field name to get email from user profile",
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "description" : "the type of the module",
+            "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
+          },
+          "metadataField" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "Field name to get metadata from user profile"
+          },
           "rightsOverride" : {
             "type" : "object",
             "additionalProperties" : {
@@ -14058,17 +14147,17 @@
             },
             "description" : "Rights associated with groups"
           },
-          "metadataField" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string"
-            } ],
-            "description" : "Field name to get metadata from user profile"
+          "id" : {
+            "description" : "Unique id of the config",
+            "type" : "string"
           },
           "extraMetadata" : {
             "description" : "Add metadata to user. Object with email as key",
             "type" : "object"
+          },
+          "searchFilter" : {
+            "description" : "Filter for users",
+            "type" : "string"
           },
           "adminPassword" : {
             "oneOf" : [ {
@@ -14078,28 +14167,20 @@
             } ],
             "description" : "The admin password"
           },
-          "tags" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
+          "sessionCookieValues" : {
+            "description" : "Settings for the session cookie",
+            "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
+          },
+          "dataOverride" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "object"
             },
-            "description" : "Entity tags"
+            "description" : "Overiddes user data. Object with email as key"
           },
-          "adminUsername" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string"
-            } ],
-            "description" : "The admin username"
-          },
-          "searchFilter" : {
-            "description" : "Filter for users",
-            "type" : "string"
-          },
-          "desc" : {
-            "description" : "Description of the config",
-            "type" : "string"
+          "superAdmins" : {
+            "description" : "This module produces only super admins",
+            "type" : "boolean"
           },
           "userBase" : {
             "oneOf" : [ {
@@ -14109,57 +14190,6 @@
             } ],
             "description" : "LDAP user base DN"
           },
-          "superAdmins" : {
-            "description" : "This module produces only super admins",
-            "type" : "boolean"
-          },
-          "allowEmptyPassword" : {
-            "description" : "Allow empty password access",
-            "type" : "boolean"
-          },
-          "groupFilters" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.auth.GroupFilter"
-            },
-            "description" : "LDAP group filters"
-          },
-          "basicAuth" : {
-            "description" : "Use standard basic auth or web login form",
-            "type" : "boolean"
-          },
-          "location" : {
-            "description" : "Location of the module",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
-          "metadata" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "Metadata of the module"
-          },
-          "name" : {
-            "description" : "Name of the config",
-            "type" : "string"
-          },
-          "emailField" : {
-            "description" : "Field name to get email from user profile",
-            "type" : "string"
-          },
-          "nameField" : {
-            "description" : "Field name to get name from user profile",
-            "type" : "string"
-          },
-          "sessionMaxAge" : {
-            "format" : "int32",
-            "description" : "Max age of the session",
-            "type" : "integer"
-          },
-          "sessionCookieValues" : {
-            "description" : "Settings for the session cookie",
-            "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
-          },
           "serverUrls" : {
             "type" : "array",
             "items" : {
@@ -14167,26 +14197,43 @@
             },
             "description" : "LDAP server list of url"
           },
-          "dataOverride" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "object"
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
             },
-            "description" : "Overiddes user data. Object with email as key"
+            "description" : "Entity tags"
           },
-          "searchBase" : {
-            "description" : "LDAP search base",
+          "sessionMaxAge" : {
+            "format" : "int32",
+            "description" : "Max age of the session",
+            "type" : "integer"
+          },
+          "adminUsername" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "The admin username"
+          },
+          "name" : {
+            "description" : "Name of the config",
             "type" : "string"
           },
-          "id" : {
-            "description" : "Unique id of the config",
+          "location" : {
+            "description" : "Location of the module",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
+          },
+          "desc" : {
+            "description" : "Description of the config",
             "type" : "string"
           }
         }
       },
       "otoroshi.models.Team" : {
-        "type" : "object",
         "description" : "An otoroshi model for a team of users in the organization (otoroshi-ui)",
+        "type" : "object",
         "properties" : {
           "tags" : {
             "type" : "array",
@@ -14221,8 +14268,8 @@
         }
       },
       "otoroshi.models.ChaosConfig" : {
-        "type" : "object",
         "description" : "Settings to enable chaos engineering for a service",
+        "type" : "object",
         "properties" : {
           "badResponsesFaultConfig" : {
             "oneOf" : [ {
@@ -14279,8 +14326,8 @@
         }
       },
       "otoroshi.events.HealthCheckEvent" : {
-        "type" : "object",
         "description" : "Events generated by health checks",
+        "type" : "object",
         "properties" : {
           "error" : {
             "oneOf" : [ {
@@ -14324,8 +14371,8 @@
         "description" : "Version of the challenge token"
       },
       "otoroshi.models.TransformSettings" : {
-        "type" : "object",
         "description" : "jwt token transformation settings",
+        "type" : "object",
         "properties" : {
           "location" : {
             "description" : "Location of the token",
@@ -14344,8 +14391,8 @@
         }
       },
       "otoroshi.models.ApiKey" : {
-        "type" : "object",
         "description" : "An otoroshi apikey that can allow you to access some services",
+        "type" : "object",
         "properties" : {
           "dailyQuota" : {
             "format" : "int64",
@@ -14438,8 +14485,8 @@
         }
       },
       "otoroshi.models.UserRight" : {
-        "type" : "object",
         "description" : "Represent a user right (teams, organizations) in otoroshi-ui",
+        "type" : "object",
         "properties" : {
           "tenant" : {
             "description" : "Access rights on organizations",
@@ -14455,12 +14502,17 @@
         }
       },
       "otoroshi.models.InHeader" : {
-        "type" : "object",
         "description" : "JWT token location (header)",
+        "type" : "object",
         "properties" : {
           "name" : {
             "description" : "Header name",
             "type" : "string"
+          },
+          "type" : {
+            "description" : "the kind of location",
+            "type" : "string",
+            "enum" : [ "InQueryParam", "InHeader", "InCookie" ]
           },
           "remove" : {
             "description" : "Remove from value",
@@ -14469,80 +14521,12 @@
         }
       },
       "otoroshi.auth.GenericOauth2ModuleConfig" : {
-        "type" : "object",
         "description" : "Authentication module that works with OAuth2/OIDC",
+        "type" : "object",
         "properties" : {
-          "superAdmins" : {
-            "description" : "This module produces only super admins",
+          "refreshTokens" : {
+            "description" : "Refresh token support",
             "type" : "boolean"
-          },
-          "loginUrl" : {
-            "description" : "OAuth login URL",
-            "type" : "string"
-          },
-          "location" : {
-            "description" : "Location of the module",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
-          "userInfoUrl" : {
-            "description" : "OAuth userinfo to get user profile",
-            "type" : "string"
-          },
-          "mtlsConfig" : {
-            "description" : "TLS config. for the module (for server accessed endpoints like tokenUrl, introspectionUrl, etc)",
-            "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
-          },
-          "accessTokenField" : {
-            "description" : "Field name to get access token",
-            "type" : "string"
-          },
-          "clientId" : {
-            "description" : "OAuth Client id",
-            "type" : "string"
-          },
-          "extraMetadata" : {
-            "description" : "Add metadata to user. Object with email as key",
-            "type" : "object"
-          },
-          "apiKeyTagsField" : {
-            "description" : "Field name to extract apikey tags",
-            "type" : "string"
-          },
-          "authorizeUrl" : {
-            "description" : "OAuth authorize URL",
-            "type" : "string"
-          },
-          "desc" : {
-            "description" : "Description of the config",
-            "type" : "string"
-          },
-          "dataOverride" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "object"
-            },
-            "description" : "Overiddes user data. Object with email as key"
-          },
-          "name" : {
-            "description" : "Name of the config",
-            "type" : "string"
-          },
-          "otoroshiDataField" : {
-            "description" : "Field name to get otoroshi metadata from. You can specify sub fields using | as separator",
-            "type" : "string"
-          },
-          "readProfileFromToken" : {
-            "description" : "The user profile will be read from the JWT token in id_token",
-            "type" : "boolean"
-          },
-          "sessionMaxAge" : {
-            "format" : "int32",
-            "description" : "max age for the session cookie in seconds",
-            "type" : "integer"
-          },
-          "clientSecret" : {
-            "description" : "OAuth Client secret",
-            "type" : "string"
           },
           "metadata" : {
             "type" : "object",
@@ -14551,8 +14535,111 @@
             },
             "description" : "Metadata of the module"
           },
+          "tokenUrl" : {
+            "description" : "OAuth token URL",
+            "type" : "string"
+          },
+          "mtlsConfig" : {
+            "description" : "TLS config. for the module (for server accessed endpoints like tokenUrl, introspectionUrl, etc)",
+            "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
+          },
+          "nameField" : {
+            "description" : "Field name to get name from user profile",
+            "type" : "string"
+          },
+          "emailField" : {
+            "description" : "Field name to get email from user profile",
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "description" : "the type of the module",
+            "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
+          },
           "introspectionUrl" : {
             "description" : "URL to introspect access_token",
+            "type" : "string"
+          },
+          "loginUrl" : {
+            "description" : "OAuth login URL",
+            "type" : "string"
+          },
+          "scope" : {
+            "description" : "The scope of the token",
+            "type" : "string"
+          },
+          "rightsOverride" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/otoroshi.models.UserRights"
+            },
+            "description" : "Overrides user rights. Object with email as key"
+          },
+          "callbackUrl" : {
+            "description" : "Otoroshi callback URL",
+            "type" : "string"
+          },
+          "clientSecret" : {
+            "description" : "OAuth Client secret",
+            "type" : "string"
+          },
+          "id" : {
+            "description" : "Unique id of the config",
+            "type" : "string"
+          },
+          "extraMetadata" : {
+            "description" : "Add metadata to user. Object with email as key",
+            "type" : "object"
+          },
+          "accessTokenField" : {
+            "description" : "Field name to get access token",
+            "type" : "string"
+          },
+          "userInfoUrl" : {
+            "description" : "OAuth userinfo to get user profile",
+            "type" : "string"
+          },
+          "clientId" : {
+            "description" : "OAuth Client id",
+            "type" : "string"
+          },
+          "useCookie" : {
+            "description" : "Use cookies for redirection",
+            "type" : "boolean"
+          },
+          "authorizeUrl" : {
+            "description" : "OAuth authorize URL",
+            "type" : "string"
+          },
+          "sessionCookieValues" : {
+            "description" : "Settings for the session cookie",
+            "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
+          },
+          "dataOverride" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "object"
+            },
+            "description" : "Overiddes user data. Object with email as key"
+          },
+          "superAdmins" : {
+            "description" : "This module produces only super admins",
+            "type" : "boolean"
+          },
+          "apiKeyMetaField" : {
+            "description" : "Field name to extract apikey metadata",
+            "type" : "string"
+          },
+          "useJson" : {
+            "description" : "Use JSON or URL Form Encoded as payload with the OAuth provider",
+            "type" : "boolean"
+          },
+          "apiKeyTagsField" : {
+            "description" : "Field name to extract apikey tags",
+            "type" : "string"
+          },
+          "otoroshiDataField" : {
+            "description" : "Field name to get otoroshi metadata from. You can specify sub fields using | as separator",
             "type" : "string"
           },
           "tags" : {
@@ -14561,54 +14648,6 @@
               "type" : "string"
             },
             "description" : "Entity tags"
-          },
-          "claims" : {
-            "description" : "The claims of the token",
-            "type" : "string"
-          },
-          "nameField" : {
-            "description" : "Field name to get name from user profile",
-            "type" : "string"
-          },
-          "sessionCookieValues" : {
-            "description" : "Settings for the session cookie",
-            "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
-          },
-          "useCookie" : {
-            "description" : "Use cookies for redirection",
-            "type" : "boolean"
-          },
-          "proxy" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
-            } ],
-            "description" : "Web proxy configuration for the module's http client"
-          },
-          "scope" : {
-            "description" : "The scope of the token",
-            "type" : "string"
-          },
-          "refreshTokens" : {
-            "description" : "Refresh token support",
-            "type" : "boolean"
-          },
-          "oidConfig" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string"
-            } ],
-            "description" : "URL of the OIDC config. file"
-          },
-          "logoutUrl" : {
-            "description" : "OAuth logout URL",
-            "type" : "string"
           },
           "jwtVerifier" : {
             "oneOf" : [ {
@@ -14622,50 +14661,67 @@
             } ],
             "description" : "Algo. settings to verify JWT token"
           },
-          "rightsOverride" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "$ref" : "#/components/schemas/otoroshi.models.UserRights"
-            },
-            "description" : "Overrides user rights. Object with email as key"
+          "sessionMaxAge" : {
+            "format" : "int32",
+            "description" : "max age for the session cookie in seconds",
+            "type" : "integer"
           },
-          "emailField" : {
-            "description" : "Field name to get email from user profile",
+          "proxy" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/Null"
+              }, {
+                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
+              } ]
+            } ],
+            "description" : "Web proxy configuration for the module's http client"
+          },
+          "logoutUrl" : {
+            "description" : "OAuth logout URL",
             "type" : "string"
           },
-          "apiKeyMetaField" : {
-            "description" : "Field name to extract apikey metadata",
-            "type" : "string"
+          "oidConfig" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "URL of the OIDC config. file"
           },
-          "callbackUrl" : {
-            "description" : "Otoroshi callback URL",
-            "type" : "string"
-          },
-          "useJson" : {
-            "description" : "Use JSON or URL Form Encoded as payload with the OAuth provider",
+          "readProfileFromToken" : {
+            "description" : "The user profile will be read from the JWT token in id_token",
             "type" : "boolean"
           },
-          "id" : {
-            "description" : "Unique id of the config",
+          "name" : {
+            "description" : "Name of the config",
             "type" : "string"
           },
-          "tokenUrl" : {
-            "description" : "OAuth token URL",
+          "claims" : {
+            "description" : "The claims of the token",
+            "type" : "string"
+          },
+          "location" : {
+            "description" : "Location of the module",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
+          },
+          "desc" : {
+            "description" : "Description of the config",
             "type" : "string"
           }
         }
       },
       "otoroshi.models.GlobalJwtVerifier" : {
-        "type" : "object",
         "description" : "Otoroshi model for JWT token verifier",
+        "type" : "object",
         "properties" : {
-          "id" : {
-            "description" : "Verifier id",
-            "type" : "string"
-          },
-          "strict" : {
-            "description" : "Does it fail if JWT not found",
-            "type" : "boolean"
+          "metadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "Entity metadata"
           },
           "algoSettings" : {
             "description" : "Algo settings of the verifier",
@@ -14675,9 +14731,26 @@
             "description" : "Verifier name",
             "type" : "string"
           },
+          "location" : {
+            "description" : "Entity location",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
+          },
           "source" : {
             "description" : "Where to find the jwt token",
             "$ref" : "#/components/schemas/otoroshi.models.JwtTokenLocation"
+          },
+          "id" : {
+            "description" : "Verifier id",
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "description" : "the kind of verifier",
+            "enum" : [ "global", "local", "ref" ]
+          },
+          "strict" : {
+            "description" : "Does it fail if JWT not found",
+            "type" : "boolean"
           },
           "strategy" : {
             "description" : "The strategy of the verifier",
@@ -14693,28 +14766,23 @@
               "type" : "string"
             },
             "description" : "Entity tags"
-          },
-          "location" : {
-            "description" : "Entity location",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
-          "metadata" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "Entity metadata"
           }
         }
       },
       "otoroshi.models.ConsoleSettings" : {
-        "type" : "object",
         "description" : "Data exporter that will log everything to the console",
-        "properties" : { }
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "description" : "the kind of exporter",
+            "type" : "string",
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+          }
+        }
       },
       "otoroshi.models.TenantAccess" : {
-        "type" : "object",
         "description" : "Access rights for organizations",
+        "type" : "object",
         "properties" : {
           "canWrite" : {
             "description" : "Can this access right write data",
@@ -14750,16 +14818,21 @@
         } ]
       },
       "otoroshi.models.IpStackGeolocationSettings" : {
-        "type" : "object",
         "description" : "Settings for connection to IpStack",
+        "type" : "object",
         "properties" : {
-          "enabled" : {
-            "description" : "enable ipstack geolocation",
-            "type" : "boolean"
-          },
           "apikey" : {
             "description" : "IpStack apikey",
             "type" : "string"
+          },
+          "type" : {
+            "description" : "the kind of geolocation",
+            "type" : "string",
+            "enum" : [ "none", "maxmind", "ipstack" ]
+          },
+          "enabled" : {
+            "description" : "enable ipstack geolocation",
+            "type" : "boolean"
           },
           "timeout" : {
             "format" : "int64",
@@ -14768,13 +14841,27 @@
           }
         }
       },
+      "otoroshi.auth.SAMLSignature" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "algorithm" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.auth.SAMLSignatureAlgorithm"
+          },
+          "canocalizationMethod" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.auth.SAMLCanocalizationMethod"
+          }
+        }
+      },
       "UpdateQuotasBody" : {
         "type" : "string",
         "description" : ""
       },
       "otoroshi.models.DataExporterConfigFiltering" : {
-        "type" : "object",
         "description" : "Settings to match otoroshi events",
+        "type" : "object",
         "properties" : {
           "include" : {
             "type" : "array",
@@ -14793,8 +14880,8 @@
         }
       },
       "otoroshi.models.ServiceGroup" : {
-        "type" : "object",
         "description" : "The otoroshi model for a group of services",
+        "type" : "object",
         "properties" : {
           "id" : {
             "description" : "A unique random string to identify your service",
@@ -14828,9 +14915,14 @@
           }
         }
       },
-      "otoroshi.ssl.pki.models.GenCsrQuery" : {
+      "otoroshi.auth.OAuth1Provider" : {
+        "description" : "???",
         "type" : "object",
+        "properties" : { }
+      },
+      "otoroshi.ssl.pki.models.GenCsrQuery" : {
         "description" : "Settings for generating a certificate",
+        "type" : "object",
         "properties" : {
           "client" : {
             "description" : "Is cert client ?",
@@ -14894,27 +14986,32 @@
         }
       },
       "otoroshi.models.NetworkLocationMatch" : {
-        "type" : "object",
         "description" : "Match a target if in the same network location",
+        "type" : "object",
         "properties" : {
-          "dataCenter" : {
-            "description" : "Datacenter name",
-            "type" : "string"
-          },
           "rack" : {
             "description" : "Rack name",
-            "type" : "string"
-          },
-          "region" : {
-            "description" : "Region name",
             "type" : "string"
           },
           "provider" : {
             "description" : "Provider name",
             "type" : "string"
           },
+          "dataCenter" : {
+            "description" : "Datacenter name",
+            "type" : "string"
+          },
           "zone" : {
             "description" : "Zone name",
+            "type" : "string"
+          },
+          "type" : {
+            "description" : "the kind of predicate",
+            "type" : "string",
+            "enum" : [ "AlwaysMatch", "NetworkLocationMatch", "GeolocationMatch" ]
+          },
+          "region" : {
+            "description" : "Region name",
             "type" : "string"
           }
         }
@@ -14925,9 +15022,15 @@
         "description" : "Plugin kind"
       },
       "otoroshi.utils.mailer.ConsoleMailerSettings" : {
-        "type" : "object",
         "description" : "Settings for the console mailer",
-        "properties" : { }
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "description" : "the kind of mailer",
+            "type" : "string",
+            "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
+          }
+        }
       },
       "otoroshi.models.DataExporterConfigType" : {
         "type" : "string",
@@ -14935,8 +15038,8 @@
         "description" : "Type of data exporter"
       },
       "otoroshi.script.Script" : {
-        "type" : "object",
         "description" : "An otoroshi plugins stored as scala code in the otoroshi datastore",
+        "type" : "object",
         "properties" : {
           "name" : {
             "description" : "The name of the script",
@@ -14979,15 +15082,15 @@
         }
       },
       "otoroshi.utils.mailer.MailjetSettings" : {
-        "type" : "object",
         "description" : "Settings for the mailjet mailer",
+        "type" : "object",
         "properties" : {
-          "apiKeyPublic" : {
-            "description" : "Public key",
-            "type" : "string"
-          },
           "apiKeyPrivate" : {
             "description" : "Private key",
+            "type" : "string"
+          },
+          "apiKeyPublic" : {
+            "description" : "Public key",
             "type" : "string"
           },
           "to" : {
@@ -14996,6 +15099,11 @@
               "$ref" : "#/components/schemas/otoroshi.utils.mailer.EmailLocation"
             },
             "description" : "Destination email address"
+          },
+          "type" : {
+            "description" : "the kind of mailer",
+            "type" : "string",
+            "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
           }
         }
       },
@@ -15009,8 +15117,8 @@
         "description" : "the id of a service prefixed by 'service_'"
       },
       "otoroshi.models.SecComHeaders" : {
-        "type" : "object",
         "description" : "Header names for the otoroshi exchange protocol",
+        "type" : "object",
         "properties" : {
           "claimRequestName" : {
             "oneOf" : [ {
@@ -15038,14 +15146,36 @@
           }
         }
       },
+      "otoroshi.auth.SAMLCredentials" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "signingKey" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.auth.Credential"
+          },
+          "encryptionKey" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.auth.Credential"
+          },
+          "signedDocuments" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "encryptedAssertions" : {
+            "description" : "???",
+            "type" : "boolean"
+          }
+        }
+      },
       "otoroshi.tcp.TlsMode" : {
         "type" : "string",
         "enum" : [ "Disabled", "Enabled", "PassThrough" ],
         "description" : "TLS mode"
       },
       "otoroshi.models.ESKPAlgoSettings" : {
-        "type" : "object",
         "description" : "Settings to use elliptic curve signing algorithm from a certificate keypair",
+        "type" : "object",
         "properties" : {
           "size" : {
             "format" : "int32",
@@ -15055,6 +15185,11 @@
           "certId" : {
             "description" : "Certificate id to use the keypair",
             "type" : "string"
+          },
+          "type" : {
+            "description" : "the kind of algosettings",
+            "type" : "string",
+            "enum" : [ "HSAlgoSettings", "RSAlgoSettings", "ESAlgoSettings", "JWKSAlgoSettings", "RSAKPAlgoSettings", "ESKPAlgoSettings", "KidAlgoSettings" ]
           }
         }
       },
@@ -15065,8 +15200,8 @@
         }
       },
       "otoroshi.models.ServiceDescriptor" : {
-        "type" : "object",
         "description" : "The otoroshi model for a service (handles routing)",
+        "type" : "object",
         "properties" : {
           "buildMode" : {
             "description" : "Display a construction page when a user try to use the service",
@@ -15375,6 +15510,10 @@
             "description" : "Sec. com. settings",
             "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
           },
+          "handleLegacyDomain" : {
+            "description" : "Use 'domain', 'subdomain', 'env' and 'matchingRoot' for routing in addition to hosts, or just use hosts.",
+            "type" : "boolean"
+          },
           "canary" : {
             "description" : "Canary settings",
             "$ref" : "#/components/schemas/otoroshi.models.Canary"
@@ -15476,8 +15615,8 @@
         }
       },
       "otoroshi.models.TeamAccess" : {
-        "type" : "object",
         "description" : "Access rights for teams",
+        "type" : "object",
         "properties" : {
           "canRead" : {
             "description" : "Can this access right read data",
@@ -15499,8 +15638,8 @@
         "description" : "Admin kind"
       },
       "otoroshi.ssl.Cert" : {
-        "type" : "object",
         "description" : "The otoroshi model for X509 certificates",
+        "type" : "object",
         "properties" : {
           "letsEncrypt" : {
             "description" : "Let's encrypt (ACME) generated",
@@ -15635,8 +15774,8 @@
         } ]
       },
       "otoroshi.tcp.TcpRule" : {
-        "type" : "object",
         "description" : "Associate targets for a domain (SNI)",
+        "type" : "object",
         "properties" : {
           "domain" : {
             "description" : "match on SNI domain",
@@ -15652,8 +15791,8 @@
         }
       },
       "otoroshi.models.CleverCloudSettings" : {
-        "type" : "object",
         "description" : "Settings for connection to the clever-cloud api",
+        "type" : "object",
         "properties" : {
           "consumerSecret" : {
             "description" : "Clever-Cloud oauth consumer secret",
@@ -15678,8 +15817,8 @@
         }
       },
       "otoroshi.models.Canary" : {
-        "type" : "object",
         "description" : "Settings for canary routing",
+        "type" : "object",
         "properties" : {
           "enabled" : {
             "description" : "Use canary mode for this service",
@@ -15704,8 +15843,8 @@
         }
       },
       "otoroshi.models.BadResponse" : {
-        "type" : "object",
         "description" : "Settings for a bad response return (chaos engineering)",
+        "type" : "object",
         "properties" : {
           "status" : {
             "format" : "int32",
@@ -15725,9 +15864,14 @@
           }
         }
       },
-      "otoroshi.models.GlobalConfig" : {
+      "otoroshi.auth.SAMLSignatureAlgorithm" : {
+        "description" : "???",
         "type" : "object",
+        "properties" : { }
+      },
+      "otoroshi.models.GlobalConfig" : {
         "description" : "The global config (dynamic) for otoroshi",
+        "type" : "object",
         "properties" : {
           "geolocationSettings" : {
             "description" : "Settings for geolocation extraction",
@@ -15980,12 +16124,17 @@
         }
       },
       "otoroshi.models.ExporterRef" : {
-        "type" : "object",
         "description" : "Reference to a data exporter",
+        "type" : "object",
         "properties" : {
           "ref" : {
             "description" : "Script id",
             "type" : "string"
+          },
+          "type" : {
+            "description" : "the kind of exporter",
+            "type" : "string",
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
           },
           "config" : {
             "description" : "Script config",
@@ -15994,8 +16143,8 @@
         }
       },
       "otoroshi.ssl.pki.models.GenKeyPairQuery" : {
-        "type" : "object",
         "description" : "Settings for generating a keypair",
+        "type" : "object",
         "properties" : {
           "algo" : {
             "description" : "Keypair algorithm",
@@ -16019,8 +16168,8 @@
         "enum" : [ "AllServicesPerGroup", "OneServicePerGroup" ]
       },
       "otoroshi.models.ClientIdAuthConstraints" : {
-        "type" : "object",
         "description" : "Settings to extract apikey (using client_id only) from a header or query param",
+        "type" : "object",
         "properties" : {
           "enabled" : {
             "description" : "Constraint enabled",
@@ -16045,8 +16194,8 @@
         }
       },
       "otoroshi.auth.BasicAuthUser" : {
-        "type" : "object",
         "description" : "A user model for the BasicAuthModuleConfig module",
+        "type" : "object",
         "properties" : {
           "metadata" : {
             "description" : "User metadata",
@@ -16083,8 +16232,8 @@
         }
       },
       "otoroshi.models.ClientConfig" : {
-        "type" : "object",
         "description" : "Settings for the http client when http request is forwarded",
+        "type" : "object",
         "properties" : {
           "connectionTimeout" : {
             "format" : "int64",
@@ -16166,8 +16315,8 @@
         "description" : "Service live stats"
       },
       "otoroshi.models.ApiKeyConstraints" : {
-        "type" : "object",
         "description" : "Settings used to extract apikeys from http requests and routing traffic",
+        "type" : "object",
         "properties" : {
           "customHeadersAuth" : {
             "description" : "Settings to extract apikey from custom headers",
@@ -16212,25 +16361,9 @@
         "description" : "Client authentication mode"
       },
       "otoroshi.models.SimpleOtoroshiAdmin" : {
-        "type" : "object",
         "description" : "An otoroshi admin user",
+        "type" : "object",
         "properties" : {
-          "username" : {
-            "description" : "User username",
-            "type" : "string"
-          },
-          "password" : {
-            "description" : "User password (bcrypt hashed)",
-            "type" : "string"
-          },
-          "location" : {
-            "description" : "Entity location",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
-          "label" : {
-            "description" : "User label",
-            "type" : "string"
-          },
           "createdAt" : {
             "description" : "User creation date",
             "type" : "number"
@@ -16242,20 +16375,41 @@
             },
             "description" : "Entity metadata"
           },
+          "password" : {
+            "description" : "User password (bcrypt hashed)",
+            "type" : "string"
+          },
+          "rights" : {
+            "description" : "User rights",
+            "$ref" : "#/components/schemas/otoroshi.models.UserRights"
+          },
+          "location" : {
+            "description" : "Entity location",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
+          },
+          "typ" : {
+            "description" : "Type of user",
+            "$ref" : "#/components/schemas/otoroshi.models.OtoroshiAdminType"
+          },
+          "label" : {
+            "description" : "User label",
+            "type" : "string"
+          },
+          "type" : {
+            "description" : "the kind of admin",
+            "type" : "string",
+            "enum" : [ "simple", "webauthn" ]
+          },
+          "username" : {
+            "description" : "User username",
+            "type" : "string"
+          },
           "tags" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Entity tags"
-          },
-          "rights" : {
-            "description" : "User rights",
-            "$ref" : "#/components/schemas/otoroshi.models.UserRights"
-          },
-          "typ" : {
-            "description" : "Type of user",
-            "$ref" : "#/components/schemas/otoroshi.models.OtoroshiAdminType"
           }
         }
       },
@@ -16267,8 +16421,8 @@
         } ]
       },
       "otoroshi.ssl.pki.models.SignCertResponse" : {
-        "type" : "object",
         "description" : "Response for a certificate signing operation",
+        "type" : "object",
         "properties" : {
           "cert" : {
             "description" : "Cert (PEM encoded)",
@@ -16290,9 +16444,16 @@
         }
       },
       "otoroshi.events.KafkaConfig" : {
-        "type" : "object",
         "description" : "Settings for connection to a kafka cluster",
+        "type" : "object",
         "properties" : {
+          "servers" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "URLs of the kafka servers"
+          },
           "keyPass" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
@@ -16301,20 +16462,13 @@
             } ],
             "description" : "Optional keypass"
           },
-          "servers" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "URLs of the kafka servers"
-          },
           "mtlsConfig" : {
             "description" : "TLS config to access the cluster",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
           },
-          "sendEvents" : {
-            "description" : "Send events to it, or just connect",
-            "type" : "boolean"
+          "topic" : {
+            "description" : "Optional kafka topic (otoroshi-events by default)",
+            "type" : "string"
           },
           "truststore" : {
             "oneOf" : [ {
@@ -16324,10 +16478,6 @@
             } ],
             "description" : "Optional truststore"
           },
-          "topic" : {
-            "description" : "Optional kafka topic (otoroshi-events by default)",
-            "type" : "string"
-          },
           "keystore" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
@@ -16335,12 +16485,21 @@
               "type" : "string"
             } ],
             "description" : "Optional keystore"
+          },
+          "sendEvents" : {
+            "description" : "Send events to it, or just connect",
+            "type" : "boolean"
+          },
+          "type" : {
+            "description" : "the kind of exporter",
+            "type" : "string",
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
           }
         }
       },
       "otoroshi.models.UserRights" : {
-        "type" : "object",
         "description" : "Represent a list of user rights",
+        "type" : "object",
         "properties" : {
           "rights" : {
             "type" : "array",
@@ -16352,8 +16511,8 @@
         }
       },
       "otoroshi.script.plugins.Plugins" : {
-        "type" : "object",
         "description" : "Settings for plugins (of any kind)",
+        "type" : "object",
         "properties" : {
           "config" : {
             "description" : "Plugins configuration",
@@ -16380,8 +16539,8 @@
         }
       },
       "otoroshi.auth.WebAuthnDetails" : {
-        "type" : "object",
         "description" : "Handle and credentials for a webauthn user",
+        "type" : "object",
         "properties" : {
           "handle" : {
             "description" : "Webauthn user handle",
@@ -16397,8 +16556,8 @@
         }
       },
       "otoroshi.tcp.TcpTarget" : {
-        "type" : "object",
         "description" : "Target for a TCP proxy",
+        "type" : "object",
         "properties" : {
           "host" : {
             "description" : "Target host",
@@ -16424,8 +16583,8 @@
         }
       },
       "otoroshi.models.GeoPositionRadius" : {
-        "type" : "object",
         "description" : "Geolocation radius",
+        "type" : "object",
         "properties" : {
           "latitude" : {
             "format" : "double",
@@ -16445,19 +16604,32 @@
         }
       },
       "otoroshi.models.InCookie" : {
-        "type" : "object",
         "description" : "JWT token location (cookie)",
+        "type" : "object",
         "properties" : {
           "name" : {
             "description" : "Cookie name",
             "type" : "string"
+          },
+          "type" : {
+            "description" : "the kind of location",
+            "type" : "string",
+            "enum" : [ "InQueryParam", "InHeader", "InCookie" ]
           }
         }
       },
       "otoroshi.models.RSAlgoSettings" : {
-        "type" : "object",
         "description" : "Settings to use RSA signing algorithm",
+        "type" : "object",
         "properties" : {
+          "privateKey" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "Private key (for signing)"
+          },
           "size" : {
             "format" : "int32",
             "description" : "SHA function size",
@@ -16467,19 +16639,16 @@
             "description" : "Public key (for verification)",
             "type" : "string"
           },
-          "privateKey" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string"
-            } ],
-            "description" : "Private key (for signing)"
+          "type" : {
+            "description" : "the kind of algosettings",
+            "type" : "string",
+            "enum" : [ "HSAlgoSettings", "RSAlgoSettings", "ESAlgoSettings", "JWKSAlgoSettings", "RSAKPAlgoSettings", "ESKPAlgoSettings", "KidAlgoSettings" ]
           }
         }
       },
       "otoroshi.tcp.TcpService" : {
-        "type" : "object",
         "description" : "Model for a TCP proxy",
+        "type" : "object",
         "properties" : {
           "enabled" : {
             "description" : "Service enabled",
@@ -16550,21 +16719,9 @@
         "description" : ""
       },
       "otoroshi.models.LocalJwtVerifier" : {
-        "type" : "object",
         "description" : "Local jwt verifier (deprecated)",
+        "type" : "object",
         "properties" : {
-          "strategy" : {
-            "description" : "Token strategy",
-            "$ref" : "#/components/schemas/otoroshi.models.VerifierStrategy"
-          },
-          "algoSettings" : {
-            "description" : "Algo settings",
-            "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
-          },
-          "enabled" : {
-            "description" : "Verifier enabled",
-            "type" : "boolean"
-          },
           "excludedPatterns" : {
             "type" : "array",
             "items" : {
@@ -16572,19 +16729,36 @@
             },
             "description" : "Verifier excluded paths"
           },
+          "algoSettings" : {
+            "description" : "Algo settings",
+            "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
+          },
           "source" : {
             "description" : "Token source",
             "$ref" : "#/components/schemas/otoroshi.models.JwtTokenLocation"
           },
+          "type" : {
+            "description" : "the kind of verifier",
+            "type" : "string",
+            "enum" : [ "global", "local", "ref" ]
+          },
           "strict" : {
             "description" : "Strict token verification",
+            "type" : "boolean"
+          },
+          "strategy" : {
+            "description" : "Token strategy",
+            "$ref" : "#/components/schemas/otoroshi.models.VerifierStrategy"
+          },
+          "enabled" : {
+            "description" : "Verifier enabled",
             "type" : "boolean"
           }
         }
       },
       "otoroshi.utils.gzip.GzipConfig" : {
-        "type" : "object",
         "description" : "Settings for gzip support",
+        "type" : "object",
         "properties" : {
           "compressionLevel" : {
             "format" : "int32",
@@ -16629,13 +16803,9 @@
         }
       },
       "otoroshi.models.Webhook" : {
-        "type" : "object",
         "description" : "Settings for webhook call",
+        "type" : "object",
         "properties" : {
-          "url" : {
-            "description" : "The URL where events are posted",
-            "type" : "string"
-          },
           "headers" : {
             "type" : "object",
             "additionalProperties" : {
@@ -16646,6 +16816,15 @@
           "mtlsConfig" : {
             "description" : "TLS config when calling webhook",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
+          },
+          "type" : {
+            "description" : "the kind of exporter",
+            "type" : "string",
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+          },
+          "url" : {
+            "description" : "The URL where events are posted",
+            "type" : "string"
           }
         }
       },
@@ -16661,9 +16840,18 @@
         } ]
       },
       "otoroshi.models.DefaultToken" : {
-        "type" : "object",
         "description" : "Default jwt token when no other token validated",
+        "type" : "object",
         "properties" : {
+          "verificationSettings" : {
+            "description" : "Verification settings",
+            "$ref" : "#/components/schemas/otoroshi.models.VerificationSettings"
+          },
+          "type" : {
+            "description" : "the kind of strategy",
+            "type" : "string",
+            "enum" : [ "PassThrough", "Sign", "Transform", "DefaultToken" ]
+          },
           "strict" : {
             "description" : "If the token already exists in the request, then fail",
             "type" : "boolean"
@@ -16671,16 +16859,12 @@
           "token" : {
             "description" : "The default token",
             "type" : "object"
-          },
-          "verificationSettings" : {
-            "description" : "Verification settings",
-            "$ref" : "#/components/schemas/otoroshi.models.VerificationSettings"
           }
         }
       },
       "otoroshi.models.RemainingQuotas" : {
-        "type" : "object",
         "description" : "Remaining quotas for an apikey",
+        "type" : "object",
         "properties" : {
           "currentCallsPerSec" : {
             "format" : "int64",
@@ -16730,8 +16914,8 @@
         }
       },
       "otoroshi.models.GlobalScripts" : {
-        "type" : "object",
         "description" : "Settings to apply plugins globally",
+        "type" : "object",
         "properties" : {
           "jobConfig" : {
             "description" : "jobs enabled",
@@ -16817,8 +17001,8 @@
         }
       },
       "otoroshi.models.JwtAuthConstraints" : {
-        "type" : "object",
         "description" : "Settings to extract apikey from a jwt token",
+        "type" : "object",
         "properties" : {
           "keyPairSigned" : {
             "description" : "The jwt token is signed by a keypair from a cert found from its id in apikey meta. 'jwt-sign-keypair'",
@@ -16880,8 +17064,8 @@
         "description" : "the id of a group prefixed by 'group_'"
       },
       "otoroshi.script.AccessValidatorRef" : {
-        "type" : "object",
         "description" : "References to access validation plugins",
+        "type" : "object",
         "properties" : {
           "enabled" : {
             "description" : "Access validator plugins enabled",
@@ -16908,8 +17092,8 @@
         }
       },
       "otoroshi.ssl.pki.models.GenCertResponse" : {
-        "type" : "object",
         "description" : "Response for a certificate generation operation",
+        "type" : "object",
         "properties" : {
           "ca" : {
             "description" : "Ca cert (PEM encoded)",
@@ -16955,8 +17139,8 @@
         }
       },
       "otoroshi.models.PrivateAppsUser" : {
-        "type" : "object",
         "description" : "User session for private apps",
+        "type" : "object",
         "properties" : {
           "realm" : {
             "description" : "Session realm name",
@@ -17037,8 +17221,8 @@
         }
       },
       "otoroshi.models.HealthCheck" : {
-        "type" : "object",
         "description" : "Healthcheck settings for a service",
+        "type" : "object",
         "properties" : {
           "enabled" : {
             "description" : "Whether or not healthcheck is enabled on the current service descriptor",
@@ -17051,8 +17235,8 @@
         }
       },
       "otoroshi.models.SnowMonkeyConfig" : {
-        "type" : "object",
         "description" : "Settings for the snow monkey (chaos engineering)",
+        "type" : "object",
         "properties" : {
           "dryRun" : {
             "description" : "Whether or not outages will actualy impact requests",
@@ -17104,19 +17288,29 @@
           }
         }
       },
-      "otoroshi.models.ZoneMatch" : {
+      "otoroshi.auth.NameIDFormat" : {
+        "description" : "???",
         "type" : "object",
+        "properties" : { }
+      },
+      "otoroshi.models.ZoneMatch" : {
         "description" : "Match a target if in the same zone",
+        "type" : "object",
         "properties" : {
           "zone" : {
             "description" : "Zone name",
             "type" : "string"
+          },
+          "type" : {
+            "description" : "the kind of predicate",
+            "type" : "string",
+            "enum" : [ "AlwaysMatch", "NetworkLocationMatch", "GeolocationMatch" ]
           }
         }
       },
       "otoroshi.auth.GroupFilter" : {
-        "type" : "object",
         "description" : "Filter for a LDAP group",
+        "type" : "object",
         "properties" : {
           "group" : {
             "description" : "The LDAP group",
@@ -17137,8 +17331,8 @@
         "description" : "Plugin scala code"
       },
       "otoroshi.models.AutoCert" : {
-        "type" : "object",
         "description" : "Settings to generate certificates on the fly",
+        "type" : "object",
         "properties" : {
           "allowed" : {
             "type" : "array",
@@ -17182,8 +17376,8 @@
         }
       },
       "otoroshi.models.RestrictionPath" : {
-        "type" : "object",
         "description" : "Represent an http request on which restrictions will apply",
+        "type" : "object",
         "properties" : {
           "method" : {
             "description" : "Method of the http request",
@@ -17196,8 +17390,8 @@
         }
       },
       "otoroshi.models.GeolocationMatch" : {
-        "type" : "object",
         "description" : "Match a target if in the same geo location radius",
+        "type" : "object",
         "properties" : {
           "positions" : {
             "type" : "array",
@@ -17205,6 +17399,11 @@
               "$ref" : "#/components/schemas/otoroshi.models.GeoPositionRadius"
             },
             "description" : "Possible positions"
+          },
+          "type" : {
+            "description" : "the kind of predicate",
+            "type" : "string",
+            "enum" : [ "AlwaysMatch", "NetworkLocationMatch", "GeolocationMatch" ]
           }
         }
       },
@@ -17230,8 +17429,8 @@
         }
       },
       "otoroshi.models.BadResponsesFaultConfig" : {
-        "type" : "object",
         "description" : "List of bad response settings",
+        "type" : "object",
         "properties" : {
           "ratio" : {
             "format" : "double",
@@ -17248,8 +17447,8 @@
         }
       },
       "otoroshi.models.Target" : {
-        "type" : "object",
         "description" : "A target model for a service (destination for forwarded requests)",
+        "type" : "object",
         "properties" : {
           "host" : {
             "description" : "The host on which the HTTP call will be forwarded. Can be a domain name, or an IP address. Can also have a port",
@@ -17293,8 +17492,8 @@
         }
       },
       "otoroshi.models.Proxies" : {
-        "type" : "object",
         "description" : "Various web proxy settings for http client",
+        "type" : "object",
         "properties" : {
           "elastic" : {
             "oneOf" : [ {
@@ -17395,8 +17594,8 @@
         }
       },
       "otoroshi.models.ApiKeyRotation" : {
-        "type" : "object",
         "description" : "Settings for automatic apikey rotation with grace period",
+        "type" : "object",
         "properties" : {
           "enabled" : {
             "description" : "Rotation enabled",
@@ -17423,8 +17622,8 @@
         }
       },
       "otoroshi.tcp.SniSettings" : {
-        "type" : "object",
         "description" : "SNI settings for a TCP proxy",
+        "type" : "object",
         "properties" : {
           "enabled" : {
             "description" : "SNI extraction enabled",
@@ -17455,8 +17654,8 @@
         }
       },
       "otoroshi.models.RedirectionSettings" : {
-        "type" : "object",
         "description" : "Settings for routing redirection",
+        "type" : "object",
         "properties" : {
           "enabled" : {
             "description" : "Whether or not redirection is enabled",
@@ -17490,51 +17689,13 @@
         } ]
       },
       "otoroshi.auth.BasicAuthModuleConfig" : {
-        "type" : "object",
         "description" : "Authentication module that let you use otoroshi as the identity provider",
+        "type" : "object",
         "properties" : {
           "sessionMaxAge" : {
             "format" : "int32",
             "description" : "max age for the session cookie in seconds",
             "type" : "integer"
-          },
-          "tags" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "Entity tags"
-          },
-          "users" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.auth.BasicAuthUser"
-            },
-            "description" : "Users attached to the module"
-          },
-          "location" : {
-            "description" : "location of the module",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
-          "basicAuth" : {
-            "description" : "Use standard basic auth or web login form",
-            "type" : "boolean"
-          },
-          "name" : {
-            "description" : "name of the module",
-            "type" : "string"
-          },
-          "desc" : {
-            "description" : "description of the module",
-            "type" : "string"
-          },
-          "webauthn" : {
-            "description" : "Use webauthn for login",
-            "type" : "boolean"
-          },
-          "id" : {
-            "description" : "id of the module",
-            "type" : "string"
           },
           "metadata" : {
             "type" : "object",
@@ -17546,12 +17707,55 @@
           "sessionCookieValues" : {
             "description" : "Settings for the session cookie",
             "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
+          },
+          "basicAuth" : {
+            "description" : "Use standard basic auth or web login form",
+            "type" : "boolean"
+          },
+          "name" : {
+            "description" : "name of the module",
+            "type" : "string"
+          },
+          "webauthn" : {
+            "description" : "Use webauthn for login",
+            "type" : "boolean"
+          },
+          "location" : {
+            "description" : "location of the module",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
+          },
+          "id" : {
+            "description" : "id of the module",
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "description" : "the type of the module",
+            "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
+          },
+          "users" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.auth.BasicAuthUser"
+            },
+            "description" : "Users attached to the module"
+          },
+          "desc" : {
+            "description" : "description of the module",
+            "type" : "string"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Entity tags"
           }
         }
       },
       "otoroshi.utils.mailer.EmailLocation" : {
-        "type" : "object",
         "description" : "Email location settings",
+        "type" : "object",
         "properties" : {
           "name" : {
             "description" : "Destination name",
@@ -17564,19 +17768,32 @@
         }
       },
       "otoroshi.models.RackMatch" : {
-        "type" : "object",
         "description" : "Match a target if in the same rack",
+        "type" : "object",
         "properties" : {
           "rack" : {
             "description" : "Rack name",
             "type" : "string"
+          },
+          "type" : {
+            "description" : "the kind of predicate",
+            "type" : "string",
+            "enum" : [ "AlwaysMatch", "NetworkLocationMatch", "GeolocationMatch" ]
           }
         }
       },
       "otoroshi.models.ESAlgoSettings" : {
-        "type" : "object",
         "description" : "Settings to use elliptic curve signing algorithm",
+        "type" : "object",
         "properties" : {
+          "privateKey" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "The EC private key. If used for verification, can be null"
+          },
           "size" : {
             "format" : "int32",
             "description" : "SHA function size",
@@ -17586,13 +17803,10 @@
             "description" : "The EC private key. If used for signing, can be null",
             "type" : "string"
           },
-          "privateKey" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string"
-            } ],
-            "description" : "The EC private key. If used for verification, can be null"
+          "type" : {
+            "description" : "the kind of algosettings",
+            "type" : "string",
+            "enum" : [ "HSAlgoSettings", "RSAlgoSettings", "ESAlgoSettings", "JWKSAlgoSettings", "RSAKPAlgoSettings", "ESKPAlgoSettings", "KidAlgoSettings" ]
           }
         }
       },
@@ -17635,8 +17849,8 @@
         }
       },
       "otoroshi.models.Tenant" : {
-        "type" : "object",
         "description" : "An otoroshi model for an organization (otoroshi-ui)",
+        "type" : "object",
         "properties" : {
           "description" : {
             "description" : "Entity description",
@@ -17667,8 +17881,8 @@
         }
       },
       "otoroshi.models.BackOfficeUser" : {
-        "type" : "object",
         "description" : "User session for otoroshi-ui admins",
+        "type" : "object",
         "properties" : {
           "randomId" : {
             "description" : "Session user random id",
@@ -17748,8 +17962,8 @@
         "description" : "Alert trail event"
       },
       "otoroshi.models.ApiDescriptor" : {
-        "type" : "object",
         "description" : "Represent if a service exposes an API with an optional url to an openapi descriptor",
+        "type" : "object",
         "properties" : {
           "exposeApi" : {
             "description" : "Is this an API",
@@ -17766,8 +17980,8 @@
         }
       },
       "otoroshi.auth.SessionCookieValues" : {
-        "type" : "object",
         "description" : "The configuration for session cookie",
+        "type" : "object",
         "properties" : {
           "httpOnly" : {
             "description" : "Is cookie accessible on server side only",
@@ -17780,8 +17994,8 @@
         }
       },
       "otoroshi.utils.letsencrypt.LetsEncryptSettings" : {
-        "type" : "object",
         "description" : "Settings for connection to a let's encrypt (or ACME) server",
+        "type" : "object",
         "properties" : {
           "privateKey" : {
             "description" : "Let's encrypt (ACME) private key",
@@ -17816,8 +18030,8 @@
         }
       },
       "otoroshi.models.ApiKeyRouteMatcher" : {
-        "type" : "object",
         "description" : "Routing settings based on apikeys metadata and tags",
+        "type" : "object",
         "properties" : {
           "oneTagIn" : {
             "type" : "array",
@@ -17885,8 +18099,8 @@
         }
       },
       "otoroshi.models.Outage" : {
-        "type" : "object",
         "description" : "A snowmonkey outage model",
+        "type" : "object",
         "properties" : {
           "descriptorName" : {
             "description" : "Service descriptor name",
@@ -17911,8 +18125,8 @@
         }
       },
       "otoroshi.utils.mailer.SendgridSettings" : {
-        "type" : "object",
         "description" : "Settings for the sendgrid mailer",
+        "type" : "object",
         "properties" : {
           "apiKey" : {
             "description" : "Sendgrid apikey",
@@ -17924,6 +18138,11 @@
               "$ref" : "#/components/schemas/otoroshi.utils.mailer.EmailLocation"
             },
             "description" : "Destination email address"
+          },
+          "type" : {
+            "description" : "the kind of mailer",
+            "type" : "string",
+            "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
           }
         }
       },
@@ -17936,8 +18155,8 @@
         "description" : "PEM encoded certificate"
       },
       "otoroshi.models.LargeRequestFaultConfig" : {
-        "type" : "object",
         "description" : "Settings for a large request fault (chaos engineering)",
+        "type" : "object",
         "properties" : {
           "ratio" : {
             "format" : "double",
@@ -17958,8 +18177,8 @@
         }
       },
       "otoroshi.script.PreRoutingRef" : {
-        "type" : "object",
         "description" : "References to pre-routing plugins",
+        "type" : "object",
         "properties" : {
           "enabled" : {
             "description" : "pre-routing plugins enabled",
@@ -17986,8 +18205,8 @@
         }
       },
       "otoroshi.models.DataExporterConfig" : {
-        "type" : "object",
         "description" : "Module to export otoroshi specific events to whatever destination you want",
+        "type" : "object",
         "properties" : {
           "desc" : {
             "description" : "Description",
@@ -18066,8 +18285,8 @@
         }
       },
       "otoroshi.ssl.pki.models.GenKeyPairResponse" : {
-        "type" : "object",
         "description" : "Response for a keypair generation operation",
+        "type" : "object",
         "properties" : {
           "publicKey" : {
             "description" : "Public key (PEM encoded)",
@@ -18092,8 +18311,8 @@
         "description" : "value used by the openapi generator when no matching type found. Should be fixed in a near future."
       },
       "otoroshi.models.CustomHeadersAuthConstraints" : {
-        "type" : "object",
         "description" : "Settings to extract apikey from a custom headers",
+        "type" : "object",
         "properties" : {
           "enabled" : {
             "description" : "Constraint enabled",
@@ -18118,8 +18337,8 @@
         }
       },
       "otoroshi.models.TlsSettings" : {
-        "type" : "object",
         "description" : "Global TLS settings. The default domain that will be picked if no certificate matches the current request",
+        "type" : "object",
         "properties" : {
           "defaultDomain" : {
             "oneOf" : [ {
@@ -18136,9 +18355,14 @@
         }
       },
       "otoroshi.models.MetricsSettings" : {
-        "type" : "object",
         "description" : "Settings for metrics labels",
+        "type" : "object",
         "properties" : {
+          "type" : {
+            "description" : "the kind of exporter",
+            "type" : "string",
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+          },
           "labels" : {
             "type" : "object",
             "additionalProperties" : {
@@ -18149,52 +18373,46 @@
         }
       },
       "otoroshi.models.Sign" : {
-        "type" : "object",
         "description" : "jwt token re-sign policy settings",
+        "type" : "object",
         "properties" : {
+          "algoSettings" : {
+            "description" : "Re-signing jwt token settings",
+            "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
+          },
           "verificationSettings" : {
             "description" : "Verification settings",
             "$ref" : "#/components/schemas/otoroshi.models.VerificationSettings"
           },
-          "algoSettings" : {
-            "description" : "Re-signing jwt token settings",
-            "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
+          "type" : {
+            "description" : "the kind of strategy",
+            "type" : "string",
+            "enum" : [ "PassThrough", "Sign", "Transform", "DefaultToken" ]
           }
         }
       },
       "otoroshi.models.PassThrough" : {
-        "type" : "object",
         "description" : "jwt token validation policicy that just validate the token",
+        "type" : "object",
         "properties" : {
           "verificationSettings" : {
             "description" : "Verification settings",
             "$ref" : "#/components/schemas/otoroshi.models.VerificationSettings"
+          },
+          "type" : {
+            "description" : "the kind of strategy",
+            "type" : "string",
+            "enum" : [ "PassThrough", "Sign", "Transform", "DefaultToken" ]
           }
         }
       },
       "otoroshi.events.PulsarConfig" : {
-        "type" : "object",
         "description" : "Settings for connection to a pulsar cluster",
+        "type" : "object",
         "properties" : {
-          "namespace" : {
-            "description" : "Pulsar namespace",
-            "type" : "string"
-          },
           "mtlsConfig" : {
             "description" : "TLS config to access the cluster",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
-          },
-          "tenant" : {
-            "description" : "Pulsar tenant",
-            "type" : "string"
-          },
-          "topic" : {
-            "description" : "Pulsar topic",
-            "type" : "string"
-          },
-          "uri" : {
-            "description" : "Pulsar cluster url",
-            "type" : "string"
           },
           "tlsTrustCertsFilePath" : {
             "oneOf" : [ {
@@ -18203,12 +18421,142 @@
               "type" : "string"
             } ],
             "description" : "Trusted cert path"
+          },
+          "namespace" : {
+            "description" : "Pulsar namespace",
+            "type" : "string"
+          },
+          "topic" : {
+            "description" : "Pulsar topic",
+            "type" : "string"
+          },
+          "type" : {
+            "description" : "the kind of exporter",
+            "type" : "string",
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+          },
+          "uri" : {
+            "description" : "Pulsar cluster url",
+            "type" : "string"
+          },
+          "tenant" : {
+            "description" : "Pulsar tenant",
+            "type" : "string"
+          }
+        }
+      },
+      "otoroshi.auth.SamlAuthModuleConfig" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "validateSignature" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "metadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "ssoProtocolBinding" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.auth.SAMLProtocolBinding"
+          },
+          "sessionCookieValues" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
+          },
+          "validatingCertificates" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "signature" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.auth.SAMLSignature"
+          },
+          "credentials" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.auth.SAMLCredentials"
+          },
+          "validateAssertions" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "type" : {
+            "type" : "string",
+            "description" : "the type of the module",
+            "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
+          },
+          "issuer" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "sessionMaxAge" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "usedNameIDAsEmail" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "singleLogoutUrl" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "name" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "emailAttributeName" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
+          },
+          "singleSignOnUrl" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "nameIDFormat" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.auth.NameIDFormat"
+          },
+          "location" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
+          },
+          "singleLogoutProtocolBinding" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.auth.SAMLProtocolBinding"
+          },
+          "id" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "desc" : {
+            "description" : "???",
+            "type" : "string"
           }
         }
       },
       "otoroshi.models.Restrictions" : {
-        "type" : "object",
         "description" : "Http requests restrictions for a service or an apikey",
+        "type" : "object",
         "properties" : {
           "forbidden" : {
             "type" : "array",
@@ -18242,8 +18590,8 @@
         }
       },
       "otoroshi.events.StatsdConfig" : {
-        "type" : "object",
         "description" : "Settings for connection to a statsd agent",
+        "type" : "object",
         "properties" : {
           "datadog" : {
             "description" : "Datadog agent",
@@ -18261,35 +18609,12 @@
         }
       },
       "otoroshi.models.JWKSAlgoSettings" : {
-        "type" : "object",
         "description" : "Settings to use keypair from JWKS for verification",
+        "type" : "object",
         "properties" : {
           "kty" : {
             "description" : "Key type",
             "type" : "string"
-          },
-          "mtlsConfig" : {
-            "description" : "TLS settings for http client",
-            "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
-          },
-          "headers" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "Http header when fetching JWKS"
-          },
-          "url" : {
-            "description" : "JWKS url",
-            "type" : "string"
-          },
-          "timeout" : {
-            "description" : "Timeout when fetching JWKS",
-            "type" : "number"
-          },
-          "ttl" : {
-            "description" : "Cache ttl",
-            "type" : "number"
           },
           "proxy" : {
             "oneOf" : [ {
@@ -18302,12 +18627,40 @@
               } ]
             } ],
             "description" : "Web proxy for http client"
+          },
+          "headers" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "Http header when fetching JWKS"
+          },
+          "mtlsConfig" : {
+            "description" : "TLS settings for http client",
+            "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
+          },
+          "type" : {
+            "description" : "the kind of algosettings",
+            "type" : "string",
+            "enum" : [ "HSAlgoSettings", "RSAlgoSettings", "ESAlgoSettings", "JWKSAlgoSettings", "RSAKPAlgoSettings", "ESKPAlgoSettings", "KidAlgoSettings" ]
+          },
+          "ttl" : {
+            "description" : "Cache ttl",
+            "type" : "number"
+          },
+          "url" : {
+            "description" : "JWKS url",
+            "type" : "string"
+          },
+          "timeout" : {
+            "description" : "Timeout when fetching JWKS",
+            "type" : "number"
           }
         }
       },
       "otoroshi.models.IpFiltering" : {
-        "type" : "object",
         "description" : "Settings for ip address filtering for a service or globally",
+        "type" : "object",
         "properties" : {
           "whitelist" : {
             "type" : "array",
@@ -18326,8 +18679,8 @@
         }
       },
       "otoroshi.ssl.pki.models.GenCsrResponse" : {
-        "type" : "object",
         "description" : "Response for a csr generation operation",
+        "type" : "object",
         "properties" : {
           "csr" : {
             "description" : "CSR (PEM encoded)",
@@ -18343,23 +18696,33 @@
           }
         }
       },
-      "otoroshi.models.MaxmindGeolocationSettings" : {
+      "otoroshi.auth.SAMLProtocolBinding" : {
+        "description" : "???",
         "type" : "object",
+        "properties" : { }
+      },
+      "otoroshi.models.MaxmindGeolocationSettings" : {
         "description" : "Settings for connection to a maxmind db",
+        "type" : "object",
         "properties" : {
-          "enabled" : {
-            "description" : "Geolocation using maxmind db enabled",
-            "type" : "boolean"
-          },
           "path" : {
             "description" : "Maxmlind db file path",
             "type" : "string"
+          },
+          "type" : {
+            "description" : "the kind of geolocation",
+            "type" : "string",
+            "enum" : [ "none", "maxmind", "ipstack" ]
+          },
+          "enabled" : {
+            "description" : "Geolocation using maxmind db enabled",
+            "type" : "boolean"
           }
         }
       },
       "otoroshi.models.LatencyInjectionFaultConfig" : {
-        "type" : "object",
         "description" : "Settings for a latency injection fault (chaos engineering)",
+        "type" : "object",
         "properties" : {
           "ratio" : {
             "format" : "double",
@@ -18377,8 +18740,8 @@
         }
       },
       "otoroshi.models.RSAKPAlgoSettings" : {
-        "type" : "object",
         "description" : "Settings to use RSA signing algorithm from a certificate keypair",
+        "type" : "object",
         "properties" : {
           "size" : {
             "format" : "int32",
@@ -18388,6 +18751,11 @@
           "certId" : {
             "description" : "Certificate id",
             "type" : "string"
+          },
+          "type" : {
+            "description" : "the kind of algosettings",
+            "type" : "string",
+            "enum" : [ "HSAlgoSettings", "RSAlgoSettings", "ESAlgoSettings", "JWKSAlgoSettings", "RSAKPAlgoSettings", "ESKPAlgoSettings", "KidAlgoSettings" ]
           }
         }
       },
@@ -18406,19 +18774,113 @@
           "$ref" : "#/components/schemas/otoroshi.utils.mailer.SendgridSettings"
         } ]
       },
-      "otoroshi.models.InQueryParam" : {
+      "otoroshi.auth.Oauth1ModuleConfig" : {
+        "description" : "???",
         "type" : "object",
-        "description" : "JWT token location (query param)",
         "properties" : {
+          "profileURL" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "metadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "authorizeURL" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "requestTokenURL" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "sessionCookieValues" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
+          },
+          "type" : {
+            "type" : "string",
+            "description" : "the type of the module",
+            "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
+          },
+          "httpMethod" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.auth.OAuth1Provider"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "sessionMaxAge" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "consumerSecret" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "accessTokenURL" : {
+            "description" : "???",
+            "type" : "string"
+          },
           "name" : {
-            "description" : "Query param name",
+            "description" : "???",
+            "type" : "string"
+          },
+          "rightsOverride" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/otoroshi.models.UserRights"
+            },
+            "description" : "???"
+          },
+          "callbackURL" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "location" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
+          },
+          "id" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "consumerKey" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "desc" : {
+            "description" : "???",
             "type" : "string"
           }
         }
       },
-      "otoroshi.models.EntityLocation" : {
+      "otoroshi.models.InQueryParam" : {
+        "description" : "JWT token location (query param)",
         "type" : "object",
+        "properties" : {
+          "name" : {
+            "description" : "Query param name",
+            "type" : "string"
+          },
+          "type" : {
+            "description" : "the kind of location",
+            "type" : "string",
+            "enum" : [ "InQueryParam", "InHeader", "InCookie" ]
+          }
+        }
+      },
+      "otoroshi.models.EntityLocation" : {
         "description" : "Location of any entity (teams and organization)",
+        "type" : "object",
         "properties" : {
           "tenant" : {
             "description" : "Organization of the current entity",
@@ -18438,8 +18900,8 @@
         "description" : "Audit trail event"
       },
       "otoroshi.models.ErrorTemplate" : {
-        "type" : "object",
         "description" : "Service descriptor error template",
+        "type" : "object",
         "properties" : {
           "template50x" : {
             "description" : "The 50x error html template",
@@ -18471,9 +18933,15 @@
         }
       },
       "otoroshi.utils.mailer.NoneMailerSettings" : {
-        "type" : "object",
         "description" : "Settings for the /dev/null mailer",
-        "properties" : { }
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "description" : "the kind of mailer",
+            "type" : "string",
+            "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
+          }
+        }
       },
       "otoroshi.models.SecComInfoTokenVersion" : {
         "type" : "string",
@@ -18491,16 +18959,16 @@
           "$ref" : "#/components/schemas/otoroshi.auth.GenericOauth2ModuleConfig"
         }, {
           "$ref" : "#/components/schemas/otoroshi.auth.LdapAuthModuleConfig"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.auth.Oauth1ModuleConfig"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.auth.SamlAuthModuleConfig"
         } ]
       },
       "otoroshi.utils.mailer.GenericMailerSettings" : {
-        "type" : "object",
         "description" : "Settings for the generic mailer (http requests)",
+        "type" : "object",
         "properties" : {
-          "url" : {
-            "description" : "Sender URL",
-            "type" : "string"
-          },
           "headers" : {
             "type" : "object",
             "additionalProperties" : {
@@ -18514,6 +18982,15 @@
               "$ref" : "#/components/schemas/otoroshi.utils.mailer.EmailLocation"
             },
             "description" : "Destination email address"
+          },
+          "type" : {
+            "description" : "the kind of mailer",
+            "type" : "string",
+            "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
+          },
+          "url" : {
+            "description" : "Sender URL",
+            "type" : "string"
           }
         }
       },
@@ -18527,12 +19004,57 @@
           "$ref" : "#/components/schemas/otoroshi.models.Target"
         }
       },
-      "otoroshi.models.WebAuthnOtoroshiAdmin" : {
+      "otoroshi.auth.Credential" : {
+        "description" : "???",
         "type" : "object",
-        "description" : "An otoroshi admin user that uses webauthn at login",
         "properties" : {
-          "label" : {
-            "description" : "User label",
+          "certificate" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
+          },
+          "privateKey" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
+          },
+          "certId" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
+          },
+          "useOtoroshiCertificate" : {
+            "description" : "???",
+            "type" : "boolean"
+          }
+        }
+      },
+      "otoroshi.models.WebAuthnOtoroshiAdmin" : {
+        "description" : "An otoroshi admin user that uses webauthn at login",
+        "type" : "object",
+        "properties" : {
+          "createdAt" : {
+            "description" : "User creation date",
+            "type" : "number"
+          },
+          "metadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "Entity metadata"
+          },
+          "password" : {
+            "description" : "User password",
             "type" : "string"
           },
           "credentials" : {
@@ -18542,21 +19064,34 @@
             },
             "description" : "User webauthn credentials"
           },
+          "rights" : {
+            "description" : "User rights",
+            "$ref" : "#/components/schemas/otoroshi.models.UserRights"
+          },
           "location" : {
             "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
-          "createdAt" : {
-            "description" : "User creation date",
-            "type" : "number"
-          },
-          "password" : {
-            "description" : "User password",
-            "type" : "string"
-          },
           "typ" : {
             "description" : "User type",
             "$ref" : "#/components/schemas/otoroshi.models.OtoroshiAdminType"
+          },
+          "handle" : {
+            "description" : "User webauthn handle",
+            "type" : "string"
+          },
+          "label" : {
+            "description" : "User label",
+            "type" : "string"
+          },
+          "type" : {
+            "description" : "the kind of admin",
+            "type" : "string",
+            "enum" : [ "simple", "webauthn" ]
+          },
+          "username" : {
+            "description" : "User username",
+            "type" : "string"
           },
           "tags" : {
             "type" : "array",
@@ -18564,25 +19099,6 @@
               "type" : "string"
             },
             "description" : "Entity tags"
-          },
-          "username" : {
-            "description" : "User username",
-            "type" : "string"
-          },
-          "metadata" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "Entity metadata"
-          },
-          "handle" : {
-            "description" : "User webauthn handle",
-            "type" : "string"
-          },
-          "rights" : {
-            "description" : "User rights",
-            "$ref" : "#/components/schemas/otoroshi.models.UserRights"
           }
         }
       },
@@ -18593,9 +19109,14 @@
         }
       },
       "otoroshi.models.DataCenterMatch" : {
-        "type" : "object",
         "description" : "Match a target if in the same datacenter",
+        "type" : "object",
         "properties" : {
+          "type" : {
+            "description" : "the kind of predicate",
+            "type" : "string",
+            "enum" : [ "AlwaysMatch", "NetworkLocationMatch", "GeolocationMatch" ]
+          },
           "dc" : {
             "description" : "DC name",
             "type" : "string"
@@ -18612,27 +19133,32 @@
         } ]
       },
       "otoroshi.models.HSAlgoSettings" : {
-        "type" : "object",
         "description" : "Settings to use HMAC-SHA signing algorithm",
+        "type" : "object",
         "properties" : {
           "size" : {
             "format" : "int32",
             "description" : "Size for SHA function",
             "type" : "integer"
           },
+          "base64" : {
+            "description" : "The secret is base64 encoded",
+            "type" : "boolean"
+          },
           "secret" : {
             "description" : "HMAC secret",
             "type" : "string"
           },
-          "base64" : {
-            "description" : "The secret is base64 encoded",
-            "type" : "boolean"
+          "type" : {
+            "description" : "the kind of algosettings",
+            "type" : "string",
+            "enum" : [ "HSAlgoSettings", "RSAlgoSettings", "ESAlgoSettings", "JWKSAlgoSettings", "RSAKPAlgoSettings", "ESKPAlgoSettings", "KidAlgoSettings" ]
           }
         }
       },
       "otoroshi.models.UserAgentSettings" : {
-        "type" : "object",
         "description" : "Settings to extract informations about user agent (for otoroshi events)",
+        "type" : "object",
         "properties" : {
           "enabled" : {
             "description" : "User agent extraction enabled",
