@@ -7,7 +7,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import otoroshi.auth.AuthConfigsDataStore
-import otoroshi.cluster.{ClusterStateDataStore, KvClusterStateDataStore}
+import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
@@ -158,20 +158,21 @@ class LevelDbDataStores(
           Future.sequence(
             keys
               .filterNot { key =>
-                key == s"${env.storageRoot}:cluster:" ||
-                key == s"${env.storageRoot}:events:audit" ||
-                key == s"${env.storageRoot}:events:alerts" ||
-                key.startsWith(s"${env.storageRoot}:users:backoffice") ||
-                key.startsWith(s"${env.storageRoot}:admins:") ||
-                key.startsWith(s"${env.storageRoot}:u2f:users:") ||
-                // key.startsWith(s"${env.storageRoot}:users:") ||
-                key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
-                key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
-                key.startsWith(s"${env.storageRoot}:scall:stats:") ||
-                key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
-                key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
-                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
-                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+                Cluster.filteredKey(key, env)
+                //key == s"${env.storageRoot}:cluster:" ||
+                //key == s"${env.storageRoot}:events:audit" ||
+                //key == s"${env.storageRoot}:events:alerts" ||
+                //key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+                //key.startsWith(s"${env.storageRoot}:admins:") ||
+                //key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+                //// key.startsWith(s"${env.storageRoot}:users:") ||
+                //key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
+                //key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+                //key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+                //key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+                //key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+                //(key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+                //(key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
               }
               .map { key =>
                 redis.get(key).flatMap {

@@ -6,6 +6,7 @@ import java.util.regex.Pattern
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
+import otoroshi.cluster.Cluster
 import otoroshi.env.Env
 import otoroshi.storage._
 import otoroshi.utils.SchedulerHelper
@@ -70,13 +71,14 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
       val newStore = new ConcurrentHashMap[String, Any]()
       _memory.store.keySet.asScala
         .toSeq
-        .filterNot(_.startsWith(s"${env.storageRoot}:desclookup"))
-        .filterNot(_.startsWith(s"${env.storageRoot}:scall"))
-        .filterNot(_.startsWith(s"${env.storageRoot}:data"))
-        .filterNot(_.startsWith(s"${env.storageRoot}:cache"))
-        .filterNot(_.startsWith(s"${env.storageRoot}:users:alreadyloggedin"))
-        .filterNot(_.startsWith(s"${env.storageRoot}:migrations"))
-        .filterNot(_.startsWith(s"${env.storageRoot}:dev"))
+        .filterNot(key => Cluster.filteredKey(key, env))
+        // .filterNot(_.startsWith(s"${env.storageRoot}:desclookup"))
+        // .filterNot(_.startsWith(s"${env.storageRoot}:scall"))
+        // .filterNot(_.startsWith(s"${env.storageRoot}:data"))
+        // .filterNot(_.startsWith(s"${env.storageRoot}:cache"))
+        // .filterNot(_.startsWith(s"${env.storageRoot}:users:alreadyloggedin"))
+        // .filterNot(_.startsWith(s"${env.storageRoot}:migrations"))
+        // .filterNot(_.startsWith(s"${env.storageRoot}:dev"))
         .map { k =>
           newStore.put(k, _memory.store.get(k))
           k
