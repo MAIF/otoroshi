@@ -16,7 +16,7 @@ function OtoroshiMiddleware(opts = {}) {
             req.challengeVersion = "V2";
             req.token = decoded;
             const ttl = 10 // by default its 30 seconds in the UI
-            const now = parseInt((Date.now() / 1000).toFixed(0), 10)
+            const now = Math.floor(Date.now() / 1000)
             const token = { 'state-resp': decodedState.state, iat: now, nbf: now, exp: now + ttl, aud: 'Otoroshi' }
             res.set("Otoroshi-State-Resp", jwt.sign(token, tokenKey, { algorithm: 'HS512'}))
             next();
