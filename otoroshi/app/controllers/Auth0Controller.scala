@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
+import auth.Oauth1ModuleConfig
 import auth.saml.SamlAuthModuleConfig
 import cats.implicits.catsSyntaxOptionId
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, GenericOauth2ModuleConfig}
@@ -39,7 +40,7 @@ class AuthController(
   ): Future[Result] = {
     val hash     = req.getQueryString("hash").orElse(req.session.get("hash")).getOrElse("--")
     val expected = env.sign(s"${auth.id}:::$descId")
-    if ((hash != "--" && hash == expected) || auth.isInstanceOf[SamlAuthModuleConfig])
+    if ((hash != "--" && hash == expected) || auth.isInstanceOf[SamlAuthModuleConfig] || auth.isInstanceOf[Oauth1ModuleConfig])
       f(auth)
     else
       Errors.craftResponseResult(

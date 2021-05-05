@@ -1,5 +1,6 @@
 package otoroshi.auth
 
+import auth.Oauth1ModuleConfig
 import auth.saml.{SAMLModule, SamlAuthModuleConfig}
 import otoroshi.env.Env
 import otoroshi.models._
@@ -106,6 +107,7 @@ object AuthModuleConfig {
         case "basic"         => BasicAuthModuleConfig._fmt.reads(json)
         case "ldap"          => LdapAuthModuleConfig._fmt.reads(json)
         case "saml"          => SamlAuthModuleConfig._fmt.reads(json)
+        case "oauth1"        => Oauth1ModuleConfig._fmt.reads(json)
         case _               => JsError("Unknown auth. config type")
       }
     override def writes(o: AuthModuleConfig): JsValue             = o.asJson
@@ -204,6 +206,22 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           singleSignOnUrl = "",
           singleLogoutUrl = "",
           issuer = "",
+          sessionCookieValues = SessionCookieValues()
+        )
+      case Some("oauth1")        =>
+        Oauth1ModuleConfig(
+          id    = IdGenerator.token,
+          name  = "New OAuth 1.0 module",
+          desc  = "New OAuth 1.0 module",
+          consumerKey         = "",
+          consumerSecret      = "",
+          requestTokenURL     = "",
+          authorizeURL        = "",
+          accessTokenURL      = "",
+          profileURL          = "",
+          callbackURL         = "",
+          tags = Seq.empty,
+          metadata = Map.empty,
           sessionCookieValues = SessionCookieValues()
         )
       case _                     =>
