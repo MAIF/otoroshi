@@ -889,7 +889,7 @@ export class DangerZonePage extends Component {
     },
   };
 
-  formFlow = [
+  formFlow = (value) => [
     '<<<Misc. Settings',
     'maintenanceMode',
     'u2fLoginOnly',
@@ -897,7 +897,7 @@ export class DangerZonePage extends Component {
     // 'streamEntityOnly',
     'autoLinkToDefaultGroup',
     'useCircuitBreakers',
-    'logAnalyticsOnServer',
+    value.logAnalyticsOnServer ? 'logAnalyticsOnServer' : null,
     'useAkkaHttpClient',
     'enableEmbeddedMetrics',
     'middleFingers',
