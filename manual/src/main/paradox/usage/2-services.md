@@ -55,13 +55,17 @@ If you enable secure communication for a given service with `V1 - simple values 
 <img src="../img/exchange.png" />
 @@@
 
+you can find an example project that implements V1 challenge [here](https://github.com/MAIF/otoroshi/tree/master/demos/challenge)
+
 #### V2 challenge
 
-If you enable secure communication for a given service with `V2 - signed JWT token exhange` activated, you will have to add a filter on the target application that will take the `Otoroshi-State` header value containing a JWT token, verify it's content signature then extract a claim named `state` and return a new JWT token in a header named `Otoroshi-State-Resp` with the `state` value in a claim named `state-resp`. By default, the signature algorithm is HMAC+SHA512 but can you can choose your own. The sent and returned JWT tokens have short TTL to avoid being replayed. You must be validate the tokens TTL.
+If you enable secure communication for a given service with `V2 - signed JWT token exhange` activated, you will have to add a filter on the target application that will take the `Otoroshi-State` header value containing a JWT token, verify it's content signature then extract a claim named `state` and return a new JWT token in a header named `Otoroshi-State-Resp` with the `state` value in a claim named `state-resp`. By default, the signature algorithm is HMAC+SHA512 but can you can choose your own. The sent and returned JWT tokens have short TTL to avoid being replayed. You must be validate the tokens TTL. The audience of the response token must be `Otoroshi` and you have to specify `iat`, `nbf` and `exp`.
 
 @@@ div { .centered-img }
 <img src="../img/exchange-2.png" />
 @@@
+
+you can find an example project that implements V2 challenge [here](https://github.com/MAIF/otoroshi/tree/master/demos/challenge)
 
 #### Info. token
 

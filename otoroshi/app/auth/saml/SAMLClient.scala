@@ -1,7 +1,6 @@
-package auth.saml
+package otoroshi.auth
 
 import akka.http.scaladsl.util.FastFuture
-import auth.saml.SAMLModule.{decodeAndValidateSamlResponse, getLogoutRequest, getRequest}
 import com.nimbusds.jose.util.X509CertUtils
 import net.shibboleth.utilities.java.support.xml.BasicParserPool
 import org.apache.pulsar.shade.org.apache.commons.io.IOUtils
@@ -27,7 +26,6 @@ import org.opensaml.xmlsec.signature.impl.SignatureBuilder
 import org.opensaml.xmlsec.signature.support.{SignatureConstants, SignatureException, SignatureSupport}
 import org.w3c.dom.ls.DOMImplementationLS
 import org.w3c.dom.{Document, Node}
-import otoroshi.auth.{AuthModule, AuthModuleConfig, SessionCookieValues}
 import otoroshi.controllers.routes
 import otoroshi.env.Env
 import otoroshi.models._
@@ -56,6 +54,9 @@ import scala.jdk.CollectionConverters.{asScalaBufferConverter, asScalaSetConvert
 import scala.util.Try
 
 case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
+
+  import SAMLModule._
+
   override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)
                           (implicit ec: ExecutionContext, env: Env): Future[Result] = {
     implicit val req: RequestHeader = request

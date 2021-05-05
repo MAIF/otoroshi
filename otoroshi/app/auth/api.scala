@@ -1,17 +1,14 @@
 package otoroshi.auth
 
-import auth.Oauth1ModuleConfig
-import auth.saml.{SAMLModule, SamlAuthModuleConfig}
 import otoroshi.env.Env
-import otoroshi.models._
-import otoroshi.models.{UserRight, UserRights}
+import otoroshi.models.{UserRights, _}
+import otoroshi.security.IdGenerator
+import otoroshi.storage.BasicStore
+import otoroshi.utils.http.MtlsConfig
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
-import otoroshi.security.IdGenerator
-import otoroshi.storage.BasicStore
-import otoroshi.utils.http.MtlsConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try

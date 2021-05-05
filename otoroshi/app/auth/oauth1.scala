@@ -1,10 +1,9 @@
-package auth
+package otoroshi.auth
 
 import akka.http.scaladsl.util.FastFuture
-import otoroshi.auth.{AuthModule, AuthModuleConfig, SessionCookieValues}
 import otoroshi.controllers.routes
 import otoroshi.env.Env
-import otoroshi.models.{BackOfficeUser, FromJson, GlobalConfig, PrivateAppsUser, RefreshableUser, ServiceDescriptor, TeamAccess, TenantAccess, UserRight, UserRights}
+import otoroshi.models._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.crypto.Signatures
 import play.api.Logger
@@ -225,7 +224,7 @@ object Oauth1AuthModule {
 
 case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
 
-  import auth.Oauth1AuthModule._
+  import Oauth1AuthModule._
 
   override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
                                                                                                         ec: ExecutionContext,

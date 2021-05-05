@@ -2,9 +2,7 @@ package otoroshi.controllers.adminapi
 
 import otoroshi.actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
-import auth.Oauth1ModuleConfig
-import auth.saml.SamlAuthModuleConfig
-import otoroshi.auth.{AuthModuleConfig, BasicAuthModuleConfig, GenericOauth2ModuleConfig, LdapAuthModuleConfig}
+import otoroshi.auth.{AuthModuleConfig, BasicAuthModuleConfig, GenericOauth2ModuleConfig, LdapAuthModuleConfig, Oauth1ModuleConfig, SamlAuthModuleConfig}
 import otoroshi.env.Env
 import otoroshi.events.GatewayEvent
 import otoroshi.models._
@@ -357,6 +355,8 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
                   case c: GenericOauth2ModuleConfig =>
                     c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
                   case c: SamlAuthModuleConfig =>
+                    c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+                  case c: Oauth1ModuleConfig =>
                     c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
                 }
                 .asJson,

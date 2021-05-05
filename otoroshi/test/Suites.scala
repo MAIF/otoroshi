@@ -20,18 +20,6 @@ object Configurations {
       .resolve()
   )
 
-  def LevelDBConfiguration =
-    Configuration(
-      ConfigFactory
-        .parseString(s"""
-         |{
-         |  app.storage = "leveldb"
-         |  app.leveldb.path = "./target/leveldbs/test-${System.currentTimeMillis()}"
-         |}
-       """.stripMargin)
-        .resolve()
-    )
-
   val RedisConfiguration = Configuration(
     ConfigFactory
       .parseString("""
@@ -62,17 +50,6 @@ object Configurations {
       .resolve()
   )
 
-  val MongoConfiguration = Configuration(
-    ConfigFactory
-      .parseString("""
-         |{
-         |  app.storage = "mongo"
-         |  app.mongo.testMode = true
-         |}
-       """.stripMargin)
-      .resolve()
-  )
-
   val PgConfiguration = Configuration(
     ConfigFactory
       .parseString("""
@@ -91,10 +68,8 @@ object OtoroshiTests {
     Try(Option(System.getenv("TEST_STORE"))).toOption.flatten.getOrElse("inmemory") match {
       case "redis"           => ("Redis", Configurations.RedisConfiguration)
       case "inmemory"        => ("InMemory", Configurations.InMemoryConfiguration)
-      case "leveldb"         => ("LevelDB", Configurations.LevelDBConfiguration)
       case "cassandra-naive" => ("Cassandra Naive", Configurations.CassandraNaiveConfiguration)
       case "cassandra"       => ("Cassandra", Configurations.CassandraConfiguration)
-      case "mongo"           => ("Mongo", Configurations.MongoConfiguration)
       case "experimental-pg" => ("Experimental PG", Configurations.PgConfiguration)
       case e                 => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
@@ -102,73 +77,39 @@ object OtoroshiTests {
 
   def getSuites(): Seq[Suite] = {
     val (name, config) = getNameAndConfig()
-    val suites         = if (name == "LevelDB") {
-      Seq(
-        new BasicSpec(name, Configurations.LevelDBConfiguration),
-        new AdminApiSpec(name, Configurations.LevelDBConfiguration),
-        new ProgrammaticApiSpec(name, Configurations.LevelDBConfiguration),
-        new CircuitBreakerSpec(name, Configurations.LevelDBConfiguration),
-        new QuotasSpec(name, Configurations.LevelDBConfiguration),
-        new CanarySpec(name, Configurations.LevelDBConfiguration),
-        new AlertAndAnalyticsSpec(name, Configurations.LevelDBConfiguration),
-        // new AnalyticsSpec(name, Configurations.LevelDBConfiguration),
-        new ApiKeysSpec(name, Configurations.LevelDBConfiguration),
-        new SidecarSpec(name, Configurations.LevelDBConfiguration),
-        new JWTVerificationSpec(name, Configurations.LevelDBConfiguration),
-        new JWTVerificationRefSpec(name, Configurations.LevelDBConfiguration),
-        new SnowMonkeySpec(name, Configurations.LevelDBConfiguration),
-        new Version149Spec(name, Configurations.LevelDBConfiguration),
-        new Version1410Spec(name, Configurations.LevelDBConfiguration),
-        new Version1413Spec(name, Configurations.LevelDBConfiguration),
-        new WebsocketSpec(name, Configurations.LevelDBConfiguration),
-        new ServiceGroupApiSpec(name, config),
-        new TcpServiceApiSpec(name, config),
-        new ScriptApiSpec(name, config),
-        new AuthModuleConfigApiSpec(name, config),
-        new ClientValidatorApiSpec(name, config),
-        new JWTVerifierApiSpec(name, config),
-        new CertificateApiSpec(name, config),
-        new ServicesApiSpec(name, config),
-        new ApikeyGroupApiSpec(name, config),
-        new ApikeyServiceApiSpec(name, config),
-        new ApikeyApiSpec(name, config)
-      )
-    } else {
-      Seq(
-        new BasicSpec(name, config),
-        new AdminApiSpec(name, config),
-        new ProgrammaticApiSpec(name, config),
-        new CircuitBreakerSpec(name, config),
-        new AlertAndAnalyticsSpec(name, config),
-        // new AnalyticsSpec(name, config),
-        new ApiKeysSpec(name, config),
-        new CanarySpec(name, config),
-        new QuotasSpec(name, config),
-        new SidecarSpec(name, config),
-        new JWTVerificationSpec(name, config),
-        new JWTVerificationRefSpec(name, config),
-        new SnowMonkeySpec(name, config),
-        new Version149Spec(name, config),
-        new Version1410Spec(name, config),
-        new Version1413Spec(name, config),
-        new WebsocketSpec(name, config),
-        new ServiceGroupApiSpec(name, config),
-        new TcpServiceApiSpec(name, config),
-        new ScriptApiSpec(name, config),
-        new AuthModuleConfigApiSpec(name, config),
-        new ClientValidatorApiSpec(name, config),
-        new JWTVerifierApiSpec(name, config),
-        new CertificateApiSpec(name, config),
-        new ServicesApiSpec(name, config),
-        new ApikeyGroupApiSpec(name, config),
-        new ApikeyServiceApiSpec(name, config),
-        new ApikeyApiSpec(name, config)
-      )
-    }
+    val suites         = Seq(
+      new BasicSpec(name, config),
+      new AdminApiSpec(name, config),
+      new ProgrammaticApiSpec(name, config),
+      new CircuitBreakerSpec(name, config),
+      new AlertAndAnalyticsSpec(name, config),
+      // new AnalyticsSpec(name, config),
+      new ApiKeysSpec(name, config),
+      new CanarySpec(name, config),
+      new QuotasSpec(name, config),
+      new SidecarSpec(name, config),
+      new JWTVerificationSpec(name, config),
+      new JWTVerificationRefSpec(name, config),
+      new SnowMonkeySpec(name, config),
+      new Version149Spec(name, config),
+      new Version1410Spec(name, config),
+      new Version1413Spec(name, config),
+      // new WebsocketSpec(name, config),
+      new ServiceGroupApiSpec(name, config),
+      new TcpServiceApiSpec(name, config),
+      new ScriptApiSpec(name, config),
+      new AuthModuleConfigApiSpec(name, config),
+      new ClientValidatorApiSpec(name, config),
+      new JWTVerifierApiSpec(name, config),
+      new CertificateApiSpec(name, config),
+      new ServicesApiSpec(name, config),
+      new ApikeyGroupApiSpec(name, config),
+      new ApikeyServiceApiSpec(name, config),
+      new ApikeyApiSpec(name, config)
+    )
     Option(System.getenv("TEST_ANALYTICS")) match {
-      case Some("true") if name == "LevelDB" => suites :+ new AnalyticsSpec(name, Configurations.LevelDBConfiguration)
       case Some("true")                      => suites :+ new AnalyticsSpec(name, config)
-      case None                              => suites
+      case _                              => suites
     }
   }
 }

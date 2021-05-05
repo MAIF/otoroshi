@@ -12,8 +12,7 @@ import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import auth.saml.SamlAuthModuleConfig
-import otoroshi.auth.{AuthModuleConfig, SessionCookieValues}
+import otoroshi.auth._
 import com.google.common.base.Charsets
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import otoroshi.env.Env

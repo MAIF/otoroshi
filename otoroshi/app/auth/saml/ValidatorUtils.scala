@@ -1,4 +1,4 @@
-package auth.saml
+package otoroshi.auth
 
 import org.opensaml.saml.common.SignableSAMLObject
 import org.opensaml.saml.saml2.core.{LogoutRequest, RequestAbstractType, Response, StatusCode, StatusResponseType}

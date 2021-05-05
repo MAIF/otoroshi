@@ -1,35 +1,30 @@
 package otoroshi.controllers
 
-import java.util.Base64
-import java.util.concurrent.TimeUnit
-import otoroshi.actions.{ApiActionContext, BackOfficeAction, BackOfficeActionAuth}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import auth.saml.SamlAuthModuleConfig
-import otoroshi.auth.{GenericOauth2ModuleConfig, LdapAuthModuleConfig, SessionCookieValues}
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import com.nimbusds.jose.jwk.KeyType
-import net.shibboleth.utilities.java.support.xml.BasicParserPool
-import org.apache.pulsar.shade.org.apache.commons.io.IOUtils
-import org.apache.pulsar.shade.org.apache.commons.io.input.BOMInputStream
-import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
-import org.opensaml.saml.metadata.resolver.impl.DOMMetadataResolver
-import org.opensaml.saml.saml2.metadata.EntitiesDescriptor
 import org.slf4j.LoggerFactory
+import otoroshi.actions.{ApiActionContext, BackOfficeAction, BackOfficeActionAuth}
+import otoroshi.auth._
+import otoroshi.env.Env
+import otoroshi.events._
 import otoroshi.jobs.updates.SoftwareUpdatesJobs
-import otoroshi.models.{EntityLocation, EntityLocationSupport, TenantId}
 import otoroshi.models.RightsChecker.SuperAdminOnly
+import otoroshi.models.{EntityLocation, EntityLocationSupport, TenantId, _}
+import otoroshi.security._
+import otoroshi.ssl._
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
 import otoroshi.utils.http.MtlsConfig
+import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.misc.LocalCache
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.http.HttpEntity
@@ -37,12 +32,9 @@ import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.SourceBody
 import play.api.mvc._
-import otoroshi.security._
-import otoroshi.ssl._
-import otoroshi.utils.misc.LocalCache
-import otoroshi.utils.http.RequestImplicits._
 
-import java.nio.charset.StandardCharsets
+import java.util.Base64
+import java.util.concurrent.TimeUnit
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Try
@@ -706,8 +698,8 @@ class BackOfficeController(
 
   def fetchSAMLConfiguration() = BackOfficeActionAuth.async(parse.json) {
     ctx => {
-        import scala.xml.XML._
         import scala.xml.Elem
+        import scala.xml.XML._
 
         Try {
           val xmlContent: Either[String, Elem] = (ctx.request.body \ "url").asOpt[String] match {

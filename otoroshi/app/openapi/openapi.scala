@@ -16,6 +16,7 @@ import scala.util.Try
 case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
 
   lazy val add_schemas = raw.select("add_schemas").asOpt[JsObject].getOrElse(Json.obj())
+  lazy val merge_schemas = raw.select("merge_schemas").asOpt[JsObject].getOrElse(Json.obj())
 
   lazy val bulkControllerMethods             = raw
     .select("bulkControllerMethods")
@@ -66,7 +67,8 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
       // "old_examples" -> JsObject(old_examples.mapValues(JsString.apply)),
       "bulkControllerMethods" -> JsArray(bulkControllerMethods.map(JsString.apply)),
       "crudControllerMethods" -> JsArray(crudControllerMethods.map(JsString.apply)),
-      "add_schemas"           -> add_schemas
+      "add_schemas"           -> add_schemas,
+      "merge_schemas"         -> merge_schemas
     )
     val f      = new File(filePath)
     if (!f.exists()) {
@@ -86,7 +88,8 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
   "descriptions": {
 $descs
   },
-  "add_schemas": ${add_schemas.prettify.split("\n").map(v => "  " + v).mkString("\n")}
+  "add_schemas": ${add_schemas.prettify.split("\n").map(v => "  " + v).mkString("\n")},
+  "merge_schemas": ${merge_schemas.prettify.split("\n").map(v => "  " + v).mkString("\n")}
 }"""
     println(s"write config file: '${f.getAbsolutePath}'")
     Files.write(f.toPath, fileContent.split("\n").toList.asJava, StandardCharsets.UTF_8)
@@ -258,7 +261,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }
   }
 
-  def visitEntity(clazz: ClassInfo, result: TrieMap[String, JsValue], config: OpenApiGeneratorConfig): Unit = {
+  def visitEntity(clazz: ClassInfo, parent: Option[ClassInfo], result: TrieMap[String, JsValue], config: OpenApiGeneratorConfig): Unit = {
 
     if (clazz.getName.contains("$")) {
       return ()
@@ -267,7 +270,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     if (clazz.getName.startsWith("otoroshi.")) {
       if (clazz.isInterface) {
         val children = scanResult.getClassesImplementing(clazz.getName).asScala.map(_.getName)
-        children.flatMap(cl => world.get(cl)).map(cl => visitEntity(cl, result, config))
+        children.flatMap(cl => world.get(cl)).map(cl => visitEntity(cl, clazz.some, result, config))
         adts = adts :+ Json.obj(
           clazz.getName -> Json.obj(
             "oneOf" -> JsArray(children.map(c => Json.obj("$ref" -> s"#/components/schemas/$c")))
@@ -337,7 +340,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             Json.obj("type" -> "string", "description" -> "pem encoded csr").some
           case "com.nimbusds.jose.jwk.KeyType"                    => Json.obj("type" -> "string", "description" -> "key type").some
           case _ if typ.toString.startsWith("scala.Option<")      => {
-            world.get(valueName).map(cl => visitEntity(cl, result, config))
+            world.get(valueName).map(cl => visitEntity(cl, None, result, config))
             result.get(valueName) match {
               case None
                   if valueName == "java.lang.Object" && (name == "maxJwtLifespanSecs" || name == "existingSerialNumber") =>
@@ -350,7 +353,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             }
           }
           case vn if valueName.startsWith("otoroshi")             => {
-            world.get(valueName).map(cl => visitEntity(cl, result, config))
+            world.get(valueName).map(cl => visitEntity(cl, None, result, config))
             Json.obj("$ref" -> s"#/components/schemas/$valueName").some
           }
           case _                                                  =>
@@ -397,6 +400,18 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
                 )
               )
             }
+          case c: ClassRefTypeSignature
+              if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.immutable.List" =>
+            val valueName = c.getTypeArguments.asScala.head.toString
+            handleType(name, valueName, typ).foreach { r =>
+              properties = properties ++ Json.obj(
+                name -> Json.obj(
+                  "type"        -> "array",
+                  "items"       -> r,
+                  "description" -> getFieldDescription(clazz, name, typ, config)
+                )
+              )
+            }
           case c: ClassRefTypeSignature if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.Option" =>
             val valueName = c.getTypeArguments.asScala.head.toString
             handleType(name, valueName, typ).foreach { r =>
@@ -424,13 +439,27 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             println(s"${clazz.getName}.$name: $typ (unexpected 2)")
         }
       }
+
+      val toMergeSelf = config.merge_schemas.select(clazz.getName).asOpt[JsObject].getOrElse(Json.obj())
+      val toMergeParent = parent.flatMap(p => config.merge_schemas.select(p.getName).asOpt[JsObject]).getOrElse(Json.obj())
+      val toMergeParents = clazz.getInterfaces.asScala
+        .filter(_.getName.startsWith("otoroshi."))
+        .flatMap(c => config.merge_schemas.select(c.getName).asOpt[JsObject])
+        .foldLeft(Json.obj())((a, b) => a.deepMerge(b))
+      val toMerge = toMergeParent.deepMerge(toMergeParents.deepMerge(toMergeSelf))
+      if (clazz.getName.startsWith("otoroshi.auth")) {
+        // println(clazz.getName + " - " + parent.map(p => p.getName).getOrElse("") + " - " + clazz.getInterfaces.asScala.map(_.getName).mkString(", "))
+      }
+      if (toMerge != Json.obj()) {
+        //println(s"found some stuff to merge for ${clazz.getName} - ${parent.map(p => p.getName).getOrElse("")}")//- ${toMerge.prettify}")
+      }
       result.put(
         clazz.getName,
-        Json.obj(
+        toMerge.deepMerge(Json.obj(
           "type"        -> "object",
           "description" -> entityDescription(clazz.getName, config),
           "properties"  -> properties
-        )
+        ))
       )
     }
   }
@@ -818,14 +847,8 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }
 
     entities.foreach { clazz =>
-      if (clazz.getName == "otoroshi.ssl.pki.GenCsrQuery") {
-        println("bimmmmm otoroshi.ssl.pki.GenCsrQuery")
-      }
       if (!config.banned.contains(clazz.getName)) {
-        if (clazz.getName == "otoroshi.ssl.pki.GenCsrQuery") {
-          println("otoroshi.ssl.pki.GenCsrQuery")
-        }
-        visitEntity(clazz, result, config)
+        visitEntity(clazz, None, result, config)
       }
     }
 
