@@ -14,7 +14,7 @@ import otoroshi.gateway.Errors
 import otoroshi.models.{BackOfficeUser, CorsSettings, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.utils.TypedMap
 import play.api.Logger
-import play.api.libs.json.{Json, __}
+import play.api.libs.json.Json
 import play.api.mvc._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.future.Implicits._

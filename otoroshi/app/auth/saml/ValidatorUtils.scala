@@ -29,7 +29,7 @@ object ValidatorUtils {
       val statusCode = response.getStatus.getStatusCode.getValue
 
       if (StatusCode.SUCCESS.equals(statusCode))
-        Right()
+        Right(())
       else
         Left(s"Invalid status code: $statusCode")
     }
@@ -37,7 +37,7 @@ object ValidatorUtils {
     def validateIssuer(response: StatusResponseType, responseIssuer: String): Either[String, Unit] = {
       if (response.getIssuer.getValue.equals(responseIssuer)) {
         logger.debug(s"Response Issuer validated : $responseIssuer")
-        Right()
+        Right(())
       } else
         Left("The response issuer didn't match the expected value")
     }
@@ -45,7 +45,7 @@ object ValidatorUtils {
   def validateIssuer(request: RequestAbstractType, requestIssuer: String): Either[String, Unit] =
       if (!request.getIssuer.getValue.equals(requestIssuer)) {
         logger.debug(s"Request Issuer validated : $requestIssuer")
-        Right()
+        Right(())
       } else
         Left("The request issuer didn't match the expected value")
 
@@ -63,7 +63,7 @@ object ValidatorUtils {
         else if (!validate(assertion.getSignature, credentials, validateAssertions))
           Left("The assertion signature is invalid : wrong certificate")
         else
-          Right()
+          Right(())
         }
     }
 
@@ -76,7 +76,7 @@ object ValidatorUtils {
           logger.debug(s"Response Signature validated")
         else
           logger.debug(s"Validation of Response Signature not required")
-        Right()
+        Right(())
       }
     }
 
@@ -115,6 +115,6 @@ object ValidatorUtils {
       if (nameID == null || !nameID.equals(request.getNameID.getValue))
         Left("The nameID of the logout request is incorrect")
       else
-        Right()
+        Right(())
     }
 }

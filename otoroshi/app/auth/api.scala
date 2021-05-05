@@ -200,6 +200,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           name  = "New auth. module",
           desc  = "New auth. module",
           tags  = Seq.empty,
+          metadata  = Map.empty,
           singleSignOnUrl = "",
           singleLogoutUrl = "",
           issuer = "",

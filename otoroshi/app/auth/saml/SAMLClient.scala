@@ -280,6 +280,7 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
           singleLogoutUrl   = (json \ "singleLogoutUrl").as[String],
           credentials       =  (json \ "credentials").as[SAMLCredentials](SAMLCredentials.fmt),
           tags              = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          metadata          = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           issuer            = (json \ "issuer").as[String],
           ssoProtocolBinding          = (json \ "ssoProtocolBinding")
             .asOpt[String]
@@ -356,6 +357,7 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
                 .map(_.getValue)
                 .toList,
               tags = Seq.empty,
+              metadata = Map.empty,
               sessionCookieValues = SessionCookieValues()
             )
           )
@@ -602,6 +604,7 @@ case class SamlAuthModuleConfig (
                                   ),
                                   nameIDFormat: NameIDFormat = NameIDFormat.Unspecified,
                                   tags: Seq[String],
+                                  metadata: Map[String, String],
                                   issuer: String,
                                   location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
                                   validatingCertificates: List[String] = List.empty,
@@ -628,6 +631,7 @@ case class SamlAuthModuleConfig (
       "singleLogoutUrl"             -> this.singleLogoutUrl,
       "credentials"                 -> SAMLCredentials.fmt.writes(this.credentials),
       "tags"                        -> JsArray(tags.map(JsString.apply)),
+      "metadata"                    -> this.metadata,
       "sessionCookieValues"         -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "issuer"                      -> this.issuer,
       "validatingCertificates"      -> this.validatingCertificates,
@@ -645,8 +649,6 @@ case class SamlAuthModuleConfig (
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     env.datastores.authConfigsDataStore.set(this)
   }
-
-  override def metadata: Map[String, String] = metadata
 }
 
 object SAMLModule {
@@ -861,6 +863,7 @@ object SAMLModule {
 
             getPrivateKey(privateKey) match {
               case Right(value) => decodeAssertionWithCertificate (response, new BasicX509Credential (cert, value))
+              case Left(err) => FastFuture.successful(())
             }
 
         case Credential(_, _, Some(certId), true) =>

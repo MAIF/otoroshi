@@ -74,6 +74,10 @@ libraryDependencies ++= Seq(
   "com.sksamuel.pulsar4s"           %% "pulsar4s-akka-streams"       % pulsarVersion,
   "org.jsoup"                        % "jsoup"                       % "1.13.1",
   "com.clever-cloud"                 % "biscuit-java"                % "1.0.0",
+  "org.opensaml"                     % "opensaml-core"               % "4.0.1",
+  "org.opensaml"                     % "opensaml-saml-api"           % "4.0.1",
+  //"org.opensaml"                     % "opensaml-xmlsec-impl"        % "4.0.1",
+  "org.opensaml"                     % "opensaml-saml-impl"          % "4.0.1",
   // fix multiple CVEs
   "com.fasterxml.jackson.core"       % "jackson-databind"            % "2.10.5.1",
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml"     % "2.10.5",
@@ -84,12 +88,7 @@ libraryDependencies ++= Seq(
   "org.scalatestplus.play"          %% "scalatestplus-play"          % "5.1.0" % Test,
   // do not update because the feature is deprecated and will be removed
   "org.reactivemongo"               %% "reactivemongo"               % "0.20.13",
-  "org.iq80.leveldb"                 % "leveldb"                     % "0.12",
-
-  "org.opensaml"                     % "opensaml-core"               % "4.0.1",
-  "org.opensaml"                     % "opensaml-saml-api"           % "4.0.1",
-  //"org.opensaml"                     % "opensaml-xmlsec-impl"        % "4.0.1",
-  "org.opensaml"                     % "opensaml-saml-impl"          % "4.0.1"
+  "org.iq80.leveldb"                 % "leveldb"                     % "0.12"
 )
 
 scalacOptions ++= Seq(
