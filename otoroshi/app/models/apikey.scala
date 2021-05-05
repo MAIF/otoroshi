@@ -1266,10 +1266,10 @@ object ApiKeyHelper {
             }
         }
         case _                                          =>
-          errorResult(BadRequest, "No ApiKey provided 1", "errors.no.api.key")
+          errorResult(BadRequest, "No ApiKey provided", "errors.no.api.key")
       }
     } else {
-      errorResult(BadRequest, "No ApiKey provided 2", "errors.no.api.key")
+      errorResult(BadRequest, "No ApiKey provided", "errors.no.api.key")
     }
     //}
   }
