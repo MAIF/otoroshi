@@ -119,6 +119,7 @@ case class WorkerConfig(
     name: String = s"otoroshi-worker-${IdGenerator.token(16)}",
     retries: Int = 3,
     timeout: Long = 2000,
+    dataStaleAfter: Long = 10 * 60 * 1000L,
     dbPath: Option[String] = None,
     state: WorkerStateConfig = WorkerStateConfig(),
     quotas: WorkerQuotasConfig = WorkerQuotasConfig(),
@@ -205,6 +206,7 @@ object ClusterConfig {
           .getOrElse(s"otoroshi-worker-${IdGenerator.token(16)}"),
         retries = configuration.getOptionalWithFileSupport[Int]("worker.retries").getOrElse(3),
         timeout = configuration.getOptionalWithFileSupport[Long]("worker.timeout").getOrElse(2000),
+        dataStaleAfter = configuration.getOptionalWithFileSupport[Long]("worker.dataStaleAfter").getOrElse(10 * 60 * 1000L),
         dbPath = configuration.getOptionalWithFileSupport[String]("worker.dbpath"),
         state = WorkerStateConfig(
           timeout = configuration.getOptionalWithFileSupport[Long]("worker.state.timeout").getOrElse(2000),
@@ -1116,13 +1118,26 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 resp.ignoreIf(resp.status != 200)
                 resp.status == 200
               }
+              .filterWithCause("State is too old !") { resp =>
+                val responseFrom   = resp.header("X-Data-From").map(_.toLong)
+                val from = new DateTime(responseFrom.getOrElse(0))
+                val predicate = from.isAfter(DateTime.now().minusMillis(env.clusterConfig.worker.dataStaleAfter.toInt))
+                if (!predicate) {
+                  val nodeName = resp.header("Otoroshi-Leader-Node-Name").getOrElse("--")
+                  Cluster.logger.warn(s"State data coming from '$nodeName' is too old (${from.toString()}). Maybe the leader node '$nodeName' has an issue and needs to be restarted. Failing state fetch !")
+                }
+                predicate
+              }
               .flatMap { resp =>
                 val store          = new ConcurrentHashMap[String, Any]()
                 val expirations    = new ConcurrentHashMap[String, Long]()
+                val responseFrom   = resp.header("X-Data-From").map(_.toLong)
                 val responseDigest = resp.header("X-Data-Digest")
                 val responseCount  = resp.header("X-Data-Count")
                 val counter        = new AtomicLong(0L)
                 val digest         = MessageDigest.getInstance("SHA-256")
+                val from           = new DateTime(responseFrom.getOrElse(0))
+
                 resp.bodyAsSource
                   .via(env.clusterConfig.gunzip())
                   .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, true))
@@ -1380,6 +1395,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       )
     }
   }
+
   def stop(): Unit = {
     if (config.mode == ClusterMode.Worker) {
       Option(pollRef.get()).foreach(_.cancel())

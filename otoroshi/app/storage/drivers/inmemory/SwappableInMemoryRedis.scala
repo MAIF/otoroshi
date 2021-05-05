@@ -64,9 +64,28 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
     ()
   })
 
-  def swap(memory: Memory): Unit = {
+  def swap(_memory: Memory): Unit = {
     val oldSize = store.keySet.size
-    _storeHolder.updateAndGet(_ => memory)
+    val memory = {
+      val newStore = new ConcurrentHashMap[String, Any]()
+      _memory.store.keySet.asScala
+        .toSeq
+        .filterNot(_.startsWith(s"${env.storageRoot}:desclookup"))
+        .filterNot(_.startsWith(s"${env.storageRoot}:scall"))
+        .filterNot(_.startsWith(s"${env.storageRoot}:data"))
+        .filterNot(_.startsWith(s"${env.storageRoot}:cache"))
+        .filterNot(_.startsWith(s"${env.storageRoot}:users:alreadyloggedin"))
+        .filterNot(_.startsWith(s"${env.storageRoot}:migrations"))
+        .filterNot(_.startsWith(s"${env.storageRoot}:dev"))
+        .map { k =>
+          newStore.put(k, _memory.store.get(k))
+          k
+        }
+      Memory(newStore, _memory.expirations)
+    }
+    //env.metrics.withTimer("memory-swap", true) {
+      _storeHolder.updateAndGet(_ => memory)
+    //}
     val newSize = store.keySet.size
     SwappableInMemoryRedis.logger.debug(
       s"[${env.clusterConfig.mode.name}] Swapping store instance now ! ($oldSize / $newSize)"

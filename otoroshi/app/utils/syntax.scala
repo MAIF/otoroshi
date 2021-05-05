@@ -17,6 +17,7 @@ import otoroshi.utils.Regex
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.reflect.ClassTag
+import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
 
 object implicits {
@@ -187,7 +188,25 @@ object implicits {
       }
       promise.future
     }
+    def filterWithCause(cause: String, include: Boolean = false)(f: A => Boolean)(implicit ec: ExecutionContext): Future[A] = {
+      obj.transform { t =>
+        if (t.isSuccess) {
+          val value = t.asInstanceOf[Success[A]].value
+          if (f(value)) {
+            t
+          } else {
+            val inc = if (include) s" - ${value.toString}" else ""
+            Failure[A](new FilterExceptionWithoutCause(cause + inc))
+          }
+        } else {
+          val failure = t.asInstanceOf[Failure[A]].exception
+          Failure[A](new FilterException(cause, failure))
+        }
+      }
+    }
   }
+  class FilterException(str: String, cause: Throwable) extends RuntimeException(str, cause) with NoStackTrace
+  class FilterExceptionWithoutCause(str: String) extends RuntimeException(str) with NoStackTrace
   implicit class BetterCache[A, B](val cache: Cache[A, B])             extends AnyVal {
     def getOrElse(key: A, el: => B): B = {
       cache.getIfPresent(key).getOrElse {

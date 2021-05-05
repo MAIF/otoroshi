@@ -124,6 +124,8 @@ assemblyMergeStrategy in assembly := {
   case PathList("org", "apache", "commons", "lang", xs @ _*)          => MergeStrategy.first
   case PathList("org", "apache", "commons", "collections", xs @ _*)   => MergeStrategy.first
   case PathList("io", "sundr", xs @ _*)                               => MergeStrategy.first
+  case PathList("com", "sun", "xml", xs @ _*)                         => MergeStrategy.first
+  case PathList("com", "sun", "istack", xs @ _*)                      => MergeStrategy.first
   case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
   case PathList(ps @ _*) if ps.contains("reference-overrides.conf")   => MergeStrategy.concat
   case PathList(ps @ _*) if ps.contains("field_mask.proto")           => MergeStrategy.first // ???
