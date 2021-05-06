@@ -82,13 +82,13 @@ object Cluster {
       key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
       (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
       (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out")) ||
-      key.startsWith(s"${env.storageRoot}:desclookup") ||
-      key.startsWith(s"${env.storageRoot}:scall") ||
-      key.startsWith(s"${env.storageRoot}:data") ||
-      key.startsWith(s"${env.storageRoot}:cache") ||
+      key.startsWith(s"${env.storageRoot}:desclookup:") ||
+      key.startsWith(s"${env.storageRoot}:scall:") ||
+      key.startsWith(s"${env.storageRoot}:data:") ||
+      key.startsWith(s"${env.storageRoot}:cache:") ||
       key.startsWith(s"${env.storageRoot}:users:alreadyloggedin") ||
       key.startsWith(s"${env.storageRoot}:migrations") ||
-      key.startsWith(s"${env.storageRoot}:dev")
+      key.startsWith(s"${env.storageRoot}:dev:")
   }
 }
 

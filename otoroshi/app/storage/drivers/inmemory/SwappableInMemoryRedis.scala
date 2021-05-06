@@ -72,13 +72,6 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
       _memory.store.keySet.asScala
         .toSeq
         .filterNot(key => Cluster.filteredKey(key, env))
-        // .filterNot(_.startsWith(s"${env.storageRoot}:desclookup"))
-        // .filterNot(_.startsWith(s"${env.storageRoot}:scall"))
-        // .filterNot(_.startsWith(s"${env.storageRoot}:data"))
-        // .filterNot(_.startsWith(s"${env.storageRoot}:cache"))
-        // .filterNot(_.startsWith(s"${env.storageRoot}:users:alreadyloggedin"))
-        // .filterNot(_.startsWith(s"${env.storageRoot}:migrations"))
-        // .filterNot(_.startsWith(s"${env.storageRoot}:dev"))
         .map { k =>
           newStore.put(k, _memory.store.get(k))
           k
