@@ -524,6 +524,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                         )
                       ).withHeaders(
                         "Otoroshi-Leader-Node-Name"  -> env.clusterConfig.leader.name,
+                        "Otoroshi-Leader-Node-Version"  -> env.otoroshiVersion,
                         "X-Data-Count"  -> s"${cachedCount.get()}",
                         "X-Data-Digest" -> cachedDigest.get(),
                         "X-Data-From"   -> s"${System.currentTimeMillis()}",
@@ -546,6 +547,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                 Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
                   .withHeaders(
                     "Otoroshi-Leader-Node-Name"  -> env.clusterConfig.leader.name,
+                    "Otoroshi-Leader-Node-Version"  -> env.otoroshiVersion,
                     "X-Data-Count"      -> s"${cachedCount.get()}",
                     "X-Data-Digest"     -> cachedDigest.get(),
                     "X-Data-From"       -> s"${cachedAt.get()}",
@@ -564,6 +566,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                   .Streamed(Source.single(env.clusterLeaderAgent.cachedState), None, Some("application/x-ndjson"))
               ).withHeaders(
                 "Otoroshi-Leader-Node-Name"  -> env.clusterConfig.leader.name,
+                "Otoroshi-Leader-Node-Version"  -> env.otoroshiVersion,
                 "X-Data-Count"  -> s"${env.clusterLeaderAgent.cachedCount}",
                 "X-Data-Digest" -> env.clusterLeaderAgent.cachedDigest,
                 "X-Data-From"   -> s"${env.clusterLeaderAgent.cachedTimestamp}",
@@ -578,6 +581,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
               Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
                 .withHeaders(
                   "Otoroshi-Leader-Node-Name"  -> env.clusterConfig.leader.name,
+                  "Otoroshi-Leader-Node-Version"  -> env.otoroshiVersion,
                   "X-Data-Count"      -> s"${cachedCount.get()}",
                   "X-Data-Digest"     -> cachedDigest.get(),
                   "X-Data-From"       -> s"${cachedAt.get()}",
@@ -593,6 +597,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
               Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
                 .withHeaders(
                   "Otoroshi-Leader-Node-Name"  -> env.clusterConfig.leader.name,
+                  "Otoroshi-Leader-Node-Version"  -> env.otoroshiVersion,
                   "X-Data-Count"      -> s"${cachedCount.get()}",
                   "X-Data-Digest"     -> cachedDigest.get(),
                   "X-Data-From"       -> s"${cachedAt.get()}",

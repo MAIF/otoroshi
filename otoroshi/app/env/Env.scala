@@ -21,20 +21,8 @@ import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.events.{OtoroshiEventsActorSupervizer, StartExporters}
-import otoroshi.models.{
-  EntityLocation,
-  OtoroshiAdminType,
-  SimpleOtoroshiAdmin,
-  Team,
-  TeamAccess,
-  TeamId,
-  Tenant,
-  TenantAccess,
-  TenantId,
-  UserRight,
-  UserRights,
-  WebAuthnOtoroshiAdmin
-}
+import otoroshi.jobs.updates.Version
+import otoroshi.models.{EntityLocation, OtoroshiAdminType, SimpleOtoroshiAdmin, Team, TeamAccess, TeamId, Tenant, TenantAccess, TenantId, UserRight, UserRights, WebAuthnOtoroshiAdmin}
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.storage.DataStores
@@ -886,6 +874,7 @@ class Env(
   )
 
   lazy val otoroshiVersion = "1.5.0-dev"
+  lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
   lazy val jmxEnabled = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.jmx.enabled").getOrElse(false)

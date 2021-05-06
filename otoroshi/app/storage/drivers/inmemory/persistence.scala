@@ -84,13 +84,13 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     logger.debug("Reading state from disk ...")
     val store       = new ConcurrentHashMap[String, Any]()
     val expirations = new ConcurrentHashMap[String, Long]()
-    source.foreach { raw =>
-      val item  = Json.parse(raw)
-      val key   = (item \ "k").as[String]
+    source.filterNot(_.trim.isEmpty).foreach { raw =>
+      val item = Json.parse(raw)
+      val key = (item \ "k").as[String]
       val value = (item \ "v").as[JsValue]
-      val what  = (item \ "w").as[String]
-      val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
-      fromJson(what, value).foreach(v => store.put(key, v))
+      val what = (item \ "w").as[String]
+      val ttl = (item \ "t").asOpt[Long].getOrElse(-1L)
+      fromJson(what, value).map(v => store.put(key, v)).getOrElse(println(s"file read error for: ${item.prettify} "))
       if (ttl > -1L) {
         expirations.put(key, ttl)
       }

@@ -1,29 +1,12 @@
 package otoroshi.models
 
 import akka.stream.scaladsl.{Sink, Source}
+import com.google.common.hash.Hashing
 import otoroshi.env.Env
-import otoroshi.events.Exporters.{
-  ConsoleExporter,
-  CustomExporter,
-  ElasticExporter,
-  FileAppenderExporter,
-  GenericMailerExporter,
-  KafkaExporter,
-  MetricsExporter,
-  PulsarExporter,
-  WebhookExporter
-}
+import otoroshi.events.Exporters.{ConsoleExporter, CustomExporter, ElasticExporter, FileAppenderExporter, GenericMailerExporter, KafkaExporter, MetricsExporter, PulsarExporter, WebhookExporter}
 import otoroshi.events._
 import otoroshi.script._
-import otoroshi.utils.mailer.{
-  ConsoleMailerSettings,
-  GenericMailerSettings,
-  MailerSettings,
-  MailgunSettings,
-  MailjetSettings,
-  NoneMailerSettings,
-  SendgridSettings
-}
+import otoroshi.utils.mailer.{ConsoleMailerSettings, GenericMailerSettings, MailerSettings, MailgunSettings, MailjetSettings, NoneMailerSettings, SendgridSettings}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
@@ -32,6 +15,9 @@ import otoroshi.utils.mailer.MailerSettings
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import otoroshi.utils.syntax.implicits._
+
+import java.nio.charset.StandardCharsets
 
 trait Exporter {
   def toJson: JsValue
@@ -268,41 +254,63 @@ case class DataExporterConfig(
   }
 }
 
-class DataExporterConfigMigrationJob extends Job {
+object DataExporterConfigMigrationJob {
 
-  private val logger = Logger("otoroshi-data-exporter-config-migration-job")
+  import otoroshi.utils.syntax.implicits._
 
-  override def uniqueId: JobId = JobId("io.otoroshi.core.models.DataExporterConfigMigrationJob")
+  def cleanupGlobalConfig(env: Env): Future[Unit] = {
+    implicit val ev = env
+    implicit val ec = env.otoroshiExecutionContext
+    env.datastores.globalConfigDataStore.findById("global").map {
+      case Some(config) =>
+        env.datastores.globalConfigDataStore.set(
+          config.copy(
+            analyticsWebhooks = Seq.empty,
+            alertsWebhooks = Seq.empty,
+            elasticWritesConfigs = Seq.empty,
+            kafkaConfig = None,
+            mailerSettings = None
+          )
+        )
+      case None         => ()
+    }
+  }
 
-  override def name: String = "Otoroshi data exporter config migration job"
+  def saveExporters(configs: Seq[DataExporterConfig], env: Env): Future[Unit] = {
 
-  override def visibility: JobVisibility = JobVisibility.Internal
+    implicit val ev = env
+    implicit val ec = env.otoroshiExecutionContext
+    implicit val mat = env.otoroshiMaterializer
 
-  override def kind: JobKind = JobKind.ScheduledOnce
+    Source(configs.toList)
+      .mapAsync(1)(ex => {
+        env.datastores.dataExporterConfigDataStore.set(ex)
+      })
+      .runWith(Sink.ignore)
+      .map(_ => ())
+  }
+  def extractExporters(env: Env): Future[Seq[DataExporterConfig]] = {
 
-  override def starting: JobStarting = JobStarting.Automatically
-
-  override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
-    JobInstantiation.OneInstancePerOtoroshiCluster
-
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    implicit val ev = env
+    implicit val ec = env.otoroshiExecutionContext
     implicit val mat = env.otoroshiMaterializer
 
     val alertDataExporterConfigFiltering     = DataExporterConfigFiltering(
-      include = Seq(Json.obj("type" -> Json.obj("$regex" -> "Alert*")))
+      include = Seq(Json.obj("@type" -> Json.obj("$regex" -> "Alert*")))
     )
     val analyticsDataExporterConfigFiltering = DataExporterConfigFiltering(
-      include = Seq(Json.obj("type" -> Json.obj("$regex" -> "*Event")))
+      include = Seq()
     )
+
     def toDataExporterConfig(
-        name: String,
-        ex: Exporter,
-        typ: DataExporterConfigType,
-        filter: DataExporterConfigFiltering
-    ): DataExporterConfig                    =
+                              name: String,
+                              ex: Exporter,
+                              typ: DataExporterConfigType,
+                              filter: DataExporterConfigFiltering
+                            ): DataExporterConfig                    = {
       DataExporterConfig(
         enabled = true,
-        id = IdGenerator.token,
+        id = Hashing.sha256().hashString(name, StandardCharsets.UTF_8).toString,
         name = name,
         desc = "--",
         tags = Seq.empty,
@@ -313,6 +321,7 @@ class DataExporterConfigMigrationJob extends Job {
         typ = typ,
         config = ex
       )
+    }
 
     env.datastores.globalConfigDataStore
       .findById("global")
@@ -329,7 +338,7 @@ class DataExporterConfigMigrationJob extends Job {
           )
           val alertsWebhooksExporters: Seq[DataExporterConfig]   = globalConfig.alertsWebhooks.zipWithIndex.map(t =>
             toDataExporterConfig(
-              s"Alters webhook exporter ${t._2 + 1} from Danger Zone",
+              s"Alerts webhook exporter ${t._2 + 1} from Danger Zone",
               t._1,
               DataExporterConfigType.Webhook,
               alertDataExporterConfigFiltering
@@ -346,6 +355,7 @@ class DataExporterConfigMigrationJob extends Job {
             )
           val kafkaExporter: Option[DataExporterConfig]          = globalConfig.kafkaConfig
             .filter(c => c.servers.nonEmpty)
+            .filter(c => c.sendEvents)
             .map(c =>
               toDataExporterConfig(
                 "Kafka exporter from Danger Zone",
@@ -366,34 +376,36 @@ class DataExporterConfigMigrationJob extends Job {
             )
 
           analyticsWebhooksExporters ++
-          alertsWebhooksExporters ++
-          analyticsElasticExporters ++
-          kafkaExporter.fold(Seq.empty[DataExporterConfig])(e => Seq(e)) ++
-          alertMailerExporter.fold(Seq.empty[DataExporterConfig])(e => Seq(e))
+            alertsWebhooksExporters ++
+            analyticsElasticExporters ++
+            kafkaExporter.fold(Seq.empty[DataExporterConfig])(e => Seq(e)) ++
+            alertMailerExporter.fold(Seq.empty[DataExporterConfig])(e => Seq(e))
       }
-      .flatMap(configs => {
-        Source(configs.toList)
-          .mapAsync(1)(ex => {
-            env.datastores.dataExporterConfigDataStore.set(ex)
-          })
-          .runWith(Sink.ignore)
-          .map(_ => ())
-      })
+  }
+}
+
+class DataExporterConfigMigrationJob extends Job {
+
+  private val logger = Logger("otoroshi-data-exporter-config-migration-job")
+
+  override def uniqueId: JobId = JobId("io.otoroshi.core.models.DataExporterConfigMigrationJob")
+
+  override def name: String = "Otoroshi data exporter config migration job"
+
+  override def visibility: JobVisibility = JobVisibility.Internal
+
+  override def kind: JobKind = JobKind.ScheduledOnce
+
+  override def starting: JobStarting = JobStarting.Automatically
+
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
+    JobInstantiation.OneInstancePerOtoroshiCluster
+
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    DataExporterConfigMigrationJob.extractExporters(env)
+      .flatMap(configs => DataExporterConfigMigrationJob.saveExporters(configs, env))
       .andThen {
-        case Success(_) =>
-          env.datastores.globalConfigDataStore.findById("global").map {
-            case Some(config) =>
-              env.datastores.globalConfigDataStore.set(
-                config.copy(
-                  analyticsWebhooks = Seq.empty,
-                  alertsWebhooks = Seq.empty,
-                  elasticWritesConfigs = Seq.empty,
-                  kafkaConfig = None,
-                  mailerSettings = None
-                )
-              )
-            case None         => ()
-          }
+        case Success(_) => DataExporterConfigMigrationJob.cleanupGlobalConfig(env)
         case Failure(e) => logger.error("Data exporter migration job failed", e)
       }
   }

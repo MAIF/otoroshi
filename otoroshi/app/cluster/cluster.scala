@@ -26,6 +26,7 @@ import javax.management.{Attribute, ObjectName}
 import otoroshi.models._
 import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
+import otoroshi.jobs.updates.Version
 import otoroshi.models.{SimpleAdminDataStore, TenantId, WebAuthnAdminDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage._
@@ -33,7 +34,7 @@ import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import otoroshi.utils
-import otoroshi.utils.{future, SchedulerHelper}
+import otoroshi.utils.{SchedulerHelper, future}
 import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
@@ -66,29 +67,31 @@ import scala.util.{Failure, Success, Try}
  * java -Dhttp.port=9080 -Dotoroshi.cluster.leader.url=http://otoroshi-api.oto.tools:9999 -Dotoroshi.cluster.worker.dbpath=./worker.db -Dhttps.port=9443 -Dotoroshi.cluster.mode=worker -jar otoroshi.jar
  */
 object Cluster {
+
   lazy val logger = Logger("otoroshi-cluster")
+
   def filteredKey(key: String, env: Env): Boolean = {
-      key.startsWith(s"${env.storageRoot}:cluster:") ||
-      key == s"${env.storageRoot}:events:audit" ||
-      key == s"${env.storageRoot}:events:alerts" ||
-      key.startsWith(s"${env.storageRoot}:users:backoffice") ||
-      key.startsWith(s"${env.storageRoot}:admins:") ||
-      key.startsWith(s"${env.storageRoot}:u2f:users:") ||
-      // key.startsWith(s"${env.storageRoot}:users:") ||
-      key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
-      key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
-      key.startsWith(s"${env.storageRoot}:scall:stats:") ||
-      key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
-      key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
-      (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
-      (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out")) ||
-      key.startsWith(s"${env.storageRoot}:desclookup:") ||
-      key.startsWith(s"${env.storageRoot}:scall:") ||
-      key.startsWith(s"${env.storageRoot}:data:") ||
-      key.startsWith(s"${env.storageRoot}:cache:") ||
-      key.startsWith(s"${env.storageRoot}:users:alreadyloggedin") ||
-      key.startsWith(s"${env.storageRoot}:migrations") ||
-      key.startsWith(s"${env.storageRoot}:dev:")
+    key.startsWith(s"${env.storageRoot}:cluster:") ||
+    key == s"${env.storageRoot}:events:audit" ||
+    key == s"${env.storageRoot}:events:alerts" ||
+    key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+    key.startsWith(s"${env.storageRoot}:admins:") ||
+    key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+    // key.startsWith(s"${env.storageRoot}:users:") ||
+    key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
+    key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+    key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+    key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+    key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+    // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+    // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out")) ||
+    key.startsWith(s"${env.storageRoot}:desclookup:") ||
+    key.startsWith(s"${env.storageRoot}:scall:") ||
+    key.startsWith(s"${env.storageRoot}:data:") ||
+    key.startsWith(s"${env.storageRoot}:cache:") ||
+    key.startsWith(s"${env.storageRoot}:users:alreadyloggedin") ||
+    key.startsWith(s"${env.storageRoot}:migrations") ||
+    key.startsWith(s"${env.storageRoot}:dev:")
   }
 }
 
@@ -1157,6 +1160,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 val responseFrom   = resp.header("X-Data-From").map(_.toLong)
                 val responseDigest = resp.header("X-Data-Digest")
                 val responseCount  = resp.header("X-Data-Count")
+                val fromVersion    = resp.header("Otoroshi-Leader-Node-Version").map(Version.apply).getOrElse(Version("0.0.0"))
                 val counter        = new AtomicLong(0L)
                 val digest         = MessageDigest.getInstance("SHA-256")
                 val from           = new DateTime(responseFrom.getOrElse(0))
@@ -1203,6 +1207,13 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                       if (!store.isEmpty) {
                         firstSuccessfulStateFetchDone.compareAndSet(false, true)
                         env.datastores.asInstanceOf[SwappableInMemoryDataStores].swap(Memory(store, expirations))
+                        if (fromVersion.isBefore(env.otoroshiVersionSem)) {
+                          // TODO: run other migrations ?
+                          if (fromVersion.isBefore(Version("1.4.999"))) {
+                            DataExporterConfigMigrationJob.extractExporters(env)
+                              .flatMap(c => DataExporterConfigMigrationJob.saveExporters(c, env))
+                          }
+                        }
                       }
                       FastFuture.successful(())
                     } else {
