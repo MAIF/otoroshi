@@ -95,7 +95,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
         expirations.put(key, ttl)
       }
     }
-    ds.redis.swap(Memory(store, expirations))
+    ds.redis.swap(Memory(store, expirations), SwapStrategy.Replace)
   }
 
   private def fromJson(what: String, value: JsValue): Option[Any] = {
@@ -223,7 +223,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
               }
             }
             .map { _ =>
-              ds.redis.swap(Memory(store, expirations))
+              ds.redis.swap(Memory(store, expirations), SwapStrategy.Replace)
             }
       }
   }

@@ -149,7 +149,8 @@ case class WorkerConfig(
     dbPath: Option[String] = None,
     state: WorkerStateConfig = WorkerStateConfig(),
     quotas: WorkerQuotasConfig = WorkerQuotasConfig(),
-    tenants: Seq[TenantId] = Seq.empty
+    tenants: Seq[TenantId] = Seq.empty,
+    swapStrategy: SwapStrategy = SwapStrategy.Replace
     //initialCacert: Option[String] = None
 )
 case class LeaderConfig(
@@ -250,7 +251,11 @@ object ClusterConfig {
             configuration.getOptionalWithFileSupport[String]("worker.tenantsStr").map(_.split(",").toSeq.map(_.trim))
           )
           .map(_.map(TenantId.apply))
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty),
+        swapStrategy =  configuration.getOptionalWithFileSupport[String]("worker.swapStrategy") match {
+          case Some("Merge") => SwapStrategy.Merge
+          case _ => SwapStrategy.Replace
+        }
       )
     )
   }
@@ -1513,7 +1518,7 @@ class SwappableInMemoryDataStores(
   }
 
   def swap(memory: Memory): Unit = {
-    redis.swap(memory)
+    redis.swap(memory, env.clusterConfig.worker.swapStrategy)
   }
 
   private val cancelRef                 = new AtomicReference[Cancellable]()
@@ -1535,7 +1540,7 @@ class SwappableInMemoryDataStores(
         expirations.put(key, ttl)
       }
     }
-    redis.swap(Memory(store, expirations))
+    redis.swap(Memory(store, expirations), env.clusterConfig.worker.swapStrategy)
   }
 
   private def fromJson(what: String, value: JsValue): Option[Any] = {

@@ -184,7 +184,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
       val res     = f
       val elapsed = ctx.stop()
       if (display) {
-        logger.info(s"elapsed time for $name: ${elapsed} nanoseconds.")
+        logger.info(s"elapsed time for $name: ${elapsed} nanoseconds / ${FiniteDuration(elapsed, TimeUnit.NANOSECONDS).toMillis} milliseconds.")
       }
       jmxCtx.close()
       res

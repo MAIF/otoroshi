@@ -13,11 +13,21 @@ import otoroshi.utils.SchedulerHelper
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
+
+sealed trait SwapStrategy {
+  def name: String
+}
+object SwapStrategy {
+  case object Replace extends SwapStrategy { def name: String = "replace" }
+  case object Merge extends SwapStrategy { def name: String = "merge" }
+}
 
 class Memory(
     val store: ConcurrentHashMap[String, Any],
-    val expirations: ConcurrentHashMap[String, Long]
+    val expirations: ConcurrentHashMap[String, Long],
+    val newStore: TrieMap[String, Any] = new TrieMap[String, Any]()
 )
 
 object Memory {
@@ -65,30 +75,43 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
     ()
   })
 
-  def swap(_memory: Memory): Unit = {
-    val oldSize = store.keySet.size
-    val memory = {
-      if (env.clusterConfig.mode.isWorker) {
-        val newStore = new ConcurrentHashMap[String, Any]()
-        _memory.store.keySet.asScala
-          .toSeq
-          .filterNot(key => Cluster.filteredKey(key, env))
-          .map { k =>
-            newStore.put(k, _memory.store.get(k))
-            k
+  def swap(_memory: Memory, strategy: SwapStrategy): Unit = {
+    env.metrics.withTimer(s"memory-swap-${strategy.name}") {
+      val oldSize = store.keySet.size
+      _storeHolder.updateAndGet { oldMemory =>
+        if (env.clusterConfig.mode.isWorker) {
+          strategy match {
+            case SwapStrategy.Replace => {
+              val newStore = new ConcurrentHashMap[String, Any]()
+              _memory.store.keySet.asScala
+                .filterNot(key => Cluster.filteredKey(key, env))
+                .map { k =>
+                  newStore.put(k, _memory.store.get(k))
+                  k
+                }
+              Memory(newStore, _memory.expirations)
+            }
+            case SwapStrategy.Merge => env.metrics.withTimer(s"memory-swap-merge-compute") {
+              val newStore = _memory.store.asScala
+              val newKeys = newStore.keySet
+              val oldKeys = store.keySet.asScala
+              val keysToDelete = oldKeys.filterNot(k => Cluster.filteredKey(k, env)).diff(newKeys)
+              keysToDelete.map(k => oldMemory.store.remove(k))
+              newStore.filterNot(t => Cluster.filteredKey(t._1, env)).foreach {
+                case (key, value) => oldMemory.store.put(key, value)
+              }
+              oldMemory
+            }
           }
-        Memory(newStore, _memory.expirations)
-      } else {
-        _memory
+        } else {
+          _memory
+        }
       }
+      val newSize = store.keySet.size
+      SwappableInMemoryRedis.logger.debug(
+        s"[${env.clusterConfig.mode.name}] Swapping store instance now ! ($oldSize / $newSize)"
+      )
     }
-    //env.metrics.withTimer("memory-swap", true) {
-      _storeHolder.updateAndGet(_ => memory)
-    //}
-    val newSize = store.keySet.size
-    SwappableInMemoryRedis.logger.debug(
-      s"[${env.clusterConfig.mode.name}] Swapping store instance now ! ($oldSize / $newSize)"
-    )
   }
 
   override def stop(): Unit =
