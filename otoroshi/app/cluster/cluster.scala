@@ -755,7 +755,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
                 cacheState()
               } catch {
                 case e: Throwable =>
-                  Cluster.logger.error(s"Error while renewing leader membership of ${env.clusterConfig.leader.name}", e)
+                  Cluster.logger.error(s"Error while renewing leader state cache of ${env.clusterConfig.leader.name}", e)
               }
             )
           )
