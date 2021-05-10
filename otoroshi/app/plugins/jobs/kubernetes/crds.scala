@@ -635,7 +635,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
                   clientId,
                   clientSecret,
                   clientName = name,
-                  authorizedEntities = Seq(ServiceGroupIdentifier("default"))
+                  authorizedEntities = Seq.empty
                 )
               )
             }
