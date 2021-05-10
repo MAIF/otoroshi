@@ -3071,7 +3071,7 @@ api2.another.domain                IN A 10.2.2.50
     &quot;crds&quot;: false, // sync crds
     &quot;kubeLeader&quot;: false, // delegate leader election to kubernetes, to know where the sync job should run
     &quot;restartDependantDeployments&quot;: true, // when a secret/cert changes from otoroshi sync, restart dependant deployments
-    &quot;templates&quot;: { // template for entities that will be merged with kubernetes entities
+    &quot;templates&quot;: { // template for entities that will be merged with kubernetes entities. can be &quot;default&quot; to use otoroshi default templates
       &quot;service-group&quot;: {},
       &quot;service-descriptor&quot;: {},
       &quot;apikeys&quot;: {},
@@ -3082,6 +3082,9 @@ api2.another.domain                IN A 10.2.2.50
       &quot;auth-module&quot;: {},
       &quot;data-exporter&quot;: {},
       &quot;script&quot;: {},
+      &quot;organization&quot;: {},
+      &quot;team&quot;: {},
+      &quot;data-exporter&quot;: {}
     }
   }
 }
@@ -3604,7 +3607,7 @@ spec:
     &quot;crds&quot;: true, // sync crds
     &quot;kubeLeader&quot;: false, // delegate leader election to kubernetes, to know where the sync job should run
     &quot;restartDependantDeployments&quot;: true, // when a secret/cert changes from otoroshi sync, restart dependant deployments
-    &quot;templates&quot;: { // template for entities that will be merged with kubernetes entities
+    &quot;templates&quot;: { // template for entities that will be merged with kubernetes entities. can be &quot;default&quot; to use otoroshi default templates
       &quot;service-group&quot;: {},
       &quot;service-descriptor&quot;: {},
       &quot;apikeys&quot;: {},
@@ -3617,6 +3620,7 @@ spec:
       &quot;script&quot;: {},
       &quot;organization&quot;: {},
       &quot;team&quot;: {},
+      &quot;data-exporter&quot;: {}
     }
   }
 }
