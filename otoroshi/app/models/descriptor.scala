@@ -2228,7 +2228,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       }
     } getOrElse ("myservice", "prod", env.domain)
     ServiceDescriptor(
-      id = IdGenerator.token(64),
+      id = IdGenerator.namedId("service", env),
       name = "my-service",
       description = "a service",
       groups = Seq("default"),

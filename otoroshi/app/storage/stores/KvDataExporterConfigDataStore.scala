@@ -40,7 +40,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
       case Some("webhook")        =>
         DataExporterConfig(
           typ = DataExporterConfigType.Webhook,
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("data_exporter", env),
           name = "New webhook exporter config",
           desc = "New webhook exporter config",
           metadata = Map.empty,
@@ -57,7 +57,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
       case Some("elastic")        =>
         DataExporterConfig(
           typ = DataExporterConfigType.Elastic,
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("data_exporter", env),
           name = "New elastic exporter config",
           desc = "New elastic exporter config",
           metadata = Map.empty,
@@ -72,7 +72,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
       case Some("pulsar")         =>
         DataExporterConfig(
           typ = DataExporterConfigType.Pulsar,
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("data_exporter", env),
           name = "New pulsar exporter config",
           desc = "New pulsar exporter config",
           metadata = Map.empty,
@@ -91,7 +91,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
       case Some("kafka")          =>
         DataExporterConfig(
           typ = DataExporterConfigType.Kafka,
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("data_exporter", env),
           name = "New kafka exporter config",
           desc = "New kafka exporter config",
           metadata = Map.empty,
@@ -106,7 +106,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
       case Some("mailer")         =>
         DataExporterConfig(
           typ = DataExporterConfigType.Mailer,
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("data_exporter", env),
           name = "New mailer exporter config",
           desc = "New mailer exporter config",
           metadata = Map.empty,
@@ -121,7 +121,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
       case Some("generic-mailer") =>
         DataExporterConfig(
           typ = DataExporterConfigType.Mailer,
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("data_exporter", env),
           name = "New generic mailer exporter config",
           desc = "New generic mailer exporter config",
           metadata = Map.empty,
@@ -140,7 +140,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
       case Some("mailgun")        =>
         DataExporterConfig(
           typ = DataExporterConfigType.Mailer,
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("data_exporter", env),
           name = "New mailgun exporter config",
           desc = "New mailgun exporter config",
           metadata = Map.empty,
@@ -160,7 +160,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
       case Some("mailjet")        =>
         DataExporterConfig(
           typ = DataExporterConfigType.Mailer,
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("data_exporter", env),
           name = "New mailjet exporter config",
           desc = "New mailjet exporter config",
           metadata = Map.empty,
@@ -179,7 +179,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
       case Some("none-mailer")    =>
         DataExporterConfig(
           typ = DataExporterConfigType.Mailer,
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("data_exporter", env),
           name = "New none mailer exporter config",
           desc = "New none mailer exporter config",
           metadata = Map.empty,
@@ -192,7 +192,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
       case Some("sendgrid")       =>
         DataExporterConfig(
           typ = DataExporterConfigType.Mailer,
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("data_exporter", env),
           name = "New sendgrid mailer exporter config",
           desc = "New sendgrid mailer exporter config",
           metadata = Map.empty,
@@ -210,7 +210,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
       case Some("file")           =>
         DataExporterConfig(
           typ = DataExporterConfigType.File,
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("data_exporter", env),
           name = "New file exporter config",
           desc = "New file exporter config",
           metadata = Map.empty,
@@ -224,7 +224,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
       case Some("metrics")        =>
         DataExporterConfig(
           typ = DataExporterConfigType.Metrics,
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("data_exporter", env),
           name = "New metrics exporter config",
           desc = "New metrics exporter config",
           metadata = Map.empty,
@@ -237,7 +237,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
       case _                      =>
         DataExporterConfig(
           typ = DataExporterConfigType.Mailer,
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("data_exporter", env),
           name = "New console exporter config",
           desc = "New console exporter config",
           metadata = Map.empty,

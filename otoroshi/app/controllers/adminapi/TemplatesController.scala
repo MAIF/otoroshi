@@ -75,7 +75,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   def initiateServiceGroup() =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
-        val group      = env.datastores.serviceGroupDataStore.initiateNewGroup()
+        val group      = env.datastores.serviceGroupDataStore.initiateNewGroup(env)
         val finalGroup =
           group.copy(location = group.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
         Ok(process(finalGroup.toJson, ctx.request)).future
@@ -95,7 +95,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   def initiateTcpService() =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
-        val service      = env.datastores.tcpServiceDataStore.template
+        val service      = env.datastores.tcpServiceDataStore.template(env)
         val finalService =
           service.copy(location = service.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
 
@@ -129,7 +129,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   def initiateJwtVerifier() =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
-        val jwt      = env.datastores.globalJwtVerifierDataStore.template
+        val jwt      = env.datastores.globalJwtVerifierDataStore.template(env)
         val finalJwt =
           jwt.copy(location = jwt.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
         Ok(
@@ -141,7 +141,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   def initiateAuthModule() =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
-        val module = env.datastores.authConfigsDataStore.template(ctx.request.getQueryString("mod-type")).applyOn {
+        val module = env.datastores.authConfigsDataStore.template(ctx.request.getQueryString("mod-type"), env).applyOn {
           case c: LdapAuthModuleConfig      =>
             c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
           case c: BasicAuthModuleConfig     =>
@@ -162,7 +162,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   def initiateScript() =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
-        val script      = env.datastores.scriptDataStore.template
+        val script      = env.datastores.scriptDataStore.template(env)
         val finalScript =
           script.copy(location = script.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
         Ok(
@@ -276,7 +276,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           case "groups"       =>
             patchTemplate[ServiceGroup](
               env.datastores.serviceGroupDataStore
-                .initiateNewGroup()
+                .initiateNewGroup(env)
                 .applyOn(v =>
                   v.copy(location = v.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
                 )
@@ -334,7 +334,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             )
           case "verifiers"    =>
             patchTemplate[GlobalJwtVerifier](
-              env.datastores.globalJwtVerifierDataStore.template
+              env.datastores.globalJwtVerifierDataStore.template(env)
                 .applyOn(v =>
                   v.copy(location = v.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
                 )
@@ -346,7 +346,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           case "auths"        =>
             patchTemplate[AuthModuleConfig](
               env.datastores.authConfigsDataStore
-                .template(ctx.request.getQueryString("mod-type"))
+                .template(ctx.request.getQueryString("mod-type"), env)
                 .applyOn {
                   case c: LdapAuthModuleConfig      =>
                     c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
@@ -366,7 +366,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             )
           case "scripts"      =>
             patchTemplate[Script](
-              env.datastores.scriptDataStore.template
+              env.datastores.scriptDataStore.template(env)
                 .applyOn(v =>
                   v.copy(location = v.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
                 )
@@ -377,7 +377,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             )
           case "tcp/services" =>
             patchTemplate[TcpService](
-              env.datastores.tcpServiceDataStore.template
+              env.datastores.tcpServiceDataStore.template(env)
                 .applyOn(v =>
                   v.copy(location = v.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
                 )

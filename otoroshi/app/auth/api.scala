@@ -150,11 +150,11 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
   def setUserForToken(token: String, user: JsValue)(implicit ec: ExecutionContext): Future[Unit]
   def getUserForToken(token: String)(implicit ec: ExecutionContext): Future[Option[JsValue]]
 
-  def template(modType: Option[String]): AuthModuleConfig = {
+  def template(modType: Option[String], env: Env): AuthModuleConfig = {
     modType match {
       case Some("oauth2")        =>
         GenericOauth2ModuleConfig(
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("auth_mod", env),
           name = "New auth. module",
           desc = "New auth. module",
           tags = Seq.empty,
@@ -163,7 +163,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
         )
       case Some("oauth2-global") =>
         GenericOauth2ModuleConfig(
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("auth_mod", env),
           name = "New auth. module",
           desc = "New auth. module",
           tags = Seq.empty,
@@ -172,7 +172,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
         )
       case Some("basic")         =>
         BasicAuthModuleConfig(
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("auth_mod", env),
           name = "New auth. module",
           desc = "New auth. module",
           tags = Seq.empty,
@@ -181,7 +181,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
         )
       case Some("ldap")          =>
         LdapAuthModuleConfig(
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("auth_mod", env),
           name = "New auth. module",
           desc = "New auth. module",
           serverUrls = Seq("ldap://ldap.forumsys.com:389"),
@@ -195,7 +195,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
         )
       case Some("saml")          =>
         SamlAuthModuleConfig(
-          id    = IdGenerator.token,
+          id = IdGenerator.namedId("auth_mod", env),
           name  = "New auth. module",
           desc  = "New auth. module",
           tags  = Seq.empty,
@@ -207,7 +207,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
         )
       case Some("oauth1")        =>
         Oauth1ModuleConfig(
-          id    = IdGenerator.token,
+          id = IdGenerator.namedId("auth_mod", env),
           name  = "New OAuth 1.0 module",
           desc  = "New OAuth 1.0 module",
           consumerKey         = "",
@@ -223,7 +223,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
         )
       case _                     =>
         BasicAuthModuleConfig(
-          id = IdGenerator.token,
+          id = IdGenerator.namedId("auth_mod", env),
           name = "New auth. module",
           desc = "New auth. module",
           tags = Seq.empty,

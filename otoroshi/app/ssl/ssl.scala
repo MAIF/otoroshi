@@ -614,7 +614,13 @@ trait CertificateDataStore extends BasicStore[Cert] {
         )
       )
       .map { c =>
-        c.toOption.get.toCert
+        c.toOption.get.toCert.copy(
+          id = IdGenerator.namedId("cert", env),
+          name = "a new certificate",
+          description = "a new certificate",
+          chain = "",
+          privateKey = ""
+        )
       }
   }
 

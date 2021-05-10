@@ -1656,9 +1656,9 @@ object Implicits {
 }
 
 trait GlobalJwtVerifierDataStore extends BasicStore[GlobalJwtVerifier] {
-  def template: GlobalJwtVerifier =
+  def template(env: Env): GlobalJwtVerifier =
     GlobalJwtVerifier(
-      id = IdGenerator.token,
+      id = IdGenerator.namedId("jwt_verifier", env),
       name = "New jwt verifier",
       desc = "New jwt verifier",
       metadata = Map.empty

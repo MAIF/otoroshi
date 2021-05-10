@@ -963,9 +963,9 @@ class RunningServers(env: Env) {
 }
 
 sealed trait TcpServiceDataStore extends BasicStore[TcpService] {
-  def template: TcpService =
+  def template(env: Env): TcpService =
     TcpService(
-      id = IdGenerator.token,
+      id = IdGenerator.namedId("tcp_service", env),
       enabled = true,
       tls = TlsMode.Disabled,
       sni = SniSettings(false, false),

@@ -1457,9 +1457,9 @@ object Script {
 }
 
 trait ScriptDataStore extends BasicStore[Script] {
-  def template: Script =
+  def template(env: Env): Script =
     Script(
-      id = IdGenerator.token,
+      id = IdGenerator.namedId("script", env),
       name = "New request transformer",
       desc = "New request transformer",
       code = """import akka.stream.Materializer

@@ -1,7 +1,9 @@
 package otoroshi.security
 
-import java.util.concurrent.atomic.AtomicLong
+import otoroshi.env.Env
 
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicLong
 import scala.util.{Random, Try}
 
 class IdGenerator(generatorId: Long) {
@@ -64,4 +66,11 @@ object IdGenerator {
   def token: String                    = token(64)
   def extendedToken(size: Int): String = token(EXTENDED_CHARACTERS, size)
   def extendedToken: String            = token(EXTENDED_CHARACTERS, 64)
+  def namedId(prefix: String, env: Env): String = namedId(prefix, env.env)
+  def namedId(prefix: String, env: String): String = {
+    env match {
+      case "prod" => s"${prefix}_${UUID.randomUUID().toString}"
+      case _      => s"${prefix}_${env}_${UUID.randomUUID().toString}"
+    }
+  }
 }
