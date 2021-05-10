@@ -11,7 +11,7 @@ class TenantDataStore(redisCli: RedisLike, env: Env) extends RedisLikeStore[Tena
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def key(id: String): Key                    = Key(s"${env.storageRoot}:tenants:$id")
   override def extractId(value: Tenant): String        = value.id.value
-  val template                                         = Tenant(
+  def template(env: Env)                               = Tenant(
     id = TenantId("new-organization"),
     name = "New Organization",
     description = "A organization to do whatever you want",

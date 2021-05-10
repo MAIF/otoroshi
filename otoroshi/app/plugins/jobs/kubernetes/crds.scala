@@ -375,6 +375,24 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     }
   }
 
+  private[kubernetes] def getDefaultTemplate(templateName: String, source: JsValue): JsObject = {
+    templateName match {
+      case "service-descriptor" => env.datastores.serviceDescriptorDataStore.template(env).json.asObject
+      case "service-group"      => env.datastores.serviceGroupDataStore.template(env).json.asObject
+      case "apikey"             => env.datastores.apiKeyDataStore.template(env).json.asObject
+      case "certificate"        => env.datastores.certificatesDataStore.nakedTemplate(env).json.asObject
+      case "auth-module"        => env.datastores.authConfigsDataStore.template(source.select("type").asOpt[String], env).json.asObject
+      case "tcp-service"        => env.datastores.tcpServiceDataStore.template(env).json.asObject
+      case "script"             => env.datastores.scriptDataStore.template(env).json.asObject
+      case "team"               => env.datastores.teamDataStore.template(source.select("_loc").select("tenant").asOpt[String].map(TenantId.apply).getOrElse(TenantId.default)).json.asObject
+      case "organization"       => env.datastores.tenantDataStore.template(env).json.asObject
+      case "admin"              => env.datastores.simpleAdminDataStore.template(env).json.asObject
+      case "data-exporter"      => env.datastores.dataExporterConfigDataStore.template(source.select("type").asOpt[String]).json.asObject
+      case "jwt-verifier"       => env.datastores.globalJwtVerifierDataStore.template(env).json.asObject
+      case _                    => Json.obj()
+    }
+  }
+
   private[kubernetes] def findAndMerge[T](
       _spec: JsValue,
       res: KubernetesOtoroshiResource,
@@ -387,7 +405,8 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       enabledExtr: Option[T => Boolean] = None
   ): JsObject = {
     val opt      = maybe.orElse(findEntityByIdAndPath[T](entities, templateName, res, metaExtr, idExtr))
-    val template = (client.config.templates \ templateName).asOpt[JsObject].getOrElse(Json.obj())
+    val useDefaultTemplate = (client.config.templates \ templateName).asOpt[String].contains("default")
+    val template = if (useDefaultTemplate) getDefaultTemplate(templateName, _spec) else (client.config.templates \ templateName).asOpt[JsObject].getOrElse(Json.obj())
     val spec     = template.deepMerge(
       opt.map(v => toJson(v).as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject]
     )

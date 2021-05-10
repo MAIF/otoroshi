@@ -2215,7 +2215,7 @@ object ServiceDescriptorDataStore {
 
 trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
 
-  def template()(implicit env: Env): ServiceDescriptor = initiateNewDescriptor()
+  def template(env: Env): ServiceDescriptor = initiateNewDescriptor()(env)
 
   def initiateNewDescriptor()(implicit env: Env): ServiceDescriptor = {
     val (subdomain, envir, domain) = env.staticExposedDomain.map { v =>

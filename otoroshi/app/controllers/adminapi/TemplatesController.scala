@@ -38,7 +38,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
 
   def initiateTenant() =
     ApiAction.async { ctx =>
-      Ok(env.datastores.tenantDataStore.template.json).future
+      Ok(env.datastores.tenantDataStore.template(env).json).future
     }
 
   def initiateTeam() =
@@ -299,7 +299,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             )
           case "tenants"      =>
             patchTemplate[ServiceGroup](
-              env.datastores.tenantDataStore.template.json,
+              env.datastores.tenantDataStore.template(env).json,
               patch,
               ServiceGroup._fmt,
               _.save()

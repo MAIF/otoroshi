@@ -74,6 +74,7 @@ object ServiceGroup {
 }
 
 trait ServiceGroupDataStore extends BasicStore[ServiceGroup] {
+  def template(env: Env): ServiceGroup = initiateNewGroup(env)
   def initiateNewGroup(env: Env): ServiceGroup =
     ServiceGroup(
       id = IdGenerator.namedId("group", env),

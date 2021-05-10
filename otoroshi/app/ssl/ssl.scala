@@ -605,6 +605,18 @@ object Cert {
 
 trait CertificateDataStore extends BasicStore[Cert] {
 
+  def nakedTemplate(env: Env): Cert = {
+    Cert(
+      id = IdGenerator.namedId("cert", env),
+      name = "a new certificate",
+      description = "a new certificate",
+      chain = "",
+      privateKey = "",
+      caRef = None,
+      revoked = false
+    )
+  }
+
   def template(implicit ec: ExecutionContext, env: Env): Future[Cert] = {
     env.pki
       .genSelfSignedCert(

@@ -66,6 +66,7 @@ case class UserRights(rights: Seq[UserRight]) {
 }
 
 object UserRights {
+  val default = UserRights.varargs(UserRight.default)
   val superAdmin = UserRights.varargs(UserRight.superAdmin)
   val format     = new Format[UserRights] {
     override def writes(o: UserRights): JsValue             = JsArray(o.rights.map(_.json))
@@ -104,6 +105,7 @@ case class UserRight(tenant: TenantAccess, teams: Seq[TeamAccess]) {
 }
 
 object UserRight {
+  val default = UserRight(TenantAccess("default"), Seq(TeamAccess("default")))
   val superAdmin = UserRight(TenantAccess("*"), Seq(TeamAccess("*")))
   val format     = new Format[UserRight] {
     override def writes(o: UserRight): JsValue             =

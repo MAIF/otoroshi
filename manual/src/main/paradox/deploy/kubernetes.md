@@ -267,7 +267,7 @@ the configuration can have the following values
     "crds": false, // sync crds
     "kubeLeader": false, // delegate leader election to kubernetes, to know where the sync job should run
     "restartDependantDeployments": true, // when a secret/cert changes from otoroshi sync, restart dependant deployments
-    "templates": { // template for entities that will be merged with kubernetes entities
+    "templates": { // template for entities that will be merged with kubernetes entities. can be "default" to use otoroshi default templates
       "service-group": {},
       "service-descriptor": {},
       "apikeys": {},
@@ -278,6 +278,9 @@ the configuration can have the following values
       "auth-module": {},
       "data-exporter": {},
       "script": {},
+      "organization": {},
+      "team": {},
+      "data-exporter": {}
     }
   }
 }
@@ -674,7 +677,7 @@ the configuration can have the following values
     "crds": true, // sync crds
     "kubeLeader": false, // delegate leader election to kubernetes, to know where the sync job should run
     "restartDependantDeployments": true, // when a secret/cert changes from otoroshi sync, restart dependant deployments
-    "templates": { // template for entities that will be merged with kubernetes entities
+    "templates": { // template for entities that will be merged with kubernetes entities. can be "default" to use otoroshi default templates
       "service-group": {},
       "service-descriptor": {},
       "apikeys": {},
@@ -687,6 +690,7 @@ the configuration can have the following values
       "script": {},
       "organization": {},
       "team": {},
+      "data-exporter": {}
     }
   }
 }

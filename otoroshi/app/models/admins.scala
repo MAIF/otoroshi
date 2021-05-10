@@ -2,6 +2,7 @@ package otoroshi.models
 
 import otoroshi.env.Env
 import org.joda.time.DateTime
+import org.mindrot.jbcrypt.BCrypt
 import otoroshi.models._
 import play.api.libs.json._
 import otoroshi.utils.syntax.implicits._
@@ -183,6 +184,17 @@ trait SimpleAdminDataStore {
   def registerUser(user: SimpleOtoroshiAdmin)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def hasAlreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def alreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def template(env: Env): SimpleOtoroshiAdmin = {
+    SimpleOtoroshiAdmin(
+      username = "new.admin@foo.bar",
+      password = BCrypt.hashpw("password", BCrypt.gensalt()),
+      label = "new admin",
+      createdAt = DateTime.now(),
+      typ = OtoroshiAdminType.SimpleAdmin,
+      metadata = Map.empty,
+      rights = UserRights.default
+    )
+  }
 }
 
 trait WebAuthnAdminDataStore {
