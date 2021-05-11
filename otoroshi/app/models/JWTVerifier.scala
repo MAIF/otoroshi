@@ -939,7 +939,8 @@ sealed trait JwtVerifier extends AsJson {
   def asGlobal: GlobalJwtVerifier = this.asInstanceOf[GlobalJwtVerifier]
 
   private def sign(token: JsObject, algorithm: Algorithm, kid: Option[String]): String = {
-    val headerJson     = Json.obj("alg" -> algorithm.getName, "typ" -> "JWT").applyOnWithOpt(kid)((h, id) => h ++ Json.obj("kid" -> id))
+    val headerJson     = Json.obj("alg" -> algorithm.getName, "typ" -> "JWT")
+                           .applyOnWithOpt(kid)((h, id) => h ++ Json.obj("kid" -> id))
     val header         = ApacheBase64.encodeBase64URLSafeString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
     val payload        = ApacheBase64.encodeBase64URLSafeString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
     val content        = String.format("%s.%s", header, payload)
