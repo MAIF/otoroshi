@@ -11,16 +11,11 @@ import otoroshi.models.{BestResponseTime, RemainingQuotas, SecComVersion, Weight
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.script.Implicits._
-import otoroshi.script.{
-  TransformerRequestBodyContext,
-  TransformerRequestContext,
-  TransformerResponseBodyContext,
-  TransformerResponseContext
-}
+import otoroshi.script.{TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseBodyContext, TransformerResponseContext}
 import otoroshi.utils.UrlSanitizer
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.libs.json.{JsArray, JsString, JsValue, Json}
+import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.{DefaultWSCookie, EmptyBody, SourceBody}
 import play.api.mvc.Results.{BadGateway, Forbidden, HttpVersionNotSupported, NotFound, Status}
@@ -525,325 +520,134 @@ class HttpHandler()(implicit env: Env) {
               val stateResp           = headers
                 .get(stateRespHeaderName)
                 .orElse(headers.get(stateRespHeaderName.toLowerCase))
-              if (
-                (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge)
-                && !descriptor.isUriExcludedFromSecuredCommunication("/" + uri)
-                && !ReverseProxyActionHelper.stateRespValid(stateValue, stateResp, jti, descriptor)
-              ) {
-                // && !headers.get(stateRespHeaderName).contains(state)) {
-                resp.ignore()
-                if (
-                  resp.status == 404 && headers
-                    .get("X-CleverCloudUpgrade")
-                    .contains("true")
-                ) {
-                  Errors.craftResponseResult(
-                    "No service found for the specified target host, the service descriptor should be verified !",
-                    NotFound,
-                    req,
-                    Some(descriptor),
-                    Some("errors.no.service.found"),
-                    duration = System.currentTimeMillis - start,
-                    overhead = (System
-                      .currentTimeMillis() - secondStart) + firstOverhead,
-                    cbDuration = cbDuration,
-                    callAttempts = callAttempts,
-                    attrs = attrs
-                  )
-                } else if (isUp) {
-                  val exchange = Json.stringify(
-                    Json.obj(
-                      "uri"           -> req.relativeUri,
-                      "url"           -> url,
-                      "state"         -> stateValue,
-                      "reveivedState" -> JsString(stateResp.getOrElse("--")),
-                      "claim"         -> claim
-                        .serialize(descriptor.algoInfoFromOtoToBack)(env),
-                      "method"        -> req.method,
-                      "query"         -> req.rawQueryString,
-                      "status"        -> resp.status,
-                      "headersIn"     -> JsArray(
-                        req.headers.toSimpleMap
-                          .map(t => Json.obj("name" -> t._1, "value" -> t._2))
-                          .toSeq
-                      ),
-                      "headersOut"    -> JsArray(
-                        headers
-                          .map(t => Json.obj("name" -> t._1, "values" -> t._2))
-                          .toSeq
-                      )
-                    )
-                  )
-                  logger
-                    .error(
-                      s"\n\nError while talking with downstream service :(\n\n$exchange\n\n"
-                    )
-                  Errors.craftResponseResult(
-                    "Downstream microservice does not seems to be secured. Cancelling request !",
-                    BadGateway,
-                    req,
-                    Some(descriptor),
-                    Some("errors.service.not.secured"),
-                    duration = System.currentTimeMillis - start,
-                    overhead = (System
-                      .currentTimeMillis() - secondStart) + firstOverhead,
-                    cbDuration = cbDuration,
-                    callAttempts = callAttempts,
-                    attrs = attrs
-                  )
-                } else {
-                  Errors.craftResponseResult(
-                    "The service seems to be down :( come back later",
-                    Forbidden,
-                    req,
-                    Some(descriptor),
-                    Some("errors.service.down"),
-                    duration = System.currentTimeMillis - start,
-                    overhead = (System
-                      .currentTimeMillis() - secondStart) + firstOverhead,
-                    cbDuration = cbDuration,
-                    callAttempts = callAttempts,
-                    attrs = attrs
-                  )
-                }
-              } else {
-                val upstreamLatency                    = System.currentTimeMillis() - upstreamStart
-                val _headersOut: Seq[(String, String)] =
-                  HeadersHelper.composeHeadersOut(
-                    descriptor = descriptor,
-                    req = req,
-                    resp = resp,
-                    apiKey = apiKey,
-                    paUsr = paUsr,
-                    elCtx = elCtx,
-                    snowflake = snowflake,
-                    requestTimestamp = requestTimestamp,
-                    headersOutFiltered = headersOutFiltered,
-                    overhead = overhead,
-                    upstreamLatency = upstreamLatency,
-                    canaryId = canaryId,
-                    remainingQuotas = remainingQuotas,
-                    attrs = attrs
-                  )
-
-                val otoroshiResponse = otoroshi.script.HttpResponse(
-                  status = resp.status,
-                  headers = _headersOut.toMap,
-                  cookies = resp.cookies
-                )
-                descriptor
-                  .transformResponse(
-                    TransformerResponseContext(
-                      index = -1,
-                      snowflake = snowflake,
-                      rawResponse = rawResponse,
-                      otoroshiResponse = otoroshiResponse,
-                      descriptor = descriptor,
-                      apikey = apiKey,
-                      user = paUsr,
-                      request = req,
-                      config = descriptor.transformerConfig,
+              ReverseProxyActionHelper.stateRespValidM(stateValue, stateResp, jti, descriptor, uri, req) match {
+                case Left(stateRespInvalid) => {
+                  resp.ignore()
+                  if (
+                    resp.status == 404 && headers
+                      .get("X-CleverCloudUpgrade")
+                      .contains("true")
+                  ) {
+                    Errors.craftResponseResult(
+                      "No service found for the specified target host, the service descriptor should be verified !",
+                      NotFound,
+                      req,
+                      Some(descriptor),
+                      Some("errors.no.service.found"),
+                      duration = System.currentTimeMillis - start,
+                      overhead = (System
+                        .currentTimeMillis() - secondStart) + firstOverhead,
+                      cbDuration = cbDuration,
+                      callAttempts = callAttempts,
                       attrs = attrs
                     )
+                  } else if (isUp) {
+                    logger.error(stateRespInvalid.errorMessage(resp))
+                    val extraInfos = attrs.get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey).map(_.as[JsObject]).getOrElse(Json.obj())
+                    val newExtraInfos = extraInfos ++ Json.obj("stateRespInvalid" -> stateRespInvalid.exchangePayload(resp))
+                    attrs.put(otoroshi.plugins.Keys.GatewayEventExtraInfosKey -> newExtraInfos)
+                    Errors.craftResponseResult(
+                      "Downstream microservice does not seems to be secured. Cancelling request !",
+                      BadGateway,
+                      req,
+                      Some(descriptor),
+                      Some("errors.service.not.secured"),
+                      duration = System.currentTimeMillis - start,
+                      overhead = (System
+                        .currentTimeMillis() - secondStart) + firstOverhead,
+                      cbDuration = cbDuration,
+                      callAttempts = callAttempts,
+                      attrs = attrs
+                    )
+                  } else {
+                    Errors.craftResponseResult(
+                      "The service seems to be down :( come back later",
+                      Forbidden,
+                      req,
+                      Some(descriptor),
+                      Some("errors.service.down"),
+                      duration = System.currentTimeMillis - start,
+                      overhead = (System
+                        .currentTimeMillis() - secondStart) + firstOverhead,
+                      cbDuration = cbDuration,
+                      callAttempts = callAttempts,
+                      attrs = attrs
+                    )
+                  }
+                }
+                case Right(_) => {
+                  val upstreamLatency = System.currentTimeMillis() - upstreamStart
+                  val _headersOut: Seq[(String, String)] =
+                    HeadersHelper.composeHeadersOut(
+                      descriptor = descriptor,
+                      req = req,
+                      resp = resp,
+                      apiKey = apiKey,
+                      paUsr = paUsr,
+                      elCtx = elCtx,
+                      snowflake = snowflake,
+                      requestTimestamp = requestTimestamp,
+                      headersOutFiltered = headersOutFiltered,
+                      overhead = overhead,
+                      upstreamLatency = upstreamLatency,
+                      canaryId = canaryId,
+                      remainingQuotas = remainingQuotas,
+                      attrs = attrs
+                    )
+
+                  val otoroshiResponse = otoroshi.script.HttpResponse(
+                    status = resp.status,
+                    headers = _headersOut.toMap,
+                    cookies = resp.cookies
                   )
-                  .flatMap {
-                    case Left(badResult)     => {
-                      resp.ignore()
-                      FastFuture.successful(badResult)
-                    }
-                    case Right(httpResponse) => {
-                      val headersOut                  = httpResponse.headers.toSeq
-                      val contentType: Option[String] = httpResponse.headers
-                        .get("Content-Type")
-                        .orElse(httpResponse.headers.get("content-type"))
-
-                      val noContentLengthHeader: Boolean =
-                        resp.contentLength.isEmpty
-                      val hasChunkedHeader: Boolean      = resp
-                        .header("Transfer-Encoding")
-                        .orElse(httpResponse.headers.get("Transfer-Encoding"))
-                        .exists(h => h.toLowerCase().contains("chunked"))
-                      val isChunked: Boolean             = resp.isChunked() match {
-                        case Some(chunked)                                                                         => chunked
-                        case None if !env.emptyContentLengthIsChunked                                              =>
-                          hasChunkedHeader // false
-                        case None if env.emptyContentLengthIsChunked && hasChunkedHeader                           =>
-                          true
-                        case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader =>
-                          true
-                        case _                                                                                     => false
-                      }
-
-                      val theStream: Source[ByteString, _] = resp.bodyAsSource
-                        .concat(snowMonkeyContext.trailingResponseBodyStream)
-                        .alsoTo(Sink.onComplete {
-                          case Success(_) =>
-                            // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.relativeUri}")
-                            promise.trySuccess(
-                              ProxyDone(
-                                httpResponse.status,
-                                isChunked,
-                                upstreamLatency,
-                                headersOut = resp.headers.mapValues(_.head).toSeq.map(Header.apply),
-                                otoroshiHeadersOut = headersOut.map(Header.apply),
-                                otoroshiHeadersIn = headersIn.map(Header.apply)
-                              )
-                            )
-                          case Failure(e) =>
-                            if (
-                              !(req.relativeUri
-                                .startsWith("/api/live/global") && e.getMessage == "Connection reset by peer")
-                            ) {
-                              logger.error(
-                                s"error while transfering stream for ${req.theProtocol}://${req.theHost}${req.relativeUri}",
-                                e
-                              )
-                            }
-                            resp.ignore()
-                            promise.trySuccess(
-                              ProxyDone(
-                                httpResponse.status,
-                                isChunked,
-                                upstreamLatency,
-                                headersOut = resp.headers.mapValues(_.head).toSeq.map(Header.apply),
-                                otoroshiHeadersOut = headersOut.map(Header.apply),
-                                otoroshiHeadersIn = headersIn.map(Header.apply)
-                              )
-                            )
-                        })
-                        .map { bs =>
-                          counterOut.addAndGet(bs.length)
-                          bs
-                        }
-
-                      val finalStream = descriptor.transformResponseBody(
-                        TransformerResponseBodyContext(
-                          index = -1,
-                          snowflake = snowflake,
-                          rawResponse = rawResponse,
-                          otoroshiResponse = otoroshiResponse,
-                          descriptor = descriptor,
-                          apikey = apiKey,
-                          user = paUsr,
-                          request = req,
-                          config = descriptor.transformerConfig,
-                          body = theStream,
-                          attrs = attrs
-                        )
+                  descriptor
+                    .transformResponse(
+                      TransformerResponseContext(
+                        index = -1,
+                        snowflake = snowflake,
+                        rawResponse = rawResponse,
+                        otoroshiResponse = otoroshiResponse,
+                        descriptor = descriptor,
+                        apikey = apiKey,
+                        user = paUsr,
+                        request = req,
+                        config = descriptor.transformerConfig,
+                        attrs = attrs
                       )
-
-                      val cookies = httpResponse.cookies.map {
-                        case c: WSCookieWithSameSite =>
-                          Cookie(
-                            name = c.name,
-                            value = c.value,
-                            maxAge = c.maxAge.map(_.toInt),
-                            path = c.path.getOrElse("/"),
-                            domain = c.domain,
-                            secure = c.secure,
-                            httpOnly = c.httpOnly,
-                            sameSite = c.sameSite
-                          )
-                        case c                       =>
-                          Cookie(
-                            name = c.name,
-                            value = c.value,
-                            maxAge = c.maxAge.map(_.toInt),
-                            path = c.path.getOrElse("/"),
-                            domain = c.domain,
-                            secure = c.secure,
-                            httpOnly = c.httpOnly,
-                            sameSite = None
-                          )
+                    )
+                    .flatMap {
+                      case Left(badResult) => {
+                        resp.ignore()
+                        FastFuture.successful(badResult)
                       }
+                      case Right(httpResponse) => {
+                        val headersOut = httpResponse.headers.toSeq
+                        val contentType: Option[String] = httpResponse.headers
+                          .get("Content-Type")
+                          .orElse(httpResponse.headers.get("content-type"))
 
-                      if (req.version == "HTTP/1.0") {
-                        if (descriptor.allowHttp10) {
-                          logger.warn(
-                            s"HTTP/1.0 request, storing temporary result in memory :( (${req.theProtocol}://${req.theHost}${req.relativeUri})"
-                          )
-                          finalStream
-                            .via(
-                              MaxLengthLimiter(
-                                globalConfig.maxHttp10ResponseSize.toInt,
-                                str => logger.warn(str)
-                              )
-                            )
-                            .runWith(
-                              Sink.reduce[ByteString]((bs, n) => bs.concat(n))
-                            )
-                            .fast
-                            .flatMap { body =>
-                              val response: Result = Status(httpResponse.status)(body)
-                                .withHeaders(
-                                  headersOut.filterNot { h =>
-                                    val lower = h._1.toLowerCase()
-                                    lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
-                                  }: _*
-                                )
-                                .withCookies(
-                                  withTrackingCookies ++ jwtInjection.additionalCookies
-                                    .map(t => Cookie(t._1, t._2)) ++ cookies: _*
-                                )
-                              contentType match {
-                                case None      => descriptor.gzip.handleResult(req, response)
-                                case Some(ctp) =>
-                                  descriptor.gzip.handleResult(req, response.as(ctp))
-                              }
-                            }
-                        } else {
-                          resp.ignore()
-                          Errors.craftResponseResult(
-                            "You cannot use HTTP/1.0 here",
-                            HttpVersionNotSupported,
-                            req,
-                            Some(descriptor),
-                            Some("errors.http.10.not.allowed"),
-                            duration = System.currentTimeMillis - start,
-                            overhead = (System
-                              .currentTimeMillis() - secondStart) + firstOverhead,
-                            cbDuration = cbDuration,
-                            callAttempts = callAttempts,
-                            attrs = attrs
-                          )
+                        val noContentLengthHeader: Boolean =
+                          resp.contentLength.isEmpty
+                        val hasChunkedHeader: Boolean = resp
+                          .header("Transfer-Encoding")
+                          .orElse(httpResponse.headers.get("Transfer-Encoding"))
+                          .exists(h => h.toLowerCase().contains("chunked"))
+                        val isChunked: Boolean = resp.isChunked() match {
+                          case Some(chunked) => chunked
+                          case None if !env.emptyContentLengthIsChunked =>
+                            hasChunkedHeader // false
+                          case None if env.emptyContentLengthIsChunked && hasChunkedHeader =>
+                            true
+                          case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader =>
+                            true
+                          case _ => false
                         }
-                      } else {
-                        val response: Result = isChunked match {
-                          case true  => {
-                            // stream out
-                            val res = Status(httpResponse.status)
-                              .chunked(finalStream)
-                              .withHeaders(
-                                headersOut.filterNot { h =>
-                                  val lower = h._1.toLowerCase()
-                                  lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
-                                }: _*
-                              )
-                              .withCookies(
-                                (withTrackingCookies ++ jwtInjection.additionalCookies
-                                  .map(t => Cookie(t._1, t._2)) ++ cookies): _*
-                              )
-                            contentType match {
-                              case None      => res
-                              case Some(ctp) => res.as(ctp)
-                            }
-                          }
-                          case false => {
-                            val contentLength: Option[Long] = httpResponse.headers
-                              .get("Content-Length")
-                              .orElse(httpResponse.headers.get("content-length"))
-                              .orElse(resp.contentLengthStr)
-                              .map(
-                                _.toLong + snowMonkeyContext.trailingResponseBodySize
-                              )
-                            val actualContentLength: Long   =
-                              contentLength.getOrElse(0L)
-                            if (actualContentLength == 0L) {
-                              // here, Play did not run the body because it's empty, so triggering things manually
-                              logger
-                                .debug(
-                                  "Triggering promise as content length is 0"
-                                )
+
+                        val theStream: Source[ByteString, _] = resp.bodyAsSource
+                          .concat(snowMonkeyContext.trailingResponseBodyStream)
+                          .alsoTo(Sink.onComplete {
+                            case Success(_) =>
+                              // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.relativeUri}")
                               promise.trySuccess(
                                 ProxyDone(
                                   httpResponse.status,
@@ -854,36 +658,202 @@ class HttpHandler()(implicit env: Env) {
                                   otoroshiHeadersIn = headersIn.map(Header.apply)
                                 )
                               )
-                            }
-                            // stream out
-                            val res                         = Status(httpResponse.status)
-                              .sendEntity(
-                                HttpEntity.Streamed(
-                                  finalStream,
-                                  contentLength,
-                                  contentType
+                            case Failure(e) =>
+                              if (
+                                !(req.relativeUri
+                                  .startsWith("/api/live/global") && e.getMessage == "Connection reset by peer")
+                              ) {
+                                logger.error(
+                                  s"error while transfering stream for ${req.theProtocol}://${req.theHost}${req.relativeUri}",
+                                  e
+                                )
+                              }
+                              resp.ignore()
+                              promise.trySuccess(
+                                ProxyDone(
+                                  httpResponse.status,
+                                  isChunked,
+                                  upstreamLatency,
+                                  headersOut = resp.headers.mapValues(_.head).toSeq.map(Header.apply),
+                                  otoroshiHeadersOut = headersOut.map(Header.apply),
+                                  otoroshiHeadersIn = headersIn.map(Header.apply)
                                 )
                               )
-                              .withHeaders(
-                                headersOut.filterNot { h =>
-                                  val lower = h._1.toLowerCase()
-                                  lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
-                                }: _*
+                          })
+                          .map { bs =>
+                            counterOut.addAndGet(bs.length)
+                            bs
+                          }
+
+                        val finalStream = descriptor.transformResponseBody(
+                          TransformerResponseBodyContext(
+                            index = -1,
+                            snowflake = snowflake,
+                            rawResponse = rawResponse,
+                            otoroshiResponse = otoroshiResponse,
+                            descriptor = descriptor,
+                            apikey = apiKey,
+                            user = paUsr,
+                            request = req,
+                            config = descriptor.transformerConfig,
+                            body = theStream,
+                            attrs = attrs
+                          )
+                        )
+
+                        val cookies = httpResponse.cookies.map {
+                          case c: WSCookieWithSameSite =>
+                            Cookie(
+                              name = c.name,
+                              value = c.value,
+                              maxAge = c.maxAge.map(_.toInt),
+                              path = c.path.getOrElse("/"),
+                              domain = c.domain,
+                              secure = c.secure,
+                              httpOnly = c.httpOnly,
+                              sameSite = c.sameSite
+                            )
+                          case c =>
+                            Cookie(
+                              name = c.name,
+                              value = c.value,
+                              maxAge = c.maxAge.map(_.toInt),
+                              path = c.path.getOrElse("/"),
+                              domain = c.domain,
+                              secure = c.secure,
+                              httpOnly = c.httpOnly,
+                              sameSite = None
+                            )
+                        }
+
+                        if (req.version == "HTTP/1.0") {
+                          if (descriptor.allowHttp10) {
+                            logger.warn(
+                              s"HTTP/1.0 request, storing temporary result in memory :( (${req.theProtocol}://${req.theHost}${req.relativeUri})"
+                            )
+                            finalStream
+                              .via(
+                                MaxLengthLimiter(
+                                  globalConfig.maxHttp10ResponseSize.toInt,
+                                  str => logger.warn(str)
+                                )
                               )
-                              .withCookies(
-                                (withTrackingCookies ++ jwtInjection.additionalCookies
-                                  .map(t => Cookie(t._1, t._2)) ++ cookies): _*
+                              .runWith(
+                                Sink.reduce[ByteString]((bs, n) => bs.concat(n))
                               )
-                            contentType match {
-                              case None      => res
-                              case Some(ctp) => res.as(ctp)
+                              .fast
+                              .flatMap { body =>
+                                val response: Result = Status(httpResponse.status)(body)
+                                  .withHeaders(
+                                    headersOut.filterNot { h =>
+                                      val lower = h._1.toLowerCase()
+                                      lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
+                                    }: _*
+                                  )
+                                  .withCookies(
+                                    withTrackingCookies ++ jwtInjection.additionalCookies
+                                      .map(t => Cookie(t._1, t._2)) ++ cookies: _*
+                                  )
+                                contentType match {
+                                  case None => descriptor.gzip.handleResult(req, response)
+                                  case Some(ctp) =>
+                                    descriptor.gzip.handleResult(req, response.as(ctp))
+                                }
+                              }
+                          } else {
+                            resp.ignore()
+                            Errors.craftResponseResult(
+                              "You cannot use HTTP/1.0 here",
+                              HttpVersionNotSupported,
+                              req,
+                              Some(descriptor),
+                              Some("errors.http.10.not.allowed"),
+                              duration = System.currentTimeMillis - start,
+                              overhead = (System
+                                .currentTimeMillis() - secondStart) + firstOverhead,
+                              cbDuration = cbDuration,
+                              callAttempts = callAttempts,
+                              attrs = attrs
+                            )
+                          }
+                        } else {
+                          val response: Result = isChunked match {
+                            case true => {
+                              // stream out
+                              val res = Status(httpResponse.status)
+                                .chunked(finalStream)
+                                .withHeaders(
+                                  headersOut.filterNot { h =>
+                                    val lower = h._1.toLowerCase()
+                                    lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
+                                  }: _*
+                                )
+                                .withCookies(
+                                  (withTrackingCookies ++ jwtInjection.additionalCookies
+                                    .map(t => Cookie(t._1, t._2)) ++ cookies): _*
+                                )
+                              contentType match {
+                                case None => res
+                                case Some(ctp) => res.as(ctp)
+                              }
+                            }
+                            case false => {
+                              val contentLength: Option[Long] = httpResponse.headers
+                                .get("Content-Length")
+                                .orElse(httpResponse.headers.get("content-length"))
+                                .orElse(resp.contentLengthStr)
+                                .map(
+                                  _.toLong + snowMonkeyContext.trailingResponseBodySize
+                                )
+                              val actualContentLength: Long =
+                                contentLength.getOrElse(0L)
+                              if (actualContentLength == 0L) {
+                                // here, Play did not run the body because it's empty, so triggering things manually
+                                logger
+                                  .debug(
+                                    "Triggering promise as content length is 0"
+                                  )
+                                promise.trySuccess(
+                                  ProxyDone(
+                                    httpResponse.status,
+                                    isChunked,
+                                    upstreamLatency,
+                                    headersOut = resp.headers.mapValues(_.head).toSeq.map(Header.apply),
+                                    otoroshiHeadersOut = headersOut.map(Header.apply),
+                                    otoroshiHeadersIn = headersIn.map(Header.apply)
+                                  )
+                                )
+                              }
+                              // stream out
+                              val res = Status(httpResponse.status)
+                                .sendEntity(
+                                  HttpEntity.Streamed(
+                                    finalStream,
+                                    contentLength,
+                                    contentType
+                                  )
+                                )
+                                .withHeaders(
+                                  headersOut.filterNot { h =>
+                                    val lower = h._1.toLowerCase()
+                                    lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
+                                  }: _*
+                                )
+                                .withCookies(
+                                  (withTrackingCookies ++ jwtInjection.additionalCookies
+                                    .map(t => Cookie(t._1, t._2)) ++ cookies): _*
+                                )
+                              contentType match {
+                                case None => res
+                                case Some(ctp) => res.as(ctp)
+                              }
                             }
                           }
+                          descriptor.gzip.handleResult(req, response)
                         }
-                        descriptor.gzip.handleResult(req, response)
                       }
                     }
-                  }
+                }
               }
             }
         }

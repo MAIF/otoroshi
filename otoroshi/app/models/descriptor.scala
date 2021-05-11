@@ -1124,15 +1124,18 @@ object ApiKeyConstraints {
 }
 
 sealed trait SecComVersion {
+  def str: String
   def version: Int
   def json: JsValue
 }
 object SecComVersion       {
   object V1 extends SecComVersion {
+    def str: String  = "V1"
     def version: Int  = 1
     def json: JsValue = JsNumber(1)
   }
   object V2 extends SecComVersion {
+    def str: String  = "V2"
     def version: Int  = 2
     def json: JsValue = JsNumber(2)
   }
