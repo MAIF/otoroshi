@@ -890,7 +890,7 @@ class Env(
     useAkkaHttpClient = true
   )
 
-  lazy val otoroshiVersion    = "1.5.0-alpha.10"
+  lazy val otoroshiVersion    = "1.5.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
