@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-alpha.10] - 2021-05-12
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.10+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-alpha.9...v1.5.0-alpha.10
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-alpha.10
+
+- Provide plugins to perform service discovery (#797)
+- Enhance de LDAP auth. module (#799)
+- remove log on server (service/global) options (#806)
+- Support mTLS for PG connection (#810)
+- Missing kid when signing with RSAKPAlgoSettings and ESKPAlgoSettings (#832)
+- Add support for S3 persistence for the in-memory datastore (#834)
+- Add support for SAML V2 auth. module (#815)
+- Add support for OAuth1 auth. module (#865)
+
 ## [1.5.0-alpha.9] - 2021-03-12
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.9+is%3Aclosed
