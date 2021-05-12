@@ -329,14 +329,17 @@ export class Form extends Component {
     if (_.isFunction(this.props.flow)) {
       return (
         <form className="form-horizontal" style={this.props.style}>
-          {this.props.flow(this.props.value).filter(v => !!v).map((step, idx) => this.generateStep(step, idx))}
+          {this.props
+            .flow(this.props.value)
+            .filter((v) => !!v)
+            .map((step, idx) => this.generateStep(step, idx))}
           {this.generateLastStep()}
         </form>
       );
     } else {
       return (
         <form className="form-horizontal" style={this.props.style}>
-          {this.props.flow.filter(v => !!v).map((step, idx) => this.generateStep(step, idx))}
+          {this.props.flow.filter((v) => !!v).map((step, idx) => this.generateStep(step, idx))}
           {this.generateLastStep()}
         </form>
       );

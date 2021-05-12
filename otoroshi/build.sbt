@@ -19,7 +19,11 @@ lazy val webAuthnVersion     = "1.7.0" // breaks jackson modules at 1.7.0
 lazy val kubernetesVersion   = "8.0.2"
 lazy val bouncyCastleVersion = "1.68"
 lazy val pulsarVersion       = "2.6.3"
-lazy val excludesJackson = Seq(ExclusionRule(organization = "com.fasterxml.jackson.core"), ExclusionRule(organization = "com.fasterxml.jackson.datatype"), ExclusionRule(organization = "com.fasterxml.jackson.dataformat"))
+lazy val excludesJackson     = Seq(
+  ExclusionRule(organization = "com.fasterxml.jackson.core"),
+  ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
+  ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
+)
 
 libraryDependencies ++= Seq(
   ws,
@@ -38,16 +42,16 @@ libraryDependencies ++= Seq(
   "io.dropwizard.metrics"            % "metrics-json"                % metricsVersion, // Apache 2.0
   "io.prometheus"                    % "simpleclient_common"         % prometheusVersion, // Apache 2.0
   "io.prometheus"                    % "simpleclient_dropwizard"     % prometheusVersion, // Apache 2.0
-  "com.auth0"                        % "java-jwt"                    % "3.14.0" excludeAll(excludesJackson: _*),
-  "com.auth0"                        % "jwks-rsa"                    % "0.17.0" excludeAll(excludesJackson: _*), // https://github.com/auth0/jwks-rsa-java
+  "com.auth0"                        % "java-jwt"                    % "3.14.0" excludeAll (excludesJackson: _*),
+  "com.auth0"                        % "jwks-rsa"                    % "0.17.0" excludeAll (excludesJackson: _*), // https://github.com/auth0/jwks-rsa-java
   "com.nimbusds"                     % "nimbus-jose-jwt"             % "9.7",
   "de.svenkubiak"                    % "jBCrypt"                     % "0.4.3",
   "com.propensive"                  %% "kaleidoscope"                % "0.1.0",
   "io.github.classgraph"             % "classgraph"                  % "4.8.102",
   "com.risksense"                   %% "ipaddr"                      % "1.0.2",
-  "com.yubico"                       % "webauthn-server-core"        % webAuthnVersion excludeAll(excludesJackson: _*),
-  "com.yubico"                       % "webauthn-server-attestation" % webAuthnVersion excludeAll(excludesJackson: _*),
-  "com.yubico"                       % "yubico-util"                 % webAuthnVersion excludeAll(excludesJackson: _*),
+  "com.yubico"                       % "webauthn-server-core"        % webAuthnVersion excludeAll (excludesJackson: _*),
+  "com.yubico"                       % "webauthn-server-attestation" % webAuthnVersion excludeAll (excludesJackson: _*),
+  "com.yubico"                       % "yubico-util"                 % webAuthnVersion excludeAll (excludesJackson: _*),
   "com.maxmind.geoip2"               % "geoip2"                      % "2.13.1",
   "com.blueconic"                    % "browscap-java"               % "1.3.3",
   "javax.xml.bind"                   % "jaxb-api"                    % "2.3.1", // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
@@ -84,7 +88,7 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.core"       % "jackson-databind"            % "2.10.5.1",
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml"     % "2.10.5",
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"     % "2.10.5",
-  "com.fasterxml.jackson.datatype"   % "jackson-datatype-jdk8"     % "2.10.5",
+  "com.fasterxml.jackson.datatype"   % "jackson-datatype-jdk8"       % "2.10.5",
   "org.yaml"                         % "snakeyaml"                   % "1.28",
 // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"          % "5.1.0" % Test,

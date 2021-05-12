@@ -166,16 +166,16 @@ case class BasicAuthModuleConfig(
       "webauthn"            -> this.webauthn,
       "sessionMaxAge"       -> this.sessionMaxAge,
       "metadata"            -> this.metadata,
-      "tags"                 -> JsArray(tags.map(JsString.apply)),
+      "tags"                -> JsArray(tags.map(JsString.apply)),
       "users"               -> Writes.seq(BasicAuthUser.fmt).writes(this.users),
       "sessionCookieValues" -> SessionCookieValues.fmt.writes(this.sessionCookieValues)
     )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"basic-auth-$id"
-  def theDescription: String = desc
-  def theMetadata: Map[String,String] = metadata
-  def theName: String = name
-  def theTags: Seq[String] = tags
+  def theDescription: String                                           = desc
+  def theMetadata: Map[String, String]                                 = metadata
+  def theName: String                                                  = name
+  def theTags: Seq[String]                                             = tags
 }
 
 case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule {
@@ -295,7 +295,12 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
   }
 
-  override def paLogout(request: RequestHeader, user: Option[PrivateAppsUser], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paLogout(
+      request: RequestHeader,
+      user: Option[PrivateAppsUser],
+      config: GlobalConfig,
+      descriptor: ServiceDescriptor
+  )(implicit
       ec: ExecutionContext,
       env: Env
   ) = FastFuture.successful(Right(None))
@@ -408,7 +413,10 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       }
     }
   }
-  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env) =
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ) =
     FastFuture.successful(Right(None))
 
   override def boCallback(

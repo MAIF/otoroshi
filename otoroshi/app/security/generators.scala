@@ -62,10 +62,10 @@ object IdGenerator {
       i <- 0 to size - 1
     } yield characters(Random.nextInt(characters.size))).mkString("")
 
-  def token(size: Int): String         = token(CHARACTERS, size)
-  def token: String                    = token(64)
-  def extendedToken(size: Int): String = token(EXTENDED_CHARACTERS, size)
-  def extendedToken: String            = token(EXTENDED_CHARACTERS, 64)
+  def token(size: Int): String                  = token(CHARACTERS, size)
+  def token: String                             = token(64)
+  def extendedToken(size: Int): String          = token(EXTENDED_CHARACTERS, size)
+  def extendedToken: String                     = token(EXTENDED_CHARACTERS, 64)
   def namedId(prefix: String, env: Env): String = namedId(prefix, env.env)
   def namedId(prefix: String, env: String): String = {
     env match {

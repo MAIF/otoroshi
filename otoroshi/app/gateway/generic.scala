@@ -32,36 +32,49 @@ import play.api.libs.ws.WSResponse
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class StateRespInvalid(at: Long, reason: String, iat: Long, exp: Long, nbf: Long, stateValue: String, stateResp: Option[String], extractedState: Option[String], descriptor: ServiceDescriptor, req: RequestHeader, env: Env) {
+case class StateRespInvalid(
+    at: Long,
+    reason: String,
+    iat: Long,
+    exp: Long,
+    nbf: Long,
+    stateValue: String,
+    stateResp: Option[String],
+    extractedState: Option[String],
+    descriptor: ServiceDescriptor,
+    req: RequestHeader,
+    env: Env
+) {
 
-  def errorMessage(resp: WSResponse): String = s"error while talking with downstream service - ${reason} - ${exchangePayload(resp)}"
+  def errorMessage(resp: WSResponse): String =
+    s"error while talking with downstream service - ${reason} - ${exchangePayload(resp)}"
 
   def exchangePayload(resp: WSResponse): JsValue = {
     Json.obj(
-      "reason" -> reason,
-      "expected_token_issuer" -> env.Headers.OtoroshiIssuer,
+      "reason"                           -> reason,
+      "expected_token_issuer"            -> env.Headers.OtoroshiIssuer,
       "expected_token_challenge_version" -> descriptor.secComVersion.str,
-      "expected_token_ttl_seconds" -> descriptor.secComTtl.toSeconds,
-      "expected_token_state" -> stateValue,
-      "at"    -> at,
-      "at_sec" -> Math.floor(at / 1000.0).toInt,
-      "leeway" -> 10,
-      "token" -> Json.obj(
+      "expected_token_ttl_seconds"       -> descriptor.secComTtl.toSeconds,
+      "expected_token_state"             -> stateValue,
+      "at"                               -> at,
+      "at_sec"                           -> Math.floor(at / 1000.0).toInt,
+      "leeway"                           -> 10,
+      "token"                            -> Json.obj(
         "extracted_state" -> JsString(extractedState.getOrElse("--")),
-        "iat" -> iat,
-        "exp" -> exp,
-        "nbf" -> nbf,
+        "iat"             -> iat,
+        "exp"             -> exp,
+        "nbf"             -> nbf
       ),
-      "request" -> Json.obj(
-        "uri" -> req.relativeUri,
-        "method" -> req.method,
-        "query" -> req.rawQueryString,
+      "request"                          -> Json.obj(
+        "uri"     -> req.relativeUri,
+        "method"  -> req.method,
+        "query"   -> req.rawQueryString,
         "headers" -> req.headers.toSimpleMap
       ),
-      "response" -> Json.obj(
-        "status" -> resp.status,
+      "response"                         -> Json.obj(
+        "status"           -> resp.status,
         "raw_state_header" -> JsString(stateResp.getOrElse("--")),
-        "headers" -> resp.headers.mapValues(_.last)
+        "headers"          -> resp.headers.mapValues(_.last)
       )
     )
   }
@@ -248,21 +261,70 @@ object ReverseProxyActionHelper {
     }
   }
 
-  def stateRespValidM(stateValue: String, stateResp: Option[String], jti: String, descriptor: ServiceDescriptor, uri: String, req: RequestHeader)(implicit
-    ec: ExecutionContext,
-    env: Env
+  def stateRespValidM(
+      stateValue: String,
+      stateResp: Option[String],
+      jti: String,
+      descriptor: ServiceDescriptor,
+      uri: String,
+      req: RequestHeader
+  )(implicit
+      ec: ExecutionContext,
+      env: Env
   ): Either[StateRespInvalid, Done] = {
-    if (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge && !descriptor.isUriExcludedFromSecuredCommunication("/" + uri)) {
+    if (
+      descriptor.enforceSecureCommunication && descriptor.sendStateChallenge && !descriptor
+        .isUriExcludedFromSecuredCommunication("/" + uri)
+    ) {
       val at = System.currentTimeMillis()
       stateResp match {
-        case None       => StateRespInvalid(at, "no state in response header", -1, -1, -1, stateValue, stateResp, None, descriptor, req, env).left
+        case None       =>
+          StateRespInvalid(
+            at,
+            "no state in response header",
+            -1,
+            -1,
+            -1,
+            stateValue,
+            stateResp,
+            None,
+            descriptor,
+            req,
+            env
+          ).left
         case Some(resp) => {
           descriptor.secComVersion match {
             case SecComVersion.V1 if stateValue == resp => Done.right
-            case SecComVersion.V1 if stateValue != resp => StateRespInvalid(at, s"V1 - state from response does not match request one ($stateValue != $resp)", -1, -1, -1, stateValue, stateResp, None, descriptor, req, env).left
-            case SecComVersion.V2 => {
+            case SecComVersion.V1 if stateValue != resp =>
+              StateRespInvalid(
+                at,
+                s"V1 - state from response does not match request one ($stateValue != $resp)",
+                -1,
+                -1,
+                -1,
+                stateValue,
+                stateResp,
+                None,
+                descriptor,
+                req,
+                env
+              ).left
+            case SecComVersion.V2                       => {
               descriptor.algoChallengeFromBackToOto.asAlgorithm(otoroshi.models.OutputMode)(env) match {
-                case None => StateRespInvalid(at, s"V2 - bad challenge algorithm", -1, -1, -1, stateValue, stateResp, None, descriptor, req, env).left
+                case None       =>
+                  StateRespInvalid(
+                    at,
+                    s"V2 - bad challenge algorithm",
+                    -1,
+                    -1,
+                    -1,
+                    stateValue,
+                    stateResp,
+                    None,
+                    descriptor,
+                    req,
+                    env
+                  ).left
                 case Some(algo) => {
                   Try {
                     val jwt = JWT
@@ -274,14 +336,26 @@ object ReverseProxyActionHelper {
                       .verify(resp)
                     val extractedState: Option[String] =
                       Option(jwt.getClaim("state-resp")).filterNot(_.isNull).map(_.asString())
-                    val exp: Option[Long] =
+                    val exp: Option[Long]              =
                       Option(jwt.getClaim("exp")).filterNot(_.isNull).map(_.asLong())
-                    val iat: Option[Long] =
+                    val iat: Option[Long]              =
                       Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
-                    val nbf: Option[Long] =
+                    val nbf: Option[Long]              =
                       Option(jwt.getClaim("nbf")).filterNot(_.isNull).map(_.asLong())
                     if (exp.isEmpty || iat.isEmpty) {
-                      StateRespInvalid(at, s"V2 - exp / iat is empty", exp.getOrElse(-1L), iat.getOrElse(-1L), nbf.getOrElse(-1L), stateValue, stateResp, extractedState, descriptor, req, env).left
+                      StateRespInvalid(
+                        at,
+                        s"V2 - exp / iat is empty",
+                        exp.getOrElse(-1L),
+                        iat.getOrElse(-1L),
+                        nbf.getOrElse(-1L),
+                        stateValue,
+                        stateResp,
+                        extractedState,
+                        descriptor,
+                        req,
+                        env
+                      ).left
                     } else {
                       val expValue = exp.get
                       val iatValue = iat.get
@@ -289,13 +363,37 @@ object ReverseProxyActionHelper {
                       if ((exp.get - iat.get) <= descriptor.secComTtl.toSeconds) { // seconds
                         Done.right
                       } else {
-                        StateRespInvalid(at, s"V2 - response token ttl too big - ${expValue - iatValue} seconds ((${expValue} - ${iatValue}) > ${descriptor.secComTtl.toSeconds})", expValue, iatValue, nbfValue, stateValue, stateResp, extractedState, descriptor, req, env).left
+                        StateRespInvalid(
+                          at,
+                          s"V2 - response token ttl too big - ${expValue - iatValue} seconds ((${expValue} - ${iatValue}) > ${descriptor.secComTtl.toSeconds})",
+                          expValue,
+                          iatValue,
+                          nbfValue,
+                          stateValue,
+                          stateResp,
+                          extractedState,
+                          descriptor,
+                          req,
+                          env
+                        ).left
                       }
                     }
                   } match {
                     case Success(v) => v
                     case Failure(e) => {
-                      StateRespInvalid(at, s"V2 - error while decoding token - ${e.getMessage}", -1, -1, -1, stateValue, stateResp, None, descriptor, req, env).left
+                      StateRespInvalid(
+                        at,
+                        s"V2 - error while decoding token - ${e.getMessage}",
+                        -1,
+                        -1,
+                        -1,
+                        stateValue,
+                        stateResp,
+                        None,
+                        descriptor,
+                        req,
+                        env
+                      ).left
                     }
                   }
                 }
@@ -1005,20 +1103,22 @@ class ReverseProxyAction(env: Env) {
                                                       }
                                                     } else {
 
-                                                      val target = attrs.get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey).getOrElse {
+                                                      val target = attrs
+                                                        .get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey)
+                                                        .getOrElse {
 
-                                                        val targets: Seq[Target] = descriptor.targets
-                                                          .filter(_.predicate.matches(reqNumber.toString, req, attrs))
-                                                          .flatMap(t => Seq.fill(t.weight)(t))
-                                                        descriptor.targetsLoadBalancing
-                                                          .select(
-                                                            reqNumber.toString,
-                                                            trackingId,
-                                                            req,
-                                                            targets,
-                                                            descriptor
-                                                          )
-                                                      }
+                                                          val targets: Seq[Target] = descriptor.targets
+                                                            .filter(_.predicate.matches(reqNumber.toString, req, attrs))
+                                                            .flatMap(t => Seq.fill(t.weight)(t))
+                                                          descriptor.targetsLoadBalancing
+                                                            .select(
+                                                              reqNumber.toString,
+                                                              trackingId,
+                                                              req,
+                                                              targets,
+                                                              descriptor
+                                                            )
+                                                        }
                                                       //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
                                                       // Round robin loadbalancing is happening here !!!!!
                                                       //val target = targets.apply(index.toInt)

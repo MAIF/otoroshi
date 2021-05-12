@@ -108,8 +108,8 @@ object OtoroshiTests {
       new ApikeyApiSpec(name, config)
     )
     Option(System.getenv("TEST_ANALYTICS")) match {
-      case Some("true")                      => suites :+ new AnalyticsSpec(name, config)
-      case _                              => suites
+      case Some("true") => suites :+ new AnalyticsSpec(name, config)
+      case _            => suites
     }
   }
 }

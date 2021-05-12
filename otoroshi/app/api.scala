@@ -53,7 +53,9 @@ object OtoroshiLoaderHelper {
     val waitForPluginsSearch            =
       components.env.configuration.getOptional[Boolean]("app.boot.waitForPluginsSearch").getOrElse(true)
     val waitForScriptsCompilation       =
-      components.env.scriptingEnabled && components.env.configuration.getOptional[Boolean]("app.boot.waitForScriptsCompilation").getOrElse(true)
+      components.env.scriptingEnabled && components.env.configuration
+        .getOptional[Boolean]("app.boot.waitForScriptsCompilation")
+        .getOrElse(true)
     val waitForFirstClusterFetchEnabled =
       components.env.configuration.getOptional[Boolean]("app.boot.waitForFirstClusterFetch").getOrElse(true)
 

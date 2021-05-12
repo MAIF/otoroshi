@@ -523,12 +523,12 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                           Some("application/x-ndjson")
                         )
                       ).withHeaders(
-                        "Otoroshi-Leader-Node-Name"  -> env.clusterConfig.leader.name,
-                        "Otoroshi-Leader-Node-Version"  -> env.otoroshiVersion,
-                        "X-Data-Count"  -> s"${cachedCount.get()}",
-                        "X-Data-Digest" -> cachedDigest.get(),
-                        "X-Data-From"   -> s"${System.currentTimeMillis()}",
-                        "X-Data-Fresh"  -> "true"
+                        "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
+                        "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
+                        "X-Data-Count"                 -> s"${cachedCount.get()}",
+                        "X-Data-Digest"                -> cachedDigest.get(),
+                        "X-Data-From"                  -> s"${System.currentTimeMillis()}",
+                        "X-Data-Fresh"                 -> "true"
                       ) //.withHeaders("Content-Encoding" -> "gzip")
                     }
                     case Failure(err)        =>
@@ -546,12 +546,12 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                 )
                 Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
                   .withHeaders(
-                    "Otoroshi-Leader-Node-Name"  -> env.clusterConfig.leader.name,
-                    "Otoroshi-Leader-Node-Version"  -> env.otoroshiVersion,
-                    "X-Data-Count"      -> s"${cachedCount.get()}",
-                    "X-Data-Digest"     -> cachedDigest.get(),
-                    "X-Data-From"       -> s"${cachedAt.get()}",
-                    "X-Data-From-Cache" -> "true"
+                    "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
+                    "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
+                    "X-Data-Count"                 -> s"${cachedCount.get()}",
+                    "X-Data-Digest"                -> cachedDigest.get(),
+                    "X-Data-From"                  -> s"${cachedAt.get()}",
+                    "X-Data-From-Cache"            -> "true"
                   )
                   .future
               }
@@ -565,12 +565,12 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                 HttpEntity
                   .Streamed(Source.single(env.clusterLeaderAgent.cachedState), None, Some("application/x-ndjson"))
               ).withHeaders(
-                "Otoroshi-Leader-Node-Name"  -> env.clusterConfig.leader.name,
-                "Otoroshi-Leader-Node-Version"  -> env.otoroshiVersion,
-                "X-Data-Count"  -> s"${env.clusterLeaderAgent.cachedCount}",
-                "X-Data-Digest" -> env.clusterLeaderAgent.cachedDigest,
-                "X-Data-From"   -> s"${env.clusterLeaderAgent.cachedTimestamp}",
-                "X-Data-Auto"   -> "true"
+                "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
+                "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
+                "X-Data-Count"                 -> s"${env.clusterLeaderAgent.cachedCount}",
+                "X-Data-Digest"                -> env.clusterLeaderAgent.cachedDigest,
+                "X-Data-From"                  -> s"${env.clusterLeaderAgent.cachedTimestamp}",
+                "X-Data-Auto"                  -> "true"
               ).future
             } else if (cachedValue == null) {
               sendAndCache()
@@ -580,12 +580,12 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
               )
               Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
                 .withHeaders(
-                  "Otoroshi-Leader-Node-Name"  -> env.clusterConfig.leader.name,
-                  "Otoroshi-Leader-Node-Version"  -> env.otoroshiVersion,
-                  "X-Data-Count"      -> s"${cachedCount.get()}",
-                  "X-Data-Digest"     -> cachedDigest.get(),
-                  "X-Data-From"       -> s"${cachedAt.get()}",
-                  "X-Data-From-Cache" -> "true"
+                  "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
+                  "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
+                  "X-Data-Count"                 -> s"${cachedCount.get()}",
+                  "X-Data-Digest"                -> cachedDigest.get(),
+                  "X-Data-From"                  -> s"${cachedAt.get()}",
+                  "X-Data-From-Cache"            -> "true"
                 )
                 .future
             } else if ((cachedAt.get() + env.clusterConfig.leader.cacheStateFor) < System.currentTimeMillis()) {
@@ -596,12 +596,12 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
               )
               Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
                 .withHeaders(
-                  "Otoroshi-Leader-Node-Name"  -> env.clusterConfig.leader.name,
-                  "Otoroshi-Leader-Node-Version"  -> env.otoroshiVersion,
-                  "X-Data-Count"      -> s"${cachedCount.get()}",
-                  "X-Data-Digest"     -> cachedDigest.get(),
-                  "X-Data-From"       -> s"${cachedAt.get()}",
-                  "X-Data-From-Cache" -> "true"
+                  "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
+                  "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
+                  "X-Data-Count"                 -> s"${cachedCount.get()}",
+                  "X-Data-Digest"                -> cachedDigest.get(),
+                  "X-Data-From"                  -> s"${cachedAt.get()}",
+                  "X-Data-From-Cache"            -> "true"
                 )
                 .future
             }

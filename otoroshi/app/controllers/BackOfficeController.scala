@@ -207,7 +207,7 @@ class BackOfficeController(
               "providerDashboardTitle"  -> env.providerDashboardTitle,
               "providerDashboardSecret" -> env.providerDashboardSecret,
               "instanceId"              -> config.otoroshiId,
-              "instanceName"            -> env.name,
+              "instanceName"            -> env.name
             )
           )
         }
@@ -395,12 +395,12 @@ class BackOfficeController(
       typ: String,
       location: EntityLocation
   ) extends EntityLocationSupport {
-    override def internalId: String = id
-    override def json: JsValue      = Json.obj()
-    def theDescription: String = name
-    def theMetadata: Map[String,String] = Map.empty
-    def theName: String = name
-    def theTags: Seq[String] = Seq.empty
+    override def internalId: String      = id
+    override def json: JsValue           = Json.obj()
+    def theDescription: String           = name
+    def theMetadata: Map[String, String] = Map.empty
+    def theName: String                  = name
+    def theTags: Seq[String]             = Seq.empty
   }
 
   def searchServicesApi() =
@@ -696,38 +696,43 @@ class BackOfficeController(
       }
     }
 
-  def fetchSAMLConfiguration() = BackOfficeActionAuth.async(parse.json) {
-    ctx => {
-        import scala.xml.Elem
-        import scala.xml.XML._
+  def fetchSAMLConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
+    {
+      import scala.xml.Elem
+      import scala.xml.XML._
 
-        Try {
-          val xmlContent: Either[String, Elem] = (ctx.request.body \ "url").asOpt[String] match {
-            case Some(url) => Right(load(url))
-            case None => (ctx.request.body \ "xml").asOpt[String] match {
+      Try {
+        val xmlContent: Either[String, Elem] = (ctx.request.body \ "url").asOpt[String] match {
+          case Some(url) => Right(load(url))
+          case None      =>
+            (ctx.request.body \ "xml").asOpt[String] match {
               case Some(content) => Right(loadString(content))
-              case None => Left("Missing body content")
+              case None          => Left("Missing body content")
             }
-          }
+        }
 
-          xmlContent match {
-            case Left(err) => FastFuture.successful(BadRequest(err))
-            case Right(xmlContent) =>
-              var metadata = (xmlContent \\ "EntitiesDescriptor").toString
+        xmlContent match {
+          case Left(err)         => FastFuture.successful(BadRequest(err))
+          case Right(xmlContent) =>
+            var metadata = (xmlContent \\ "EntitiesDescriptor").toString
 
-              if (metadata.isEmpty)
-                metadata = xmlContent.toString
+            if (metadata.isEmpty)
+              metadata = xmlContent.toString
 
-              SamlAuthModuleConfig.fromDescriptor(metadata) match {
-                case Left(err) => FastFuture.successful(BadRequest(err))
-                case Right(config) => FastFuture.successful(Ok(SamlAuthModuleConfig._fmt.writes(config)))
-              }
-          }
-        } recover {
-          case e: Throwable => FastFuture.successful(BadRequest(Json.obj(
-            "error" -> e.getMessage
-          )))
-        } get
+            SamlAuthModuleConfig.fromDescriptor(metadata) match {
+              case Left(err)     => FastFuture.successful(BadRequest(err))
+              case Right(config) => FastFuture.successful(Ok(SamlAuthModuleConfig._fmt.writes(config)))
+            }
+        }
+      } recover { case e: Throwable =>
+        FastFuture.successful(
+          BadRequest(
+            Json.obj(
+              "error" -> e.getMessage
+            )
+          )
+        )
+      } get
     }
   }
 

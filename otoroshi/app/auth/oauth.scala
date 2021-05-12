@@ -128,10 +128,10 @@ case class GenericOauth2ModuleConfig(
     rightsOverride: Map[String, UserRights] = Map.empty,
     dataOverride: Map[String, JsObject] = Map.empty
 ) extends OAuth2ModuleConfig {
-  def theDescription: String = desc
-  def theMetadata: Map[String,String] = metadata
-  def theName: String = name
-  def theTags: Seq[String] = tags
+  def theDescription: String                                           = desc
+  def theMetadata: Map[String, String]                                 = metadata
+  def theName: String                                                  = name
+  def theTags: Seq[String]                                             = tags
   def `type`: String                                                   = "oauth2"
   override def authModule(config: GlobalConfig): AuthModule            = GenericOauth2Module(this)
   override def asJson                                                  =
@@ -167,7 +167,7 @@ case class GenericOauth2ModuleConfig(
       "proxy"                -> WSProxyServerJson.maybeProxyToJson(this.proxy),
       "extraMetadata"        -> this.extraMetadata,
       "metadata"             -> this.metadata,
-      "tags"       -> JsArray(tags.map(JsString.apply)),
+      "tags"                 -> JsArray(tags.map(JsString.apply)),
       "refreshTokens"        -> this.refreshTokens,
       "sessionCookieValues"  -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "superAdmins"          -> superAdmins,
@@ -244,7 +244,12 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     ).asFuture
   }
 
-  override def paLogout(request: RequestHeader, user: Option[PrivateAppsUser], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paLogout(
+      request: RequestHeader,
+      user: Option[PrivateAppsUser],
+      config: GlobalConfig,
+      descriptor: ServiceDescriptor
+  )(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]] = {

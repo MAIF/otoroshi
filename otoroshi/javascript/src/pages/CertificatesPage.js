@@ -773,10 +773,9 @@ export class CertificatesPage extends Component {
 
   updateCertificate = (cert) => {
     if (cert.revoked === RevocationReason.VALID.value || cert.revoked === false) {
-      cert.revoked = false
+      cert.revoked = false;
       delete cert.metadata.revocationReason;
-    }
-    else {
+    } else {
       cert.metadata.revocationReason = cert.revoked;
       cert.revoked = true;
     }

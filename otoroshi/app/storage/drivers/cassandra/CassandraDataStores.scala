@@ -163,20 +163,20 @@ class CassandraDataStores(
             keys
               .filterNot { key =>
                 Cluster.filteredKey(key, env)
-                // key == s"${env.storageRoot}:cluster:" ||
-                // key == s"${env.storageRoot}:events:audit" ||
-                // key == s"${env.storageRoot}:events:alerts" ||
-                // key.startsWith(s"${env.storageRoot}:users:backoffice") ||
-                // key.startsWith(s"${env.storageRoot}:admins:") ||
-                // key.startsWith(s"${env.storageRoot}:u2f:users:") ||
-                // // key.startsWith(s"${env.storageRoot}:users:") ||
-                // key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
-                // key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
-                // key.startsWith(s"${env.storageRoot}:scall:stats:") ||
-                // key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
-                // key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
-                // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
-                // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+              // key == s"${env.storageRoot}:cluster:" ||
+              // key == s"${env.storageRoot}:events:audit" ||
+              // key == s"${env.storageRoot}:events:alerts" ||
+              // key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+              // key.startsWith(s"${env.storageRoot}:admins:") ||
+              // key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+              // // key.startsWith(s"${env.storageRoot}:users:") ||
+              // key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
+              // key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+              // key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+              // key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+              // key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+              // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+              // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
               }
               .map { key =>
                 redis.rawGet(key).flatMap {

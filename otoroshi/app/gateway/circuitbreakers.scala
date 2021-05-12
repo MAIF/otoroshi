@@ -246,7 +246,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
                 logger.debug(s"Try to call target : $target")
                 f(target, attempts)
               }
-            case None => FastFuture.failed(AllCircuitBreakersOpenException)
+            case None                    => FastFuture.failed(AllCircuitBreakersOpenException)
           }
         }
       }

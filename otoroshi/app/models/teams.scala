@@ -66,7 +66,7 @@ case class UserRights(rights: Seq[UserRight]) {
 }
 
 object UserRights {
-  val default = UserRights.varargs(UserRight.default)
+  val default    = UserRights.varargs(UserRight.default)
   val superAdmin = UserRights.varargs(UserRight.superAdmin)
   val format     = new Format[UserRights] {
     override def writes(o: UserRights): JsValue             = JsArray(o.rights.map(_.json))
@@ -105,7 +105,7 @@ case class UserRight(tenant: TenantAccess, teams: Seq[TeamAccess]) {
 }
 
 object UserRight {
-  val default = UserRight(TenantAccess("default"), Seq(TeamAccess("default")))
+  val default    = UserRight(TenantAccess("default"), Seq(TeamAccess("default")))
   val superAdmin = UserRight(TenantAccess("*"), Seq(TeamAccess("*")))
   val format     = new Format[UserRight] {
     override def writes(o: UserRight): JsValue             =
@@ -262,7 +262,7 @@ object RightsChecker {
   }
 }
 
-object Tenant                     {
+object Tenant {
   val format                            = new Format[Tenant] {
     override def writes(o: Tenant): JsValue             =
       Json.obj(
@@ -270,7 +270,7 @@ object Tenant                     {
         "name"        -> o.name,
         "description" -> o.description,
         "metadata"    -> o.metadata,
-        "tags"       -> JsArray(o.tags.map(JsString.apply)),
+        "tags"        -> JsArray(o.tags.map(JsString.apply))
       )
     override def reads(json: JsValue): JsResult[Tenant] =
       Try {
@@ -279,7 +279,7 @@ object Tenant                     {
           name = (json \ "name").asOpt[String].getOrElse((json \ "id").as[String]),
           description = (json \ "description").asOpt[String].getOrElse(""),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -293,18 +293,23 @@ object Tenant                     {
       case e: Throwable => throw e
     }
 }
-case class Tenant(id: TenantId, name: String, description: String, tags: Seq[String] = Seq.empty, metadata: Map[String, String])
-    extends EntityLocationSupport {
+case class Tenant(
+    id: TenantId,
+    name: String,
+    description: String,
+    tags: Seq[String] = Seq.empty,
+    metadata: Map[String, String]
+) extends EntityLocationSupport {
   override def internalId: String                                      = id.value
   override def json: JsValue                                           = Tenant.format.writes(this)
   override def location: EntityLocation                                = EntityLocation(id, Seq.empty)
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.tenantDataStore.set(this)
-  def theDescription: String = description
-  def theMetadata: Map[String,String] = metadata
-  def theName: String = name
-  def theTags: Seq[String] = tags
+  def theDescription: String                                           = description
+  def theMetadata: Map[String, String]                                 = metadata
+  def theName: String                                                  = name
+  def theTags: Seq[String]                                             = tags
 }
-object Team                       {
+object Team   {
   val format                          = new Format[Team] {
     override def writes(o: Team): JsValue             =
       Json.obj(
@@ -313,7 +318,7 @@ object Team                       {
         "name"        -> o.name,
         "description" -> o.description,
         "metadata"    -> o.metadata,
-        "tags"       -> JsArray(o.tags.map(JsString.apply)),
+        "tags"        -> JsArray(o.tags.map(JsString.apply))
       )
     override def reads(json: JsValue): JsResult[Team] =
       Try {
@@ -323,7 +328,7 @@ object Team                       {
           name = (json \ "name").asOpt[String].getOrElse((json \ "id").as[String]),
           description = (json \ "description").asOpt[String].getOrElse(""),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -337,15 +342,21 @@ object Team                       {
       case e: Throwable => throw e
     }
 }
-case class Team(id: TeamId, tenant: TenantId, name: String, description: String, tags: Seq[String] = Seq.empty, metadata: Map[String, String])
-    extends EntityLocationSupport {
+case class Team(
+    id: TeamId,
+    tenant: TenantId,
+    name: String,
+    description: String,
+    tags: Seq[String] = Seq.empty,
+    metadata: Map[String, String]
+) extends EntityLocationSupport {
   override def internalId: String                                      = id.value
   override def json: JsValue                                           = Team.format.writes(this)
   override def location: EntityLocation                                = EntityLocation(tenant, Seq(id))
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.teamDataStore.set(this)
 
-  def theDescription: String = description
-  def theMetadata: Map[String,String] = metadata
-  def theName: String = name
-  def theTags: Seq[String] = tags
+  def theDescription: String           = description
+  def theMetadata: Map[String, String] = metadata
+  def theName: String                  = name
+  def theTags: Seq[String]             = tags
 }

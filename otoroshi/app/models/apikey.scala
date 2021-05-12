@@ -125,12 +125,12 @@ case class ApiKey(
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
 
-  def json: JsValue      = toJson
-  def internalId: String = clientId
-  def theDescription: String = description
-  def theMetadata: Map[String,String] = metadata
-  def theName: String = clientName
-  def theTags: Seq[String] = tags
+  def json: JsValue                    = toJson
+  def internalId: String               = clientId
+  def theDescription: String           = description
+  def theMetadata: Map[String, String] = metadata
+  def theName: String                  = clientName
+  def theTags: Seq[String]             = tags
 
   def save()(implicit ec: ExecutionContext, env: Env)     = env.datastores.apiKeyDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.delete(this)
@@ -375,7 +375,7 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
       clientName = "client-name-apikey",
       authorizedEntities = Seq(ServiceGroupIdentifier(groupId))
     )
-  def template(env: Env): ApiKey =
+  def template(env: Env): ApiKey                 =
     ApiKey(
       clientId = IdGenerator.token(16),
       clientSecret = IdGenerator.token(64),

@@ -95,11 +95,11 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     val store       = new ConcurrentHashMap[String, Any]()
     val expirations = new ConcurrentHashMap[String, Long]()
     source.filterNot(_.trim.isEmpty).foreach { raw =>
-      val item = Json.parse(raw)
-      val key = (item \ "k").as[String]
+      val item  = Json.parse(raw)
+      val key   = (item \ "k").as[String]
       val value = (item \ "v").as[JsValue]
-      val what = (item \ "w").as[String]
-      val ttl = (item \ "t").asOpt[Long].getOrElse(-1L)
+      val what  = (item \ "w").as[String]
+      val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
       fromJson(what, value).map(v => store.put(key, v)).getOrElse(println(s"file read error for: ${item.prettify} "))
       if (ttl > -1L) {
         expirations.put(key, ttl)
@@ -292,53 +292,62 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 }
 
 case class S3Configuration(
-  bucket: String,
-  endpoint: String,
-  region: String,
-  access: String,
-  secret: String,
-  key: String,
-  chunkSize: Int = 1024 * 1024 * 8,
-  v4auth: Boolean = true,
-  writeEvery: FiniteDuration,
-  acl: CannedAcl
+    bucket: String,
+    endpoint: String,
+    region: String,
+    access: String,
+    secret: String,
+    key: String,
+    chunkSize: Int = 1024 * 1024 * 8,
+    v4auth: Boolean = true,
+    writeEvery: FiniteDuration,
+    acl: CannedAcl
 )
 
 class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
-  private implicit val ec = ds.actorSystem.dispatcher
+  private implicit val ec  = ds.actorSystem.dispatcher
   private implicit val mat = ds.materializer
 
-  private val logger         = Logger("otoroshi-s3-datastores")
-  private val cancelRef      = new AtomicReference[Cancellable]()
+  private val logger    = Logger("otoroshi-s3-datastores")
+  private val cancelRef = new AtomicReference[Cancellable]()
 
   private val conf: S3Configuration = S3Configuration(
-    bucket     = env.configuration.getOptionalWithFileSupport[String]("app.s3db.bucket").getOrElse("otoroshi-states"),
-    endpoint   = env.configuration.getOptionalWithFileSupport[String]("app.s3db.endpoint").getOrElse("https://otoroshi-states.foo.bar"),
-    region     = env.configuration.getOptionalWithFileSupport[String]("app.s3db.region").getOrElse("eu-west-1"),
-    access     = env.configuration.getOptionalWithFileSupport[String]("app.s3db.access").getOrElse("secret"),
-    secret     = env.configuration.getOptionalWithFileSupport[String]("app.s3db.secret").getOrElse("secret"),
-    key        = env.configuration.getOptionalWithFileSupport[String]("app.s3db.key").getOrElse("/otoroshi/states/state").applyOnWithPredicate(_.startsWith("/"))(_.substring(1)),
-    chunkSize  = env.configuration.getOptionalWithFileSupport[Int]("app.s3db.chunkSize").getOrElse(8388608),
-    v4auth     = env.configuration.getOptionalWithFileSupport[Boolean]("app.s3db.v4auth").getOrElse(true),
-    writeEvery = env.configuration.getOptionalWithFileSupport[Long]("app.s3db.writeEvery").map(v => v.millis).getOrElse(1.minute),
-    acl        = env.configuration.getOptionalWithFileSupport[String]("app.s3db.acl").map {
-      case "AuthenticatedRead" => CannedAcl.AuthenticatedRead
-      case "AwsExecRead" => CannedAcl.AwsExecRead
-      case "BucketOwnerFullControl" => CannedAcl.BucketOwnerFullControl
-      case "BucketOwnerRead" => CannedAcl.BucketOwnerRead
-      case "Private" => CannedAcl.Private
-      case "PublicRead" => CannedAcl.PublicRead
-      case "PublicReadWrite" => CannedAcl.PublicReadWrite
-      case _ => CannedAcl.Private
-    }.getOrElse(CannedAcl.Private),
+    bucket = env.configuration.getOptionalWithFileSupport[String]("app.s3db.bucket").getOrElse("otoroshi-states"),
+    endpoint = env.configuration
+      .getOptionalWithFileSupport[String]("app.s3db.endpoint")
+      .getOrElse("https://otoroshi-states.foo.bar"),
+    region = env.configuration.getOptionalWithFileSupport[String]("app.s3db.region").getOrElse("eu-west-1"),
+    access = env.configuration.getOptionalWithFileSupport[String]("app.s3db.access").getOrElse("secret"),
+    secret = env.configuration.getOptionalWithFileSupport[String]("app.s3db.secret").getOrElse("secret"),
+    key = env.configuration
+      .getOptionalWithFileSupport[String]("app.s3db.key")
+      .getOrElse("/otoroshi/states/state")
+      .applyOnWithPredicate(_.startsWith("/"))(_.substring(1)),
+    chunkSize = env.configuration.getOptionalWithFileSupport[Int]("app.s3db.chunkSize").getOrElse(8388608),
+    v4auth = env.configuration.getOptionalWithFileSupport[Boolean]("app.s3db.v4auth").getOrElse(true),
+    writeEvery =
+      env.configuration.getOptionalWithFileSupport[Long]("app.s3db.writeEvery").map(v => v.millis).getOrElse(1.minute),
+    acl = env.configuration
+      .getOptionalWithFileSupport[String]("app.s3db.acl")
+      .map {
+        case "AuthenticatedRead"      => CannedAcl.AuthenticatedRead
+        case "AwsExecRead"            => CannedAcl.AwsExecRead
+        case "BucketOwnerFullControl" => CannedAcl.BucketOwnerFullControl
+        case "BucketOwnerRead"        => CannedAcl.BucketOwnerRead
+        case "Private"                => CannedAcl.Private
+        case "PublicRead"             => CannedAcl.PublicRead
+        case "PublicReadWrite"        => CannedAcl.PublicReadWrite
+        case _                        => CannedAcl.Private
+      }
+      .getOrElse(CannedAcl.Private)
   )
 
   private def s3ClientSettingsAttrs(): Attributes = {
     val awsCredentials = StaticCredentialsProvider.create(
       AwsBasicCredentials.create(conf.access, conf.secret)
     )
-    val settings = S3Settings(
+    val settings       = S3Settings(
       bufferType = MemoryBufferType,
       credentialsProvider = awsCredentials,
       s3RegionProvider = new AwsRegionProvider {
@@ -349,7 +358,8 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     S3Attributes.settings(settings)
   }
 
-  private val url = s"${conf.endpoint}/${conf.key}?v4=${conf.v4auth}&region=${conf.region}&acl=${conf.acl.value}&bucket=${conf.bucket}"
+  private val url =
+    s"${conf.endpoint}/${conf.key}?v4=${conf.v4auth}&region=${conf.region}&acl=${conf.acl.value}&bucket=${conf.bucket}"
 
   override def kind: PersistenceKind = PersistenceKind.S3PersistenceKind
 
@@ -371,28 +381,35 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private def readStateFromS3(): Future[Unit] = {
     logger.debug(s"Reading state from $url")
-    val store       = new ConcurrentHashMap[String, Any]()
-    val expirations = new ConcurrentHashMap[String, Long]()
+    val store                                                       = new ConcurrentHashMap[String, Any]()
+    val expirations                                                 = new ConcurrentHashMap[String, Long]()
     val none: Option[(Source[ByteString, NotUsed], ObjectMetadata)] = None
     S3.download(conf.bucket, conf.key).withAttributes(s3ClientSettingsAttrs).runFold(none)((_, opt) => opt).map {
-      case None =>
+      case None                 =>
         logger.warn(s"asset at ${url} does not exists yet ...")
         ds.redis.swap(Memory(store, expirations), SwapStrategy.Replace)
       case Some((source, meta)) => {
-        source.via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true)).map(_.utf8String.trim).filterNot(_.isEmpty).map { raw =>
-          val item = Json.parse(raw)
-          val key = (item \ "k").as[String]
-          val value = (item \ "v").as[JsValue]
-          val what = (item \ "w").as[String]
-          val ttl = (item \ "t").asOpt[Long].getOrElse(-1L)
-          fromJson(what, value).map(v => store.put(key, v)).getOrElse(println(s"file read error for: ${item.prettify} "))
-          if (ttl > -1L) {
-            expirations.put(key, ttl)
+        source
+          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
+          .map(_.utf8String.trim)
+          .filterNot(_.isEmpty)
+          .map { raw =>
+            val item  = Json.parse(raw)
+            val key   = (item \ "k").as[String]
+            val value = (item \ "v").as[JsValue]
+            val what  = (item \ "w").as[String]
+            val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
+            fromJson(what, value)
+              .map(v => store.put(key, v))
+              .getOrElse(println(s"file read error for: ${item.prettify} "))
+            if (ttl > -1L) {
+              expirations.put(key, ttl)
+            }
           }
-        }.runWith(Sink.ignore).andThen {
-          case _ =>
+          .runWith(Sink.ignore)
+          .andThen { case _ =>
             ds.redis.swap(Memory(store, expirations), SwapStrategy.Replace)
-        }
+          }
       }
     }
   }
@@ -428,10 +445,12 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
       .futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4))
       .map { item =>
         ByteString(Json.stringify(item) + "\n")
-      }.runFold(ByteString.empty)(_ ++ _).flatMap { payload =>
+      }
+      .runFold(ByteString.empty)(_ ++ _)
+      .flatMap { payload =>
         val ctype = ContentTypes.`application/octet-stream`
-        val meta = MetaHeaders(Map("content-type" -> ctype.value))
-        val sink = S3
+        val meta  = MetaHeaders(Map("content-type" -> ctype.value))
+        val sink  = S3
           .multipartUpload(
             bucket = conf.bucket,
             key = conf.key,
@@ -442,9 +461,10 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
           )
           .withAttributes(s3ClientSettingsAttrs)
         logger.debug(s"writing state to $url")
-        Source.single(payload)
+        Source
+          .single(payload)
           .toMat(sink)(Keep.right)
           .run()
       }
-    }
+  }
 }

@@ -19,7 +19,12 @@ trait AuthModule {
       ec: ExecutionContext,
       env: Env
   ): Future[Result]
-  def paLogout(request: RequestHeader, user: Option[PrivateAppsUser], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  def paLogout(
+      request: RequestHeader,
+      user: Option[PrivateAppsUser],
+      config: GlobalConfig,
+      descriptor: ServiceDescriptor
+  )(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]]
@@ -196,10 +201,10 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
       case Some("saml")          =>
         SamlAuthModuleConfig(
           id = IdGenerator.namedId("auth_mod", env),
-          name  = "New auth. module",
-          desc  = "New auth. module",
-          tags  = Seq.empty,
-          metadata  = Map.empty,
+          name = "New auth. module",
+          desc = "New auth. module",
+          tags = Seq.empty,
+          metadata = Map.empty,
           singleSignOnUrl = "",
           singleLogoutUrl = "",
           issuer = "",
@@ -208,15 +213,15 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
       case Some("oauth1")        =>
         Oauth1ModuleConfig(
           id = IdGenerator.namedId("auth_mod", env),
-          name  = "New OAuth 1.0 module",
-          desc  = "New OAuth 1.0 module",
-          consumerKey         = "",
-          consumerSecret      = "",
-          requestTokenURL     = "",
-          authorizeURL        = "",
-          accessTokenURL      = "",
-          profileURL          = "",
-          callbackURL         = "",
+          name = "New OAuth 1.0 module",
+          desc = "New OAuth 1.0 module",
+          consumerKey = "",
+          consumerSecret = "",
+          requestTokenURL = "",
+          authorizeURL = "",
+          accessTokenURL = "",
+          profileURL = "",
+          callbackURL = "",
           tags = Seq.empty,
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues()

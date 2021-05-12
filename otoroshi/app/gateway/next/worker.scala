@@ -697,49 +697,54 @@ class OtoroshiRequestHandler(
                   withAuthConfig(descriptor, req, attrs) { auth =>
                     val u: Future[Option[PrivateAppsUser]] = auth match {
                       case _: SamlAuthModuleConfig =>
-                        request.cookies.find(c => c.name.startsWith("oto-papps-"))
-                          .flatMap(env.extractPrivateSessionId).map {
-                          env.datastores.privateAppsUserDataStore.findById(_)
-                        }.getOrElse(FastFuture.successful(None))
-                      case _ => FastFuture.successful(None)
+                        request.cookies
+                          .find(c => c.name.startsWith("oto-papps-"))
+                          .flatMap(env.extractPrivateSessionId)
+                          .map {
+                            env.datastores.privateAppsUserDataStore.findById(_)
+                          }
+                          .getOrElse(FastFuture.successful(None))
+                      case _                       => FastFuture.successful(None)
                     }
 
                     u.flatMap { optUser =>
                       auth.authModule(globalConfig).paLogout(req, optUser, globalConfig, descriptor).map {
-                        case Left(body) =>
+                        case Left(body)   =>
                           body.discardingCookies(env.removePrivateSessionCookies(req.theHost, descriptor, auth): _*)
                           body
-                        case Right(value) => value match {
-                          case None => {
-                            val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
-                            cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
-                              env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
+                        case Right(value) =>
+                          value match {
+                            case None            => {
+                              val cookieOpt     = request.cookies.find(c => c.name.startsWith("oto-papps-"))
+                              cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
+                                env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
+                              }
+                              val finalRedirect = req.getQueryString("redirect").getOrElse(s"http://${req.theHost}")
+                              val redirectTo    =
+                                env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
+                                  .confidentialAppLogout()
+                                  .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
+                              logger.trace("should redirect to " + redirectTo)
+                              Redirect(redirectTo)
+                                .discardingCookies(env.removePrivateSessionCookies(req.theHost, descriptor, auth): _*)
                             }
-                            val finalRedirect = req.getQueryString("redirect").getOrElse(s"http://${req.theHost}")
-                            val redirectTo =
-                              env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
-                                .confidentialAppLogout()
-                                .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
-                            logger.trace("should redirect to " + redirectTo)
-                            Redirect(redirectTo)
-                              .discardingCookies(env.removePrivateSessionCookies(req.theHost, descriptor, auth): _*)
-                          }
-                          case Some(logoutUrl) => {
-                            val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
-                            cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
-                              env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
+                            case Some(logoutUrl) => {
+                              val cookieOpt         = request.cookies.find(c => c.name.startsWith("oto-papps-"))
+                              cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
+                                env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
+                              }
+                              val finalRedirect     = req.getQueryString("redirect").getOrElse(s"http://${req.theHost}")
+                              val redirectTo        =
+                                env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
+                                  .confidentialAppLogout()
+                                  .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
+                              val actualRedirectUrl =
+                                logoutUrl.replace("${redirect}", URLEncoder.encode(redirectTo, "UTF-8"))
+                              logger.trace("should redirect to " + actualRedirectUrl)
+                              Redirect(actualRedirectUrl)
+                                .discardingCookies(env.removePrivateSessionCookies(req.theHost, descriptor, auth): _*)
                             }
-                            val finalRedirect = req.getQueryString("redirect").getOrElse(s"http://${req.theHost}")
-                            val redirectTo =
-                              env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
-                                .confidentialAppLogout()
-                                .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
-                            val actualRedirectUrl = logoutUrl.replace("${redirect}", URLEncoder.encode(redirectTo, "UTF-8"))
-                            logger.trace("should redirect to " + actualRedirectUrl)
-                            Redirect(actualRedirectUrl)
-                              .discardingCookies(env.removePrivateSessionCookies(req.theHost, descriptor, auth): _*)
                           }
-                        }
                       }
                     }
                   }

@@ -37,12 +37,12 @@ case class BackOfficeUser(
 ) extends RefreshableUser
     with EntityLocationSupport {
 
-  def internalId: String = randomId
-  def json: JsValue      = toJson
-  def theDescription: String = name
-  def theMetadata: Map[String,String] = metadata
-  def theName: String = name
-  def theTags: Seq[String] = tags
+  def internalId: String               = randomId
+  def json: JsValue                    = toJson
+  def theDescription: String           = name
+  def theMetadata: Map[String, String] = metadata
+  def theName: String                  = name
+  def theTags: Seq[String]             = tags
 
   def save(duration: Duration)(implicit ec: ExecutionContext, env: Env): Future[BackOfficeUser] = {
     val withDuration = this.copy(expiredAt = expiredAt.plus(duration.toMillis))

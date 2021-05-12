@@ -19,9 +19,9 @@ import scala.concurrent.{ExecutionContext, Future}
 sealed trait SwapStrategy {
   def name: String
 }
-object SwapStrategy {
+object SwapStrategy       {
   case object Replace extends SwapStrategy { def name: String = "replace" }
-  case object Merge extends SwapStrategy { def name: String = "merge" }
+  case object Merge   extends SwapStrategy { def name: String = "merge"   }
 }
 
 class Memory(
@@ -91,17 +91,18 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
                 }
               Memory(newStore, _memory.expirations)
             }
-            case SwapStrategy.Merge => env.metrics.withTimer(s"memory-swap-merge-compute") {
-              val newStore = _memory.store.asScala
-              val newKeys = newStore.keySet
-              val oldKeys = store.keySet.asScala
-              val keysToDelete = oldKeys.filterNot(k => Cluster.filteredKey(k, env)).diff(newKeys)
-              keysToDelete.map(k => oldMemory.store.remove(k))
-              newStore.filterNot(t => Cluster.filteredKey(t._1, env)).foreach {
-                case (key, value) => oldMemory.store.put(key, value)
+            case SwapStrategy.Merge   =>
+              env.metrics.withTimer(s"memory-swap-merge-compute") {
+                val newStore     = _memory.store.asScala
+                val newKeys      = newStore.keySet
+                val oldKeys      = store.keySet.asScala
+                val keysToDelete = oldKeys.filterNot(k => Cluster.filteredKey(k, env)).diff(newKeys)
+                keysToDelete.map(k => oldMemory.store.remove(k))
+                newStore.filterNot(t => Cluster.filteredKey(t._1, env)).foreach { case (key, value) =>
+                  oldMemory.store.put(key, value)
+                }
+                oldMemory
               }
-              oldMemory
-            }
           }
         } else {
           _memory

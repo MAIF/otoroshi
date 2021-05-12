@@ -453,20 +453,16 @@ export class TopBar extends Component {
           </>
         );
       } else {
-        return (
-          <>
-            Otoroshi - {this.state.env.instanceName}
-          </>
-        );
+        return <>Otoroshi - {this.state.env.instanceName}</>;
       }
     } else {
       return (
         <>
           <span>おとろし</span> &nbsp; {window.__title || 'Otoroshi'}
         </>
-      )
+      );
     }
-  }
+  };
 
   render() {
     const selected = (this.props.params || {}).lineId;
@@ -486,9 +482,9 @@ export class TopBar extends Component {
                 <span className="sr-only">Toggle sidebar</span>
                 <span>Menu</span>
               </button>
-              
+
               <a className="navbar-brand" href="/bo/dashboard" style={{ display: 'flex' }}>
-              {this.brandName()}
+                {this.brandName()}
               </a>
             </div>
             <ul className="nav navbar-nav navbar-right">

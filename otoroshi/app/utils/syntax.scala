@@ -188,7 +188,9 @@ object implicits {
       }
       promise.future
     }
-    def filterWithCause(cause: String, include: Boolean = false)(f: A => Boolean)(implicit ec: ExecutionContext): Future[A] = {
+    def filterWithCause(cause: String, include: Boolean = false)(
+        f: A => Boolean
+    )(implicit ec: ExecutionContext): Future[A] = {
       obj.transform { t =>
         if (t.isSuccess) {
           val value = t.asInstanceOf[Success[A]].value
@@ -205,8 +207,8 @@ object implicits {
       }
     }
   }
-  class FilterException(str: String, cause: Throwable) extends RuntimeException(str, cause) with NoStackTrace
-  class FilterExceptionWithoutCause(str: String) extends RuntimeException(str) with NoStackTrace
+  class FilterException(str: String, cause: Throwable)                 extends RuntimeException(str, cause) with NoStackTrace
+  class FilterExceptionWithoutCause(str: String)                       extends RuntimeException(str) with NoStackTrace
   implicit class BetterCache[A, B](val cache: Cache[A, B])             extends AnyVal {
     def getOrElse(key: A, el: => B): B = {
       cache.getIfPresent(key).getOrElse {

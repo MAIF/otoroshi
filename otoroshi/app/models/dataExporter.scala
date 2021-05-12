@@ -3,10 +3,28 @@ package otoroshi.models
 import akka.stream.scaladsl.{Sink, Source}
 import com.google.common.hash.Hashing
 import otoroshi.env.Env
-import otoroshi.events.Exporters.{ConsoleExporter, CustomExporter, ElasticExporter, FileAppenderExporter, GenericMailerExporter, KafkaExporter, MetricsExporter, PulsarExporter, WebhookExporter}
+import otoroshi.events.Exporters.{
+  ConsoleExporter,
+  CustomExporter,
+  ElasticExporter,
+  FileAppenderExporter,
+  GenericMailerExporter,
+  KafkaExporter,
+  MetricsExporter,
+  PulsarExporter,
+  WebhookExporter
+}
 import otoroshi.events._
 import otoroshi.script._
-import otoroshi.utils.mailer.{ConsoleMailerSettings, GenericMailerSettings, MailerSettings, MailgunSettings, MailjetSettings, NoneMailerSettings, SendgridSettings}
+import otoroshi.utils.mailer.{
+  ConsoleMailerSettings,
+  GenericMailerSettings,
+  MailerSettings,
+  MailgunSettings,
+  MailjetSettings,
+  NoneMailerSettings,
+  SendgridSettings
+}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
@@ -85,7 +103,7 @@ object DataExporterConfig {
         "name"          -> o.name,
         "desc"          -> o.desc,
         "metadata"      -> o.metadata,
-        "tags"       -> JsArray(o.tags.map(JsString.apply)),
+        "tags"          -> JsArray(o.tags.map(JsString.apply)),
         "bufferSize"    -> o.bufferSize,
         "jsonWorkers"   -> o.jsonWorkers,
         "sendWorkers"   -> o.sendWorkers,
@@ -223,11 +241,11 @@ case class DataExporterConfig(
 
   override def json: JsValue = DataExporterConfig.format.writes(this)
 
-  override def internalId: String = id
-  def theDescription: String = desc
-  def theMetadata: Map[String,String] = metadata
-  def theName: String = name
-  def theTags: Seq[String] = tags
+  override def internalId: String      = id
+  def theDescription: String           = desc
+  def theMetadata: Map[String, String] = metadata
+  def theName: String                  = name
+  def theTags: Seq[String]             = tags
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     env.datastores.dataExporterConfigDataStore.set(this)
@@ -278,8 +296,8 @@ object DataExporterConfigMigrationJob {
 
   def saveExporters(configs: Seq[DataExporterConfig], env: Env): Future[Unit] = {
 
-    implicit val ev = env
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ev  = env
+    implicit val ec  = env.otoroshiExecutionContext
     implicit val mat = env.otoroshiMaterializer
 
     Source(configs.toList)
@@ -291,8 +309,8 @@ object DataExporterConfigMigrationJob {
   }
   def extractExporters(env: Env): Future[Seq[DataExporterConfig]] = {
 
-    implicit val ev = env
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ev  = env
+    implicit val ec  = env.otoroshiExecutionContext
     implicit val mat = env.otoroshiMaterializer
 
     val alertDataExporterConfigFiltering     = DataExporterConfigFiltering(
@@ -303,11 +321,11 @@ object DataExporterConfigMigrationJob {
     )
 
     def toDataExporterConfig(
-                              name: String,
-                              ex: Exporter,
-                              typ: DataExporterConfigType,
-                              filter: DataExporterConfigFiltering
-                            ): DataExporterConfig                    = {
+        name: String,
+        ex: Exporter,
+        typ: DataExporterConfigType,
+        filter: DataExporterConfigFiltering
+    ): DataExporterConfig = {
       DataExporterConfig(
         enabled = true,
         id = Hashing.sha256().hashString(name, StandardCharsets.UTF_8).toString,
@@ -376,10 +394,10 @@ object DataExporterConfigMigrationJob {
             )
 
           analyticsWebhooksExporters ++
-            alertsWebhooksExporters ++
-            analyticsElasticExporters ++
-            kafkaExporter.fold(Seq.empty[DataExporterConfig])(e => Seq(e)) ++
-            alertMailerExporter.fold(Seq.empty[DataExporterConfig])(e => Seq(e))
+          alertsWebhooksExporters ++
+          analyticsElasticExporters ++
+          kafkaExporter.fold(Seq.empty[DataExporterConfig])(e => Seq(e)) ++
+          alertMailerExporter.fold(Seq.empty[DataExporterConfig])(e => Seq(e))
       }
   }
 }
@@ -402,7 +420,8 @@ class DataExporterConfigMigrationJob extends Job {
     JobInstantiation.OneInstancePerOtoroshiCluster
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    DataExporterConfigMigrationJob.extractExporters(env)
+    DataExporterConfigMigrationJob
+      .extractExporters(env)
       .flatMap(configs => DataExporterConfigMigrationJob.saveExporters(configs, env))
       .andThen {
         case Success(_) => DataExporterConfigMigrationJob.cleanupGlobalConfig(env)

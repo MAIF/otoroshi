@@ -11,7 +11,12 @@ import otoroshi.models.{BestResponseTime, RemainingQuotas, SecComVersion, Weight
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.script.Implicits._
-import otoroshi.script.{TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseBodyContext, TransformerResponseContext}
+import otoroshi.script.{
+  TransformerRequestBodyContext,
+  TransformerRequestContext,
+  TransformerResponseBodyContext,
+  TransformerResponseContext
+}
 import otoroshi.utils.UrlSanitizer
 import play.api.Logger
 import play.api.http.HttpEntity
@@ -543,8 +548,12 @@ class HttpHandler()(implicit env: Env) {
                     )
                   } else if (isUp) {
                     logger.error(stateRespInvalid.errorMessage(resp))
-                    val extraInfos = attrs.get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey).map(_.as[JsObject]).getOrElse(Json.obj())
-                    val newExtraInfos = extraInfos ++ Json.obj("stateRespInvalid" -> stateRespInvalid.exchangePayload(resp))
+                    val extraInfos    = attrs
+                      .get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey)
+                      .map(_.as[JsObject])
+                      .getOrElse(Json.obj())
+                    val newExtraInfos =
+                      extraInfos ++ Json.obj("stateRespInvalid" -> stateRespInvalid.exchangePayload(resp))
                     attrs.put(otoroshi.plugins.Keys.GatewayEventExtraInfosKey -> newExtraInfos)
                     Errors.craftResponseResult(
                       "Downstream microservice does not seems to be secured. Cancelling request !",
@@ -575,8 +584,8 @@ class HttpHandler()(implicit env: Env) {
                     )
                   }
                 }
-                case Right(_) => {
-                  val upstreamLatency = System.currentTimeMillis() - upstreamStart
+                case Right(_)               => {
+                  val upstreamLatency                    = System.currentTimeMillis() - upstreamStart
                   val _headersOut: Seq[(String, String)] =
                     HeadersHelper.composeHeadersOut(
                       descriptor = descriptor,
@@ -616,31 +625,31 @@ class HttpHandler()(implicit env: Env) {
                       )
                     )
                     .flatMap {
-                      case Left(badResult) => {
+                      case Left(badResult)     => {
                         resp.ignore()
                         FastFuture.successful(badResult)
                       }
                       case Right(httpResponse) => {
-                        val headersOut = httpResponse.headers.toSeq
+                        val headersOut                  = httpResponse.headers.toSeq
                         val contentType: Option[String] = httpResponse.headers
                           .get("Content-Type")
                           .orElse(httpResponse.headers.get("content-type"))
 
                         val noContentLengthHeader: Boolean =
                           resp.contentLength.isEmpty
-                        val hasChunkedHeader: Boolean = resp
+                        val hasChunkedHeader: Boolean      = resp
                           .header("Transfer-Encoding")
                           .orElse(httpResponse.headers.get("Transfer-Encoding"))
                           .exists(h => h.toLowerCase().contains("chunked"))
-                        val isChunked: Boolean = resp.isChunked() match {
-                          case Some(chunked) => chunked
-                          case None if !env.emptyContentLengthIsChunked =>
+                        val isChunked: Boolean             = resp.isChunked() match {
+                          case Some(chunked)                                                                         => chunked
+                          case None if !env.emptyContentLengthIsChunked                                              =>
                             hasChunkedHeader // false
-                          case None if env.emptyContentLengthIsChunked && hasChunkedHeader =>
+                          case None if env.emptyContentLengthIsChunked && hasChunkedHeader                           =>
                             true
                           case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader =>
                             true
-                          case _ => false
+                          case _                                                                                     => false
                         }
 
                         val theStream: Source[ByteString, _] = resp.bodyAsSource
@@ -713,7 +722,7 @@ class HttpHandler()(implicit env: Env) {
                               httpOnly = c.httpOnly,
                               sameSite = c.sameSite
                             )
-                          case c =>
+                          case c                       =>
                             Cookie(
                               name = c.name,
                               value = c.value,
@@ -755,7 +764,7 @@ class HttpHandler()(implicit env: Env) {
                                       .map(t => Cookie(t._1, t._2)) ++ cookies: _*
                                   )
                                 contentType match {
-                                  case None => descriptor.gzip.handleResult(req, response)
+                                  case None      => descriptor.gzip.handleResult(req, response)
                                   case Some(ctp) =>
                                     descriptor.gzip.handleResult(req, response.as(ctp))
                                 }
@@ -778,7 +787,7 @@ class HttpHandler()(implicit env: Env) {
                           }
                         } else {
                           val response: Result = isChunked match {
-                            case true => {
+                            case true  => {
                               // stream out
                               val res = Status(httpResponse.status)
                                 .chunked(finalStream)
@@ -793,7 +802,7 @@ class HttpHandler()(implicit env: Env) {
                                     .map(t => Cookie(t._1, t._2)) ++ cookies): _*
                                 )
                               contentType match {
-                                case None => res
+                                case None      => res
                                 case Some(ctp) => res.as(ctp)
                               }
                             }
@@ -805,7 +814,7 @@ class HttpHandler()(implicit env: Env) {
                                 .map(
                                   _.toLong + snowMonkeyContext.trailingResponseBodySize
                                 )
-                              val actualContentLength: Long =
+                              val actualContentLength: Long   =
                                 contentLength.getOrElse(0L)
                               if (actualContentLength == 0L) {
                                 // here, Play did not run the body because it's empty, so triggering things manually
@@ -825,7 +834,7 @@ class HttpHandler()(implicit env: Env) {
                                 )
                               }
                               // stream out
-                              val res = Status(httpResponse.status)
+                              val res                         = Status(httpResponse.status)
                                 .sendEntity(
                                   HttpEntity.Streamed(
                                     finalStream,
@@ -844,7 +853,7 @@ class HttpHandler()(implicit env: Env) {
                                     .map(t => Cookie(t._1, t._2)) ++ cookies): _*
                                 )
                               contentType match {
-                                case None => res
+                                case None      => res
                                 case Some(ctp) => res.as(ctp)
                               }
                             }

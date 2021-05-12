@@ -539,21 +539,32 @@ object DefaultRequestTransformer extends RequestTransformer
 
 object CompilingRequestTransformer extends RequestTransformer {
 
-  override def  transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  override def transformRequestWithCtx(
+      ctx: TransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val accept = ctx.rawRequest.headers.get("Accept").getOrElse("text/html").split(",").toSeq.map(_.trim)
     ctx.attrs.put(otoroshi.plugins.Keys.GwErrorKey -> GwError("not ready yet, plugin is loading ..."))
     if (accept.contains("text/html")) { // in a browser
-      Left(Results.ServiceUnavailable("<h3>not ready yet, plugin is loading ...</h3>").as("text/html").withHeaders(
-        env.Headers.OtoroshiGatewayError -> "true",
-        env.Headers.OtoroshiErrorMsg     -> "not ready yet, plugin is loading ...",
-        env.Headers.OtoroshiStateResp    -> ctx.request.headers.get(env.Headers.OtoroshiState).getOrElse("--")
-      )).future
+      Left(
+        Results
+          .ServiceUnavailable("<h3>not ready yet, plugin is loading ...</h3>")
+          .as("text/html")
+          .withHeaders(
+            env.Headers.OtoroshiGatewayError -> "true",
+            env.Headers.OtoroshiErrorMsg     -> "not ready yet, plugin is loading ...",
+            env.Headers.OtoroshiStateResp    -> ctx.request.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+          )
+      ).future
     } else {
-      Left(Results.ServiceUnavailable(Json.obj("error" -> "not ready yet, plugin is loading ...")).withHeaders(
-        env.Headers.OtoroshiGatewayError -> "true",
-        env.Headers.OtoroshiErrorMsg     -> "not ready yet, plugin is loading ...",
-        env.Headers.OtoroshiStateResp    -> ctx.request.headers.get(env.Headers.OtoroshiState).getOrElse("--")
-      )).future
+      Left(
+        Results
+          .ServiceUnavailable(Json.obj("error" -> "not ready yet, plugin is loading ..."))
+          .withHeaders(
+            env.Headers.OtoroshiGatewayError -> "true",
+            env.Headers.OtoroshiErrorMsg     -> "not ready yet, plugin is loading ...",
+            env.Headers.OtoroshiStateResp    -> ctx.request.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+          )
+      ).future
     }
   }
 }
@@ -1054,7 +1065,7 @@ class ScriptManager(env: Env) {
 
   def getAnyScript[A](ref: String)(implicit ec: ExecutionContext): Either[String, A] = {
     ref match {
-      case r if r.startsWith("cp:") => {
+      case r if r.startsWith("cp:")  => {
         if (!cpTryCache.contains(ref)) {
           Try(env.environment.classLoader.loadClass(r.replace("cp:", ""))) // .asSubclass(classOf[A]))
             .map(clazz => clazz.newInstance()) match {
@@ -1091,7 +1102,7 @@ class ScriptManager(env: Env) {
           }
         }
       }
-      case _ => Left("scripting-not-enabled")
+      case _                         => Left("scripting-not-enabled")
     }
   }
 
@@ -1314,31 +1325,31 @@ object Implicits {
         context: TransformerRequestBodyContext
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] =
       env.metrics.withTimer("otoroshi.core.proxy.transform-request-body") {
-          val plugs    = desc.plugins.requestTransformers(context.request)
-          val gScripts = env.datastores.globalConfigDataStore.latestSafe
-            .filter(_.scripts.enabled)
-            .map(_.scripts)
-            .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-          val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
-          if (refs.nonEmpty) {
-            Source.futureSource(Source(refs.toList.zipWithIndex).runFold(context.body) { case (body, (ref, index)) =>
-              env.scriptManager
-                .getScript(ref)
-                .transformRequestBodyWithCtx(
-                  context.copy(
-                    body = body,
-                    index = index,
-                    globalConfig = ConfigUtils.mergeOpt(
-                      gScripts.transformersConfig,
-                      env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
-                    ),
-                    config = ConfigUtils.merge(context.config, desc.plugins.config)
-                  )
-                )(env, ec, mat)
-            })
-          } else {
-            context.body
-          }
+        val plugs    = desc.plugins.requestTransformers(context.request)
+        val gScripts = env.datastores.globalConfigDataStore.latestSafe
+          .filter(_.scripts.enabled)
+          .map(_.scripts)
+          .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+        val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
+        if (refs.nonEmpty) {
+          Source.futureSource(Source(refs.toList.zipWithIndex).runFold(context.body) { case (body, (ref, index)) =>
+            env.scriptManager
+              .getScript(ref)
+              .transformRequestBodyWithCtx(
+                context.copy(
+                  body = body,
+                  index = index,
+                  globalConfig = ConfigUtils.mergeOpt(
+                    gScripts.transformersConfig,
+                    env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                  ),
+                  config = ConfigUtils.merge(context.config, desc.plugins.config)
+                )
+              )(env, ec, mat)
+          })
+        } else {
+          context.body
+        }
       }
 
     def transformResponseBody(
@@ -1391,10 +1402,10 @@ case class Script(
   def hash: String                                      = Hashing.sha256().hashString(code, StandardCharsets.UTF_8).toString
   def json: JsValue                                     = toJson
   def internalId: String                                = id
-  def theDescription: String = desc
-  def theMetadata: Map[String,String] = metadata
-  def theName: String = name
-  def theTags: Seq[String] = tags
+  def theDescription: String                            = desc
+  def theMetadata: Map[String, String]                  = metadata
+  def theName: String                                   = name
+  def theTags: Seq[String]                              = tags
 }
 
 object Script {
