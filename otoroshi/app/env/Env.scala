@@ -695,6 +695,8 @@ class Env(
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.FilePersistenceKind, this)
       case "http" if clusterConfig.mode == ClusterMode.Leader              =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.HttpPersistenceKind, this)
+      case "s3" if clusterConfig.mode == ClusterMode.Leader                =>
+        new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.S3PersistenceKind, this)
       case "cassandra-naive" if clusterConfig.mode == ClusterMode.Leader   =>
         new CassandraDataStores(true, configuration, environment, lifecycle, this)
       case "cassandra" if clusterConfig.mode == ClusterMode.Leader         =>
@@ -713,6 +715,8 @@ class Env(
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.FilePersistenceKind, this)
       case "http"                                                          =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.HttpPersistenceKind, this)
+      case "s3"                                                            =>
+        new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.S3PersistenceKind, this)
       case "cassandra-naive"                                               => new CassandraDataStores(true, configuration, environment, lifecycle, this)
       case "cassandra"                                                     => new CassandraDataStores(false, configuration, environment, lifecycle, this)
       case "mongo"                                                         => new MongoDataStores(configuration, environment, lifecycle, this)

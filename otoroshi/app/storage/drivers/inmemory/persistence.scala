@@ -1,29 +1,39 @@
 package otoroshi.storage.drivers.inmemory
 
-import java.io.File
-import java.nio.file.Files
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicReference
+import akka.NotUsed
 import akka.actor.Cancellable
+import akka.actor.Status.Success
+import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
+import akka.stream.alpakka.s3.headers.CannedAcl
+import akka.stream.alpakka.s3.scaladsl.S3
+import akka.stream.alpakka.s3.{MultipartUploadResult, _}
 import akka.stream.scaladsl.{Framing, Keep, Sink, Source}
+import akka.stream.{Attributes, Materializer}
 import akka.util.ByteString
 import com.google.common.base.Charsets
 import otoroshi.env.Env
 import otoroshi.utils.SchedulerHelper
+import otoroshi.utils.http.Implicits._
+import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import play.api.libs.ws.SourceBody
-import otoroshi.utils.http.Implicits._
+import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.regions.providers.AwsRegionProvider
 
-import scala.concurrent.{Await, ExecutionContext, Future}
+import java.io.File
+import java.nio.file.Files
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.hashing.MurmurHash3
-import otoroshi.utils.syntax.implicits._
 
 sealed trait PersistenceKind
 object PersistenceKind {
+  case object S3PersistenceKind   extends PersistenceKind
   case object HttpPersistenceKind extends PersistenceKind
   case object FilePersistenceKind extends PersistenceKind
   case object NoopPersistenceKind extends PersistenceKind
@@ -279,4 +289,162 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
           resp.ignore()
       }
   }
+}
+
+case class S3Configuration(
+  bucket: String,
+  endpoint: String,
+  region: String,
+  access: String,
+  secret: String,
+  key: String,
+  chunkSize: Int = 1024 * 1024 * 8,
+  v4auth: Boolean = true,
+  writeEvery: FiniteDuration,
+  acl: CannedAcl
+)
+
+class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
+
+  private implicit val ec = ds.actorSystem.dispatcher
+  private implicit val mat = ds.materializer
+
+  private val logger         = Logger("otoroshi-s3-datastores")
+  private val cancelRef      = new AtomicReference[Cancellable]()
+
+  private val conf: S3Configuration = S3Configuration(
+    bucket     = env.configuration.getOptionalWithFileSupport[String]("app.s3db.bucket").getOrElse("otoroshi-states"),
+    endpoint   = env.configuration.getOptionalWithFileSupport[String]("app.s3db.endpoint").getOrElse("https://otoroshi-states.foo.bar"),
+    region     = env.configuration.getOptionalWithFileSupport[String]("app.s3db.region").getOrElse("eu-west-1"),
+    access     = env.configuration.getOptionalWithFileSupport[String]("app.s3db.access").getOrElse("secret"),
+    secret     = env.configuration.getOptionalWithFileSupport[String]("app.s3db.secret").getOrElse("secret"),
+    key        = env.configuration.getOptionalWithFileSupport[String]("app.s3db.key").getOrElse("/otoroshi/states/state").applyOnWithPredicate(_.startsWith("/"))(_.substring(1)),
+    chunkSize  = env.configuration.getOptionalWithFileSupport[Int]("app.s3db.chunkSize").getOrElse(8388608),
+    v4auth     = env.configuration.getOptionalWithFileSupport[Boolean]("app.s3db.v4auth").getOrElse(true),
+    writeEvery = env.configuration.getOptionalWithFileSupport[Long]("app.s3db.writeEvery").map(v => v.millis).getOrElse(1.minute),
+    acl        = env.configuration.getOptionalWithFileSupport[String]("app.s3db.acl").map {
+      case "AuthenticatedRead" => CannedAcl.AuthenticatedRead
+      case "AwsExecRead" => CannedAcl.AwsExecRead
+      case "BucketOwnerFullControl" => CannedAcl.BucketOwnerFullControl
+      case "BucketOwnerRead" => CannedAcl.BucketOwnerRead
+      case "Private" => CannedAcl.Private
+      case "PublicRead" => CannedAcl.PublicRead
+      case "PublicReadWrite" => CannedAcl.PublicReadWrite
+      case _ => CannedAcl.Private
+    }.getOrElse(CannedAcl.Private),
+  )
+
+  private def s3ClientSettingsAttrs(): Attributes = {
+    val awsCredentials = StaticCredentialsProvider.create(
+      AwsBasicCredentials.create(conf.access, conf.secret)
+    )
+    val settings = S3Settings(
+      bufferType = MemoryBufferType,
+      credentialsProvider = awsCredentials,
+      s3RegionProvider = new AwsRegionProvider {
+        override def getRegion: Region = Region.of(conf.region)
+      },
+      listBucketApiVersion = ApiVersion.ListBucketVersion2
+    ).withEndpointUrl(conf.endpoint)
+    S3Attributes.settings(settings)
+  }
+
+  private val url = s"${conf.endpoint}/${conf.key}?v4=${conf.v4auth}&region=${conf.region}&acl=${conf.acl.value}&bucket=${conf.bucket}"
+
+  override def kind: PersistenceKind = PersistenceKind.S3PersistenceKind
+
+  override def message: String = s"Now using S3 DataStores (target '$url')"
+
+  override def onStart(): Future[Unit] = {
+    Await.result(readStateFromS3(), 60.seconds)
+    cancelRef.set(ds.actorSystem.scheduler.scheduleAtFixedRate(5.second, conf.writeEvery)(SchedulerHelper.runnable {
+      Await.result(writeStateToS3(), 60.seconds)
+    })(ds.actorSystem.dispatcher))
+    FastFuture.successful(())
+  }
+
+  override def onStop(): Future[Unit] = {
+    cancelRef.get().cancel()
+    Await.result(writeStateToS3(), 60.seconds)
+    FastFuture.successful(())
+  }
+
+  private def readStateFromS3(): Future[Unit] = {
+    logger.debug(s"Reading state from $url")
+    val store       = new ConcurrentHashMap[String, Any]()
+    val expirations = new ConcurrentHashMap[String, Long]()
+    val none: Option[(Source[ByteString, NotUsed], ObjectMetadata)] = None
+    S3.download(conf.bucket, conf.key).withAttributes(s3ClientSettingsAttrs).runFold(none)((_, opt) => opt).map {
+      case None =>
+        logger.warn(s"asset at ${url} does not exists yet ...")
+        ds.redis.swap(Memory(store, expirations), SwapStrategy.Replace)
+      case Some((source, meta)) => {
+        source.via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true)).map(_.utf8String.trim).filterNot(_.isEmpty).map { raw =>
+          val item = Json.parse(raw)
+          val key = (item \ "k").as[String]
+          val value = (item \ "v").as[JsValue]
+          val what = (item \ "w").as[String]
+          val ttl = (item \ "t").asOpt[Long].getOrElse(-1L)
+          fromJson(what, value).map(v => store.put(key, v)).getOrElse(println(s"file read error for: ${item.prettify} "))
+          if (ttl > -1L) {
+            expirations.put(key, ttl)
+          }
+        }.runWith(Sink.ignore).andThen {
+          case _ =>
+            ds.redis.swap(Memory(store, expirations), SwapStrategy.Replace)
+        }
+      }
+    }
+  }
+
+  private def fromJson(what: String, value: JsValue): Option[Any] = {
+
+    import collection.JavaConverters._
+
+    what match {
+      case "counter" => Some(ByteString(value.as[Long].toString))
+      case "string"  => Some(ByteString(value.as[String]))
+      case "set"     => {
+        val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
+        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        Some(list)
+      }
+      case "list"    => {
+        val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
+        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        Some(list)
+      }
+      case "hash"    => {
+        val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
+        map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
+        Some(map)
+      }
+      case _         => None
+    }
+  }
+
+  private def writeStateToS3()(implicit ec: ExecutionContext, mat: Materializer): Future[MultipartUploadResult] = {
+    Source
+      .futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4))
+      .map { item =>
+        ByteString(Json.stringify(item) + "\n")
+      }.runFold(ByteString.empty)(_ ++ _).flatMap { payload =>
+        val ctype = ContentTypes.`application/octet-stream`
+        val meta = MetaHeaders(Map("content-type" -> ctype.value))
+        val sink = S3
+          .multipartUpload(
+            bucket = conf.bucket,
+            key = conf.key,
+            contentType = ctype,
+            metaHeaders = meta,
+            cannedAcl = conf.acl,
+            chunkingParallelism = 1
+          )
+          .withAttributes(s3ClientSettingsAttrs)
+        logger.debug(s"writing state to $url")
+        Source.single(payload)
+          .toMat(sink)(Keep.right)
+          .run()
+      }
+    }
 }

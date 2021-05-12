@@ -54,6 +54,7 @@ class InMemoryDataStores(
   lazy val persistence = persistenceKind match {
     case PersistenceKind.HttpPersistenceKind => new HttpPersistence(this, env)
     case PersistenceKind.FilePersistenceKind => new FilePersistence(this, env)
+    case PersistenceKind.S3PersistenceKind   => new S3Persistence(this, env)
     case _                                   => new NoopPersistence(this, env)
   }
 
