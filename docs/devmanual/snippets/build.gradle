@@ -1,6 +1,3 @@
-repositories {
-  bintray.repo(repoOwner: 'maif', repoName: 'maven')
-}
 
 dependencies {
   compile group: 'fr.maif.otoroshi', name: 'otoroshi_2.12', version: '1.5.0-dev'

@@ -1107,6 +1107,28 @@ play.http {
     timeout = 10000
     pollEvery = 10000
   }
+  s3db {
+    bucket = &quot;otoroshi-states&quot;
+    bucket = ${?OTOROSHI_DB_S3_BUCKET}
+    endpoint = &quot;https://otoroshi-states.foo.bar&quot;
+    endpoint = ${?OTOROSHI_DB_S3_ENDPOINT}
+    region = &quot;eu-west-1&quot;
+    region = ${?OTOROSHI_DB_S3_REGION}
+    access = &quot;secret&quot;
+    access = ${?OTOROSHI_DB_S3_ACCESS}
+    secret = &quot;secret&quot;
+    secret = ${?OTOROSHI_DB_S3_SECRET}
+    key = &quot;/otoroshi/states/state&quot;
+    key = ${?OTOROSHI_DB_S3_KEY}
+    chunkSize = 8388608
+    chunkSize = ${?OTOROSHI_DB_S3_CHUNK_SIZE}
+    v4auth = true
+    v4auth = ${?OTOROSHI_DB_S3_V4_AUTH}
+    writeEvery = 60000
+    writeEvery = ${?OTOROSHI_DB_S3_WRITE_EVERY}
+    acl = &quot;Private&quot;
+    acl = ${?OTOROSHI_DB_S3_ACL}
+  }
   pg {
     uri = ${?PG_URI}
     uri = ${?POSTGRESQL_ADDON_URI}
