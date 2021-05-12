@@ -124,7 +124,7 @@ class TcpServiceApiSpec(name: String, configurationSpec: => Configuration)
     }
   }
 
-  override def singleEntity(): TcpService                             = env.datastores.tcpServiceDataStore.template
+  override def singleEntity(): TcpService                             = env.datastores.tcpServiceDataStore.template(env)
   override def entityName: String                                     = "TcpService"
   override def route(): String                                        = "/api/tcp/services"
   override def readEntityFromJson(json: JsValue): TcpService          = TcpService.fmt.reads(json).get
@@ -174,7 +174,7 @@ class ScriptApiSpec(name: String, configurationSpec: => Configuration) extends O
     }
   }
 
-  override def singleEntity(): Script                         = env.datastores.scriptDataStore.template
+  override def singleEntity(): Script                         = env.datastores.scriptDataStore.template(env)
   override def entityName: String                             = "Script"
   override def route(): String                                = "/api/scripts"
   override def readEntityFromJson(json: JsValue): Script      = Script._fmt.reads(json).get
@@ -226,7 +226,7 @@ class AuthModuleConfigApiSpec(name: String, configurationSpec: => Configuration)
     }
   }
 
-  override def singleEntity(): AuthModuleConfig                                   = env.datastores.authConfigsDataStore.template("basic".some)
+  override def singleEntity(): AuthModuleConfig                                   = env.datastores.authConfigsDataStore.template("basic".some, env)
   override def entityName: String                                                 = "AuthModuleConfig"
   override def route(): String                                                    = "/api/auths"
   override def readEntityFromJson(json: JsValue): AuthModuleConfig                = AuthModuleConfig._fmt.reads(json).get
@@ -334,7 +334,7 @@ class JWTVerifierApiSpec(name: String, configurationSpec: => Configuration)
     }
   }
 
-  override def singleEntity(): GlobalJwtVerifier                                    = env.datastores.globalJwtVerifierDataStore.template
+  override def singleEntity(): GlobalJwtVerifier                                    = env.datastores.globalJwtVerifierDataStore.template(env)
   override def entityName: String                                                   = "GlobalJwtVerifier"
   override def route(): String                                                      = "/api/verifiers"
   override def readEntityFromJson(json: JsValue): GlobalJwtVerifier                 = GlobalJwtVerifier._fmt.reads(json).get
@@ -437,7 +437,7 @@ class ServicesApiSpec(name: String, configurationSpec: => Configuration)
     }
   }
 
-  override def singleEntity(): ServiceDescriptor                                    = env.datastores.serviceDescriptorDataStore.template()(env)
+  override def singleEntity(): ServiceDescriptor                                    = env.datastores.serviceDescriptorDataStore.template(env)
   override def entityName: String                                                   = "ServiceDescriptor"
   override def route(): String                                                      = "/api/services"
   override def readEntityFromJson(json: JsValue): ServiceDescriptor                 = ServiceDescriptor._fmt.reads(json).get
