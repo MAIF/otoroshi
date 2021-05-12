@@ -64,7 +64,7 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
                case (key, c) if !exporters.exists(e => e.id == c.configUnsafe.id || e.id == key) =>
                  logger.debug(s"[OtoroshiEventActor] - Stop exporter ${c.configOpt.map(_.name).getOrElse("no name")}")
                  dataExporters.remove(key).map(_.stopExporter()).getOrElse(FastFuture.successful(()))
-               case _                                          => FastFuture.successful(())
+               case _                                                                            => FastFuture.successful(())
              })
         _ <- Future.sequence(exporters.map {
                case config

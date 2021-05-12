@@ -1130,12 +1130,12 @@ sealed trait SecComVersion {
 }
 object SecComVersion       {
   object V1 extends SecComVersion {
-    def str: String  = "V1"
+    def str: String   = "V1"
     def version: Int  = 1
     def json: JsValue = JsNumber(1)
   }
   object V2 extends SecComVersion {
-    def str: String  = "V2"
+    def str: String   = "V2"
     def version: Int  = 2
     def json: JsValue = JsNumber(2)
   }
@@ -1534,7 +1534,7 @@ case class ServiceDescriptor(
     restrictions: Restrictions = Restrictions(),
     hosts: Seq[String] = Seq.empty[String],
     paths: Seq[String] = Seq.empty[String],
-    handleLegacyDomain: Boolean = true, 
+    handleLegacyDomain: Boolean = true,
     issueCert: Boolean = false,
     issueCertCA: Option[String] = None,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
@@ -1543,10 +1543,10 @@ case class ServiceDescriptor(
   def json: JsValue      = toJson
   def internalId: String = id
 
-  def theDescription: String = description
-  def theMetadata: Map[String,String] = metadata
-  def theName: String = name
-  def theTags: Seq[String] = tags
+  def theDescription: String           = description
+  def theMetadata: Map[String, String] = metadata
+  def theName: String                  = name
+  def theTags: Seq[String]             = tags
 
   def algoChallengeFromOtoToBack: AlgoSettings = if (secComUseSameAlgo) secComSettings else secComAlgoChallengeOtoToBack
   def algoChallengeFromBackToOto: AlgoSettings = if (secComUseSameAlgo) secComSettings else secComAlgoChallengeBackToOto
@@ -1931,9 +1931,9 @@ case class ServiceDescriptor(
           .recoverWith {
             case PreRoutingError(body, code, ctype, headers) =>
               FastFuture.successful(Results.Status(code)(body).as(ctype).withHeaders(headers.toSeq: _*)).map(Left.apply)
-            case PreRoutingErrorWithResult(result)  =>
+            case PreRoutingErrorWithResult(result)           =>
               FastFuture.successful(result).map(Left.apply)
-            case e                                  =>
+            case e                                           =>
               Errors
                 .craftResponseResult(
                   message = e.getMessage,
@@ -2170,7 +2170,7 @@ object ServiceDescriptor {
         "canary"                       -> sd.canary.toJson,
         "gzip"                         -> sd.gzip.asJson,
         "metadata"                     -> JsObject(sd.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply)),
-        "tags"       -> JsArray(sd.tags.map(JsString.apply)),
+        "tags"                         -> JsArray(sd.tags.map(JsString.apply)),
         "chaosConfig"                  -> sd.chaosConfig.asJson,
         "jwtVerifier"                  -> sd.jwtVerifier.asJson,
         "secComSettings"               -> sd.secComSettings.asJson,

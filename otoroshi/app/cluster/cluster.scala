@@ -34,7 +34,7 @@ import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import otoroshi.utils
-import otoroshi.utils.{SchedulerHelper, future}
+import otoroshi.utils.{future, SchedulerHelper}
 import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
@@ -233,7 +233,8 @@ object ClusterConfig {
           .getOrElse(s"otoroshi-worker-${IdGenerator.token(16)}"),
         retries = configuration.getOptionalWithFileSupport[Int]("worker.retries").getOrElse(3),
         timeout = configuration.getOptionalWithFileSupport[Long]("worker.timeout").getOrElse(2000),
-        dataStaleAfter = configuration.getOptionalWithFileSupport[Long]("worker.dataStaleAfter").getOrElse(10 * 60 * 1000L),
+        dataStaleAfter =
+          configuration.getOptionalWithFileSupport[Long]("worker.dataStaleAfter").getOrElse(10 * 60 * 1000L),
         dbPath = configuration.getOptionalWithFileSupport[String]("worker.dbpath"),
         state = WorkerStateConfig(
           timeout = configuration.getOptionalWithFileSupport[Long]("worker.state.timeout").getOrElse(2000),
@@ -252,9 +253,9 @@ object ClusterConfig {
           )
           .map(_.map(TenantId.apply))
           .getOrElse(Seq.empty),
-        swapStrategy =  configuration.getOptionalWithFileSupport[String]("worker.swapStrategy") match {
+        swapStrategy = configuration.getOptionalWithFileSupport[String]("worker.swapStrategy") match {
           case Some("Merge") => SwapStrategy.Merge
-          case _ => SwapStrategy.Replace
+          case _             => SwapStrategy.Replace
         }
       )
     )
@@ -760,7 +761,8 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
                 cacheState()
               } catch {
                 case e: Throwable =>
-                  Cluster.logger.error(s"Error while renewing leader state cache of ${env.clusterConfig.leader.name}", e)
+                  Cluster.logger
+                    .error(s"Error while renewing leader state cache of ${env.clusterConfig.leader.name}", e)
               }
             )
           )
@@ -1150,12 +1152,14 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 resp.status == 200
               }
               .filterWithCause("State is too old !") { resp =>
-                val responseFrom   = resp.header("X-Data-From").map(_.toLong)
-                val from = new DateTime(responseFrom.getOrElse(0))
-                val predicate = from.isAfter(DateTime.now().minusMillis(env.clusterConfig.worker.dataStaleAfter.toInt))
+                val responseFrom = resp.header("X-Data-From").map(_.toLong)
+                val from         = new DateTime(responseFrom.getOrElse(0))
+                val predicate    = from.isAfter(DateTime.now().minusMillis(env.clusterConfig.worker.dataStaleAfter.toInt))
                 if (!predicate) {
                   val nodeName = resp.header("Otoroshi-Leader-Node-Name").getOrElse("--")
-                  Cluster.logger.warn(s"State data coming from '$nodeName' is too old (${from.toString()}). Maybe the leader node '$nodeName' has an issue and needs to be restarted. Failing state fetch !")
+                  Cluster.logger.warn(
+                    s"State data coming from '$nodeName' is too old (${from.toString()}). Maybe the leader node '$nodeName' has an issue and needs to be restarted. Failing state fetch !"
+                  )
                 }
                 predicate
               }
@@ -1165,7 +1169,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 val responseFrom   = resp.header("X-Data-From").map(_.toLong)
                 val responseDigest = resp.header("X-Data-Digest")
                 val responseCount  = resp.header("X-Data-Count")
-                val fromVersion    = resp.header("Otoroshi-Leader-Node-Version").map(Version.apply).getOrElse(Version("0.0.0"))
+                val fromVersion    =
+                  resp.header("Otoroshi-Leader-Node-Version").map(Version.apply).getOrElse(Version("0.0.0"))
                 val counter        = new AtomicLong(0L)
                 val digest         = MessageDigest.getInstance("SHA-256")
                 val from           = new DateTime(responseFrom.getOrElse(0))
@@ -1215,7 +1220,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                         if (fromVersion.isBefore(env.otoroshiVersionSem)) {
                           // TODO: run other migrations ?
                           if (fromVersion.isBefore(Version("1.4.999"))) {
-                            DataExporterConfigMigrationJob.extractExporters(env)
+                            DataExporterConfigMigrationJob
+                              .extractExporters(env)
                               .flatMap(c => DataExporterConfigMigrationJob.saveExporters(c, env))
                           }
                         }

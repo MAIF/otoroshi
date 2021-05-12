@@ -425,20 +425,20 @@ class ReactivePgDataStores(
             keys
               .filterNot { key =>
                 Cluster.filteredKey(key, env)
-                // key == s"${env.storageRoot}:cluster:" ||
-                // key == s"${env.storageRoot}:events:audit" ||
-                // key == s"${env.storageRoot}:events:alerts" ||
-                // key.startsWith(s"${env.storageRoot}:users:backoffice") ||
-                // key.startsWith(s"${env.storageRoot}:admins:") ||
-                // key.startsWith(s"${env.storageRoot}:u2f:users:") ||
-                // // key.startsWith(s"${env.storageRoot}:users:") ||
-                // key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
-                // key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
-                // key.startsWith(s"${env.storageRoot}:scall:stats:") ||
-                // key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
-                // key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
-                // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
-                // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+              // key == s"${env.storageRoot}:cluster:" ||
+              // key == s"${env.storageRoot}:events:audit" ||
+              // key == s"${env.storageRoot}:events:alerts" ||
+              // key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+              // key.startsWith(s"${env.storageRoot}:admins:") ||
+              // key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+              // // key.startsWith(s"${env.storageRoot}:users:") ||
+              // key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
+              // key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+              // key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+              // key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+              // key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+              // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+              // (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
               }
               .map { key =>
                 for {
@@ -701,12 +701,12 @@ class ReactivePgRedis(
   )(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
     measure("pg.ops.optm.apikeys-find-by-service") {
 
-      var params = Seq[Any]()
+      var params     = Seq[Any]()
       val predicates = (
         Seq(s"jvalue -> 'authorizedEntities' ? $$1") ++
           service.groups.zipWithIndex.map { case (g, count) =>
             params = params ++ ServiceGroupIdentifier(g).str
-            s"jvalue -> 'authorizedEntities' ? $$${count+1}"
+            s"jvalue -> 'authorizedEntities' ? $$${count + 1}"
           }
       ).mkString(" or ")
 
@@ -748,7 +748,7 @@ class ReactivePgRedis(
 
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] =
     measure("pg.ops.mget") {
-      val inValues = keys.zipWithIndex.map { case (_, count) => s"$$${count+1}" }.mkString(", ")
+      val inValues = keys.zipWithIndex.map { case (_, count) => s"$$${count + 1}" }.mkString(", ")
       querySeq(
         s"select key, value, counter, type from $schemaDotTable where key in ($inValues) and (ttl_starting_at + ttl) > NOW();",
         keys
@@ -776,7 +776,7 @@ class ReactivePgRedis(
 
   override def del(keys: String*): Future[Long] =
     measure("pg.ops.del") {
-      val inValues = keys.zipWithIndex.map { case (_, count) => s"$$${count+1}" }.mkString(", ")
+      val inValues = keys.zipWithIndex.map { case (_, count) => s"$$${count + 1}" }.mkString(", ")
       queryRaw(
         s"delete from $schemaDotTable where key in ($inValues) and (ttl_starting_at + ttl) > NOW();",
         keys
@@ -845,21 +845,27 @@ class ReactivePgRedis(
         .getOrElse("")
       matchesEntity(key, value) match {
         case Some((kind, jsonValue)) =>
-          queryOne(s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value, kind, jvalue)
+          queryOne(
+            s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value, kind, jvalue)
              |values ($$1, 'string', $ttl, NOW(), $$2, '$kind', '$jsonValue'::jsonb)
              |ON CONFLICT (key)
              |DO
              |  update set type = 'string', value = $$2$maybeTtlUpdate, kind = $$3, jvalue = $$4::jsonb;
-             |""".stripMargin, Seq(key, value.utf8String, kind, new JsonObject(jsonValue))) { _ =>
+             |""".stripMargin,
+            Seq(key, value.utf8String, kind, new JsonObject(jsonValue))
+          ) { _ =>
             true.some
           }.map(_.getOrElse(true))
         case None                    =>
-          queryOne(s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value)
+          queryOne(
+            s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value)
              |values ($$1, 'string', $ttl, NOW(), $$2)
              |ON CONFLICT (key)
              |DO
              |  update set type = 'string', value = $$2${maybeTtlUpdate};
-             |""".stripMargin, Seq(key, value.utf8String)) { _ =>
+             |""".stripMargin,
+            Seq(key, value.utf8String)
+          ) { _ =>
             true.some
           }.map(_.getOrElse(true))
       }
@@ -903,7 +909,7 @@ class ReactivePgRedis(
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   override def hdel(key: String, fields: String*): Future[Long]          =
     measure("pg.ops.hdel") {
-      val arr = fields.zipWithIndex.map { case (_, count) => s"$$${count+2}" }.mkString(",")
+      val arr = fields.zipWithIndex.map { case (_, count) => s"$$${count + 2}" }.mkString(",")
       queryRaw(
         s"update $schemaDotTable set type = 'hash', mvalue = mvalue - ARRAY[$arr] where key = $$1 and (ttl_starting_at + ttl) > NOW();",
         fields
@@ -1091,7 +1097,7 @@ class ReactivePgRedis(
 
   override def sremBS(key: String, members: ByteString*): Future[Long] =
     measure("pg.ops.srem") {
-      val arr = members.zipWithIndex.map { case (_, count) => s"$$${count+2}" }.mkString(",")
+      val arr = members.zipWithIndex.map { case (_, count) => s"$$${count + 2}" }.mkString(",")
       queryRaw(
         s"update $schemaDotTable set type = 'set', svalue = svalue - ARRAY[$arr] where key = $$1 and (ttl_starting_at + ttl) > NOW();",
         Seq(key) ++ members

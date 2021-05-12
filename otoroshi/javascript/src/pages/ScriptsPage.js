@@ -479,11 +479,7 @@ export class ScriptsPage extends Component {
       return null;
     }
     if (!this.props.globalEnv.scriptingEnabled) {
-      return (
-        <p>
-          Scripting is not enabled on your otoroshi cluster
-        </p>
-      );
+      return <p>Scripting is not enabled on your otoroshi cluster</p>;
     }
     return (
       <Table

@@ -86,10 +86,10 @@ case class TcpService(
   def internalId: String                              = id
   def json: JsValue                                   = TcpService.fmt.writes(this)
   def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.tcpServiceDataStore.set(this)
-  def theDescription: String = description
-  def theMetadata: Map[String,String] = metadata
-  def theName: String = name
-  def theTags: Seq[String] = tags
+  def theDescription: String                          = description
+  def theMetadata: Map[String, String]                = metadata
+  def theName: String                                 = name
+  def theTags: Seq[String]                            = tags
 }
 case class SniSettings(
     enabled: Boolean,
@@ -235,7 +235,7 @@ object TcpService {
             clientAuth = (json \ "clientAuth").asOpt[String].flatMap(ClientAuth.apply).getOrElse(ClientAuth.None),
             rules = (json \ "rules").asOpt(Reads.seq(TcpRule.fmt)).getOrElse(Seq.empty),
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
           )
         )
       } recover { case e =>
@@ -244,18 +244,18 @@ object TcpService {
 
     override def writes(o: TcpService): JsValue =
       o.location.jsonWithKey ++ Json.obj(
-        "id"         -> o.id,
-        "name"       -> o.name,
+        "id"          -> o.id,
+        "name"        -> o.name,
         "description" -> o.description,
-        "enabled"    -> o.enabled,
-        "tls"        -> o.tls.name,
-        "sni"        -> o.sni.json,
-        "clientAuth" -> o.clientAuth.name,
-        "port"       -> o.port,
-        "interface"  -> o.interface,
-        "rules"      -> JsArray(o.rules.map(_.json)),
-        "metadata"   -> o.metadata,
-        "tags"       -> JsArray(o.tags.map(JsString.apply)),
+        "enabled"     -> o.enabled,
+        "tls"         -> o.tls.name,
+        "sni"         -> o.sni.json,
+        "clientAuth"  -> o.clientAuth.name,
+        "port"        -> o.port,
+        "interface"   -> o.interface,
+        "rules"       -> JsArray(o.rules.map(_.json)),
+        "metadata"    -> o.metadata,
+        "tags"        -> JsArray(o.tags.map(JsString.apply))
       )
   }
 

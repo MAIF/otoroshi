@@ -91,61 +91,61 @@ sealed trait OAuth1Provider {
   def methods: OAuth1ProviderMethods
 }
 
-case class OAuth1ProviderMethods (requestToken: String, accessToken: String)
+case class OAuth1ProviderMethods(requestToken: String, accessToken: String)
 
 object OAuth1Provider {
   case object Post extends OAuth1Provider {
-    val name = "post"
+    val name                           = "post"
     val methods: OAuth1ProviderMethods = OAuth1ProviderMethods(
-      requestToken   = "POST",
-      accessToken    = "POST",
+      requestToken = "POST",
+      accessToken = "POST"
     )
   }
-  case object Get extends OAuth1Provider {
-    val name = "get"
+  case object Get  extends OAuth1Provider {
+    val name                           = "get"
     val methods: OAuth1ProviderMethods = OAuth1ProviderMethods(
-      requestToken   = "GET",
-      accessToken    = "GET"
+      requestToken = "GET",
+      accessToken = "GET"
     )
   }
 
   def apply(value: String): OAuth1Provider = value match {
-    case "post"     => Post
-    case "get"      => Get
-    case _          => Post
+    case "post" => Post
+    case "get"  => Get
+    case _      => Post
   }
 }
 
 case class Oauth1ModuleConfig(
-                                 id: String,
-                                 name: String,
-                                 desc: String,
-                                 sessionMaxAge: Int = 86400,
-                                 consumerKey: String,
-                                 consumerSecret: String,
-                                 httpMethod: OAuth1Provider = OAuth1Provider.Post,
-                                 requestTokenURL: String,
-                                 authorizeURL: String,
-                                 accessTokenURL: String,
-                                 profileURL: String,
-                                 callbackURL: String,
-                                 tags: Seq[String],
-                                 metadata: Map[String, String],
-                                 sessionCookieValues: SessionCookieValues,
-                                 rightsOverride: Map[String, UserRights] = Map.empty,
-                                 location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
-                               ) extends AuthModuleConfig {
-  def `type`: String = "oauth1"
-  def theDescription: String = desc
-  def theMetadata: Map[String,String] = metadata
-  def theName: String = name
-  def theTags: Seq[String] = tags
+    id: String,
+    name: String,
+    desc: String,
+    sessionMaxAge: Int = 86400,
+    consumerKey: String,
+    consumerSecret: String,
+    httpMethod: OAuth1Provider = OAuth1Provider.Post,
+    requestTokenURL: String,
+    authorizeURL: String,
+    accessTokenURL: String,
+    profileURL: String,
+    callbackURL: String,
+    tags: Seq[String],
+    metadata: Map[String, String],
+    sessionCookieValues: SessionCookieValues,
+    rightsOverride: Map[String, UserRights] = Map.empty,
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+) extends AuthModuleConfig {
+  def `type`: String                   = "oauth1"
+  def theDescription: String           = desc
+  def theMetadata: Map[String, String] = metadata
+  def theName: String                  = name
+  def theTags: Seq[String]             = tags
 
   override def authModule(config: GlobalConfig): AuthModule = Oauth1AuthModule(this)
 
   override def asJson =
     location.jsonWithKey ++ Json.obj(
-      "type"          -> "oauth1",
+      "type"                -> "oauth1",
       "id"                  -> id,
       "name"                -> name,
       "desc"                -> desc,
@@ -154,7 +154,7 @@ case class Oauth1ModuleConfig(
       //"signatureMethod"     -> signatureMethod,
       "requestTokenURL"     -> requestTokenURL,
       "authorizeURL"        -> authorizeURL,
-      "profileURL"     -> profileURL,
+      "profileURL"          -> profileURL,
       "accessTokenURL"      -> accessTokenURL,
       "callbackURL"         -> callbackURL,
       "sessionMaxAge"       -> sessionMaxAge,
@@ -174,13 +174,21 @@ object Oauth1AuthModule {
 
   def encodeURI(str: String): String = URLEncoder.encode(str, "UTF-8")
 
-  def sign(params: Map[String, String], url: String, method: String, consumerSecret: String, tokenSecret: Option[String] = None): String = {
+  def sign(
+      params: Map[String, String],
+      url: String,
+      method: String,
+      consumerSecret: String,
+      tokenSecret: Option[String] = None
+  ): String = {
 
-    val sortedEncodedParams = encodeURI(params.toSeq.sortBy(_._1).map(t => (t._1, encodeURI(t._2)).productIterator.mkString("=")).mkString("&"))
-    val encodedURL = encodeURI(url)
+    val sortedEncodedParams = encodeURI(
+      params.toSeq.sortBy(_._1).map(t => (t._1, encodeURI(t._2)).productIterator.mkString("=")).mkString("&")
+    )
+    val encodedURL          = encodeURI(url)
 
-    val base = s"$method&$encodedURL&$sortedEncodedParams"
-    val key = s"${encodeURI(consumerSecret)}&${tokenSecret.map(encodeURI).getOrElse("")}"
+    val base      = s"$method&$encodedURL&$sortedEncodedParams"
+    val key       = s"${encodeURI(consumerSecret)}&${tokenSecret.map(encodeURI).getOrElse("")}"
     val signature = Base64.getEncoder.encodeToString(Signatures.hmac("HmacSHA1", base, key))
 
     if (method == "POST") signature else encodeURI(signature)
@@ -198,14 +206,14 @@ object Oauth1AuthModule {
   def getOauth1TemplateRequest(callbackURL: Option[String]): Map[String, String] = {
     val signatureMethod = "HMAC-SHA1"
 
-    val nonce = IdGenerator.token.slice(0, 12)
+    val nonce     = IdGenerator.token.slice(0, 12)
     val timestamp = System.currentTimeMillis / 1000
 
     val params = Map(
-      "oauth_nonce"             -> nonce,
-      "oauth_signature_method"  -> signatureMethod,
-      "oauth_timestamp"         -> timestamp.toString,
-      "oauth_version"           -> "1.0"
+      "oauth_nonce"            -> nonce,
+      "oauth_signature_method" -> signatureMethod,
+      "oauth_timestamp"        -> timestamp.toString,
+      "oauth_version"          -> "1.0"
     )
 
     callbackURL
@@ -227,126 +235,162 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
   import Oauth1AuthModule._
 
   override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
-                                                                                                        ec: ExecutionContext,
-                                                                                                        env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Result] = {
     implicit val _r: RequestHeader = request
 
-    val baseParams: Map[String, String] = getOauth1TemplateRequest(Some(authConfig.callbackURL)) ++ Map("oauth_consumer_key" -> authConfig.consumerKey)
+    val baseParams: Map[String, String] =
+      getOauth1TemplateRequest(Some(authConfig.callbackURL)) ++ Map("oauth_consumer_key" -> authConfig.consumerKey)
 
-    val signature = sign(baseParams, authConfig.requestTokenURL, authConfig.httpMethod.methods.requestToken, authConfig.consumerSecret)
+    val signature                       = sign(
+      baseParams,
+      authConfig.requestTokenURL,
+      authConfig.httpMethod.methods.requestToken,
+      authConfig.consumerSecret
+    )
 
     (if (authConfig.httpMethod.methods.requestToken == "POST") {
-      post(env, authConfig.requestTokenURL, baseParams ++ Map("oauth_signature" -> signature))
-    } else {
-      get(env, s"${authConfig.requestTokenURL}?${baseParams.map(t => (t._1, encodeURI(t._2)).productIterator.mkString("=")).mkString("&")}&oauth_signature=$signature")
-    })
+       post(env, authConfig.requestTokenURL, baseParams ++ Map("oauth_signature" -> signature))
+     } else {
+       get(
+         env,
+         s"${authConfig.requestTokenURL}?${baseParams.map(t => (t._1, encodeURI(t._2)).productIterator.mkString("=")).mkString("&")}&oauth_signature=$signature"
+       )
+     })
       .map { result =>
         if (result.status > 300) {
-            env.logger.error("result.body")
-            Ok(otoroshi.views.html.oto.error("OAuth request token call failed", env))
+          env.logger.error("result.body")
+          Ok(otoroshi.views.html.oto.error("OAuth request token call failed", env))
         } else {
           val parameters = strBodyToMap(result.body)
 
           if (parameters("oauth_callback_confirmed") == "true") {
-            val redirect      = request.getQueryString("redirect")
-            val hash          = env.sign(s"${authConfig.id}:::backoffice")
-            val oauth_token   = parameters("oauth_token")
+            val redirect    = request.getQueryString("redirect")
+            val hash        = env.sign(s"${authConfig.id}:::backoffice")
+            val oauth_token = parameters("oauth_token")
             Redirect(s"${authConfig.authorizeURL}?oauth_token=$oauth_token&perms=read")
               .addingToSession(
-                "oauth_token_secret" -> parameters("oauth_token_secret"),
+                "oauth_token_secret"                                              -> parameters("oauth_token_secret"),
                 s"desc"                                                           -> descriptor.id,
                 "hash"                                                            -> hash,
                 s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
                   routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
                 )
               )
-          }
-          else
+          } else
             Ok(otoroshi.views.html.oto.error("OAuth request token call failed", env))
         }
       }
   }
 
-  override def paLogout(request: RequestHeader, user: Option[PrivateAppsUser], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
-                                                                                                                                    ec: ExecutionContext,
-                                                                                                                                    env: Env
+  override def paLogout(
+      request: RequestHeader,
+      user: Option[PrivateAppsUser],
+      config: GlobalConfig,
+      descriptor: ServiceDescriptor
+  )(implicit
+      ec: ExecutionContext,
+      env: Env
   ) = FastFuture.successful(Right(None))
 
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
-                                                                                                             ec: ExecutionContext,
-                                                                                                             env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Either[String, PrivateAppsUser]] = callback(request, config, isBoLogin = false, Some(descriptor))
     .asInstanceOf[Future[Either[String, PrivateAppsUser]]]
 
   override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
-                                                                         ec: ExecutionContext,
-                                                                         env: Env): Future[Result] = {
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Result] = {
 
     implicit val _r: RequestHeader = request
 
-    val baseParams: Map[String, String] = getOauth1TemplateRequest(Some(authConfig.callbackURL)) ++ Map("oauth_consumer_key" -> authConfig.consumerKey)
+    val baseParams: Map[String, String] =
+      getOauth1TemplateRequest(Some(authConfig.callbackURL)) ++ Map("oauth_consumer_key" -> authConfig.consumerKey)
 
-    val signature = sign(baseParams, authConfig.requestTokenURL, authConfig.httpMethod.methods.requestToken, authConfig.consumerSecret)
+    val signature                       = sign(
+      baseParams,
+      authConfig.requestTokenURL,
+      authConfig.httpMethod.methods.requestToken,
+      authConfig.consumerSecret
+    )
 
     (if (authConfig.httpMethod.methods.requestToken == "POST") {
-      post(env, authConfig.requestTokenURL, baseParams ++ Map("oauth_signature" -> signature))
-    } else {
-      get(env, s"${authConfig.requestTokenURL}?${baseParams.map(t => (t._1, encodeURI(t._2)).productIterator.mkString("=")).mkString("&")}&oauth_signature=$signature")
-    })
+       post(env, authConfig.requestTokenURL, baseParams ++ Map("oauth_signature" -> signature))
+     } else {
+       get(
+         env,
+         s"${authConfig.requestTokenURL}?${baseParams.map(t => (t._1, encodeURI(t._2)).productIterator.mkString("=")).mkString("&")}&oauth_signature=$signature"
+       )
+     })
       .map { result =>
         val parameters = strBodyToMap(result.body)
 
         if (parameters("oauth_callback_confirmed") == "true") {
-          val redirect      = request.getQueryString("redirect")
-          val hash          = env.sign(s"${authConfig.id}:::backoffice")
-          val oauth_token   = parameters("oauth_token")
+          val redirect    = request.getQueryString("redirect")
+          val hash        = env.sign(s"${authConfig.id}:::backoffice")
+          val oauth_token = parameters("oauth_token")
           Redirect(
             s"${authConfig.authorizeURL}?oauth_token=$oauth_token&perms=read"
           ).addingToSession(
-            "oauth_token_secret" -> parameters("oauth_token_secret"),
+            "oauth_token_secret"      -> parameters("oauth_token_secret"),
             "hash"                    -> hash,
             "bo-redirect-after-login" -> redirect.getOrElse(
               routes.BackOfficeController.dashboard().absoluteURL(env.exposedRootSchemeIsHttps)
             )
           )
-        }
-        else
+        } else
           Ok(otoroshi.views.html.oto.error("OAuth request token failed", env))
       }
 
   }
 
-  override def boLogout(request: RequestHeader,  user: BackOfficeUser, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env) =
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ) =
     FastFuture.successful(Right(None))
 
-  override def boCallback(request: Request[AnyContent], config: GlobalConfig)
-                         (implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] =
+  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[String, BackOfficeUser]] =
     callback(request, config, isBoLogin = true).asInstanceOf[Future[Either[String, BackOfficeUser]]]
 
   private def callback(
-                        request: Request[AnyContent],
-                        config: GlobalConfig,
-                        isBoLogin: Boolean,
-                        descriptor: Option[ServiceDescriptor] = None
-                      )(implicit ec: ExecutionContext, env: Env): Future[Either[String, RefreshableUser]] = {
+      request: Request[AnyContent],
+      config: GlobalConfig,
+      isBoLogin: Boolean,
+      descriptor: Option[ServiceDescriptor] = None
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[String, RefreshableUser]] = {
 
-    val method = authConfig.httpMethod.methods.accessToken
+    val method  = authConfig.httpMethod.methods.accessToken
     val queries = mapOfSeqToMap(request.queryString)
 
     val baseParams = getOauth1TemplateRequest(None) ++ Map(
-      "oauth_consumer_key"      -> authConfig.consumerKey,
-      "oauth_token"             -> queries("oauth_token"),
-      "oauth_verifier"          -> queries("oauth_verifier")
+      "oauth_consumer_key" -> authConfig.consumerKey,
+      "oauth_token"        -> queries("oauth_token"),
+      "oauth_verifier"     -> queries("oauth_verifier")
     )
 
-    val signature = sign(baseParams, authConfig.accessTokenURL, method, authConfig.consumerSecret, Some(request.session.get("oauth_token_secret").get))
+    val signature = sign(
+      baseParams,
+      authConfig.accessTokenURL,
+      method,
+      authConfig.consumerSecret,
+      Some(request.session.get("oauth_token_secret").get)
+    )
 
     (if (method == "POST") {
-      post(env, authConfig.accessTokenURL, baseParams ++ Map("oauth_signature" -> signature))
-    } else {
-      get(env, s"${authConfig.accessTokenURL}?${baseParams.map(t => (t._1, encodeURI(t._2)).productIterator.mkString("=")).mkString("&")}&oauth_signature=$signature")
-    })
+       post(env, authConfig.accessTokenURL, baseParams ++ Map("oauth_signature" -> signature))
+     } else {
+       get(
+         env,
+         s"${authConfig.accessTokenURL}?${baseParams.map(t => (t._1, encodeURI(t._2)).productIterator.mkString("=")).mkString("&")}&oauth_signature=$signature"
+       )
+     })
       .flatMap { result =>
         val bodyParams = strBodyToMap(result.body)
 
@@ -354,90 +398,96 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
 
         val userParams = getOauth1TemplateRequest(None) ++ Map(
           "oauth_consumer_key" -> authConfig.consumerKey,
-          "oauth_token" -> oauth_token,
+          "oauth_token"        -> oauth_token
         )
 
         val oauthTokenSecret = bodyParams("oauth_token_secret")
 
-        val signature = sign(userParams, authConfig.profileURL, "GET", authConfig.consumerSecret, Some(oauthTokenSecret))
+        val signature =
+          sign(userParams, authConfig.profileURL, "GET", authConfig.consumerSecret, Some(oauthTokenSecret))
 
-        env.Ws.url(authConfig.profileURL)
-          .addHttpHeaders(("Authorization", s"""OAuth oauth_consumer_key="${authConfig.consumerKey}",oauth_token="$oauth_token",oauth_signature_method="HMAC-SHA1",oauth_signature="$signature",oauth_timestamp="${userParams("oauth_timestamp")}",oauth_nonce="${userParams("oauth_nonce")}",oauth_version="1.0""""))
+        env.Ws
+          .url(authConfig.profileURL)
+          .addHttpHeaders(
+            (
+              "Authorization",
+              s"""OAuth oauth_consumer_key="${authConfig.consumerKey}",oauth_token="$oauth_token",oauth_signature_method="HMAC-SHA1",oauth_signature="$signature",oauth_timestamp="${userParams(
+                "oauth_timestamp"
+              )}",oauth_nonce="${userParams("oauth_nonce")}",oauth_version="1.0""""
+            )
+          )
           .get()
           .flatMap { result =>
             (result.header("Content-Type") match {
-              case Some("application/json") =>
+              case Some("application/json")                    =>
                 val userJson = Json.parse(result.body)
-                Some(Map(
-                  "profile" -> userJson,
-                  "email" -> (userJson \ "email").asOpt[String].getOrElse("no.name@oto.tools"),
-                  "name" -> (userJson \ "name").asOpt[String].getOrElse("No name")
-                ))
-              case Some(value) if value.contains("text/plain")  =>
+                Some(
+                  Map(
+                    "profile" -> userJson,
+                    "email"   -> (userJson \ "email").asOpt[String].getOrElse("no.name@oto.tools"),
+                    "name"    -> (userJson \ "name").asOpt[String].getOrElse("No name")
+                  )
+                )
+              case Some(value) if value.contains("text/plain") =>
                 val fields = strBodyToMap(result.body)
-                Some(Map(
-                  "profile" -> Json.toJson(fields),
-                  "email" -> fields.getOrElse("email", fields.getOrElse("mail", "no.name@oto.tools")),
-                  "name" -> fields.getOrElse("fullname", fields.getOrElse("username", fields.getOrElse("name", "No name")))
-                ))
-              case _ => None
+                Some(
+                  Map(
+                    "profile" -> Json.toJson(fields),
+                    "email"   -> fields.getOrElse("email", fields.getOrElse("mail", "no.name@oto.tools")),
+                    "name"    -> fields
+                      .getOrElse("fullname", fields.getOrElse("username", fields.getOrElse("name", "No name")))
+                  )
+                )
+              case _                                           => None
             })
               .map { data =>
-                FastFuture.successful(Right(
-                  if(isBoLogin)
-                    BackOfficeUser(
-                      randomId = IdGenerator.token(64),
-                      name = data("name").toString,
-                      email = data("email").toString,
-                      profile = data("profile").asInstanceOf[JsObject],
-                      simpleLogin = false,
-                      authConfigId = authConfig.id,
-                      tags = Seq.empty,
-                      metadata = Map.empty,
-                      rights = authConfig.rightsOverride.getOrElse(
-                        data("email").toString,
-                        UserRights(
-                          Seq(
-                            UserRight(
-                              TenantAccess(authConfig.location.tenant.value),
-                              authConfig.location.teams.map(t => TeamAccess(t.value))
+                FastFuture.successful(
+                  Right(
+                    if (isBoLogin)
+                      BackOfficeUser(
+                        randomId = IdGenerator.token(64),
+                        name = data("name").toString,
+                        email = data("email").toString,
+                        profile = data("profile").asInstanceOf[JsObject],
+                        simpleLogin = false,
+                        authConfigId = authConfig.id,
+                        tags = Seq.empty,
+                        metadata = Map.empty,
+                        rights = authConfig.rightsOverride.getOrElse(
+                          data("email").toString,
+                          UserRights(
+                            Seq(
+                              UserRight(
+                                TenantAccess(authConfig.location.tenant.value),
+                                authConfig.location.teams.map(t => TeamAccess(t.value))
+                              )
                             )
                           )
-                        )
-                      ),
-                      location = authConfig.location
-                    )
-                  else {
-                    PrivateAppsUser(
-                      randomId = IdGenerator.token(64),
-                      name = data("name").toString,
-                      email = data("email").toString,
-                      profile = data("profile").asInstanceOf[JsObject],
-                      authConfigId = authConfig.id,
-                      tags = Seq.empty,
-                      metadata = Map.empty,
-                      location = authConfig.location,
-                      realm = authConfig.cookieSuffix(descriptor.get),
-                      otoroshiData = None
-                    )
-                  }
-                ))
+                        ),
+                        location = authConfig.location
+                      )
+                    else {
+                      PrivateAppsUser(
+                        randomId = IdGenerator.token(64),
+                        name = data("name").toString,
+                        email = data("email").toString,
+                        profile = data("profile").asInstanceOf[JsObject],
+                        authConfigId = authConfig.id,
+                        tags = Seq.empty,
+                        metadata = Map.empty,
+                        location = authConfig.location,
+                        realm = authConfig.cookieSuffix(descriptor.get),
+                        otoroshiData = None
+                      )
+                    }
+                  )
+                )
               }
               .getOrElse(FastFuture.successful(Left("Missing content type from provider")))
           }
-          .recover {
-            case e: Throwable => Left(e.getMessage)
+          .recover { case e: Throwable =>
+            Left(e.getMessage)
           }
       }
   }
 }
-
-
-
-
-
-
-
-
-
-

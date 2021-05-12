@@ -15,8 +15,12 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.util.control.NoStackTrace
 
-case class PreRoutingError(body: ByteString, code: Int = 500, contentType: String, headers: Map[String, String] = Map.empty)
-    extends RuntimeException("PreRoutingError")
+case class PreRoutingError(
+    body: ByteString,
+    code: Int = 500,
+    contentType: String,
+    headers: Map[String, String] = Map.empty
+) extends RuntimeException("PreRoutingError")
     with NoStackTrace
 case class PreRoutingErrorWithResult(result: Result)
     extends RuntimeException("PreRoutingErrorWithResult")

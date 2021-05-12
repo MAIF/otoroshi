@@ -37,10 +37,10 @@ case class PrivateAppsUser(
 ) extends RefreshableUser
     with otoroshi.models.EntityLocationSupport {
 
-  def theDescription: String = name
-  def theMetadata: Map[String,String] = metadata
-  def theName: String = name
-  def theTags: Seq[String] = tags
+  def theDescription: String           = name
+  def theMetadata: Map[String, String] = metadata
+  def theName: String                  = name
+  def theTags: Seq[String]             = tags
 
   def picture: Option[String]             = (profile \ "picture").asOpt[String]
   def field(name: String): Option[String] = (profile \ name).asOpt[String]
@@ -132,7 +132,7 @@ object PrivateAppsUser {
         "expiredAt"    -> o.expiredAt.toDate.getTime,
         "lastRefresh"  -> o.lastRefresh.toDate.getTime,
         "metadata"     -> o.metadata,
-        "tags"         -> JsArray(o.tags.map(JsString.apply)),
+        "tags"         -> JsArray(o.tags.map(JsString.apply))
       )
   }
 }

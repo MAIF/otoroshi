@@ -55,12 +55,12 @@ case class SimpleOtoroshiAdmin(
     rights: UserRights,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends OtoroshiAdmin {
-  def internalId: String = username
-  def theDescription: String = label
-  def theMetadata: Map[String,String] = metadata
-  def theName: String = username
-  def theTags: Seq[String] = tags
-  def json: JsValue      =
+  def internalId: String               = username
+  def theDescription: String           = label
+  def theMetadata: Map[String, String] = metadata
+  def theName: String                  = username
+  def theTags: Seq[String]             = tags
+  def json: JsValue                    =
     location.jsonWithKey ++ Json.obj(
       "username"  -> username,
       "password"  -> password,
@@ -112,12 +112,12 @@ case class WebAuthnOtoroshiAdmin(
     rights: UserRights,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends OtoroshiAdmin {
-  def internalId: String = username
-  def theDescription: String = label
-  def theMetadata: Map[String,String] = metadata
-  def theName: String = username
-  def theTags: Seq[String] = tags
-  def json: JsValue      =
+  def internalId: String               = username
+  def theDescription: String           = label
+  def theMetadata: Map[String, String] = metadata
+  def theName: String                  = username
+  def theTags: Seq[String]             = tags
+  def json: JsValue                    =
     location.jsonWithKey ++ Json.obj(
       "username"    -> username,
       "password"    -> password,

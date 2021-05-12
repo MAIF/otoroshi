@@ -1223,12 +1223,14 @@ export class ServicePage extends Component {
                   help="Display a construction page when a user try to use the service"
                   onChange={(v) => this.changeTheValue('buildMode', v)}
                 />
-                {this.state.service.logAnalyticsOnServer && <BiColumnBooleanInput
-                  label="Log analytics"
-                  value={this.state.service.logAnalyticsOnServer}
-                  help="Log analytics events for this service on the servers"
-                  onChange={(v) => this.changeTheValue('logAnalyticsOnServer', v)}
-                />}
+                {this.state.service.logAnalyticsOnServer && (
+                  <BiColumnBooleanInput
+                    label="Log analytics"
+                    value={this.state.service.logAnalyticsOnServer}
+                    help="Log analytics events for this service on the servers"
+                    onChange={(v) => this.changeTheValue('logAnalyticsOnServer', v)}
+                  />
+                )}
                 <BiColumnBooleanInput
                   label="Use new http client"
                   value={this.state.service.useAkkaHttpClient}
@@ -1302,7 +1304,7 @@ export class ServicePage extends Component {
             initCollapsed={false}
             label="Service exposition settings">
             {this.state.service.handleLegacyDomain && (
-              <>  
+              <>
                 {this.state.freeDomain && (
                   <FreeDomainInput
                     label="Exposed domain"
@@ -1369,7 +1371,9 @@ export class ServicePage extends Component {
                         e.preventDefault();
                         this.setState({ freeDomain: !this.state.freeDomain });
                       }}>
-                      {this.state.freeDomain ? 'exposed domain assistant' : 'exposed domain free input'}
+                      {this.state.freeDomain
+                        ? 'exposed domain assistant'
+                        : 'exposed domain free input'}
                     </button>
                     {!this.state.neverSaved && (
                       <button
@@ -1380,7 +1384,10 @@ export class ServicePage extends Component {
                       </button>
                     )}
                     {!this.state.neverSaved && (
-                      <button type="button" onClick={this.createCert} className="btn btn-xs btn-info">
+                      <button
+                        type="button"
+                        onClick={this.createCert}
+                        className="btn btn-xs btn-info">
                         <i className="fas fa-plus-circle" /> Create certificate
                       </button>
                     )}

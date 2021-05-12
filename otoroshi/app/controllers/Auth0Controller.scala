@@ -38,7 +38,10 @@ class AuthController(
   ): Future[Result] = {
     val hash     = req.getQueryString("hash").orElse(req.session.get("hash")).getOrElse("--")
     val expected = env.sign(s"${auth.id}:::$descId")
-    if ((hash != "--" && hash == expected) || auth.isInstanceOf[SamlAuthModuleConfig] || auth.isInstanceOf[Oauth1ModuleConfig])
+    if (
+      (hash != "--" && hash == expected) || auth.isInstanceOf[SamlAuthModuleConfig] || auth
+        .isInstanceOf[Oauth1ModuleConfig]
+    )
       f(auth)
     else
       Errors.craftResponseResult(
@@ -239,17 +242,21 @@ class AuthController(
 
             ctx.request.body.asFormUrlEncoded match {
               case Some(body) if body("RelayState").nonEmpty =>
-                  val queryParams = body("RelayState").head.split("&").map { qParam => (qParam.split("=")(0), qParam.split("=")(1)) }
-                  val params = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
+                val queryParams =
+                  body("RelayState").head.split("&").map { qParam => (qParam.split("=")(0), qParam.split("=")(1)) }
+                val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
 
-                  val redirectTo = params.getOrElse("redirect_uri", routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps))
+                val redirectTo = params.getOrElse(
+                  "redirect_uri",
+                  routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
+                )
 
-                  val url                = new java.net.URL(redirectTo)
-                  val host               = url.getHost
+                val url  = new java.net.URL(redirectTo)
+                val host = url.getHost
 
-                 Redirect(redirectTo)
-                    .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
-                    .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth): _*)
+                Redirect(redirectTo)
+                  .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
+                  .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth): _*)
 
               case None =>
                 ctx.request.session
@@ -303,8 +310,9 @@ class AuthController(
       ctx.request.body.asFormUrlEncoded match {
         case Some(body) =>
           if (body("RelayState").nonEmpty) {
-            val queryParams = body("RelayState").head.split("&").map { qParam => (qParam.split("=")(0), qParam.split("=")(1)) }
-            val params = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
+            val queryParams =
+              body("RelayState").head.split("&").map { qParam => (qParam.split("=")(0), qParam.split("=")(1)) }
+            val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
 
             if (!params.contains("hash") || !params.contains("redirect_uri") || !params.contains("desc"))
               NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
@@ -433,7 +441,7 @@ class AuthController(
                     )
                   case Some(oauth) =>
                     oauth.authModule(config).boLogout(ctx.request, ctx.user, config).flatMap {
-                      case Left(body) =>
+                      case Left(body)   =>
                         ctx.user.delete().map { _ =>
                           Alerts.send(
                             AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua)
@@ -442,21 +450,33 @@ class AuthController(
                         }
                       case Right(value) =>
                         value match {
-                          case None =>
+                          case None            =>
                             ctx.user.delete().map { _ =>
                               Alerts.send(
-                                AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua)
+                                AdminLoggedOutAlert(
+                                  env.snowflakeGenerator.nextIdStr(),
+                                  env.env,
+                                  ctx.user,
+                                  ctx.from,
+                                  ctx.ua
+                                )
                               )
                               val userRedirect = redirect.getOrElse(routes.BackOfficeController.index().url)
                               Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
                             }
                           case Some(logoutUrl) =>
-                            val userRedirect = redirect.getOrElse(s"http://${request.theHost}/")
+                            val userRedirect      = redirect.getOrElse(s"http://${request.theHost}/")
                             val actualRedirectUrl =
                               logoutUrl.replace("${redirect}", URLEncoder.encode(userRedirect, "UTF-8"))
                             ctx.user.delete().map { _ =>
                               Alerts.send(
-                                AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua)
+                                AdminLoggedOutAlert(
+                                  env.snowflakeGenerator.nextIdStr(),
+                                  env.env,
+                                  ctx.user,
+                                  ctx.from,
+                                  ctx.ua
+                                )
                               )
                               Redirect(actualRedirectUrl).removingFromSession("bousr", "bo-redirect-after-login")
                             }

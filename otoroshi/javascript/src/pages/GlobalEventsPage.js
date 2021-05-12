@@ -132,13 +132,13 @@ export class GlobalEventsPage extends Component {
     { title: 'overhead', content: (item) => `${item.overhead} ms.` },
     { title: 'status', content: (item) => item.status },
     { title: 'method', content: (item) => item.method },
-    { title: 'Access By', content: (item) => safe(item.identity, i => i.identityType) }, // (item.identity ? item.identity.identityType : '--') },
+    { title: 'Access By', content: (item) => safe(item.identity, (i) => i.identityType) }, // (item.identity ? item.identity.identityType : '--') },
     {
       title: 'Accessed By',
-      content: (item) => safe(item.identity, i => i.label + ' (' + i.identity + ')'),
+      content: (item) => safe(item.identity, (i) => i.label + ' (' + i.identity + ')'),
     },
-    { title: 'Data In', content: (item)  => safe(item.data, i => i.dataIn  + ' bytes') }, // item.data.dataIn + ' bytes' },
-    { title: 'Data Out', content: (item) => safe(item.data, i => i.dataOut + ' bytes') }, // item.data.dataOut + ' bytes' },
+    { title: 'Data In', content: (item) => safe(item.data, (i) => i.dataIn + ' bytes') }, // item.data.dataIn + ' bytes' },
+    { title: 'Data Out', content: (item) => safe(item.data, (i) => i.dataOut + ' bytes') }, // item.data.dataOut + ' bytes' },
     {
       title: 'uri',
       content: (item) => item.url,
@@ -159,9 +159,9 @@ export class GlobalEventsPage extends Component {
     { title: 'reqId', content: (item) => item.reqId },
     {
       title: 'To',
-      content: (item) => safe(item.to, i => `${i.scheme}://${i.host}${i.uri}`), // `${item.to.scheme}://${item.to.host}${item.to.uri}`,
+      content: (item) => safe(item.to, (i) => `${i.scheme}://${i.host}${i.uri}`), // `${item.to.scheme}://${item.to.host}${item.to.uri}`,
       cell: (v, item) => {
-        const url = safe(item.to, i => `${i.scheme}://${i.host}${i.uri}`);
+        const url = safe(item.to, (i) => `${i.scheme}://${i.host}${i.uri}`);
         return (
           <a target="_blank" href={url}>
             {url}
@@ -171,9 +171,9 @@ export class GlobalEventsPage extends Component {
     },
     {
       title: 'Target',
-      content: (item) => safe(item.target, i => `${i.scheme}://${i.host}${i.uri}`), // `${item.target.scheme}://${item.target.host}${item.target.uri}`,
+      content: (item) => safe(item.target, (i) => `${i.scheme}://${i.host}${i.uri}`), // `${item.target.scheme}://${item.target.host}${item.target.uri}`,
       cell: (v, item) => {
-        const url = safe(item.target, i => `${i.scheme}://${i.host}${i.uri}`);
+        const url = safe(item.target, (i) => `${i.scheme}://${i.host}${i.uri}`);
         return (
           <a target="_blank" href={url}>
             {url}
@@ -191,20 +191,41 @@ export class GlobalEventsPage extends Component {
       ),
     },
     { title: 'Headers Count', content: (item) => item.headers.length },
-    { title: 'Calls per sec', content: (item) => safe(item.remainingQuotas, i => i.currentCallsPerSec) },
-    { title: 'Auth. calls per sec', content: (item) => safe(item.remainingQuotas, i => i.authorizedCallsPerSec) },
-    { title: 'Rem. calls per sec', content: (item) => safe(item.remainingQuotas, i => i.remainingCallsPerSec) },
-    { title: 'Calls per day', content: (item) => safe(item.remainingQuotas, i => i.currentCallsPerDay) },
-    { title: 'Auth. calls per day', content: (item) => safe(item.remainingQuotas, i => i.authorizedCallsPerDay) },
-    { title: 'Rem. calls per day', content: (item) => safe(item.remainingQuotas, i => i.remainingCallsPerDay) },
-    { title: 'Calls per month', content: (item) => safe(item.remainingQuotas, i => i.currentCallsPerMonth) },
+    {
+      title: 'Calls per sec',
+      content: (item) => safe(item.remainingQuotas, (i) => i.currentCallsPerSec),
+    },
+    {
+      title: 'Auth. calls per sec',
+      content: (item) => safe(item.remainingQuotas, (i) => i.authorizedCallsPerSec),
+    },
+    {
+      title: 'Rem. calls per sec',
+      content: (item) => safe(item.remainingQuotas, (i) => i.remainingCallsPerSec),
+    },
+    {
+      title: 'Calls per day',
+      content: (item) => safe(item.remainingQuotas, (i) => i.currentCallsPerDay),
+    },
+    {
+      title: 'Auth. calls per day',
+      content: (item) => safe(item.remainingQuotas, (i) => i.authorizedCallsPerDay),
+    },
+    {
+      title: 'Rem. calls per day',
+      content: (item) => safe(item.remainingQuotas, (i) => i.remainingCallsPerDay),
+    },
+    {
+      title: 'Calls per month',
+      content: (item) => safe(item.remainingQuotas, (i) => i.currentCallsPerMonth),
+    },
     {
       title: 'Auth. calls per month',
-      content: (item) => safe(item.remainingQuotas, i => i.authorizedCallsPerMonth),
+      content: (item) => safe(item.remainingQuotas, (i) => i.authorizedCallsPerMonth),
     },
     {
       title: 'Rem. calls per month',
-      content: (item) => safe(item.remainingQuotas, i => i.remainingCallsPerMonth),
+      content: (item) => safe(item.remainingQuotas, (i) => i.remainingCallsPerMonth),
     },
   ];
 

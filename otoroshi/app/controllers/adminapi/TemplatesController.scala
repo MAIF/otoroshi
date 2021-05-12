@@ -2,7 +2,14 @@ package otoroshi.controllers.adminapi
 
 import otoroshi.actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
-import otoroshi.auth.{AuthModuleConfig, BasicAuthModuleConfig, GenericOauth2ModuleConfig, LdapAuthModuleConfig, Oauth1ModuleConfig, SamlAuthModuleConfig}
+import otoroshi.auth.{
+  AuthModuleConfig,
+  BasicAuthModuleConfig,
+  GenericOauth2ModuleConfig,
+  LdapAuthModuleConfig,
+  Oauth1ModuleConfig,
+  SamlAuthModuleConfig
+}
 import otoroshi.env.Env
 import otoroshi.events.GatewayEvent
 import otoroshi.models._
@@ -334,7 +341,8 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             )
           case "verifiers"    =>
             patchTemplate[GlobalJwtVerifier](
-              env.datastores.globalJwtVerifierDataStore.template(env)
+              env.datastores.globalJwtVerifierDataStore
+                .template(env)
                 .applyOn(v =>
                   v.copy(location = v.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
                 )
@@ -354,9 +362,9 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
                     c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
                   case c: GenericOauth2ModuleConfig =>
                     c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-                  case c: SamlAuthModuleConfig =>
+                  case c: SamlAuthModuleConfig      =>
                     c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-                  case c: Oauth1ModuleConfig =>
+                  case c: Oauth1ModuleConfig        =>
                     c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
                 }
                 .asJson,
@@ -366,7 +374,8 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             )
           case "scripts"      =>
             patchTemplate[Script](
-              env.datastores.scriptDataStore.template(env)
+              env.datastores.scriptDataStore
+                .template(env)
                 .applyOn(v =>
                   v.copy(location = v.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
                 )
@@ -377,7 +386,8 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             )
           case "tcp/services" =>
             patchTemplate[TcpService](
-              env.datastores.tcpServiceDataStore.template(env)
+              env.datastores.tcpServiceDataStore
+                .template(env)
                 .applyOn(v =>
                   v.copy(location = v.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
                 )

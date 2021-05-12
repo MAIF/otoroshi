@@ -1035,7 +1035,7 @@ export class LdapModuleConfig extends Component {
   setGroupFiltersValues = (groupFilters, i, group, tenant, team) => {
     groupFilters[i] = { group, tenant, team };
     this.changeTheValue(this.props.path + '.groupFilters', groupFilters);
-  }
+  };
 
   render() {
     const settings = this.props.value || this.props.settings;
@@ -1088,7 +1088,8 @@ export class LdapModuleConfig extends Component {
           placeholder="Set your LDAP server"
           value={settings.serverUrls}
           help="List of your LDAP servers"
-          onChange={(v) => changeTheValue(path + '.serverUrls', v)} />
+          onChange={(v) => changeTheValue(path + '.serverUrls', v)}
+        />
         <TextInput
           label="Search Base"
           value={settings.searchBase}
@@ -1105,89 +1106,135 @@ export class LdapModuleConfig extends Component {
         <div className="form-group">
           <label className="col-xs-12 col-sm-2 control-label">Mapping group filter</label>
           <div className="col-sm-10" style={{ display: 'flex' }}>
-            {(settings.groupFilters && settings.groupFilters.length > 0) ? <table style={{ width: "100%" }}>
-              <thead style={{ backgroundColor: "transparent" }}>
-                <tr>
-                  <th scope="col" className="text-center">Group filter</th>
-                  <th scope="col" className="text-center">Tenant</th>
-                  <th scope="col" className="text-center">Team</th>
-                  <th scope="col" className="text-center">Read</th>
-                  <th scope="col" className="text-center">Write</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(settings.groupFilters || []).map(({ group, tenant, team }, i) => (
-                  <tr key={`group-filter-${i}`} style={{ marginTop: '5px' }}>
-                    <th>
-                      <input type="text" className="form-control" placeholder="Group filter" value={group}
-                        onChange={e => this.setGroupFiltersValues(settings.groupFilters, i, e.target.value, tenant, team)}
-                        onDragOver={(e) => e.preventDefault()}
-                      />
+            {settings.groupFilters && settings.groupFilters.length > 0 ? (
+              <table style={{ width: '100%' }}>
+                <thead style={{ backgroundColor: 'transparent' }}>
+                  <tr>
+                    <th scope="col" className="text-center">
+                      Group filter
                     </th>
-                    <td style={{ width: '25%', padding: '5px' }}>
-                      <SelectInput
-                        value={tenant.split(":")[0]}
-                        onChange={e => this.setGroupFiltersValues(settings.groupFilters, i, group, `${e}:${tenant.split(":")[1]}`, team)}
-                        valuesFrom="/bo/api/proxy/api/tenants"
-                        staticValues={[
-                          { value: '*', label: 'All' }
-                        ]}
-                        transformer={a => ({ value: a.id, label: a.name, })}
-                      />
-                    </td>
-                    <td style={{ width: '25%', padding: '5px' }}>
-                      <SelectInput
-                        value={team}
-                        onChange={e => this.setGroupFiltersValues(settings.groupFilters, i, group, tenant, e)}
-                        valuesFrom="/bo/api/proxy/api/teams"
-                        staticValues={[
-                          { value: '*', label: 'All' }
-                        ]}
-                        transformer={a => ({ value: a.id, label: a.name, })}
-                      />
-                    </td>
-                    <td style={{ width: '15%', padding: '5px' }}>
-                      <SelectInput
-                        value={tenant.split(":")[1]}
-                        onChange={e => this.setGroupFiltersValues(settings.groupFilters, i, group, `${tenant.split(':')[0]}:${e}`, team)}
-                        staticValues={[
-                          { value: 'rw', label: 'Read/Write' },
-                          { value: 'r', label: 'Read' }
-                        ]}
-                        transformer={a => ({ value: a.id, label: a.name, })}
-                      />
-                    </td>
-                    <td style={{ width: "1%" }}>
-                      <span className="input-group-btn">
-                        <button
-                          type="button"
-                          className="btn btn-danger"
-                          onClick={() => this.changeTheValue(path + '.groupFilters', settings.groupFilters.filter((_, j) => i !== j))}>
-                          <i className="fas fa-trash" />
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          onClick={() => changeTheValue(path + '.groupFilters', [
-                            ...settings.groupFilters,
-                            { group: '', tenant: '*rw', team: '*' }
-                          ])}>
-                          <i className="fas fa-plus-circle" />{' '}
-                        </button>
-                      </span>
-                    </td>
+                    <th scope="col" className="text-center">
+                      Tenant
+                    </th>
+                    <th scope="col" className="text-center">
+                      Team
+                    </th>
+                    <th scope="col" className="text-center">
+                      Read
+                    </th>
+                    <th scope="col" className="text-center">
+                      Write
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-              : <button
+                </thead>
+                <tbody>
+                  {(settings.groupFilters || []).map(({ group, tenant, team }, i) => (
+                    <tr key={`group-filter-${i}`} style={{ marginTop: '5px' }}>
+                      <th>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Group filter"
+                          value={group}
+                          onChange={(e) =>
+                            this.setGroupFiltersValues(
+                              settings.groupFilters,
+                              i,
+                              e.target.value,
+                              tenant,
+                              team
+                            )
+                          }
+                          onDragOver={(e) => e.preventDefault()}
+                        />
+                      </th>
+                      <td style={{ width: '25%', padding: '5px' }}>
+                        <SelectInput
+                          value={tenant.split(':')[0]}
+                          onChange={(e) =>
+                            this.setGroupFiltersValues(
+                              settings.groupFilters,
+                              i,
+                              group,
+                              `${e}:${tenant.split(':')[1]}`,
+                              team
+                            )
+                          }
+                          valuesFrom="/bo/api/proxy/api/tenants"
+                          staticValues={[{ value: '*', label: 'All' }]}
+                          transformer={(a) => ({ value: a.id, label: a.name })}
+                        />
+                      </td>
+                      <td style={{ width: '25%', padding: '5px' }}>
+                        <SelectInput
+                          value={team}
+                          onChange={(e) =>
+                            this.setGroupFiltersValues(settings.groupFilters, i, group, tenant, e)
+                          }
+                          valuesFrom="/bo/api/proxy/api/teams"
+                          staticValues={[{ value: '*', label: 'All' }]}
+                          transformer={(a) => ({ value: a.id, label: a.name })}
+                        />
+                      </td>
+                      <td style={{ width: '15%', padding: '5px' }}>
+                        <SelectInput
+                          value={tenant.split(':')[1]}
+                          onChange={(e) =>
+                            this.setGroupFiltersValues(
+                              settings.groupFilters,
+                              i,
+                              group,
+                              `${tenant.split(':')[0]}:${e}`,
+                              team
+                            )
+                          }
+                          staticValues={[
+                            { value: 'rw', label: 'Read/Write' },
+                            { value: 'r', label: 'Read' },
+                          ]}
+                          transformer={(a) => ({ value: a.id, label: a.name })}
+                        />
+                      </td>
+                      <td style={{ width: '1%' }}>
+                        <span className="input-group-btn">
+                          <button
+                            type="button"
+                            className="btn btn-danger"
+                            onClick={() =>
+                              this.changeTheValue(
+                                path + '.groupFilters',
+                                settings.groupFilters.filter((_, j) => i !== j)
+                              )
+                            }>
+                            <i className="fas fa-trash" />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={() =>
+                              changeTheValue(path + '.groupFilters', [
+                                ...settings.groupFilters,
+                                { group: '', tenant: '*rw', team: '*' },
+                              ])
+                            }>
+                            <i className="fas fa-plus-circle" />{' '}
+                          </button>
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <button
                 type="button"
                 className="btn btn-primary"
-                onClick={() => changeTheValue(path + '.groupFilters', [
-                  { group: '', tenant: '*rw', team: '*' }
-                ])}>
+                onClick={() =>
+                  changeTheValue(path + '.groupFilters', [{ group: '', tenant: '*rw', team: '*' }])
+                }>
                 <i className="fas fa-plus-circle" />{' '}
-              </button>}
+              </button>
+            )}
           </div>
         </div>
         <TextInput
@@ -1270,7 +1317,7 @@ export class LdapModuleConfig extends Component {
           value={settings.rightsOverride || {}}
           onChange={(e) => this.changeTheValue(path + '.rightsOverride', e)}
         />
-      </div >
+      </div>
     );
   }
 }
@@ -1364,7 +1411,7 @@ export class AuthModuleConfig extends Component {
         label="Type"
         value={settings.type}
         onChange={(e) => {
-          console.log(e)
+          console.log(e);
           BackOfficeServices.createNewAuthConfig(e).then((templ) => {
             this.props.onChange(templ);
           });
@@ -1457,7 +1504,7 @@ export class AuthModuleConfig extends Component {
           { label: 'In memory auth. provider', value: 'basic' },
           { label: 'Ldap auth. provider', value: 'ldap' },
           { label: 'SAML provider', value: 'saml' },
-          { label: 'OAuth1', value: 'oauth1' }
+          { label: 'OAuth1', value: 'oauth1' },
         ]}
         help="The type of settings to log into your app."
       />
@@ -1502,63 +1549,66 @@ export class AuthModuleConfig extends Component {
 
 export class SamlModuleConfig extends Component {
   flow = [
-    "warning",
-    "id",
-    "name",
-    "desc",
-    "singleSignOnUrl",
-    "ssoProtocolBinding",
-    "singleLogoutUrl",
-    "singleLogoutProtocolBinding",
-    "credentials.signedDocuments",
-    "credentials.encryptedAssertions",
-    "credentials",
-    "nameIDFormat",
-    "usedNameIDAsEmail",
-    "issuer",
-    "validateSignature",
-    "validateAssertions",
-    "validatingCertificates"
+    'warning',
+    'id',
+    'name',
+    'desc',
+    'singleSignOnUrl',
+    'ssoProtocolBinding',
+    'singleLogoutUrl',
+    'singleLogoutProtocolBinding',
+    'credentials.signedDocuments',
+    'credentials.encryptedAssertions',
+    'credentials',
+    'nameIDFormat',
+    'usedNameIDAsEmail',
+    'issuer',
+    'validateSignature',
+    'validateAssertions',
+    'validatingCertificates',
   ];
 
   changeTheValue = (name, value) => {
     if (this.props.onChange)
-      this.props.onChange(deepSet(
-        _.cloneDeep(this.props.value || this.props.settings),
-        name.startsWith('.') ? name.substr(1) : name,
-        value
-      ));
-    else
-      this.props.changeTheValue(name, value);
+      this.props.onChange(
+        deepSet(
+          _.cloneDeep(this.props.value || this.props.settings),
+          name.startsWith('.') ? name.substr(1) : name,
+          value
+        )
+      );
+    else this.props.changeTheValue(name, value);
   };
 
   schema = {
     warning: {
-      type: ({ }) => {
+      type: ({}) => {
         if (this.props.value.warning) {
           const { warning } = this.props.value;
-          return <div className="form-group">
-            <label className="col-xs-12 col-sm-2 control-label"></label>
-            <div className="col-sm-10">{warning.error ? warning.error : warning.success}</div>
-          </div>
+          return (
+            <div className="form-group">
+              <label className="col-xs-12 col-sm-2 control-label"></label>
+              <div className="col-sm-10">{warning.error ? warning.error : warning.success}</div>
+            </div>
+          );
         }
-        return null
-      }
+        return null;
+      },
     },
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
     name: {
       type: 'string',
-      props: { label: 'Name', placeholder: 'New SAML config' }
+      props: { label: 'Name', placeholder: 'New SAML config' },
     },
     desc: {
       type: 'string',
-      props: { label: 'Description', placeholder: 'New SAML Description' }
+      props: { label: 'Description', placeholder: 'New SAML Description' },
     },
     singleSignOnUrl: {
       type: 'string',
       props: {
-        label: "Single sign on URL"
-      }
+        label: 'Single sign on URL',
+      },
     },
     ssoProtocolBinding: {
       type: 'select',
@@ -1567,15 +1617,15 @@ export class SamlModuleConfig extends Component {
         defaultValue: 'post',
         possibleValues: [
           { value: 'post', label: 'Post' },
-          { value: 'redirect', label: 'Redirect' }
+          { value: 'redirect', label: 'Redirect' },
         ],
       },
     },
     singleLogoutUrl: {
       type: 'string',
       props: {
-        label: "Single Logout URL"
-      }
+        label: 'Single Logout URL',
+      },
     },
     singleLogoutProtocolBinding: {
       type: 'select',
@@ -1584,125 +1634,134 @@ export class SamlModuleConfig extends Component {
         defaultValue: 'post',
         possibleValues: [
           { value: 'post', label: 'Post' },
-          { value: 'redirect', label: 'Redirect' }
+          { value: 'redirect', label: 'Redirect' },
         ],
       },
     },
-    "credentials.signedDocuments": {
+    'credentials.signedDocuments': {
       type: 'bool',
       props: {
         label: 'Sign documents',
-        help: 'Should SAML Request be signed by Otoroshi ?'
-      }
+        help: 'Should SAML Request be signed by Otoroshi ?',
+      },
     },
-    "credentials.encryptedAssertions": {
+    'credentials.encryptedAssertions': {
       type: 'bool',
       props: {
         label: 'Validate Assertions Signature',
-        help: 'Should SAML Assertions to be decrypted ?'
-      }
+        help: 'Should SAML Assertions to be decrypted ?',
+      },
     },
-    'credentials': {
-      type: ({ }) => {
-        const { signingKey, encryptionKey, signedDocuments, encryptedAssertions } = this.props.value.credentials;
+    credentials: {
+      type: ({}) => {
+        const {
+          signingKey,
+          encryptionKey,
+          signedDocuments,
+          encryptedAssertions,
+        } = this.props.value.credentials;
 
         const configs = [
           {
             element: 'documents',
             switch: {
               value: signingKey.useOtoroshiCertificate,
-              setValue: value => {
-                this.changeTheValue('credentials.signingKey.useOtoroshiCertificate', value)
-              }
+              setValue: (value) => {
+                this.changeTheValue('credentials.signingKey.useOtoroshiCertificate', value);
+              },
             },
-            key: "Signing",
-            path: "credentials.signingKey",
+            key: 'Signing',
+            path: 'credentials.signingKey',
             value: {
               certificate: signingKey.certificate,
               privateKey: signingKey.privateKey,
-              certId: signingKey.certId
+              certId: signingKey.certId,
             },
-            show: signedDocuments
+            show: signedDocuments,
           },
           {
             element: 'assertions',
             switch: {
               value: encryptionKey.useOtoroshiCertificate,
-              setValue: value => {
-                this.changeTheValue('credentials.encryptionKey.useOtoroshiCertificate', value)
-              }
+              setValue: (value) => {
+                this.changeTheValue('credentials.encryptionKey.useOtoroshiCertificate', value);
+              },
             },
-            key: "Encryption",
-            path: "credentials.encryptionKey",
+            key: 'Encryption',
+            path: 'credentials.encryptionKey',
             value: {
               certificate: encryptionKey.certificate,
               privateKey: encryptionKey.privateKey,
-              certId: encryptionKey.certId
+              certId: encryptionKey.certId,
             },
-            show: encryptedAssertions
-          }
-        ]
+            show: encryptedAssertions,
+          },
+        ];
 
-        return (
-          configs.map((config, i) => (
-            config.show && <div key={`config${i}`}>
-              <BooleanInput
-                label={`${i === 0 ? 'Sign' : 'Validate'} ${config.element} with Otoroshi certificate`}
-                value={config.switch.value}
-                onChange={() => config.switch.setValue(!config.switch.value)}
-              />
-              {!config.switch.value ?
-                <div>
-                  <TextareaInput
-                    label={`${config.key} Certificate`}
-                    value={config.value.certificate}
-                    help="..."
-                    onChange={(v) => this.changeTheValue(`${config.path}.certificate`, v)}
-                  />
-                  <TextareaInput
-                    label={`${config.key} Private Key`}
-                    value={config.value.privateKey}
-                    help="..."
-                    onChange={(v) => this.changeTheValue(`${config.path}.privateKey`, v)}
-                  />
-                  <SelectInput
-                    label="Signature al"
-                    help="The signature algorithm to use to sign documents"
-                    value={this.props.value.signature.algorithm}
-                    onChange={(v) => this.changeTheValue('signature.algorithm', v)}
-                    possibleValues={[
-                      { label: 'RSA_SHA1', value: 'rsa_sha1' },
-                      { label: 'RSA_SHA512', value: 'rsa_sha512' },
-                      { label: 'RSA_SHA256', value: 'rsa_sha256' },
-                      { label: 'DSA_SHA1', value: 'dsa_sha1' }
-                    ]}
-                  />
-                  <SelectInput
-                    label="Canonicalization Method"
-                    help="Canonicalization Method for XML Signatures"
-                    value={this.props.value.signature.canocalizationMethod}
-                    onChange={(v) => this.changeTheValue('signature.canocalizationMethod', v)}
-                    possibleValues={[
-                      { label: 'EXCLUSIVE', value: 'exclusive' },
-                      { label: 'EXCLUSIVE_WITH_COMMENTS', value: 'with_comments' },
-                    ]}
-                  />
-                </div> :
-                <div>
-                  <SelectInput
-                    label={`${config.key} KeyPair`}
-                    help={`The keypair used to sign/verify ${config.element}`}
-                    value={config.value.certId}
-                    onChange={(v) => this.changeTheValue(`${config.path}.certId`, v)}
-                    valuesFrom="/bo/api/proxy/api/certificates?keypair=true"
-                    transformer={(a) => ({ value: a.id, label: a.name + ' - ' + a.description })}
-                  />
-                </div>
-              }
-            </div>
-          ))
-        )
-      }
+        return configs.map(
+          (config, i) =>
+            config.show && (
+              <div key={`config${i}`}>
+                <BooleanInput
+                  label={`${i === 0 ? 'Sign' : 'Validate'} ${
+                    config.element
+                  } with Otoroshi certificate`}
+                  value={config.switch.value}
+                  onChange={() => config.switch.setValue(!config.switch.value)}
+                />
+                {!config.switch.value ? (
+                  <div>
+                    <TextareaInput
+                      label={`${config.key} Certificate`}
+                      value={config.value.certificate}
+                      help="..."
+                      onChange={(v) => this.changeTheValue(`${config.path}.certificate`, v)}
+                    />
+                    <TextareaInput
+                      label={`${config.key} Private Key`}
+                      value={config.value.privateKey}
+                      help="..."
+                      onChange={(v) => this.changeTheValue(`${config.path}.privateKey`, v)}
+                    />
+                    <SelectInput
+                      label="Signature al"
+                      help="The signature algorithm to use to sign documents"
+                      value={this.props.value.signature.algorithm}
+                      onChange={(v) => this.changeTheValue('signature.algorithm', v)}
+                      possibleValues={[
+                        { label: 'RSA_SHA1', value: 'rsa_sha1' },
+                        { label: 'RSA_SHA512', value: 'rsa_sha512' },
+                        { label: 'RSA_SHA256', value: 'rsa_sha256' },
+                        { label: 'DSA_SHA1', value: 'dsa_sha1' },
+                      ]}
+                    />
+                    <SelectInput
+                      label="Canonicalization Method"
+                      help="Canonicalization Method for XML Signatures"
+                      value={this.props.value.signature.canocalizationMethod}
+                      onChange={(v) => this.changeTheValue('signature.canocalizationMethod', v)}
+                      possibleValues={[
+                        { label: 'EXCLUSIVE', value: 'exclusive' },
+                        { label: 'EXCLUSIVE_WITH_COMMENTS', value: 'with_comments' },
+                      ]}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <SelectInput
+                      label={`${config.key} KeyPair`}
+                      help={`The keypair used to sign/verify ${config.element}`}
+                      value={config.value.certId}
+                      onChange={(v) => this.changeTheValue(`${config.path}.certId`, v)}
+                      valuesFrom="/bo/api/proxy/api/certificates?keypair=true"
+                      transformer={(a) => ({ value: a.id, label: a.name + ' - ' + a.description })}
+                    />
+                  </div>
+                )}
+              </div>
+            )
+        );
+      },
     },
     nameIDFormat: {
       type: 'select',
@@ -1715,114 +1774,111 @@ export class SamlModuleConfig extends Component {
           { value: 'persistent', label: 'Persistent' },
           { value: 'transient', label: 'Transient' },
           { value: 'kerberos', label: 'Kerberos' },
-          { value: 'entity', label: 'Entity' }
+          { value: 'entity', label: 'Entity' },
         ],
       },
     },
     usedNameIDAsEmail: {
-      type: ({ }) => {
+      type: ({}) => {
         const { emailAttributeName, usedNameIDAsEmail } = this.props.value;
         return (
           <div>
             <BooleanInput
               label={`Use NameID format as email`}
               value={usedNameIDAsEmail}
-              onChange={v => this.changeTheValue('.usedNameIDAsEmail', v)}
+              onChange={(v) => this.changeTheValue('.usedNameIDAsEmail', v)}
             />
-            {!this.props.value.usedNameIDAsEmail &&
+            {!this.props.value.usedNameIDAsEmail && (
               <TextInput
                 label="Name of email attribute"
                 value={emailAttributeName}
                 help="..."
                 onChange={(v) => this.changeTheValue('emailAttributeName', v)}
               />
-            }
+            )}
           </div>
-        )
-      }
+        );
+      },
     },
     issuer: {
       type: 'string',
       props: {
-        label: 'URL issuer'
-      }
+        label: 'URL issuer',
+      },
     },
     validateSignature: {
       type: 'bool',
       props: {
         label: 'Validate Signature',
-        help: 'Enable/disable signature validation of SAML responses'
-      }
+        help: 'Enable/disable signature validation of SAML responses',
+      },
     },
     validateAssertions: {
       type: 'bool',
       props: {
         label: 'Validate Assertions Signature',
-        help: 'Enable/disable signature validation of SAML assertions'
-      }
+        help: 'Enable/disable signature validation of SAML assertions',
+      },
     },
     validatingCertificates: {
       type: 'array',
       props: {
         label: 'Validating Certificates',
-        help: 'The certificate in PEM format that must be used to check for signatures.'
+        help: 'The certificate in PEM format that must be used to check for signatures.',
       },
     },
   };
 
   fetchFromURL = () => {
-    window.newPrompt('URL of the entity descriptor config')
-      .then(url => {
-        if (url)
-          this._fetchConfig({ url })
-      });
-  }
+    window.newPrompt('URL of the entity descriptor config').then((url) => {
+      if (url) this._fetchConfig({ url });
+    });
+  };
 
-  _fetchConfig = body => {
+  _fetchConfig = (body) => {
     fetch('/bo/api/saml/_fetchConfig', {
       method: 'POST',
       headers: {
         Accept: 'application/json',
-        "Content-Type": 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body)
-    })
-      .then(res => {
-        const onError = res.status >= 400
-        res.json()
-          .then(r => {
-            if (onError)
-              this.props.onChange({
-                ...this.props.value,
-                warning: {
-                  error: r.error
-                }
-              })
-            else
-              this.props.onChange({
-                ...r,
-                warning: {
-                  success: 'Config loaded'
-                }
-              })
-          })
-      })
-  }
+      body: JSON.stringify(body),
+    }).then((res) => {
+      const onError = res.status >= 400;
+      res.json().then((r) => {
+        if (onError)
+          this.props.onChange({
+            ...this.props.value,
+            warning: {
+              error: r.error,
+            },
+          });
+        else
+          this.props.onChange({
+            ...r,
+            warning: {
+              success: 'Config loaded',
+            },
+          });
+      });
+    });
+  };
 
   fetchConfig = () => {
     window
       .newPrompt('Entities descriptor config', { value: '', textarea: true, rows: 12 })
-      .then(xml => {
-        if (xml)
-          this._fetchConfig({ xml })
+      .then((xml) => {
+        if (xml) this._fetchConfig({ xml });
       });
-  }
+  };
 
   render() {
     return (
       <div>
         <div className="form-group">
-          <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label"></label>
+          <label
+            htmlFor={`input-${this.props.label}`}
+            className="col-xs-12 col-sm-2 control-label"></label>
           <div className="col-sm-10">
             <button type="button" className="btn btn-success" onClick={this.fetchFromURL}>
               Get entity descriptor from URL
@@ -1845,30 +1901,31 @@ export class SamlModuleConfig extends Component {
 
 export class OAuth1ModuleConfig extends Component {
   flow = [
-    "id",
-    "httpMethod",
-    "name",
-    "desc",
-    "consumerKey",
-    "consumerSecret",
+    'id',
+    'httpMethod',
+    'name',
+    'desc',
+    'consumerKey',
+    'consumerSecret',
     // "signatureMethod",
-    "requestTokenURL",
-    "authorizeURL",
-    "accessTokenURL",
-    "profileURL",
-    "callbackURL",
-    "rightsOverride"
+    'requestTokenURL',
+    'authorizeURL',
+    'accessTokenURL',
+    'profileURL',
+    'callbackURL',
+    'rightsOverride',
   ];
 
   changeTheValue = (name, value) => {
     if (this.props.onChange)
-      this.props.onChange(deepSet(
-        _.cloneDeep(this.props.value || this.props.settings),
-        name.startsWith('.') ? name.substr(1) : name,
-        value
-      ));
-    else
-      this.props.changeTheValue(name, value);
+      this.props.onChange(
+        deepSet(
+          _.cloneDeep(this.props.value || this.props.settings),
+          name.startsWith('.') ? name.substr(1) : name,
+          value
+        )
+      );
+    else this.props.changeTheValue(name, value);
   };
 
   schema = {
@@ -1879,31 +1936,31 @@ export class OAuth1ModuleConfig extends Component {
         label: 'Http Method',
         help: 'Method used to get request_token and access token',
         possibleValues: [
-          { value: 'post', label: 'POST'},
-          { value: 'get', label: 'GET'}
-        ]
-      }
+          { value: 'post', label: 'POST' },
+          { value: 'get', label: 'GET' },
+        ],
+      },
     },
     name: {
       type: 'string',
-      props: { label: 'Name', placeholder: 'New OAuth1 config' }
+      props: { label: 'Name', placeholder: 'New OAuth1 config' },
     },
     desc: {
       type: 'string',
-      props: { label: 'Description', placeholder: 'New OAuth1 Description' }
+      props: { label: 'Description', placeholder: 'New OAuth1 Description' },
     },
     consumerKey: {
       type: 'string',
-      props: { label: 'Consumer key', placeholder: 'Consumer Key' }
+      props: { label: 'Consumer key', placeholder: 'Consumer Key' },
     },
     consumerSecret: {
       type: 'string',
-      props: { label: 'Consumer secret', placeholder: 'Consumer secret' }
+      props: { label: 'Consumer secret', placeholder: 'Consumer secret' },
     },
     // signatureMethod: {
     //   type: 'select',
-    //   props: { 
-    //     label: 'Signature method', 
+    //   props: {
+    //     label: 'Signature method',
     //     defaultValue: 'HMAC-SHA1',
     //     possibleValues: [
     //       { value: 'HmacSHA1', label: 'HMAC-SHA1' },
@@ -1914,27 +1971,27 @@ export class OAuth1ModuleConfig extends Component {
     // },
     requestTokenURL: {
       type: 'string',
-      props: { label: 'Request Token URL', placeholder: 'Request Token URL' }
+      props: { label: 'Request Token URL', placeholder: 'Request Token URL' },
     },
     authorizeURL: {
       type: 'string',
-      props: { label: 'Authorize URL', placeholder: 'Authorize URL' }
+      props: { label: 'Authorize URL', placeholder: 'Authorize URL' },
     },
     accessTokenURL: {
       type: 'string',
-      props: { label: 'Access token URL', placeholder: 'Access token URL' }
+      props: { label: 'Access token URL', placeholder: 'Access token URL' },
     },
     profileURL: {
       type: 'string',
-      props: { label: 'Profile URL', placeholder: 'Profile URL' }
+      props: { label: 'Profile URL', placeholder: 'Profile URL' },
     },
     callbackURL: {
       type: 'string',
-      props: { 
-        label: 'Callback URL', 
+      props: {
+        label: 'Callback URL',
         placeholder: 'Callback URL',
-        help: "Endpoint used to get back user after authentication on provider"
-      }
+        help: 'Endpoint used to get back user after authentication on provider',
+      },
     },
     rightsOverride: {
       type: ({}) => (
@@ -1946,9 +2003,9 @@ export class OAuth1ModuleConfig extends Component {
         />
       ),
       props: {
-        label: 'Override rights'
-      }
-    }
+        label: 'Override rights',
+      },
+    },
   };
 
   render() {

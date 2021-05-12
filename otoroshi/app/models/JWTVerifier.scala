@@ -939,8 +939,9 @@ sealed trait JwtVerifier extends AsJson {
   def asGlobal: GlobalJwtVerifier = this.asInstanceOf[GlobalJwtVerifier]
 
   private def sign(token: JsObject, algorithm: Algorithm, kid: Option[String]): String = {
-    val headerJson     = Json.obj("alg" -> algorithm.getName, "typ" -> "JWT")
-                           .applyOnWithOpt(kid)((h, id) => h ++ Json.obj("kid" -> id))
+    val headerJson     = Json
+      .obj("alg" -> algorithm.getName, "typ" -> "JWT")
+      .applyOnWithOpt(kid)((h, id) => h ++ Json.obj("kid" -> id))
     val header         = ApacheBase64.encodeBase64URLSafeString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
     val payload        = ApacheBase64.encodeBase64URLSafeString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
     val content        = String.format("%s.%s", header, payload)
@@ -1468,12 +1469,12 @@ case class GlobalJwtVerifier(
     with AsJson
     with otoroshi.models.EntityLocationSupport {
 
-  def json: JsValue      = asJson
-  def internalId: String = id
-  def theDescription: String = desc
-  def theMetadata: Map[String,String] = metadata
-  def theName: String = name
-  def theTags: Seq[String] = tags
+  def json: JsValue                    = asJson
+  def internalId: String               = id
+  def theDescription: String           = desc
+  def theMetadata: Map[String, String] = metadata
+  def theName: String                  = name
+  def theTags: Seq[String]             = tags
 
   def asJson: JsValue =
     location.jsonWithKey ++ Json.obj(
@@ -1486,7 +1487,7 @@ case class GlobalJwtVerifier(
       "algoSettings" -> algoSettings.asJson,
       "strategy"     -> strategy.asJson,
       "metadata"     -> metadata,
-      "tags"         -> JsArray(tags.map(JsString.apply)),
+      "tags"         -> JsArray(tags.map(JsString.apply))
     )
 
   override def isRef = false

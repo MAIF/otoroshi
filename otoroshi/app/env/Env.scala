@@ -22,7 +22,20 @@ import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.events.{OtoroshiEventsActorSupervizer, StartExporters}
 import otoroshi.jobs.updates.Version
-import otoroshi.models.{EntityLocation, OtoroshiAdminType, SimpleOtoroshiAdmin, Team, TeamAccess, TeamId, Tenant, TenantAccess, TenantId, UserRight, UserRights, WebAuthnOtoroshiAdmin}
+import otoroshi.models.{
+  EntityLocation,
+  OtoroshiAdminType,
+  SimpleOtoroshiAdmin,
+  Team,
+  TeamAccess,
+  TeamId,
+  Tenant,
+  TenantAccess,
+  TenantId,
+  UserRight,
+  UserRights,
+  WebAuthnOtoroshiAdmin
+}
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.storage.DataStores
@@ -877,9 +890,9 @@ class Env(
     useAkkaHttpClient = true
   )
 
-  lazy val otoroshiVersion = "1.5.0-alpha.10"
+  lazy val otoroshiVersion    = "1.5.0-alpha.10"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
-  lazy val checkForUpdates = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
+  lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
   lazy val jmxEnabled = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.jmx.enabled").getOrElse(false)
   lazy val jmxPort    = configuration.getOptionalWithFileSupport[Int]("otoroshi.jmx.port").getOrElse(16000)
@@ -1008,7 +1021,8 @@ class Env(
               }
               case _         => {
 
-                val defaultGroup       = ServiceGroup("default", "default-group", "The default service group", Seq.empty, Map.empty)
+                val defaultGroup       =
+                  ServiceGroup("default", "default-group", "The default service group", Seq.empty, Map.empty)
                 val defaultGroupApiKey = ApiKey(
                   IdGenerator.token(16),
                   IdGenerator.token(64),

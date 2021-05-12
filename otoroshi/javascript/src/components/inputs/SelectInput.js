@@ -129,7 +129,7 @@ export class SelectInput extends Component {
             isLoading={this.state.loading}
             value={this.state.value}
             placeholder={this.props.placeholder}
-            options={[...(this.props.staticValues || []), ...this.state.values]}
+            options={[...(this.props.staticValues || []), ...this.state.values]}
             onChange={this.onChange}
           />
         </div>

@@ -36,9 +36,9 @@ object LdapAuthUser {
     new Format[LdapAuthUser] {
       override def writes(o: LdapAuthUser) =
         Json.obj(
-          "name"     -> o.name,
-          "email"    -> o.email,
-          "metadata" -> o.metadata,
+          "name"       -> o.name,
+          "email"      -> o.email,
+          "metadata"   -> o.metadata,
           "userRights" -> o.userRights.map(UserRights.format.writes)
         )
       override def reads(json: JsValue)    =
@@ -96,13 +96,17 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           allowEmptyPassword = (json \ "allowEmptyPassword").asOpt[Boolean].getOrElse(false),
           serverUrls = (json \ "serverUrl").asOpt[String] match {
             case Some(url) => Seq(url)
-            case None => (json \ "serverUrls").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            case None      => (json \ "serverUrls").asOpt[Seq[String]].getOrElse(Seq.empty[String])
           },
           searchBase = (json \ "searchBase").as[String],
           userBase = (json \ "userBase").asOpt[String].filterNot(_.trim.isEmpty),
           groupFilters = (json \ "groupFilter").asOpt[String] match {
-            case Some(filter) => location.teams.map(t => GroupFilter(filter, TenantAccess(location.tenant.value), t.value))
-            case None => (json \ "groupFilters").asOpt[Seq[GroupFilter]](Reads.seq(GroupFilter._fmt)).getOrElse(Seq.empty[GroupFilter])
+            case Some(filter) =>
+              location.teams.map(t => GroupFilter(filter, TenantAccess(location.tenant.value), t.value))
+            case None         =>
+              (json \ "groupFilters")
+                .asOpt[Seq[GroupFilter]](Reads.seq(GroupFilter._fmt))
+                .getOrElse(Seq.empty[GroupFilter])
           },
           searchFilter = (json \ "searchFilter").as[String],
           adminUsername = (json \ "adminUsername").asOpt[String].filterNot(_.trim.isEmpty),
@@ -123,10 +127,10 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
           groupRights = (json \ "groupRights")
             .asOpt[Map[String, JsObject]]
-            .map(_.mapValues(GroupRights.reads).collect {
-              case (key, Some(v)) => (key, v)
+            .map(_.mapValues(GroupRights.reads).collect { case (key, Some(v)) =>
+              (key, v)
             })
-            .getOrElse(Map.empty),
+            .getOrElse(Map.empty)
         )
       )
     } recover { case e =>
@@ -135,14 +139,14 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
     } get
 }
 
-case class GroupRights (userRights: UserRights, users: Seq[String])
+case class GroupRights(userRights: UserRights, users: Seq[String])
 
 object GroupRights {
   def _fmt = new Format[GroupRights] {
     override def writes(o: GroupRights) =
       Json.obj(
-        "rights"  -> o.userRights.json,
-        "users"          -> o.users
+        "rights" -> o.userRights.json,
+        "users"  -> o.users
       )
 
     override def reads(json: JsValue): JsResult[GroupRights] =
@@ -162,30 +166,30 @@ object GroupRights {
     this._fmt.reads(json).asOpt
 }
 
-case class GroupFilter (group: String, tenant: TenantAccess, team: String)
+case class GroupFilter(group: String, tenant: TenantAccess, team: String)
 
 object GroupFilter {
   def _fmt = new Format[GroupFilter] {
-      override def writes(o: GroupFilter) =
-        Json.obj(
-          "group" -> o.group,
-          "team" -> o.team,
-          "tenant"   -> o.tenant.raw
-        )
+    override def writes(o: GroupFilter) =
+      Json.obj(
+        "group"  -> o.group,
+        "team"   -> o.team,
+        "tenant" -> o.tenant.raw
+      )
 
-      override def reads(json: JsValue) =
-        Try {
-          JsSuccess(
-            GroupFilter(
-              group = (json \ "group").asOpt[String].getOrElse(""),
-              tenant = (json \ "tenant").asOpt[String].map(TenantAccess(_)).getOrElse(TenantAccess("*:rw")),
-              team = (json \ "team").asOpt[String].getOrElse("")
-            )
+    override def reads(json: JsValue) =
+      Try {
+        JsSuccess(
+          GroupFilter(
+            group = (json \ "group").asOpt[String].getOrElse(""),
+            tenant = (json \ "tenant").asOpt[String].map(TenantAccess(_)).getOrElse(TenantAccess("*:rw")),
+            team = (json \ "team").asOpt[String].getOrElse("")
           )
-        } recover { case e =>
-          JsError(e.getMessage)
-        } get
-    }
+        )
+      } recover { case e =>
+        JsError(e.getMessage)
+      } get
+  }
 }
 
 case class LdapAuthModuleConfig(
@@ -217,10 +221,10 @@ case class LdapAuthModuleConfig(
 ) extends AuthModuleConfig {
   def `type`: String = "ldap"
 
-  def theDescription: String = desc
-  def theMetadata: Map[String,String] = metadata
-  def theName: String = name
-  def theTags: Seq[String] = tags
+  def theDescription: String           = desc
+  def theMetadata: Map[String, String] = metadata
+  def theName: String                  = name
+  def theTags: Seq[String]             = tags
 
   override def authModule(config: GlobalConfig): AuthModule = LdapAuthModule(this)
 
@@ -302,7 +306,7 @@ case class LdapAuthModuleConfig(
     searchControls
   }
 
-  private def _bindUser(urls: Seq[String], username: String, password: String) : Either[String, LdapAuthUser] = {
+  private def _bindUser(urls: Seq[String], username: String, password: String): Either[String, LdapAuthUser] = {
     import javax.naming._
     import collection.JavaConverters._
 
@@ -327,7 +331,7 @@ case class LdapAuthModuleConfig(
             val groupSearch = ctx.search(searchBase, filter._1._1, getDefaultSearchControls())
 
             val uids: Seq[String] = if (groupSearch.hasMore) {
-              val item = groupSearch.next()
+              val item  = groupSearch.next()
               val attrs = item.getAttributes
               attrs.getAll.asScala.toSeq.filter(a => a.getID == "uniqueMember" || a.getID == "member").flatMap { attr =>
                 attr.getAll.asScala.toSeq.map(_.toString)
@@ -340,18 +344,20 @@ case class LdapAuthModuleConfig(
             (filter, uids)
           }
 
-        LdapAuthModuleConfig.logger.debug(s"found ${usersInGroup.flatMap(_._2).size} users in group : ${usersInGroup.mkString(", ")}")
+        LdapAuthModuleConfig.logger.debug(
+          s"found ${usersInGroup.flatMap(_._2).size} users in group : ${usersInGroup.mkString(", ")}"
+        )
         LdapAuthModuleConfig.logger.debug(
           s"searching user in ${userBase.map(_ + ",").getOrElse("") + searchBase} with filter ${searchFilter.replace("${username}", username)}"
         )
-        val res = ctx.search(
+        val res                                     = ctx.search(
           userBase.map(_ + ",").getOrElse("") + searchBase,
           searchFilter.replace("${username}", username),
           getDefaultSearchControls()
         )
         val boundUser: Either[String, LdapAuthUser] = if (res.hasMore) {
           val item = res.next()
-          val dn = item.getNameInNamespace
+          val dn   = item.getNameInNamespace
           LdapAuthModuleConfig.logger.debug(s"found user with dn `$dn`")
 
           val userGroup = usersInGroup
@@ -385,23 +391,26 @@ case class LdapAuthModuleConfig(
                           .map(userGroup =>
                             UserRight(
                               userGroup._1._1._2,
-                              userGroup._1._2.map(team => TeamAccess(s"$team:${userGroup._1._1._2.raw.split(":")(1)}")))
-                          ).toList
-                          ++
-                          groupRights.values
-                            .filter { group => group.users.contains(email) }
-                            .flatMap { group => group.userRights.rights }
-                            .toList
-                        )
+                              userGroup._1._2.map(team => TeamAccess(s"$team:${userGroup._1._1._2.raw.split(":")(1)}"))
+                            )
+                          )
+                          .toList
+                        ++
+                        groupRights.values
+                          .filter { group => group.users.contains(email) }
+                          .flatMap { group => group.userRights.rights }
+                          .toList
+                      )
                         .groupBy(f => f.tenant)
                         .map(m => UserRight(m._1, m._2.flatMap(_.teams)))
                         .toSeq
-                    ))
+                    )
+                  )
                 )
               )
             } catch {
               case _: ServiceUnavailableException | _: CommunicationException => Left(s"Communication error")
-              case e: Throwable =>
+              case e: Throwable                                               =>
                 LdapAuthModuleConfig.logger.debug(s"bind failed", e)
                 Left(s"bind failed ${e.getMessage}")
             }
@@ -417,7 +426,7 @@ case class LdapAuthModuleConfig(
         ctx.close()
         boundUser
       } catch {
-        case _ : CommunicationException | _ : ServiceUnavailableException =>
+        case _: CommunicationException | _: ServiceUnavailableException =>
           _bindUser(urls.tail, username, password)
         case e: Throwable =>
           LdapAuthModuleConfig.logger.debug(s"error on LDAP searching method", e)
@@ -440,9 +449,9 @@ case class LdapAuthModuleConfig(
           val ctx2 = new InitialDirContext(env)
           ctx2.close()
         } match {
-          case Success(_) => return FastFuture.successful((true, "--"))
+          case Success(_)                                                          => return FastFuture.successful((true, "--"))
           case Failure(_: ServiceUnavailableException | _: CommunicationException) =>
-          case Failure(e) =>  throw e
+          case Failure(e)                                                          => throw e
         }
       }
       FastFuture.successful((false, "Missing LDAP server URLs or all down"))
@@ -495,7 +504,8 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     userRights.rights.exists(f => f.tenant.containsWildcard || f.tenant.value.equals(authConfig.location.tenant.value))
 
   private def hasOverrideRightsForEmailAndTenant(email: String): Option[UserRight] =
-    authConfig.rightsOverride.get(email)
+    authConfig.rightsOverride
+      .get(email)
       .flatMap(_.rights.find(p => p.tenant.value.equals(authConfig.location.tenant.value)))
 
   def bindAdminUser(username: String, password: String): Either[String, BackOfficeUser] = {
@@ -518,25 +528,33 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                   case Some(userRight) if userRightContainsTenant(userRight) =>
                     hasOverrideRightsForEmailAndTenant(user.email) match {
                       case Some(rightOverride) => UserRights(Seq(rightOverride))
-                      case None =>
+                      case None                =>
                         UserRights(
-                          Seq(userRight.rights.find(f => f.tenant.containsWildcard ||
-                          f.tenant.value.equals(authConfig.location.tenant.value)).get)
+                          Seq(
+                            userRight.rights
+                              .find(f =>
+                                f.tenant.containsWildcard ||
+                                f.tenant.value.equals(authConfig.location.tenant.value)
+                              )
+                              .get
+                          )
                         )
                     }
-                  case None =>
+                  case None                                                  =>
                     authConfig.rightsOverride.getOrElse(
                       user.email,
-                      UserRights(Seq(
+                      UserRights(
+                        Seq(
                           UserRight(
                             TenantAccess(authConfig.location.tenant.value),
                             authConfig.location.teams.map(t => TeamAccess(t.value))
-                          ))
+                          )
+                        )
                       )
                     )
                 }
               },
-              location = authConfig.location
+            location = authConfig.location
           )
         )
       case None       => Left(s"You're not authorized here")
@@ -595,7 +613,12 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def paLogout(request: RequestHeader, user: Option[PrivateAppsUser], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paLogout(
+      request: RequestHeader,
+      user: Option[PrivateAppsUser],
+      config: GlobalConfig,
+      descriptor: ServiceDescriptor
+  )(implicit
       ec: ExecutionContext,
       env: Env
   ) = FastFuture.successful(Right(None))
@@ -685,7 +708,10 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       }
     }
   }
-  override def boLogout(request: RequestHeader,  user: BackOfficeUser, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env) =
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ) =
     FastFuture.successful(Right(None))
 
   override def boCallback(

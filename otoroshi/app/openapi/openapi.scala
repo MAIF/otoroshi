@@ -15,7 +15,7 @@ import scala.util.Try
 
 case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
 
-  lazy val add_schemas = raw.select("add_schemas").asOpt[JsObject].getOrElse(Json.obj())
+  lazy val add_schemas   = raw.select("add_schemas").asOpt[JsObject].getOrElse(Json.obj())
   lazy val merge_schemas = raw.select("merge_schemas").asOpt[JsObject].getOrElse(Json.obj())
 
   lazy val bulkControllerMethods             = raw
@@ -261,7 +261,12 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }
   }
 
-  def visitEntity(clazz: ClassInfo, parent: Option[ClassInfo], result: TrieMap[String, JsValue], config: OpenApiGeneratorConfig): Unit = {
+  def visitEntity(
+      clazz: ClassInfo,
+      parent: Option[ClassInfo],
+      result: TrieMap[String, JsValue],
+      config: OpenApiGeneratorConfig
+  ): Unit = {
 
     if (clazz.getName.contains("$")) {
       return ()
@@ -440,13 +445,14 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         }
       }
 
-      val toMergeSelf = config.merge_schemas.select(clazz.getName).asOpt[JsObject].getOrElse(Json.obj())
-      val toMergeParent = parent.flatMap(p => config.merge_schemas.select(p.getName).asOpt[JsObject]).getOrElse(Json.obj())
+      val toMergeSelf    = config.merge_schemas.select(clazz.getName).asOpt[JsObject].getOrElse(Json.obj())
+      val toMergeParent  =
+        parent.flatMap(p => config.merge_schemas.select(p.getName).asOpt[JsObject]).getOrElse(Json.obj())
       val toMergeParents = clazz.getInterfaces.asScala
         .filter(_.getName.startsWith("otoroshi."))
         .flatMap(c => config.merge_schemas.select(c.getName).asOpt[JsObject])
         .foldLeft(Json.obj())((a, b) => a.deepMerge(b))
-      val toMerge = toMergeParent.deepMerge(toMergeParents.deepMerge(toMergeSelf))
+      val toMerge        = toMergeParent.deepMerge(toMergeParents.deepMerge(toMergeSelf))
       if (clazz.getName.startsWith("otoroshi.auth")) {
         // println(clazz.getName + " - " + parent.map(p => p.getName).getOrElse("") + " - " + clazz.getInterfaces.asScala.map(_.getName).mkString(", "))
       }
@@ -455,11 +461,13 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       }
       result.put(
         clazz.getName,
-        toMerge.deepMerge(Json.obj(
-          "type"        -> "object",
-          "description" -> entityDescription(clazz.getName, config),
-          "properties"  -> properties
-        ))
+        toMerge.deepMerge(
+          Json.obj(
+            "type"        -> "object",
+            "description" -> entityDescription(clazz.getName, config),
+            "properties"  -> properties
+          )
+        )
       )
     }
   }
