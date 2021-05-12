@@ -61,7 +61,6 @@ const files = [
   { file: './otoroshi/app/env/Env.scala' },
   { file: './otoroshi/build.sbt', replace: (from, to, source) => source.replace(`version := "${from}"`, `version := "${to}"`) },
   { file: './readme.md' },
-  { file: './scripts/upload.sh' },
 ];
 
 async function echoReadable(readable) {

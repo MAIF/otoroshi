@@ -93,7 +93,6 @@ lazy val root = (project in file(".")).
       version      := "0.1.0-SNAPSHOT"
     )),
     name := "request-transformer-example",
-    resolvers += Resolver.bintrayRepo("maif", "maven"),
     libraryDependencies += "fr.maif.otoroshi" %% "otoroshi" % "1.x.x"
   )
 ```

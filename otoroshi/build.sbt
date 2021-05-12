@@ -101,8 +101,6 @@ scalacOptions ++= Seq(
   "-language:postfixOps"
 )
 
-resolvers += "bintray" at "https://jcenter.bintray.com"
-
 PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
 
 sources in (Compile, doc) := Seq.empty
@@ -112,8 +110,6 @@ publishArtifact in (Compile, packageDoc) := false
 
 parallelExecution in Test := false
 
-bintrayOrganization := Some("maif")
-bintrayRepository := "maven"
 licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
 
 // assembly

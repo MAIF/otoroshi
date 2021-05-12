@@ -31,7 +31,6 @@ before_install:
   
 script:
   - sh ./scripts/build.sh test_all
-  # - sh ./scripts/upload.sh
 
 cache:
   directories:
