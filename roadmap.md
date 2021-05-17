@@ -2,7 +2,7 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
 
 # Roadmap
 
-## authentication
+## authentication and security
 
 provide the authentication modules needed for most cases and associated tools 
 
@@ -16,6 +16,7 @@ provide the authentication modules needed for most cases and associated tools
 - [ ] plugin to handle basic auth calls
 - [ ] plugin to handle OAuth1 calls
 - [ ] plugin to handle OAuth2 calls
+- [ ] more integration of biscuit tokens
 
 ## container orchestrators
 
