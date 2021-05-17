@@ -241,7 +241,7 @@ class AuthController(
             )
 
             ctx.request.body.asFormUrlEncoded match {
-              case Some(body) if body("RelayState").nonEmpty =>
+              case Some(body) if body.get("RelayState").exists(_.nonEmpty) =>
                 val queryParams =
                   body("RelayState").head.split("&").map { qParam => (qParam.split("=")(0), qParam.split("=")(1)) }
                 val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
@@ -258,7 +258,7 @@ class AuthController(
                   .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                   .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth): _*)
 
-              case None =>
+              case _ =>
                 ctx.request.session
                   .get(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}")
                   .getOrElse(
@@ -309,7 +309,7 @@ class AuthController(
 
       ctx.request.body.asFormUrlEncoded match {
         case Some(body) =>
-          if (body("RelayState").nonEmpty) {
+          if (body.get("RelayState").exists(_.nonEmpty)) {
             val queryParams =
               body("RelayState").head.split("&").map { qParam => (qParam.split("=")(0), qParam.split("=")(1)) }
             val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
