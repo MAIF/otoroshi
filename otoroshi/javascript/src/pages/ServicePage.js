@@ -2855,6 +2855,16 @@ export class ServicePage extends Component {
                   className="btn btn-xs btn-success">
                   Public-Key-Pins
                 </button>
+                <button
+                  type="button"
+                  style={{ marginBottom: 5 }}
+                  onClick={(e) =>
+                    this.addSecurityHeader('Permissions-Policy', 'interest-cohort=()')
+                  }
+                  disabled={this.computeIfButtonDisabled('Permissions-Policy')}
+                  className="btn btn-xs btn-success">
+                  opt-out from Google FLoC
+                </button>
               </div>
             </div>
             <ObjectInput
