@@ -82,6 +82,7 @@ trait RawDataStore {
   def sadd(key: String, members: Seq[ByteString]): Future[Long]
   def sismember(key: String, member: ByteString): Future[Boolean]
   def smembers(key: String): Future[Seq[ByteString]]
+  def strlen(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Long]] = get(key).map(_.map(_.size))
   def allMatching(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ByteString]] = {
     keys(pattern)
       .flatMap {

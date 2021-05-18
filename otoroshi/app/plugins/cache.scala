@@ -1,19 +1,20 @@
 package otoroshi.plugins.cache
 
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext, TransformerResponseBodyContext}
-import otoroshi.utils.RegexPool
+import otoroshi.utils.{RegexPool, SchedulerHelper}
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{RequestHeader, Result, Results}
 import redis.{RedisClientMasterSlaves, RedisServer}
 import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -39,7 +40,8 @@ case class ResponseCacheConfig(json: JsValue) {
   lazy val filter: Option[ResponseCacheFilterConfig] =
     (json \ "filter").asOpt[JsObject].map(o => ResponseCacheFilterConfig(o))
   lazy val hasFilter: Boolean                        = filter.isDefined
-  lazy val maxSize: Long                             = (json \ "maxSize").asOpt[Long].getOrElse(5L * 1024L * 1024L)
+  lazy val maxSize: Long                             = (json \ "maxSize").asOpt[Long].getOrElse(50L * 1024L * 1024L)
+  lazy val autoClean: Boolean                        = (json \ "autoClean").asOpt[Boolean].getOrElse(true)
 }
 
 object ResponseCache {
@@ -58,7 +60,8 @@ class ResponseCache extends RequestTransformer {
         "ResponseCache" -> Json.obj(
           "enabled" -> true,
           "ttl"     -> 60.minutes.toMillis,
-          "maxSize" -> 5L * 1024L * 1024L,
+          "maxSize" -> 50L * 1024L * 1024L,
+          "autoClean" -> true,
           "filter"  -> Json.obj(
             "statuses" -> Json.arr(),
             "methods"  -> Json.arr(),
@@ -85,6 +88,7 @@ class ResponseCache extends RequestTransformer {
       |    "enabled": true, // enabled cache
       |    "ttl": 300000,  // store it for some times (5 minutes by default)
       |    "maxSize": 5242880, // max body size (body will be cut after that)
+      |    "autoClean": true, // cleanup older keys when all bigger than maxSize
       |    "filter": { // cache only for some status, method and paths
       |      "statuses": [],
       |      "methods": [],
@@ -101,10 +105,21 @@ class ResponseCache extends RequestTransformer {
     """.stripMargin)
 
   private val ref = new AtomicReference[(RedisClientMasterSlaves, ActorSystem)]()
+  private val jobRef = new AtomicReference[Cancellable]()
 
   override def start(env: Env): Future[Unit] = {
     val actorSystem = ActorSystem("cache-redis")
     implicit val ec = actorSystem.dispatcher
+    jobRef.set(env.otoroshiScheduler.scheduleAtFixedRate(1.minute, 10.minutes) {
+      SchedulerHelper.runnable(
+        try {
+          cleanCache(env)
+        } catch {
+          case e: Throwable =>
+            ResponseCache.logger.error("error while cleaning cache", e)
+        }
+      )
+    })
     env.datastores.globalConfigDataStore.singleton()(ec, env).map { conf =>
       if ((conf.scripts.transformersConfig \ "ResponseCache").isDefined) {
         val redis: RedisClientMasterSlaves = {
@@ -135,7 +150,59 @@ class ResponseCache extends RequestTransformer {
 
   override def stop(env: Env): Future[Unit] = {
     Option(ref.get()).foreach(_._2.terminate())
+    Option(jobRef.get()).foreach(_.cancel())
     FastFuture.successful(())
+  }
+
+  private def cleanCache(env: Env): Future[Unit] = {
+    implicit val ev = env
+    implicit val ec = env.otoroshiExecutionContext
+    implicit val mat = env.otoroshiMaterializer
+    env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
+      val functions = services.filter(s => s.transformerRefs.nonEmpty && s.transformerRefs.contains("cp:otoroshi.plugins.cache.ResponseCache")).map { service =>
+        () => {
+          val config = ResponseCacheConfig(service.transformerConfig.select("ResponseCache").asOpt[JsObject].getOrElse(Json.obj()))
+          val maxSize = config.maxSize
+          if (config.autoClean) {
+            env.datastores.rawDataStore.keys(s"${env.storageRoot}:cache:${service.id}:*").flatMap { keys =>
+              if (keys.nonEmpty) {
+                Source(keys.toList)
+                  .mapAsync(1) { key =>
+                    for {
+                      size <- env.datastores.rawDataStore.strlen(key).map(_.getOrElse(0L))
+                      pttl <- env.datastores.rawDataStore.pttl(key)
+                    } yield (key, size, pttl)
+                  }.runWith(Sink.seq).flatMap { values =>
+                  val globalSize = values.foldLeft(0L)((a, b) => a + b._2)
+                  if (globalSize > maxSize) {
+                    var acc = 0L
+                    val sorted = values.sortWith((a, b) => a._3.compareTo(b._3) < 0).filter { t =>
+                      acc = acc + t._2
+                      if ((globalSize - acc) < maxSize) {
+                        false
+                      } else {
+                        true
+                      }
+                    }.map(_._1)
+                    env.datastores.rawDataStore.del(sorted).map(_ => ())
+                  } else {
+                    ().future
+                  }
+                }
+              } else {
+                ().future
+              }
+            }
+          } else {
+            ().future
+          }
+        }
+      }
+      Source(functions.toList)
+        .mapAsync(1) { f => f() }
+        .runWith(Sink.ignore)
+        .map(_ => ())
+    }
   }
 
   private def get(key: String)(implicit env: Env, ec: ExecutionContext): Future[Option[ByteString]] = {
