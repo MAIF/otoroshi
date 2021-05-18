@@ -2855,6 +2855,15 @@ export class ServicePage extends Component {
                   className="btn btn-xs btn-success">
                   Public-Key-Pins
                 </button>
+              </div>
+            </div>
+            <div className="form-group">
+              <label
+                htmlFor={`input-${this.props.label}`}
+                className="col-xs-12 col-sm-2 control-label">
+                Utility headers
+              </label>
+              <div className="col-sm-10">
                 <button
                   type="button"
                   style={{ marginBottom: 5 }}
