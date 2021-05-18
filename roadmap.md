@@ -12,6 +12,8 @@ provide the authentication modules needed for most cases and associated tools
 - [x] OAuth2
 - [x] OIDC
 - [x] SAML v2
+- [x] support ocsp, aia, public keys access through jwks.json
+- [x] support oauth2 `client_credentials` flow
 - [ ] pluggable authentication modules using the existing discovery mecanism
 - [ ] plugin to handle basic auth calls
 - [ ] plugin to handle OAuth1 calls
@@ -28,6 +30,7 @@ provide the authentication modules needed for most cases and associated tools
 ## clustering
 
 - [x] support postgresql as leader datastore
+- [x] support S3 as leader datastore
 - [ ] experiment around lightweight workers
   - [ ] written in rust (based on sozu ?)
   - [ ] written in c++ and lua (based on envoy ?)
@@ -39,13 +42,17 @@ provide the authentication modules needed for most cases and associated tools
 
 ## deprecations and renaming
 
-- [x] rename everything master/slave in the api
-- [ ] rename everything blacklist/whitelist in the api
+- [x] rename everything `master/slave` in the api
+- [ ] rename everything `blacklist/whitelist` in the api
 
 ## language
 
-- [ ] upgrade to scala 2.13.x
-- [ ] upgrade to scala 3.x.x
+- [ ] upgrade to scala `2.13.x`
+- [ ] upgrade to scala `3.x.x`
+
+## multi-tenancy
+
+- [x] support multi-tenancy through organizations and teams in the UI and admin API
 
 ## platform
 
@@ -59,8 +66,12 @@ at some point we will have the opportunity to rewrite otoroshi with major breaki
 - [ ] remove play framework
 - [ ] rewritte http engine using akka http
 - [ ] split admin api http server and http routing server with default routing for admin api
+- [ ] rewrite http handler to be mostly plugin based
+- [ ] targets should be a separate entity to allow reuse
+- [ ] extract standard plugins from legacy http handler
+- [ ] rewrite datastore layer to be less redis specific and offer better performance improvement possibilities
 - [ ] rewrite entities
-  - [ ] each entity has an id that is human readable s"${entity_singular_name}_${uuid}"
+  - [ ] each entity has an id that is human readable `${entity_singular_name}_${uuid}`
   - [ ] each entity has a name
   - [ ] each entity has a description
   - [ ] each entity has metadata
@@ -69,7 +80,9 @@ at some point we will have the opportunity to rewrite otoroshi with major breaki
   - [ ] each entity has a creation timestamp
   - [ ] each entity has an update timestamp
   - [ ] each entity has a json write function
-- [ ] rewrite http handler to be mostly plugin based
-- [ ] targets should be a separate entity to allow reuse
-- [ ] extract standard plugins from legacy http handler
-- [ ] rewrite datastore layer to be less redis specific and offer better performance improvement possibilities
+
+## storage
+
+- [ ] switch default redis driver to lettuce and remove rediscala
+- [ ] remove support for mongodb
+- [ ] remove support for leveldb
