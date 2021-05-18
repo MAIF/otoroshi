@@ -111,6 +111,7 @@ class ResponseCache extends RequestTransformer {
     val actorSystem = ActorSystem("cache-redis")
     implicit val ec = actorSystem.dispatcher
     jobRef.set(env.otoroshiScheduler.scheduleAtFixedRate(1.minute, 10.minutes) {
+    //jobRef.set(env.otoroshiScheduler.scheduleAtFixedRate(10.seconds, 10.seconds) {
       SchedulerHelper.runnable(
         try {
           cleanCache(env)
@@ -159,7 +160,8 @@ class ResponseCache extends RequestTransformer {
     implicit val ec = env.otoroshiExecutionContext
     implicit val mat = env.otoroshiMaterializer
     env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
-      val functions = services.filter(s => s.transformerRefs.nonEmpty && s.transformerRefs.contains("cp:otoroshi.plugins.cache.ResponseCache")).map { service =>
+      val possibleServices = services.filter(s => s.transformerRefs.nonEmpty && s.transformerRefs.contains("cp:otoroshi.plugins.cache.ResponseCache"))
+      val functions = possibleServices.map { service =>
         () => {
           val config = ResponseCacheConfig(service.transformerConfig.select("ResponseCache").asOpt[JsObject].getOrElse(Json.obj()))
           val maxSize = config.maxSize
@@ -177,10 +179,11 @@ class ResponseCache extends RequestTransformer {
                   if (globalSize > maxSize) {
                     var acc = 0L
                     val sorted = values.sortWith((a, b) => a._3.compareTo(b._3) < 0).filter { t =>
-                      acc = acc + t._2
                       if ((globalSize - acc) < maxSize) {
+                        acc = acc + t._2
                         false
                       } else {
+                        acc = acc + t._2
                         true
                       }
                     }.map(_._1)
