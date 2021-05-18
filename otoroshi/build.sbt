@@ -1,3 +1,5 @@
+import xerial.sbt.Sonatype._
+
 name := """otoroshi"""
 organization := "fr.maif.otoroshi"
 version := "1.5.0-dev"
@@ -115,6 +117,51 @@ publishArtifact in (Compile, packageDoc) := false
 parallelExecution in Test := false
 
 licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
+
+usePgpKeyHex("555B52C0AEAF5DE0D95F0F69DFA62E480E20755C")
+
+inThisBuild(List(
+  organization := "fr.maif",
+  homepage := Some(url("https://github.com/MAIF/otoroshi")),
+  licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+  sonatypeProfileName := "fr.maif",
+  scmInfo := Some(
+    ScmInfo(
+      url("https://github.com/MAIF/otoroshi"),
+      "scm:git@github.com:MAIF/otoroshi.git"
+    )
+  ),
+  publishMavenStyle := true,
+  sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.ancelin@serli.com")),
+  sonatypeRepository := "https://s01.oss.sonatype.org/service/local",
+  sonatypeCredentialHost := "s01.oss.sonatype.org",
+  developers := List(
+    Developer(
+      "mathieuancelin",
+      "Mathieu Ancelin",
+      "mathieu.ancelin@serli.com",
+      url("https://github.com/mathieuancelin")
+    ),
+    Developer(
+      "quentinovega",
+      "Quentin Aubert",
+      "",
+      url("https://github.com/quentinovega")
+    ),
+    Developer(
+      "Zwiterrion",
+      "Etienne Anne",
+      "",
+      url("https://github.com/Zwiterrion")
+    ),
+    Developer(
+      "baudelotphilippe",
+      "Philippe Baudelot",
+      "",
+      url("https://github.com/baudelotphilippe")
+    )
+  )
+))
 
 // assembly
 mainClass in assembly := Some("play.core.server.ProdServerStart")

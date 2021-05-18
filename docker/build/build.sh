@@ -41,8 +41,8 @@ build_jdk8 () {
 build_jdk11 () {
   docker build --no-cache -f ./Dockerfile-jdk11 -t otoroshi-jdk11-no-scripting .
   docker build --no-cache -f ./Dockerfile-jdk11-jar -t otoroshi-jdk11 .
-  docker tag otoroshi-jdk11-jar "maif/otoroshi:latest" 
-  docker tag otoroshi-jdk11-jar "maif/otoroshi:$1" 
+  docker tag otoroshi-jdk11 "maif/otoroshi:latest" 
+  docker tag otoroshi-jdk11 "maif/otoroshi:$1" 
   docker tag otoroshi-jdk11-no-scripting "maif/otoroshi:$1-jdk11-no-scripting"
   docker tag otoroshi-jdk11 "maif/otoroshi:$1-jdk11"
 }

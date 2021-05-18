@@ -101,6 +101,40 @@ function runScript(script, where, env = {}, fit) {
   });
 }  
 
+async function keypress() {
+  process.stdin.setRawMode(true)
+  return new Promise(resolve => process.stdin.once('data', () => {
+    process.stdin.setRawMode(false)
+    resolve()
+  }))
+}
+
+let steps = [];
+
+async function ensureStep(step, file, f) {
+  const found = _.find(steps, s => s.step === step && s.state === 'stop');
+  if (!!found) {
+    console.log(`Step ${step} already done ... moving along`);
+    return Promise.resolve('');
+  }
+  console.log(`
+===================================================================================================  
+== Step: ${step}
+===================================================================================================  
+  `);
+  fs.appendFileSync(file, JSON.stringify({ timestamp: Date.now(), at: moment().format('YYYY-MM-DD hh:mm:ss.SSS'), step, state: 'start' }) + '\n');
+  return f().then(() => {
+    fs.appendFileSync(file, JSON.stringify({ timestamp: Date.now(), at: moment().format('YYYY-MM-DD hh:mm:ss.SSS'), step, state: 'stop' }) + '\n');
+  }, e => {
+    fs.appendFileSync(file, JSON.stringify({ timestamp: Date.now(), at: moment().format('YYYY-MM-DD hh:mm:ss.SSS'), step, state: 'error', error: e.message }) + '\n');
+    throw new Error(e);
+  });
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 async function changeVersion(where, from, to, exclude = []) {
   console.log(`Changing version from '${from}' to '${to}'`)
   return new Promise(s => {
@@ -116,12 +150,18 @@ async function changeVersion(where, from, to, exclude = []) {
   });
 }
 
-async function buildVersion(version, where, releaseDir) {
+async function formatCode(version, where, releaseDir) {
   // format code
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/fmt.sh')], where);
   await runSystemCommand('git', ['commit', '-am', `Format code before release`], location);
+}
+
+async function cleanup(version, where, releaseDir) {
   // clean
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/build.sh'), 'clean'], where);
+}
+
+async function buildUi(version, where, releaseDir) {
   // build ui
   await runScript(`
     cd ${where}/otoroshi/javascript
@@ -129,40 +169,49 @@ async function buildVersion(version, where, releaseDir) {
     cd ${where}
     sh ${where}/scripts/build.sh ui
   `, where);
-  // build bootstrap server
+}
+
+async function buildOpenApi(version, where, releaseDir) {
+  // build openapi
   await runScript(`
     cd ${where}/otoroshi
     sbt ";clean;compile;testOnly OpenapiGeneratorTests"
   `, where);
-  // await runScript(`
-  //   cd ${where}/otoroshi/target/scala-2.12/
-  //   java -jar otoroshi.jar &
-  //   sleep 20
-  //   curl http://otoroshi.oto.tools:8080/api/swagger.json > ${releaseDir}/swagger.json
-  //   cp ${releaseDir}/swagger.json ${where}/manual/src/main/paradox/code/
-  //   ps aux | grep java | grep otoroshi.jar | awk '{print $2}' | xargs kill  >> /dev/null
-  //   rm -f ./RUNNING_PID
-  // `, where, {}, true);
   await runSystemCommand('cp', [`${where}/otoroshi/public/openapi.json`, `${releaseDir}/openapi.json`], location);
   await runSystemCommand('cp', [`${releaseDir}/openapi.json`, `${where}/manual/src/main/paradox/code/`], location);
   await runSystemCommand('git', ['add', `${releaseDir}/openapi.json`], location);
   await runSystemCommand('git', ['add', `${where}/manual/src/main/paradox/code/openapi.json`], location);
   await runSystemCommand('git', ['commit', '-am', `Update openapi file before release`], location);
+}
+
+async function buildDocumentation(version, where, releaseDir, releaseFile) {
   // build doc with schemas
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/doc.sh'), 'all'], where);
   await runSystemCommand('zip', ['-r', path.resolve(releaseDir, `otoroshi-manual-${version}.zip`), path.resolve(where, 'docs/manual'), '-x', '*.DS_Store'], where);
   await runSystemCommand('git', ['add', '--all'], location);
   await runSystemCommand('git', ['commit', '-am', `Update site documentation before release`], location);
+}
+
+async function buildDistribution(version, where, releaseDir, releaseFile) {
   // run test and build server
   await runScript(`
-    export JAVA_HOME=$JDK8_HOME
-    export PATH=\${JAVA_HOME}/bin:\${PATH}
-    cd ${where}/otoroshi
-    sbt ";dist;assembly"
+  export JAVA_HOME=$JDK8_HOME
+  export PATH=\${JAVA_HOME}/bin:\${PATH}
+  cd ${where}/otoroshi
+  sbt ";dist;assembly"
   `, where);
   // await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/build.sh'), 'server'], where);
   await runSystemCommand('cp', ['-v', path.resolve(where, './otoroshi/target/scala-2.12/otoroshi.jar'), path.resolve(where, releaseDir)], where);
   await runSystemCommand('cp', ['-v', path.resolve(where, `./otoroshi/target/universal/otoroshi-${version}.zip`),  path.resolve(where, releaseDir)], where);
+}
+
+async function buildVersion(version, where, releaseDir, releaseFile) {
+  await ensureStep('BUILD_VERSION_FORMAT_CODE', releaseFile, () => formatCode(version, where, releaseDir, releaseFile));
+  await ensureStep('BUILD_VERSION_CLEANUP', releaseFile, () => cleanup(version, where, releaseDir, releaseFile));
+  await ensureStep('BUILD_VERSION_BUILD_OPENAPI', releaseFile, () => buildOpenApi(version, where, releaseDir, releaseFile));
+  await ensureStep('BUILD_VERSION_BUILD_DOCUMENTATION', releaseFile, () => buildDocumentation(version, where, releaseDir, releaseFile));
+  await ensureStep('BUILD_VERSION_BUILD_UI', releaseFile, () => buildUi(version, where, releaseDir, releaseFile));
+  await ensureStep('BUILD_VERSION_BUILD_DISTRIBUTION', releaseFile, () => buildDistribution(version, where, releaseDir, releaseFile));
 }
 
 async function publishDockerOtoroshi(location, version) {
@@ -170,62 +219,6 @@ async function publishDockerOtoroshi(location, version) {
   await runSystemCommand('cp', [path.resolve(location, `./otoroshi/target/scala-2.12/otoroshi.jar`), path.resolve(location, `./docker/build/otoroshi.jar`)], location);
   await runSystemCommand('sh', [path.resolve(location, `./docker/build/build.sh`), 'push-all', version], path.resolve(location, `./docker/build`));
   await runSystemCommand('sh', [path.resolve(location, `./clients/sidecar/build.sh`), 'push-all', version], path.resolve(location, `./clients/sidecar`));
-}
-
-async function publishDockerCli(location, version) {
-  await runScript(`
-    cd $LOCATION/docker/otoroshicli
-    cp ../../clients/cli/target/release/otoroshicli ./otoroshicli
-    docker build --no-cache -t otoroshicli .
-    rm ./otoroshicli
-    docker tag otoroshicli "maif/otoroshicli:$VERSION" 
-    docker tag otoroshicli "maif/otoroshicli:latest"
-    docker push "maif/otoroshicli:$VERSION"
-    docker push "maif/otoroshicli:latest"
-    cd $LOCATION
-    `, 
-    location, 
-    {
-      LOCATION: location,
-      VERSION: version,
-      BINTRAY_API_KEY,
-      GITHUB_TOKEN
-    }
-  );
-}
-
-async function buildMacCLI(location, version) {
-  await runScript(`
-    # build cli for mac
-    sh ./scripts/build.sh cli
-    cp -v "./clients/cli/target/release/otoroshicli" "$LOCATION/release-$VERSION"
-    mv "$LOCATION/release-$VERSION/otoroshicli" "$LOCATION/release-$VERSION/mac-otoroshicli"
-    `, 
-    location, 
-    {
-      LOCATION: location,
-      VERSION: version,
-      BINTRAY_API_KEY,
-      GITHUB_TOKEN
-    }
-  );
-}
-
-async function buildLinuxCLI(location, version) {
-  await runScript(`
-    # build cli for linux
-    sh ./scripts/cli-linux-build.sh
-    cp -v "./clients/cli/target/release/otoroshicli" "$LOCATION/release-$VERSION"
-    mv "$LOCATION/release-$VERSION/otoroshicli" "$LOCATION/release-$VERSION/linux-otoroshicli"  
-    `, 
-    location, 
-    {
-      LOCATION: location,
-      VERSION: version,
-      BINTRAY_API_KEY,
-      GITHUB_TOKEN
-    }
-  );
 }
 
 async function buildTcpTunnelingCli(location, version) {
@@ -269,21 +262,23 @@ async function githubTag(location, version) {
   await runSystemCommand('git', ['tag', '-am', `Release Otoroshi version ${version}`, 'v' + version], location);
 }
 
-// TODO: push on github repo
-async function publishSbt(location, version) {
+async function publishMavenCentral(location, version) {
   await runScript(`
     cd $LOCATION/otoroshi
     export JAVA_HOME=$JDK8_HOME
     export PATH=\${JAVA_HOME}/bin:\${PATH}
-    sbt publish
+    sbt publishSigned
+    sbt sonatypeBundleRelease
     cd $LOCATION
     `, 
     location, 
     {
       LOCATION: location,
       VERSION: version,
-      BINTRAY_API_KEY,
-      GITHUB_TOKEN
+      PGP_PASSPHRASE: process.env.PGP_PASSPHRASE,
+      PGP_SECRET: process.env.PGP_SECRET,
+      SONATYPE_PASSWORD: process.env.SONATYPE_PASSWORD,
+      SONATYPE_USERNAME: process.env.SONATYPE_USERNAME,
     }
   );
 }
@@ -343,36 +338,6 @@ async function installDependencies(location) {
   await runSystemCommand('yarn', ['install'], path.resolve(location, './connectors/rancher'));
 }
 
-async function keypress() {
-  process.stdin.setRawMode(true)
-  return new Promise(resolve => process.stdin.once('data', () => {
-    process.stdin.setRawMode(false)
-    resolve()
-  }))
-}
-
-let steps = [];
-
-async function ensureStep(step, file, f) {
-  const found = _.find(steps, s => s.step === step && s.state === 'stop');
-  if (!!found) {
-    console.log(`Step ${step} already done ... moving along`);
-    return Promise.resolve('');
-  }
-  console.log(`
-===================================================================================================  
-== Step: ${step}
-===================================================================================================  
-  `);
-  fs.appendFileSync(file, JSON.stringify({ timestamp: Date.now(), at: moment().format('YYYY-MM-DD hh:mm:ss.SSS'), step, state: 'start' }) + '\n');
-  return f().then(() => {
-    fs.appendFileSync(file, JSON.stringify({ timestamp: Date.now(), at: moment().format('YYYY-MM-DD hh:mm:ss.SSS'), step, state: 'stop' }) + '\n');
-  }, e => {
-    fs.appendFileSync(file, JSON.stringify({ timestamp: Date.now(), at: moment().format('YYYY-MM-DD hh:mm:ss.SSS'), step, state: 'error', error: e.message }) + '\n');
-    throw new Error(e);
-  });
-}
-
 async function releaseOtoroshi(from, to, next, last, location, dryRun) {
   console.log(`Releasing Otoroshi from version '${from}' to version '${to}'/'${next}' (${location})`);
   console.log(`Don't forget to set JAVA_HOME to JDK8_HOME and to docker login`);
@@ -406,13 +371,13 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
     await changeVersion(location, last, to);
     await runSystemCommand('git', ['commit', '-am', `Update version to ${to}`], location);
   });
-  await ensureStep('BUILD_OTOROSHI', releaseFile, () => buildVersion(to, location, releaseDir));
+  await ensureStep('BUILD_OTOROSHI', releaseFile, () => buildVersion(to, location, releaseDir, releaseFile));
   await ensureStep('BUILD_TCP_TUNNEL_CLI', releaseFile, () => buildTcpTunnelingCli(location, to));
   await ensureStep('BUILD_TCP_TUNNEL_CLI_GUI', releaseFile, () => buildTcpTunnelingCliGUI(location, to));
   if (!dryRun) {
     await ensureStep('CREATE_GITHUB_RELEASE', releaseFile, () => createGithubRelease(to, releaseDir));
     await ensureStep('CREATE_GITHUB_TAG', releaseFile, () => githubTag(location, to));
-    // await ensureStep('PUBLISH_LIBRARIES', releaseFile, () => publishSbt(location, to));
+    await ensureStep('PUBLISH_LIBRARIES_TO_CENTRAL', releaseFile, () => publishMavenCentral(location, to));
     await ensureStep('PUBLISH_DOCKER_OTOROSHI', releaseFile, () => publishDockerOtoroshi(location, to));
     await ensureStep('CHANGE_TO_DEV_VERSION', releaseFile, () => changeVersion(location, to, next, ['./readme.md']));
     await ensureStep('PUSH_TO_GITHUB', releaseFile, async () => {
@@ -460,3 +425,62 @@ console.log({
 })
 
 releaseOtoroshi(releaseFrom, releaseTo, releaseNext, releaseLast, location, dryRun);
+
+
+/*
+async function publishDockerCli(location, version) {
+  await runScript(`
+    cd $LOCATION/docker/otoroshicli
+    cp ../../clients/cli/target/release/otoroshicli ./otoroshicli
+    docker build --no-cache -t otoroshicli .
+    rm ./otoroshicli
+    docker tag otoroshicli "maif/otoroshicli:$VERSION" 
+    docker tag otoroshicli "maif/otoroshicli:latest"
+    docker push "maif/otoroshicli:$VERSION"
+    docker push "maif/otoroshicli:latest"
+    cd $LOCATION
+    `, 
+    location, 
+    {
+      LOCATION: location,
+      VERSION: version,
+      BINTRAY_API_KEY,
+      GITHUB_TOKEN
+    }
+  );
+}
+
+async function buildMacCLI(location, version) {
+  await runScript(`
+    # build cli for mac
+    sh ./scripts/build.sh cli
+    cp -v "./clients/cli/target/release/otoroshicli" "$LOCATION/release-$VERSION"
+    mv "$LOCATION/release-$VERSION/otoroshicli" "$LOCATION/release-$VERSION/mac-otoroshicli"
+    `, 
+    location, 
+    {
+      LOCATION: location,
+      VERSION: version,
+      BINTRAY_API_KEY,
+      GITHUB_TOKEN
+    }
+  );
+}
+
+async function buildLinuxCLI(location, version) {
+  await runScript(`
+    # build cli for linux
+    sh ./scripts/cli-linux-build.sh
+    cp -v "./clients/cli/target/release/otoroshicli" "$LOCATION/release-$VERSION"
+    mv "$LOCATION/release-$VERSION/otoroshicli" "$LOCATION/release-$VERSION/linux-otoroshicli"  
+    `, 
+    location, 
+    {
+      LOCATION: location,
+      VERSION: version,
+      BINTRAY_API_KEY,
+      GITHUB_TOKEN
+    }
+  );
+}
+*/

@@ -17,6 +17,7 @@ provide the authentication modules needed for most cases and associated tools
 - [ ] plugin to handle OAuth1 calls
 - [ ] plugin to handle OAuth2 calls
 - [ ] more integration of biscuit tokens
+  - [ ] add biscuit playground to the UI
 
 ## container orchestrators
 
@@ -46,6 +47,11 @@ provide the authentication modules needed for most cases and associated tools
 - [ ] upgrade to scala 2.13.x
 - [ ] upgrade to scala 3.x.x
 
+## platform
+
+- [ ] investiguate graalvm build and perf boost
+- [ ] build a graalvm native image
+
 ## otoroshi.next
 
 at some point we will have the opportunity to rewrite otoroshi with major breaking changes
@@ -57,11 +63,13 @@ at some point we will have the opportunity to rewrite otoroshi with major breaki
   - [ ] each entity has an id that is human readable s"${entity_singular_name}_${uuid}"
   - [ ] each entity has a name
   - [ ] each entity has a description
-  – [ ] each entity has metadata
-  – [ ] each entity has tags
-  – [ ] each entity has an version
-  – [ ] each entity has an creation timestamp
-  – [ ] each entity has an update timestamp
-  – [ ] each entity has a json write function
-– [ ] rewrite datastore layer to be less redis specific and offer better performance improvement possibilities
+  - [ ] each entity has metadata
+  - [ ] each entity has tags
+  - [ ] each entity has a version
+  - [ ] each entity has a creation timestamp
+  - [ ] each entity has an update timestamp
+  - [ ] each entity has a json write function
 - [ ] rewrite http handler to be mostly plugin based
+- [ ] targets should be a separate entity to allow reuse
+- [ ] extract standard plugins from legacy http handler
+- [ ] rewrite datastore layer to be less redis specific and offer better performance improvement possibilities
