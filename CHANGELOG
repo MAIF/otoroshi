@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-alpha.11] - 2021-05-19
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.11+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-alpha.10...v1.5.0-alpha.11
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-alpha.11
+
+- Publish otoroshi_lib on maven central (#789)
+- Local authentication doesn't works (#836)
+- Add google floc specific headers in ui (#837)
+- Fix docker build (#838)
+- Add auto cleanup in the cache plugin (#839)
+
 ## [1.5.0-alpha.10] - 2021-05-12
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.10+is%3Aclosed
