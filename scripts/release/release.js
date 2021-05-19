@@ -371,7 +371,8 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
     await changeVersion(location, last, to);
     await runSystemCommand('git', ['commit', '-am', `Update version to ${to}`], location);
   });
-  await ensureStep('BUILD_OTOROSHI', releaseFile, () => buildVersion(to, location, releaseDir, releaseFile));
+  // await ensureStep('BUILD_OTOROSHI', releaseFile, () => buildVersion(to, location, releaseDir, releaseFile));
+  await buildVersion(to, location, releaseDir, releaseFile);
   await ensureStep('BUILD_TCP_TUNNEL_CLI', releaseFile, () => buildTcpTunnelingCli(location, to));
   await ensureStep('BUILD_TCP_TUNNEL_CLI_GUI', releaseFile, () => buildTcpTunnelingCliGUI(location, to));
   if (!dryRun) {
