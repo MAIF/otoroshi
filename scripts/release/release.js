@@ -387,8 +387,8 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
       await runSystemCommand('git', ['push', 'origin', 'master'], location);
       await runSystemCommand('git', ['push', '--tags'], location);
       console.log("Release done !");
-      process.exit(0);
     });
+    process.exit(0);
   }
 }
 
