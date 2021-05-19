@@ -1,7 +1,7 @@
 import xerial.sbt.Sonatype._
 
 name := """otoroshi"""
-organization := "fr.maif.otoroshi"
+organization := "fr.maif"
 version := "1.5.0-dev"
 scalaVersion := scalaLangVersion
 
@@ -109,9 +109,8 @@ scalacOptions ++= Seq(
 
 PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
 
-sources in (Compile, doc) := Seq.empty
-publishArtifact in (Compile, packageDoc) := false
-
+// sources in (Compile, doc) := Seq.empty
+// publishArtifact in (Compile, packageDoc) := false
 // scalafmtVersion in ThisBuild := "1.2.0"
 
 parallelExecution in Test := false
@@ -119,9 +118,13 @@ parallelExecution in Test := false
 licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
 
 usePgpKeyHex("555B52C0AEAF5DE0D95F0F69DFA62E480E20755C")
+sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.ancelin@serli.com"))
+sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
+sonatypeCredentialHost := "s01.oss.sonatype.org"
 
 inThisBuild(
   List(
+    startYear := Some(2017),
     organization := "fr.maif",
     homepage := Some(url("https://github.com/MAIF/otoroshi")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
@@ -133,9 +136,6 @@ inThisBuild(
       )
     ),
     publishMavenStyle := true,
-    sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.ancelin@serli.com")),
-    sonatypeRepository := "https://s01.oss.sonatype.org/service/local",
-    sonatypeCredentialHost := "s01.oss.sonatype.org",
     developers := List(
       Developer(
         "mathieuancelin",

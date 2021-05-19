@@ -93,7 +93,7 @@ lazy val root = (project in file(".")).
       version      := "0.1.0-SNAPSHOT"
     )),
     name := "request-transformer-example",
-    libraryDependencies += "fr.maif.otoroshi" %% "otoroshi" % "1.x.x"
+    libraryDependencies += "fr.maif" %% "otoroshi" % "1.x.x"
   )
 ```
 
