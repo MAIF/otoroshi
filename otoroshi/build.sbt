@@ -5,6 +5,50 @@ organization := "fr.maif"
 version := "1.5.0-dev"
 scalaVersion := scalaLangVersion
 
+inThisBuild(
+  List(
+    description := "Lightweight api management on top of a modern http reverse proxy",
+    startYear := Some(2017),
+    organization := "fr.maif",
+    homepage := Some(url("https://github.com/MAIF/otoroshi")),
+    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    sonatypeProfileName := "fr.maif",
+    scmInfo := Some(
+      ScmInfo(
+        url("https://github.com/MAIF/otoroshi"),
+        "scm:git@github.com:MAIF/otoroshi.git"
+      )
+    ),
+    publishMavenStyle := true,
+    developers := List(
+      Developer(
+        "mathieuancelin",
+        "Mathieu Ancelin",
+        "mathieu.ancelin@serli.com",
+        url("https://github.com/mathieuancelin")
+      ),
+      Developer(
+        "quentinovega",
+        "Quentin Aubert",
+        "",
+        url("https://github.com/quentinovega")
+      ),
+      Developer(
+        "Zwiterrion",
+        "Etienne Anne",
+        "",
+        url("https://github.com/Zwiterrion")
+      ),
+      Developer(
+        "baudelotphilippe",
+        "Philippe Baudelot",
+        "",
+        url("https://github.com/baudelotphilippe")
+      )
+    )
+  )
+)
+
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala, PlayAkkaHttp2Support)
   .disablePlugins(PlayFilters)
@@ -115,55 +159,11 @@ PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
 
 parallelExecution in Test := false
 
-licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
-
 usePgpKeyHex("555B52C0AEAF5DE0D95F0F69DFA62E480E20755C")
 sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.ancelin@serli.com"))
 sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
 sonatypeCredentialHost := "s01.oss.sonatype.org"
-
-inThisBuild(
-  List(
-    startYear := Some(2017),
-    organization := "fr.maif",
-    homepage := Some(url("https://github.com/MAIF/otoroshi")),
-    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    sonatypeProfileName := "fr.maif",
-    scmInfo := Some(
-      ScmInfo(
-        url("https://github.com/MAIF/otoroshi"),
-        "scm:git@github.com:MAIF/otoroshi.git"
-      )
-    ),
-    publishMavenStyle := true,
-    developers := List(
-      Developer(
-        "mathieuancelin",
-        "Mathieu Ancelin",
-        "mathieu.ancelin@serli.com",
-        url("https://github.com/mathieuancelin")
-      ),
-      Developer(
-        "quentinovega",
-        "Quentin Aubert",
-        "",
-        url("https://github.com/quentinovega")
-      ),
-      Developer(
-        "Zwiterrion",
-        "Etienne Anne",
-        "",
-        url("https://github.com/Zwiterrion")
-      ),
-      Developer(
-        "baudelotphilippe",
-        "Philippe Baudelot",
-        "",
-        url("https://github.com/baudelotphilippe")
-      )
-    )
-  )
-)
+licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
 
 // assembly
 mainClass in assembly := Some("play.core.server.ProdServerStart")
