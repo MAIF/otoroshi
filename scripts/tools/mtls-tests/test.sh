@@ -7,7 +7,7 @@
 GODEBUG=x509ignoreCN=0 go run backendmtls.go &
 sleep 5
 GODEBUG=x509ignoreCN=0 go run clientbackend.go > clientbackend.out
-cp ../../otoroshi/target/scala-2.12/otoroshi.jar ./otoroshi.jar
+cp ../../../otoroshi/target/scala-2.12/otoroshi.jar ./otoroshi.jar
 java -Dapp.domain=oto.tools -Dhttp.port=18080 -Dhttps.port=18443 -jar otoroshi.jar &
 sleep 20
 yarn install
