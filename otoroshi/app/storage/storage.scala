@@ -75,7 +75,7 @@ trait RawDataStore {
   def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def setnx(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def del(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long]
-  def incr(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = incrby(key, 1L)
+  def incr(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long]           = incrby(key, 1L)
   def incrby(key: String, incr: Long)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def keys(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[String]]
   def pexpire(key: String, pttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean]

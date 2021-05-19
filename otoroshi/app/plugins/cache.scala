@@ -58,11 +58,11 @@ class ResponseCache extends RequestTransformer {
     Some(
       Json.obj(
         "ResponseCache" -> Json.obj(
-          "enabled" -> true,
-          "ttl"     -> 60.minutes.toMillis,
-          "maxSize" -> 50L * 1024L * 1024L,
+          "enabled"   -> true,
+          "ttl"       -> 60.minutes.toMillis,
+          "maxSize"   -> 50L * 1024L * 1024L,
           "autoClean" -> true,
-          "filter"  -> Json.obj(
+          "filter"    -> Json.obj(
             "statuses" -> Json.arr(),
             "methods"  -> Json.arr(),
             "paths"    -> Json.arr(),
@@ -104,14 +104,14 @@ class ResponseCache extends RequestTransformer {
       |```
     """.stripMargin)
 
-  private val ref = new AtomicReference[(RedisClientMasterSlaves, ActorSystem)]()
+  private val ref    = new AtomicReference[(RedisClientMasterSlaves, ActorSystem)]()
   private val jobRef = new AtomicReference[Cancellable]()
 
   override def start(env: Env): Future[Unit] = {
     val actorSystem = ActorSystem("cache-redis")
     implicit val ec = actorSystem.dispatcher
     jobRef.set(env.otoroshiScheduler.scheduleAtFixedRate(1.minute, 10.minutes) {
-    //jobRef.set(env.otoroshiScheduler.scheduleAtFixedRate(10.seconds, 10.seconds) {
+      //jobRef.set(env.otoroshiScheduler.scheduleAtFixedRate(10.seconds, 10.seconds) {
       SchedulerHelper.runnable(
         try {
           cleanCache(env)
@@ -156,14 +156,17 @@ class ResponseCache extends RequestTransformer {
   }
 
   private def cleanCache(env: Env): Future[Unit] = {
-    implicit val ev = env
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ev  = env
+    implicit val ec  = env.otoroshiExecutionContext
     implicit val mat = env.otoroshiMaterializer
     env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
-      val possibleServices = services.filter(s => s.transformerRefs.nonEmpty && s.transformerRefs.contains("cp:otoroshi.plugins.cache.ResponseCache"))
-      val functions = possibleServices.map { service =>
-        () => {
-          val config = ResponseCacheConfig(service.transformerConfig.select("ResponseCache").asOpt[JsObject].getOrElse(Json.obj()))
+      val possibleServices = services.filter(s =>
+        s.transformerRefs.nonEmpty && s.transformerRefs.contains("cp:otoroshi.plugins.cache.ResponseCache")
+      )
+      val functions        = possibleServices.map { service => () =>
+        {
+          val config  =
+            ResponseCacheConfig(service.transformerConfig.select("ResponseCache").asOpt[JsObject].getOrElse(Json.obj()))
           val maxSize = config.maxSize
           if (config.autoClean) {
             env.datastores.rawDataStore.keys(s"${env.storageRoot}:cache:${service.id}:*").flatMap { keys =>
@@ -174,24 +177,29 @@ class ResponseCache extends RequestTransformer {
                       size <- env.datastores.rawDataStore.strlen(key).map(_.getOrElse(0L))
                       pttl <- env.datastores.rawDataStore.pttl(key)
                     } yield (key, size, pttl)
-                  }.runWith(Sink.seq).flatMap { values =>
-                  val globalSize = values.foldLeft(0L)((a, b) => a + b._2)
-                  if (globalSize > maxSize) {
-                    var acc = 0L
-                    val sorted = values.sortWith((a, b) => a._3.compareTo(b._3) < 0).filter { t =>
-                      if ((globalSize - acc) < maxSize) {
-                        acc = acc + t._2
-                        false
-                      } else {
-                        acc = acc + t._2
-                        true
-                      }
-                    }.map(_._1)
-                    env.datastores.rawDataStore.del(sorted).map(_ => ())
-                  } else {
-                    ().future
                   }
-                }
+                  .runWith(Sink.seq)
+                  .flatMap { values =>
+                    val globalSize = values.foldLeft(0L)((a, b) => a + b._2)
+                    if (globalSize > maxSize) {
+                      var acc    = 0L
+                      val sorted = values
+                        .sortWith((a, b) => a._3.compareTo(b._3) < 0)
+                        .filter { t =>
+                          if ((globalSize - acc) < maxSize) {
+                            acc = acc + t._2
+                            false
+                          } else {
+                            acc = acc + t._2
+                            true
+                          }
+                        }
+                        .map(_._1)
+                      env.datastores.rawDataStore.del(sorted).map(_ => ())
+                    } else {
+                      ().future
+                    }
+                  }
               } else {
                 ().future
               }
