@@ -62,7 +62,7 @@ You can find the official Otoroshi logo [on GitHub](https://github.com/MAIF/otor
 
 ## Changelog
 
-Every release, along with the migration instructions, is documented on the [Github Releases](https://github.com/MAIF/otoroshi/releases) page.
+Every release, along with the migration instructions, is documented on the [Github Releases](https://github.com/MAIF/otoroshi/releases) page. A condensed version of the changelog is available on [github]((https://github.com/MAIF/otoroshi/CHANGELOG.md)
 
 ## Patrons
 
