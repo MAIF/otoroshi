@@ -32,7 +32,7 @@ provide the authentication modules needed for most cases and associated tools
 - [x] support postgresql as leader datastore
 - [x] support S3 as leader datastore
 - [ ] experiment around lightweight workers
-  - [ ] written in rust (based on sozu ?)
+  - [ ] written in rust (based on sozu or hyper ?)
   - [ ] written in c++ and lua (based on envoy ?)
 
 ## data exports
@@ -70,6 +70,7 @@ at some point we will have the opportunity to rewrite otoroshi with major breaki
 - [ ] targets should be a separate entity to allow reuse
 - [ ] extract standard plugins from legacy http handler
 - [ ] rewrite datastore layer to be less redis specific and offer better performance improvement possibilities
+  - [ ] default template (customizable) for services with standard plugins
 - [ ] rewrite entities
   - [ ] each entity has an id that is human readable `${entity_singular_name}_${uuid}`
   - [ ] each entity has a name
