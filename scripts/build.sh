@@ -56,7 +56,7 @@ test_server () {
 }
 
 test_mtls () {
-  cd $LOCATION/scripts/mtls-tests
+  cd $LOCATION/scripts/tools/mtls-tests
   sh ./test.sh
   rc=$?; if [ $rc != 0 ]; then exit $rc; fi
 }
