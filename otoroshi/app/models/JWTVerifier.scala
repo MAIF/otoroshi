@@ -846,7 +846,7 @@ object DefaultToken extends FromJson[VerifierStrategy] {
 
 case class DefaultToken(
     strict: Boolean = true,
-    token: JsValue,
+    token: JsValue, // TODO: we need to use a string here !
     verificationSettings: VerificationSettings = VerificationSettings()
 ) extends VerifierStrategy {
   override def asJson =
@@ -1016,7 +1016,8 @@ sealed trait JwtVerifier extends AsJson {
     source.token(request) match {
       case None        =>
         strategy match {
-          case DefaultToken(true, newToken, _) => {
+          case DefaultToken(true, newToken,_) => {
+            // it's okay to use algoSettings here as it's the default token, so it's not used as an input but as output algo
             algoSettings.asAlgorithmF(OutputMode) flatMap {
               case None                  =>
                 Errors
@@ -1031,6 +1032,15 @@ sealed trait JwtVerifier extends AsJson {
                   )
                   .left[A]
               case Some(outputAlgorithm) => {
+                val moreCtx = Map(
+                  "jti" -> IdGenerator.uuid,
+                  "iat" -> s"${Math.floor(System.currentTimeMillis() / 1000L).toLong}",
+                  "nbf" -> s"${Math.floor(System.currentTimeMillis() / 1000L).toLong}",
+                  "iss" -> "Otoroshi",
+                  "exp" -> s"${Math.floor((System.currentTimeMillis() + 60000L) / 1000L).toLong}",
+                  "sub" -> apikey.map(_.clientName).orElse(user.map(_.email)).getOrElse("anonymous"),
+                  "aud" -> "backend"
+                )
                 val interpolatedToken = JwtExpressionLanguage
                   .fromJson(
                     newToken,
@@ -1038,20 +1048,30 @@ sealed trait JwtVerifier extends AsJson {
                     Some(desc),
                     apikey,
                     user,
-                    elContext ++ Map(
-                      "jti" -> IdGenerator.uuid,
-                      "iat" -> Math.floor(System.currentTimeMillis() / 1000).toString,
-                      "nbf" -> Math.floor(System.currentTimeMillis() / 1000).toString,
-                      "iss" -> "Otoroshi",
-                      "exp" -> Math.floor((System.currentTimeMillis() + 60) / 1000).toString,
-                      "sub" -> apikey.map(_.clientName).orElse(user.map(_.email)).getOrElse("anonymous"),
-                      "aud" -> "backend"
-                    ),
+                    elContext ++ moreCtx,
                     attrs = attrs,
                     env
                   )
                   .as[JsObject]
-                val signedToken       = sign(interpolatedToken, outputAlgorithm, None)
+                val correctedToken = interpolatedToken
+                  .applyOnIf(interpolatedToken.select("nbf").asOpt[String].isDefined) { obj =>
+                    Try(interpolatedToken.select("nbf").asString.toLong) match {
+                      case Failure(e) => obj
+                      case Success(lng) => obj ++ Json.obj("nbf" -> lng)
+                    }
+                  }.applyOnIf(interpolatedToken.select("iat").asOpt[String].isDefined) { obj =>
+                    Try(interpolatedToken.select("iat").asString.toLong) match {
+                      case Failure(e) => obj
+                      case Success(lng) => obj ++ Json.obj("iat" -> lng)
+                    }
+                  }.applyOnIf(interpolatedToken.select("exp").asOpt[String].isDefined) { obj =>
+                    Try(interpolatedToken.select("exp").asString.toLong) match {
+                      case Failure(e) => obj
+                      case Success(lng) => obj ++ Json.obj("exp" -> lng)
+                    }
+                  }
+                // it's okay to use algoSettings here as it's the default token, so it's not used as an input but as output algo
+                val signedToken       = sign(correctedToken, outputAlgorithm, algoSettings.keyId)
                 val decodedToken      = JWT.decode(signedToken)
                 f(source.asJwtInjection(decodedToken, signedToken)).right[Result]
               }
@@ -1342,7 +1362,7 @@ case class RefJwtVerifier(
 
         val promise                                       = Promise[Either[Result, A]]
         val last                                          = new AtomicReference[Either[Result, A]](
-          Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.bad.globaljwtverifier.id")))
+          Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.missing.globaljwtverifier.id")))
         )
         val queue: scala.collection.mutable.Queue[String] = scala.collection.mutable.Queue(ids: _*)
 
@@ -1380,7 +1400,7 @@ case class RefJwtVerifier(
                   case None           =>
                     Errors
                       .craftResponseResult(
-                        "error.bad.globaljwtverifier.id",
+                        s"error.bad.globaljwtverifier.id",
                         Results.InternalServerError,
                         request,
                         Some(desc),
