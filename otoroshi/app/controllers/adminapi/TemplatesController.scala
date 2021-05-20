@@ -60,7 +60,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           case Some(gid) => {
             env.datastores.serviceGroupDataStore.findById(gid).map {
               case Some(group) => {
-                val apiKey   = env.datastores.apiKeyDataStore.initiateNewApiKey(gid)
+                val apiKey   = env.datastores.apiKeyDataStore.initiateNewApiKey(gid, env)
                 val finalKey = apiKey
                   .copy(location = apiKey.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
                 Ok(process(finalKey.toJson, ctx.request))
@@ -69,7 +69,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             }
           }
           case None      => {
-            val apiKey   = env.datastores.apiKeyDataStore.initiateNewApiKey("default")
+            val apiKey   = env.datastores.apiKeyDataStore.initiateNewApiKey("default", env)
             val finalKey = apiKey.copy(location =
               apiKey.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam))
             )
@@ -295,7 +295,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           case "apikeys"      =>
             patchTemplate[ApiKey](
               env.datastores.apiKeyDataStore
-                .initiateNewApiKey("default")
+                .initiateNewApiKey("default", env)
                 .applyOn(v =>
                   v.copy(location = v.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
                 )

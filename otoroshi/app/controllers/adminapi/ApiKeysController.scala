@@ -88,10 +88,10 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
   def createApiKey(serviceId: String) =
     ApiAction.async(parse.json) { ctx =>
       val body: JsObject = ((ctx.request.body \ "clientId").asOpt[String] match {
-        case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.token(16))
+        case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.namedToken("apki", 16, env))
         case Some(b) => ctx.request.body.as[JsObject]
       }) ++ ((ctx.request.body \ "clientSecret").asOpt[String] match {
-        case None    => Json.obj("clientSecret" -> IdGenerator.token(64))
+        case None    => Json.obj("clientSecret" -> IdGenerator.namedToken("apks", 64, env))
         case Some(b) => Json.obj()
       })
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
@@ -484,10 +484,10 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
   def createApiKeyFromGroup(groupId: String) =
     ApiAction.async(parse.json) { ctx =>
       val body: JsObject = ((ctx.request.body \ "clientId").asOpt[String] match {
-        case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.token(16))
+        case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.namedToken("apki", 16, env))
         case Some(b) => ctx.request.body.as[JsObject]
       }) ++ ((ctx.request.body \ "clientSecret").asOpt[String] match {
-        case None    => Json.obj("clientSecret" -> IdGenerator.token(64))
+        case None    => Json.obj("clientSecret" -> IdGenerator.namedToken("apks", 64, env))
         case Some(b) => Json.obj()
       })
       env.datastores.serviceGroupDataStore.findById(groupId).flatMap {

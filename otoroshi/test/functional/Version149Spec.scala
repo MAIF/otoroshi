@@ -158,26 +158,36 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         )
       )
       val apikey1                    = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
         clientName = "apikey1",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         tags = Seq("user", "foo")
       )
       val apikey2                    = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
         clientName = "apikey2",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         tags = Seq("admin", "bar", "foo")
       )
       val apikey3                    = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
         clientName = "apikey3",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         metadata = Map("level" -> "1")
       )
       val apikey4                    = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
         clientName = "apikey4",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         metadata = Map("level" -> "2", "root" -> "true")
       )
       val apikey5                    = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
         clientName = "apikey5",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         tags = Seq("lkj", "leveled", "root")
@@ -305,6 +315,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         )
       )
       val apikey                     = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
         clientName = "apikey-service3",
         authorizedEntities = Seq(ServiceGroupIdentifier("default"))
       )
@@ -656,6 +668,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         "secret"
       )
       val apikey1                    = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
         clientName = "apikey1",
         authorizedEntities = Seq(ServiceGroupIdentifier("default"))
       )
@@ -1959,10 +1973,14 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         enforceSecureCommunication = false
       )
       val apikey1                     = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
         clientName = "apikey1",
         authorizedEntities = Seq(ServiceGroupIdentifier("default"))
       )
       val apikey2                     = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
         clientName = "apikey2",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         restrictions = Restrictions(
@@ -2087,10 +2105,14 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         enforceSecureCommunication = false
       )
       val apikey1                     = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
         clientName = "apikey1",
         authorizedEntities = Seq(ServiceGroupIdentifier("default"))
       )
       val apikey2                     = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
         clientName = "apikey2",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         restrictions = Restrictions(

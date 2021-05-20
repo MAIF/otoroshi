@@ -63,7 +63,7 @@ const ResetSecret = ({ changeValue }) => (
       <button
         type="button"
         className="btn btn-danger btn-xs"
-        onClick={(e) => changeValue('clientSecret', faker.random.alphaNumeric(64))}>
+        onClick={(e) => changeValue('clientSecret', 'apks_' + faker.random.alphaNumeric(64))}>
         <i className="fas fa-sync" /> Reset secret
       </button>
     </div>
@@ -643,7 +643,12 @@ export class ServiceApiKeysPage extends Component {
         parentProps={this.props}
         selfUrl={`lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`}
         defaultTitle="Service Api Keys"
-        defaultValue={() => ({
+        defaultValue={BackOfficeServices.createNewApikey().then(apk => ({ 
+          ...apk,
+          clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+          authorizedEntities: this.state.service.groups.map((g) => 'group_' + g),
+        }))}
+        _defaultValue={() => ({
           clientId: faker.random.alphaNumeric(16),
           clientSecret: faker.random.alphaNumeric(64),
           clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
@@ -718,7 +723,12 @@ export class ApiKeysPage extends Component {
         parentProps={this.props}
         selfUrl={`apikeys`}
         defaultTitle="All apikeys"
-        defaultValue={() => ({
+        defaultValue={() => BackOfficeServices.createNewApikey().then(apk => ({ 
+          ...apk,
+          clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+          authorizedEntities: [],
+        }))}
+        _defaultValue={() => ({
           clientId: faker.random.alphaNumeric(16),
           clientSecret: faker.random.alphaNumeric(64),
           clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,

@@ -66,6 +66,13 @@ object IdGenerator {
   def token: String                             = token(64)
   def extendedToken(size: Int): String          = token(EXTENDED_CHARACTERS, size)
   def extendedToken: String                     = token(EXTENDED_CHARACTERS, 64)
+  def namedToken(prefix: String, size: Int, env: Env): String = namedToken(prefix, size, env.env)
+  def namedToken(prefix: String, size: Int, env: String): String = {
+    env match {
+      case "prod" => s"${prefix}_${token(size)}"
+      case _      => s"${prefix}_${env}_${token(size)}"
+    }
+  }
   def namedId(prefix: String, env: Env): String = namedId(prefix, env.env)
   def namedId(prefix: String, env: String): String = {
     env match {

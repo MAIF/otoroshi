@@ -1725,3 +1725,13 @@ export function createNewScript() {
     },
   }).then((r) => r.json());
 }
+
+export function createNewApikey() {
+  return fetch(`/bo/api/proxy/api/apikeys/_template`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
+}

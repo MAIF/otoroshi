@@ -105,8 +105,8 @@ case class ServiceDescriptorIdentifier(id: String) extends EntityIdentifier {
 }
 
 case class ApiKey(
-    clientId: String = IdGenerator.token(16),
-    clientSecret: String = IdGenerator.token(64),
+    clientId: String,// = IdGenerator.token(16),
+    clientSecret: String,// = IdGenerator.token(64),
     clientName: String,
     description: String = "",
     authorizedEntities: Seq[EntityIdentifier],
@@ -368,17 +368,17 @@ object ApiKey {
 }
 
 trait ApiKeyDataStore extends BasicStore[ApiKey] {
-  def initiateNewApiKey(groupId: String): ApiKey =
+  def initiateNewApiKey(groupId: String, env: Env): ApiKey =
     ApiKey(
-      clientId = IdGenerator.token(16),
-      clientSecret = IdGenerator.token(64),
+      clientId = IdGenerator.namedToken("apki", 16, env), // IdGenerator.token(16),
+      clientSecret = IdGenerator.namedToken("apks", 64, env), // IdGenerator.token(64),
       clientName = "client-name-apikey",
       authorizedEntities = Seq(ServiceGroupIdentifier(groupId))
     )
   def template(env: Env): ApiKey                 =
     ApiKey(
-      clientId = IdGenerator.token(16),
-      clientSecret = IdGenerator.token(64),
+      clientId = IdGenerator.namedToken("apki", 16, env), // IdGenerator.token(16),
+      clientSecret = IdGenerator.namedToken("apks", 64, env), // IdGenerator.token(64),
       clientName = "client-name-apikey",
       authorizedEntities = Seq.empty
     )

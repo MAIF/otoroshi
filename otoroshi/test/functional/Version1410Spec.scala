@@ -139,11 +139,15 @@ class Version1410Spec(name: String, configurationSpec: => Configuration) extends
       enforceSecureCommunication = false
     )
     val validApiKey                 = ApiKey(
+      clientId = IdGenerator.token(16),
+      clientSecret = IdGenerator.token(64),
       clientName = "apikey1",
       authorizedEntities = Seq(ServiceGroupIdentifier("default")),
       validUntil = Some(DateTime.now().plusDays(1))
     )
     val invalidApiKey               = ApiKey(
+      clientId = IdGenerator.token(16),
+      clientSecret = IdGenerator.token(64),
       clientName = "apikey2",
       authorizedEntities = Seq(ServiceGroupIdentifier("default")),
       validUntil = Some(DateTime.now().minusDays(1))

@@ -490,7 +490,7 @@ class ApikeyGroupApiSpec(name: String, configurationSpec: => Configuration)
     }
   }
 
-  override def singleEntity(): ApiKey                         = env.datastores.apiKeyDataStore.initiateNewApiKey("default")
+  override def singleEntity(): ApiKey                         = env.datastores.apiKeyDataStore.initiateNewApiKey("default", env)
   override def entityName: String                             = "ApiKey"
   override def route(): String                                = "/api/groups/default/apikeys"
   override def readEntityFromJson(json: JsValue): ApiKey      = ApiKey._fmt.reads(json).get
@@ -544,7 +544,7 @@ class ApikeyServiceApiSpec(name: String, configurationSpec: => Configuration)
 
   override def singleEntity(): ApiKey                         =
     env.datastores.apiKeyDataStore
-      .initiateNewApiKey("admin-api-group")
+      .initiateNewApiKey("admin-api-group", env)
       .copy(authorizedEntities = Seq(ServiceDescriptorIdentifier("admin-api-service")))
   override def entityName: String                             = "ApiKey"
   override def route(): String                                = "/api/services/admin-api-service/apikeys"
@@ -595,7 +595,7 @@ class ApikeyApiSpec(name: String, configurationSpec: => Configuration) extends O
     }
   }
 
-  override def singleEntity(): ApiKey                         = env.datastores.apiKeyDataStore.initiateNewApiKey("default")
+  override def singleEntity(): ApiKey                         = env.datastores.apiKeyDataStore.initiateNewApiKey("default", env)
   override def entityName: String                             = "ApiKey"
   override def route(): String                                = "/api/apikeys"
   override def readEntityFromJson(json: JsValue): ApiKey      = ApiKey._fmt.reads(json).get

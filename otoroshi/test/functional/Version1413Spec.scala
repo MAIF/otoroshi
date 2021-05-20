@@ -1,7 +1,6 @@
 package functional
 
 import java.util.concurrent.atomic.AtomicInteger
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
@@ -14,6 +13,7 @@ import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import otoroshi.script
 import otoroshi.script._
+import otoroshi.security.IdGenerator
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.libs.typedmap.TypedKey
@@ -261,11 +261,15 @@ class Version1413Spec(name: String, configurationSpec: => Configuration) extends
         )
       )
       val validApiKey                 = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
         clientName = "apikey1",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         tags = Seq("foo", "bar")
       )
       val invalidApiKey               = ApiKey(
+        clientId = IdGenerator.token(16),
+        clientSecret = IdGenerator.token(64),
         clientName = "apikey2",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         tags = Seq("kix")
