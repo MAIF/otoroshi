@@ -643,7 +643,7 @@ export class ServiceApiKeysPage extends Component {
         parentProps={this.props}
         selfUrl={`lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`}
         defaultTitle="Service Api Keys"
-        defaultValue={BackOfficeServices.createNewApikey().then(apk => ({ 
+        defaultValue={BackOfficeServices.createNewApikey().then((apk) => ({
           ...apk,
           clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
           authorizedEntities: this.state.service.groups.map((g) => 'group_' + g),
@@ -723,11 +723,13 @@ export class ApiKeysPage extends Component {
         parentProps={this.props}
         selfUrl={`apikeys`}
         defaultTitle="All apikeys"
-        defaultValue={() => BackOfficeServices.createNewApikey().then(apk => ({ 
-          ...apk,
-          clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
-          authorizedEntities: [],
-        }))}
+        defaultValue={() =>
+          BackOfficeServices.createNewApikey().then((apk) => ({
+            ...apk,
+            clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+            authorizedEntities: [],
+          }))
+        }
         _defaultValue={() => ({
           clientId: faker.random.alphaNumeric(16),
           clientSecret: faker.random.alphaNumeric(64),

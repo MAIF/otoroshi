@@ -416,8 +416,6 @@ const releaseNext = argv.next;
 const releaseLast = argv.last;
 const location = argv.location || __dirname;
 
-printEnv();
-
 if (!JDK8_HOME) {
   throw new Error('No JDK8_HOME defined !')
 }
