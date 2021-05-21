@@ -406,7 +406,6 @@ function printEnv() {
   })
   runScript('java -version', argv.location || __dirname, {})
   runScript('node -v', argv.location || __dirname, {})
-  runScript('docker version', argv.location || __dirname, {})
 }
 
 const dryRun = argv.dry || false;
@@ -437,6 +436,17 @@ printEnv();
 
 releaseOtoroshi(releaseFrom, releaseTo, releaseNext, releaseLast, location, dryRun);
 
+
+/*
+# usage 
+
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home
+export JDK8_HOME=/Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home
+export PATH=/Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home/bin:$PATH
+nvm use 13
+docker login
+node release.js --from=1.5.0-dev --to=1.5.0-alpha.13 --next=1.5.0-dev --last=1.5.0-alpha.12 --location=/Users/mathieuancelin/projects/otoroshi
+*/
 
 /*
 async function publishDockerCli(location, version) {
