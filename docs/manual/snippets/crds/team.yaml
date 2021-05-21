@@ -1,0 +1,10 @@
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Team
+metadata:
+  name: default-team
+spec:
+  id: default
+  tenant: default
+  name: Default team
+  description: Default team created for any otoroshi instance
+  metadata: {}
