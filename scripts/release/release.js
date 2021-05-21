@@ -12,6 +12,7 @@ const argv = require('minimist')(process.argv.slice(2));
 const BINTRAY_API_KEY = process.env.BINTRAY_API_KEY;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const JDK8_HOME = process.env.JDK8_HOME;
+const JAVA_HOME = process.env.JAVA_HOME;
 
 const files = [
   { file: './kubernetes/kustomize/overlays/cluster/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}-jdk11`, `maif/otoroshi:${to}-jdk11`) },
@@ -391,12 +392,31 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
   }
 }
 
+function printEnv() {
+  console.log("current env is: ")
+  console.log({
+    JDK8_HOME,
+    JAVA_HOME,
+    dryRun,
+    releaseFrom,
+    releaseTo,
+    releaseNext,
+    releaseLast,
+    location
+  })
+  runScript('java -version', argv.location || __dirname, {})
+  runScript('node -v', argv.location || __dirname, {})
+  runScript('docker version', argv.location || __dirname, {})
+}
+
 const dryRun = argv.dry || false;
 const releaseFrom = argv.from;
 const releaseTo = argv.to;
 const releaseNext = argv.next;
 const releaseLast = argv.last;
 const location = argv.location || __dirname;
+
+printEnv();
 
 if (!JDK8_HOME) {
   throw new Error('No JDK8_HOME defined !')
@@ -415,14 +435,7 @@ if (!releaseLast) {
   throw new Error('No last version')
 }
 
-console.log({
-  dryRun,
-  releaseFrom,
-  releaseTo,
-  releaseNext,
-  releaseLast,
-  location
-})
+printEnv();
 
 releaseOtoroshi(releaseFrom, releaseTo, releaseNext, releaseLast, location, dryRun);
 

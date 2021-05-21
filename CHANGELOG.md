@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-alpha.13] - 2021-05-21
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.13+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-alpha.12...v1.5.0-alpha.13
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-alpha.13
+
+- Missing kid in default token (#841)
+
 ## [1.5.0-alpha.12] - 2021-05-19
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.12+is%3Aclosed
