@@ -446,6 +446,7 @@ export PATH=/Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home/b
 nvm use 13
 docker login
 node release.js --from=1.5.0-dev --to=1.5.0-alpha.13 --next=1.5.0-dev --last=1.5.0-alpha.12 --location=/Users/mathieuancelin/projects/otoroshi
+
 */
 
 /*
