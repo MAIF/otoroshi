@@ -62,10 +62,10 @@ object IdGenerator {
       i <- 0 to size - 1
     } yield characters(Random.nextInt(characters.size))).mkString("")
 
-  def token(size: Int): String                  = token(CHARACTERS, size)
-  def token: String                             = token(64)
-  def extendedToken(size: Int): String          = token(EXTENDED_CHARACTERS, size)
-  def extendedToken: String                     = token(EXTENDED_CHARACTERS, 64)
+  def token(size: Int): String                                = token(CHARACTERS, size)
+  def token: String                                           = token(64)
+  def extendedToken(size: Int): String                        = token(EXTENDED_CHARACTERS, size)
+  def extendedToken: String                                   = token(EXTENDED_CHARACTERS, 64)
   def namedToken(prefix: String, size: Int, env: Env): String = namedToken(prefix, size, env.env)
   def namedToken(prefix: String, size: Int, env: String): String = {
     env match {
@@ -73,7 +73,7 @@ object IdGenerator {
       case _      => s"${prefix}_${env}_${token(size)}"
     }
   }
-  def namedId(prefix: String, env: Env): String = namedId(prefix, env.env)
+  def namedId(prefix: String, env: Env): String               = namedId(prefix, env.env)
   def namedId(prefix: String, env: String): String = {
     env match {
       case "prod" => s"${prefix}_${UUID.randomUUID().toString}"

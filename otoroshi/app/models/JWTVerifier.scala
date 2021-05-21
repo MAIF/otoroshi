@@ -1016,7 +1016,7 @@ sealed trait JwtVerifier extends AsJson {
     source.token(request) match {
       case None        =>
         strategy match {
-          case DefaultToken(true, newToken,_) => {
+          case DefaultToken(true, newToken, _) => {
             // it's okay to use algoSettings here as it's the default token, so it's not used as an input but as output algo
             algoSettings.asAlgorithmF(OutputMode) flatMap {
               case None                  =>
@@ -1032,7 +1032,7 @@ sealed trait JwtVerifier extends AsJson {
                   )
                   .left[A]
               case Some(outputAlgorithm) => {
-                val moreCtx = Map(
+                val moreCtx           = Map(
                   "jti" -> IdGenerator.uuid,
                   "iat" -> s"${Math.floor(System.currentTimeMillis() / 1000L).toLong}",
                   "nbf" -> s"${Math.floor(System.currentTimeMillis() / 1000L).toLong}",
@@ -1053,20 +1053,22 @@ sealed trait JwtVerifier extends AsJson {
                     env
                   )
                   .as[JsObject]
-                val correctedToken = interpolatedToken
+                val correctedToken    = interpolatedToken
                   .applyOnIf(interpolatedToken.select("nbf").asOpt[String].isDefined) { obj =>
                     Try(interpolatedToken.select("nbf").asString.toLong) match {
-                      case Failure(e) => obj
+                      case Failure(e)   => obj
                       case Success(lng) => obj ++ Json.obj("nbf" -> lng)
                     }
-                  }.applyOnIf(interpolatedToken.select("iat").asOpt[String].isDefined) { obj =>
+                  }
+                  .applyOnIf(interpolatedToken.select("iat").asOpt[String].isDefined) { obj =>
                     Try(interpolatedToken.select("iat").asString.toLong) match {
-                      case Failure(e) => obj
+                      case Failure(e)   => obj
                       case Success(lng) => obj ++ Json.obj("iat" -> lng)
                     }
-                  }.applyOnIf(interpolatedToken.select("exp").asOpt[String].isDefined) { obj =>
+                  }
+                  .applyOnIf(interpolatedToken.select("exp").asOpt[String].isDefined) { obj =>
                     Try(interpolatedToken.select("exp").asString.toLong) match {
-                      case Failure(e) => obj
+                      case Failure(e)   => obj
                       case Success(lng) => obj ++ Json.obj("exp" -> lng)
                     }
                   }
