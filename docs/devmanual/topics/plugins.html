@@ -295,7 +295,11 @@ new MyTransformer()
     name := &quot;request-transformer-example&quot;,
     libraryDependencies += &quot;fr.maif&quot; %% &quot;otoroshi&quot; % &quot;1.x.x&quot;
   )
+</code></pre><div class="callout warning "><div class="callout-title">Warning</div>
+<p>you MUST provide plugins that lies in the <code>otoroshi_plugins</code> package or in a sub-package of <code>otoroshi_plugins</code>. If you do not, your plugin will not be found by otoroshi. for example</p>
+<pre class="prettyprint"><code class="language-scala">package otoroshi_plugins.com.my.company.myplugin
 </code></pre>
+<p>also you don&rsquo;t have to instanciate your plugin at the end of the file like in the Otoroshi UI</p></div>
 <p>When your code is ready, create a jar file </p>
 <pre><code>sbt package
 </code></pre>
@@ -304,7 +308,7 @@ new MyTransformer()
 </code></pre>
 <p>then, in your service descriptor, you can chose your transformer in the list. If you want to do it from the API, you have to defined the transformerRef using <code>cp:</code> prefix like </p>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;transformerRef&quot;: &quot;cp:my.class.package.MyTransformer&quot;
+  &quot;transformerRef&quot;: &quot;cp:otoroshi_plugins.my.class.package.MyTransformer&quot;
 }
 </code></pre>
 <h2><a href="#getting-custom-configuration-from-the-otoroshi-config-file" name="getting-custom-configuration-from-the-otoroshi-config-file" class="anchor"><span class="anchor-link"></span></a>Getting custom configuration from the Otoroshi config. file</h2>
@@ -327,7 +331,7 @@ my-transformer {
 <pre class="prettyprint"><code class="language-sh">java -Dconfig.file=/path/to/custom.conf -jar otoroshi.jar
 </code></pre>
 <p>then, in your transformer, you can write something like </p>
-<pre class="prettyprint"><code class="language-scala">package com.example.otoroshi
+<pre class="prettyprint"><code class="language-scala">package otoroshi_plugins.com.example.otoroshi
 
 import akka.stream.Materializer
 import akka.stream.scaladsl._
