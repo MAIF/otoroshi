@@ -97,6 +97,16 @@ lazy val root = (project in file(".")).
   )
 ```
 
+@@@ warning
+you MUST provide plugins that lies in the `otoroshi_plugins` package or in a sub-package of `otoroshi_plugins`. If you do not, your plugin will not be found by otoroshi. for example
+
+```scala
+package otoroshi_plugins.com.my.company.myplugin
+```
+
+also you don't have to instanciate your plugin at the end of the file like in the Otoroshi UI
+@@@
+
 When your code is ready, create a jar file 
 
 ```
@@ -113,7 +123,7 @@ then, in your service descriptor, you can chose your transformer in the list. If
 
 ```json
 {
-  "transformerRef": "cp:my.class.package.MyTransformer"
+  "transformerRef": "cp:otoroshi_plugins.my.class.package.MyTransformer"
 }
 ```
 
@@ -146,7 +156,7 @@ java -Dconfig.file=/path/to/custom.conf -jar otoroshi.jar
 then, in your transformer, you can write something like 
 
 ```scala
-package com.example.otoroshi
+package otoroshi_plugins.com.example.otoroshi
 
 import akka.stream.Materializer
 import akka.stream.scaladsl._

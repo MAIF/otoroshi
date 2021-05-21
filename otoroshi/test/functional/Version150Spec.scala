@@ -1,32 +1,23 @@
 package functional
 
-import java.util.Base64
 import akka.actor.ActorSystem
-import otoroshi.auth.{AuthModuleConfig, BasicAuthModuleConfig}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import com.typesafe.config.ConfigFactory
-import otoroshi.models.{
-  ApiKey,
-  BackOfficeUser,
-  GlobalJwtVerifier,
-  ServiceDescriptor,
-  ServiceDescriptorIdentifier,
-  ServiceGroup,
-  Target
-}
-import otoroshi.models.{TeamAccess, TeamId, TenantAccess, TenantId, UserRight, UserRights}
-import otoroshi.script.{AccessValidatorRef, Script}
+import otoroshi.auth.{AuthModuleConfig, BasicAuthModuleConfig}
+import otoroshi.models._
+import otoroshi.script.Script
+import otoroshi.security.IdGenerator
+import otoroshi.ssl.{Cert, ClientCertificateValidator}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.http.MtlsConfig
+import otoroshi.utils.syntax.implicits._
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsValue, Json}
-import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits._
 import play.api.libs.ws.WSAuthScheme
-import otoroshi.ssl.{Cert, ClientCertificateValidator}
 
+import java.util.Base64
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
@@ -36,8 +27,6 @@ class ServiceGroupApiSpec(name: String, configurationSpec: => Configuration)
 
   implicit val system = ActorSystem("otoroshi-test")
   implicit val env    = otoroshiComponents.env
-
-  import system.dispatcher
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -94,8 +83,6 @@ class TcpServiceApiSpec(name: String, configurationSpec: => Configuration)
   implicit val system = ActorSystem("otoroshi-test")
   implicit val env    = otoroshiComponents.env
 
-  import system.dispatcher
-
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
       ConfigFactory
@@ -143,8 +130,6 @@ class ScriptApiSpec(name: String, configurationSpec: => Configuration) extends O
 
   implicit val system = ActorSystem("otoroshi-test")
   implicit val env    = otoroshiComponents.env
-
-  import system.dispatcher
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -196,8 +181,6 @@ class AuthModuleConfigApiSpec(name: String, configurationSpec: => Configuration)
   implicit val system = ActorSystem("otoroshi-test")
   implicit val env    = otoroshiComponents.env
 
-  import system.dispatcher
-
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
       ConfigFactory
@@ -248,8 +231,6 @@ class ClientValidatorApiSpec(name: String, configurationSpec: => Configuration)
 
   implicit val system = ActorSystem("otoroshi-test")
   implicit val env    = otoroshiComponents.env
-
-  import system.dispatcher
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -304,8 +285,6 @@ class JWTVerifierApiSpec(name: String, configurationSpec: => Configuration)
   implicit val system = ActorSystem("otoroshi-test")
   implicit val env    = otoroshiComponents.env
 
-  import system.dispatcher
-
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
       ConfigFactory
@@ -354,8 +333,6 @@ class CertificateApiSpec(name: String, configurationSpec: => Configuration) exte
 
   implicit val system = ActorSystem("otoroshi-test")
   implicit val env    = otoroshiComponents.env
-
-  import system.dispatcher
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -406,8 +383,6 @@ class ServicesApiSpec(name: String, configurationSpec: => Configuration)
 
   implicit val system = ActorSystem("otoroshi-test")
   implicit val env    = otoroshiComponents.env
-
-  import system.dispatcher
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -460,8 +435,6 @@ class ApikeyGroupApiSpec(name: String, configurationSpec: => Configuration)
   implicit val system = ActorSystem("otoroshi-test")
   implicit val env    = otoroshiComponents.env
 
-  import system.dispatcher
-
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
       ConfigFactory
@@ -511,8 +484,6 @@ class ApikeyServiceApiSpec(name: String, configurationSpec: => Configuration)
 
   implicit val system = ActorSystem("otoroshi-test")
   implicit val env    = otoroshiComponents.env
-
-  import system.dispatcher
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -564,8 +535,6 @@ class ApikeyApiSpec(name: String, configurationSpec: => Configuration) extends O
 
   implicit val system = ActorSystem("otoroshi-test")
   implicit val env    = otoroshiComponents.env
-
-  import system.dispatcher
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(

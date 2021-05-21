@@ -846,7 +846,7 @@ object DefaultToken extends FromJson[VerifierStrategy] {
 
 case class DefaultToken(
     strict: Boolean = true,
-    token: JsValue, // TODO: we need to use a string here !
+    token: JsValue, // TODO.next: we need to use a string here !
     verificationSettings: VerificationSettings = VerificationSettings()
 ) extends VerifierStrategy {
   override def asJson =
