@@ -293,9 +293,9 @@ case class Version(
     }
   }
   def stringify(): String = {
-    val buildStr         = build.map(v => s".$v")
-    val suffixStr        = suffix.map(v => s"-${v.stringify()}")
-    val suffixVersionStr = suffixVersion.map(v => s".$v")
+    val buildStr         = build.map(v => s".$v").getOrElse("")
+    val suffixStr        = suffix.map(v => s"-${v.stringify()}").getOrElse("")
+    val suffixVersionStr = suffixVersion.map(v => s".$v").getOrElse("")
     s"$major.$minor.$patch$buildStr$suffixStr$suffixVersionStr"
   }
 }
