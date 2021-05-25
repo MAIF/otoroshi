@@ -643,7 +643,7 @@ export class ServiceApiKeysPage extends Component {
         parentProps={this.props}
         selfUrl={`lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`}
         defaultTitle="Service Api Keys"
-        defaultValue={BackOfficeServices.createNewApikey().then((apk) => ({
+        defaultValue={() => BackOfficeServices.createNewApikey().then((apk) => ({
           ...apk,
           clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
           authorizedEntities: this.state.service.groups.map((g) => 'group_' + g),
