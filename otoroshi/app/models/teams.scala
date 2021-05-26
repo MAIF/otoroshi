@@ -208,8 +208,9 @@ object TeamAccess {
     val raw = _raw.toLowerCase.trim
     if (raw.contains(":")) {
       val parts    = raw.toLowerCase.split(":")
-      val canRead  = parts.last.contains("r")
-      val canWrite = parts.last.contains("w")
+      val not      = parts.last == "not"
+      val canRead  = if (not) false else parts.last.contains("r")
+      val canWrite = if (not) false else parts.last.contains("w")
       TeamAccess(parts.head.toLowerCase.trim, canRead, canRead && canWrite)
     } else {
       TeamAccess(raw.toLowerCase.trim, true, true)
@@ -222,8 +223,9 @@ object TenantAccess {
     val raw = _raw.toLowerCase.trim
     if (raw.contains(":")) {
       val parts    = raw.toLowerCase.split(":")
-      val canRead  = parts.last.contains("r")
-      val canWrite = parts.last.contains("w")
+      val not      = parts.last == "not"
+      val canRead  = if (not) false else parts.last.contains("r")
+      val canWrite = if (not) false else parts.last.contains("w")
       TenantAccess(parts.head.toLowerCase.trim, canRead, canRead && canWrite)
     } else {
       TenantAccess(raw.toLowerCase.trim, true, true)
