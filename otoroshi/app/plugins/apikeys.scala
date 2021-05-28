@@ -1,40 +1,38 @@
 package otoroshi.plugins.apikeys
 
-import java.nio.charset.StandardCharsets
-import java.security.{KeyPair, SecureRandom}
-import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
-import java.util
-import java.util.Date
-import java.util.concurrent.atomic.AtomicBoolean
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
-import otoroshi.cluster.ClusterAgent
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.clevercloud.biscuit.token
-import com.clevercloud.biscuit.token.builder.Check
 import com.clevercloud.biscuit.token.builder.parser.Parser
 import com.clevercloud.biscuit.token.format.SealedBiscuit
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import com.google.protobuf.Descriptors.ServiceDescriptor
+import com.google.common.base.Charsets
 import com.nimbusds.jose.jwk.{Curve, ECKey, RSAKey}
-import otoroshi.env.Env
-import otoroshi.models.{ApiKey, RemainingQuotas, ServiceDescriptorIdentifier, ServiceGroupIdentifier}
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
+import otoroshi.cluster.ClusterAgent
+import otoroshi.env.Env
+import otoroshi.models.{ApiKey, RemainingQuotas, ServiceDescriptorIdentifier, ServiceGroupIdentifier}
 import otoroshi.plugins.JsonPathUtils
 import otoroshi.script._
+import otoroshi.security.{IdGenerator, OtoroshiClaim}
+import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.http.DN
 import otoroshi.utils.jwk.JWKSHelper
+import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 import play.core.parsers.FormUrlEncodedParser
-import otoroshi.security.IdGenerator
-import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 
+import java.nio.charset.StandardCharsets
+import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
+import java.security.{KeyPair, SecureRandom}
+import java.util
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -292,8 +290,8 @@ class ClientCredentialFlowExtractor extends PreRouting {
 
 class ClientCredentialFlow extends RequestTransformer {
 
-  import otoroshi.utils.syntax.implicits._
   import otoroshi.utils.http.RequestImplicits._
+  import otoroshi.utils.syntax.implicits._
 
   private val revokedCache: Cache[String, Boolean] = Scaffeine()
     .recordStats()
@@ -1106,8 +1104,9 @@ class ClientCredentialService extends RequestSink {
 
             import com.clevercloud.biscuit.crypto.KeyPair
             import com.clevercloud.biscuit.token.Biscuit
-            import com.clevercloud.biscuit.token.builder.Utils._
             import com.clevercloud.biscuit.token.builder.Block
+            import com.clevercloud.biscuit.token.builder.Utils._
+
             import collection.JavaConverters._
 
             val biscuitConf: BiscuitConf = conf.biscuit
@@ -1355,6 +1354,85 @@ class ClientCredentialService extends RequestSink {
       }
     } else {
       Results.BadRequest(Json.obj("error" -> "bad_request", "error_description" -> s"use a secure channel")).future
+    }
+  }
+}
+
+import scala.concurrent.{ExecutionContext, Future}
+
+class ApikeyAuthModule extends PreRouting {
+
+  override def name: String = "Apikey auth module"
+
+  override def defaultConfig: Option[JsObject] = {
+    Some(
+      Json.obj(
+        "ApikeyAuthModule" -> Json.obj(
+          "realm"         -> "apikey-auth-module-realm"
+        )
+      )
+    )
+  }
+
+  override def description: Option[String] = {
+    Some(
+      s"""This plugin adds basic auth on service where credentials are valid apikeys on the current service.
+         |
+         |```json
+         |${Json.prettyPrint(defaultConfig.get)}
+         |```
+      """.stripMargin
+    )
+  }
+
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+
+  def extractUsernamePassword(header: String): Option[(String, String)] = {
+    val base64 = header.replace("Basic ", "").replace("basic ", "")
+    Option(base64)
+      .map(decodeBase64)
+      .map(_.split(":").toSeq)
+      .flatMap(a => a.headOption.flatMap(head => a.lastOption.map(last => (head, last))))
+  }
+
+  def unauthorized(ctx: PreRoutingContext): Future[Unit] = {
+    val realm = ctx.configFor("ApikeyAuthModule").select("realm").asOpt[String].getOrElse("apikey-auth-module-realm")
+    FastFuture.failed(PreRoutingError(
+      body = "<h3>not authorized</h3>".byteString,
+      code = 401,
+      contentType = "text/html",
+      headers = Map("WWW-Authenticate" -> s"""Basic realm="${realm}"""")
+    ))
+  }
+
+  def forbidden(ctx: PreRoutingContext): Future[Unit] = {
+    val realm = ctx.configFor("ApikeyAuthModule").select("realm").asOpt[String].getOrElse("apikey-auth-module-realm")
+    FastFuture.failed(PreRoutingError(
+      body = "<h3>forbidden</h3>".byteString,
+      code = 403,
+      contentType = "text/html",
+      headers = Map("WWW-Authenticate" -> s"""Basic realm="${realm}"""")
+    ))
+  }
+
+  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    ctx.request.headers.get("Authorization") match {
+      case Some(auth) if auth.startsWith("Basic ") =>
+        extractUsernamePassword(auth) match {
+          case None => forbidden(ctx)
+          case Some((username, password)) => {
+            val groups = ctx.descriptor.groups.map(g => ServiceGroupIdentifier(g))
+            env.datastores.apiKeyDataStore.findById(username).flatMap {
+              case Some(apikey) if (apikey.clientSecret == password || (apikey.rotation.enabled && apikey.rotation.nextSecret.contains(password)))
+                  && apikey.authorizedEntities.intersect(groups).nonEmpty => {
+                ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
+                ().future
+              }
+              case _ => unauthorized(ctx)
+            }
+          }
+        }
+      case _ => unauthorized(ctx)
     }
   }
 }

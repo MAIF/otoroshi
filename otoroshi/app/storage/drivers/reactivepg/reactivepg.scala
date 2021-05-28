@@ -152,7 +152,7 @@ class ReactivePgDataStores(
       .setUser(configuration.getOptional[String]("app.pg.user").getOrElse("otoroshi"))
       .setPassword(configuration.getOptional[String]("app.pg.password").getOrElse("otoroshi"))
       .applyOnIf(sslEnabled) { pgopt =>
-        val mode              = SslMode.of(ssl.getOptional[String]("mode").getOrElse("VERIFY_CA"))
+        val mode              = SslMode.of(ssl.getOptional[String]("mode").getOrElse("verify_ca"))
         val pemTrustOptions   = new PemTrustOptions()
         val pemKeyCertOptions = new PemKeyCertOptions()
         pgopt.setSslMode(mode)
@@ -187,6 +187,22 @@ class ReactivePgDataStores(
         }
         ssl.getOptional[String]("client-cert").map { path =>
           pemKeyCertOptions.addCertValue(Buffer.buffer(path))
+          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
+        }
+        ssl.getOptional[Seq[String]]("client-keys-path").map { pathes =>
+          pathes.map(p => pemKeyCertOptions.addKeyPath(p))
+          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
+        }
+        ssl.getOptional[Seq[String]]("client-keys").map { certs =>
+          certs.map(p => pemKeyCertOptions.addKeyValue(Buffer.buffer(p)))
+          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
+        }
+        ssl.getOptional[String]("client-key-path").map { path =>
+          pemKeyCertOptions.addKeyPath(path)
+          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
+        }
+        ssl.getOptional[String]("client-key").map { path =>
+          pemKeyCertOptions.addKeyValue(Buffer.buffer(path))
           pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
         ssl.getOptional[Boolean]("trust-all").map { v =>

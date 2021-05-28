@@ -58,6 +58,8 @@ provide the authentication modules needed for most cases and associated tools
 
 - [ ] investiguate graalvm build and perf boost
 - [ ] build a graalvm native image
+- [ ] investiguate using polyglot api and embedded languages of graalvm for better scripts
+- [ ] investiguate using WASM as script language (run with wasmer-java)
 
 ## otoroshi.next
 
