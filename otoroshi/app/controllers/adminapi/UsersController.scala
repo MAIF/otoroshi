@@ -231,7 +231,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
           println("right none")
           true
         case Right(Some(user)) => {
-          println(s"right some ${user.json}")
+          // println(s"right some ${user.json}")
           val tenantAccesses    = user.rights.rights.map(_.tenant)
           val newTenantAccesses = rights.rights.map(_.tenant)
           val badTenantAccess   = newTenantAccesses.exists(v => !tenantAccesses.contains(v))
