@@ -262,10 +262,15 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
         val usernameOpt = (ctx.request.body \ "username").asOpt[String]
         val passwordOpt = (ctx.request.body \ "password").asOpt[String]
         val labelOpt    = (ctx.request.body \ "label").asOpt[String]
-        val rights      =
+        val rights      = if (ctx.userIsSuperAdmin) {
+          UserRights(
+            Seq(UserRight(TenantAccess("*"), Seq(TeamAccess("*"))))
+          )
+        } else {
           UserRights(
             Seq(UserRight(TenantAccess(ctx.currentTenant.value), Seq(TeamAccess("*"))))
-          ) // UserRights.readFromObject(ctx.request.body)
+          )
+        }
         checkNewUserRights(ctx, rights) {
           (usernameOpt, passwordOpt, labelOpt) match {
             case (Some(username), Some(password), Some(label)) => {
