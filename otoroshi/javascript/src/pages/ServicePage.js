@@ -117,11 +117,22 @@ class Target extends Component {
             .replace('https://', '')
             .replace('tcp://', '')
             .replace('udp://', '');
-          if (this.containsOneValueOf(domain, ['http:', 'https:', 'tcp:', 'udp:', '/'])) {
+          if (this.containsOneValueOf(domain, ['http:', 'https:', 'tcp:', 'udp:'])) {
             window.newAlert('You cannot put the path here, use target root');
             return;
+          } else if (this.containsOneValueOf(domain, ['/'])) {
+            const parts = e.split('://');
+            const afterScheme = parts[1];
+            const afterSchemeParts = afterScheme.split('/');
+            const domain = afterSchemeParts[0];
+            this.changeTheUrl(`${parts[0]}://${domain}`);
+            if (this.props.changeTargetRoot) {
+              afterSchemeParts.shift();
+              this.props.changeTargetRoot('/' + afterSchemeParts.join('/'))
+            }
+          } else {
+            this.changeTheUrl(e);
           }
-          this.changeTheUrl(e);
         }}
         after={() => {
           if (!this.props.itemValue.mtlsConfig) {
@@ -1650,6 +1661,7 @@ export class ServicePage extends Component {
                   }}
                   tunnelingEnabled={this.state.service.tcpUdpTunneling}
                   onChange={(e) => this.changeTheValue('targets', e)}
+                  changeTargetRoot={(tr) => this.changeTheValue('root', tr)}
                 />
               </div>
             )}
