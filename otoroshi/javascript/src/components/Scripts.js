@@ -23,7 +23,7 @@ const converter = new showdown.Converter({
 });
 
 class PluginsDescription extends Component {
-  state = { scripts: [] };
+  state = { scripts: [], display: false };
 
   componentDidMount() {
     fetch(`/bo/api/proxy/api/scripts/_list?type=${this.props.type}`, {
@@ -92,6 +92,12 @@ class PluginsDescription extends Component {
     return script.configRoot && script.configFlow && script.configSchema; // && !!this.props.config[script.configRoot];
   };
 
+  toogle = (script) => {
+    this.setState({ display: { ...this.state.display, [script.id]: !this.state.display[script.id] }}, () => {
+      this.update();
+    });
+  };
+
   render() {
     if (!this.props.refs) {
       return null;
@@ -111,6 +117,36 @@ class PluginsDescription extends Component {
                   marginRight: 50,
                 }}>
                 <label className="col-xs-12 col-sm-2 control-label" />
+                {!this.state.display[script.id] && (
+                  <div className="col-sm-10">
+                    <div
+                      className="plugin-doc"
+                      style={{
+                        marginTop: 10,
+                        padding: 10,
+                        borderRadius: 5,
+                        backgroundColor: '#494948',
+                        width: '100%',
+                        display: 'flex',
+                        flexDirection: 'row',
+                        justifyContent: 'flex-end',
+                        height: 40
+                      }}>
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-info"
+                        onClick={(e) => this.toogle(script)}
+                        style={{
+                          position: 'absolute',
+                          right: 20,
+                          top: 20,
+                        }}>
+                        <i className="fas fa-eye" /> show config. panel
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {this.state.display[script.id] && (
                 <div className="col-sm-10">
                   <div
                     className="plugin-doc"
@@ -120,21 +156,41 @@ class PluginsDescription extends Component {
                       borderRadius: 5,
                       backgroundColor: '#494948',
                       width: '100%',
+                      display: 'flex',
+                      flexDirection: 'column'
                     }}>
-                    <h3>{script.name}</h3>
-                    {!!script.defaultConfig && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end'}}>
+                      <div className="btn-group">
+                        {!!script.defaultConfig && (
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-info"
+                            onClick={(e) => this.inject(script)}
+                            _style={{
+                              position: 'absolute',
+                              right: 20,
+                              top: 20,
+                            }}>
+                            Inject default config.
+                          </button>
+                        )}
+                      </div>
                       <button
-                        type="button"
-                        className="btn btn-xs btn-info"
-                        onClick={(e) => this.inject(script)}
-                        style={{
-                          position: 'absolute',
-                          right: 20,
-                          top: 20,
-                        }}>
-                        Inject default config.
-                      </button>
-                    )}
+                          type="button"
+                          className="btn btn-xs btn-info"
+                          onClick={(e) => this.toogle(script)}
+                          _style={{
+                            position: 'absolute',
+                            right: 20,
+                            top: 20,
+                          }}>
+                          <i className="fas fa-eye-slash" /> hide config. panel
+                        </button>
+                    </div>
+                    <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      
+                      <div style={{ fontSize: 24, color: '#f9b000' }}>{script.name}</div>
+                    </div>
                     <p
                       style={{ textAlign: 'justify', marginBottom: 10 }}
                       dangerouslySetInnerHTML={{ __html: converter.makeHtml(script.description) }}
@@ -165,6 +221,7 @@ class PluginsDescription extends Component {
                     )}
                   </div>
                 </div>
+                )}
               </div>
             )
           )}
