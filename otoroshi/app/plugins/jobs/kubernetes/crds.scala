@@ -551,8 +551,8 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       .applyOn { s =>
         val enabledAdditionalHosts = (s \ "enabledAdditionalHosts").asOpt[Boolean].getOrElse(true)
         (s \ "hosts").asOpt[JsArray] match {
-          case None if enabledAdditionalHosts      => s.as[JsObject] ++ Json.obj("hosts" -> additionalHosts)
-          case Some(arr) if enabledAdditionalHosts => s.as[JsObject] ++ Json.obj("hosts" -> (arr ++ additionalHosts))
+          case None if enabledAdditionalHosts      => s.as[JsObject] ++ Json.obj("hosts" -> JsArray(additionalHosts.value.distinct))
+          case Some(arr) if enabledAdditionalHosts => s.as[JsObject] ++ Json.obj("hosts" -> JsArray((arr ++ additionalHosts).value.distinct))
           case _                                   => s.as[JsObject]
         }
       }

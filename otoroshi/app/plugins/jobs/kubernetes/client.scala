@@ -51,6 +51,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   private def client(url: String, wildcard: Boolean = true): WSRequest = {
     val _uri = UrlSanitizer.sanitize(config.endpoint + url)
     val uri  = if (wildcard) Uri(_uri.replace("/namespaces/*", "")) else Uri(_uri)
+    logger.debug(s"built uri: $uri")
     env.Ws
       .akkaUrlWithTarget(
         uri.toString(),
@@ -784,7 +785,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       stop: => Boolean,
       labelSelector: Option[String] = None
   ): Source[Seq[ByteString], _] = {
-    watchResources(namespaces, resources, "v1", timeout, stop, labelSelector)
+    watchResources(namespaces, resources, "v1", timeout, stop, labelSelector, "/api")
   }
 
   def watchResources(
@@ -793,15 +794,16 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       api: String,
       timeout: Int,
       stop: => Boolean,
-      labelSelector: Option[String] = None
+      labelSelector: Option[String] = None,
+      root: String = "/apis"
   ): Source[Seq[ByteString], _] = {
     if (namespaces.contains("*")) {
       resources
-        .map(r => watchResource("*", r, api, timeout, stop, labelSelector))
+        .map(r => watchResource("*", r, api, timeout, stop, labelSelector, root))
         .foldLeft(Source.empty[Seq[ByteString]])((s1, s2) => s1.merge(s2))
     } else {
       resources
-        .flatMap(r => namespaces.map(n => watchResource(n, r, api, timeout, stop, labelSelector)))
+        .flatMap(r => namespaces.map(n => watchResource(n, r, api, timeout, stop, labelSelector, root)))
         .foldLeft(Source.empty[Seq[ByteString]])((s1, s2) => s1.merge(s2))
     }
   }
@@ -812,7 +814,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       api: String,
       timeout: Int,
       stop: => Boolean,
-      labelSelector: Option[String] = None
+      labelSelector: Option[String] = None,
+      root: String = "/apis"
   ): Source[Seq[ByteString], _] = {
 
     import otoroshi.utils.http.Implicits._
@@ -828,9 +831,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           Source.single(Source.empty).delay(5.seconds).flatMapConcat(v => v)
         } else {
           lastTime.set(now)
-          logger.debug(s"watch on ${api}/${namespace}/${resource} for ${timeout} seconds ! ")
+          logger.debug(s"watch on ${api} / ${namespace} / ${resource} for ${timeout} seconds ! ")
           val lblStart                              = labelSelector.map(s => s"?labelSelector=$s").getOrElse("")
-          val cliStart: WSRequest                   = client(s"/apis/$api/namespaces/$namespace/$resource$lblStart")
+          val cliStart: WSRequest                   = client(s"${root}/$api/namespaces/$namespace/$resource$lblStart")
           val f: Future[Source[Seq[ByteString], _]] = cliStart
             .addHttpHeaders(
               "Accept" -> "application/json"
@@ -844,7 +847,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 last.set(resourceVersionStart)
                 val lbl                  = labelSelector.map(s => s"&labelSelector=$s").getOrElse("")
                 val cli: WSRequest       = client(
-                  s"/apis/$api/namespaces/$namespace/$resource?watch=1&resourceVersion=${last.get()}&timeoutSeconds=$timeout$lbl"
+                  s"${root}/$api/namespaces/$namespace/$resource?watch=1&resourceVersion=${last.get()}&timeoutSeconds=$timeout$lbl"
                 )
                 cli
                   .addHttpHeaders(
