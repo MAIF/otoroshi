@@ -1503,8 +1503,8 @@ export class AuthModuleConfig extends Component {
           { label: 'OAuth2 / OIDC provider', value: 'oauth2' },
           { label: 'In memory auth. provider', value: 'basic' },
           { label: 'Ldap auth. provider', value: 'ldap' },
-          { label: 'SAML provider', value: 'saml' },
-          { label: 'OAuth1', value: 'oauth1' },
+          { label: 'SAML v2 provider', value: 'saml' },
+          { label: 'OAuth1 provider', value: 'oauth1' },
         ]}
         help="The type of settings to log into your app."
       />
