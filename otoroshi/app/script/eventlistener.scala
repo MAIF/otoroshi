@@ -48,7 +48,7 @@ trait InternalEventListener {
 }
 
 trait OtoroshiEventListener extends StartableAndStoppable with NamedPlugin with InternalEventListener {
-  final def pluginType: PluginType = EventListenerType
+  def pluginType: PluginType = PluginType.EventListenerType
 }
 
 object DefaultOtoroshiEventListener extends OtoroshiEventListener

@@ -2412,6 +2412,45 @@ export class ServicePage extends Component {
               onChange={(v) => this.changeTheValue('jwtVerifier.excludedPatterns', v)}
             />
           </Collapse>
+          
+          <Collapse
+            notVisible={this.state.service.redirection.enabled}
+            collapsed={this.state.allCollapsed}
+            initCollapsed={true}
+            label="Plugins">
+            <BooleanInput
+              label="Enabled"
+              value={this.state.service.plugins.enabled}
+              help="Are plugins enabled for this service"
+              onChange={(v) => this.changeTheValue('plugins.enabled', v)}
+            />
+            <Scripts
+              label="Plugins"
+              refs={this.state.service.plugins.refs}
+              onChange={(e) => this.changeTheValue('plugins.refs', e)}
+              config={this.state.service.plugins.config}
+              onChangeConfig={(e) => this.changeTheValue('plugins.config', e)}
+            />
+            <ArrayInput
+              label="Excluded patterns"
+              placeholder="URI pattern"
+              suffix="regex"
+              value={this.state.service.plugins.excluded}
+              help="By default, when plugins are enabled, everything pass in. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
+              onChange={(v) => this.changeTheValue('plugins.excluded', v)}
+            />
+            <div className="form-group">
+              <Suspense fallback={<div>loading ...</div>}>
+                <CodeInput
+                  label="Configuration"
+                  mode="json"
+                  value={JSON.stringify(this.state.service.plugins.config, null, 2)}
+                  onChange={(e) => this.changeTheValue('plugins.config', JSON.parse(e))}
+                />
+              </Suspense>
+            </div>
+          </Collapse>
+          
           <Collapse
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
@@ -2420,7 +2459,7 @@ export class ServicePage extends Component {
             <BooleanInput
               label="Enabled"
               value={this.state.service.preRouting.enabled}
-              help="Is access validation enabled for this service"
+              help="Is pre-routing enabled for this service"
               onChange={(v) => this.changeTheValue('preRouting.enabled', v)}
             />
             <Scripts

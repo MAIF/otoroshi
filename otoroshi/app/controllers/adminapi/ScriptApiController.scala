@@ -105,8 +105,8 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       }
       def extractInfos(c: String): JsValue = {
         env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c") match {
-          case Left(_)         => Json.obj("id" -> s"cp:$c", "name" -> c, "description" -> JsNull)
-          case Right(instance) => instance.jsonDescription ++ Json.obj("id" -> s"cp:$c", "name" -> instance.name)
+          case Left(_)         => Json.obj("id" -> s"cp:$c", "name" -> c, "description" -> JsNull, "pluginType" -> PluginType.CompositeType.name)
+          case Right(instance) => instance.jsonDescription ++ Json.obj("id" -> s"cp:$c", "name" -> instance.name, "pluginType" -> instance.pluginType.name)
         }
       }
       env.datastores.scriptDataStore.findAll().map { all =>
@@ -114,22 +114,24 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
           .filter(ctx.canUserRead)
           .filter { script =>
             typ match {
-              case None                                                      => true
-              case Some("transformer") if script.`type` == TransformerType   => true
-              case Some("transformer") if script.`type` == AppType           => true
-              case Some("app") if script.`type` == AppType                   => true
-              case Some("validator") if script.`type` == AccessValidatorType => true
-              case Some("preroute") if script.`type` == PreRoutingType       => true
-              case Some("sink") if script.`type` == RequestSinkType          => true
-              case Some("listener") if script.`type` == EventListenerType    => true
-              case Some("job") if script.`type` == JobType                   => true
-              case Some("exporter") if script.`type` == DataExporterType     => true
-              case _                                                         => false
+              case None                                                                 => true
+              case Some("transformer") if script.`type` == PluginType.TransformerType   => true
+              case Some("transformer") if script.`type` == PluginType.AppType           => true
+              case Some("app") if script.`type` == PluginType.AppType                   => true
+              case Some("validator") if script.`type` == PluginType.AccessValidatorType => true
+              case Some("preroute") if script.`type` == PluginType.PreRoutingType       => true
+              case Some("sink") if script.`type` == PluginType.RequestSinkType          => true
+              case Some("listener") if script.`type` == PluginType.EventListenerType    => true
+              case Some("job") if script.`type` == PluginType.JobType                   => true
+              case Some("exporter") if script.`type` == PluginType.DataExporterType     => true
+              case Some("composite") if script.`type` == PluginType.CompositeType       => true
+              case Some("*")                                                            => true
+              case _                                                                    => false
             }
           }
           .map(c => (c, env.scriptManager.getAnyScript[NamedPlugin](c.id)))
           .map {
-            case (c, Left(_))         => Json.obj("id" -> c.id, "name" -> c.name, "description" -> c.desc)
+            case (c, Left(_))         => Json.obj("id" -> c.id, "name" -> c.name, "description" -> c.desc, "pluginType" -> PluginType.CompositeType.name)
             case (c, Right(instance)) =>
               Json.obj(
                 "id"            -> c.id,
@@ -141,6 +143,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
                   .map(JsString.apply)
                   .getOrElse(JsNull)
                   .as[JsValue],
+                "pluginType"    -> instance.pluginType.name,
                 "defaultConfig" -> instance.defaultConfig.getOrElse(JsNull).as[JsValue],
                 "configRoot"    -> instance.configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
                 "configSchema"  -> instance.configSchema.getOrElse(JsNull).as[JsValue],

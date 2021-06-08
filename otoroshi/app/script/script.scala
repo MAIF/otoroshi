@@ -42,37 +42,36 @@ sealed trait PluginType {
   def name: String
 }
 
-object AppType extends PluginType {
-  def name: String = "app"
+object PluginType {
+  object AppType extends PluginType {
+    def name: String = "app"
+  }
+  object TransformerType extends PluginType {
+    def name: String = "transformer"
+  }
+  object AccessValidatorType extends PluginType {
+    def name: String = "validator"
+  }
+  object PreRoutingType extends PluginType {
+    def name: String = "preroute"
+  }
+  object RequestSinkType extends PluginType {
+    def name: String = "sink"
+  }
+  object EventListenerType extends PluginType {
+    def name: String = "listener"
+  }
+  object JobType extends PluginType {
+    def name: String = "job"
+  }
+  object DataExporterType extends PluginType {
+    def name: String = "exporter"
+  }
+  object CompositeType extends PluginType {
+    def name: String = "composite"
+  }
 }
 
-object TransformerType extends PluginType {
-  def name: String = "transformer"
-}
-
-object AccessValidatorType extends PluginType {
-  def name: String = "validator"
-}
-
-object PreRoutingType extends PluginType {
-  def name: String = "preroute"
-}
-
-object RequestSinkType extends PluginType {
-  def name: String = "sink"
-}
-
-object EventListenerType extends PluginType {
-  def name: String = "listener"
-}
-
-object JobType extends PluginType {
-  def name: String = "job"
-}
-
-object DataExporterType extends PluginType {
-  def name: String = "exporter"
-}
 
 trait StartableAndStoppable {
   val funit: Future[Unit]                                         = FastFuture.successful(())
@@ -386,7 +385,7 @@ case class TransformerErrorContext(
 
 trait RequestTransformer extends StartableAndStoppable with NamedPlugin with InternalEventListener {
 
-  def pluginType: PluginType = TransformerType
+  def pluginType: PluginType = PluginType.TransformerType
 
   def beforeRequest(
       context: BeforeRequestContext
@@ -571,7 +570,7 @@ object CompilingRequestTransformer extends RequestTransformer {
 
 trait NanoApp extends RequestTransformer {
 
-  override def pluginType: PluginType = AppType
+  override def pluginType: PluginType = PluginType.AppType
 
   private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
 
@@ -1428,14 +1427,15 @@ object Script {
     override def reads(json: JsValue): JsResult[Script] =
       Try {
         val scriptType = (json \ "type").asOpt[String].getOrElse("transformer") match {
-          case "app"         => AppType
-          case "transformer" => TransformerType
-          case "validator"   => AccessValidatorType
-          case "preroute"    => PreRoutingType
-          case "sink"        => RequestSinkType
-          case "job"         => JobType
-          case "exporter"    => DataExporterType
-          case _             => TransformerType
+          case "app"         => PluginType.AppType
+          case "transformer" => PluginType.TransformerType
+          case "validator"   => PluginType.AccessValidatorType
+          case "preroute"    => PluginType.PreRoutingType
+          case "sink"        => PluginType.RequestSinkType
+          case "job"         => PluginType.JobType
+          case "exporter"    => PluginType.DataExporterType
+          case "composite"   => PluginType.CompositeType
+          case _             => PluginType.TransformerType
         }
         Script(
           location = otoroshi.models.EntityLocation.readFromKey(json),
@@ -1504,7 +1504,7 @@ trait ScriptDataStore extends BasicStore[Script] {
              |// don't forget to return an instance of the transformer to make it work
              |new MyTransformer()
            """.stripMargin,
-      `type` = TransformerType,
+      `type` = PluginType.TransformerType,
       metadata = Map.empty
     )
 }

@@ -70,7 +70,7 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
   private val refId   = new AtomicReference[String](s"cp:${self.getClass.getName}")
   private val promise = Promise[Unit]
 
-  final override def pluginType: PluginType = JobType
+  final override def pluginType: PluginType = PluginType.JobType
 
   def uniqueId: JobId
   def visibility: JobVisibility                                       = JobVisibility.UserLand

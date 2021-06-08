@@ -131,7 +131,7 @@ case class CustomDataExporterContext(config: JsValue, exporter: DataExporter)
 
 trait CustomDataExporter extends NamedPlugin with StartableAndStoppable {
 
-  override def pluginType: PluginType = DataExporterType
+  override def pluginType: PluginType = PluginType.DataExporterType
 
   def accept(event: JsValue, ctx: CustomDataExporterContext)(implicit env: Env): Boolean
 

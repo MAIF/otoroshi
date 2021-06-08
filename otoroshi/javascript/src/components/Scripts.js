@@ -231,15 +231,26 @@ class PluginsDescription extends Component {
 }
 
 export class Scripts extends Component {
+
+  extractName = (script, displayKind) => {
+    if (displayKind) {
+      return `[${script.pluginType}] ${script.name}`
+    } else {
+      return script.name;
+    }
+  }
+
   render() {
+    const url = this.props.type ? `/bo/api/proxy/api/scripts/_list?type=${this.props.type}` : `/bo/api/proxy/api/scripts/_list`;
+    const displayKind = !this.props.type;
     return (
       <>
         <ArrayInput
           label={this.props.label}
           value={this.props.refs}
           onChange={this.props.onChange}
-          valuesFrom={`/bo/api/proxy/api/scripts/_list?type=${this.props.type}`}
-          transformer={(a) => ({ value: a.id, label: a.name, desc: a.description })}
+          valuesFrom={url}
+          transformer={(a) => ({ value: a.id, label: this.extractName(a, displayKind), desc: a.description })}
           help="..."
         />
         <PluginsDescription
