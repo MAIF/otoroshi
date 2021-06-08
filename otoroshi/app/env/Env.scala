@@ -702,6 +702,10 @@ class Env(
         new RedisLFDataStores(configuration, environment, lifecycle, this)
       case "inmemory" if clusterConfig.mode == ClusterMode.Leader          =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
+      case "memory" if clusterConfig.mode == ClusterMode.Leader            =>
+        new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
+      case "mem" if clusterConfig.mode == ClusterMode.Leader               =>
+        new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "leveldb" if clusterConfig.mode == ClusterMode.Leader           =>
         new LevelDbDataStores(configuration, environment, lifecycle, this)
       case "file" if clusterConfig.mode == ClusterMode.Leader              =>
@@ -722,6 +726,10 @@ class Env(
         new ReactivePgDataStores(configuration, environment, lifecycle, this)
       case "redis"                                                         => new RedisLFDataStores(configuration, environment, lifecycle, this)
       case "inmemory"                                                      =>
+        new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
+      case "memory"                                                        =>
+        new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
+      case "mem"                                                           =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "leveldb"                                                       => new LevelDbDataStores(configuration, environment, lifecycle, this)
       case "file"                                                          =>
