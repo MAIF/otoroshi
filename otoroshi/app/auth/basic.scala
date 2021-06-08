@@ -58,6 +58,7 @@ case class BasicAuthUser(
     email: String,
     webauthn: Option[WebAuthnDetails] = None,
     metadata: JsObject = Json.obj(),
+    tags: Seq[String],
     rights: UserRights
 ) {
   def asJson: JsValue = BasicAuthUser.fmt.writes(this)
@@ -72,6 +73,7 @@ object BasicAuthUser {
           "password" -> o.password,
           "email"    -> o.email,
           "metadata" -> o.metadata,
+          "tags"     -> o.tags,
           "webauthn" -> o.webauthn.map(_.asJson).getOrElse(JsNull).as[JsValue],
           "rights"   -> o.rights.json
         )
@@ -84,6 +86,7 @@ object BasicAuthUser {
               email = (json \ "email").as[String],
               webauthn = (json \ "webauthn").asOpt(WebAuthnDetails.fmt),
               metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj()),
+              tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
               rights = UserRights.readFromObject(json)
             )
           )
@@ -205,6 +208,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
               "name" -> user.name,
               "email" -> user.email,
               "metadata" -> user.metadata,
+              "tags" -> user.tags
             ),
             realm = authConfig.cookieSuffix(descriptor),
             otoroshiData = Some(user.metadata),
@@ -232,6 +236,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
               "name" -> user.name,
               "email" -> user.email,
               "metadata" -> user.metadata,
+              "tags" -> user.tags
             ),
             simpleLogin = false,
             authConfigId = authConfig.id,
@@ -352,6 +357,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                             "name" -> user.name,
                             "email" -> user.email,
                             "metadata" -> user.metadata,
+                            "tags" -> user.tags
                           ),
                           realm = authConfig.cookieSuffix(descriptor),
                           otoroshiData = Some(user.metadata),
