@@ -383,7 +383,7 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
                   // ),
                   "env"             -> Json.arr(
                     envVariable("TOKEN_SECRET", tokenSecret),
-                    envVariable("OTOROSHI_DOMAIN", otoroshi.select("domain").asOpt[String].getOrElse("otoroshi.mesh")),
+                    envVariable("OTOROSHI_DOMAIN", otoroshi.select("domain").asOpt[String].getOrElse(conf.meshDomain)),
                     envVariable(
                       "OTOROSHI_HOST",
                       otoroshi

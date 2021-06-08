@@ -54,6 +54,7 @@ case class KubernetesConfig(
     mutatingWebhookName: String,
     validatingWebhookName: String,
     image: Option[String],
+    meshDomain: String,
     openshiftDnsOperatorIntegration: Boolean,
     openshiftDnsOperatorCoreDnsNamespace: String,
     openshiftDnsOperatorCoreDnsName: String,
@@ -167,6 +168,7 @@ object KubernetesConfig {
           validatingWebhookName =
             (conf \ "validatingWebhookName").asOpt[String].getOrElse("otoroshi-admission-webhook-validation"),
           image = (conf \ "image").asOpt[String].filter(_.trim.nonEmpty),
+          meshDomain = (conf \ "meshDomain").asOpt[String].filter(_.trim.nonEmpty).getOrElse("otoroshi.mesh"),
           openshiftDnsOperatorIntegration = (conf \ "openshiftDnsOperatorIntegration").asOpt[Boolean].getOrElse(false),
           openshiftDnsOperatorCoreDnsNamespace =
             (conf \ "openshiftDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
@@ -249,6 +251,7 @@ object KubernetesConfig {
           validatingWebhookName =
             (conf \ "validatingWebhookName").asOpt[String].getOrElse("otoroshi-admission-webhook-validation"),
           image = (conf \ "image").asOpt[String].filter(_.trim.nonEmpty),
+          meshDomain = (conf \ "meshDomain").asOpt[String].filter(_.trim.nonEmpty).getOrElse("otoroshi.mesh"),
           openshiftDnsOperatorIntegration = (conf \ "openshiftDnsOperatorIntegration").asOpt[Boolean].getOrElse(false),
           openshiftDnsOperatorCoreDnsNamespace =
             (conf \ "openshiftDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
@@ -298,6 +301,7 @@ object KubernetesConfig {
         "watchGracePeriodSeconds"              -> 5,
         "mutatingWebhookName"                  -> "otoroshi-admission-webhook-injector",
         "validatingWebhookName"                -> "otoroshi-admission-webhook-validation",
+        "meshDomain"                           -> "otoroshi.mesh",
         "openshiftDnsOperatorIntegration"      -> false,
         "openshiftDnsOperatorCoreDnsNamespace" -> "otoroshi",
         "openshiftDnsOperatorCoreDnsName"      -> "otoroshi-dns",

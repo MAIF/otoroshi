@@ -450,9 +450,9 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     val globalName       = res.annotations.getOrElse("global-name/otoroshi.io", res.name)
     val coreDnsDomainEnv = conf.coreDnsEnv.map(e => s"$e.").getOrElse("")
     val additionalHosts  = Json.arr(
-      s"${globalName}.global.${coreDnsDomainEnv}otoroshi.mesh",
-      s"${res.name}.${res.namespace}.${coreDnsDomainEnv}otoroshi.mesh",
-      s"${res.name}.${res.namespace}.svc.${coreDnsDomainEnv}otoroshi.mesh",
+      s"${globalName}.global.${coreDnsDomainEnv}${conf.meshDomain}",
+      s"${res.name}.${res.namespace}.${coreDnsDomainEnv}${conf.meshDomain}",
+      s"${res.name}.${res.namespace}.svc.${coreDnsDomainEnv}${conf.meshDomain}",
       s"${res.name}.${res.namespace}.svc.${conf.clusterDomain}"
     )
 
@@ -1714,7 +1714,7 @@ object KubernetesCRDsJob {
         val otoMesh               =
           s"""### otoroshi-${coreDnsNameEnv}mesh-begin ###
            |### config-hash: $hash
-           |${coreDnsDomainEnv}otoroshi.mesh:${conf.corednsPort} {
+           |${coreDnsDomainEnv}${conf.meshDomain}:${conf.corednsPort} {
            |    errors
            |    health
            |    ready
@@ -1723,7 +1723,7 @@ object KubernetesCRDsJob {
            |        $upstream
            |        fallthrough in-addr.arpa ip6.arpa
            |    }
-           |    rewrite name regex (.*)\\.${coreDnsDomainRegexEnv}otoroshi\\.mesh ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+           |    rewrite name regex (.*)\\.${coreDnsDomainRegexEnv}${conf.meshDomain.replaceAll("\\.", """\\\\.""")} ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
            |    forward . /etc/resolv.conf
            |    cache 30
            |    loop
@@ -1856,7 +1856,7 @@ object KubernetesCRDsJob {
   ): Future[Unit] = {
     if (conf.kubeDnsOperatorIntegration) {
       val client    = new KubernetesClient(conf, env)
-      val otoDomain = s"${conf.coreDnsEnv.map(e => s"$e.").getOrElse("")}otoroshi.mesh"
+      val otoDomain = s"${conf.coreDnsEnv.map(e => s"$e.").getOrElse("")}${conf.meshDomain}"
       for {
         kubeDnsDep          <- client.fetchDeployment(conf.kubeSystemNamespace, "kube-dns")
         kubeDnsCm           <- client.fetchConfigMap(conf.kubeSystemNamespace, "kube-dns")
@@ -1922,7 +1922,7 @@ object KubernetesCRDsJob {
               .exists(_.forwardPluginUpstreams.exists(_.startsWith(service.map(_.clusterIP).getOrElse("--")))) &&
             dnso.servers
               .find(_.name == conf.openshiftDnsOperatorCoreDnsName)
-              .exists(_.zones.exists(_.contains(s"${conf.coreDnsEnv.map(e => s"$e.").getOrElse("")}otoroshi.mesh")))
+              .exists(_.zones.exists(_.contains(s"${conf.coreDnsEnv.map(e => s"$e.").getOrElse("")}${conf.meshDomain}")))
           )
         _                    =
           logger.debug(
@@ -1934,7 +1934,7 @@ object KubernetesCRDsJob {
                                  val servers = dnsOperator.get.servers.map(_.raw) :+ Json.obj(
                                    "name"          -> conf.openshiftDnsOperatorCoreDnsName,
                                    "zones"         -> Json.arr(
-                                     s"${conf.coreDnsEnv.map(e => s"$e.").getOrElse("")}otoroshi.mesh"
+                                     s"${conf.coreDnsEnv.map(e => s"$e.").getOrElse("")}${conf.meshDomain}"
                                    ),
                                    "forwardPlugin" -> Json.obj(
                                      "upstreams" -> Json.arr(
@@ -1958,7 +1958,7 @@ object KubernetesCRDsJob {
                                      Json.obj(
                                        "name"          -> conf.openshiftDnsOperatorCoreDnsName,
                                        "zones"         -> Json.arr(
-                                         s"${conf.coreDnsEnv.map(e => s"$e.").getOrElse("")}otoroshi.mesh"
+                                         s"${conf.coreDnsEnv.map(e => s"$e.").getOrElse("")}${conf.meshDomain}"
                                        ),
                                        "forwardPlugin" -> Json.obj(
                                          "upstreams" -> Json.arr(
@@ -2046,9 +2046,9 @@ object KubernetesCRDsJob {
 
     val query = GenCsrQuery(
       hosts = Seq(
-        s"*.otoroshi.mesh",
-        s"*.svc.otoroshi.mesh",
-        s"*.global.otoroshi.mesh"
+        s"*.${conf.meshDomain}",
+        s"*.svc.${conf.meshDomain}",
+        s"*.global.${conf.meshDomain}"
       ),
       subject = "SN=Kubernetes Mesh Certificate, OU=Otoroshi Certificates, O=Otoroshi".some,
       duration = 365.days
