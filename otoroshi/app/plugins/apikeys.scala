@@ -15,7 +15,7 @@ import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterAgent
 import otoroshi.env.Env
-import otoroshi.models.{ApiKey, RemainingQuotas, ServiceDescriptorIdentifier, ServiceGroupIdentifier}
+import otoroshi.models.{ApiKey, ApiKeyRouteMatcher, RemainingQuotas, ServiceDescriptorIdentifier, ServiceGroupIdentifier}
 import otoroshi.plugins.JsonPathUtils
 import otoroshi.script._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
@@ -1368,7 +1368,16 @@ class ApikeyAuthModule extends PreRouting {
     Some(
       Json.obj(
         "ApikeyAuthModule" -> Json.obj(
-          "realm"         -> "apikey-auth-module-realm"
+          "realm"   -> "apikey-auth-module-realm",
+          "noneTagIn"      -> Json.arr(),
+          "oneTagIn"       -> Json.arr(),
+          "allTagsIn"      -> Json.arr(),
+          "noneMetaIn"     -> Json.arr(),
+          "oneMetaIn"      -> Json.arr(),
+          "allMetaIn"      -> Json.arr(),
+          "noneMetaKeysIn" -> Json.arr(),
+          "oneMetaKeyIn"   -> Json.arr(),
+          "allMetaKeysIn"  -> Json.arr(),
         )
       )
     )
@@ -1415,6 +1424,58 @@ class ApikeyAuthModule extends PreRouting {
     ))
   }
 
+  def validApikey(apikey: ApiKey, password: String, groups: Seq[ServiceGroupIdentifier], config: JsValue): Boolean = {
+
+    import otoroshi.models.SeqImplicits._
+
+    val validSecret = (apikey.clientSecret == password || (apikey.rotation.enabled && apikey.rotation.nextSecret.contains(password)))
+    val validGroups = apikey.authorizedEntities.intersect(groups).nonEmpty
+    val routing = ApiKeyRouteMatcher.format.reads(config).getOrElse(ApiKeyRouteMatcher())
+    val matchOnRole: Boolean   = Option(routing.oneTagIn)
+      .filter(_.nonEmpty)
+      .forall(tags => apikey.tags.findOne(tags))
+    val matchAllRoles: Boolean = Option(routing.allTagsIn)
+      .filter(_.nonEmpty)
+      .forall(tags => apikey.tags.findAll(tags))
+    val matchNoneRole: Boolean = !Option(routing.noneTagIn)
+      .filter(_.nonEmpty)
+      .exists(tags => apikey.tags.findOne(tags))
+
+    val matchOneMeta: Boolean  = Option(routing.oneMetaIn.toSeq)
+      .filter(_.nonEmpty)
+      .forall(metas => apikey.metadata.toSeq.findOne(metas))
+    val matchAllMeta: Boolean  = Option(routing.allMetaIn.toSeq)
+      .filter(_.nonEmpty)
+      .forall(metas => apikey.metadata.toSeq.findAll(metas))
+    val matchNoneMeta: Boolean = !Option(routing.noneMetaIn.toSeq)
+      .filter(_.nonEmpty)
+      .exists(metas => apikey.metadata.toSeq.findOne(metas))
+
+    val matchOneMetakeys: Boolean  = Option(routing.oneMetaKeyIn)
+      .filter(_.nonEmpty)
+      .forall(keys => apikey.metadata.toSeq.map(_._1).findOne(keys))
+    val matchAllMetaKeys: Boolean  = Option(routing.allMetaKeysIn)
+      .filter(_.nonEmpty)
+      .forall(keys => apikey.metadata.toSeq.map(_._1).findAll(keys))
+    val matchNoneMetaKeys: Boolean = !Option(routing.noneMetaKeysIn)
+      .filter(_.nonEmpty)
+      .exists(keys => apikey.metadata.toSeq.map(_._1).findOne(keys))
+
+    val result = Seq(
+      matchOnRole,
+      matchAllRoles,
+      matchNoneRole,
+      matchOneMeta,
+      matchAllMeta,
+      matchNoneMeta,
+      matchOneMetakeys,
+      matchAllMetaKeys,
+      matchNoneMetaKeys
+    )
+      .forall(bool => bool)
+    result
+  }
+
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.request.headers.get("Authorization") match {
       case Some(auth) if auth.startsWith("Basic ") =>
@@ -1423,8 +1484,7 @@ class ApikeyAuthModule extends PreRouting {
           case Some((username, password)) => {
             val groups = ctx.descriptor.groups.map(g => ServiceGroupIdentifier(g))
             env.datastores.apiKeyDataStore.findById(username).flatMap {
-              case Some(apikey) if (apikey.clientSecret == password || (apikey.rotation.enabled && apikey.rotation.nextSecret.contains(password)))
-                  && apikey.authorizedEntities.intersect(groups).nonEmpty => {
+              case Some(apikey) if validApikey(apikey, password, groups, ctx.configFor("ApikeyAuthModule")) => {
                 ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
                 ().future
               }
