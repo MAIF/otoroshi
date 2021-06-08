@@ -56,6 +56,9 @@ case class KubernetesConfig(
     image: Option[String],
     meshDomain: String,
     openshiftDnsOperatorIntegration: Boolean,
+    openshiftDnsOperatorCleanup: Boolean,
+    openshiftDnsOperatorCleanupNames: Seq[String],
+    openshiftDnsOperatorCleanupDomains: Seq[String],
     openshiftDnsOperatorCoreDnsNamespace: String,
     openshiftDnsOperatorCoreDnsName: String,
     openshiftDnsOperatorCoreDnsPort: Int,
@@ -175,6 +178,9 @@ object KubernetesConfig {
           openshiftDnsOperatorCoreDnsName =
             (conf \ "openshiftDnsOperatorCoreDnsName").asOpt[String].getOrElse("otoroshi-dns"),
           openshiftDnsOperatorCoreDnsPort = (conf \ "openshiftDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
+          openshiftDnsOperatorCleanup = (conf \ "openshiftDnsOperatorCleanup").asOpt[Boolean].getOrElse(false),
+          openshiftDnsOperatorCleanupNames = (conf \ "openshiftDnsOperatorCleanupNames").asOpt[Seq[String]].getOrElse(Seq.empty),
+          openshiftDnsOperatorCleanupDomains = (conf \ "openshiftDnsOperatorCleanupDomains").asOpt[Seq[String]].getOrElse(Seq.empty),
           kubeDnsOperatorIntegration = (conf \ "kubetDnsOperatorIntegration").asOpt[Boolean].getOrElse(false),
           kubeDnsOperatorCoreDnsNamespace =
             (conf \ "kubetDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
@@ -258,6 +264,9 @@ object KubernetesConfig {
           openshiftDnsOperatorCoreDnsName =
             (conf \ "openshiftDnsOperatorCoreDnsName").asOpt[String].getOrElse("otoroshi-dns"),
           openshiftDnsOperatorCoreDnsPort = (conf \ "openshiftDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
+          openshiftDnsOperatorCleanup = (conf \ "openshiftDnsOperatorCleanup").asOpt[Boolean].getOrElse(false),
+          openshiftDnsOperatorCleanupNames = (conf \ "openshiftDnsOperatorCleanupNames").asOpt[Seq[String]].getOrElse(Seq.empty),
+          openshiftDnsOperatorCleanupDomains = (conf \ "openshiftDnsOperatorCleanupDomains").asOpt[Seq[String]].getOrElse(Seq.empty),
           kubeDnsOperatorIntegration = (conf \ "kubetDnsOperatorIntegration").asOpt[Boolean].getOrElse(false),
           kubeDnsOperatorCoreDnsNamespace =
             (conf \ "kubetDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),

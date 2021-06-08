@@ -21,7 +21,7 @@ import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
 import otoroshi.ssl.pki.models.GenCsrQuery
 import otoroshi.tcp.TcpService
-import otoroshi.utils.TypedMap
+import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.http.DN
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -1912,8 +1912,28 @@ object KubernetesCRDsJob {
     if (conf.openshiftDnsOperatorIntegration) {
       val client = new KubernetesClient(conf, env)
       for {
-        dnsOperator         <- client.fetchOpenshiftDnsOperator()
+        _dnsOperator        <- client.fetchOpenshiftDnsOperator()
         service             <- client.fetchService(conf.openshiftDnsOperatorCoreDnsNamespace, conf.openshiftDnsOperatorCoreDnsName)
+        dnsOperator = {
+          if (conf.openshiftDnsOperatorCleanup) {
+            _dnsOperator.map { dnso =>
+              val servers = dnso.servers.filter { server =>
+                val name = server.name
+                val zones = server.zones
+                val cleanupNames = conf.openshiftDnsOperatorCleanupNames.map(RegexPool.apply)
+                val cleanupDomains = conf.openshiftDnsOperatorCleanupDomains.map(RegexPool.apply)
+                cleanupNames.exists(_.matches(name)) || zones.exists(z => cleanupDomains.exists(_.matches(z)))
+              }
+              val spec = dnso.spec
+              val newSpec = spec ++ Json.obj("servers" -> servers.map(_.raw))
+              val raw = dnso.raw
+              val newRaw = raw.asObject ++ Json.obj("spec" -> newSpec)
+              KubernetesOpenshiftDnsOperator(newRaw)
+            }
+          } else {
+            _dnsOperator
+          }
+        }
         hasOtoroshiDnsServer = dnsOperator.exists(_.servers.exists(_.name == conf.openshiftDnsOperatorCoreDnsName))
         shouldNotUpdate      =
           dnsOperator.exists(dnso =>
@@ -2046,9 +2066,9 @@ object KubernetesCRDsJob {
 
     val query = GenCsrQuery(
       hosts = Seq(
-        s"*.${conf.meshDomain}",
-        s"*.svc.${conf.meshDomain}",
-        s"*.global.${conf.meshDomain}"
+        s"*.${config.meshDomain}",
+        s"*.svc.${config.meshDomain}",
+        s"*.global.${config.meshDomain}"
       ),
       subject = "SN=Kubernetes Mesh Certificate, OU=Otoroshi Certificates, O=Otoroshi".some,
       duration = 365.days
