@@ -16210,7 +16210,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "User tags"
           },
           "email" : {
             "description" : "User email",

@@ -1156,7 +1156,7 @@ play.http {
     ssl {
       enabled = false
       enabled = ${?PG_SSL_ENABLED}
-      mode = &quot;VERIFY_CA&quot;
+      mode = &quot;verify_ca&quot;
       mode = ${?PG_SSL_MODE}
       trusted-certs-path = []
       trusted-certs = []
