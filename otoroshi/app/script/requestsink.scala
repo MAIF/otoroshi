@@ -12,7 +12,7 @@ import play.api.mvc.{RequestHeader, Result, Results}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait RequestSink extends StartableAndStoppable with NamedPlugin with InternalEventListener {
-  def pluginType: PluginType = PluginType.RequestSinkType
+  def pluginType: PluginType                                                                       = PluginType.RequestSinkType
   def matches(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean       = false
   def handle(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] =
     FastFuture.successful(Results.NotImplemented(Json.obj("error" -> "not implemented yet")))

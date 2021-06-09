@@ -128,7 +128,7 @@ class Target extends Component {
             this.changeTheUrl(`${parts[0]}://${domain}`);
             if (this.props.changeTargetRoot) {
               afterSchemeParts.shift();
-              this.props.changeTargetRoot('/' + afterSchemeParts.join('/'))
+              this.props.changeTargetRoot('/' + afterSchemeParts.join('/'));
             }
           } else {
             this.changeTheUrl(e);
@@ -2412,7 +2412,7 @@ export class ServicePage extends Component {
               onChange={(v) => this.changeTheValue('jwtVerifier.excludedPatterns', v)}
             />
           </Collapse>
-          
+
           <Collapse
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
@@ -2450,7 +2450,7 @@ export class ServicePage extends Component {
               </Suspense>
             </div>
           </Collapse>
-          
+
           <Collapse
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}

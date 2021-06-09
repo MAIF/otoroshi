@@ -93,9 +93,12 @@ class PluginsDescription extends Component {
   };
 
   toogle = (script) => {
-    this.setState({ display: { ...this.state.display, [script.id]: !this.state.display[script.id] }}, () => {
-      this.update();
-    });
+    this.setState(
+      { display: { ...this.state.display, [script.id]: !this.state.display[script.id] } },
+      () => {
+        this.update();
+      }
+    );
   };
 
   render() {
@@ -130,7 +133,7 @@ class PluginsDescription extends Component {
                         display: 'flex',
                         flexDirection: 'row',
                         justifyContent: 'flex-end',
-                        height: 40
+                        height: 40,
                       }}>
                       <button
                         type="button"
@@ -147,35 +150,35 @@ class PluginsDescription extends Component {
                   </div>
                 )}
                 {this.state.display[script.id] && (
-                <div className="col-sm-10">
-                  <div
-                    className="plugin-doc"
-                    style={{
-                      marginTop: 10,
-                      padding: 10,
-                      borderRadius: 5,
-                      backgroundColor: '#494948',
-                      width: '100%',
-                      display: 'flex',
-                      flexDirection: 'column'
-                    }}>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end'}}>
-                      <div className="btn-group">
-                        {!!script.defaultConfig && (
-                          <button
-                            type="button"
-                            className="btn btn-xs btn-info"
-                            onClick={(e) => this.inject(script)}
-                            _style={{
-                              position: 'absolute',
-                              right: 20,
-                              top: 20,
-                            }}>
-                            Inject default config.
-                          </button>
-                        )}
-                      </div>
-                      <button
+                  <div className="col-sm-10">
+                    <div
+                      className="plugin-doc"
+                      style={{
+                        marginTop: 10,
+                        padding: 10,
+                        borderRadius: 5,
+                        backgroundColor: '#494948',
+                        width: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                      }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <div className="btn-group">
+                          {!!script.defaultConfig && (
+                            <button
+                              type="button"
+                              className="btn btn-xs btn-info"
+                              onClick={(e) => this.inject(script)}
+                              _style={{
+                                position: 'absolute',
+                                right: 20,
+                                top: 20,
+                              }}>
+                              Inject default config.
+                            </button>
+                          )}
+                        </div>
+                        <button
                           type="button"
                           className="btn btn-xs btn-info"
                           onClick={(e) => this.toogle(script)}
@@ -186,41 +189,46 @@ class PluginsDescription extends Component {
                           }}>
                           <i className="fas fa-eye-slash" /> hide config. panel
                         </button>
-                    </div>
-                    <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      
-                      <div style={{ fontSize: 24, color: '#f9b000' }}>{script.name}</div>
-                    </div>
-                    <p
-                      style={{ textAlign: 'justify', marginBottom: 10 }}
-                      dangerouslySetInnerHTML={{ __html: converter.makeHtml(script.description) }}
-                    />
-                    {this.displayForm(script) && (
-                      <h4 style={{ marginTop: 20 }}>Plugin configuration</h4>
-                    )}
-                    {this.displayForm(script) && (
-                      <Form
-                        value={
-                          this.props.config[script.configRoot] || {
-                            ...script.defaultConfig[script.configRoot],
-                          }
-                        }
-                        onChange={(e) => {
-                          const newConfig = { ...this.props.config, [script.configRoot]: e };
-                          this.props.onChangeConfig(newConfig);
-                        }}
-                        flow={script.configFlow}
-                        schema={script.configSchema}
+                      </div>
+                      <div
                         style={{
-                          marginTop: 20,
-                          backgroundColor: '#373735',
-                          padding: 10,
-                          borderRadius: 5,
-                        }}
+                          width: '100%',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}>
+                        <div style={{ fontSize: 24, color: '#f9b000' }}>{script.name}</div>
+                      </div>
+                      <p
+                        style={{ textAlign: 'justify', marginBottom: 10 }}
+                        dangerouslySetInnerHTML={{ __html: converter.makeHtml(script.description) }}
                       />
-                    )}
+                      {this.displayForm(script) && (
+                        <h4 style={{ marginTop: 20 }}>Plugin configuration</h4>
+                      )}
+                      {this.displayForm(script) && (
+                        <Form
+                          value={
+                            this.props.config[script.configRoot] || {
+                              ...script.defaultConfig[script.configRoot],
+                            }
+                          }
+                          onChange={(e) => {
+                            const newConfig = { ...this.props.config, [script.configRoot]: e };
+                            this.props.onChangeConfig(newConfig);
+                          }}
+                          flow={script.configFlow}
+                          schema={script.configSchema}
+                          style={{
+                            marginTop: 20,
+                            backgroundColor: '#373735',
+                            padding: 10,
+                            borderRadius: 5,
+                          }}
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
                 )}
               </div>
             )
@@ -231,17 +239,18 @@ class PluginsDescription extends Component {
 }
 
 export class Scripts extends Component {
-
   extractName = (script, displayKind) => {
     if (displayKind) {
-      return `[${script.pluginType}] ${script.name}`
+      return `[${script.pluginType}] ${script.name}`;
     } else {
       return script.name;
     }
-  }
+  };
 
   render() {
-    const url = this.props.type ? `/bo/api/proxy/api/scripts/_list?type=${this.props.type}` : `/bo/api/proxy/api/scripts/_list`;
+    const url = this.props.type
+      ? `/bo/api/proxy/api/scripts/_list?type=${this.props.type}`
+      : `/bo/api/proxy/api/scripts/_list`;
     const displayKind = !this.props.type;
     return (
       <>
@@ -250,7 +259,11 @@ export class Scripts extends Component {
           value={this.props.refs}
           onChange={this.props.onChange}
           valuesFrom={url}
-          transformer={(a) => ({ value: a.id, label: this.extractName(a, displayKind), desc: a.description })}
+          transformer={(a) => ({
+            value: a.id,
+            label: this.extractName(a, displayKind),
+            desc: a.description,
+          })}
           help="..."
         />
         <PluginsDescription

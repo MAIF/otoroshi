@@ -435,7 +435,7 @@ export class TopBar extends Component {
       document.addEventListener('keydown', this.listenToSlash, false);
     }
     BackOfficeServices.env().then((env) => {
-      this.setState({ env })
+      this.setState({ env });
       if (this.state.env.instanceName.toLowerCase() !== 'otoroshi') {
         const title = `Otoroshi - ${this.state.env.instanceName}`;
         window.document.title = title;

@@ -105,8 +105,19 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       }
       def extractInfos(c: String): JsValue = {
         env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c") match {
-          case Left(_)         => Json.obj("id" -> s"cp:$c", "name" -> c, "description" -> JsNull, "pluginType" -> PluginType.CompositeType.name)
-          case Right(instance) => instance.jsonDescription ++ Json.obj("id" -> s"cp:$c", "name" -> instance.name, "pluginType" -> instance.pluginType.name)
+          case Left(_)         =>
+            Json.obj(
+              "id"          -> s"cp:$c",
+              "name"        -> c,
+              "description" -> JsNull,
+              "pluginType"  -> PluginType.CompositeType.name
+            )
+          case Right(instance) =>
+            instance.jsonDescription ++ Json.obj(
+              "id"         -> s"cp:$c",
+              "name"       -> instance.name,
+              "pluginType" -> instance.pluginType.name
+            )
         }
       }
       env.datastores.scriptDataStore.findAll().map { all =>
@@ -131,7 +142,13 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
           }
           .map(c => (c, env.scriptManager.getAnyScript[NamedPlugin](c.id)))
           .map {
-            case (c, Left(_))         => Json.obj("id" -> c.id, "name" -> c.name, "description" -> c.desc, "pluginType" -> PluginType.CompositeType.name)
+            case (c, Left(_))         =>
+              Json.obj(
+                "id"          -> c.id,
+                "name"        -> c.name,
+                "description" -> c.desc,
+                "pluginType"  -> PluginType.CompositeType.name
+              )
             case (c, Right(instance)) =>
               Json.obj(
                 "id"            -> c.id,

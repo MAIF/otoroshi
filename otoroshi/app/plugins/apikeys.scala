@@ -15,7 +15,13 @@ import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterAgent
 import otoroshi.env.Env
-import otoroshi.models.{ApiKey, ApiKeyRouteMatcher, RemainingQuotas, ServiceDescriptorIdentifier, ServiceGroupIdentifier}
+import otoroshi.models.{
+  ApiKey,
+  ApiKeyRouteMatcher,
+  RemainingQuotas,
+  ServiceDescriptorIdentifier,
+  ServiceGroupIdentifier
+}
 import otoroshi.plugins.JsonPathUtils
 import otoroshi.script._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
@@ -1368,7 +1374,7 @@ class ApikeyAuthModule extends PreRouting {
     Some(
       Json.obj(
         "ApikeyAuthModule" -> Json.obj(
-          "realm"   -> "apikey-auth-module-realm",
+          "realm"          -> "apikey-auth-module-realm",
           "noneTagIn"      -> Json.arr(),
           "oneTagIn"       -> Json.arr(),
           "allTagsIn"      -> Json.arr(),
@@ -1377,7 +1383,7 @@ class ApikeyAuthModule extends PreRouting {
           "allMetaIn"      -> Json.arr(),
           "noneMetaKeysIn" -> Json.arr(),
           "oneMetaKeyIn"   -> Json.arr(),
-          "allMetaKeysIn"  -> Json.arr(),
+          "allMetaKeysIn"  -> Json.arr()
         )
       )
     )
@@ -1406,31 +1412,36 @@ class ApikeyAuthModule extends PreRouting {
 
   def unauthorized(ctx: PreRoutingContext): Future[Unit] = {
     val realm = ctx.configFor("ApikeyAuthModule").select("realm").asOpt[String].getOrElse("apikey-auth-module-realm")
-    FastFuture.failed(PreRoutingError(
-      body = "<h3>not authorized</h3>".byteString,
-      code = 401,
-      contentType = "text/html",
-      headers = Map("WWW-Authenticate" -> s"""Basic realm="${realm}"""")
-    ))
+    FastFuture.failed(
+      PreRoutingError(
+        body = "<h3>not authorized</h3>".byteString,
+        code = 401,
+        contentType = "text/html",
+        headers = Map("WWW-Authenticate" -> s"""Basic realm="${realm}"""")
+      )
+    )
   }
 
   def forbidden(ctx: PreRoutingContext): Future[Unit] = {
     val realm = ctx.configFor("ApikeyAuthModule").select("realm").asOpt[String].getOrElse("apikey-auth-module-realm")
-    FastFuture.failed(PreRoutingError(
-      body = "<h3>forbidden</h3>".byteString,
-      code = 403,
-      contentType = "text/html",
-      headers = Map("WWW-Authenticate" -> s"""Basic realm="${realm}"""")
-    ))
+    FastFuture.failed(
+      PreRoutingError(
+        body = "<h3>forbidden</h3>".byteString,
+        code = 403,
+        contentType = "text/html",
+        headers = Map("WWW-Authenticate" -> s"""Basic realm="${realm}"""")
+      )
+    )
   }
 
   def validApikey(apikey: ApiKey, password: String, groups: Seq[ServiceGroupIdentifier], config: JsValue): Boolean = {
 
     import otoroshi.models.SeqImplicits._
 
-    val validSecret = (apikey.clientSecret == password || (apikey.rotation.enabled && apikey.rotation.nextSecret.contains(password)))
-    val validGroups = apikey.authorizedEntities.intersect(groups).nonEmpty
-    val routing = ApiKeyRouteMatcher.format.reads(config).getOrElse(ApiKeyRouteMatcher())
+    val validSecret            =
+      apikey.clientSecret == password || (apikey.rotation.enabled && apikey.rotation.nextSecret.contains(password))
+    val validGroups            = apikey.authorizedEntities.intersect(groups).nonEmpty
+    val routing                = ApiKeyRouteMatcher.format.reads(config).getOrElse(ApiKeyRouteMatcher())
     val matchOnRole: Boolean   = Option(routing.oneTagIn)
       .filter(_.nonEmpty)
       .forall(tags => apikey.tags.findOne(tags))
@@ -1480,7 +1491,7 @@ class ApikeyAuthModule extends PreRouting {
     ctx.request.headers.get("Authorization") match {
       case Some(auth) if auth.startsWith("Basic ") =>
         extractUsernamePassword(auth) match {
-          case None => forbidden(ctx)
+          case None                       => forbidden(ctx)
           case Some((username, password)) => {
             val groups = ctx.descriptor.groups.map(g => ServiceGroupIdentifier(g))
             env.datastores.apiKeyDataStore.findById(username).flatMap {
@@ -1488,11 +1499,11 @@ class ApikeyAuthModule extends PreRouting {
                 ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
                 ().future
               }
-              case _ => unauthorized(ctx)
+              case _                                                                                        => unauthorized(ctx)
             }
           }
         }
-      case _ => unauthorized(ctx)
+      case _                                       => unauthorized(ctx)
     }
   }
 }

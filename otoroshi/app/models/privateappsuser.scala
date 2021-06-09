@@ -61,7 +61,7 @@ case class PrivateAppsUser(
       "email"    -> email,
       "profile"  -> profile,
       "metadata" -> otoroshiData,
-      "tags" -> tags
+      "tags"     -> tags
     )
 
   def withAuthModuleConfig[A](f: AuthModuleConfig => A)(implicit ec: ExecutionContext, env: Env): Unit = {

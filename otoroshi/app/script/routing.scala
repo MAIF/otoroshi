@@ -73,7 +73,7 @@ object PreRoutingRef {
 }
 
 trait PreRouting extends StartableAndStoppable with NamedPlugin with InternalEventListener {
-  def pluginType: PluginType = PluginType.PreRoutingType
+  def pluginType: PluginType                                                                      = PluginType.PreRoutingType
   def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = funit
 }
 

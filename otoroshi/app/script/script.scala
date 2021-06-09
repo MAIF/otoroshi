@@ -43,35 +43,34 @@ sealed trait PluginType {
 }
 
 object PluginType {
-  object AppType extends PluginType {
+  object AppType             extends PluginType {
     def name: String = "app"
   }
-  object TransformerType extends PluginType {
+  object TransformerType     extends PluginType {
     def name: String = "transformer"
   }
   object AccessValidatorType extends PluginType {
     def name: String = "validator"
   }
-  object PreRoutingType extends PluginType {
+  object PreRoutingType      extends PluginType {
     def name: String = "preroute"
   }
-  object RequestSinkType extends PluginType {
+  object RequestSinkType     extends PluginType {
     def name: String = "sink"
   }
-  object EventListenerType extends PluginType {
+  object EventListenerType   extends PluginType {
     def name: String = "listener"
   }
-  object JobType extends PluginType {
+  object JobType             extends PluginType {
     def name: String = "job"
   }
-  object DataExporterType extends PluginType {
+  object DataExporterType    extends PluginType {
     def name: String = "exporter"
   }
-  object CompositeType extends PluginType {
+  object CompositeType       extends PluginType {
     def name: String = "composite"
   }
 }
-
 
 trait StartableAndStoppable {
   val funit: Future[Unit]                                         = FastFuture.successful(())

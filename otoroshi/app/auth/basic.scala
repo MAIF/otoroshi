@@ -205,10 +205,10 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             name = user.name,
             email = user.email,
             profile = Json.obj(
-              "name" -> user.name,
-              "email" -> user.email,
+              "name"     -> user.name,
+              "email"    -> user.email,
               "metadata" -> user.metadata,
-              "tags" -> user.tags
+              "tags"     -> user.tags
             ),
             realm = authConfig.cookieSuffix(descriptor),
             otoroshiData = Some(user.metadata),
@@ -233,10 +233,10 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             name = user.name,
             email = user.email,
             profile = Json.obj(
-              "name" -> user.name,
-              "email" -> user.email,
+              "name"     -> user.name,
+              "email"    -> user.email,
               "metadata" -> user.metadata,
-              "tags" -> user.tags
+              "tags"     -> user.tags
             ),
             simpleLogin = false,
             authConfigId = authConfig.id,
@@ -354,10 +354,10 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                           name = user.name,
                           email = user.email,
                           profile = Json.obj(
-                            "name" -> user.name,
-                            "email" -> user.email,
+                            "name"     -> user.name,
+                            "email"    -> user.email,
                             "metadata" -> user.metadata,
-                            "tags" -> user.tags
+                            "tags"     -> user.tags
                           ),
                           realm = authConfig.cookieSuffix(descriptor),
                           otoroshiData = Some(user.metadata),

@@ -551,8 +551,10 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       .applyOn { s =>
         val enabledAdditionalHosts = (s \ "enabledAdditionalHosts").asOpt[Boolean].getOrElse(true)
         (s \ "hosts").asOpt[JsArray] match {
-          case None if enabledAdditionalHosts      => s.as[JsObject] ++ Json.obj("hosts" -> JsArray(additionalHosts.value.distinct))
-          case Some(arr) if enabledAdditionalHosts => s.as[JsObject] ++ Json.obj("hosts" -> JsArray((arr ++ additionalHosts).value.distinct))
+          case None if enabledAdditionalHosts      =>
+            s.as[JsObject] ++ Json.obj("hosts" -> JsArray(additionalHosts.value.distinct))
+          case Some(arr) if enabledAdditionalHosts =>
+            s.as[JsObject] ++ Json.obj("hosts" -> JsArray((arr ++ additionalHosts).value.distinct))
           case _                                   => s.as[JsObject]
         }
       }
@@ -1723,7 +1725,8 @@ object KubernetesCRDsJob {
            |        $upstream
            |        fallthrough in-addr.arpa ip6.arpa
            |    }
-           |    rewrite name regex (.*)\\.${coreDnsDomainRegexEnv}${conf.meshDomain.replaceAll("\\.", """\\\\.""")} ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+           |    rewrite name regex (.*)\\.${coreDnsDomainRegexEnv}${conf.meshDomain
+            .replaceAll("\\.", """\\\\.""")} ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
            |    forward . /etc/resolv.conf
            |    cache 30
            |    loop
@@ -1914,20 +1917,20 @@ object KubernetesCRDsJob {
       for {
         _dnsOperator        <- client.fetchOpenshiftDnsOperator()
         service             <- client.fetchService(conf.openshiftDnsOperatorCoreDnsNamespace, conf.openshiftDnsOperatorCoreDnsName)
-        dnsOperator = {
+        dnsOperator          = {
           if (conf.openshiftDnsOperatorCleanup) {
             _dnsOperator.map { dnso =>
               val servers = dnso.servers.filter { server =>
-                val name = server.name
-                val zones = server.zones
-                val cleanupNames = conf.openshiftDnsOperatorCleanupNames.map(RegexPool.apply)
+                val name           = server.name
+                val zones          = server.zones
+                val cleanupNames   = conf.openshiftDnsOperatorCleanupNames.map(RegexPool.apply)
                 val cleanupDomains = conf.openshiftDnsOperatorCleanupDomains.map(RegexPool.apply)
                 cleanupNames.exists(_.matches(name)) || zones.exists(z => cleanupDomains.exists(_.matches(z)))
               }
-              val spec = dnso.spec
+              val spec    = dnso.spec
               val newSpec = spec ++ Json.obj("servers" -> servers.map(_.raw))
-              val raw = dnso.raw
-              val newRaw = raw.asObject ++ Json.obj("spec" -> newSpec)
+              val raw     = dnso.raw
+              val newRaw  = raw.asObject ++ Json.obj("spec" -> newSpec)
               KubernetesOpenshiftDnsOperator(newRaw)
             }
           } else {
@@ -1942,7 +1945,9 @@ object KubernetesCRDsJob {
               .exists(_.forwardPluginUpstreams.exists(_.startsWith(service.map(_.clusterIP).getOrElse("--")))) &&
             dnso.servers
               .find(_.name == conf.openshiftDnsOperatorCoreDnsName)
-              .exists(_.zones.exists(_.contains(s"${conf.coreDnsEnv.map(e => s"$e.").getOrElse("")}${conf.meshDomain}")))
+              .exists(
+                _.zones.exists(_.contains(s"${conf.coreDnsEnv.map(e => s"$e.").getOrElse("")}${conf.meshDomain}"))
+              )
           )
         _                    =
           logger.debug(
