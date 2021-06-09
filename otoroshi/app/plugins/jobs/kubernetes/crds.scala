@@ -51,6 +51,10 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
 
   override def defaultConfig: Option[JsObject] = KubernetesConfig.defaultConfig.some
 
+  override def configFlow: Seq[String] = KubernetesConfig.configFlow
+
+  override def configSchema: Option[JsObject] = KubernetesConfig.configSchema
+
   override def description: Option[String] =
     Some(
       s"""This plugin enables Otoroshi CRDs Controller

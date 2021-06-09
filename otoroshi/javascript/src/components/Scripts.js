@@ -121,6 +121,31 @@ class PluginsDescription extends Component {
                 }}>
                 <label className="col-xs-12 col-sm-2 control-label" />
                 {!this.state.display[script.id] && (
+                  <div
+                  style={{
+                    marginTop: 10,
+                    padding: 10,
+                    borderRadius: 5,
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'flex-end',
+                    height: 45,
+                  }}>
+                    <button
+                      type="button"
+                      className="btn btn-xs btn-info"
+                      onClick={(e) => this.toogle(script)}
+                      _style={{
+                        position: 'absolute',
+                        right: 20,
+                        top: 20,
+                      }}>
+                      <i className="fas fa-eye" /> show config. panel
+                    </button>
+                  </div>
+                )}
+                {false && !this.state.display[script.id] && (
                   <div className="col-sm-10">
                     <div
                       className="plugin-doc"
