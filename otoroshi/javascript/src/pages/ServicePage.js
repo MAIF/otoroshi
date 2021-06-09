@@ -648,13 +648,23 @@ export class ServicePage extends Component {
     }
   };
 
-  changeTheValue = (name, value) => {
+  changeTheValue = (name, value, f) => {
     const serviceClone = _.cloneDeep(this.state.service);
     const newService = deepSet(serviceClone, name, value);
     this.setState({
       changed: shallowDiffers(this.state.originalService, newService),
       service: newService,
-    });
+    }, f);
+  };
+
+  setTheValue = (value, f) => {
+    const serviceClone = _.cloneDeep(this.state.service);
+    const valueClone = _.cloneDeep(value);
+    const newService = _.merge({}, serviceClone, valueClone)
+    this.setState({
+      changed: shallowDiffers(this.state.originalService, newService),
+      service: newService,
+    }, f);
   };
 
   saveChanges = (e) => {
@@ -2417,6 +2427,38 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Pre routing">
+            <Message message={
+              <>
+                <span>Pre-routes will be deprecated soon, please use global plugins instead !</span>
+                <Migration 
+                  style={{ marginLeft: 10 }}
+                  what="preroute" 
+                  value={this.state.service} 
+                  onChange={this.setTheValue} 
+                  extractHolder={s => s.plugins}
+                  reset={() => {
+                    this.changeTheValue('preRouting', { 
+                      enabled: false,
+                      refs: [],
+                      config: {},
+                      excludedPatterns: []
+                    });
+                  }}
+                  extractLegacy={s => {
+                    return {
+                      enabled: s.preRouting.enabled,
+                      refs: s.preRouting.refs,
+                      config: s.preRouting.config,
+                      excluded: s.preRouting.excludedPatterns,
+                    }
+                  }}
+                  setHolder={(s, h) => {
+                    s.plugins = h;
+                    return s;
+                  }}
+                />
+              </>
+            } />
             <BooleanInput
               label="Enabled"
               value={this.state.service.preRouting.enabled}
@@ -2455,6 +2497,38 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Access validation">
+            <Message message={
+              <>
+                <span>Access validators will be deprecated soon, please use global plugins instead !</span>
+                <Migration 
+                  style={{ marginLeft: 10 }}
+                  what="validator" 
+                  value={this.state.service} 
+                  onChange={this.setTheValue} 
+                  extractHolder={s => s.plugins}
+                  reset={() => {
+                    this.changeTheValue('accessValidator', { 
+                      enabled: false,
+                      refs: [],
+                      config: {},
+                      excludedPatterns: []
+                    });
+                  }}
+                  extractLegacy={s => {
+                    return {
+                      enabled: s.accessValidator.enabled,
+                      refs: s.accessValidator.refs,
+                      config: s.accessValidator.config,
+                      excluded: s.accessValidator.excludedPatterns,
+                    }
+                  }}
+                  setHolder={(s, h) => {
+                    s.plugins = h;
+                    return s;
+                  }}
+                />
+              </>
+            } />
             <BooleanInput
               label="Enabled"
               value={this.state.service.accessValidator.enabled}
@@ -3092,6 +3166,35 @@ export class ServicePage extends Component {
             initCollapsed={true}
             label="Request transformation">
             {/*<Warning />*/}
+            <Message message={
+              <>
+                <span>Request transformers will be deprecated soon, please use global plugins instead !</span>
+                <Migration 
+                  style={{ marginLeft: 10 }}
+                  what="transformer" 
+                  value={this.state.service} 
+                  onChange={this.setTheValue} 
+                  extractHolder={s => s.plugins}
+                  reset={() => {
+                    this.changeTheValue('transformerRefs', [], () => {
+                      this.changeTheValue('transformerConfig', {})
+                    });
+                  }}
+                  extractLegacy={s => {
+                    return {
+                      enabled: true,
+                      refs: s.transformerRefs,
+                      config: s.transformerConfig,
+                      excluded: [],
+                    }
+                  }}
+                  setHolder={(s, h) => {
+                    s.plugins = h;
+                    return s;
+                  }}
+                />
+              </>
+            } />
             <Scripts
               label="Request transformers"
               refs={this.state.service.transformerRefs}
@@ -3174,7 +3277,7 @@ export class Message extends Component {
               backgroundColor: '#494948',
               width: '100%',
             }}>
-            <p style={{ textAlign: 'justify' }}>{this.props.message}</p>
+            <p style={{ textAlign: 'justify', marginBottom: 0 }}>{this.props.message}</p>
           </div>
         </div>
       </div>
@@ -3477,5 +3580,35 @@ export class PrivateApiButton extends Component {
         </button>
       );
     }
+  }
+}
+
+
+export class Migration extends Component {
+
+  migrate = () => {
+    const value = _.cloneDeep(this.props.value);
+    const legacy = this.props.extractLegacy ? _.cloneDeep(this.props.extractLegacy(value)) : { enabled: false, refs: [], excluded: [], config: {}};
+    const holder = this.props.extractHolder ? _.cloneDeep(this.props.extractHolder(value)) : { enabled: false, refs: [], excluded: [], config: {}};
+    const newHolder = _.cloneDeep(holder);
+    newHolder.refs = [...newHolder.refs, ...legacy.refs];
+    newHolder.excluded = [...newHolder.excluded, ...legacy.excluded];
+    newHolder.config = _.merge({}, newHolder.config, legacy.config);
+    if (!newHolder.enabled && legacy.enabled) {
+      newHolder.enabled = true;
+    }
+    if (this.props.setHolder) {
+      const res = this.props.setHolder(value, newHolder)
+      this.props.onChange(res, () => {
+        if (this.props.reset) this.props.reset();
+      });
+    }
+  }
+  render() {
+    return (
+      <button className="btn btn-danger btn-xs btn-sm" type="button" onClick={this.migrate} style={this.props.style}>
+        <i className="fas fa-fire" /> Migrate all to plugins
+      </button>
+    )
   }
 }
