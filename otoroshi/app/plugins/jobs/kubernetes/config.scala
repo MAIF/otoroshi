@@ -15,12 +15,10 @@ import scala.concurrent.ExecutionContext
 import scala.util.Try
 
 case class KubernetesConfig(
-
     endpoint: String,
     token: Option[String],
     userPassword: Option[String],
     caCert: Option[String],
-
     kubeLeader: Boolean,
     trust: Boolean,
     watch: Boolean,
@@ -30,35 +28,29 @@ case class KubernetesConfig(
     syncIntervalSeconds: Long,
     watchTimeoutSeconds: Int,
     watchGracePeriodSeconds: Int,
-
     ingresses: Boolean,
     ingressClasses: Seq[String],
     defaultGroup: String,
     ingressEndpointHostname: Option[String],
     ingressEndpointIp: Option[String],
     ingressEndpointPublishedService: Option[String],
-
     crds: Boolean,
     syncDaikokuApikeysOnly: Boolean,
     restartDependantDeployments: Boolean,
-
     mutatingWebhookName: String,
     validatingWebhookName: String,
     image: Option[String],
-
     meshDomain: String,
     kubeSystemNamespace: String,
     otoroshiServiceName: String,
     otoroshiNamespace: String,
     clusterDomain: String,
-
     coreDnsEnv: Option[String],
     coreDnsConfigMapName: String,
     coreDnsDeploymentName: String,
     corednsPort: Int,
     coreDnsIntegration: Boolean,
     coreDnsIntegrationDryRun: Boolean,
-
     openshiftDnsOperatorIntegration: Boolean,
     openshiftDnsOperatorCleanup: Boolean,
     openshiftDnsOperatorCleanupNames: Seq[String],
@@ -66,16 +58,14 @@ case class KubernetesConfig(
     openshiftDnsOperatorCoreDnsNamespace: String,
     openshiftDnsOperatorCoreDnsName: String,
     openshiftDnsOperatorCoreDnsPort: Int,
-
     kubeDnsOperatorIntegration: Boolean,
     kubeDnsOperatorCoreDnsNamespace: String,
     kubeDnsOperatorCoreDnsName: String,
     kubeDnsOperatorCoreDnsPort: Int,
-
     triggerKey: Option[String],
     triggerHost: Option[String],
     triggerPath: Option[String],
-    templates: JsObject,
+    templates: JsObject
 )
 
 object KubernetesConfig {
@@ -409,75 +399,286 @@ object KubernetesConfig {
       "kubeDnsOperatorIntegration",
       "kubeDnsOperatorCoreDnsNamespace",
       "kubeDnsOperatorCoreDnsName",
-      "kubeDnsOperatorCoreDnsPort",
+      "kubeDnsOperatorCoreDnsPort"
     )
   }
 
-  private def makeFormField(name: String, typ: String, label: String, help: Option[String] = None, more: JsObject = Json.obj()): JsObject = {
-    val h = help.getOrElse("...")
+  private def makeFormField(
+      name: String,
+      typ: String,
+      label: String,
+      help: Option[String] = None,
+      more: JsObject = Json.obj()
+  ): JsObject = {
+    val h     = help.getOrElse("...")
     val props = Json.obj(
       "label" -> label,
-      "help" -> h,
+      "help"  -> h
     ) ++ more
-    Json.obj(name -> Json.obj(
-      "type" -> typ,
-      "props" -> props
-    ))
+    Json.obj(
+      name -> Json.obj(
+        "type"  -> typ,
+        "props" -> props
+      )
+    )
   }
 
   def configSchema: Option[JsObject] = Some(
-    Json.obj() 
-      ++ makeFormField("trust", "bool", "Trust Kube CA", "Do you want to trust the kubernetes cluster issued CA for TLS connections".some)
-      ++ makeFormField("endpoint", "string", "Kube API endpoint", "The http URL to access kubernetes api server (optional, will look for $KUBERNETE_HOST and $KUBERNETES_PORT if not provided)".some)
-      ++ makeFormField("token", "string", "Kube API access token", "The jwt token to access kubernetes api server (optional, will look for /var/run/secrets/kubernetes.io/serviceaccount/token if not provided)".some)
-      ++ makeFormField("userPassword", "string", "Kube API user/password", "Base64 encoded user password tuple to access kubernetes api server (optional)".some)
-      ++ makeFormField("caCert", "string", "Kube API CA cert", "Kubernetes api server CA cert (optional, will look for /var/run/secrets/kubernetes.io/serviceaccount/ca.crt if not provided)".some)
-      
-      ++ makeFormField("namespaces", "array", "Kube namespaces", "Kubernetes namespaces that will be query".some)
-      ++ makeFormField("namespacesLabels", "object", "Kube namespace labels", "Kubernetes namespaces with those labels that will be query".some)
-      ++ makeFormField("labels", "object", "Kube labels", "Kubernetes entities with those labels will be query".some)
-      ++ makeFormField("kubeLeader", "bool", "Use kube leader", "If enabled, otoroshi will delegate job running leader to kubernetes leader".some)
-      ++ makeFormField("syncIntervalSeconds", "number", "Sync interval", "Number of seconds between syncs".some, more = Json.obj("suffix" -> "seconds"))
-      ++ makeFormField("watch", "bool", "Watch kube events", "If enabled, will watch kubernetes events and trigger sync according to it".some)
-      ++ makeFormField("watchTimeoutSeconds", "number", "Watch timeout", "Number of seconds before watch timeout".some, more = Json.obj("suffix" -> "seconds"))
-      ++ makeFormField("watchGracePeriodSeconds", "number", "Watch grace period", "Number of seconds for collapsing watch events".some, more = Json.obj("suffix" -> "seconds"))
-     
-      ++ makeFormField("ingresses", "bool", "Enable", "Enable ingress controller".some)
-      ++ makeFormField("ingressClasses", "array", "Ingress classes", "Ingress classes watched by otoroshi ingress controller".some)
-      ++ makeFormField("defaultGroup", "string", "Default group", "Otoroshi groups where ingress services will be created".some, more = Json.obj("placeholder" -> "default"))
+    Json.obj()
+    ++ makeFormField(
+      "trust",
+      "bool",
+      "Trust Kube CA",
+      "Do you want to trust the kubernetes cluster issued CA for TLS connections".some
+    )
+    ++ makeFormField(
+      "endpoint",
+      "string",
+      "Kube API endpoint",
+      "The http URL to access kubernetes api server (optional, will look for $KUBERNETE_HOST and $KUBERNETES_PORT if not provided)".some
+    )
+    ++ makeFormField(
+      "token",
+      "string",
+      "Kube API access token",
+      "The jwt token to access kubernetes api server (optional, will look for /var/run/secrets/kubernetes.io/serviceaccount/token if not provided)".some
+    )
+    ++ makeFormField(
+      "userPassword",
+      "string",
+      "Kube API user/password",
+      "Base64 encoded user password tuple to access kubernetes api server (optional)".some
+    )
+    ++ makeFormField(
+      "caCert",
+      "string",
+      "Kube API CA cert",
+      "Kubernetes api server CA cert (optional, will look for /var/run/secrets/kubernetes.io/serviceaccount/ca.crt if not provided)".some
+    )
 
-      ++ makeFormField("crds", "bool", "Enabled", "Enable Otoroshi CRDs".some)
-      ++ makeFormField("syncDaikokuApikeysOnly", "bool", "Sync only daikoku apikeys", "If enabled, only the apikeys CRDs with daikoku integration token will be synced".some)
-      ++ makeFormField("restartDependantDeployments", "bool", "Restart deployments", "If enabled, deployments dependant to otoroshi managed secrets (apikeys, certs) will be automatically restarted as secrets are updated".some)
-     
-      ++ makeFormField("mutatingWebhookName", "string", "Sidecar webhook name", "If you want to use otoroshi sidecars, you need to specify the name of the dedicated mutating webhook".some, more = Json.obj("placeholder" -> "otoroshi-admission-webhook-injector"))
-      ++ makeFormField("validatingWebhookName", "string", "Validation webhook name", "If you want to use kubectl validation, you need to specify the name of the dedicated validating webhook".some, more = Json.obj("placeholder" -> "otoroshi-admission-webhook-validation"))
-      ++ makeFormField("image", "string", "Sidecar image", "The docker image for the otoroshi injected sidecar".some, more = Json.obj("placeholder" -> "maif/otoroshi-sidecar:latest")) 
+    ++ makeFormField("namespaces", "array", "Kube namespaces", "Kubernetes namespaces that will be query".some)
+    ++ makeFormField(
+      "namespacesLabels",
+      "object",
+      "Kube namespace labels",
+      "Kubernetes namespaces with those labels that will be query".some
+    )
+    ++ makeFormField("labels", "object", "Kube labels", "Kubernetes entities with those labels will be query".some)
+    ++ makeFormField(
+      "kubeLeader",
+      "bool",
+      "Use kube leader",
+      "If enabled, otoroshi will delegate job running leader to kubernetes leader".some
+    )
+    ++ makeFormField(
+      "syncIntervalSeconds",
+      "number",
+      "Sync interval",
+      "Number of seconds between syncs".some,
+      more = Json.obj("suffix" -> "seconds")
+    )
+    ++ makeFormField(
+      "watch",
+      "bool",
+      "Watch kube events",
+      "If enabled, will watch kubernetes events and trigger sync according to it".some
+    )
+    ++ makeFormField(
+      "watchTimeoutSeconds",
+      "number",
+      "Watch timeout",
+      "Number of seconds before watch timeout".some,
+      more = Json.obj("suffix" -> "seconds")
+    )
+    ++ makeFormField(
+      "watchGracePeriodSeconds",
+      "number",
+      "Watch grace period",
+      "Number of seconds for collapsing watch events".some,
+      more = Json.obj("suffix" -> "seconds")
+    )
 
-      ++ makeFormField("meshDomain", "string", "Mesh domain", "The domain used for service mesh".some, more = Json.obj("placeholder" -> "otoroshi.mesh"))
-      ++ makeFormField("kubeSystemNamespace", "string", "Kube system namespace", "The namespace containing coredns".some, more = Json.obj("placeholder" -> "kube-system"))
-      ++ makeFormField("otoroshiNamespace", "string", "Otoroshi namespace", "The namespace where otoroshi is deployed".some, more = Json.obj("placeholder" -> "otoroshi"))
-      ++ makeFormField("otoroshiServiceName", "string", "Otoroshi service", "The service name for otoroshi".some, more = Json.obj("placeholder" -> "otoroshi-service"))
-      ++ makeFormField("clusterDomain", "string", "Cluster domain", "The current kubernetes cluster domain".some, more = Json.obj("placeholder" -> "svc.cluster.local"))
+    ++ makeFormField("ingresses", "bool", "Enable", "Enable ingress controller".some)
+    ++ makeFormField(
+      "ingressClasses",
+      "array",
+      "Ingress classes",
+      "Ingress classes watched by otoroshi ingress controller".some
+    )
+    ++ makeFormField(
+      "defaultGroup",
+      "string",
+      "Default group",
+      "Otoroshi groups where ingress services will be created".some,
+      more = Json.obj("placeholder" -> "default")
+    )
 
-      ++ makeFormField("coreDnsIntegration", "bool", "Coredns integration", "Auto register service mesh in coredns".some)
-      ++ makeFormField("coreDnsIntegrationDryRun", "bool", "Dry run", "Just simulate integration".some)
-      ++ makeFormField("coreDnsConfigMapName", "string", "Config map name", "The name of the coredns config-map".some, more = Json.obj("placeholder" -> "coredns"))
-      ++ makeFormField("coreDnsDeploymentName", "string", "Deployment name", "The name of the coredns deployment".some, more = Json.obj("placeholder" -> "coredns"))
-      ++ makeFormField("corednsPort", "number", "Coredns port", "The DNS port to expose service mesh regions".some, more = Json.obj("placeholder" -> "53"))
-      ++ makeFormField("coreDnsEnv", "string", "Coredns env", "Preffix for meshDomain".some)
+    ++ makeFormField("crds", "bool", "Enabled", "Enable Otoroshi CRDs".some)
+    ++ makeFormField(
+      "syncDaikokuApikeysOnly",
+      "bool",
+      "Sync only daikoku apikeys",
+      "If enabled, only the apikeys CRDs with daikoku integration token will be synced".some
+    )
+    ++ makeFormField(
+      "restartDependantDeployments",
+      "bool",
+      "Restart deployments",
+      "If enabled, deployments dependant to otoroshi managed secrets (apikeys, certs) will be automatically restarted as secrets are updated".some
+    )
 
-      ++ makeFormField("openshiftDnsOperatorIntegration", "bool", "Openshift dns integration", "Auto register service mesh in openshift DNS operator".some)
-      ++ makeFormField("openshiftDnsOperatorCleanup", "bool", "Cleanup", "Cleanup DNS operator".some)
-      ++ makeFormField("openshiftDnsOperatorCleanupNames", "array", "Cleanup names", "Cleanup DNS operator based on names".some, more = Json.obj("suffix" -> "regex"))
-      ++ makeFormField("openshiftDnsOperatorCleanupDomains", "array", "Cleanup domains", "Cleanup DNS operator based on domains".some, more = Json.obj("suffix" -> "regex"))
-      ++ makeFormField("openshiftDnsOperatorCoreDnsNamespace", "string", "DNS operator namespace", "DNS operator namespace".some, more = Json.obj("placeholder" -> "otoroshi"))
-      ++ makeFormField("openshiftDnsOperatorCoreDnsName", "string", "DNS operator name", "DNS operator name".some, more = Json.obj("placeholder" -> "otoroshi-dns"))
-      ++ makeFormField("openshiftDnsOperatorCoreDnsPort", "number", "DNS operator port number", "DNS operator port number".some, more = Json.obj("placeholder" -> "5353"))
+    ++ makeFormField(
+      "mutatingWebhookName",
+      "string",
+      "Sidecar webhook name",
+      "If you want to use otoroshi sidecars, you need to specify the name of the dedicated mutating webhook".some,
+      more = Json.obj("placeholder" -> "otoroshi-admission-webhook-injector")
+    )
+    ++ makeFormField(
+      "validatingWebhookName",
+      "string",
+      "Validation webhook name",
+      "If you want to use kubectl validation, you need to specify the name of the dedicated validating webhook".some,
+      more = Json.obj("placeholder" -> "otoroshi-admission-webhook-validation")
+    )
+    ++ makeFormField(
+      "image",
+      "string",
+      "Sidecar image",
+      "The docker image for the otoroshi injected sidecar".some,
+      more = Json.obj("placeholder" -> "maif/otoroshi-sidecar:latest")
+    )
 
-      ++ makeFormField("kubeDnsOperatorIntegration", "bool", "Kube dns integration", "Auto register service mesh in legacy kubedns".some)
-      ++ makeFormField("kubeDnsOperatorCoreDnsNamespace", "string", "Kube dns namespace", "Kube dns namespace".some, more = Json.obj("placeholder" -> "otoroshi"))
-      ++ makeFormField("kubeDnsOperatorCoreDnsName", "string", "Kube dns name", "Kube dns name".some, more = Json.obj("placeholder" -> "otoroshi-dns"))
-      ++ makeFormField("kubeDnsOperatorCoreDnsPort", "number", "Kube dns port number", "Kube dns port number".some, more = Json.obj("placeholder" -> "5353"))
+    ++ makeFormField(
+      "meshDomain",
+      "string",
+      "Mesh domain",
+      "The domain used for service mesh".some,
+      more = Json.obj("placeholder" -> "otoroshi.mesh")
+    )
+    ++ makeFormField(
+      "kubeSystemNamespace",
+      "string",
+      "Kube system namespace",
+      "The namespace containing coredns".some,
+      more = Json.obj("placeholder" -> "kube-system")
+    )
+    ++ makeFormField(
+      "otoroshiNamespace",
+      "string",
+      "Otoroshi namespace",
+      "The namespace where otoroshi is deployed".some,
+      more = Json.obj("placeholder" -> "otoroshi")
+    )
+    ++ makeFormField(
+      "otoroshiServiceName",
+      "string",
+      "Otoroshi service",
+      "The service name for otoroshi".some,
+      more = Json.obj("placeholder" -> "otoroshi-service")
+    )
+    ++ makeFormField(
+      "clusterDomain",
+      "string",
+      "Cluster domain",
+      "The current kubernetes cluster domain".some,
+      more = Json.obj("placeholder" -> "svc.cluster.local")
+    )
+
+    ++ makeFormField("coreDnsIntegration", "bool", "Coredns integration", "Auto register service mesh in coredns".some)
+    ++ makeFormField("coreDnsIntegrationDryRun", "bool", "Dry run", "Just simulate integration".some)
+    ++ makeFormField(
+      "coreDnsConfigMapName",
+      "string",
+      "Config map name",
+      "The name of the coredns config-map".some,
+      more = Json.obj("placeholder" -> "coredns")
+    )
+    ++ makeFormField(
+      "coreDnsDeploymentName",
+      "string",
+      "Deployment name",
+      "The name of the coredns deployment".some,
+      more = Json.obj("placeholder" -> "coredns")
+    )
+    ++ makeFormField(
+      "corednsPort",
+      "number",
+      "Coredns port",
+      "The DNS port to expose service mesh regions".some,
+      more = Json.obj("placeholder" -> "53")
+    )
+    ++ makeFormField("coreDnsEnv", "string", "Coredns env", "Preffix for meshDomain".some)
+
+    ++ makeFormField(
+      "openshiftDnsOperatorIntegration",
+      "bool",
+      "Openshift dns integration",
+      "Auto register service mesh in openshift DNS operator".some
+    )
+    ++ makeFormField("openshiftDnsOperatorCleanup", "bool", "Cleanup", "Cleanup DNS operator".some)
+    ++ makeFormField(
+      "openshiftDnsOperatorCleanupNames",
+      "array",
+      "Cleanup names",
+      "Cleanup DNS operator based on names".some,
+      more = Json.obj("suffix" -> "regex")
+    )
+    ++ makeFormField(
+      "openshiftDnsOperatorCleanupDomains",
+      "array",
+      "Cleanup domains",
+      "Cleanup DNS operator based on domains".some,
+      more = Json.obj("suffix" -> "regex")
+    )
+    ++ makeFormField(
+      "openshiftDnsOperatorCoreDnsNamespace",
+      "string",
+      "DNS operator namespace",
+      "DNS operator namespace".some,
+      more = Json.obj("placeholder" -> "otoroshi")
+    )
+    ++ makeFormField(
+      "openshiftDnsOperatorCoreDnsName",
+      "string",
+      "DNS operator name",
+      "DNS operator name".some,
+      more = Json.obj("placeholder" -> "otoroshi-dns")
+    )
+    ++ makeFormField(
+      "openshiftDnsOperatorCoreDnsPort",
+      "number",
+      "DNS operator port number",
+      "DNS operator port number".some,
+      more = Json.obj("placeholder" -> "5353")
+    )
+
+    ++ makeFormField(
+      "kubeDnsOperatorIntegration",
+      "bool",
+      "Kube dns integration",
+      "Auto register service mesh in legacy kubedns".some
+    )
+    ++ makeFormField(
+      "kubeDnsOperatorCoreDnsNamespace",
+      "string",
+      "Kube dns namespace",
+      "Kube dns namespace".some,
+      more = Json.obj("placeholder" -> "otoroshi")
+    )
+    ++ makeFormField(
+      "kubeDnsOperatorCoreDnsName",
+      "string",
+      "Kube dns name",
+      "Kube dns name".some,
+      more = Json.obj("placeholder" -> "otoroshi-dns")
+    )
+    ++ makeFormField(
+      "kubeDnsOperatorCoreDnsPort",
+      "number",
+      "Kube dns port number",
+      "Kube dns port number".some,
+      more = Json.obj("placeholder" -> "5353")
+    )
   )
 }

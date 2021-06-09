@@ -122,16 +122,16 @@ class PluginsDescription extends Component {
                 <label className="col-xs-12 col-sm-2 control-label" />
                 {!this.state.display[script.id] && (
                   <div
-                  style={{
-                    marginTop: 10,
-                    padding: 10,
-                    borderRadius: 5,
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'flex-end',
-                    height: 45,
-                  }}>
+                    style={{
+                      marginTop: 10,
+                      padding: 10,
+                      borderRadius: 5,
+                      width: '100%',
+                      display: 'flex',
+                      flexDirection: 'row',
+                      justifyContent: 'flex-end',
+                      height: 45,
+                    }}>
                     <button
                       type="button"
                       className="btn btn-xs btn-info"
