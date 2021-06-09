@@ -16205,6 +16205,13 @@
             "description" : "User password (bcrypt hashed)",
             "type" : "string"
           },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
           "email" : {
             "description" : "User email",
             "type" : "string"

@@ -700,6 +700,7 @@
     "otoroshi.auth.BasicAuthUser.name": "User name",
     "otoroshi.auth.BasicAuthUser.password": "User password (bcrypt hashed)",
     "otoroshi.auth.BasicAuthUser.rights": "User rights",
+    "otoroshi.auth.BasicAuthUser.tags": "???",
     "otoroshi.auth.BasicAuthUser.webauthn": "Webauthn details",
     "otoroshi.auth.Credential.certId": "Id of the certificate used to sign SAML requests send to identity provider",
     "otoroshi.auth.Credential.certificate": "PEM certificate used to sign SAML requests send to identity provider",
