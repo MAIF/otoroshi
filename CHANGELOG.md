@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-alpha.16] - 2021-06-09
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.16+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-alpha.15...v1.5.0-alpha.16
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-alpha.16
+
+- Add form description for the kubernetes jobs config (#870)
+
 ## [1.5.0-alpha.15] - 2021-06-09
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.15+is%3Aclosed
