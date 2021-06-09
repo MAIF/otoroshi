@@ -13,10 +13,11 @@ import otoroshi.env.Env
 import otoroshi.events.{JobErrorEvent, JobRunEvent, JobStartedEvent, JobStoppedEvent}
 import otoroshi.models.GlobalConfig
 import otoroshi.utils
-import otoroshi.utils.{future, SchedulerHelper, TypedMap}
+import otoroshi.utils.{SchedulerHelper, TypedMap, future}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
+import otoroshi.utils.config.ConfigUtils
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -196,7 +197,10 @@ case class RegisteredJobContext(
         JobContext(
           snowflake = runId.get(),
           attrs = attrs,
-          globalConfig = env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+          globalConfig = ConfigUtils.mergeOpt(
+            env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+            env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+          ),
           actorSystem = actorSystem,
           scheduler = actorSystem.scheduler
         )
@@ -211,7 +215,10 @@ case class RegisteredJobContext(
         JobContext(
           snowflake = runId.get(),
           attrs = attrs,
-          globalConfig = env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+          globalConfig = ConfigUtils.mergeOpt(
+            env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+            env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+          ),
           actorSystem = actorSystem,
           scheduler = actorSystem.scheduler
         )
@@ -236,7 +243,10 @@ case class RegisteredJobContext(
     val ctx = JobContext(
       snowflake = runId.get(),
       attrs = attrs,
-      globalConfig = env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+      globalConfig = ConfigUtils.mergeOpt(
+        env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+      ),
       actorSystem = actorSystem,
       scheduler = actorSystem.scheduler
     )
@@ -419,7 +429,10 @@ case class RegisteredJobContext(
     val ctx = JobContext(
       snowflake = runId.get(),
       attrs = attrs,
-      globalConfig = env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+      globalConfig = ConfigUtils.mergeOpt(
+        env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+      ),
       actorSystem = actorSystem,
       scheduler = actorSystem.scheduler
     )
@@ -565,7 +578,10 @@ class JobManager(env: Env) {
     val ctx  = JobContext(
       snowflake = rctx.runId.get(),
       attrs = TypedMap.empty,
-      globalConfig = env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+      globalConfig = ConfigUtils.mergeOpt(
+        env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+      ),
       actorSystem = jobActorSystem,
       scheduler = jobActorSystem.scheduler
     )

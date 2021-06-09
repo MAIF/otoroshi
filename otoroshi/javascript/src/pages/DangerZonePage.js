@@ -810,6 +810,10 @@ export class DangerZonePage extends Component {
       type: GlobalScripts,
       props: {},
     },
+    plugins: {
+      type: GlobalPlugins,
+      props: {},
+    },
     'autoCert.enabled': {
       type: 'bool',
       props: {
@@ -937,6 +941,8 @@ export class DangerZonePage extends Component {
     'cleverSettings.orgaId',
     '>>>Global scripts',
     'scripts',
+    '>>>Global plugins',
+    'plugins',
     '>>>Proxies',
     '-- Proxy for alert emails (mailgun)',
     'proxies.alertEmails',
@@ -1314,6 +1320,7 @@ class GlobalScripts extends Component {
     };
     return (
       <>
+        <Message message="Global scripts will be deprecated soon, please use global plugins instead !" />
         <BooleanInput
           label="Enabled"
           value={config.enabled}
@@ -1411,6 +1418,74 @@ class GlobalScripts extends Component {
           </Suspense>
         </div>
       </>
+    );
+  }
+}
+
+class GlobalPlugins extends Component {
+  changeTheValue = (name, value) => {
+    const cloned = _.cloneDeep(this.props.value);
+    const newCloned = deepSet(cloned, name, value);
+    this.props.onChange(newCloned);
+  };
+  render() {
+    const config = this.props.value || {
+      refs: [],
+      config: {},
+      excluded: [],
+      enabled: false
+    };
+    return (
+      <>
+        <Message message="This is the new place for global plugins in otoroshi. Please use it instead of global scripts as they will be deprecated soon !" />
+        <BooleanInput
+          label="Enabled"
+          value={config.enabled}
+          help="plugins enabled"
+          onChange={(v) => this.changeTheValue('enabled', v)}
+        />
+        <Scripts
+          label="Plugins"
+          refs={config.refs}
+          onChange={(e) => this.changeTheValue('refs', e)}
+          config={config.config}
+          onChangeConfig={(e) => this.changeTheValue('config', e)}
+        />
+        <div className="form-group">
+          <Suspense fallback={<div>loading ...</div>}>
+            <CodeInput
+              label="plugins configuration"
+              mode="json"
+              value={JSON.stringify(config.config, null, 2)}
+              onChange={(e) => this.changeTheValue('config', JSON.parse(e))}
+            />
+          </Suspense>
+        </div>
+      
+      </>
+    );
+  }
+}
+
+export class Message extends Component {
+  render() {
+    return (
+      <div className="form-group">
+        <label className="col-xs-12 col-sm-2 control-label" />
+        <div className="col-sm-10">
+          <div
+            style={{
+              padding: 10,
+              borderRadius: 5,
+              backgroundColor: '#494948',
+              width: '100%',
+            }}>
+            <p style={{ textAlign: 'justify' }}>
+              {this.props.message}
+            </p>
+          </div>
+        </div>
+      </div>
     );
   }
 }

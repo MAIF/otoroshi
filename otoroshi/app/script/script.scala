@@ -238,7 +238,7 @@ trait ContextWithConfig {
   def config: JsValue
   def globalConfig: JsValue
   def configExists(name: String): Boolean         =
-    (config \ name).asOpt[JsValue].orElse((globalConfig \ name).asOpt[JsValue]).isDefined
+    configForOpt(name).isDefined
   def configFor(name: String): JsValue            =
     configForOpt(name).getOrElse(Json.obj())
   def configForOpt(name: String): Option[JsValue] =

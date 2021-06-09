@@ -74,6 +74,7 @@ object KubernetesConfig {
     val conf = ctx
       .configForOpt("KubernetesConfig")
       .orElse((env.datastores.globalConfigDataStore.latest().scripts.jobConfig \ "KubernetesConfig").asOpt[JsValue])
+      .orElse((env.datastores.globalConfigDataStore.latest().plugins.config \ "KubernetesConfig").asOpt[JsValue])
       .getOrElse(Json.obj())
     theConfig(conf)
   }
