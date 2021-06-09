@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-alpha.15] - 2021-06-09
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.15+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-alpha.14...v1.5.0-alpha.15
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-alpha.15
+
+* Default rights to admins (#846)
+* Fix admin creation from super admin (#848)
+* fix the target component when pasting URL with trailing slash (#849)
+* check if custom error templates works in worker mode (#850)
+* add metadata tags check in ApikeyAuthModule  (#851)
+* remove validation from crds definitions (#852)
+* missing namespace in subject from clusterrolebinding (#853)
+* version in crds becomes versions (#854)
+* button to hide/toggle plugin configuration (#856)
+* additionnal host added indefinitely (#857)
+* kubernetes watch fails on otoroshi crds (#858)
+* Hashed Password visible when infos token is enabled on service  (#859)
+* Rename SAML to SAML v2 in auth module list (#861)
+* Admin api seems to be in default group at first startup (#862)
+* check if multi purpose plugins works as they should be (#863)
+* display instance name in window title (#864)
+* do not hardcode otoroshi.mesh, use config (#865)
+* add a flag to nuke openshift coredns operator customization that uses otoroshi.mesh (#866)
+
 ## [1.5.0-alpha.14] - 2021-05-25
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.14+is%3Aclosed
