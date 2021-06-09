@@ -3155,7 +3155,6 @@ export class ServicePage extends Component {
               </Suspense>
             </div>
           </Collapse>
-
         </form>
       </div>
     );
@@ -3175,9 +3174,7 @@ export class Message extends Component {
               backgroundColor: '#494948',
               width: '100%',
             }}>
-            <p style={{ textAlign: 'justify' }}>
-              {this.props.message}
-            </p>
+            <p style={{ textAlign: 'justify' }}>{this.props.message}</p>
           </div>
         </div>
       </div>

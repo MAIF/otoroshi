@@ -13,7 +13,7 @@ import otoroshi.env.Env
 import otoroshi.events.{JobErrorEvent, JobRunEvent, JobStartedEvent, JobStoppedEvent}
 import otoroshi.models.GlobalConfig
 import otoroshi.utils
-import otoroshi.utils.{SchedulerHelper, TypedMap, future}
+import otoroshi.utils.{future, SchedulerHelper, TypedMap}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
