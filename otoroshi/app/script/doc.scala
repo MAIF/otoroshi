@@ -14,15 +14,14 @@ class PluginDocumentationGenerator(docPath: String) {
 
   val logger = Logger("PluginDocumentationGenerator")
 
-
   lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames, exporterNames) =
     Try {
       import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
 
       import collection.JavaConverters._
-      val start                     = System.currentTimeMillis()
-      val allPackages               = Seq("otoroshi", "otoroshi_plugins")
-      val scanResult: ScanResult    = new ClassGraph()
+      val start                  = System.currentTimeMillis()
+      val allPackages            = Seq("otoroshi", "otoroshi_plugins")
+      val scanResult: ScanResult = new ClassGraph()
         .addClassLoader(this.getClass.getClassLoader)
         .enableClassInfo()
         .acceptPackages(allPackages: _*)
@@ -34,22 +33,22 @@ class PluginDocumentationGenerator(docPath: String) {
         def predicate(c: ClassInfo): Boolean = {
           c.isInterface || (
             c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
-              c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
-              c.getName == "otoroshi.script.CompilingValidator$" ||
-              c.getName == "otoroshi.script.CompilingPreRouting$" ||
-              c.getName == "otoroshi.script.CompilingRequestSink$" ||
-              c.getName == "otoroshi.script.CompilingOtoroshiEventListener$" ||
-              c.getName == "otoroshi.script.DefaultValidator$" ||
-              c.getName == "otoroshi.script.DefaultPreRouting$" ||
-              c.getName == "otoroshi.script.DefaultRequestSink$" ||
-              c.getName == "otoroshi.script.FailingPreRoute" ||
-              c.getName == "otoroshi.script.FailingPreRoute$" ||
-              c.getName == "otoroshi.script.DefaultOtoroshiEventListener$" ||
-              c.getName == "otoroshi.script.DefaultJob$" ||
-              c.getName == "otoroshi.script.CompilingJob$" ||
-              c.getName == "otoroshi.script.NanoApp" ||
-              c.getName == "otoroshi.script.NanoApp$"
-            )
+            c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
+            c.getName == "otoroshi.script.CompilingValidator$" ||
+            c.getName == "otoroshi.script.CompilingPreRouting$" ||
+            c.getName == "otoroshi.script.CompilingRequestSink$" ||
+            c.getName == "otoroshi.script.CompilingOtoroshiEventListener$" ||
+            c.getName == "otoroshi.script.DefaultValidator$" ||
+            c.getName == "otoroshi.script.DefaultPreRouting$" ||
+            c.getName == "otoroshi.script.DefaultRequestSink$" ||
+            c.getName == "otoroshi.script.FailingPreRoute" ||
+            c.getName == "otoroshi.script.FailingPreRoute$" ||
+            c.getName == "otoroshi.script.DefaultOtoroshiEventListener$" ||
+            c.getName == "otoroshi.script.DefaultJob$" ||
+            c.getName == "otoroshi.script.CompilingJob$" ||
+            c.getName == "otoroshi.script.NanoApp" ||
+            c.getName == "otoroshi.script.NanoApp$"
+          )
         }
 
         val requestTransformers: Seq[String] = (scanResult.getSubclasses(classOf[RequestTransformer].getName).asScala ++
@@ -116,40 +115,48 @@ class PluginDocumentationGenerator(docPath: String) {
     }
     file.createNewFile()
 
-    val description = plugin.description.map { dc =>
-      var desc = dc.trim
-      if (desc.contains("```") && !desc.contains("//")) {
-        desc = desc.split("```")(0)
-          .replace("This plugin can accept the following configuration", "")
-          .replace("The plugin accepts the following configuration", "")
-          .trim
-      }
-      s"""## Description
+    val description = plugin.description
+      .map { dc =>
+        var desc = dc.trim
+        if (desc.contains("```") && !desc.contains("//")) {
+          desc = desc
+            .split("```")(0)
+            .replace("This plugin can accept the following configuration", "")
+            .replace("The plugin accepts the following configuration", "")
+            .trim
+        }
+        s"""## Description
          |
          |${desc}
          |
          |""".stripMargin
-    }.getOrElse("")
+      }
+      .getOrElse("")
 
-    val defaultConfig = plugin.defaultConfig.map { dc =>
-      s"""## Default configuration
+    val defaultConfig = plugin.defaultConfig
+      .map { dc =>
+        s"""## Default configuration
          |
          |```json
          |${dc.prettify}
          |```
          |
          |""".stripMargin
-    }.getOrElse("")
+      }
+      .getOrElse("")
 
-    val documentation = plugin.documentation.map { dc =>
-      s"""## Documentation
+    val documentation = plugin.documentation
+      .map { dc =>
+        s"""## Documentation
          |
          |${dc}
          |
          |""".stripMargin
-    }.getOrElse("")
+      }
+      .getOrElse("")
 
-    Files.writeString(file.toPath,
+    Files.writeString(
+      file.toPath,
       s"""
          |# ${plugin.name}
          |
@@ -163,15 +170,18 @@ class PluginDocumentationGenerator(docPath: String) {
          |$defaultConfig
          |
          |$documentation
-         |""".stripMargin)
+         |""".stripMargin
+    )
 
     (plugin.name, file.getName)
   }
 
   def run(): Unit = {
-    val root = ensureRootDir()
-    val plugins = (transformersNames ++ validatorsNames ++ preRouteNames ++ reqSinkNames ++ listenerNames ++ jobNames ++ exporterNames).distinct
-    val names: Seq[(String, String)] = plugins.map { pl =>
+    val root                         = ensureRootDir()
+    val plugins                      =
+      (transformersNames ++ validatorsNames ++ preRouteNames ++ reqSinkNames ++ listenerNames ++ jobNames ++ exporterNames).distinct
+    val names: Seq[(String, String)] = plugins
+      .map { pl =>
         this.getClass.getClassLoader.loadClass(pl).newInstance()
       }
       .map(_.asInstanceOf[NamedPlugin])
@@ -181,12 +191,13 @@ class PluginDocumentationGenerator(docPath: String) {
       .map { pl =>
         makePluginPage(pl, root)
       }
-    val index = new File(root, "index.md")
+    val index                        = new File(root, "index.md")
     if (index.exists()) {
       index.delete()
     }
     index.createNewFile()
-    Files.writeString(index.toPath,
+    Files.writeString(
+      index.toPath,
       s"""# Otoroshi plugins
         |
         |Otoroshi provides some plugins out of the box
@@ -199,7 +210,8 @@ class PluginDocumentationGenerator(docPath: String) {
         |
         |@@@
         |
-        |""".stripMargin)
+        |""".stripMargin
+    )
   }
 }
 

@@ -80,11 +80,11 @@ trait StartableAndStoppable {
 }
 
 trait NamedPlugin { self =>
-  def deprecated: Boolean = false
-  def core: Boolean = false
+  def deprecated: Boolean           = false
+  def core: Boolean                 = false
   def pluginType: PluginType
-  def name: String                = self.getClass.getName
-  def description: Option[String] = None
+  def name: String                  = self.getClass.getName
+  def description: Option[String]   = None
   def documentation: Option[String] = None
 
   def defaultConfig: Option[JsObject] = None

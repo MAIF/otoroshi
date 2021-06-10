@@ -26,13 +26,18 @@ class PluginsDescription extends Component {
   state = { scripts: [], display: false };
 
   componentDidMount() {
-    fetch(this.props.type ? `/bo/api/proxy/api/scripts/_list?type=${this.props.type}` : `/bo/api/proxy/api/scripts/_list`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-      },
-    })
+    fetch(
+      this.props.type
+        ? `/bo/api/proxy/api/scripts/_list?type=${this.props.type}`
+        : `/bo/api/proxy/api/scripts/_list`,
+      {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+        },
+      }
+    )
       .then((r) => r.json())
       .then((scripts) => {
         this.setState({ scripts: scripts.filter((e) => !!e.description) });
@@ -105,7 +110,7 @@ class PluginsDescription extends Component {
     if (!this.props.refs) {
       return null;
     }
-    console.log('render', this.props.label, this.props.refs)
+    console.log('render', this.props.label, this.props.refs);
     return (
       <>
         {this.props.refs
@@ -133,17 +138,22 @@ class PluginsDescription extends Component {
                       justifyContent: 'flex-end',
                       height: 45,
                     }}>
-                    {script.id.indexOf('cp:otoroshi.') === 0 && <a
-                      className="btn btn-xs btn-info"
-                      target="_blank"
-                      href={`https://maif.github.io/otoroshi/manual/plugins/${script.id.replace("cp:", '').replace(/\./g, '-').toLowerCase()}.html`}
-                      _style={{
-                        position: 'absolute',
-                        right: 20,
-                        top: 20,
-                      }}>
-                      <i className="fas fa-share" /> documentation
-                    </a>}
+                    {script.id.indexOf('cp:otoroshi.') === 0 && (
+                      <a
+                        className="btn btn-xs btn-info"
+                        target="_blank"
+                        href={`https://maif.github.io/otoroshi/manual/plugins/${script.id
+                          .replace('cp:', '')
+                          .replace(/\./g, '-')
+                          .toLowerCase()}.html`}
+                        _style={{
+                          position: 'absolute',
+                          right: 20,
+                          top: 20,
+                        }}>
+                        <i className="fas fa-share" /> documentation
+                      </a>
+                    )}
                     <button
                       type="button"
                       className="btn btn-xs btn-info"
@@ -215,17 +225,22 @@ class PluginsDescription extends Component {
                             </button>
                           )}
                         </div>
-                        {script.id.indexOf('cp:otoroshi.') === 0 && <a
-                          className="btn btn-xs btn-info"
-                          target="_blank"
-                          href={`https://maif.github.io/otoroshi/manual/plugins/${script.id.replace("cp:", '').replace(/\./g, '-').toLowerCase()}.html`}
-                          _style={{
-                            position: 'absolute',
-                            right: 20,
-                            top: 20,
-                          }}>
-                          documentation
-                        </a>}
+                        {script.id.indexOf('cp:otoroshi.') === 0 && (
+                          <a
+                            className="btn btn-xs btn-info"
+                            target="_blank"
+                            href={`https://maif.github.io/otoroshi/manual/plugins/${script.id
+                              .replace('cp:', '')
+                              .replace(/\./g, '-')
+                              .toLowerCase()}.html`}
+                            _style={{
+                              position: 'absolute',
+                              right: 20,
+                              top: 20,
+                            }}>
+                            documentation
+                          </a>
+                        )}
                         <button
                           type="button"
                           className="btn btn-xs btn-info"

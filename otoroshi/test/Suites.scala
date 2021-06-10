@@ -131,9 +131,9 @@ class OpenapiGeneratorTests
     )
 
 class PluginDocTests
-  extends Suites(
-    new PluginDocSpec()
-  )
+    extends Suites(
+      new PluginDocSpec()
+    )
 
 class DevOtoroshiTests
     extends Suites(

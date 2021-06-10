@@ -1325,70 +1325,74 @@ class GlobalScripts extends Component {
     };
     return (
       <>
-        <Message message={
-          <>
-            <span>Global scripts will be deprecated soon, please use global plugins instead !</span>
-            <Migration 
-              style={{ marginLeft: 10 }}
-              what="transformer" 
-              value={this.props.rawValue} 
-              onChange={this.setTheValue} 
-              extractHolder={s => this.props.rawValue.plugins}
-              // reset={() => {
-              //   this.props.rawOnChange({ ...this.props.rawValue, scripts: {
-              //     "enabled": false,
-              //     "transformersRefs": [],
-              //     "transformersConfig": {},
-              //     "validatorRefs": [],
-              //     "validatorConfig": {},
-              //     "preRouteRefs": [],
-              //     "preRouteConfig": {},
-              //     "sinkRefs": [],
-              //     "sinkConfig": {},
-              //     "jobRefs": [],
-              //     "jobConfig": {}
-              //   }});
-              // }}
-              extractLegacy={s => {
-                return {
-                  enabled: s.scripts.enabled,
-                  refs: [
-                    ...s.scripts.transformersRefs,
-                    ...s.scripts.validatorRefs,
-                    ...s.scripts.preRouteRefs,
-                    ...s.scripts.sinkRefs,
-                    ...s.scripts.jobRefs,
-                  ],
-                  config: {
-                    ...s.scripts.transformersConfig,
-                    ...s.scripts.validatorConfig,
-                    ...s.scripts.preRouteConfig,
-                    ...s.scripts.sinkConfig,
-                    ...s.scripts.jobConfig,
-                  },
-                  excluded: [],
-                }
-              }}
-              setHolder={(s, h) => {
-                s.plugins = h;
-                s.scripts = {
-                  "enabled": false,
-                  "transformersRefs": [],
-                  "transformersConfig": {},
-                  "validatorRefs": [],
-                  "validatorConfig": {},
-                  "preRouteRefs": [],
-                  "preRouteConfig": {},
-                  "sinkRefs": [],
-                  "sinkConfig": {},
-                  "jobRefs": [],
-                  "jobConfig": {}
-                };
-                return s;
-              }}
-            />
-          </>
-        } />
+        <Message
+          message={
+            <>
+              <span>
+                Global scripts will be deprecated soon, please use global plugins instead !
+              </span>
+              <Migration
+                style={{ marginLeft: 10 }}
+                what="transformer"
+                value={this.props.rawValue}
+                onChange={this.setTheValue}
+                extractHolder={(s) => this.props.rawValue.plugins}
+                // reset={() => {
+                //   this.props.rawOnChange({ ...this.props.rawValue, scripts: {
+                //     "enabled": false,
+                //     "transformersRefs": [],
+                //     "transformersConfig": {},
+                //     "validatorRefs": [],
+                //     "validatorConfig": {},
+                //     "preRouteRefs": [],
+                //     "preRouteConfig": {},
+                //     "sinkRefs": [],
+                //     "sinkConfig": {},
+                //     "jobRefs": [],
+                //     "jobConfig": {}
+                //   }});
+                // }}
+                extractLegacy={(s) => {
+                  return {
+                    enabled: s.scripts.enabled,
+                    refs: [
+                      ...s.scripts.transformersRefs,
+                      ...s.scripts.validatorRefs,
+                      ...s.scripts.preRouteRefs,
+                      ...s.scripts.sinkRefs,
+                      ...s.scripts.jobRefs,
+                    ],
+                    config: {
+                      ...s.scripts.transformersConfig,
+                      ...s.scripts.validatorConfig,
+                      ...s.scripts.preRouteConfig,
+                      ...s.scripts.sinkConfig,
+                      ...s.scripts.jobConfig,
+                    },
+                    excluded: [],
+                  };
+                }}
+                setHolder={(s, h) => {
+                  s.plugins = h;
+                  s.scripts = {
+                    enabled: false,
+                    transformersRefs: [],
+                    transformersConfig: {},
+                    validatorRefs: [],
+                    validatorConfig: {},
+                    preRouteRefs: [],
+                    preRouteConfig: {},
+                    sinkRefs: [],
+                    sinkConfig: {},
+                    jobRefs: [],
+                    jobConfig: {},
+                  };
+                  return s;
+                }}
+              />
+            </>
+          }
+        />
         <BooleanInput
           label="Enabled"
           value={config.enabled}
@@ -1556,11 +1560,14 @@ export class Message extends Component {
 }
 
 export class Migration extends Component {
-
   migrate = () => {
     const value = _.cloneDeep(this.props.value);
-    const legacy = this.props.extractLegacy ? _.cloneDeep(this.props.extractLegacy(value)) : { enabled: false, refs: [], excluded: [], config: {}};
-    const holder = this.props.extractHolder ? _.cloneDeep(this.props.extractHolder(value)) : { enabled: false, refs: [], excluded: [], config: {}};
+    const legacy = this.props.extractLegacy
+      ? _.cloneDeep(this.props.extractLegacy(value))
+      : { enabled: false, refs: [], excluded: [], config: {} };
+    const holder = this.props.extractHolder
+      ? _.cloneDeep(this.props.extractHolder(value))
+      : { enabled: false, refs: [], excluded: [], config: {} };
     const newHolder = _.cloneDeep(holder);
     newHolder.refs = [...newHolder.refs, ...legacy.refs];
     newHolder.excluded = [...newHolder.excluded, ...legacy.excluded];
@@ -1569,17 +1576,21 @@ export class Migration extends Component {
       newHolder.enabled = true;
     }
     if (this.props.setHolder) {
-      const res = this.props.setHolder(value, newHolder)
+      const res = this.props.setHolder(value, newHolder);
       this.props.onChange(res, () => {
         if (this.props.reset) this.props.reset();
       });
     }
-  }
+  };
   render() {
     return (
-      <button className="btn btn-danger btn-xs btn-sm" type="button" onClick={this.migrate} style={this.props.style}>
+      <button
+        className="btn btn-danger btn-xs btn-sm"
+        type="button"
+        onClick={this.migrate}
+        style={this.props.style}>
         <i className="fas fa-fire" /> Migrate all to plugins
       </button>
-    )
+    );
   }
 }

@@ -311,7 +311,8 @@ class ClientCredentialFlow extends RequestTransformer {
 
   override def deprecated: Boolean = true
 
-  override def name: String = "[DEPRECATED] Client Credential Flow (deprecated, use the 'Client Credential Service' sink)"
+  override def name: String =
+    "[DEPRECATED] Client Credential Flow (deprecated, use the 'Client Credential Service' sink)"
 
   override def defaultConfig: Option[JsObject] = {
     Some(

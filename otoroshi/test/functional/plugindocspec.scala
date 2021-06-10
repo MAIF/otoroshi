@@ -8,4 +8,3 @@ class PluginDocSpec extends WordSpec with MustMatchers with OptionValues {
   val generator = new PluginDocumentationGenerator("../manual")
   generator.run()
 }
-
