@@ -1,5 +1,6 @@
 package otoroshi.script
 
+import com.google.common.base.Charsets
 import otoroshi.events.CustomDataExporter
 import play.api.Logger
 import play.api.libs.json.Json
@@ -7,8 +8,10 @@ import play.api.libs.json.Json
 import java.io.File
 import java.nio.file.Files
 import scala.util.Try
-
 import otoroshi.utils.syntax.implicits._
+
+import scala.collection.JavaConverters._
+import java.nio.charset.Charset
 
 class PluginDocumentationGenerator(docPath: String) {
 
@@ -155,9 +158,9 @@ class PluginDocumentationGenerator(docPath: String) {
       }
       .getOrElse("")
 
-    Files.writeString(
+    Files.write(
       file.toPath,
-      s"""
+      Seq(s"""
          |# ${plugin.name}
          |
          |## Infos
@@ -170,7 +173,8 @@ class PluginDocumentationGenerator(docPath: String) {
          |$defaultConfig
          |
          |$documentation
-         |""".stripMargin
+         |""".stripMargin).asJava,
+      Charsets.UTF_8
     )
 
     (plugin.name, file.getName)
@@ -196,9 +200,9 @@ class PluginDocumentationGenerator(docPath: String) {
       index.delete()
     }
     index.createNewFile()
-    Files.writeString(
+    Files.write(
       index.toPath,
-      s"""# Otoroshi plugins
+      Seq(s"""# Otoroshi plugins
         |
         |Otoroshi provides some plugins out of the box
         |
@@ -210,7 +214,8 @@ class PluginDocumentationGenerator(docPath: String) {
         |
         |@@@
         |
-        |""".stripMargin
+        |""".stripMargin).asJava,
+      Charsets.UTF_8
     )
   }
 }

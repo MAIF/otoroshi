@@ -45,3 +45,4 @@ The plugin accepts the following configuration
 
 
 
+
