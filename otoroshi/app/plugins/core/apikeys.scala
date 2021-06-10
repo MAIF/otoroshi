@@ -16,6 +16,8 @@ import scala.util.{Failure, Success, Try}
 
 class JwtApikeyExtractor extends PreRouting {
 
+  override def core: Boolean = true
+
   override def name: String = "[CORE PLUGIN] Extract apikey from a JWT token"
 
   override def description: Option[String] = {
@@ -198,6 +200,8 @@ class JwtApikeyExtractor extends PreRouting {
 
 class BasicAuthApikeyExtractor extends PreRouting {
 
+  override def core: Boolean = true
+
   override def name: String = "[CORE PLUGIN] Extract apikey from a Basic Auth header"
 
   override def description: Option[String] = {
@@ -257,6 +261,8 @@ class BasicAuthApikeyExtractor extends PreRouting {
 
 class CustomHeadersApikeyExtractor extends PreRouting {
 
+  override def core: Boolean = true
+
   override def name: String = "[CORE PLUGIN] Extract apikey from custom headers"
 
   override def description: Option[String] = {
@@ -302,6 +308,8 @@ class CustomHeadersApikeyExtractor extends PreRouting {
 }
 
 class ClientIdApikeyExtractor extends PreRouting {
+
+  override def core: Boolean = true
 
   override def name: String = "[CORE PLUGIN] Extract client_id only apikey from custom headers"
 

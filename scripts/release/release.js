@@ -185,6 +185,16 @@ async function buildOpenApi(version, where, releaseDir) {
   await runSystemCommand('git', ['commit', '-am', `Update openapi file before release`], location);
 }
 
+async function buildPluginDoc(version, where, releaseDir) {
+  // build plugins doc
+  await runScript(`
+    cd ${where}/otoroshi
+    sbt ";clean;compile;testOnly PluginDocTests"
+  `, where);
+  await runSystemCommand('git', ['add', `${where}/manual/src/main/paradox/plugins`], location);
+  await runSystemCommand('git', ['commit', '-am', `Update plugin documentation`], location);
+}
+
 async function buildDocumentation(version, where, releaseDir, releaseFile) {
   // build doc with schemas
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/doc.sh'), 'all'], where);
@@ -210,6 +220,7 @@ async function buildVersion(version, where, releaseDir, releaseFile) {
   await ensureStep('BUILD_VERSION_FORMAT_CODE', releaseFile, () => formatCode(version, where, releaseDir, releaseFile));
   await ensureStep('BUILD_VERSION_CLEANUP', releaseFile, () => cleanup(version, where, releaseDir, releaseFile));
   await ensureStep('BUILD_VERSION_BUILD_OPENAPI', releaseFile, () => buildOpenApi(version, where, releaseDir, releaseFile));
+  await ensureStep('BUILD_VERSION_BUILD_PLUGINS_DOC', releaseFile, () => buildPluginDoc(version, where, releaseDir, releaseFile));
   await ensureStep('BUILD_VERSION_BUILD_DOCUMENTATION', releaseFile, () => buildDocumentation(version, where, releaseDir, releaseFile));
   await ensureStep('BUILD_VERSION_BUILD_UI', releaseFile, () => buildUi(version, where, releaseDir, releaseFile));
   await ensureStep('BUILD_VERSION_BUILD_DISTRIBUTION', releaseFile, () => buildDistribution(version, where, releaseDir, releaseFile));

@@ -46,6 +46,8 @@ import scala.util.{Failure, Success, Try}
 
 class HasAllowedApiKeyValidator extends AccessValidator {
 
+  override def deprecated: Boolean = true
+
   override def name: String = "[DEPRECATED] Allowed apikeys only"
 
   override def configRoot: Option[String] = Some("HasAllowedApiKeyValidator")
@@ -145,6 +147,8 @@ class HasAllowedApiKeyValidator extends AccessValidator {
 }
 
 class ApiKeyAllowedOnThisServiceValidator extends AccessValidator {
+
+  override def deprecated: Boolean = true
 
   override def name: String = "[DEPRECATED] Allowed apikeys for this service only (service packs)"
 
@@ -305,7 +309,9 @@ class ClientCredentialFlow extends RequestTransformer {
     .maximumSize(1000)
     .build()
 
-  override def name: String = "Client Credential Flow (deprecated, use the 'Client Credential Service' sink)"
+  override def deprecated: Boolean = true
+
+  override def name: String = "[DEPRECATED] Client Credential Flow (deprecated, use the 'Client Credential Service' sink)"
 
   override def defaultConfig: Option[JsObject] = {
     Some(

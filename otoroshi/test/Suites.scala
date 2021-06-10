@@ -130,6 +130,11 @@ class OpenapiGeneratorTests
       new OpenApiSpec()
     )
 
+class PluginDocTests
+  extends Suites(
+    new PluginDocSpec()
+  )
+
 class DevOtoroshiTests
     extends Suites(
       new AdminApiSpec("DEV", Configurations.InMemoryConfiguration)
