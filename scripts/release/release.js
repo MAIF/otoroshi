@@ -187,6 +187,7 @@ async function buildOpenApi(version, where, releaseDir) {
 
 async function buildPluginDoc(version, where, releaseDir) {
   // build plugins doc
+  // needs JDK11 !!!! 
   await runScript(`
     cd ${where}/otoroshi
     sbt ";clean;compile;testOnly PluginDocTests"
@@ -220,7 +221,7 @@ async function buildVersion(version, where, releaseDir, releaseFile) {
   await ensureStep('BUILD_VERSION_FORMAT_CODE', releaseFile, () => formatCode(version, where, releaseDir, releaseFile));
   await ensureStep('BUILD_VERSION_CLEANUP', releaseFile, () => cleanup(version, where, releaseDir, releaseFile));
   await ensureStep('BUILD_VERSION_BUILD_OPENAPI', releaseFile, () => buildOpenApi(version, where, releaseDir, releaseFile));
-  await ensureStep('BUILD_VERSION_BUILD_PLUGINS_DOC', releaseFile, () => buildPluginDoc(version, where, releaseDir, releaseFile));
+  // await ensureStep('BUILD_VERSION_BUILD_PLUGINS_DOC', releaseFile, () => buildPluginDoc(version, where, releaseDir, releaseFile));
   await ensureStep('BUILD_VERSION_BUILD_DOCUMENTATION', releaseFile, () => buildDocumentation(version, where, releaseDir, releaseFile));
   await ensureStep('BUILD_VERSION_BUILD_UI', releaseFile, () => buildUi(version, where, releaseDir, releaseFile));
   await ensureStep('BUILD_VERSION_BUILD_DISTRIBUTION', releaseFile, () => buildDistribution(version, where, releaseDir, releaseFile));
