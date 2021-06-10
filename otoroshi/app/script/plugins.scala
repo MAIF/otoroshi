@@ -59,13 +59,37 @@ case class Plugins(
     }
   }
 
+  private def filterPatternExclusionPerPlugin(pls: Plugins, req: RequestHeader): Plugins = {
+    if (pls.excluded.exists(_.startsWith("only:"))) {
+      val badRefs = pls.excluded.filter(_.startsWith("only:")).map(_.replace("only:", "")).map {
+        case excl if excl.startsWith("cp:") => {
+          val parts = excl.replace("cp:", "").split(":")
+          ("cp:" + parts(0), parts(1))
+        }
+        case excl => {
+          val parts = excl.split(":")
+          (parts(0), parts(1))
+        }
+      }.filter {
+        case (_, pattern) => utils.RegexPool.regex(pattern).matches(req.thePath)
+      }.map {
+        case (plugin, _) => plugin
+      }.distinct
+      val refs = pls.refs.diff(badRefs)
+      pls.copy(refs = refs)
+    } else {
+      pls
+    }
+  }
+
   private def getPlugins[A](
       req: RequestHeader
   )(implicit ec: ExecutionContext, env: Env, ct: ClassTag[A]): Seq[String] = {
     val globalPlugins = env.datastores.globalConfigDataStore.latestSafe
       .map(_.plugins)
       .filter(p => p.enabled && p.refs.nonEmpty)
-      .filter(pls => pls.excluded.isEmpty || !pls.excluded.exists(p => utils.RegexPool.regex(p).matches(req.thePath)))
+      .filter(pls => pls.excluded.isEmpty || !pls.excluded.filterNot(_.startsWith("only:")).exists(p => utils.RegexPool.regex(p).matches(req.thePath)))
+      .map(pls => filterPatternExclusionPerPlugin(pls, req))
       .getOrElse(Plugins())
       .refs
       .map(r => (r, plugin[A](r)))
@@ -74,7 +98,8 @@ case class Plugins(
       }
     val localPlugins  = Some(this)
       .filter(p => p.enabled && p.refs.nonEmpty)
-      .filter(pls => pls.excluded.isEmpty || !pls.excluded.exists(p => RegexPool.regex(p).matches(req.thePath)))
+      .filter(pls => pls.excluded.isEmpty || !pls.excluded.filterNot(_.startsWith("only:")).exists(p => RegexPool.regex(p).matches(req.thePath)))
+      .map(pls => filterPatternExclusionPerPlugin(pls, req))
       .getOrElse(Plugins())
       .refs
       .map(r => (r, plugin[A](r)))
