@@ -2,6 +2,10 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
 
 # Roadmap
 
+## versioning
+
+after releasing 1.5.0 we plan to make a new release immediately with version number 16.0.0 as previous minor version where actually major ones. We will not make a 15.0.0 as there are already alpha releases of the 1.5.0.
+
 ## authentication and security
 
 provide the authentication modules needed for most cases and associated tools 
