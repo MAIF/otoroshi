@@ -26,7 +26,7 @@ class PluginsDescription extends Component {
   state = { scripts: [], display: false };
 
   componentDidMount() {
-    fetch(`/bo/api/proxy/api/scripts/_list?type=${this.props.type}`, {
+    fetch(this.props.type ? `/bo/api/proxy/api/scripts/_list?type=${this.props.type}` : `/bo/api/proxy/api/scripts/_list`, {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -67,7 +67,7 @@ class PluginsDescription extends Component {
   findNode = (ref, tree, findOnly) => {
     const nodes = Array.from(document.querySelectorAll('.Select-value-label'));
     const node = nodes.filter((n) => {
-      return n.innerText === ref.name;
+      return n.innerText === ref.name || n.innerText.indexOf(ref.name) > -1;
     })[0];
     if (!node) {
       return null;
@@ -105,6 +105,7 @@ class PluginsDescription extends Component {
     if (!this.props.refs) {
       return null;
     }
+    console.log('render', this.props.label, this.props.refs)
     return (
       <>
         {this.props.refs
@@ -132,6 +133,17 @@ class PluginsDescription extends Component {
                       justifyContent: 'flex-end',
                       height: 45,
                     }}>
+                    {script.id.indexOf('cp:otoroshi.') === 0 && <a
+                      className="btn btn-xs btn-info"
+                      target="_blank"
+                      href={`https://maif.github.io/otoroshi/manual/plugins/${script.id.replace("cp:", '').replace(/\./g, '-').toLowerCase()}.html`}
+                      _style={{
+                        position: 'absolute',
+                        right: 20,
+                        top: 20,
+                      }}>
+                      <i className="fas fa-share" /> documentation
+                    </a>}
                     <button
                       type="button"
                       className="btn btn-xs btn-info"
@@ -203,6 +215,17 @@ class PluginsDescription extends Component {
                             </button>
                           )}
                         </div>
+                        {script.id.indexOf('cp:otoroshi.') === 0 && <a
+                          className="btn btn-xs btn-info"
+                          target="_blank"
+                          href={`https://maif.github.io/otoroshi/manual/plugins/${script.id.replace("cp:", '').replace(/\./g, '-').toLowerCase()}.html`}
+                          _style={{
+                            position: 'absolute',
+                            right: 20,
+                            top: 20,
+                          }}>
+                          documentation
+                        </a>}
                         <button
                           type="button"
                           className="btn btn-xs btn-info"
@@ -278,7 +301,7 @@ export class Scripts extends Component {
       : `/bo/api/proxy/api/scripts/_list`;
     const displayKind = !this.props.type;
     return (
-      <>
+      <div data-scripts={this.props.label}>
         <ArrayInput
           label={this.props.label}
           value={this.props.refs}
@@ -292,6 +315,7 @@ export class Scripts extends Component {
           help="..."
         />
         <PluginsDescription
+          label={this.props.label}
           refs={this.props.refs}
           type={this.props.type}
           config={this.props.config}
@@ -310,7 +334,7 @@ export class Scripts extends Component {
             </a>
           </div>
         </div>
-      </>
+      </div>
     );
   }
 }
