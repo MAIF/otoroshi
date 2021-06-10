@@ -99,6 +99,62 @@
     <li><a href="deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="plugins/otoroshi-plugins-accesslog-accesslog.html" class="page">Access log (CLF)</a></li>
+    <li><a href="plugins/otoroshi-plugins-accesslog-accesslogjson.html" class="page">Access log (JSON)</a></li>
+    <li><a href="plugins/otoroshi-plugins-users-hasallowedusersvalidator.html" class="page">Allowed users only</a></li>
+    <li><a href="plugins/otoroshi-plugins-apikeys-apikeyauthmodule.html" class="page">Apikey auth module</a></li>
+    <li><a href="plugins/otoroshi-plugins-biscuit-biscuitextractor.html" class="page">Apikey from Biscuit token extractor</a></li>
+    <li><a href="plugins/otoroshi-plugins-biscuit-biscuitvalidator.html" class="page">Biscuit token validator</a></li>
+    <li><a href="plugins/otoroshi-plugins-loggers-bodylogger.html" class="page">Body logger</a></li>
+    <li><a href="plugins/otoroshi-plugins-clientcert-hasclientcertmatchingapikeyvalidator.html" class="page">Client Certificate + Api Key only</a></li>
+    <li><a href="plugins/otoroshi-plugins-clientcert-hasclientcertvalidator.html" class="page">Client Certificate Only</a></li>
+    <li><a href="plugins/otoroshi-plugins-apikeys-clientcredentialflowextractor.html" class="page">Client Credential Flow ApiKey extractor</a></li>
+    <li><a href="plugins/otoroshi-plugins-apikeys-clientcredentialservice.html" class="page">Client Credential Service</a></li>
+    <li><a href="plugins/otoroshi-plugins-apikeys-certificateasapikey.html" class="page">Client certificate as apikey</a></li>
+    <li><a href="plugins/otoroshi-plugins-clientcert-clientcertchainheader.html" class="page">Client certificate header</a></li>
+    <li><a href="plugins/otoroshi-plugins-clientcert-hasclientcertmatchingvalidator.html" class="page">Client certificate matching</a></li>
+    <li><a href="plugins/otoroshi-plugins-clientcert-hasclientcertmatchinghttpvalidator.html" class="page">Client certificate matching (over http)</a></li>
+    <li><a href="plugins/otoroshi-plugins-defer-deferplugin.html" class="page">Defer Responses</a></li>
+    <li><a href="plugins/otoroshi-plugins-envoy-envoycontrolplane.html" class="page">Envoy Control Plane (experimental)</a></li>
+    <li><a href="plugins/otoroshi-plugins-external-externalhttpvalidator.html" class="page">External Http Validator</a></li>
+    <li><a href="plugins/otoroshi-plugins-geoloc-ipstackgeolocationinfoextractor.html" class="page">Geolocation details extractor (using IpStack api)</a></li>
+    <li><a href="plugins/otoroshi-plugins-geoloc-maxmindgeolocationinfoextractor.html" class="page">Geolocation details extractor (using Maxmind db)</a></li>
+    <li><a href="plugins/otoroshi-plugins-geoloc-geolocationinfoendpoint.html" class="page">Geolocation endpoint</a></li>
+    <li><a href="plugins/otoroshi-plugins-geoloc-geolocationinfoheader.html" class="page">Geolocation header</a></li>
+    <li><a href="plugins/otoroshi-plugins-discovery-discoveryselfregistrationsink.html" class="page">Global self registration endpoints (service discovery)</a></li>
+    <li><a href="plugins/otoroshi-plugins-jsoup-htmlpatcher.html" class="page">Html Patcher</a></li>
+    <li><a href="plugins/otoroshi-plugins-quotas-instancequotas.html" class="page">Instance quotas</a></li>
+    <li><a href="plugins/otoroshi-plugins-izanami-izanamiproxy.html" class="page">Izanami APIs Proxy</a></li>
+    <li><a href="plugins/otoroshi-plugins-izanami-izanamicanary.html" class="page">Izanami Canary Campaign</a></li>
+    <li><a href="plugins/otoroshi-plugins-jwt-jwtuserextractor.html" class="page">Jwt user extractor</a></li>
+    <li><a href="plugins/otoroshi-plugins-accesslog-kafkaaccesslog.html" class="page">Kafka access log</a></li>
+    <li><a href="plugins/otoroshi-plugins-jobs-kubernetes-kubernetesingresscontrollerjob.html" class="page">Kubernetes Ingress Controller</a></li>
+    <li><a href="plugins/otoroshi-plugins-jobs-kubernetes-kubernetesotoroshicrdscontrollerjob.html" class="page">Kubernetes Otoroshi CRDs Controller</a></li>
+    <li><a href="plugins/otoroshi-plugins-jobs-kubernetes-kubernetesadmissionwebhookcrdvalidator.html" class="page">Kubernetes admission validator webhook</a></li>
+    <li><a href="plugins/otoroshi-plugins-jobs-kubernetes-kubernetesadmissionwebhooksidecarinjector.html" class="page">Kubernetes sidecar injector webhook</a></li>
+    <li><a href="plugins/otoroshi-plugins-jobs-kubernetes-kubernetestootoroshicertsyncjob.html" class="page">Kubernetes to Otoroshi certs. synchronizer</a></li>
+    <li><a href="plugins/otoroshi-plugins-mirror-mirroringplugin.html" class="page">Mirroring plugin</a></li>
+    <li><a href="plugins/otoroshi-plugins-oidc-oidcaccesstokenasapikey.html" class="page">OIDC access_token as apikey</a></li>
+    <li><a href="plugins/otoroshi-plugins-oidc-oidcaccesstokenvalidator.html" class="page">OIDC access_token validator</a></li>
+    <li><a href="plugins/otoroshi-plugins-oidc-oidcheaders.html" class="page">OIDC headers</a></li>
+    <li><a href="plugins/otoroshi-plugins-jobs-kubernetes-otoroshitokubernetescertsyncjob.html" class="page">Otoroshi certs. to Kubernetes secrets synchronizer</a></li>
+    <li><a href="plugins/otoroshi-plugins-metrics-prometheusendpoint.html" class="page">Prometheus Endpoint</a></li>
+    <li><a href="plugins/otoroshi-plugins-metrics-prometheusservicemetrics.html" class="page">Prometheus Service Metrics</a></li>
+    <li><a href="plugins/otoroshi-plugins-quotas-servicequotas.html" class="page">Public quotas</a></li>
+    <li><a href="plugins/otoroshi-plugins-cache-responsecache.html" class="page">Response Cache</a></li>
+    <li><a href="plugins/otoroshi-plugins-security-securitytxt.html" class="page">Security Txt</a></li>
+    <li><a href="plugins/otoroshi-plugins-discovery-discoveryselfregistrationtransformer.html" class="page">Self registration endpoints (service discovery)</a></li>
+    <li><a href="plugins/otoroshi-plugins-metrics-servicemetrics.html" class="page">Service Metrics</a></li>
+    <li><a href="plugins/otoroshi-plugins-discovery-discoverytargetsselector.html" class="page">Service discovery target selector (service discovery)</a></li>
+    <li><a href="plugins/otoroshi-plugins-useragent-useragentextractor.html" class="page">User-Agent details extractor</a></li>
+    <li><a href="plugins/otoroshi-plugins-useragent-useragentinfoendpoint.html" class="page">User-Agent endpoint</a></li>
+    <li><a href="plugins/otoroshi-plugins-useragent-useragentinfoheader.html" class="page">User-Agent header</a></li>
+    <li><a href="plugins/otoroshi-plugins-workflow-workflowendpoint.html" class="page">Workflow endpoint</a></li>
+    <li><a href="plugins/otoroshi-plugins-workflow-workflowjob.html" class="page">Workflow job</a></li>
+    <li><a href="plugins/otoroshi-plugins-composite-compositeplugin.html" class="page">otoroshi.plugins.composite.CompositePlugin</a></li>
+  </ul></li>
 </ul>
 </div>
 
@@ -200,6 +256,62 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="plugins/otoroshi-plugins-accesslog-accesslog.html" class="page">Access log (CLF)</a></li>
+    <li><a href="plugins/otoroshi-plugins-accesslog-accesslogjson.html" class="page">Access log (JSON)</a></li>
+    <li><a href="plugins/otoroshi-plugins-users-hasallowedusersvalidator.html" class="page">Allowed users only</a></li>
+    <li><a href="plugins/otoroshi-plugins-apikeys-apikeyauthmodule.html" class="page">Apikey auth module</a></li>
+    <li><a href="plugins/otoroshi-plugins-biscuit-biscuitextractor.html" class="page">Apikey from Biscuit token extractor</a></li>
+    <li><a href="plugins/otoroshi-plugins-biscuit-biscuitvalidator.html" class="page">Biscuit token validator</a></li>
+    <li><a href="plugins/otoroshi-plugins-loggers-bodylogger.html" class="page">Body logger</a></li>
+    <li><a href="plugins/otoroshi-plugins-clientcert-hasclientcertmatchingapikeyvalidator.html" class="page">Client Certificate + Api Key only</a></li>
+    <li><a href="plugins/otoroshi-plugins-clientcert-hasclientcertvalidator.html" class="page">Client Certificate Only</a></li>
+    <li><a href="plugins/otoroshi-plugins-apikeys-clientcredentialflowextractor.html" class="page">Client Credential Flow ApiKey extractor</a></li>
+    <li><a href="plugins/otoroshi-plugins-apikeys-clientcredentialservice.html" class="page">Client Credential Service</a></li>
+    <li><a href="plugins/otoroshi-plugins-apikeys-certificateasapikey.html" class="page">Client certificate as apikey</a></li>
+    <li><a href="plugins/otoroshi-plugins-clientcert-clientcertchainheader.html" class="page">Client certificate header</a></li>
+    <li><a href="plugins/otoroshi-plugins-clientcert-hasclientcertmatchingvalidator.html" class="page">Client certificate matching</a></li>
+    <li><a href="plugins/otoroshi-plugins-clientcert-hasclientcertmatchinghttpvalidator.html" class="page">Client certificate matching (over http)</a></li>
+    <li><a href="plugins/otoroshi-plugins-defer-deferplugin.html" class="page">Defer Responses</a></li>
+    <li><a href="plugins/otoroshi-plugins-envoy-envoycontrolplane.html" class="page">Envoy Control Plane (experimental)</a></li>
+    <li><a href="plugins/otoroshi-plugins-external-externalhttpvalidator.html" class="page">External Http Validator</a></li>
+    <li><a href="plugins/otoroshi-plugins-geoloc-ipstackgeolocationinfoextractor.html" class="page">Geolocation details extractor (using IpStack api)</a></li>
+    <li><a href="plugins/otoroshi-plugins-geoloc-maxmindgeolocationinfoextractor.html" class="page">Geolocation details extractor (using Maxmind db)</a></li>
+    <li><a href="plugins/otoroshi-plugins-geoloc-geolocationinfoendpoint.html" class="page">Geolocation endpoint</a></li>
+    <li><a href="plugins/otoroshi-plugins-geoloc-geolocationinfoheader.html" class="page">Geolocation header</a></li>
+    <li><a href="plugins/otoroshi-plugins-discovery-discoveryselfregistrationsink.html" class="page">Global self registration endpoints (service discovery)</a></li>
+    <li><a href="plugins/otoroshi-plugins-jsoup-htmlpatcher.html" class="page">Html Patcher</a></li>
+    <li><a href="plugins/otoroshi-plugins-quotas-instancequotas.html" class="page">Instance quotas</a></li>
+    <li><a href="plugins/otoroshi-plugins-izanami-izanamiproxy.html" class="page">Izanami APIs Proxy</a></li>
+    <li><a href="plugins/otoroshi-plugins-izanami-izanamicanary.html" class="page">Izanami Canary Campaign</a></li>
+    <li><a href="plugins/otoroshi-plugins-jwt-jwtuserextractor.html" class="page">Jwt user extractor</a></li>
+    <li><a href="plugins/otoroshi-plugins-accesslog-kafkaaccesslog.html" class="page">Kafka access log</a></li>
+    <li><a href="plugins/otoroshi-plugins-jobs-kubernetes-kubernetesingresscontrollerjob.html" class="page">Kubernetes Ingress Controller</a></li>
+    <li><a href="plugins/otoroshi-plugins-jobs-kubernetes-kubernetesotoroshicrdscontrollerjob.html" class="page">Kubernetes Otoroshi CRDs Controller</a></li>
+    <li><a href="plugins/otoroshi-plugins-jobs-kubernetes-kubernetesadmissionwebhookcrdvalidator.html" class="page">Kubernetes admission validator webhook</a></li>
+    <li><a href="plugins/otoroshi-plugins-jobs-kubernetes-kubernetesadmissionwebhooksidecarinjector.html" class="page">Kubernetes sidecar injector webhook</a></li>
+    <li><a href="plugins/otoroshi-plugins-jobs-kubernetes-kubernetestootoroshicertsyncjob.html" class="page">Kubernetes to Otoroshi certs. synchronizer</a></li>
+    <li><a href="plugins/otoroshi-plugins-mirror-mirroringplugin.html" class="page">Mirroring plugin</a></li>
+    <li><a href="plugins/otoroshi-plugins-oidc-oidcaccesstokenasapikey.html" class="page">OIDC access_token as apikey</a></li>
+    <li><a href="plugins/otoroshi-plugins-oidc-oidcaccesstokenvalidator.html" class="page">OIDC access_token validator</a></li>
+    <li><a href="plugins/otoroshi-plugins-oidc-oidcheaders.html" class="page">OIDC headers</a></li>
+    <li><a href="plugins/otoroshi-plugins-jobs-kubernetes-otoroshitokubernetescertsyncjob.html" class="page">Otoroshi certs. to Kubernetes secrets synchronizer</a></li>
+    <li><a href="plugins/otoroshi-plugins-metrics-prometheusendpoint.html" class="page">Prometheus Endpoint</a></li>
+    <li><a href="plugins/otoroshi-plugins-metrics-prometheusservicemetrics.html" class="page">Prometheus Service Metrics</a></li>
+    <li><a href="plugins/otoroshi-plugins-quotas-servicequotas.html" class="page">Public quotas</a></li>
+    <li><a href="plugins/otoroshi-plugins-cache-responsecache.html" class="page">Response Cache</a></li>
+    <li><a href="plugins/otoroshi-plugins-security-securitytxt.html" class="page">Security Txt</a></li>
+    <li><a href="plugins/otoroshi-plugins-discovery-discoveryselfregistrationtransformer.html" class="page">Self registration endpoints (service discovery)</a></li>
+    <li><a href="plugins/otoroshi-plugins-metrics-servicemetrics.html" class="page">Service Metrics</a></li>
+    <li><a href="plugins/otoroshi-plugins-discovery-discoverytargetsselector.html" class="page">Service discovery target selector (service discovery)</a></li>
+    <li><a href="plugins/otoroshi-plugins-useragent-useragentextractor.html" class="page">User-Agent details extractor</a></li>
+    <li><a href="plugins/otoroshi-plugins-useragent-useragentinfoendpoint.html" class="page">User-Agent endpoint</a></li>
+    <li><a href="plugins/otoroshi-plugins-useragent-useragentinfoheader.html" class="page">User-Agent header</a></li>
+    <li><a href="plugins/otoroshi-plugins-workflow-workflowendpoint.html" class="page">Workflow endpoint</a></li>
+    <li><a href="plugins/otoroshi-plugins-workflow-workflowjob.html" class="page">Workflow job</a></li>
+    <li><a href="plugins/otoroshi-plugins-composite-compositeplugin.html" class="page">otoroshi.plugins.composite.CompositePlugin</a></li>
+  </ul></li>
 </ul>
 </div>
 
