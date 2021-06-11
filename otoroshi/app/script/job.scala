@@ -473,6 +473,9 @@ case class RegisteredJobContext(
               if (config.scripts.jobRefs.contains(job.underlyingId)) {
                 startNext()
               }
+              if (config.plugins.refs.contains(job.underlyingId)) {
+                startNext()
+              }
             }
           }
         }
