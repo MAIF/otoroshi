@@ -115,7 +115,11 @@ object ElasticTemplates {
       |          "match": "*",
       |          "mapping": {
       |            "type": "text",
-      |            "fielddata": true
+      |            "fields": {
+      |               "raw": {
+      |                 "type": "keyword"
+      |               }
+      |             }
       |          },
       |          "match_mapping_type": "string"
       |        }
@@ -190,7 +194,11 @@ object ElasticTemplates {
       |          "match": "*",
       |          "mapping": {
       |            "type": "text",
-      |            "fielddata": true
+      |            "fields": {
+      |               "raw": {
+      |                 "type": "keyword"
+      |               }
+      |             }
       |          },
       |          "match_mapping_type": "string"
       |        }
@@ -768,6 +776,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   private def query(query: JsObject)(implicit ec: ExecutionContext): Future[JsValue] = {
     val builder = env.MtlsWs.url(searchUri, config.mtlsConfig)
 
+    logger.debug(s"Query to Elasticsearch: $searchUri")
     logger.debug(s"Query to Elasticsearch: ${Json.prettyPrint(query)}")
 
     authHeader()
