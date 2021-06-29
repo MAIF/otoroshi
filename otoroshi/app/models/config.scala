@@ -781,7 +781,7 @@ case class OtoroshiExport(
         apikeys,
         customization.select("apikeys").asOpt[JsArray].getOrElse(Json.arr()),
         ApiKey._fmt,
-        _.select("id").asString,
+        _.select("clientId").asString,
         _.clientId
       ),
       groups = customizeAndMergeArray[ServiceGroup](
