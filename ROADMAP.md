@@ -32,6 +32,7 @@ provide the authentication modules needed for most cases and associated tools
 
 - [ ] versioning helpers
 - [ ] orchestrator plugin (based on flow plugin work)
+- [ ] access control helpers
 - [ ] representation plugins
   - [ ] protocol transformations
   - [ ] payload transformations
