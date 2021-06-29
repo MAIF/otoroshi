@@ -24,6 +24,22 @@ provide the authentication modules needed for most cases and associated tools
 - [ ] plugin to handle OAuth2 calls
 - [ ] more integration of biscuit tokens
   - [ ] add biscuit playground to the UI
+- [ ] access control helpers
+- [ ] spikes and DoS detection and arrest
+- [ ] beyondcorp like setup helpers
+
+## plugins
+
+- [ ] versioning helpers
+- [ ] orchestrator plugin (based on flow plugin work)
+- [ ] representation plugins
+  - [ ] protocol transformations
+  - [ ] payload transformations
+
+## backoffice
+
+- [ ] multi-instances
+- [ ] customizable embbeded dashboarding
 
 ## container orchestrators
 
@@ -35,6 +51,7 @@ provide the authentication modules needed for most cases and associated tools
 
 - [x] support postgresql as leader datastore
 - [x] support S3 as leader datastore
+- [ ] master - master replication (leader / follower at least)
 - [ ] experiment around lightweight workers
   - [ ] written in rust (based on sozu or hyper ?)
   - [ ] written in c++ and lua (based on envoy ?)
