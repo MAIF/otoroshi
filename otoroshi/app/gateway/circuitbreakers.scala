@@ -111,10 +111,12 @@ object ServiceDescriptorCircuitBreaker {
   val falseAtomic = new AtomicBoolean(false)
 }
 
+case class AkkaCircuitBreakerWrapper(cb: AkkaCircuitBreaker, maxFailures: Int, callTimeout: FiniteDuration, resetTimeout: FiniteDuration)
+
 class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler: Scheduler, env: Env) {
 
   val reqCounter = new AtomicInteger(0)
-  val breakers   = new TrieMap[String, AkkaCircuitBreaker]()
+  val breakers   = new TrieMap[String, AkkaCircuitBreakerWrapper]()
 
   lazy val logger = Logger("otoroshi-circuit-breaker")
 
@@ -140,7 +142,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
     val targets = descriptor.targets
       .filter(_.predicate.matches(reqId, requestHeader, attrs))
       .filterNot(t => HealthCheck.badHealth.contains(t.asCleanTarget)) // health check can disable targets
-      .filterNot(t => breakers.get(t.host).exists(_.isOpen))
+      .filterNot(t => breakers.get(t.host).exists(_.cb.isOpen))
       .flatMap(t => Seq.fill(t.weight)(t))
     // val index = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
     // Round robin loadbalancing is happening here !!!!!
@@ -149,7 +151,8 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
     } else {
       val target  = descriptor.targetsLoadBalancing.select(reqId, trackingId, requestHeader, targets, descriptor)
       //val target = targets.apply(index.toInt)
-      if (!breakers.contains(target.host)) {
+
+      def buildBreaker(): Unit = {
         // val cb = new AkkaCircuitBreaker(
         //   scheduler = scheduler,
         //   maxFailures = descriptor.clientConfig.maxErrors,
@@ -199,10 +202,22 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
             )
           )
         }
-        breakers.putIfAbsent(target.host, cb)
+        breakers.putIfAbsent(target.host, AkkaCircuitBreakerWrapper(cb, descriptor.clientConfig.maxErrors, descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout), descriptor.clientConfig.sampleInterval.millis))
+      }
+
+      if (!breakers.contains(target.host)) {
+        buildBreaker()
+      } else {
+        if (breakers.get(target.host).exists { cb =>
+          cb.maxFailures != descriptor.clientConfig.maxErrors ||
+            cb.callTimeout != descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout) ||
+            cb.resetTimeout != descriptor.clientConfig.sampleInterval.millis
+        }) {
+          buildBreaker()
+        }
       }
       val breaker = breakers.apply(target.host)
-      Some((target, breaker))
+      Some((target, breaker.cb))
     }
   }
 
