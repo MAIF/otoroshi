@@ -302,9 +302,9 @@ class GatewayRequestHandler(
           case _ if relativeUri.startsWith("/.well-known/otoroshi/monitoring/startup") =>
             Some(healthController.startup())
 
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/security/jwks.json")                  => Some(jwks())
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/security/ocsp")                       => Some(ocsp())
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/security/certificates/")              =>
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/security/jwks.json")     => Some(jwks())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/security/ocsp")          => Some(ocsp())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/security/certificates/") =>
             Some(aia(relativeUri.replace("/.well-known/otoroshi/security/certificates/", ""))())
 
           case env.adminApiExposedHost if relativeUri.startsWith("/.well-known/jwks.json")              => Some(jwks())
@@ -334,24 +334,31 @@ class GatewayRequestHandler(
           case env.backOfficeHost if env.exposeAdminDashboard => super.routeRequest(request)
           case env.privateAppsHost                            => super.routeRequest(request)
 
-          case h if env.adminApiExposedDomains.contains(h) && relativeUri.startsWith("/.well-known/jwks.json")              => Some(jwks())
-          case h if env.backofficeDomains.contains(h) && relativeUri.startsWith("/.well-known/jwks.json")                   => Some(jwks())
-          case h if env.adminApiExposedDomains.contains(h) && relativeUri.startsWith("/.well-known/otoroshi/ocsp")          => Some(ocsp())
-          case h if env.backofficeDomains.contains(h) && relativeUri.startsWith("/.well-known/otoroshi/ocsp")               => Some(ocsp())
-          case h if env.backofficeDomains.contains(h) && relativeUri.startsWith("/.well-known/otoroshi/certificates/")      =>
+          case h if env.adminApiExposedDomains.contains(h) && relativeUri.startsWith("/.well-known/jwks.json")     =>
+            Some(jwks())
+          case h if env.backofficeDomains.contains(h) && relativeUri.startsWith("/.well-known/jwks.json")          =>
+            Some(jwks())
+          case h if env.adminApiExposedDomains.contains(h) && relativeUri.startsWith("/.well-known/otoroshi/ocsp") =>
+            Some(ocsp())
+          case h if env.backofficeDomains.contains(h) && relativeUri.startsWith("/.well-known/otoroshi/ocsp")      =>
+            Some(ocsp())
+          case h
+              if env.backofficeDomains.contains(h) && relativeUri.startsWith("/.well-known/otoroshi/certificates/") =>
             Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", "")))
-          case h if env.adminApiExposedDomains.contains(h) && relativeUri.startsWith("/.well-known/otoroshi/certificates/") =>
+          case h
+              if env.adminApiExposedDomains
+                .contains(h) && relativeUri.startsWith("/.well-known/otoroshi/certificates/") =>
             Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", "")))
-          case h if env.backofficeDomains.contains(h) && !isSecured && toHttps  => Some(redirectToHttps())
-          case h if env.privateAppsDomains.contains(h) && !isSecured && toHttps => Some(redirectToHttps())
-          case h if env.privateAppsDomains.contains(h) && monitoring            => Some(forbidden())
-          case h if env.adminApiExposedDomains.contains(h) && monitoring          => super.routeRequest(request)
-          case h if env.backofficeDomains.contains(h) && monitoring               => super.routeRequest(request)
-          case h if env.adminApiDomains.contains(h) && env.exposeAdminApi         => super.routeRequest(request)
-          case h if env.backofficeDomains.contains(h) && env.exposeAdminDashboard => super.routeRequest(request)
-          case h if env.privateAppsDomains.contains(h)                            => super.routeRequest(request)
+          case h if env.backofficeDomains.contains(h) && !isSecured && toHttps                                     => Some(redirectToHttps())
+          case h if env.privateAppsDomains.contains(h) && !isSecured && toHttps                                    => Some(redirectToHttps())
+          case h if env.privateAppsDomains.contains(h) && monitoring                                               => Some(forbidden())
+          case h if env.adminApiExposedDomains.contains(h) && monitoring                                           => super.routeRequest(request)
+          case h if env.backofficeDomains.contains(h) && monitoring                                                => super.routeRequest(request)
+          case h if env.adminApiDomains.contains(h) && env.exposeAdminApi                                          => super.routeRequest(request)
+          case h if env.backofficeDomains.contains(h) && env.exposeAdminDashboard                                  => super.routeRequest(request)
+          case h if env.privateAppsDomains.contains(h)                                                             => super.routeRequest(request)
 
-          case _                                              =>
+          case _ =>
             request.headers.get("Sec-WebSocket-Version") match {
               case None    =>
                 Some(

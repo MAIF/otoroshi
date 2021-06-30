@@ -206,7 +206,7 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
     host match {
       case env.backOfficeHost                     => perform()
       case h if env.backofficeDomains.contains(h) => perform()
-      case _ => {
+      case _                                      => {
         Errors.craftResponseResult(
           s"Not found",
           Status(404),

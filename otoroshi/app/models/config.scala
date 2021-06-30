@@ -345,17 +345,22 @@ object AutoCert {
   }
 }
 
-case class TlsSettings(defaultDomain: Option[String] = None, randomIfNotFound: Boolean = false, includeJdkCaServer: Boolean = true, includeJdkCaClient: Boolean = true) {
+case class TlsSettings(
+    defaultDomain: Option[String] = None,
+    randomIfNotFound: Boolean = false,
+    includeJdkCaServer: Boolean = true,
+    includeJdkCaClient: Boolean = true
+)                  {
   def json: JsValue = TlsSettings.format.writes(this)
 }
-object TlsSettings                                                                              {
+object TlsSettings {
   val format = new Format[TlsSettings] {
     override def writes(o: TlsSettings): JsValue =
       Json.obj(
-        "defaultDomain"    -> o.defaultDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "randomIfNotFound" -> o.randomIfNotFound,
+        "defaultDomain"      -> o.defaultDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "randomIfNotFound"   -> o.randomIfNotFound,
         "includeJdkCaServer" -> o.includeJdkCaServer,
-        "includeJdkCaClient" -> o.includeJdkCaClient,
+        "includeJdkCaClient" -> o.includeJdkCaClient
       )
 
     override def reads(json: JsValue): JsResult[TlsSettings] =
@@ -364,7 +369,7 @@ object TlsSettings                                                              
           defaultDomain = (json \ "defaultDomain").asOpt[String].map(_.trim).filter(_.nonEmpty),
           randomIfNotFound = (json \ "randomIfNotFound").asOpt[Boolean].getOrElse(false),
           includeJdkCaServer = (json \ "includeJdkCaServer").asOpt[Boolean].getOrElse(true),
-          includeJdkCaClient = (json \ "includeJdkCaClient").asOpt[Boolean].getOrElse(true),
+          includeJdkCaClient = (json \ "includeJdkCaClient").asOpt[Boolean].getOrElse(true)
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)

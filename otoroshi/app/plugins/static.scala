@@ -18,11 +18,11 @@ class StaticResponse extends RequestTransformer {
     Some(
       Json.obj(
         "StaticResponse" -> Json.obj(
-          "status"             -> 200,
-          "headers"             -> Json.obj(
+          "status"     -> 200,
+          "headers"    -> Json.obj(
             "Content-Type" -> "application/json"
           ),
-          "body" -> """{"message":"hello world!"}""",
+          "body"       -> """{"message":"hello world!"}""",
           "bodyBase64" -> JsNull
         )
       )
@@ -41,15 +41,16 @@ class StaticResponse extends RequestTransformer {
     )
 
   override def transformRequestWithCtx(
-    ctx: TransformerRequestContext
+      ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    val config = ctx.configFor("StaticResponse")
-    val status = config.select("status").asOpt[Int].getOrElse(200)
-    val _headers = config.select("headers").asOpt[Map[String, String]].getOrElse(Map("Content-Type" -> "application/json"))
-    val contentType = _headers.get("Content-Type").orElse(_headers.get("content-type")).getOrElse("application/json")
-    val headers = _headers.filterNot(_._1.toLowerCase() == "content-type")
-    val bodytext = config.select("body").asOpt[String].map(ByteString.apply)
-    val bodyBase64 = config.select("bodyBase64").asOpt[String].map(ByteString.apply).map(_.decodeBase64)
+    val config           = ctx.configFor("StaticResponse")
+    val status           = config.select("status").asOpt[Int].getOrElse(200)
+    val _headers         =
+      config.select("headers").asOpt[Map[String, String]].getOrElse(Map("Content-Type" -> "application/json"))
+    val contentType      = _headers.get("Content-Type").orElse(_headers.get("content-type")).getOrElse("application/json")
+    val headers          = _headers.filterNot(_._1.toLowerCase() == "content-type")
+    val bodytext         = config.select("body").asOpt[String].map(ByteString.apply)
+    val bodyBase64       = config.select("bodyBase64").asOpt[String].map(ByteString.apply).map(_.decodeBase64)
     val body: ByteString = bodytext.orElse(bodyBase64).getOrElse("""{"message":"hello world!"}""".byteString)
     Left(Results.Status(status)(body).withHeaders(headers.toSeq: _*).as(contentType)).future
   }

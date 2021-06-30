@@ -245,8 +245,8 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
                 .flatMap { _ =>
                   env.datastores.apiKeyDataStore.findById(clientId).flatMap {
                     case Some(apikey)
-                      if apikey.authorizedOnGroup(env.backOfficeGroup.id) || apikey
-                        .authorizedOnService(env.backOfficeDescriptor.id) => {
+                        if apikey.authorizedOnGroup(env.backOfficeGroup.id) || apikey
+                          .authorizedOnService(env.backOfficeDescriptor.id) => {
                       block(ApiActionContext(apikey, request)).foldM {
                         case Success(res) =>
                           res

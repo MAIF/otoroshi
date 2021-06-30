@@ -1035,8 +1035,8 @@ object DynamicSSLEngineProvider {
   def certificates: TrieMap[String, Cert] = _certificates.filter(_._2.notRevoked)
 
   private lazy val firstSetupDone           = new AtomicBoolean(false)
-  private lazy val currentContextServer           = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, true))
-  private lazy val currentContextClient           = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, true))
+  private lazy val currentContextServer     = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, true))
+  private lazy val currentContextClient     = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, true))
   private lazy val currentSslConfigSettings = new AtomicReference[SSLConfigSettings](null)
   private val currentEnv                    = new AtomicReference[Env](null)
   private val defaultSslContext             = SSLContext.getDefault
@@ -1104,7 +1104,7 @@ object DynamicSSLEngineProvider {
             e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")
           )
           .map {
-            case true  => Array[TrustManager](noCATrustManager)
+            case true                   => Array[TrustManager](noCATrustManager)
             case false if includeJdkCa  => createTrustStoreWithJdkCAs(keyStore, cacertPath, cacertPassword)
             case false if !includeJdkCa => createTrustStore(keyStore)
           } getOrElse {
@@ -1279,22 +1279,22 @@ object DynamicSSLEngineProvider {
             e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")
           )
           .map {
-            case true  => Array[TrustManager](noCATrustManager)
+            case true                   => Array[TrustManager](noCATrustManager)
             case false if includeJdkCa  => createTrustStoreWithJdkCAs(keyStore2, cacertPath, cacertPassword)
             case false if !includeJdkCa => createTrustStore(keyStore2)
           } getOrElse {
-            if (trustAll) {
-              Array[TrustManager](
-                new VeryNiceTrustManager(Seq.empty[X509TrustManager])
-              )
+          if (trustAll) {
+            Array[TrustManager](
+              new VeryNiceTrustManager(Seq.empty[X509TrustManager])
+            )
+          } else {
+            if (includeJdkCa) {
+              createTrustStoreWithJdkCAs(keyStore2, cacertPath, cacertPassword)
             } else {
-              if (includeJdkCa) {
-                createTrustStoreWithJdkCAs(keyStore2, cacertPath, cacertPassword)
-              } else {
-                createTrustStore(keyStore2)
-              }
+              createTrustStore(keyStore2)
             }
           }
+        }
 
       sslContext.init(keyManagers, tm, null)
       logger.debug(s"SSL Context init done ! (${keyStore1.size()} - ${keyStore2.size()})")
@@ -1314,8 +1314,14 @@ object DynamicSSLEngineProvider {
   def addCertificates(certs: Seq[Cert], env: Env): Unit = {
     firstSetupDone.compareAndSet(false, true)
     certs.filter(_.notRevoked).foreach(crt => _certificates.put(crt.id, crt))
-    val ctxClient = setupContext(env, env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true))
-    val ctxServer = setupContext(env, env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true))
+    val ctxClient = setupContext(
+      env,
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true)
+    )
+    val ctxServer = setupContext(
+      env,
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true)
+    )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
   }
@@ -1339,16 +1345,28 @@ object DynamicSSLEngineProvider {
           )
         )
       )
-    val ctxClient = setupContext(env, env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true))
-    val ctxServer = setupContext(env, env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true))
+    val ctxClient = setupContext(
+      env,
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true)
+    )
+    val ctxServer = setupContext(
+      env,
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true)
+    )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
   }
 
   def forceUpdate(env: Env): Unit = {
     firstSetupDone.compareAndSet(false, true)
-    val ctxClient = setupContext(env, env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true))
-    val ctxServer = setupContext(env, env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true))
+    val ctxClient = setupContext(
+      env,
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true)
+    )
+    val ctxServer = setupContext(
+      env,
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true)
+    )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
   }
@@ -1440,7 +1458,11 @@ object DynamicSSLEngineProvider {
     keyStore
   }
 
-  def createTrustStoreWithJdkCAs(keyStore: KeyStore, cacertPath: String, cacertPassword: String): Array[TrustManager] = {
+  def createTrustStoreWithJdkCAs(
+      keyStore: KeyStore,
+      cacertPath: String,
+      cacertPassword: String
+  ): Array[TrustManager] = {
     logger.debug(s"Creating truststore ...")
     val tmf    = TrustManagerFactory.getInstance("SunX509")
     tmf.init(keyStore)
@@ -1456,7 +1478,7 @@ object DynamicSSLEngineProvider {
 
   def createTrustStore(keyStore: KeyStore): Array[TrustManager] = {
     logger.debug(s"Creating truststore ...")
-    val tmf    = TrustManagerFactory.getInstance("SunX509")
+    val tmf = TrustManagerFactory.getInstance("SunX509")
     tmf.init(keyStore)
     Array[TrustManager](
       new FakeTrustManager(tmf.getTrustManagers.map(_.asInstanceOf[X509TrustManager]).toSeq)

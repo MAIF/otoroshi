@@ -111,7 +111,12 @@ object ServiceDescriptorCircuitBreaker {
   val falseAtomic = new AtomicBoolean(false)
 }
 
-case class AkkaCircuitBreakerWrapper(cb: AkkaCircuitBreaker, maxFailures: Int, callTimeout: FiniteDuration, resetTimeout: FiniteDuration)
+case class AkkaCircuitBreakerWrapper(
+    cb: AkkaCircuitBreaker,
+    maxFailures: Int,
+    callTimeout: FiniteDuration,
+    resetTimeout: FiniteDuration
+)
 
 class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler: Scheduler, env: Env) {
 
@@ -149,7 +154,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
     if (targets.isEmpty) {
       None
     } else {
-      val target  = descriptor.targetsLoadBalancing.select(reqId, trackingId, requestHeader, targets, descriptor)
+      val target = descriptor.targetsLoadBalancing.select(reqId, trackingId, requestHeader, targets, descriptor)
       //val target = targets.apply(index.toInt)
 
       def buildBreaker(): Unit = {
@@ -202,17 +207,27 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
             )
           )
         }
-        breakers.putIfAbsent(target.host, AkkaCircuitBreakerWrapper(cb, descriptor.clientConfig.maxErrors, descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout), descriptor.clientConfig.sampleInterval.millis))
+        breakers.putIfAbsent(
+          target.host,
+          AkkaCircuitBreakerWrapper(
+            cb,
+            descriptor.clientConfig.maxErrors,
+            descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout),
+            descriptor.clientConfig.sampleInterval.millis
+          )
+        )
       }
 
       if (!breakers.contains(target.host)) {
         buildBreaker()
       } else {
-        if (breakers.get(target.host).exists { cb =>
-          cb.maxFailures != descriptor.clientConfig.maxErrors ||
+        if (
+          breakers.get(target.host).exists { cb =>
+            cb.maxFailures != descriptor.clientConfig.maxErrors ||
             cb.callTimeout != descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout) ||
             cb.resetTimeout != descriptor.clientConfig.sampleInterval.millis
-        }) {
+          }
+        ) {
           buildBreaker()
         }
       }
