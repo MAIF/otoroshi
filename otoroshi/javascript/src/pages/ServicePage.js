@@ -226,6 +226,21 @@ class Target extends Component {
           help="The ip address of the target. Could be useful to perform manual DNS resolution. Only used with experimental client"
           onChange={(e) => this.changeTheValue('ipAddress', e)}
         />
+        <ArrayInput
+          label="Tags"
+          placeholder="A tag"
+          value={value.tags}
+          help="Specify tags for the target"
+          onChange={(v) => this.changeTheValue('tags', v)}
+        />
+        <ObjectInput
+          label="Metadata"
+          placeholderKey="Metadata key"
+          placeholderValue="Metadata value"
+          value={value.metadata}
+          help="Specify metadata for the target"
+          onChange={(v) => this.changeTheValue('metadata', v)}
+        />
         <BooleanInput
           label="Custom TLS Settings"
           value={value.mtlsConfig.mtls}
