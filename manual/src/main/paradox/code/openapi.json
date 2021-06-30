@@ -17457,6 +17457,13 @@
         "description" : "A target model for a service (destination for forwarded requests)",
         "type" : "object",
         "properties" : {
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
           "host" : {
             "description" : "The host on which the HTTP call will be forwarded. Can be a domain name, or an IP address. Can also have a port",
             "type" : "string"
@@ -17465,6 +17472,13 @@
             "format" : "int32",
             "description" : "The weight of the target when choosing",
             "type" : "integer"
+          },
+          "metadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
           },
           "protocol" : {
             "description" : "Protocol for the target",
@@ -18357,6 +18371,14 @@
           },
           "randomIfNotFound" : {
             "description" : "Use a random one",
+            "type" : "boolean"
+          },
+          "includeJdkCaServer" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "includeJdkCaClient" : {
+            "description" : "???",
             "type" : "boolean"
           }
         }
