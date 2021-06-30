@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Prometheus Endpoint · Otoroshi</title>
+<title>Static Response · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -140,7 +140,7 @@
     <li><a href="../plugins/otoroshi-plugins-oidc-oidcaccesstokenvalidator.html" class="page">OIDC access_token validator</a></li>
     <li><a href="../plugins/otoroshi-plugins-oidc-oidcheaders.html" class="page">OIDC headers</a></li>
     <li><a href="../plugins/otoroshi-plugins-jobs-kubernetes-otoroshitokubernetescertsyncjob.html" class="page">Otoroshi certs. to Kubernetes secrets synchronizer</a></li>
-    <li><a href="../plugins/otoroshi-plugins-metrics-prometheusendpoint.html" class="active page">Prometheus Endpoint</a></li>
+    <li><a href="../plugins/otoroshi-plugins-metrics-prometheusendpoint.html" class="page">Prometheus Endpoint</a></li>
     <li><a href="../plugins/otoroshi-plugins-metrics-prometheusservicemetrics.html" class="page">Prometheus Service Metrics</a></li>
     <li><a href="../plugins/otoroshi-plugins-quotas-servicequotas.html" class="page">Public quotas</a></li>
     <li><a href="../plugins/otoroshi-plugins-cache-responsecache.html" class="page">Response Cache</a></li>
@@ -148,7 +148,7 @@
     <li><a href="../plugins/otoroshi-plugins-discovery-discoveryselfregistrationtransformer.html" class="page">Self registration endpoints (service discovery)</a></li>
     <li><a href="../plugins/otoroshi-plugins-metrics-servicemetrics.html" class="page">Service Metrics</a></li>
     <li><a href="../plugins/otoroshi-plugins-discovery-discoverytargetsselector.html" class="page">Service discovery target selector (service discovery)</a></li>
-    <li><a href="../plugins/otoroshi-plugins-static-staticresponse.html" class="page">Static Response</a></li>
+    <li><a href="../plugins/otoroshi-plugins-static-staticresponse.html" class="active page">Static Response</a></li>
     <li><a href="../plugins/otoroshi-plugins-useragent-useragentextractor.html" class="page">User-Agent details extractor</a></li>
     <li><a href="../plugins/otoroshi-plugins-useragent-useragentinfoendpoint.html" class="page">User-Agent endpoint</a></li>
     <li><a href="../plugins/otoroshi-plugins-useragent-useragentinfoheader.html" class="page">User-Agent header</a></li>
@@ -298,7 +298,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/otoroshi-plugins-oidc-oidcaccesstokenvalidator.html" class="page">OIDC access_token validator</a></li>
     <li><a href="../plugins/otoroshi-plugins-oidc-oidcheaders.html" class="page">OIDC headers</a></li>
     <li><a href="../plugins/otoroshi-plugins-jobs-kubernetes-otoroshitokubernetescertsyncjob.html" class="page">Otoroshi certs. to Kubernetes secrets synchronizer</a></li>
-    <li><a href="../plugins/otoroshi-plugins-metrics-prometheusendpoint.html" class="active page">Prometheus Endpoint</a></li>
+    <li><a href="../plugins/otoroshi-plugins-metrics-prometheusendpoint.html" class="page">Prometheus Endpoint</a></li>
     <li><a href="../plugins/otoroshi-plugins-metrics-prometheusservicemetrics.html" class="page">Prometheus Service Metrics</a></li>
     <li><a href="../plugins/otoroshi-plugins-quotas-servicequotas.html" class="page">Public quotas</a></li>
     <li><a href="../plugins/otoroshi-plugins-cache-responsecache.html" class="page">Response Cache</a></li>
@@ -306,7 +306,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/otoroshi-plugins-discovery-discoveryselfregistrationtransformer.html" class="page">Self registration endpoints (service discovery)</a></li>
     <li><a href="../plugins/otoroshi-plugins-metrics-servicemetrics.html" class="page">Service Metrics</a></li>
     <li><a href="../plugins/otoroshi-plugins-discovery-discoverytargetsselector.html" class="page">Service discovery target selector (service discovery)</a></li>
-    <li><a href="../plugins/otoroshi-plugins-static-staticresponse.html" class="page">Static Response</a></li>
+    <li><a href="../plugins/otoroshi-plugins-static-staticresponse.html" class="active page">Static Response</a></li>
     <li><a href="../plugins/otoroshi-plugins-useragent-useragentextractor.html" class="page">User-Agent details extractor</a></li>
     <li><a href="../plugins/otoroshi-plugins-useragent-useragentinfoendpoint.html" class="page">User-Agent endpoint</a></li>
     <li><a href="../plugins/otoroshi-plugins-useragent-useragentinfoheader.html" class="page">User-Agent header</a></li>
@@ -329,7 +329,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../plugins/index.html">Otoroshi plugins</a></li>
-  <li>Prometheus Endpoint</li>
+  <li>Static Response</li>
 </ul>
 </div>
 </div>
@@ -337,34 +337,28 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#prometheus-endpoint" name="prometheus-endpoint" class="anchor"><span class="anchor-link"></span></a>Prometheus Endpoint</h1>
+<h1><a href="#static-response" name="static-response" class="anchor"><span class="anchor-link"></span></a>Static Response</h1>
 <h2><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h2>
 <ul>
-  <li>plugin type: <code>sink</code></li>
-  <li>configuration root: <code>PrometheusEndpoint</code></li>
+  <li>plugin type: <code>transformer</code></li>
+  <li>configuration root: <code>StaticResponse</code></li>
 </ul>
 <h2><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h2>
-<p>This plugin exposes metrics collected by <code>Prometheus Service Metrics</code> on a <code>/prometheus</code> endpoint. You can protect it with an access key defined in the configuration</p>
-<p>This plugin can accept the following configuration</p>
-<pre class="prettyprint"><code class="language-json">{
-  &quot;PrometheusEndpoint&quot;: {
-    &quot;accessKeyValue&quot;: &quot;secret&quot;, // if not defined, public access. Can be ${config.app.health.accessKey}
-    &quot;accessKeyQuery&quot;: &quot;access_key&quot;,
-    &quot;includeMetrics&quot;: false
-  }
-}
-</code></pre>
+<p>This plugin returns a static response for any request</p>
 <h2><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h2>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;PrometheusEndpoint&quot; : {
-    &quot;accessKeyValue&quot; : &quot;${config.app.health.accessKey}&quot;,
-    &quot;accessKeyQuery&quot; : &quot;access_key&quot;,
-    &quot;includeMetrics&quot; : false
+  &quot;StaticResponse&quot; : {
+    &quot;status&quot; : 200,
+    &quot;headers&quot; : {
+      &quot;Content-Type&quot; : &quot;application/json&quot;
+    },
+    &quot;body&quot; : &quot;{\&quot;message\&quot;:\&quot;hello world!\&quot;}&quot;,
+    &quot;bodyBase64&quot; : null
   }
 }
 </code></pre>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../plugins/otoroshi-plugins-metrics-prometheusservicemetrics.html">Prometheus Service Metrics</a></p>
+<p><strong>Next:</strong> <a href="../plugins/otoroshi-plugins-useragent-useragentextractor.html">User-Agent details extractor</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
@@ -373,11 +367,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-title">On this page:</div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../plugins/otoroshi-plugins-metrics-prometheusendpoint.html#prometheus-endpoint" class="header">Prometheus Endpoint</a>
+  <li><a href="../plugins/otoroshi-plugins-static-staticresponse.html#static-response" class="header">Static Response</a>
   <ul>
-    <li><a href="../plugins/otoroshi-plugins-metrics-prometheusendpoint.html#infos" class="header">Infos</a></li>
-    <li><a href="../plugins/otoroshi-plugins-metrics-prometheusendpoint.html#description" class="header">Description</a></li>
-    <li><a href="../plugins/otoroshi-plugins-metrics-prometheusendpoint.html#default-configuration" class="header">Default configuration</a></li>
+    <li><a href="../plugins/otoroshi-plugins-static-staticresponse.html#infos" class="header">Infos</a></li>
+    <li><a href="../plugins/otoroshi-plugins-static-staticresponse.html#description" class="header">Description</a></li>
+    <li><a href="../plugins/otoroshi-plugins-static-staticresponse.html#default-configuration" class="header">Default configuration</a></li>
   </ul></li>
 </ul>
 </div>
