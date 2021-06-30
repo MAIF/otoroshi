@@ -500,8 +500,8 @@ case class Target(
     predicate: TargetPredicate = AlwaysMatch,
     ipAddress: Option[String] = None,
     mtlsConfig: MtlsConfig = MtlsConfig(),
-    tags: Seq[String],
-    metadata: Map[String, String]
+    tags: Seq[String] = Seq.empty,
+    metadata: Map[String, String] = Map.empty
 ) {
 
   def toJson        = Target.format.writes(this)
