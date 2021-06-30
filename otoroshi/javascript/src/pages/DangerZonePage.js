@@ -866,6 +866,22 @@ export class DangerZonePage extends Component {
         }),
       },
     },
+    'tlsSettings.includeJdkCaServer': {
+      type: 'bool',
+      props: {
+        label: 'Include JDK CA for server',
+        placeholder: '--',
+        help: 'Include JDK CA when performing TLS terminaison',
+      },
+    },
+    'tlsSettings.includeJdkCaClient': {
+      type: 'bool',
+      props: {
+        label: 'Include JDK CA for client',
+        placeholder: '--',
+        help: 'Include JDK CA when calling something over https',
+      },
+    },
     'tlsSettings.randomIfNotFound': {
       type: 'bool',
       props: {
@@ -967,6 +983,8 @@ export class DangerZonePage extends Component {
     '>>>Tls Settings',
     'tlsSettings.randomIfNotFound',
     'tlsSettings.defaultDomain',
+    'tlsSettings.includeJdkCaServer',
+    'tlsSettings.includeJdkCaClient',
     '>>>Auto Generate Certificates',
     'autoCert.enabled',
     'autoCert.replyNicely',

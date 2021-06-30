@@ -1035,7 +1035,8 @@ object DynamicSSLEngineProvider {
   def certificates: TrieMap[String, Cert] = _certificates.filter(_._2.notRevoked)
 
   private lazy val firstSetupDone           = new AtomicBoolean(false)
-  private lazy val currentContext           = new AtomicReference[SSLContext](setupContext(FakeHasMetrics))
+  private lazy val currentContextServer           = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, true))
+  private lazy val currentContextClient           = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, true))
   private lazy val currentSslConfigSettings = new AtomicReference[SSLConfigSettings](null)
   private val currentEnv                    = new AtomicReference[Env](null)
   private val defaultSslContext             = SSLContext.getDefault
@@ -1050,7 +1051,7 @@ object DynamicSSLEngineProvider {
     currentEnv.get()
   }
 
-  private def setupContext(env: HasMetrics): SSLContext =
+  private def setupContext(env: HasMetrics, includeJdkCa: Boolean): SSLContext =
     env.metrics.withTimer("otoroshi.core.tls.setup-global-context") {
 
       val certificates = _certificates.filter(_._2.notRevoked)
@@ -1104,14 +1105,19 @@ object DynamicSSLEngineProvider {
           )
           .map {
             case true  => Array[TrustManager](noCATrustManager)
-            case false => createTrustStore(keyStore, cacertPath, cacertPassword)
+            case false if includeJdkCa  => createTrustStoreWithJdkCAs(keyStore, cacertPath, cacertPassword)
+            case false if !includeJdkCa => createTrustStore(keyStore)
           } getOrElse {
           if (trustAll) {
             Array[TrustManager](
               new VeryNiceTrustManager(Seq.empty[X509TrustManager])
             )
           } else {
-            createTrustStore(keyStore, cacertPath, cacertPassword)
+            if (includeJdkCa) {
+              createTrustStoreWithJdkCAs(keyStore, cacertPath, cacertPassword)
+            } else {
+              createTrustStore(keyStore)
+            }
           }
         }
 
@@ -1219,6 +1225,12 @@ object DynamicSSLEngineProvider {
   ): SSLContext =
     env.metrics.withTimer("otoroshi.core.tls.setup-single-context") {
 
+      val includeJdkCa: Boolean = if (client) {
+        env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true)
+      } else {
+        env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true)
+      }
+
       val certs        = _certs.filter(_.notRevoked)
       val trustedCerts = _trustedCerts.filter(_.notRevoked)
 
@@ -1268,16 +1280,21 @@ object DynamicSSLEngineProvider {
           )
           .map {
             case true  => Array[TrustManager](noCATrustManager)
-            case false => createTrustStore(keyStore2, cacertPath, cacertPassword)
+            case false if includeJdkCa  => createTrustStoreWithJdkCAs(keyStore2, cacertPath, cacertPassword)
+            case false if !includeJdkCa => createTrustStore(keyStore2)
           } getOrElse {
-          if (trustAll) {
-            Array[TrustManager](
-              new VeryNiceTrustManager(Seq.empty[X509TrustManager])
-            )
-          } else {
-            createTrustStore(keyStore2, cacertPath, cacertPassword)
+            if (trustAll) {
+              Array[TrustManager](
+                new VeryNiceTrustManager(Seq.empty[X509TrustManager])
+              )
+            } else {
+              if (includeJdkCa) {
+                createTrustStoreWithJdkCAs(keyStore2, cacertPath, cacertPassword)
+              } else {
+                createTrustStore(keyStore2)
+              }
+            }
           }
-        }
 
       sslContext.init(keyManagers, tm, null)
       logger.debug(s"SSL Context init done ! (${keyStore1.size()} - ${keyStore2.size()})")
@@ -1285,7 +1302,8 @@ object DynamicSSLEngineProvider {
       sslContext
     }
 
-  def current = currentContext.get()
+  def currentServer = currentContextServer.get()
+  def currentClient = currentContextClient.get()
 
   def sslConfigSettings: SSLConfigSettings = currentSslConfigSettings.get()
 
@@ -1293,15 +1311,16 @@ object DynamicSSLEngineProvider {
     _certificates.values.filter(_.notRevoked).map(_.domain).toSet.toSeq
   }
 
-  def addCertificates(certs: Seq[Cert], env: Env): SSLContext = {
+  def addCertificates(certs: Seq[Cert], env: Env): Unit = {
     firstSetupDone.compareAndSet(false, true)
     certs.filter(_.notRevoked).foreach(crt => _certificates.put(crt.id, crt))
-    val ctx = setupContext(env)
-    currentContext.set(ctx)
-    ctx
+    val ctxClient = setupContext(env, env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true))
+    val ctxServer = setupContext(env, env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true))
+    currentContextClient.set(ctxClient)
+    currentContextServer.set(ctxServer)
   }
 
-  def setCertificates(certs: Seq[Cert], env: Env): SSLContext = {
+  def setCertificates(certs: Seq[Cert], env: Env): Unit = {
     firstSetupDone.compareAndSet(false, true)
     _certificates.clear()
     certs.filter(_.notRevoked).foreach(crt => _certificates.put(crt.id, crt))
@@ -1320,16 +1339,18 @@ object DynamicSSLEngineProvider {
           )
         )
       )
-    val ctx = setupContext(env)
-    currentContext.set(ctx)
-    ctx
+    val ctxClient = setupContext(env, env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true))
+    val ctxServer = setupContext(env, env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true))
+    currentContextClient.set(ctxClient)
+    currentContextServer.set(ctxServer)
   }
 
-  def forceUpdate(env: Env): SSLContext = {
+  def forceUpdate(env: Env): Unit = {
     firstSetupDone.compareAndSet(false, true)
-    val ctx = setupContext(env)
-    currentContext.set(ctx)
-    ctx
+    val ctxClient = setupContext(env, env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true))
+    val ctxServer = setupContext(env, env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true))
+    currentContextClient.set(ctxClient)
+    currentContextServer.set(ctxServer)
   }
 
   def createKeyStore(certificates: Seq[Cert]): KeyStore = {
@@ -1419,7 +1440,7 @@ object DynamicSSLEngineProvider {
     keyStore
   }
 
-  def createTrustStore(keyStore: KeyStore, cacertPath: String, cacertPassword: String): Array[TrustManager] = {
+  def createTrustStoreWithJdkCAs(keyStore: KeyStore, cacertPath: String, cacertPassword: String): Array[TrustManager] = {
     logger.debug(s"Creating truststore ...")
     val tmf    = TrustManagerFactory.getInstance("SunX509")
     tmf.init(keyStore)
@@ -1430,6 +1451,15 @@ object DynamicSSLEngineProvider {
     tmf2.init(javaKs)
     Array[TrustManager](
       new FakeTrustManager((tmf.getTrustManagers ++ tmf2.getTrustManagers).map(_.asInstanceOf[X509TrustManager]).toSeq)
+    )
+  }
+
+  def createTrustStore(keyStore: KeyStore): Array[TrustManager] = {
+    logger.debug(s"Creating truststore ...")
+    val tmf    = TrustManagerFactory.getInstance("SunX509")
+    tmf.init(keyStore)
+    Array[TrustManager](
+      new FakeTrustManager(tmf.getTrustManagers.map(_.asInstanceOf[X509TrustManager]).toSeq)
     )
   }
 
@@ -1552,7 +1582,7 @@ object DynamicSSLEngineProvider {
       cipherSuites: Option[Seq[String]],
       protocols: Option[Seq[String]]
   ): SSLEngine = {
-    val context: SSLContext    = DynamicSSLEngineProvider.currentContext.get()
+    val context: SSLContext    = DynamicSSLEngineProvider.currentServer
     DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
     val rawEngine              = context.createSSLEngine()
     val rawEnabledCipherSuites = rawEngine.getEnabledCipherSuites.toSeq
@@ -1634,13 +1664,13 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
             secureRandom: SecureRandom
         ): Unit                                                             = ()
         override def engineGetClientSessionContext(): SSLSessionContext     =
-          DynamicSSLEngineProvider.current.getClientSessionContext
+          DynamicSSLEngineProvider.currentServer.getClientSessionContext
         override def engineGetServerSessionContext(): SSLSessionContext     =
-          DynamicSSLEngineProvider.current.getServerSessionContext
+          DynamicSSLEngineProvider.currentServer.getServerSessionContext
         override def engineGetSocketFactory(): SSLSocketFactory             =
-          DynamicSSLEngineProvider.current.getSocketFactory
+          DynamicSSLEngineProvider.currentServer.getSocketFactory
         override def engineGetServerSocketFactory(): SSLServerSocketFactory =
-          DynamicSSLEngineProvider.current.getServerSocketFactory
+          DynamicSSLEngineProvider.currentServer.getServerSocketFactory
       },
       new Provider(
         "Otoroshi SSlEngineProvider delegate",

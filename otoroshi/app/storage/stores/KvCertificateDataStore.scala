@@ -1,12 +1,12 @@
 package otoroshi.storage.stores
 
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import akka.actor.Cancellable
 import otoroshi.env.Env
 import otoroshi.models.Key
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.utils
-import otoroshi.utils.{future, SchedulerHelper}
+import otoroshi.utils.{SchedulerHelper, future}
 import otoroshi.utils.letsencrypt.LetsEncryptHelper
 import play.api.Logger
 import play.api.libs.json.Format
@@ -27,6 +27,8 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
   val lastUpdatedKey = (Key.Empty / _env.storageRoot / "certs-last-updated").key
 
   val lastUpdatedRef  = new AtomicReference[String]("0")
+  val includeJdkCaServerRef  = new AtomicBoolean(true)
+  val includeJdkCaClientRef  = new AtomicBoolean(true)
   val cancelRef       = new AtomicReference[Cancellable](null)
   val cancelRenewRef  = new AtomicReference[Cancellable](null)
   val cancelCreateRef = new AtomicReference[Cancellable](null)
@@ -53,9 +55,13 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
         for {
           certs <- findAll()
           last  <- redisCli.get(lastUpdatedKey).map(_.map(_.utf8String).getOrElse("0"))
+          lastIcaServer = env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true)
+          lastIcaClient = env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true)
         } yield {
-          if (last != lastUpdatedRef.get()) {
+          if (last != lastUpdatedRef.get() || lastIcaServer != includeJdkCaServerRef.get() || lastIcaClient != includeJdkCaClientRef.get()) {
             lastUpdatedRef.set(last)
+            includeJdkCaServerRef.set(lastIcaServer)
+            includeJdkCaClientRef.set(lastIcaClient)
             DynamicSSLEngineProvider.setCertificates(certs, env)
           }
         }
