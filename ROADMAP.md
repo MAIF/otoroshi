@@ -40,6 +40,7 @@ provide the authentication modules needed for most cases and associated tools
 ## backoffice
 
 - [ ] multi-instances
+  - [ ] where to store access_keys ?
 - [ ] customizable embbeded dashboarding
 
 ## container orchestrators
