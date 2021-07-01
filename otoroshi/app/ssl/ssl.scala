@@ -1035,8 +1035,8 @@ object DynamicSSLEngineProvider {
   def certificates: TrieMap[String, Cert] = _certificates.filter(_._2.notRevoked)
 
   private lazy val firstSetupDone           = new AtomicBoolean(false)
-  private lazy val currentContextServer     = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, true))
-  private lazy val currentContextClient     = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, true))
+  private lazy val currentContextServer     = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, true, Seq.empty))
+  private lazy val currentContextClient     = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, true, Seq.empty))
   private lazy val currentSslConfigSettings = new AtomicReference[SSLConfigSettings](null)
   private val currentEnv                    = new AtomicReference[Env](null)
   private val defaultSslContext             = SSLContext.getDefault
@@ -1051,10 +1051,17 @@ object DynamicSSLEngineProvider {
     currentEnv.get()
   }
 
-  private def setupContext(env: HasMetrics, includeJdkCa: Boolean): SSLContext =
+  private def setupContext(env: HasMetrics, includeJdkCa: Boolean, trustedCerts: Seq[String]): SSLContext =
     env.metrics.withTimer("otoroshi.core.tls.setup-global-context") {
 
       val certificates = _certificates.filter(_._2.notRevoked)
+      val trustedCertificates: TrieMap[String, Cert] = if (trustedCerts.nonEmpty) {
+        new TrieMap[String, Cert]() ++ trustedCerts.flatMap(k => _certificates.get(k)).filter(_.notRevoked).map(c => (c.id, c)).toMap
+      } else {
+        _certificates.filter(_._2.notRevoked)
+      }
+
+      // println(s"building context with ${trustedCertificates.size} trusted certificates")
 
       val optEnv = Option(currentEnv.get)
 
@@ -1082,6 +1089,7 @@ object DynamicSSLEngineProvider {
       logger.debug("Setting up SSL Context ")
       val sslContext: SSLContext               = SSLContext.getInstance("TLS")
       val keyStore: KeyStore                   = createKeyStore(certificates.values.toSeq) //.filterNot(_.ca))
+      val trustedKeyStore: KeyStore            = createKeyStore(trustedCertificates.values.toSeq) //.filterNot(_.ca))
       dumpPath.foreach { path =>
         logger.debug(s"Dumping keystore at $dumpPath")
         keyStore.store(new FileOutputStream(path), EMPTY_PASSWORD)
@@ -1089,6 +1097,11 @@ object DynamicSSLEngineProvider {
       val keyManagerFactory: KeyManagerFactory =
         Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
       keyManagerFactory.init(keyStore, EMPTY_PASSWORD)
+
+      val trustedkeyManagerFactory: KeyManagerFactory =
+        Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
+      trustedkeyManagerFactory.init(trustedKeyStore, EMPTY_PASSWORD)
+
       logger.debug("SSL Context init ...")
       val keyManagers: Array[KeyManager]       = keyManagerFactory.getKeyManagers.map(m =>
         KeyManagerCompatibility.keyManager(
@@ -1105,8 +1118,8 @@ object DynamicSSLEngineProvider {
           )
           .map {
             case true                   => Array[TrustManager](noCATrustManager)
-            case false if includeJdkCa  => createTrustStoreWithJdkCAs(keyStore, cacertPath, cacertPassword)
-            case false if !includeJdkCa => createTrustStore(keyStore)
+            case false if includeJdkCa  => createTrustStoreWithJdkCAs(trustedKeyStore, cacertPath, cacertPassword)
+            case false if !includeJdkCa => createTrustStore(trustedKeyStore)
           } getOrElse {
           if (trustAll) {
             Array[TrustManager](
@@ -1114,9 +1127,9 @@ object DynamicSSLEngineProvider {
             )
           } else {
             if (includeJdkCa) {
-              createTrustStoreWithJdkCAs(keyStore, cacertPath, cacertPassword)
+              createTrustStoreWithJdkCAs(trustedKeyStore, cacertPath, cacertPassword)
             } else {
-              createTrustStore(keyStore)
+              createTrustStore(trustedKeyStore)
             }
           }
         }
@@ -1316,11 +1329,13 @@ object DynamicSSLEngineProvider {
     certs.filter(_.notRevoked).foreach(crt => _certificates.put(crt.id, crt))
     val ctxClient = setupContext(
       env,
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
     )
     val ctxServer = setupContext(
       env,
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
@@ -1347,11 +1362,13 @@ object DynamicSSLEngineProvider {
       )
     val ctxClient = setupContext(
       env,
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
     )
     val ctxServer = setupContext(
       env,
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
@@ -1361,11 +1378,13 @@ object DynamicSSLEngineProvider {
     firstSetupDone.compareAndSet(false, true)
     val ctxClient = setupContext(
       env,
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
     )
     val ctxServer = setupContext(
       env,
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)

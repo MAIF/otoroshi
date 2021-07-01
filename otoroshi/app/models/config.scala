@@ -349,7 +349,8 @@ case class TlsSettings(
     defaultDomain: Option[String] = None,
     randomIfNotFound: Boolean = false,
     includeJdkCaServer: Boolean = true,
-    includeJdkCaClient: Boolean = true
+    includeJdkCaClient: Boolean = true,
+    trustedCAsServer: Seq[String] = Seq.empty
 )                  {
   def json: JsValue = TlsSettings.format.writes(this)
 }
@@ -360,7 +361,8 @@ object TlsSettings {
         "defaultDomain"      -> o.defaultDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "randomIfNotFound"   -> o.randomIfNotFound,
         "includeJdkCaServer" -> o.includeJdkCaServer,
-        "includeJdkCaClient" -> o.includeJdkCaClient
+        "includeJdkCaClient" -> o.includeJdkCaClient,
+        "trustedCAsServer"   -> JsArray(o.trustedCAsServer.map(JsString.apply))
       )
 
     override def reads(json: JsValue): JsResult[TlsSettings] =
@@ -369,7 +371,8 @@ object TlsSettings {
           defaultDomain = (json \ "defaultDomain").asOpt[String].map(_.trim).filter(_.nonEmpty),
           randomIfNotFound = (json \ "randomIfNotFound").asOpt[Boolean].getOrElse(false),
           includeJdkCaServer = (json \ "includeJdkCaServer").asOpt[Boolean].getOrElse(true),
-          includeJdkCaClient = (json \ "includeJdkCaClient").asOpt[Boolean].getOrElse(true)
+          includeJdkCaClient = (json \ "includeJdkCaClient").asOpt[Boolean].getOrElse(true),
+          trustedCAsServer = (json \ "trustedCAsServer").asOpt[Seq[String]].getOrElse(Seq.empty)
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)

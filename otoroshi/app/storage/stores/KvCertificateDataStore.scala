@@ -29,6 +29,7 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
   val lastUpdatedRef        = new AtomicReference[String]("0")
   val includeJdkCaServerRef = new AtomicBoolean(true)
   val includeJdkCaClientRef = new AtomicBoolean(true)
+  val lastTrustedCARef      = new AtomicReference[Seq[String]](Seq.empty)
   val cancelRef             = new AtomicReference[Cancellable](null)
   val cancelRenewRef        = new AtomicReference[Cancellable](null)
   val cancelCreateRef       = new AtomicReference[Cancellable](null)
@@ -59,14 +60,19 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
             env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true)
           lastIcaClient =
             env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true)
+          lastTrustedCA =
+            env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
         } yield {
           if (
-            last != lastUpdatedRef.get() || lastIcaServer != includeJdkCaServerRef
-              .get() || lastIcaClient != includeJdkCaClientRef.get()
+            last != lastUpdatedRef.get()
+              || lastIcaServer != includeJdkCaServerRef.get()
+              || lastIcaClient != includeJdkCaClientRef.get()
+              || lastTrustedCA != lastTrustedCARef.get()
           ) {
             lastUpdatedRef.set(last)
             includeJdkCaServerRef.set(lastIcaServer)
             includeJdkCaClientRef.set(lastIcaClient)
+            lastTrustedCARef.set(lastTrustedCA)
             DynamicSSLEngineProvider.setCertificates(certs, env)
           }
         }
