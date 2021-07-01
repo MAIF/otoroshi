@@ -346,12 +346,12 @@ object AutoCert {
 }
 
 case class TlsSettings(
-    defaultDomain: Option[String] = None,
-    randomIfNotFound: Boolean = false,
-    includeJdkCaServer: Boolean = true,
-    includeJdkCaClient: Boolean = true,
-    trustedCAsServer: Seq[String] = Seq.empty
-)                  {
+  defaultDomain: Option[String] = None,
+  randomIfNotFound: Boolean = false,
+  includeJdkCaServer: Boolean = true,
+  includeJdkCaClient: Boolean = true,
+  trustedCAsServer: Seq[String] = Seq.empty
+) {
   def json: JsValue = TlsSettings.format.writes(this)
 }
 object TlsSettings {

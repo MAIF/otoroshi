@@ -105,6 +105,7 @@ at some point we will have the opportunity to rewrite otoroshi with major breaki
   - [ ] each entity has a creation timestamp
   - [ ] each entity has an update timestamp
   - [ ] each entity has a json write function
+- [ ] store targets as entities ??? 
 
 ## storage
 
