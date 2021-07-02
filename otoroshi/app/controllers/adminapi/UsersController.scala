@@ -220,15 +220,12 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
 
   def checkNewUserRights(ctx: ApiActionContext[_], rights: UserRights)(f: => Future[Result]): Future[Result] = {
     if (!ctx.userIsSuperAdmin && rights.superAdmin) {
-      println("bim !")
       FastFuture.successful(Forbidden(Json.obj("error" -> "you can't set superadmin rights to an admin")))
     } else {
       val pass: Boolean = ctx.backOfficeUser match {
         case Left(_)           =>
-          println("left")
           true
         case Right(None)       =>
-          println("right none")
           true
         case Right(Some(user)) => {
           // println(s"right some ${user.json}")

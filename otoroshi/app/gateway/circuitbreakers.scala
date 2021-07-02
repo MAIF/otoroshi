@@ -12,15 +12,17 @@ import akka.stream.scaladsl.Flow
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.health.HealthCheck
-import otoroshi.models.{ApiKey, GlobalConfig, ServiceDescriptor, Target}
+import otoroshi.models.{ApiKey, ClientConfig, GlobalConfig, ServiceDescriptor, Target}
 import otoroshi.utils.TypedMap
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.mvc.{RequestHeader, Result}
 
+import otoroshi.utils.syntax.implicits._
+
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
-import scala.concurrent.{duration, ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise, duration}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success}
 
@@ -115,6 +117,7 @@ case class AkkaCircuitBreakerWrapper(
     cb: AkkaCircuitBreaker,
     maxFailures: Int,
     callTimeout: FiniteDuration,
+    callAndStreamTimeout: FiniteDuration,
     resetTimeout: FiniteDuration
 )
 
@@ -128,6 +131,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
   def clear(): Unit = breakers.clear()
 
   def getCircuitBreaker(descriptor: ServiceDescriptor, path: String): AkkaCircuitBreaker = {
+    ClientConfig.logger.debug(s"[circuitbreaker] using callTimeout - 1: ${descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout)}")
     new AkkaCircuitBreaker(
       scheduler = scheduler,
       maxFailures = descriptor.clientConfig.maxErrors,
@@ -207,13 +211,15 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
             )
           )
         }
-        breakers.putIfAbsent(
+        ClientConfig.logger.debug(s"[circuitbreaker] using callTimeout - 2: ${descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout)}")
+        breakers.put(
           target.host,
           AkkaCircuitBreakerWrapper(
             cb,
-            descriptor.clientConfig.maxErrors,
-            descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout),
-            descriptor.clientConfig.sampleInterval.millis
+            maxFailures = descriptor.clientConfig.maxErrors,
+            callTimeout = descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout),
+            resetTimeout = descriptor.clientConfig.sampleInterval.millis,
+            callAndStreamTimeout = descriptor.clientConfig.extractTimeout(path, _.callAndStreamTimeout, _.callAndStreamTimeout),
           )
         )
       }
@@ -224,11 +230,15 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
         if (
           breakers.get(target.host).exists { cb =>
             cb.maxFailures != descriptor.clientConfig.maxErrors ||
-            cb.callTimeout != descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout) ||
-            cb.resetTimeout != descriptor.clientConfig.sampleInterval.millis
+              cb.callTimeout != descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout) ||
+              cb.callAndStreamTimeout != descriptor.clientConfig.extractTimeout(path, _.callAndStreamTimeout, _.callAndStreamTimeout) ||
+              cb.resetTimeout != descriptor.clientConfig.sampleInterval.millis
           }
         ) {
+          ClientConfig.logger.debug("[circuitbreaker] breaker rebuild !!!!!!")
           buildBreaker()
+        } else {
+          ClientConfig.logger.debug("[circuitbreaker] no breaker rebuild")
         }
       }
       val breaker = breakers.apply(target.host)
@@ -246,11 +256,12 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       ctx: String,
       counter: AtomicInteger,
       attrs: TypedMap,
-      f: (Target, Int) => Future[Either[Result, A]]
+      f: (Target, Int, AtomicBoolean) => Future[Either[Result, A]]
   )(implicit
       env: Env
   ): Future[Either[Result, A]] = {
 
+    ClientConfig.logger.debug(s"[circuitbreaker] using globalTimeout: ${descriptor.clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout)}")
     val failure      = Timeout
       .timeout(Done, descriptor.clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout))
       .flatMap(_ => FastFuture.failed(RequestTimeoutException))
@@ -265,16 +276,22 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
         FastFuture.failed(BodyAlreadyConsumedException)
       } else {
         attrs.get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey).map { target =>
+          val alreadyFailed = new AtomicBoolean(false)
           getCircuitBreaker(descriptor, path).withCircuitBreaker {
             logger.debug(s"Try to call target : $target")
-            f(target, attempts)
+            f(target, attempts, alreadyFailed)
+          } andThen {
+            case Failure(_: scala.concurrent.TimeoutException) => alreadyFailed.set(true)
           }
         } getOrElse {
           chooseTarget(descriptor, path, reqId, trackingId, requestHeader, attrs) match {
             case Some((target, breaker)) =>
+              val alreadyFailed = new AtomicBoolean(false)
               breaker.withCircuitBreaker {
                 logger.debug(s"Try to call target : $target")
-                f(target, attempts)
+                f(target, attempts, alreadyFailed)
+              } andThen {
+                case Failure(_: scala.concurrent.TimeoutException) => alreadyFailed.set(true)
               }
             case None                    => FastFuture.failed(AllCircuitBreakersOpenException)
           }

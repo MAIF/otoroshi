@@ -1167,7 +1167,6 @@ class Env(
                 .save()(ec, this)
             }
             case Some(adminService)                                                                           => {
-              println(adminService.hosts)
               ().future
             }
             case _                                                                                            => ().future

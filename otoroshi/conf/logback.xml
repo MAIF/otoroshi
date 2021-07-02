@@ -80,6 +80,7 @@
   <logger name="otoroshi-data-exporter" level="INFO" />
   <logger name="otoroshi-data-exporter-update-job" level="INFO" />
   <logger name="otoroshi-analytics-writes-elastic" level="INFO" />
+  <logger name="otoroshi-client-config" level="INFO" />
 
   <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
   <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF" />

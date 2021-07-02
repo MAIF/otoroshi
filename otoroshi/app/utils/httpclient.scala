@@ -1,11 +1,13 @@
 package otoroshi.utils.http
 
+import akka.Done
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
 import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
+import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.{ClientTransport, ConnectionContext, Http, HttpsConnectionContext}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Source}
@@ -17,6 +19,7 @@ import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import otoroshi.env.Env
 import otoroshi.models.{ClientConfig, Target}
 import org.apache.commons.codec.binary.Base64
+import otoroshi.gateway.{RequestTimeoutException, Timeout}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws._
@@ -24,11 +27,12 @@ import play.api.mvc.MultipartFormData
 import play.shaded.ahc.org.asynchttpclient.util.Assertions
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
+import otoroshi.utils.future.Implicits.EnhancedObject
 
 import java.io.{File, FileOutputStream}
 import java.net.{InetAddress, InetSocketAddress, URI}
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import javax.net.ssl.SSLContext
 import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.{Duration, _}
@@ -815,7 +819,10 @@ case class AkkWsClientStreamedResponse(
   def statusText: String                               = httpResponse.status.defaultMessage()
   def headers: Map[String, Seq[String]]                = allHeaders
   def underlying[T]: T                                 = httpResponse.asInstanceOf[T]
-  def bodyAsSource: Source[ByteString, _]              = httpResponse.entity.dataBytes.takeWithin(requestTimeout)
+  def bodyAsSource: Source[ByteString, _]              = {
+    ClientConfig.logger.debug(s"[httpclient] consuming body in ${requestTimeout}")
+    httpResponse.entity.dataBytes.takeWithin(requestTimeout)
+  }
   override def header(name: String): Option[String]    = headerValues(name).headOption
   override def headerValues(name: String): Seq[String] = headers.getOrElse(name, Seq.empty)
   override def contentType: String                     = _contentType
@@ -914,6 +921,10 @@ object WSProxyServerUtils {
   }
 }
 
+object AkkaWsClientRequest {
+  val atomicFalse = new AtomicBoolean(false)
+}
+
 case class AkkaWsClientRequest(
     client: AkkWsClient,
     rawUrl: String,
@@ -925,6 +936,7 @@ case class AkkaWsClientRequest(
     requestTimeout: Option[Duration] = None,
     proxy: Option[WSProxyServer] = None,
     clientConfig: ClientConfig = ClientConfig(),
+    alreadyFailed: AtomicBoolean = AkkaWsClientRequest.atomicFalse,
     env: Env
 )(implicit materializer: Materializer)
     extends WSRequest {
@@ -998,6 +1010,7 @@ case class AkkaWsClientRequest(
           case _                                 => ClientTransport.httpsProxy(proxyAddress)
         }
         a: ConnectionPoolSettings => {
+          ClientConfig.logger.debug(s"[httpclient] using idleTimeout: $idleTimeout, connectionTimeout: $connectionTimeout")
           a.withTransport(httpsProxyTransport)
             .withIdleTimeout(idleTimeout)
             .withConnectionSettings(
@@ -1046,7 +1059,14 @@ case class AkkaWsClientRequest(
     )
   }
 
-  def withRequestTimeout(timeout: Duration): Self = copy(requestTimeout = Some(timeout))
+  def withRequestTimeout(timeout: Duration): Self = {
+    ClientConfig.logger.debug(s"[httpclient] setting requestTimeout to ${timeout}")
+    copy(requestTimeout = Some(timeout))
+  }
+
+  def withFailureIndicator(af: AtomicBoolean): Self = {
+    copy(alreadyFailed = af)
+  }
 
   override def withBody[T](body: T)(implicit evidence$1: BodyWritable[T]): WSRequest =
     copy(body = evidence$1.transform(body))
@@ -1068,18 +1088,39 @@ case class AkkaWsClientRequest(
       .filter(_.mtlsConfig.mtls)
       .exists(_.mtlsConfig.trustAll)
     val req                     = buildRequest()
-    client
+    val zeTimeout = requestTimeout
+      .map(v => FiniteDuration(v.toMillis, TimeUnit.MILLISECONDS))
+      .getOrElse(FiniteDuration(30, TimeUnit.DAYS)) // yeah that's infinity ...
+    ClientConfig.logger.debug(s"[httpclient] stream request with timeout to ${zeTimeout}")
+    ClientConfig.logger.debug(s"[httpclient] start req")
+    val failure = Timeout
+      .timeout(Done, zeTimeout)(client.ec, env.otoroshiScheduler)
+      .flatMap(_ => FastFuture.failed(RequestTimeoutException))
+    val start = System.currentTimeMillis()
+    val reqExec = client
       .executeRequest(req, targetOpt.exists(_.mtlsConfig.loose), trustAll, certs, trustedCerts, customizer)
-      .map { resp =>
-        AkkWsClientStreamedResponse(
-          resp,
-          rawUrl,
-          client.mat,
-          requestTimeout
-            .map(v => FiniteDuration(v.toMillis, TimeUnit.MILLISECONDS))
-            .getOrElse(FiniteDuration(30, TimeUnit.DAYS))
-        ) // yeah that's infinity ...
-      }(client.ec)
+      .flatMap { resp =>
+        val remaining = (zeTimeout.toMillis - (System.currentTimeMillis() - start))
+        if (alreadyFailed.get()) {
+          ClientConfig.logger.debug(s"[httpclient] stream already failed")
+          resp.entity.discardBytes()
+          FastFuture.failed(otoroshi.gateway.RequestTimeoutException)
+        } else if (remaining <= 0) {
+          ClientConfig.logger.debug(s"[httpclient] got stream resp too late")
+          resp.entity.discardBytes()
+          FastFuture.failed(otoroshi.gateway.RequestTimeoutException)
+        } else {
+          val remainingTimeout = remaining.millis
+          ClientConfig.logger.debug(s"[httpclient] got stream resp - ${remainingTimeout}")
+          AkkWsClientStreamedResponse(
+            resp,
+            rawUrl,
+            client.mat,
+            remainingTimeout
+          ).future
+        }
+      }
+    Future.firstCompletedOf(Seq(reqExec, failure))
   }
 
   override def execute(method: String): Future[WSResponse] = {
@@ -1100,16 +1141,38 @@ case class AkkaWsClientRequest(
     val trustAll: Boolean       = targetOpt
       .filter(_.mtlsConfig.mtls)
       .exists(_.mtlsConfig.trustAll)
-    client
+    val zeTimeout = requestTimeout
+      .map(v => FiniteDuration(v.toMillis, TimeUnit.MILLISECONDS))
+      .getOrElse(FiniteDuration(30, TimeUnit.DAYS)) // yeah that's infinity ...
+    val failure = Timeout
+      .timeout(Done, zeTimeout)(client.ec, env.otoroshiScheduler)
+      .flatMap(_ => FastFuture.failed(RequestTimeoutException))
+    val start = System.currentTimeMillis()
+    val reqExec = client
       .executeRequest(buildRequest(), targetOpt.exists(_.mtlsConfig.loose), trustAll, certs, trustedCerts, customizer)
       .flatMap { response: HttpResponse =>
-        response.entity
-          .toStrict(FiniteDuration(client.wsClientConfig.requestTimeout._1, client.wsClientConfig.requestTimeout._2))
-          .map(a => (response, a))
+        // FiniteDuration(client.wsClientConfig.requestTimeout._1, client.wsClientConfig.requestTimeout._2)
+        val remaining = (zeTimeout.toMillis - (System.currentTimeMillis() - start))
+        if (alreadyFailed.get()) {
+          ClientConfig.logger.debug(s"[httpclient] execute already failed")
+          response.entity.discardBytes()
+          FastFuture.failed(otoroshi.gateway.RequestTimeoutException)
+        } else if (remaining <= 0) {
+          ClientConfig.logger.debug(s"[httpclient] got resp too late")
+          response.entity.discardBytes()
+          FastFuture.failed(otoroshi.gateway.RequestTimeoutException)
+        } else {
+          val remainingTimeout = remaining.millis
+          ClientConfig.logger.debug(s"[httpclient] got resp - ${remainingTimeout}")
+          response.entity
+            .toStrict(remainingTimeout)
+            .map(a => (response, a))
+        }
       }
       .map { case (response: HttpResponse, body: HttpEntity.Strict) =>
         AkkWsClientRawResponse(response, rawUrl, body.data)
       }
+    Future.firstCompletedOf(Seq(reqExec, failure))
   }
 
   private def realContentType: Option[ContentType] = {
@@ -1301,6 +1364,12 @@ object Implicits {
       opt match {
         case Some(proxy) => req.withProxyServer(proxy)
         case None        => req.asInstanceOf[req.Self]
+      }
+    }
+    def withFailureIndicator(alreadyFailed: AtomicBoolean): req.Self = {
+      req match {
+        case areq: AkkaWsClientRequest => areq.withFailureIndicator(alreadyFailed).asInstanceOf[req.Self]
+        case _ => req.asInstanceOf[req.Self]
       }
     }
   }
