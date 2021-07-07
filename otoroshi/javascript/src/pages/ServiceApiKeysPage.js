@@ -522,7 +522,7 @@ const ApiKeysConstants = {
         <SimpleBooleanInput
           value={item.enabled}
           onChange={(value) => {
-            BackOfficeServices.updateApiKey(that.props.params.serviceId, {
+            BackOfficeServices.updateStandaloneApiKey({
               ...item,
               enabled: value,
             }).then(() => table.update());
