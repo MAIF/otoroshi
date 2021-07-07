@@ -11,12 +11,19 @@ export class ApiKeyStatsPage extends Component {
 
   componentDidMount() {
     this.props.setTitle(`ApiKey analytics`);
-    BackOfficeServices.fetchApiKeyById(this.props.params.serviceId, this.props.params.titem).then(
-      (apikey) => {
-        this.setState({ apikey });
-        this.props.setTitle(`${apikey.clientName} analytics`);
-      }
-    );
+    //if (this.props.params.serviceId === '---') {
+    BackOfficeServices.fetchStandaloneApiKey(this.props.params.titem).then((apikey) => {
+      this.setState({ apikey });
+      this.props.setTitle(`${apikey.clientName} analytics`);
+    })
+    //} else {
+    //  BackOfficeServices.fetchApiKeyById(this.props.params.serviceId, this.props.params.titem).then(
+    //    (apikey) => {
+    //      this.setState({ apikey });
+    //      this.props.setTitle(`${apikey.clientName} analytics`);
+    //    }
+    //  );
+    //}
   }
 
   fetchData = (from, to) => {
