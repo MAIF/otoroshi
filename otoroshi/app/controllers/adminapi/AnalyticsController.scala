@@ -55,7 +55,15 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             NotFound(Json.obj("error" -> "no elastic read config found !")).future
           case Some(_) => {
             if (EventstoreCheckerJob.initialized.get()) {
-              f(ctx)
+              if (EventstoreCheckerJob.works.get()) {
+                f(ctx).recoverWith {
+                  case e: Throwable if e.getMessage.contains("UnknownHostException") =>
+                    Results.InternalServerError(Json.obj("error" -> "unable to contact the elastic cluster !")).future
+                  case e => FastFuture.failed(e)
+                }
+              } else {
+                Results.InternalServerError(Json.obj("error" -> "the elastic cluster does not work at the moment !")).future
+              }
             } else {
               Results.NotFound(Json.obj("error" -> "no elastic read config found !")).future
             }
