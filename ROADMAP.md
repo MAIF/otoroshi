@@ -33,6 +33,7 @@ provide the authentication modules needed for most cases and associated tools
 - [ ] versioning helpers
 - [ ] orchestrator plugin (based on flow plugin work)
 - [ ] access control helpers
+- [ ] eureka compatibility
 - [ ] representation plugins
   - [ ] protocol transformations
   - [ ] payload transformations
