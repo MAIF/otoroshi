@@ -7,16 +7,11 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events._
-import otoroshi.models.{BestResponseTime, RemainingQuotas, SecComVersion, WeightedBestResponseTime}
+import otoroshi.models.{BestResponseTime, ClientConfig, RemainingQuotas, SecComVersion, WeightedBestResponseTime}
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.script.Implicits._
-import otoroshi.script.{
-  TransformerRequestBodyContext,
-  TransformerRequestContext,
-  TransformerResponseBodyContext,
-  TransformerResponseContext
-}
+import otoroshi.script.{TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseBodyContext, TransformerResponseContext}
 import otoroshi.utils.UrlSanitizer
 import play.api.Logger
 import play.api.http.HttpEntity
@@ -30,6 +25,7 @@ import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.http.{HeadersHelper, WSCookieWithSameSite}
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.streams.MaxLengthLimiter
+import otoroshi.utils.syntax.implicits.BetterSyntax
 
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
@@ -114,7 +110,9 @@ class HttpHandler()(implicit env: Env) {
       secondStart,
       firstOverhead,
       cbDuration,
-      callAttempts
+      callAttempts,
+      attempts,
+      alreadyFailed
     ) = ctx
 
     val counterIn  = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
@@ -478,10 +476,11 @@ class HttpHandler()(implicit env: Env) {
               )
           }
 
+          val extractedTimeout = descriptor.clientConfig.extractTimeout(req.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
+          ClientConfig.logger.debug(s"[gateway] using callAndStreamTimeout: $extractedTimeout")
           val builder = clientReq
-            .withRequestTimeout(
-              descriptor.clientConfig.extractTimeout(req.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
-            )
+            .withRequestTimeout(extractedTimeout)
+            .withFailureIndicator(alreadyFailed)
             //.withRequestTimeout(env.requestTimeout) // we should monitor leaks
             .withMethod(httpRequest.method)
             // .withHttpHeaders(httpRequest.headers.toSeq.filterNot(_._1 == "Cookie"): _*)

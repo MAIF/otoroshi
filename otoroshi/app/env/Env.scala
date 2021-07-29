@@ -447,6 +447,39 @@ class Env(
   lazy val backOfficeHost      = composeMainUrl(backOfficeSubDomain)
   lazy val privateAppsHost     = composeMainUrl(privateAppsSubDomain)
 
+  lazy val adminApiExposedDomains = configuration
+    .getOptionalWithFileSupport[Seq[String]]("app.adminapi.exposedDomains")
+    .orElse(
+      configuration
+        .getOptionalWithFileSupport[String]("app.adminapi.exposedDomainsStr")
+        .map(ds => ds.split(",").toSeq.map(_.trim))
+    )
+    .getOrElse(Seq.empty)
+  lazy val adminApiDomains        = configuration
+    .getOptionalWithFileSupport[Seq[String]]("app.adminapi.domains")
+    .orElse(
+      configuration
+        .getOptionalWithFileSupport[String]("app.adminapi.domainsStr")
+        .map(ds => ds.split(",").toSeq.map(_.trim))
+    )
+    .getOrElse(Seq.empty)
+  lazy val privateAppsDomains     = configuration
+    .getOptionalWithFileSupport[Seq[String]]("app.privateapps.domains")
+    .orElse(
+      configuration
+        .getOptionalWithFileSupport[String]("app.privateapps.domainsStr")
+        .map(ds => ds.split(",").toSeq.map(_.trim))
+    )
+    .getOrElse(Seq.empty)
+  lazy val backofficeDomains      = configuration
+    .getOptionalWithFileSupport[Seq[String]]("app.backoffice.domains")
+    .orElse(
+      configuration
+        .getOptionalWithFileSupport[String]("app.backoffice.domainsStr")
+        .map(ds => ds.split(",").toSeq.map(_.trim))
+    )
+    .getOrElse(Seq.empty)
+
   lazy val procNbr = Runtime.getRuntime.availableProcessors()
 
   lazy val ahcStats         = new AtomicReference[Cancellable]()
@@ -865,13 +898,15 @@ class Env(
 
   private lazy val backOfficeDescriptorHostHeader: String = s"$adminApiSubDomain.$domain"
 
-  lazy val backOfficeDescriptor = ServiceDescriptor(
+  lazy val adminHosts: Seq[String] =
+    adminApiExposedDomains ++ adminApiAdditionalExposedDomain :+ s"${adminApiExposedSubDomain}.${domain}"
+  lazy val backOfficeDescriptor    = ServiceDescriptor(
     id = backOfficeServiceId,
     groups = Seq(backOfficeGroupId),
     name = "otoroshi-admin-api",
     env = "prod",
     subdomain = adminApiExposedSubDomain,
-    hosts = adminApiAdditionalExposedDomain.toSeq,
+    hosts = adminHosts,
     domain = domain,
     targets = Seq(
       Target(
@@ -969,11 +1004,11 @@ class Env(
     datastores.globalConfigDataStore
       .isOtoroshiEmpty()
       .andThen {
-        case Success(true) if clusterConfig.mode == ClusterMode.Worker => {
+        case Success(true) if clusterConfig.mode == ClusterMode.Worker  => {
           logger.info(s"The main datastore seems to be empty, registering default config.")
           defaultConfig.save()(ec, this)
         }
-        case Success(true) if clusterConfig.mode != ClusterMode.Worker => {
+        case Success(true) if clusterConfig.mode != ClusterMode.Worker  => {
           logger.info(s"The main datastore seems to be empty, registering some basic services")
           val login                          =
             configuration.getOptionalWithFileSupport[String]("app.adminLogin").getOrElse("admin@otoroshi.io")
@@ -1098,6 +1133,43 @@ class Env(
                 datastores.globalConfigDataStore.fullImport(finalConfig.json)(ec, this)
               }
             }
+          }
+        }
+        case Success(false) if clusterConfig.mode != ClusterMode.Worker => {
+          datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(ec, this).flatMap {
+            case Some(adminService) if !adminApiExposedDomains.forall(d => adminService.hosts.contains(d))    => {
+              adminService
+                .copy(
+                  hosts =
+                    (adminService.hosts ++ adminApiAdditionalExposedDomain ++ adminApiExposedDomains :+ s"${adminApiExposedSubDomain}.${domain}").distinct,
+                  additionalHeaders = Map("Host" -> backOfficeDescriptorHostHeader)
+                )
+                .save()(ec, this)
+            }
+            case Some(adminService) if !adminService.hosts.contains(s"${adminApiExposedSubDomain}.${domain}") => {
+              adminService
+                .copy(
+                  hosts =
+                    (adminService.hosts ++ adminApiAdditionalExposedDomain ++ adminApiExposedDomains :+ s"${adminApiExposedSubDomain}.${domain}").distinct,
+                  additionalHeaders = Map("Host" -> backOfficeDescriptorHostHeader)
+                )
+                .save()(ec, this)
+            }
+            case Some(adminService)
+                if !adminService.additionalHeaders
+                  .exists(t => t._1 == "Host" && t._2 == backOfficeDescriptorHostHeader) => {
+              adminService
+                .copy(
+                  hosts =
+                    (adminService.hosts ++ adminApiAdditionalExposedDomain ++ adminApiExposedDomains :+ s"${adminApiExposedSubDomain}.${domain}").distinct,
+                  additionalHeaders = Map("Host" -> backOfficeDescriptorHostHeader)
+                )
+                .save()(ec, this)
+            }
+            case Some(adminService)                                                                           => {
+              ().future
+            }
+            case _                                                                                            => ().future
           }
         }
       }

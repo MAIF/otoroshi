@@ -31,7 +31,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.0-alpha.18
+1.5.0-alpha.19
 </div>
 </div>
 <div class="nav-toc">
@@ -188,7 +188,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.0-alpha.18
+1.5.0-alpha.19
 </div>
 </div>
 <div class="nav-toc">
@@ -1075,6 +1075,9 @@ play.http {
     exposed = ${?APP_BACKOFFICE_EXPOSED}
     subdomain = &quot;otoroshi&quot;
     subdomain = ${?APP_BACKOFFICE_SUBDOMAIN}
+    domains = []
+    domainsStr = ${?APP_BACKOFFICE_DOMAINS}
+    domainsStr = ${?OTOROSHI_BACKOFFICE_DOMAINS}
     session {
       exp = 86400000
       exp = ${?APP_BACKOFFICE_SESSION_EXP}
@@ -1084,6 +1087,9 @@ play.http {
     subdomain = &quot;privateapps&quot;
     subdomain = ${?APP_PRIVATEAPPS_SUBDOMAIN}
     # port = ${?APP_PRIVATEAPPS_PORT}
+    domains = []
+    domainsStr = ${?APP_PRIVATEAPPS_DOMAINS}
+    domainsStr = ${?OTOROSHI_PRIVATEAPPS_DOMAINS}
     session {
       exp = 86400000
       exp = ${?APP_PRIVATEAPPS_SESSION_EXP}
@@ -1097,6 +1103,12 @@ play.http {
     exposedSubdomain = &quot;otoroshi-api&quot;
     exposedSubdomain = ${?ADMIN_API_EXPOSED_SUBDOMAIN}
     additionalExposedDomain = ${?ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN}
+    domains = []
+    domainsStr = ${?ADMIN_API_DOMAINS}
+    domainsStr = ${?OTOROSHI_ADMIN_API_DOMAINS}
+    exposedDomains = []
+    exposedDomainsStr = ${?ADMIN_API_EXPOSED_DOMAINS}
+    exposedDomainsStr = ${?OTOROSHI_ADMIN_API_EXPOSED_DOMAINS}
     defaultValues {
       backOfficeGroupId = &quot;admin-api-group&quot;
       backOfficeGroupId = ${?ADMIN_API_GROUP}

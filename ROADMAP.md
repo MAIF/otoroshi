@@ -24,6 +24,25 @@ provide the authentication modules needed for most cases and associated tools
 - [ ] plugin to handle OAuth2 calls
 - [ ] more integration of biscuit tokens
   - [ ] add biscuit playground to the UI
+- [ ] access control helpers
+- [ ] spikes and DoS detection and arrest
+- [ ] beyondcorp like setup helpers
+
+## plugins
+
+- [ ] versioning helpers
+- [ ] orchestrator plugin (based on flow plugin work)
+- [ ] access control helpers
+- [ ] eureka compatibility
+- [ ] representation plugins
+  - [ ] protocol transformations
+  - [ ] payload transformations
+
+## backoffice
+
+- [ ] multi-instances
+  - [ ] where to store access_keys ?
+- [ ] customizable embbeded dashboarding
 
 ## container orchestrators
 
@@ -35,14 +54,19 @@ provide the authentication modules needed for most cases and associated tools
 
 - [x] support postgresql as leader datastore
 - [x] support S3 as leader datastore
+- [ ] master - master replication (leader / follower at least)
 - [ ] experiment around lightweight workers
   - [ ] written in rust (based on sozu or hyper ?)
   - [ ] written in c++ and lua (based on envoy ?)
 
-## data exports
+## observability and data exports
 
 - [x] support a generic way to export data (events) from otoroshi
 - [ ] add more data export modules
+- [ ] support W3C Trace Context: [trace-context spec](https://www.w3.org/TR/trace-context), [manual impl.](https://github.com/open-telemetry/opentelemetry-java/blob/main/api/all/src/main/java/io/opentelemetry/api/trace/propagation/W3CTraceContextPropagator.java)
+  - [ ] support Jaeger exporter (use [opentelemetry-java](https://github.com/open-telemetry/opentelemetry-java/tree/main/exporters/jaeger))
+  - [ ] support Zipkin exporter (use [opentelemetry-java](https://github.com/open-telemetry/opentelemetry-java/tree/main/exporters/zipkin))
+- [ ] support W3C Baggage propagation: [baggage spec](https://www.w3.org/TR/baggage/), [manual impl.](https://github.com/open-telemetry/opentelemetry-java/blob/main/api/all/src/main/java/io/opentelemetry/api/baggage/propagation/W3CBaggagePropagator.java)
 
 ## deprecations and renaming
 
@@ -87,6 +111,7 @@ at some point we will have the opportunity to rewrite otoroshi with major breaki
   - [ ] each entity has a creation timestamp
   - [ ] each entity has an update timestamp
   - [ ] each entity has a json write function
+- [ ] store targets as entities ??? 
 
 ## storage
 

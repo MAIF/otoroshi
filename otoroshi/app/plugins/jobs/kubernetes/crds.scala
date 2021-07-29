@@ -1412,9 +1412,9 @@ object KubernetesCRDsJob {
           case Some(secret) =>
             val clientId     = (secret.raw \ "data" \ "clientId").as[String].applyOn(s => s.fromBase64)
             val clientSecret = (secret.raw \ "data" \ "clientSecret").as[String].applyOn(s => s.fromBase64)
+            updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
             if ((clientId != apikey.clientId) || (clientSecret != apikey.clientSecret)) {
               // println(s"updating $namespace/$name  with ${apikey.clientId} and ${apikey.clientSecret}")
-              updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
               clientSupport.client.updateSecret(
                 namespace,
                 name,

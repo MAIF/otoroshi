@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-alpha.19] - 2021-06-30
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.19+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-alpha.18...v1.5.0-alpha.19
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-alpha.19
+
+- dynamic root domains (#879)
+- configure input MTLS in the danger zone (#881)
+- static response plugin (#882)
+- circuit breaker cache too aggressive  (#883)
+- add tags and meta on targets (#884)
+
 ## [1.5.0-alpha.18] - 2021-06-10
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.18+is%3Aclosed

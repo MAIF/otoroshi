@@ -95,7 +95,9 @@ class WebSocketHandler()(implicit env: Env) {
       secondStart,
       firstOverhead,
       cbDuration,
-      callAttempts
+      callAttempts,
+      attempts,
+      alreadyFailed
     ) = ctx
 
     val counterIn        = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get

@@ -546,7 +546,9 @@ case class ActualCallContext(
     secondStart: Long,
     firstOverhead: Long,
     cbDuration: Long,
-    callAttempts: Int
+    callAttempts: Int,
+    attempts: Int,
+    alreadyFailed: AtomicBoolean
 )
 
 class ReverseProxyAction(env: Env) {
@@ -579,6 +581,7 @@ class ReverseProxyAction(env: Env) {
   ).map(_.toLowerCase)
 
   val reqCounter = new AtomicInteger(0)
+  val atomicFalse = new AtomicBoolean(false)
 
   def async[A](
       ctx: ReverseProxyActionContext,
@@ -872,7 +875,9 @@ class ReverseProxyAction(env: Env) {
                                                 apiKey: Option[ApiKey],
                                                 paUsr: Option[PrivateAppsUser],
                                                 cbDuration: Long,
-                                                callAttempts: Int
+                                                callAttempts: Int,
+                                                attempts: Int,
+                                                alreadyFailed: AtomicBoolean
                                             ): Future[Either[Result, A]] = {
                                               ReverseProxyActionHelper.applyJwtVerifier(
                                                 rawDesc,
@@ -902,7 +907,9 @@ class ReverseProxyAction(env: Env) {
                                                     firstOverhead = firstOverhead,
                                                     secondStart = secondStart,
                                                     bodyAlreadyConsumed = bodyAlreadyConsumed,
-                                                    requestBody = requestBody
+                                                    requestBody = requestBody,
+                                                    attempts = attempts,
+                                                    alreadyFailed = alreadyFailed
                                                   )
                                                 )
                                               }
@@ -950,13 +957,15 @@ class ReverseProxyAction(env: Env) {
                                                           .map(_ => relUri)
                                                           .getOrElse("")
 
-                                                      def callF(t: Target, attemps: Int): Future[Either[Result, A]] = {
+                                                      def callF(t: Target, attemps: Int, alreadyFailed: AtomicBoolean): Future[Either[Result, A]] = {
                                                         actuallyCallDownstream(
                                                           t,
                                                           apiKey,
                                                           paUsr,
                                                           System.currentTimeMillis - cbStart,
-                                                          counter.get()
+                                                          counter.get(),
+                                                          attemps,
+                                                          alreadyFailed
                                                         )
                                                       }
 
@@ -1122,7 +1131,7 @@ class ReverseProxyAction(env: Env) {
                                                       //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
                                                       // Round robin loadbalancing is happening here !!!!!
                                                       //val target = targets.apply(index.toInt)
-                                                      actuallyCallDownstream(target, apiKey, paUsr, 0L, 1)
+                                                      actuallyCallDownstream(target, apiKey, paUsr, 0L, 1, 1, atomicFalse)
                                                     }
                                                   }
                                                 }

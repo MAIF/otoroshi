@@ -499,7 +499,9 @@ case class Target(
     protocol: HttpProtocol = HttpProtocols.`HTTP/1.1`,
     predicate: TargetPredicate = AlwaysMatch,
     ipAddress: Option[String] = None,
-    mtlsConfig: MtlsConfig = MtlsConfig()
+    mtlsConfig: MtlsConfig = MtlsConfig(),
+    tags: Seq[String] = Seq.empty,
+    metadata: Map[String, String] = Map.empty
 ) {
 
   def toJson        = Target.format.writes(this)
@@ -531,6 +533,8 @@ object Target {
         "scheme"     -> o.scheme,
         "weight"     -> o.weight,
         "mtlsConfig" -> o.mtlsConfig.json,
+        "tags"       -> JsArray(o.tags.map(JsString.apply)),
+        "metadata"   -> JsObject(o.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply)),
         // "loose"     -> o.loose,
         // "mtls"      -> o.mtls,
         // "certId"    -> o.certId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -554,7 +558,12 @@ object Target {
             .map(s => HttpProtocol.apply(s))
             .getOrElse(HttpProtocols.`HTTP/1.1`),
           predicate = (json \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
-          ipAddress = (json \ "ipAddress").asOpt[String].filterNot(_.trim.isEmpty)
+          ipAddress = (json \ "ipAddress").asOpt[String].filterNot(_.trim.isEmpty),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          metadata = (json \ "metadata")
+            .asOpt[Map[String, String]]
+            .map(m => m.filter(_._1.nonEmpty))
+            .getOrElse(Map.empty[String, String])
         )
       } map { case sd =>
         JsSuccess(sd)

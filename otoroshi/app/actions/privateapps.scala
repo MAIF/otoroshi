@@ -34,45 +34,49 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
       request: Request[A],
       block: (PrivateAppsActionContext[A]) => Future[Result]
   ): Future[Result] = {
+
     val host = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
 
-    host match {
-      case env.privateAppsHost => {
-        env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-          val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
-          cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
-            // request.cookies.get("oto-papps").flatMap(env.extractPrivateSessionId).map { id =>
-            Cluster.logger.debug(s"private apps session checking for $id - from action")
-            env.datastores.privateAppsUserDataStore.findById(id).flatMap {
-              case Some(user)                                           =>
-                user.withAuthModuleConfig(a => GenericOauth2Module.handleTokenRefresh(a, user))
-                block(PrivateAppsActionContext(request, Some(user), globalConfig))
-              case None if env.clusterConfig.mode == ClusterMode.Worker => {
-                Cluster.logger.debug(s"private apps session $id not found locally - from action")
-                env.clusterAgent.isSessionValid(id).flatMap {
-                  case Some(user) =>
-                    user.save(Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS))
-                    block(PrivateAppsActionContext(request, Some(user), globalConfig))
-                  case None       => block(PrivateAppsActionContext(request, None, globalConfig))
-                }
+    def perform() = {
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
+        cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
+          // request.cookies.get("oto-papps").flatMap(env.extractPrivateSessionId).map { id =>
+          Cluster.logger.debug(s"private apps session checking for $id - from action")
+          env.datastores.privateAppsUserDataStore.findById(id).flatMap {
+            case Some(user)                                           =>
+              user.withAuthModuleConfig(a => GenericOauth2Module.handleTokenRefresh(a, user))
+              block(PrivateAppsActionContext(request, Some(user), globalConfig))
+            case None if env.clusterConfig.mode == ClusterMode.Worker => {
+              Cluster.logger.debug(s"private apps session $id not found locally - from action")
+              env.clusterAgent.isSessionValid(id).flatMap {
+                case Some(user) =>
+                  user.save(Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS))
+                  block(PrivateAppsActionContext(request, Some(user), globalConfig))
+                case None       => block(PrivateAppsActionContext(request, None, globalConfig))
               }
-              case None                                                 => block(PrivateAppsActionContext(request, None, globalConfig))
             }
-          } getOrElse {
-            cookieOpt match {
-              case None         => block(PrivateAppsActionContext(request, None, globalConfig))
-              case Some(cookie) =>
-                block(PrivateAppsActionContext(request, None, globalConfig)).fast
-                  .map(
-                    _.discardingCookies(
-                      env.removePrivateSessionCookiesWithSuffix(host, cookie.name.replace("oto-papps-", "")): _*
-                    )
+            case None                                                 => block(PrivateAppsActionContext(request, None, globalConfig))
+          }
+        } getOrElse {
+          cookieOpt match {
+            case None         => block(PrivateAppsActionContext(request, None, globalConfig))
+            case Some(cookie) =>
+              block(PrivateAppsActionContext(request, None, globalConfig)).fast
+                .map(
+                  _.discardingCookies(
+                    env.removePrivateSessionCookiesWithSuffix(host, cookie.name.replace("oto-papps-", "")): _*
                   )
-            }
+                )
           }
         }
       }
-      case _                   => {
+    }
+
+    host match {
+      case env.privateAppsHost                     => perform()
+      case h if env.privateAppsDomains.contains(h) => perform()
+      case _                                       => {
         // TODO : based on Accept header
         FastFuture.successful(Results.NotFound(otoroshi.views.html.oto.error("Not found", env)))
       }

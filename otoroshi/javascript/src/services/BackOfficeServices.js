@@ -478,6 +478,16 @@ export function updateApiKey(serviceId, ak) {
   }).then((r) => r.json());
 }
 
+export function fetchStandaloneApiKey(clientId) {
+  return fetch(`/bo/api/proxy/api/apikeys/${clientId}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
+}
+
 export function deleteStandaloneApiKey(ak) {
   return fetch(`/bo/api/proxy/api/apikeys/${ak.clientId}`, {
     method: 'DELETE',

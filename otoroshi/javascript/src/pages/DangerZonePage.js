@@ -866,6 +866,42 @@ export class DangerZonePage extends Component {
         }),
       },
     },
+    'tlsSettings.includeJdkCaServer': {
+      type: 'bool',
+      props: {
+        label: 'Trust JDK CAs (server)',
+        placeholder: '--',
+        help: 'Trust JDK CAs. The CAs from the JDK CA bundle will be proposed in the certificate request when performing TLS handshake',
+      },
+    },
+    'tlsSettings.includeJdkCaClient': {
+      type: 'bool',
+      props: {
+        label: 'Trust JDK CAs (trust)',
+        placeholder: '--',
+        help: 'Trust JDK CAs. The CAs from the JDK CA bundle will be used as trusted CAs when calling HTTPS resources',
+      },
+    },
+    'tlsSettings.trustedCAsServer': {
+      type: 'array',
+      props: {
+        label: 'Trusted CAs (server)',
+        placeholder: 'Selet a CA certificate',
+        valuesFrom: '/bo/api/proxy/api/certificates?ca=true',
+        transformer: (a) => ({
+          value: a.id,
+          label: (
+            <span>
+              <span className="label label-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }),
+        help: 'Select the trusted CAs you want for TLS terminaison. Those CAs only will be proposed in the certificate request when performing TLS handshake',
+      },
+    },
     'tlsSettings.randomIfNotFound': {
       type: 'bool',
       props: {
@@ -967,6 +1003,9 @@ export class DangerZonePage extends Component {
     '>>>Tls Settings',
     'tlsSettings.randomIfNotFound',
     'tlsSettings.defaultDomain',
+    'tlsSettings.includeJdkCaServer',
+    'tlsSettings.includeJdkCaClient',
+    'tlsSettings.trustedCAsServer',
     '>>>Auto Generate Certificates',
     'autoCert.enabled',
     'autoCert.replyNicely',

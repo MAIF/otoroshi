@@ -525,6 +525,24 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       .addHttpHeaders(config.headers.toSeq: _*)
   }
 
+  def getElasticVersion()(implicit ec: ExecutionContext): Future[ElasticVersion] = {
+
+    import otoroshi.jobs.updates.Version
+
+    url(urlFromPath(""))
+      .get()
+      .map(_.json)
+      .map(json => (json \ "version" \ "number").asOpt[String].getOrElse("6.0.0"))
+      .map { _v =>
+        Version(_v) match {
+          case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven
+          case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight
+          case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven
+          case _                                  => ElasticVersion.AboveSeven
+        }
+      }
+  }
+
   override def fetchHits(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
       env: Env,
       ec: ExecutionContext

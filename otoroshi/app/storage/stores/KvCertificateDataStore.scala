@@ -1,6 +1,6 @@
 package otoroshi.storage.stores
 
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import akka.actor.Cancellable
 import otoroshi.env.Env
 import otoroshi.models.Key
@@ -26,10 +26,13 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
 
   val lastUpdatedKey = (Key.Empty / _env.storageRoot / "certs-last-updated").key
 
-  val lastUpdatedRef  = new AtomicReference[String]("0")
-  val cancelRef       = new AtomicReference[Cancellable](null)
-  val cancelRenewRef  = new AtomicReference[Cancellable](null)
-  val cancelCreateRef = new AtomicReference[Cancellable](null)
+  val lastUpdatedRef        = new AtomicReference[String]("0")
+  val includeJdkCaServerRef = new AtomicBoolean(true)
+  val includeJdkCaClientRef = new AtomicBoolean(true)
+  val lastTrustedCARef      = new AtomicReference[Seq[String]](Seq.empty)
+  val cancelRef             = new AtomicReference[Cancellable](null)
+  val cancelRenewRef        = new AtomicReference[Cancellable](null)
+  val cancelCreateRef       = new AtomicReference[Cancellable](null)
 
   def startSync(): Unit = {
     implicit val ec  = _env.otoroshiExecutionContext
@@ -51,11 +54,25 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
     cancelRef.set(
       _env.otoroshiActorSystem.scheduler.scheduleAtFixedRate(2.seconds, 2.seconds)(utils.SchedulerHelper.runnable {
         for {
-          certs <- findAll()
-          last  <- redisCli.get(lastUpdatedKey).map(_.map(_.utf8String).getOrElse("0"))
+          certs        <- findAll()
+          last         <- redisCli.get(lastUpdatedKey).map(_.map(_.utf8String).getOrElse("0"))
+          lastIcaServer =
+            env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true)
+          lastIcaClient =
+            env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true)
+          lastTrustedCA =
+            env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
         } yield {
-          if (last != lastUpdatedRef.get()) {
+          if (
+            last != lastUpdatedRef.get()
+              || lastIcaServer != includeJdkCaServerRef.get()
+              || lastIcaClient != includeJdkCaClientRef.get()
+              || lastTrustedCA != lastTrustedCARef.get()
+          ) {
             lastUpdatedRef.set(last)
+            includeJdkCaServerRef.set(lastIcaServer)
+            includeJdkCaClientRef.set(lastIcaClient)
+            lastTrustedCARef.set(lastTrustedCA)
             DynamicSSLEngineProvider.setCertificates(certs, env)
           }
         }

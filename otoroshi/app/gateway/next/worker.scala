@@ -129,13 +129,13 @@ class OtoroshiWorker(interface: String, router: OtoroshiRequestHandler, errorHan
             secureRandom: SecureRandom
         ): Unit                                                             = ()
         override def engineGetClientSessionContext(): SSLSessionContext     =
-          DynamicSSLEngineProvider.current.getClientSessionContext
+          DynamicSSLEngineProvider.currentServer.getClientSessionContext
         override def engineGetServerSessionContext(): SSLSessionContext     =
-          DynamicSSLEngineProvider.current.getServerSessionContext
+          DynamicSSLEngineProvider.currentServer.getServerSessionContext
         override def engineGetSocketFactory(): SSLSocketFactory             =
-          DynamicSSLEngineProvider.current.getSocketFactory
+          DynamicSSLEngineProvider.currentServer.getSocketFactory
         override def engineGetServerSocketFactory(): SSLServerSocketFactory =
-          DynamicSSLEngineProvider.current.getServerSocketFactory
+          DynamicSSLEngineProvider.currentServer.getServerSocketFactory
       },
       new Provider(
         "Otoroshi SSlEngineProvider delegate",

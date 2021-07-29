@@ -92,6 +92,15 @@ class HealthController(cc: ControllerComponents)(implicit env: Env) extends Abst
         case Unhealthy   => "unhealthy"
         case Unreachable => "unreachable"
       })
+      val eventstoreStatus = if (otoroshi.jobs.updates.EventstoreCheckerJob.initialized.get()) {
+        if (otoroshi.jobs.updates.EventstoreCheckerJob.works.get()) {
+          JsString("healthy")
+        } else {
+          JsString("down")
+        }
+      } else {
+        JsString("unknown")
+      }
       val payload         = Json.obj(
         "otoroshi"     -> otoroshiStatus,
         "datastore"    -> dataStoreStatus,
@@ -102,6 +111,10 @@ class HealthController(cc: ControllerComponents)(implicit env: Env) extends Abst
         "storage"      -> Json.obj(
           "initialized" -> true,
           "status"      -> dataStoreStatus
+        ),
+        "eventstore"    -> Json.obj(
+          "initialized" -> otoroshi.jobs.updates.EventstoreCheckerJob.initialized.get(),
+          "status"      -> eventstoreStatus
         ),
         "certificates" -> Json.obj(
           "initialized" -> DynamicSSLEngineProvider.isFirstSetupDone,

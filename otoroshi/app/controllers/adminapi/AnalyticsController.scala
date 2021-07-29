@@ -1,6 +1,6 @@
 package otoroshi.controllers.adminapi
 
-import otoroshi.actions.ApiAction
+import otoroshi.actions._
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import otoroshi.env.Env
@@ -10,7 +10,8 @@ import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
-import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
+import play.api.mvc.{AbstractController, Action, AnyContent, AnyContentAsEmpty, BodyParser, BodyParsers, ControllerComponents, RequestHeader, Result, Results}
+import otoroshi.jobs.updates._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -42,8 +43,38 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
 
   lazy val logger = Logger("otoroshi-analytics-api")
 
+  def withEventStore(f: ApiActionContext[AnyContent] => Future[Result]): Action[AnyContent] = {
+    withEventStoreAndParser[AnyContent](BodyParsers.utils.ignore(AnyContentAsEmpty: AnyContent))(f)
+  }
+
+  def withEventStoreAndParser[A](parser: BodyParser[A])(f: ApiActionContext[A] => Future[Result]): Action[A] = {
+    ApiAction.async(parser) { ctx =>
+      env.datastores.globalConfigDataStore.singleton().flatMap { config =>
+        config.elasticReadsConfig match {
+          case None =>
+            NotFound(Json.obj("error" -> "no elastic read config found !")).future
+          case Some(_) => {
+            if (EventstoreCheckerJob.initialized.get()) {
+              if (EventstoreCheckerJob.works.get()) {
+                f(ctx).recoverWith {
+                  case e: Throwable if e.getMessage.contains("UnknownHostException") =>
+                    Results.InternalServerError(Json.obj("error" -> "unable to contact the elastic cluster !")).future
+                  case e => FastFuture.failed(e)
+                }
+              } else {
+                Results.InternalServerError(Json.obj("error" -> "the elastic cluster does not work at the moment !")).future
+              }
+            } else {
+              Results.NotFound(Json.obj("error" -> "no elastic read config found !")).future
+            }
+          }
+        }
+      }
+    }
+  }
+
   def serviceStats(serviceId: String, from: Option[String], to: Option[String]) =
-    ApiAction.async { ctx =>
+    withEventStore { ctx =>
       Audit.send(
         AdminApiEvent(
           env.snowflakeGenerator.nextIdStr(),
@@ -150,7 +181,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     }
 
   def globalStats(from: Option[String] = None, to: Option[String] = None) =
-    ApiAction.async { ctx =>
+    withEventStore { ctx =>
       Audit.send(
         AdminApiEvent(
           env.snowflakeGenerator.nextIdStr(),
@@ -246,7 +277,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     }
 
   def globalStatus(from: Option[String] = None, to: Option[String] = None) =
-    ApiAction.async { ctx =>
+    withEventStore { ctx =>
       Audit.send(
         AdminApiEvent(
           env.snowflakeGenerator.nextIdStr(),
@@ -313,7 +344,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     }
 
   def serviceEvents(serviceId: String, from: Option[String] = None, to: Option[String] = None) =
-    ApiAction.async { ctx =>
+    withEventStore { ctx =>
       Audit.send(
         AdminApiEvent(
           env.snowflakeGenerator.nextIdStr(),
@@ -368,7 +399,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     }
 
   def filterableEvents(from: Option[String] = None, to: Option[String] = None) =
-    ApiAction.async { ctx =>
+    withEventStore { ctx =>
       val order: String           = ctx.request.queryString
         .get("order")
         .flatMap(_.headOption)
@@ -433,7 +464,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     }
 
   def filterableStats(from: Option[String], to: Option[String]) =
-    ApiAction.async { ctx =>
+    withEventStore { ctx =>
       val paginationPage: Int     = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
       val paginationPageSize: Int =
         ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(9999)
@@ -569,7 +600,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     }
 
   def serviceStatus(serviceId: String, from: Option[String], to: Option[String]) =
-    ApiAction.async { ctx =>
+    withEventStore { ctx =>
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
 
@@ -592,7 +623,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     }
 
   def groupStatus(groupId: String, from: Option[String], to: Option[String]) =
-    ApiAction.async { ctx =>
+    withEventStore { ctx =>
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
 
@@ -623,7 +654,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     }
 
   def serviceResponseTime(serviceId: String, from: Option[String], to: Option[String]) =
-    ApiAction.async { ctx =>
+    withEventStore { ctx =>
       val fromDate =
         from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
       val toDate   = to.map(f => new DateTime(f.toLong))

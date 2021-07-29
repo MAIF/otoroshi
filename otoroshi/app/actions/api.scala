@@ -233,47 +233,49 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
     implicit val req = request
 
     val host = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
-    host match {
-      case env.adminApiHost => {
-        request.headers.get(env.Headers.OtoroshiClaim).get.split("\\.").toSeq match {
-          case Seq(head, body, signature) => {
-            val claim = Json.parse(new String(OtoroshiClaim.decoder.decode(body), Charsets.UTF_8))
-            (claim \ "sub").as[String].split(":").toSeq match {
-              case Seq("apikey", clientId) => {
-                env.datastores.globalConfigDataStore
-                  .singleton()
-                  .filter(c => request.method.toLowerCase() == "get" || !c.apiReadOnly)
-                  .flatMap { _ =>
-                    env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-                      case Some(apikey)
-                          if apikey.authorizedOnGroup(env.backOfficeGroup.id) || apikey
-                            .authorizedOnService(env.backOfficeDescriptor.id) => {
-                        block(ApiActionContext(apikey, request)).foldM {
-                          case Success(res) =>
-                            res
-                              .withHeaders(
-                                env.Headers.OtoroshiStateResp -> request.headers
-                                  .get(env.Headers.OtoroshiState)
-                                  .getOrElse("--")
-                              )
-                              .asFuture
-                          case Failure(err) => error(s"Server error : $err", Some(err))
-                        }
+    def perform(): Future[Result] = {
+      request.headers.get(env.Headers.OtoroshiClaim).get.split("\\.").toSeq match {
+        case Seq(head, body, signature) => {
+          val claim = Json.parse(new String(OtoroshiClaim.decoder.decode(body), Charsets.UTF_8))
+          (claim \ "sub").as[String].split(":").toSeq match {
+            case Seq("apikey", clientId) => {
+              env.datastores.globalConfigDataStore
+                .singleton()
+                .filter(c => request.method.toLowerCase() == "get" || !c.apiReadOnly)
+                .flatMap { _ =>
+                  env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+                    case Some(apikey)
+                        if apikey.authorizedOnGroup(env.backOfficeGroup.id) || apikey
+                          .authorizedOnService(env.backOfficeDescriptor.id) => {
+                      block(ApiActionContext(apikey, request)).foldM {
+                        case Success(res) =>
+                          res
+                            .withHeaders(
+                              env.Headers.OtoroshiStateResp -> request.headers
+                                .get(env.Headers.OtoroshiState)
+                                .getOrElse("--")
+                            )
+                            .asFuture
+                        case Failure(err) => error(s"Server error : $err", Some(err))
                       }
-                      case _ => error(s"You're not authorized - ${request.method} ${request.uri}")
                     }
-                  } recoverWith { case e =>
-                  e.printStackTrace()
-                  error(s"You're not authorized - ${request.method} ${request.uri}")
-                }
+                    case _ => error(s"You're not authorized - ${request.method} ${request.uri}")
+                  }
+                } recoverWith { case e =>
+                e.printStackTrace()
+                error(s"You're not authorized - ${request.method} ${request.uri}")
               }
-              case _                       => error(s"You're not authorized - ${request.method} ${request.uri}")
             }
+            case _                       => error(s"You're not authorized - ${request.method} ${request.uri}")
           }
-          case _                          => error(s"You're not authorized - ${request.method} ${request.uri}")
         }
+        case _                          => error(s"You're not authorized - ${request.method} ${request.uri}")
       }
-      case _                => error(s"Not found")
+    }
+    host match {
+      case env.adminApiHost                     => perform()
+      case h if env.adminApiDomains.contains(h) => perform()
+      case _                                    => error(s"Not found")
     }
   }
 
@@ -313,8 +315,9 @@ class UnAuthApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
 
     val host = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
     host match {
-      case env.adminApiHost => block(UnAuthApiActionContent(request))
-      case _                => error(s"Not found")
+      case env.adminApiHost                     => block(UnAuthApiActionContent(request))
+      case h if env.adminApiDomains.contains(h) => block(UnAuthApiActionContent(request))
+      case _                                    => error(s"Not found")
     }
   }
 

@@ -623,7 +623,7 @@ class TcpEngineProvider {
     lazy val protocols    =
       env.configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
 
-    val context: SSLContext    = DynamicSSLEngineProvider.current
+    val context: SSLContext    = DynamicSSLEngineProvider.currentServer
     DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
     val rawEngine              = context.createSSLEngine()
     val engine                 = new CustomSSLEngine(rawEngine)

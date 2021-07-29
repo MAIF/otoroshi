@@ -10,7 +10,7 @@ import otoroshi.ssl.pki.models.GenCsrQuery
 import play.api.Logger
 import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
 import play.api.libs.streams.Accumulator
-import play.api.mvc.{AbstractController, Action, BodyParser, ControllerComponents}
+import play.api.mvc.{AbstractController, Action, BodyParser, ControllerComponents, RequestHeader, Result}
 import otoroshi.ssl.{Cert, CertificateData, P12Helper}
 import otoroshi.utils.future.Implicits._
 
@@ -42,6 +42,15 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
       .map(_.filter(_.ca))
   }
 
+  private def handleSave(request: RequestHeader, cert: Cert): Future[Result] = {
+    val shouldSave = request.getQueryString("persist").flatMap(v => Try(v.toBoolean).toOption).getOrElse(true)
+    if (shouldSave) {
+      cert.save().map(_ => Ok(cert.json.as[JsObject] ++ Json.obj("certId" -> cert.id)))
+    } else {
+      Ok(cert.json.as[JsObject]).future
+    }
+  }
+
   def genKeyPair() =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
@@ -68,7 +77,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
                       description = s"Public / Private key pair - $serialNumber",
                       keypair = true
                     )
-                    cert.save().map(_ => Ok(kp.json.as[JsObject] ++ Json.obj("certId" -> cert.id)))
+                    handleSave(ctx.request, cert)
                 }
           }
         }
@@ -81,9 +90,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
         ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
           env.pki.genSelfSignedCA(body).flatMap {
             case Left(err) => BadRequest(Json.obj("error" -> err)).future
-            case Right(kp) =>
-              val cert = kp.toCert
-              cert.save().map(_ => Ok(kp.json.as[JsObject] ++ Json.obj("certId" -> cert.id)))
+            case Right(kp) => handleSave(ctx.request, kp.toCert)
           }
         }
       }
@@ -95,9 +102,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
         ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
           env.pki.genSelfSignedCert(body).flatMap {
             case Left(err) => BadRequest(Json.obj("error" -> err)).future
-            case Right(kp) =>
-              val cert = kp.toCert
-              cert.save().map(_ => Ok(kp.json.as[JsObject] ++ Json.obj("certId" -> cert.id)))
+            case Right(kp) => handleSave(ctx.request, kp.toCert)
           }
         }
       }
@@ -158,9 +163,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
                 .genCert(body, cacert.certificate.get, cacert.certificates.tail, cacert.cryptoKeyPair.getPrivate)
                 .flatMap {
                   case Left(err) => BadRequest(Json.obj("error" -> err)).future
-                  case Right(kp) =>
-                    val cert = kp.toCert
-                    cert.save().map(_ => Ok(kp.json.as[JsObject] ++ Json.obj("certId" -> cert.id)))
+                  case Right(kp) => handleSave(ctx.request, kp.toCert)
                 }
           }
         }
@@ -178,9 +181,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
                 .genSubCA(body, cacert.certificate.get, cacert.certificates.tail, cacert.cryptoKeyPair.getPrivate)
                 .flatMap {
                   case Left(err) => BadRequest(Json.obj("error" -> err)).future
-                  case Right(kp) =>
-                    val cert = kp.toCert
-                    cert.save().map(_ => Ok(kp.json.as[JsObject] ++ Json.obj("certId" -> cert.id)))
+                  case Right(kp) => handleSave(ctx.request, kp.toCert)
                 }
           }
         }

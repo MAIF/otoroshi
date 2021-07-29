@@ -83,18 +83,20 @@ class BackOfficeAction(val parser: BodyParser[AnyContent])(implicit env: Env)
       block: (BackOfficeActionContext[A]) => Future[Result]
   ): Future[Result] = {
     val host = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
-    host match {
-      case env.backOfficeHost => {
-        request.session.get("bousr").map { id =>
-          env.datastores.backOfficeUserDataStore.findById(id).flatMap {
-            case Some(user) => block(BackOfficeActionContext(request, Some(user)))
-            case None       => block(BackOfficeActionContext(request, None))
-          }
-        } getOrElse {
-          block(BackOfficeActionContext(request, None))
+    def perform(): Future[Result] = {
+      request.session.get("bousr").map { id =>
+        env.datastores.backOfficeUserDataStore.findById(id).flatMap {
+          case Some(user) => block(BackOfficeActionContext(request, Some(user)))
+          case None       => block(BackOfficeActionContext(request, None))
         }
+      } getOrElse {
+        block(BackOfficeActionContext(request, None))
       }
-      case _                  => {
+    }
+    host match {
+      case env.backOfficeHost                     => perform()
+      case h if env.backofficeDomains.contains(h) => perform()
+      case _                                      => {
         Errors.craftResponseResult(
           s"Not found",
           Status(404),
@@ -126,83 +128,85 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
     implicit val req = request
 
     val host = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
-    host match {
-      case env.backOfficeHost => {
+    def perform(): Future[Result] = {
 
-        def callAction() = {
-          // val redirectTo = env.rootScheme + env.backOfficeHost + otoroshi.controllers.routes.Auth0Controller.backOfficeLogin(Some(s"${env.rootScheme}${request.host}${request.relativeUri}")).url
-          val redirectTo =
-            env.rootScheme + request.theHost + otoroshi.controllers.routes.BackOfficeController.index().url
-          request.session.get("bousr").map { id =>
-            env.datastores.backOfficeUserDataStore.findById(id).flatMap {
-              case Some(user) => {
-                env.datastores.backOfficeUserDataStore.blacklisted(user.email).flatMap {
-                  case true  => {
-                    Alerts.send(
-                      BlackListedBackOfficeUserAlert(
-                        env.snowflakeGenerator.nextIdStr(),
-                        env.env,
-                        user,
-                        request.theIpAddress,
-                        request.theUserAgent
-                      )
+      def callAction() = {
+        // val redirectTo = env.rootScheme + env.backOfficeHost + otoroshi.controllers.routes.Auth0Controller.backOfficeLogin(Some(s"${env.rootScheme}${request.host}${request.relativeUri}")).url
+        val redirectTo =
+          env.rootScheme + request.theHost + otoroshi.controllers.routes.BackOfficeController.index().url
+        request.session.get("bousr").map { id =>
+          env.datastores.backOfficeUserDataStore.findById(id).flatMap {
+            case Some(user) => {
+              env.datastores.backOfficeUserDataStore.blacklisted(user.email).flatMap {
+                case true  => {
+                  Alerts.send(
+                    BlackListedBackOfficeUserAlert(
+                      env.snowflakeGenerator.nextIdStr(),
+                      env.env,
+                      user,
+                      request.theIpAddress,
+                      request.theUserAgent
                     )
-                    FastFuture.successful(
-                      Results
-                        .NotFound(otoroshi.views.html.oto.error("Error", env))
-                        .removingFromSession("bousr")(request)
-                    )
-                  }
-                  case false =>
-                    //checker.check(req, user) {
-                    user.withAuthModuleConfig { auth =>
-                      GenericOauth2Module.handleTokenRefresh(auth, user)
-                    }
-                    block(BackOfficeActionContextAuth(request, user))
-                  //}
+                  )
+                  FastFuture.successful(
+                    Results
+                      .NotFound(otoroshi.views.html.oto.error("Error", env))
+                      .removingFromSession("bousr")(request)
+                  )
                 }
+                case false =>
+                  //checker.check(req, user) {
+                  user.withAuthModuleConfig { auth =>
+                    GenericOauth2Module.handleTokenRefresh(auth, user)
+                  }
+                  block(BackOfficeActionContextAuth(request, user))
+                //}
               }
-              case None       =>
-                FastFuture.successful(
-                  Results
-                    .Redirect(redirectTo)
-                    .addingToSession(
-                      "bo-redirect-after-login" -> s"${env.rootScheme}${request.theHost}${request.relativeUri}"
-                    )
-                )
             }
-          } getOrElse {
-            FastFuture.successful(
-              Results
-                .Redirect(redirectTo)
-                .addingToSession(
-                  "bo-redirect-after-login" -> s"${env.rootScheme}${request.theHost}${request.relativeUri}"
-                )
-            )
+            case None       =>
+              FastFuture.successful(
+                Results
+                  .Redirect(redirectTo)
+                  .addingToSession(
+                    "bo-redirect-after-login" -> s"${env.rootScheme}${request.theHost}${request.relativeUri}"
+                  )
+              )
           }
-        }
-
-        request.headers
-          .get("Origin")
-          .map(Uri.apply)
-          .orElse(
-            request.headers.get("Referer").map(Uri.apply).map(uri => uri.copy(path = Path.Empty))
+        } getOrElse {
+          FastFuture.successful(
+            Results
+              .Redirect(redirectTo)
+              .addingToSession(
+                "bo-redirect-after-login" -> s"${env.rootScheme}${request.theHost}${request.relativeUri}"
+              )
           )
-          .map(u => u.authority.copy(port = 0).toString()) match {
-          case Some(origin) if origin == env.backOfficeHost                                        => callAction()
-          case Some(origin) if origin != env.backOfficeHost && request.method.toLowerCase != "get" =>
-            Errors.craftResponseResult(
-              s"Bad origin",
-              Status(417),
-              request,
-              None,
-              Some("errors.bad.origin"),
-              attrs = TypedMap.empty
-            )
-          case _                                                                                   => callAction()
         }
       }
-      case _ => {
+
+      request.headers
+        .get("Origin")
+        .map(Uri.apply)
+        .orElse(
+          request.headers.get("Referer").map(Uri.apply).map(uri => uri.copy(path = Path.Empty))
+        )
+        .map(u => u.authority.copy(port = 0).toString()) match {
+        case Some(origin) if origin == env.backOfficeHost                                        => callAction()
+        case Some(origin) if origin != env.backOfficeHost && request.method.toLowerCase != "get" =>
+          Errors.craftResponseResult(
+            s"Bad origin",
+            Status(417),
+            request,
+            None,
+            Some("errors.bad.origin"),
+            attrs = TypedMap.empty
+          )
+        case _                                                                                   => callAction()
+      }
+    }
+    host match {
+      case env.backOfficeHost                     => perform()
+      case h if env.backofficeDomains.contains(h) => perform()
+      case _                                      => {
         Errors.craftResponseResult(
           s"Not found",
           Status(404),

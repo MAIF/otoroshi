@@ -345,22 +345,34 @@ object AutoCert {
   }
 }
 
-case class TlsSettings(defaultDomain: Option[String] = None, randomIfNotFound: Boolean = false) {
+case class TlsSettings(
+  defaultDomain: Option[String] = None,
+  randomIfNotFound: Boolean = false,
+  includeJdkCaServer: Boolean = true,
+  includeJdkCaClient: Boolean = true,
+  trustedCAsServer: Seq[String] = Seq.empty
+) {
   def json: JsValue = TlsSettings.format.writes(this)
 }
-object TlsSettings                                                                              {
+object TlsSettings {
   val format = new Format[TlsSettings] {
     override def writes(o: TlsSettings): JsValue =
       Json.obj(
-        "defaultDomain"    -> o.defaultDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "randomIfNotFound" -> o.randomIfNotFound
+        "defaultDomain"      -> o.defaultDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "randomIfNotFound"   -> o.randomIfNotFound,
+        "includeJdkCaServer" -> o.includeJdkCaServer,
+        "includeJdkCaClient" -> o.includeJdkCaClient,
+        "trustedCAsServer"   -> JsArray(o.trustedCAsServer.map(JsString.apply))
       )
 
     override def reads(json: JsValue): JsResult[TlsSettings] =
       Try {
         TlsSettings(
           defaultDomain = (json \ "defaultDomain").asOpt[String].map(_.trim).filter(_.nonEmpty),
-          randomIfNotFound = (json \ "randomIfNotFound").asOpt[Boolean].getOrElse(false)
+          randomIfNotFound = (json \ "randomIfNotFound").asOpt[Boolean].getOrElse(false),
+          includeJdkCaServer = (json \ "includeJdkCaServer").asOpt[Boolean].getOrElse(true),
+          includeJdkCaClient = (json \ "includeJdkCaClient").asOpt[Boolean].getOrElse(true),
+          trustedCAsServer = (json \ "trustedCAsServer").asOpt[Seq[String]].getOrElse(Seq.empty)
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -781,7 +793,7 @@ case class OtoroshiExport(
         apikeys,
         customization.select("apikeys").asOpt[JsArray].getOrElse(Json.arr()),
         ApiKey._fmt,
-        _.select("id").asString,
+        _.select("clientId").asString,
         _.clientId
       ),
       groups = customizeAndMergeArray[ServiceGroup](
