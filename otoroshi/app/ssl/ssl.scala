@@ -2053,7 +2053,7 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
   def setEngineHostName(hostName: String): Unit = {
     DynamicSSLEngineProvider.logger.debug(s"Setting current session hostname to $hostName")
     hostnameHolder.set(hostName)
-    // TODO: add try to avoid future issue ?
+    // TODO: add try to avoid future issue ? fixed for now with '--add-opens java.base/javax.net.ssl=ALL-UNNAMED' in the java command line
     field.set(this, hostName)
     field.set(delegate, hostName)
   }

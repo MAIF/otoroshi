@@ -62,6 +62,11 @@ build_jdk17 () {
   docker tag otoroshi-jdk17 "maif/otoroshi:$1-jdk17"
 }
 
+build_jdk18 () {
+  docker build --no-cache -f ./Dockerfile-jdk18-jar -t otoroshi-jdk18 .
+  docker tag otoroshi-jdk18 "maif/otoroshi:$1-jdk18"
+}
+
 build_graal () {
   docker build --no-cache -f ./Dockerfile-graal -t otoroshi-graal .
   docker tag otoroshi-graal "maif/otoroshi:$1-graal"
@@ -101,6 +106,11 @@ case "${1}" in
     build_jdk17 $2
     cleanup
     ;;
+  build-jdk18)
+    prepare_build
+    build_jdk18 $2
+    cleanup
+    ;;
   build-graal)
     prepare_build
     build_graal $2
@@ -115,26 +125,24 @@ case "${1}" in
     ;;
   push-all)
     prepare_build
-    build_jdk8 $2
     build_jdk11 $2
     build_jdk16 $2
     build_jdk17 $2
+    build_jdk18 $2
     build_graal $2
     cleanup
     docker push "maif/otoroshi:$2"
-    docker push "maif/otoroshi:$2-jdk8"
     docker push "maif/otoroshi:$2-jdk11"
     docker push "maif/otoroshi:$2-jdk16"
     docker push "maif/otoroshi:$2-jdk17"
+    docker push "maif/otoroshi:$2-jdk18"
     docker push "maif/otoroshi:$2-graal"
     docker push "maif/otoroshi:latest"
     ;;
   build-and-push-snapshot)
     NBR=`date +%s`
     echo "Will build version 1.5.0-dev-$NBR"
-    # cp ../../otoroshi/target/universal/otoroshi-1.5.0-dev.zip otoroshi-dist.zip
     cp ../../otoroshi/target/scala-2.12/otoroshi.jar otoroshi.jar
-    # prepare_build
     docker build --no-cache -f ./Dockerfile-jdk11-jar -t otoroshi-jdk11 .
     docker tag otoroshi-jdk11 "maif/otoroshi:1.5.0-dev-$NBR"
     docker tag otoroshi-jdk11 "maif/otoroshi:dev"
@@ -143,21 +151,16 @@ case "${1}" in
     docker push "maif/otoroshi:dev"
     ;;
   build-and-push-local)
-    cp ../../otoroshi/target/universal/otoroshi-1.5.0-dev.zip otoroshi-dist.zip
-    prepare_build
-    docker build --no-cache -f ./Dockerfile-jdk11 -t otoroshi-jdk11 .
+    cp ../../otoroshi/target/scala-2.12/otoroshi.jar otoroshi.jar
+    docker build --no-cache -f ./Dockerfile-jdk11-jar -t otoroshi-jdk11 .
     docker tag otoroshi-jdk11 "registry.oto.tools:5000/maif/otoroshi:1.5.0-local"
     cleanup
     docker push "registry.oto.tools:5000/maif/otoroshi:1.5.0-local"
     ;;
   build-snapshot)
-    NBR=`date +%s`
-    echo "Will build version 1.5.0-dev-$NBR"
-    cp ../../otoroshi/target/universal/otoroshi-1.5.0-dev.zip otoroshi-dist.zip
-    prepare_build
-    docker build --no-cache -f ./Dockerfile-jdk11 -t otoroshi-jdk11 .
-    docker tag otoroshi-jdk11 "maif/otoroshi:1.5.0-dev-$NBR"
-    docker tag otoroshi-jdk11 "maif/otoroshi:dev"
+    cp ../../otoroshi/target/scala-2.12/otoroshi.jar otoroshi.jar
+    docker build --no-cache -f ./Dockerfile-jdk18-jar -t otoroshi-jdk18 .
+    docker tag otoroshi-jdk18 "maif/otoroshi:dev"
     cleanup
     ;;
   prepare)
