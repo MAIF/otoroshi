@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-alpha.20] - 2021-07-29
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.20+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-alpha.19...v1.5.0-alpha.20
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-alpha.20
+
+- Seeking configuration for Read timeout to XXX after 120000 ms (#880)
+- Select trusted CAs for server mtls from global config (#886)
+- Add env. variables to enable server MTLS in documentation (#887)
+- when using circuit breaker with akka client, need to discardBytes (#888)
+- Unable to change api key status from all api keys view (#889)
+- Return http error when ES statistics cannot be returned (#890)
+- When I clicked on the stats button of an api key (from all Api keys view), I got an undefined analytics view  (#891)
+- Add options in pki api to avoid certificate save (#893)
+- investigate about kube secret changing even if apikey didn't change  (#894)
+
 ## [1.5.0-alpha.19] - 2021-06-30
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.19+is%3Aclosed
