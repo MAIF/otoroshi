@@ -893,7 +893,8 @@ class Env(
     "Otoroshi Backoffice ApiKey",
     "The apikey use by the Otoroshi UI",
     Seq(ServiceGroupIdentifier(backOfficeGroupId)),
-    validUntil = None
+    validUntil = None,
+    throttlingQuota = 10000,
   )
 
   private lazy val backOfficeDescriptorHostHeader: String = s"$adminApiSubDomain.$domain"
