@@ -132,9 +132,10 @@ case "${1}" in
   build-and-push-snapshot)
     NBR=`date +%s`
     echo "Will build version 1.5.0-dev-$NBR"
-    cp ../../otoroshi/target/universal/otoroshi-1.5.0-dev.zip otoroshi-dist.zip
-    prepare_build
-    docker build --no-cache -f ./Dockerfile-jdk11 -t otoroshi-jdk11 .
+    # cp ../../otoroshi/target/universal/otoroshi-1.5.0-dev.zip otoroshi-dist.zip
+    cp ../../otoroshi/target/scala-2.12/otoroshi.jar otoroshi.jar
+    # prepare_build
+    docker build --no-cache -f ./Dockerfile-jdk11-jar -t otoroshi-jdk11 .
     docker tag otoroshi-jdk11 "maif/otoroshi:1.5.0-dev-$NBR"
     docker tag otoroshi-jdk11 "maif/otoroshi:dev"
     cleanup

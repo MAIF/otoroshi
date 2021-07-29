@@ -1,7 +1,29 @@
 # Mutual TLS with Otoroshi
 
+if you want to use MTLS on otoroshi, you first need to enable it. It is not enabled by default as it will make TLS handshake way heavier. 
+To enable it just change the following config :
+
+```
+play.server.https.wantClientAuth=true
+# or
+# play.server.https.wantClientNeed=true
+otoroshi.ssl.fromOutside.clientAuth=None|Want|Need
+```
+
+or using env. variables
+
+```
+HTTPS_WANT_CLIENT_AUTH=true 
+# HTTPS_NEED_CLIENT_AUTH=true 
+SSL_OUTSIDE_CLIENT_AUTH=None|Want|Need
+```
+
+you can use the `Want` setup if you cant to have both mtls on some services and no mtls on other services.
+
+You can also change the trusted CA list sent in the handshake certificate request from the `Danger Zone` in `Tls Settings`.
+
 @@@ warning
-This section is under rewrite. The following content is deprecated
+The following section is under rewrite. The following content is deprecated
 @@@
 
 Otoroshi support mutual TLS out of the box. mTLS from client to Otoroshi and from Otoroshi to targets are supported. In this article we will see how to configure Otoroshi to use end-to-end mTLS. All code and files used in this articles can be found on the [Otoroshi github](https://github.com/MAIF/otoroshi/tree/master/demos/mtls)
