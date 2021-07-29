@@ -115,11 +115,7 @@ object ElasticTemplates {
       |          "match": "*",
       |          "mapping": {
       |            "type": "text",
-      |            "fields": {
-      |               "raw": {
-      |                 "type": "keyword"
-      |               }
-      |             }
+      |            "fielddata": true
       |          },
       |          "match_mapping_type": "string"
       |        }
@@ -169,6 +165,19 @@ object ElasticTemplates {
       |            "type": "keyword"
       |          },
       |          "value": {
+      |            "type": "keyword"
+      |          }
+      |        }
+      |      },
+      |      "identity": {
+      |        "properties": {
+      |          "label": {
+      |            "type": "keyword"
+      |          },
+      |          "identityType": {
+      |            "type": "keyword"
+      |          },
+      |          "identity": {
       |            "type": "keyword"
       |          }
       |        }
@@ -194,11 +203,7 @@ object ElasticTemplates {
       |          "match": "*",
       |          "mapping": {
       |            "type": "text",
-      |            "fields": {
-      |               "raw": {
-      |                 "type": "keyword"
-      |               }
-      |             }
+      |            "fielddata": true
       |          },
       |          "match_mapping_type": "string"
       |        }
@@ -248,6 +253,19 @@ object ElasticTemplates {
       |            "type": "keyword"
       |          },
       |          "value": {
+      |            "type": "keyword"
+      |          }
+      |        }
+      |      },
+      |      "identity": {
+      |        "properties": {
+      |          "label": {
+      |            "type": "keyword"
+      |          },
+      |          "identityType": {
+      |            "type": "keyword"
+      |          },
+      |          "identity": {
       |            "type": "keyword"
       |          }
       |        }
