@@ -1325,6 +1325,7 @@
     "otoroshi.models.TlsSettings.includeJdkCaClient": "???",
     "otoroshi.models.TlsSettings.includeJdkCaServer": "???",
     "otoroshi.models.TlsSettings.randomIfNotFound": "Use a random one",
+    "otoroshi.models.TlsSettings.trustedCAsServer": "???",
     "otoroshi.models.Transform.algoSettings": "Algorithm settings for re-signing token",
     "otoroshi.models.Transform.transformSettings": "Transformation settings",
     "otoroshi.models.Transform.verificationSettings": "Verification settings",

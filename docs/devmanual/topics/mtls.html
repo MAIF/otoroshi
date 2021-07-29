@@ -337,8 +337,21 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#mutual-tls-with-otoroshi" name="mutual-tls-with-otoroshi" class="anchor"><span class="anchor-link"></span></a>Mutual TLS with Otoroshi</h1><div class="callout warning "><div class="callout-title">Warning</div>
-<p>This section is under rewrite. The following content is deprecated</p></div>
+<h1><a href="#mutual-tls-with-otoroshi" name="mutual-tls-with-otoroshi" class="anchor"><span class="anchor-link"></span></a>Mutual TLS with Otoroshi</h1>
+<p>if you want to use MTLS on otoroshi, you first need to enable it. It is not enabled by default as it will make TLS handshake way heavier. To enable it just change the following config :</p>
+<pre><code>play.server.https.wantClientAuth=true
+# or
+# play.server.https.wantClientNeed=true
+otoroshi.ssl.fromOutside.clientAuth=None|Want|Need
+</code></pre>
+<p>or using env. variables</p>
+<pre><code>HTTPS_WANT_CLIENT_AUTH=true 
+# HTTPS_NEED_CLIENT_AUTH=true 
+SSL_OUTSIDE_CLIENT_AUTH=None|Want|Need
+</code></pre>
+<p>you can use the <code>Want</code> setup if you cant to have both mtls on some services and no mtls on other services.</p>
+<p>You can also change the trusted CA list sent in the handshake certificate request from the <code>Danger Zone</code> in <code>Tls Settings</code>.</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>The following section is under rewrite. The following content is deprecated</p></div>
 <p>Otoroshi support mutual TLS out of the box. mTLS from client to Otoroshi and from Otoroshi to targets are supported. In this article we will see how to configure Otoroshi to use end-to-end mTLS. All code and files used in this articles can be found on the <a href="https://github.com/MAIF/otoroshi/tree/master/demos/mtls">Otoroshi github</a></p><div class="callout note "><div class="callout-title">Experimental Feature</div>
 <p>Dynamic Mutual TLS is an experimental feature. It can change until it becomess an official feature</p></div>
 <h2><a href="#end-to-end-mtls" name="end-to-end-mtls" class="anchor"><span class="anchor-link"></span></a>End-to-end mTLS</h2>
