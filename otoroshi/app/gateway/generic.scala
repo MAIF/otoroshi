@@ -580,7 +580,7 @@ class ReverseProxyAction(env: Env) {
     "Tls-Session-Info"
   ).map(_.toLowerCase)
 
-  val reqCounter = new AtomicInteger(0)
+  val reqCounter  = new AtomicInteger(0)
   val atomicFalse = new AtomicBoolean(false)
 
   def async[A](
@@ -957,7 +957,8 @@ class ReverseProxyAction(env: Env) {
                                                           .map(_ => relUri)
                                                           .getOrElse("")
 
-                                                      def callF(t: Target, attemps: Int, alreadyFailed: AtomicBoolean): Future[Either[Result, A]] = {
+                                                      def callF(t: Target, attemps: Int, alreadyFailed: AtomicBoolean)
+                                                          : Future[Either[Result, A]] = {
                                                         actuallyCallDownstream(
                                                           t,
                                                           apiKey,
@@ -1131,7 +1132,15 @@ class ReverseProxyAction(env: Env) {
                                                       //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
                                                       // Round robin loadbalancing is happening here !!!!!
                                                       //val target = targets.apply(index.toInt)
-                                                      actuallyCallDownstream(target, apiKey, paUsr, 0L, 1, 1, atomicFalse)
+                                                      actuallyCallDownstream(
+                                                        target,
+                                                        apiKey,
+                                                        paUsr,
+                                                        0L,
+                                                        1,
+                                                        1,
+                                                        atomicFalse
+                                                      )
                                                     }
                                                   }
                                                 }

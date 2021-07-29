@@ -65,9 +65,9 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
         } yield {
           if (
             last != lastUpdatedRef.get()
-              || lastIcaServer != includeJdkCaServerRef.get()
-              || lastIcaClient != includeJdkCaClientRef.get()
-              || lastTrustedCA != lastTrustedCARef.get()
+            || lastIcaServer != includeJdkCaServerRef.get()
+            || lastIcaClient != includeJdkCaClientRef.get()
+            || lastTrustedCA != lastTrustedCARef.get()
           ) {
             lastUpdatedRef.set(last)
             includeJdkCaServerRef.set(lastIcaServer)

@@ -819,7 +819,7 @@ case class AkkWsClientStreamedResponse(
   def statusText: String                               = httpResponse.status.defaultMessage()
   def headers: Map[String, Seq[String]]                = allHeaders
   def underlying[T]: T                                 = httpResponse.asInstanceOf[T]
-  def bodyAsSource: Source[ByteString, _]              = {
+  def bodyAsSource: Source[ByteString, _] = {
     ClientConfig.logger.debug(s"[httpclient] consuming body in ${requestTimeout}")
     httpResponse.entity.dataBytes.takeWithin(requestTimeout)
   }
@@ -1010,7 +1010,9 @@ case class AkkaWsClientRequest(
           case _                                 => ClientTransport.httpsProxy(proxyAddress)
         }
         a: ConnectionPoolSettings => {
-          ClientConfig.logger.debug(s"[httpclient] using idleTimeout: $idleTimeout, connectionTimeout: $connectionTimeout")
+          ClientConfig.logger.debug(
+            s"[httpclient] using idleTimeout: $idleTimeout, connectionTimeout: $connectionTimeout"
+          )
           a.withTransport(httpsProxyTransport)
             .withIdleTimeout(idleTimeout)
             .withConnectionSettings(
@@ -1088,7 +1090,7 @@ case class AkkaWsClientRequest(
       .filter(_.mtlsConfig.mtls)
       .exists(_.mtlsConfig.trustAll)
     val req                     = buildRequest()
-    val zeTimeout = requestTimeout
+    val zeTimeout               = requestTimeout
       .map(v => FiniteDuration(v.toMillis, TimeUnit.MILLISECONDS))
       .getOrElse(FiniteDuration(30, TimeUnit.DAYS)) // yeah that's infinity ...
     ClientConfig.logger.debug(s"[httpclient] stream request with timeout to ${zeTimeout}")
@@ -1096,11 +1098,11 @@ case class AkkaWsClientRequest(
     val failure = Timeout
       .timeout(Done, zeTimeout)(client.ec, env.otoroshiScheduler)
       .flatMap(_ => FastFuture.failed(RequestTimeoutException))
-    val start = System.currentTimeMillis()
+    val start   = System.currentTimeMillis()
     val reqExec = client
       .executeRequest(req, targetOpt.exists(_.mtlsConfig.loose), trustAll, certs, trustedCerts, customizer)
       .flatMap { resp =>
-        val remaining = (zeTimeout.toMillis - (System.currentTimeMillis() - start))
+        val remaining = zeTimeout.toMillis - (System.currentTimeMillis() - start)
         if (alreadyFailed.get()) {
           ClientConfig.logger.debug(s"[httpclient] stream already failed")
           resp.entity.discardBytes()
@@ -1141,18 +1143,18 @@ case class AkkaWsClientRequest(
     val trustAll: Boolean       = targetOpt
       .filter(_.mtlsConfig.mtls)
       .exists(_.mtlsConfig.trustAll)
-    val zeTimeout = requestTimeout
+    val zeTimeout               = requestTimeout
       .map(v => FiniteDuration(v.toMillis, TimeUnit.MILLISECONDS))
       .getOrElse(FiniteDuration(30, TimeUnit.DAYS)) // yeah that's infinity ...
     val failure = Timeout
       .timeout(Done, zeTimeout)(client.ec, env.otoroshiScheduler)
       .flatMap(_ => FastFuture.failed(RequestTimeoutException))
-    val start = System.currentTimeMillis()
+    val start   = System.currentTimeMillis()
     val reqExec = client
       .executeRequest(buildRequest(), targetOpt.exists(_.mtlsConfig.loose), trustAll, certs, trustedCerts, customizer)
       .flatMap { response: HttpResponse =>
         // FiniteDuration(client.wsClientConfig.requestTimeout._1, client.wsClientConfig.requestTimeout._2)
-        val remaining = (zeTimeout.toMillis - (System.currentTimeMillis() - start))
+        val remaining = zeTimeout.toMillis - (System.currentTimeMillis() - start)
         if (alreadyFailed.get()) {
           ClientConfig.logger.debug(s"[httpclient] execute already failed")
           response.entity.discardBytes()
@@ -1369,7 +1371,7 @@ object Implicits {
     def withFailureIndicator(alreadyFailed: AtomicBoolean): req.Self = {
       req match {
         case areq: AkkaWsClientRequest => areq.withFailureIndicator(alreadyFailed).asInstanceOf[req.Self]
-        case _ => req.asInstanceOf[req.Self]
+        case _                         => req.asInstanceOf[req.Self]
       }
     }
   }

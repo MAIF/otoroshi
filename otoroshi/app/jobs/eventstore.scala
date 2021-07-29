@@ -17,7 +17,7 @@ import scala.util.{Failure, Try}
 
 object EventstoreCheckerJob {
   val initialized = new AtomicBoolean(false)
-  val works = new AtomicBoolean(false)
+  val works       = new AtomicBoolean(false)
 }
 
 class EventstoreCheckerJob extends Job {
@@ -49,18 +49,20 @@ class EventstoreCheckerJob extends Job {
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores.globalConfigDataStore.singleton().flatMap { config =>
       config.elasticReadsConfig match {
-        case None =>
+        case None           =>
           ().future
         case Some(esConfig) => {
           val read = new ElasticReadsAnalytics(esConfig, env)
-          read.getElasticVersion().map { version =>
-            EventstoreCheckerJob.initialized.set(true)
-            EventstoreCheckerJob.works.set(true)
-          }.recover {
-            case t: Throwable =>
+          read
+            .getElasticVersion()
+            .map { version =>
+              EventstoreCheckerJob.initialized.set(true)
+              EventstoreCheckerJob.works.set(true)
+            }
+            .recover { case t: Throwable =>
               EventstoreCheckerJob.initialized.set(true)
               EventstoreCheckerJob.works.set(false)
-          }
+            }
         }
       }
     }

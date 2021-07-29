@@ -10,7 +10,18 @@ import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
-import play.api.mvc.{AbstractController, Action, AnyContent, AnyContentAsEmpty, BodyParser, BodyParsers, ControllerComponents, RequestHeader, Result, Results}
+import play.api.mvc.{
+  AbstractController,
+  Action,
+  AnyContent,
+  AnyContentAsEmpty,
+  BodyParser,
+  BodyParsers,
+  ControllerComponents,
+  RequestHeader,
+  Result,
+  Results
+}
 import otoroshi.jobs.updates._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -51,7 +62,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     ApiAction.async(parser) { ctx =>
       env.datastores.globalConfigDataStore.singleton().flatMap { config =>
         config.elasticReadsConfig match {
-          case None =>
+          case None    =>
             NotFound(Json.obj("error" -> "no elastic read config found !")).future
           case Some(_) => {
             if (EventstoreCheckerJob.initialized.get()) {
@@ -59,10 +70,12 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
                 f(ctx).recoverWith {
                   case e: Throwable if e.getMessage.contains("UnknownHostException") =>
                     Results.InternalServerError(Json.obj("error" -> "unable to contact the elastic cluster !")).future
-                  case e => FastFuture.failed(e)
+                  case e                                                             => FastFuture.failed(e)
                 }
               } else {
-                Results.InternalServerError(Json.obj("error" -> "the elastic cluster does not work at the moment !")).future
+                Results
+                  .InternalServerError(Json.obj("error" -> "the elastic cluster does not work at the moment !"))
+                  .future
               }
             } else {
               Results.NotFound(Json.obj("error" -> "no elastic read config found !")).future

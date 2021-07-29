@@ -46,13 +46,13 @@ class HealthController(cc: ControllerComponents)(implicit env: Env) extends Abst
       overhead <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
       members  <- membersF
     } yield {
-      val workerReady     =
+      val workerReady      =
         if (env.clusterConfig.mode == ClusterMode.Worker) !env.clusterAgent.cannotServeRequests() else true
-      val workerReadyStr  = workerReady match {
+      val workerReadyStr   = workerReady match {
         case true  => "loaded"
         case false => "loading"
       }
-      val cluster         = env.clusterConfig.mode match {
+      val cluster          = env.clusterConfig.mode match {
         case ClusterMode.Off    => Json.obj()
         case ClusterMode.Worker =>
           Json.obj(
@@ -73,21 +73,21 @@ class HealthController(cc: ControllerComponents)(implicit env: Env) extends Abst
           Json.obj("cluster" -> Json.obj("health" -> health))
         }
       }
-      val certificates    = DynamicSSLEngineProvider.isFirstSetupDone match {
+      val certificates     = DynamicSSLEngineProvider.isFirstSetupDone match {
         case true  => "loaded"
         case false => "loading"
       }
-      val scriptsReady    = scripts.initialized match {
+      val scriptsReady     = scripts.initialized match {
         case true  => "loaded"
         case false => "loading"
       }
-      val otoroshiStatus  = JsString(_health match {
+      val otoroshiStatus   = JsString(_health match {
         case Healthy if overhead <= env.healthLimit => "healthy"
         case Healthy if overhead > env.healthLimit  => "unhealthy"
         case Unhealthy                              => "unhealthy"
         case Unreachable                            => "down"
       })
-      val dataStoreStatus = JsString(_health match {
+      val dataStoreStatus  = JsString(_health match {
         case Healthy     => "healthy"
         case Unhealthy   => "unhealthy"
         case Unreachable => "unreachable"
@@ -101,7 +101,7 @@ class HealthController(cc: ControllerComponents)(implicit env: Env) extends Abst
       } else {
         JsString("unknown")
       }
-      val payload         = Json.obj(
+      val payload          = Json.obj(
         "otoroshi"     -> otoroshiStatus,
         "datastore"    -> dataStoreStatus,
         "proxy"        -> Json.obj(
@@ -112,7 +112,7 @@ class HealthController(cc: ControllerComponents)(implicit env: Env) extends Abst
           "initialized" -> true,
           "status"      -> dataStoreStatus
         ),
-        "eventstore"    -> Json.obj(
+        "eventstore"   -> Json.obj(
           "initialized" -> otoroshi.jobs.updates.EventstoreCheckerJob.initialized.get(),
           "status"      -> eventstoreStatus
         ),
@@ -122,7 +122,7 @@ class HealthController(cc: ControllerComponents)(implicit env: Env) extends Abst
         ),
         "scripts"      -> (scripts.json.as[JsObject] ++ Json.obj("status" -> scriptsReady))
       ) ++ cluster
-      val err             = (payload \ "otoroshi").asOpt[String].exists(_ != "healthy") ||
+      val err              = (payload \ "otoroshi").asOpt[String].exists(_ != "healthy") ||
         (payload \ "datastore").asOpt[String].exists(_ != "healthy") ||
         (payload \ "cluster").asOpt[String].orElse(Some("healthy")).exists(v => v != "healthy") ||
         !scripts.initialized ||

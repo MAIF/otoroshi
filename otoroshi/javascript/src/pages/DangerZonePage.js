@@ -871,7 +871,8 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Trust JDK CAs (server)',
         placeholder: '--',
-        help: 'Trust JDK CAs. The CAs from the JDK CA bundle will be proposed in the certificate request when performing TLS handshake',
+        help:
+          'Trust JDK CAs. The CAs from the JDK CA bundle will be proposed in the certificate request when performing TLS handshake',
       },
     },
     'tlsSettings.includeJdkCaClient': {
@@ -879,7 +880,8 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Trust JDK CAs (trust)',
         placeholder: '--',
-        help: 'Trust JDK CAs. The CAs from the JDK CA bundle will be used as trusted CAs when calling HTTPS resources',
+        help:
+          'Trust JDK CAs. The CAs from the JDK CA bundle will be used as trusted CAs when calling HTTPS resources',
       },
     },
     'tlsSettings.trustedCAsServer': {
@@ -899,7 +901,8 @@ export class DangerZonePage extends Component {
             </span>
           ),
         }),
-        help: 'Select the trusted CAs you want for TLS terminaison. Those CAs only will be proposed in the certificate request when performing TLS handshake',
+        help:
+          'Select the trusted CAs you want for TLS terminaison. Those CAs only will be proposed in the certificate request when performing TLS handshake',
       },
     },
     'tlsSettings.randomIfNotFound': {

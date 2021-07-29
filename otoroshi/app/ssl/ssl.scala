@@ -1054,9 +1054,13 @@ object DynamicSSLEngineProvider {
   private def setupContext(env: HasMetrics, includeJdkCa: Boolean, trustedCerts: Seq[String]): SSLContext =
     env.metrics.withTimer("otoroshi.core.tls.setup-global-context") {
 
-      val certificates = _certificates.filter(_._2.notRevoked)
+      val certificates                               = _certificates.filter(_._2.notRevoked)
       val trustedCertificates: TrieMap[String, Cert] = if (trustedCerts.nonEmpty) {
-        new TrieMap[String, Cert]() ++ trustedCerts.flatMap(k => _certificates.get(k)).filter(_.notRevoked).map(c => (c.id, c)).toMap
+        new TrieMap[String, Cert]() ++ trustedCerts
+          .flatMap(k => _certificates.get(k))
+          .filter(_.notRevoked)
+          .map(c => (c.id, c))
+          .toMap
       } else {
         _certificates.filter(_._2.notRevoked)
       }
@@ -1088,7 +1092,7 @@ object DynamicSSLEngineProvider {
 
       logger.debug("Setting up SSL Context ")
       val sslContext: SSLContext               = SSLContext.getInstance("TLS")
-      val keyStore: KeyStore                   = createKeyStore(certificates.values.toSeq) //.filterNot(_.ca))
+      val keyStore: KeyStore                   = createKeyStore(certificates.values.toSeq)        //.filterNot(_.ca))
       val trustedKeyStore: KeyStore            = createKeyStore(trustedCertificates.values.toSeq) //.filterNot(_.ca))
       dumpPath.foreach { path =>
         logger.debug(s"Dumping keystore at $dumpPath")
@@ -1103,7 +1107,7 @@ object DynamicSSLEngineProvider {
       trustedkeyManagerFactory.init(trustedKeyStore, EMPTY_PASSWORD)
 
       logger.debug("SSL Context init ...")
-      val keyManagers: Array[KeyManager]       = keyManagerFactory.getKeyManagers.map(m =>
+      val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(m =>
         KeyManagerCompatibility.keyManager(
           () => certificates.values.toSeq,
           false,

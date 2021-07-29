@@ -11,7 +11,12 @@ import otoroshi.models.{BestResponseTime, ClientConfig, RemainingQuotas, SecComV
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.script.Implicits._
-import otoroshi.script.{TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseBodyContext, TransformerResponseContext}
+import otoroshi.script.{
+  TransformerRequestBodyContext,
+  TransformerRequestContext,
+  TransformerResponseBodyContext,
+  TransformerResponseContext
+}
 import otoroshi.utils.UrlSanitizer
 import play.api.Logger
 import play.api.http.HttpEntity
@@ -476,9 +481,10 @@ class HttpHandler()(implicit env: Env) {
               )
           }
 
-          val extractedTimeout = descriptor.clientConfig.extractTimeout(req.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
+          val extractedTimeout =
+            descriptor.clientConfig.extractTimeout(req.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
           ClientConfig.logger.debug(s"[gateway] using callAndStreamTimeout: $extractedTimeout")
-          val builder = clientReq
+          val builder          = clientReq
             .withRequestTimeout(extractedTimeout)
             .withFailureIndicator(alreadyFailed)
             //.withRequestTimeout(env.requestTimeout) // we should monitor leaks
