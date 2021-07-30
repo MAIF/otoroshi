@@ -728,12 +728,17 @@ class HttpHandler()(implicit env: Env) {
                               sameSite = c.sameSite
                             )
                           case c                       => {
-                            val sameSite: Option[Cookie.SameSite] = httpResponse.headers.get("Set-Cookie").flatMap { sc =>
-                              sc.split(";")
-                                .map(_.trim)
-                                .find(p => p.toLowerCase.startsWith("samesite="))
-                                .map(_.replace("samesite=", "").replace("SameSite=", ""))
-                                .flatMap(Cookie.SameSite.parse)
+                            val sameSite: Option[Cookie.SameSite] = resp.headers.get("Set-Cookie").flatMap { values =>
+                              // , split is not supported by all browsers but just in case ...
+                              values.flatMap(v => v.split(",").map(_.trim)).find { sc =>
+                                sc.startsWith(s"${c.name}=${c.value}")
+                              }.flatMap { sc =>
+                                sc.split(";")
+                                  .map(_.trim)
+                                  .find(p => p.toLowerCase.startsWith("samesite="))
+                                  .map(_.replace("samesite=", "").replace("SameSite=", ""))
+                                  .flatMap(Cookie.SameSite.parse)
+                              }
                             }
                             Cookie(
                               name = c.name,
