@@ -3,7 +3,7 @@ authors = ["Mathieu <mathieu.ancelin@serli.com>"]
 license = "ASL-2.0"
 name = "otoroshi-cli"
 readme = "readme.md"
-version = "1.5.0-dev"
+version = "1.5.0-beta.1"
 
 [[bin]]
 name = "otoroshicli"
