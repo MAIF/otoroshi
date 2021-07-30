@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-beta.1] - 2021-07-30
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-beta.1+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-alpha.20...v1.5.0-beta.1
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-beta.1
+
+- Make SameSite cookie flags works with both http clients
+
 ## [1.5.0-alpha.20] - 2021-07-29
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.20+is%3Aclosed
