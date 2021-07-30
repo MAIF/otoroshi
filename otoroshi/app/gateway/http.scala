@@ -729,8 +729,7 @@ class HttpHandler()(implicit env: Env) {
                             )
                           case c                       => {
                             val sameSite: Option[Cookie.SameSite] = resp.headers.get("Set-Cookie").flatMap { values =>
-                              // , split is not supported by all browsers but just in case ...
-                              values.flatMap(v => v.split(",").map(_.trim)).find { sc =>
+                              values.find { sc =>
                                 sc.startsWith(s"${c.name}=${c.value}")
                               }.flatMap { sc =>
                                 sc.split(";")
