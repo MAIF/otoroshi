@@ -4,6 +4,9 @@ The Otoroshi API exposes two endpoints for
 
 * `/health`: the health of the Otoroshi instance
 * `/metrics`: the metrics of the Otoroshi instance, either in JSON or Prometheus format using the `Accept` header (with `application/json` / `application/prometheus` values) or the `format` query param (with `json` or `prometheus` values)
+* `/live`: returns an http 200 response `{"live": true}` when the service is alive
+* `/ready`: return an http 200 response `{"ready": true}` when the instance is ready to accept traffic (certs synced, plugins compiled, etc). if not, returns http 503 `{"ready": false}`
+* `/startup`: return an http 200 response `{"started": true}` when the instance is ready to accept traffic (certs synced, plugins compiled, etc). if not, returns http 503 `{"started": false}`
 
 ## Endpoints security
 
