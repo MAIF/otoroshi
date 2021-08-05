@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-beta.2] - 2021-08-05
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-beta.2+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-beta.1...v1.5.0-beta.2
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-beta.2
+
+- client certificate lookup strategy is broken (#899)
+
 ## [1.5.0-beta.1] - 2021-07-30
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-beta.1+is%3Aclosed
