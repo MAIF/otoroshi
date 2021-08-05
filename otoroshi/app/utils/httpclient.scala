@@ -54,7 +54,7 @@ case class DNPart(raw: String) {
 }
 
 case class DN(raw: String) {
-  val parts = raw.split(",").toSeq.map(_.trim).map(DNPart.apply)
+  val parts                  = raw.split(",").toSeq.map(_.trim).map(DNPart.apply)
   def isEqualsTo(other: DN): Boolean = {
     parts.size == other.parts.size && parts.forall(p => other.parts.exists(o => o.name == p.name && o.value == p.value))
   }
