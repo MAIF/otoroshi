@@ -58,6 +58,7 @@ case class DN(raw: String) {
   def isEqualsTo(other: DN): Boolean = {
     parts.size == other.parts.size && parts.forall(p => other.parts.exists(o => o.name == p.name && o.value == p.value))
   }
+  def stringifyDebug: String = s"DN(${stringify})"
   def stringify: String = {
     parts
       .sortWith((a, b) => a.name.compareTo(b.name) > 0)

@@ -10,6 +10,8 @@ import javax.net.ssl.{KeyManager, SSLEngine, SSLSession, X509ExtendedKeyManager,
 import otoroshi.models.{GlobalConfig, TlsSettings}
 import otoroshi.utils.http.DN
 
+import otoroshi.utils.syntax.implicits._
+
 import scala.concurrent.duration._
 
 object KeyManagerCompatibility {
@@ -55,15 +57,23 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
 
   def findCertMatching(domain: String): Option[Cert] = {
     if (client) {
-      val dns   = domain.split("\\|").toSeq.map(DN.apply)
-      val certs = allCerts()
-        .map(_.enrich())
-        .filter(c => c.notRevoked && c.notExpired)
-        .filter { c =>
-          c.certificates.map(_.getSubjectDN.getName).map(DN.apply).exists(dn => dns.contains(dn))
-        }
-        .sortWith((c1, c2) => c1.to.compareTo(c2.to) > 0)
-      certs.headOption
+      val allCertificates = allCerts()
+      if (allCertificates.isEmpty) {
+        None
+      } else if (allCertificates.size == 1) {
+        allCertificates.headOption
+      } else {
+        val dns = domain.split("\\|").toSeq.map(DN.apply)
+        val certs = allCertificates
+          .map(_.enrich())
+          .filter(c => c.notRevoked && c.notExpired)
+          .filter { c =>
+            val dnses = c.certificates.map(_.getSubjectDN.getName).map(DN.apply)
+            dnses.exists(dn => dns.exists(v => v.isEqualsTo(dn)))
+          }
+          .sortWith((c1, c2) => c1.to.compareTo(c2.to) > 0)
+        certs.headOption
+      }
     } else {
       DynamicKeyManager.cache.getIfPresent(domain) match {
         case Some(cert) => Some(cert)
