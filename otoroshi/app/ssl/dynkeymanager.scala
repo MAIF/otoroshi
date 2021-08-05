@@ -63,7 +63,7 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
       } else if (allCertificates.size == 1) {
         allCertificates.headOption
       } else {
-        val dns = domain.split("\\|").toSeq.map(DN.apply)
+        val dns   = domain.split("\\|").toSeq.map(DN.apply)
         val certs = allCertificates
           .map(_.enrich())
           .filter(c => c.notRevoked && c.notExpired)
