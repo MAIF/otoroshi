@@ -1,6 +1,6 @@
 name := """otoroshi-manual"""
 organization := "fr.maif"
-version := "1.5.0-dev"
+version := "1.5.0-beta.2"
 scalaVersion := "2.13.1"
 
 lazy val docs = (project in file("."))
