@@ -882,7 +882,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   def isLoginTokenValid(token: String): Future[Boolean] = {
     if (env.clusterConfig.mode.isWorker) {
       Retry
-        .retry(times = config.worker.retries, delay = config.retryDelay, factor = config.retryFactor, ctx = "leader-login-token-valid") { tryCount =>
+        .retry(
+          times = config.worker.retries,
+          delay = config.retryDelay,
+          factor = config.retryFactor,
+          ctx = "leader-login-token-valid"
+        ) { tryCount =>
           Cluster.logger.debug(s"Checking if login token $token is valid with a leader")
           env.MtlsWs
             .url(otoroshiUrl + s"/api/cluster/login-tokens/$token", config.mtlsConfig)
@@ -916,7 +921,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   def getUserToken(token: String): Future[Option[JsValue]] = {
     if (env.clusterConfig.mode.isWorker) {
       Retry
-        .retry(times = config.worker.retries, delay = config.retryDelay, factor = config.retryFactor, ctx = "leader-user-token-get") { tryCount =>
+        .retry(
+          times = config.worker.retries,
+          delay = config.retryDelay,
+          factor = config.retryFactor,
+          ctx = "leader-user-token-get"
+        ) { tryCount =>
           Cluster.logger.debug(s"Checking if user token $token is valid with a leader")
           env.MtlsWs
             .url(otoroshiUrl + s"/api/cluster/user-tokens/$token", config.mtlsConfig)
@@ -951,7 +961,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     if (env.clusterConfig.mode.isWorker) {
       Cluster.logger.debug(s"Creating login token for $token on the leader")
       Retry
-        .retry(times = config.worker.retries, delay = config.retryDelay, factor = config.retryFactor, ctx = "leader-create-login-token") { tryCount =>
+        .retry(
+          times = config.worker.retries,
+          delay = config.retryDelay,
+          factor = config.retryFactor,
+          ctx = "leader-create-login-token"
+        ) { tryCount =>
           env.MtlsWs
             .url(otoroshiUrl + s"/api/cluster/login-tokens/$token", config.mtlsConfig)
             .withHttpHeaders(
@@ -980,7 +995,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     if (env.clusterConfig.mode.isWorker) {
       Cluster.logger.debug(s"Creating user token for ${token} on the leader: ${Json.prettyPrint(user)}")
       Retry
-        .retry(times = config.worker.retries, delay = config.retryDelay, factor = config.retryFactor, ctx = "leader-create-user-token") { tryCount =>
+        .retry(
+          times = config.worker.retries,
+          delay = config.retryDelay,
+          factor = config.retryFactor,
+          ctx = "leader-create-user-token"
+        ) { tryCount =>
           env.MtlsWs
             .url(otoroshiUrl + s"/api/cluster/user-tokens", config.mtlsConfig)
             .withHttpHeaders(
@@ -1008,7 +1028,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   def isSessionValid(id: String): Future[Option[PrivateAppsUser]] = {
     if (env.clusterConfig.mode.isWorker) {
       Retry
-        .retry(times = config.worker.retries, delay = config.retryDelay, factor = config.retryFactor, ctx = "leader-session-valid") { tryCount =>
+        .retry(
+          times = config.worker.retries,
+          delay = config.retryDelay,
+          factor = config.retryFactor,
+          ctx = "leader-session-valid"
+        ) { tryCount =>
           Cluster.logger.debug(s"Checking if session $id is valid with a leader")
           env.MtlsWs
             .url(otoroshiUrl + s"/api/cluster/sessions/$id", config.mtlsConfig)
@@ -1043,7 +1068,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     if (env.clusterConfig.mode.isWorker) {
       Cluster.logger.debug(s"Creating session for ${user.email} on the leader: ${Json.prettyPrint(user.json)}")
       Retry
-        .retry(times = config.worker.retries, delay = config.retryDelay, factor = config.retryFactor, ctx = "leader-create-session") { tryCount =>
+        .retry(
+          times = config.worker.retries,
+          delay = config.retryDelay,
+          factor = config.retryFactor,
+          ctx = "leader-create-session"
+        ) { tryCount =>
           env.MtlsWs
             .url(otoroshiUrl + s"/api/cluster/sessions", config.mtlsConfig)
             .withHttpHeaders(
@@ -1134,7 +1164,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         Retry
           .retry(
             times = if (cannotServeRequests()) 10 else config.worker.state.retries,
-            delay = config.retryDelay, factor = config.retryFactor,
+            delay = config.retryDelay,
+            factor = config.retryFactor,
             ctx = "leader-fetch-state"
           ) { tryCount =>
             env.MtlsWs
@@ -1277,7 +1308,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         Retry
           .retry(
             times = if (cannotServeRequests()) 10 else config.worker.quotas.retries,
-            delay = config.retryDelay, factor = config.retryFactor,
+            delay = config.retryDelay,
+            factor = config.retryFactor,
             ctx = "leader-push-quotas"
           ) { tryCount =>
             Cluster.logger.trace(

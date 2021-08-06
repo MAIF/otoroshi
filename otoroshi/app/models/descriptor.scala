@@ -802,7 +802,7 @@ object ClientConfig {
           cacheConnectionSettings = CacheConnectionSettings(
             enabled = (json \ "cacheConnectionSettings" \ "enabled").asOpt[Boolean].getOrElse(false),
             queueSize = (json \ "cacheConnectionSettings" \ "queueSize").asOpt[Int].getOrElse(2048),
-            strategy = OverflowStrategy.dropNew,
+            strategy = OverflowStrategy.dropNew
           ),
           customTimeouts = (json \ "customTimeouts")
             .asOpt[JsArray]
@@ -818,19 +818,19 @@ object ClientConfig {
 
     override def writes(o: ClientConfig): JsValue =
       Json.obj(
-        "useCircuitBreaker"    -> o.useCircuitBreaker,
-        "retries"              -> o.retries,
-        "maxErrors"            -> o.maxErrors,
-        "retryInitialDelay"    -> o.retryInitialDelay,
-        "backoffFactor"        -> o.backoffFactor,
-        "callTimeout"          -> o.callTimeout,
-        "callAndStreamTimeout" -> o.callAndStreamTimeout,
-        "connectionTimeout"    -> o.connectionTimeout,
-        "idleTimeout"          -> o.idleTimeout,
-        "globalTimeout"        -> o.globalTimeout,
-        "sampleInterval"       -> o.sampleInterval,
-        "proxy"                -> o.proxy.map(p => WSProxyServerJson.proxyToJson(p)).getOrElse(Json.obj()).as[JsValue],
-        "customTimeouts"       -> JsArray(o.customTimeouts.map(_.toJson)),
+        "useCircuitBreaker"       -> o.useCircuitBreaker,
+        "retries"                 -> o.retries,
+        "maxErrors"               -> o.maxErrors,
+        "retryInitialDelay"       -> o.retryInitialDelay,
+        "backoffFactor"           -> o.backoffFactor,
+        "callTimeout"             -> o.callTimeout,
+        "callAndStreamTimeout"    -> o.callAndStreamTimeout,
+        "connectionTimeout"       -> o.connectionTimeout,
+        "idleTimeout"             -> o.idleTimeout,
+        "globalTimeout"           -> o.globalTimeout,
+        "sampleInterval"          -> o.sampleInterval,
+        "proxy"                   -> o.proxy.map(p => WSProxyServerJson.proxyToJson(p)).getOrElse(Json.obj()).as[JsValue],
+        "customTimeouts"          -> JsArray(o.customTimeouts.map(_.toJson)),
         "cacheConnectionSettings" -> o.cacheConnectionSettings.json
       )
   }
