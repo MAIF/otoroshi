@@ -495,10 +495,14 @@ class Env(
       userAgent = Some("Otoroshi-akka"),
       compressionEnabled =
         configuration.getOptionalWithFileSupport[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
+      requestTimeout = configuration
+        .getOptionalWithFileSupport[Int]("app.proxy.requestTimeout")
+        .map(_.millis)
+        .getOrElse((60 * 60 * 1000).millis),
       idleTimeout = configuration
         .getOptionalWithFileSupport[Int]("app.proxy.idleTimeout")
         .map(_.millis)
-        .getOrElse((2 * 60 * 1000).millis),
+        .getOrElse((60 * 60 * 1000).millis),
       connectionTimeout = configuration
         .getOptionalWithFileSupport[Int]("app.proxy.connectionTimeout")
         .map(_.millis)
@@ -546,10 +550,14 @@ class Env(
       userAgent = Some("Otoroshi-akka"),
       compressionEnabled =
         configuration.getOptionalWithFileSupport[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
+      requestTimeout = configuration
+        .getOptionalWithFileSupport[Int]("app.proxy.requestTimeout")
+        .map(_.millis)
+        .getOrElse((60 * 60 * 1000).millis),
       idleTimeout = configuration
         .getOptionalWithFileSupport[Int]("app.proxy.idleTimeout")
         .map(_.millis)
-        .getOrElse((2 * 60 * 1000).millis),
+        .getOrElse((60 * 60 * 1000).millis),
       connectionTimeout = configuration
         .getOptionalWithFileSupport[Int]("app.proxy.connectionTimeout")
         .map(_.millis)
