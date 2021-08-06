@@ -2721,6 +2721,12 @@ export class ServicePage extends Component {
               value={this.state.service.clientConfig.useCircuitBreaker}
               onChange={(v) => this.changeTheValue('clientConfig.useCircuitBreaker', v)}
             />
+            {this.state.service.useAkkaHttpClient && <BooleanInput
+                label="Cache connections"
+                help="Use a cache at host connection level to avoid reconnection time"
+                value={this.state.service.clientConfig.cacheConnectionSettings.enabled}
+                onChange={(v) => this.changeTheValue('clientConfig.cacheConnectionSettings.enabled', v)}
+            />}
             <NumberInput
               suffix="times"
               label="Client attempts"

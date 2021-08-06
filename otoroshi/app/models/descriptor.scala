@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
 import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
-import akka.stream.Materializer
+import akka.stream.{Materializer, OverflowStrategy}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import otoroshi.auth._
 import com.auth0.jwt.JWT
@@ -32,7 +32,7 @@ import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.config.ConfigUtils
 import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.ReplaceAllWith
-import otoroshi.utils.http.MtlsConfig
+import otoroshi.utils.http.{CacheConnectionSettings, MtlsConfig}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{FiniteDuration, _}
@@ -694,7 +694,8 @@ case class ClientConfig(
       30000,  // circuit breaker timeout around all calls (soft, streaming from otoroshi to client not included)
     sampleInterval: Long = 2000,
     proxy: Option[WSProxyServer] = None,
-    customTimeouts: Seq[CustomTimeouts] = Seq.empty[CustomTimeouts]
+    customTimeouts: Seq[CustomTimeouts] = Seq.empty[CustomTimeouts],
+    cacheConnectionSettings: CacheConnectionSettings = CacheConnectionSettings()
 ) {
   def toJson                                                                                            = ClientConfig.format.writes(this)
   def timeouts(path: String): Option[CustomTimeouts] = {
@@ -798,6 +799,11 @@ object ClientConfig {
           globalTimeout = (json \ "globalTimeout").asOpt[Long].getOrElse(30000),
           sampleInterval = (json \ "sampleInterval").asOpt[Long].getOrElse(2000),
           proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
+          cacheConnectionSettings = CacheConnectionSettings(
+            enabled = (json \ "cacheConnectionSettings" \ "enabled").asOpt[Boolean].getOrElse(false),
+            queueSize = (json \ "cacheConnectionSettings" \ "queueSize").asOpt[Int].getOrElse(2048),
+            strategy = OverflowStrategy.dropNew,
+          ),
           customTimeouts = (json \ "customTimeouts")
             .asOpt[JsArray]
             .map(_.value.map(e => CustomTimeouts.format.reads(e).get))
@@ -824,7 +830,8 @@ object ClientConfig {
         "globalTimeout"        -> o.globalTimeout,
         "sampleInterval"       -> o.sampleInterval,
         "proxy"                -> o.proxy.map(p => WSProxyServerJson.proxyToJson(p)).getOrElse(Json.obj()).as[JsValue],
-        "customTimeouts"       -> JsArray(o.customTimeouts.map(_.toJson))
+        "customTimeouts"       -> JsArray(o.customTimeouts.map(_.toJson)),
+        "cacheConnectionSettings" -> o.cacheConnectionSettings.json
       )
   }
 }

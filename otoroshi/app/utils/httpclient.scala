@@ -9,8 +9,8 @@ import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeR
 import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.{ClientTransport, ConnectionContext, Http, HttpsConnectionContext}
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Source}
+import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
+import akka.stream.scaladsl.{Flow, Sink, Source, SourceQueueWithComplete}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
@@ -34,9 +34,11 @@ import java.net.{InetAddress, InetSocketAddress, URI}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import javax.net.ssl.SSLContext
+import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.{Duration, _}
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, Future, Promise}
+import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, XML}
 
@@ -679,6 +681,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
       trustAll: Boolean,
       clientCerts: Seq[Cert],
       trustedCerts: Seq[Cert],
+      clientConfig: ClientConfig,
       customizer: ConnectionPoolSettings => ConnectionPoolSettings
   ): Future[HttpResponse] = {
     // TODO: fix warning with
@@ -697,11 +700,16 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
           connectionContextLooseHolder.set(connectionContextLoose)
         }
         val pool              = customizer(connectionPoolSettings).withMaxConnections(512)
-        client.singleRequest(
-          request,
-          if (loose) connectionContextLooseHolder.get() else connectionContextHolder.get(),
-          pool
-        )
+        val cctx = if (loose) connectionContextLooseHolder.get() else connectionContextHolder.get()
+        if (clientConfig.cacheConnectionSettings.enabled) {
+          queueClientRequest(request, pool, cctx, clientConfig.cacheConnectionSettings)
+        } else {
+          client.singleRequest(
+            request,
+            cctx,
+            pool
+          )
+        }
       }
       case certs if (clientCerts ++ trustedCerts).nonEmpty => {
         logger.debug(
@@ -726,10 +734,48 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
           } else {
             ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLConfig))
           }
-          client.singleRequest(request, cctx, pool)
+          if (clientConfig.cacheConnectionSettings.enabled) {
+            queueClientRequest(request, pool, cctx, clientConfig.cacheConnectionSettings)
+          } else {
+            client.singleRequest(request, cctx, pool)
+          }
         }
       }
     }
+  }
+
+  private val queueCache = new TrieMap[String, SourceQueueWithComplete[(HttpRequest, Promise[HttpResponse])]]()
+
+  private def getQueue(request: HttpRequest, settings: ConnectionPoolSettings, connectionContext: HttpsConnectionContext, queueSettings: CacheConnectionSettings): SourceQueueWithComplete[(HttpRequest, Promise[HttpResponse])] = {
+    val host = request.uri.authority.host.toString()
+    val port = request.uri.authority.port
+    val isHttps = request.uri.scheme.equalsIgnoreCase("https")
+    val key = s"$host-$port-$isHttps-${queueSettings.queueSize}"
+    queueCache.getOrElseUpdate(key, {
+      logger.debug(s"create host connection cache queue for '$key'")
+      val pool = if (isHttps) {
+        client.cachedHostConnectionPoolHttps[Promise[HttpResponse]](host = host, port = port, connectionContext = connectionContext, settings = settings)
+      } else {
+        client.cachedHostConnectionPool[Promise[HttpResponse]](host = host, port = port, settings = settings)
+      }
+      Source.queue[(HttpRequest, Promise[HttpResponse])](queueSettings.queueSize, queueSettings.strategy)
+        .via(pool)
+        .to(Sink.foreach {
+          case (Success(resp), p) => p.success(resp)
+          case (Failure(e), p)    => p.failure(e)
+        }).run()
+    })
+  }
+
+  private def queueClientRequest(request: HttpRequest, settings: ConnectionPoolSettings, connectionContext: HttpsConnectionContext, queueSettings: CacheConnectionSettings): Future[HttpResponse] = {
+    val queue = getQueue(request, settings, connectionContext, queueSettings)
+    val responsePromise = Promise[HttpResponse]()
+    queue.offer((request, responsePromise)).flatMap {
+      case QueueOfferResult.Enqueued    => responsePromise.future
+      case QueueOfferResult.Dropped     => FastFuture.failed(ClientQueueError("Client queue overflowed. Try again later."))
+      case QueueOfferResult.Failure(ex) => FastFuture.failed(ClientQueueError(ex.getMessage))
+      case QueueOfferResult.QueueClosed => FastFuture.failed(ClientQueueError("Client queue was closed (pool shut down) while running the request. Try again later."))
+    }(ec)
   }
 
   private[utils] def executeWsRequest[T](
@@ -785,6 +831,17 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
         }
       }
     }
+  }
+}
+
+case class ClientQueueError(message: String) extends RuntimeException(message) with NoStackTrace
+
+case class CacheConnectionSettings(enabled: Boolean = false, queueSize: Int = 2048, strategy: OverflowStrategy = OverflowStrategy.dropNew) {
+  def json: JsValue = {
+    Json.obj(
+      "enabled" -> enabled,
+      "queueSize" -> queueSize
+    )
   }
 }
 
@@ -1101,7 +1158,7 @@ case class AkkaWsClientRequest(
       .flatMap(_ => FastFuture.failed(RequestTimeoutException))
     val start   = System.currentTimeMillis()
     val reqExec = client
-      .executeRequest(req, targetOpt.exists(_.mtlsConfig.loose), trustAll, certs, trustedCerts, customizer)
+      .executeRequest(req, targetOpt.exists(_.mtlsConfig.loose), trustAll, certs, trustedCerts, clientConfig, customizer)
       .flatMap { resp =>
         val remaining = zeTimeout.toMillis - (System.currentTimeMillis() - start)
         if (alreadyFailed.get()) {
@@ -1152,7 +1209,7 @@ case class AkkaWsClientRequest(
       .flatMap(_ => FastFuture.failed(RequestTimeoutException))
     val start   = System.currentTimeMillis()
     val reqExec = client
-      .executeRequest(buildRequest(), targetOpt.exists(_.mtlsConfig.loose), trustAll, certs, trustedCerts, customizer)
+      .executeRequest(buildRequest(), targetOpt.exists(_.mtlsConfig.loose), trustAll, certs, trustedCerts, clientConfig, customizer)
       .flatMap { response: HttpResponse =>
         // FiniteDuration(client.wsClientConfig.requestTimeout._1, client.wsClientConfig.requestTimeout._2)
         val remaining = zeTimeout.toMillis - (System.currentTimeMillis() - start)
