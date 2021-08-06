@@ -1032,7 +1032,7 @@ play.http {
     keepAlive = ${?PROXY_KEEPALIVE}
     compressionEnabled = false
     compressionEnabled = ${?PROXY_COMPRESSION_ENABLED}
-    idleTimeout = 120000
+    idleTimeout = 3600000
     idleTimeout = ${?PROXY_IDLE_TIMEOUT}
     connectionTimeout = 120000
     connectionTimeout = ${?PROXY_CONNECTION_TIMEOUT}
@@ -1821,6 +1821,10 @@ otoroshi {
     mode = ${?CLUSTER_MODE}
     compression = -1
     compression = ${?CLUSTER_COMPRESSION}
+    retryDelay = 300
+    retryDelay = ${?CLUSTER_RETRY_DELAY}
+    retryFactor = 2
+    retryFactor = ${?CLUSTER_RETRY_FACTOR}
     selfAddress = ${?CLUSTER_SELF_ADDRESS}
     autoUpdateState = true
     autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE}
@@ -2006,8 +2010,10 @@ play.server.https.keyStoreDumpPath = ${?HTTPS_KEYSTORE_DUMP_PATH}
 play.http.secret.key = ${otoroshi.secret}
 play.http.secret.key = ${?PLAY_CRYPTO_SECRET}
 
-play.server.http.idleTimeout = 60s
-play.server.akka.requestTimeout = 60s
+play.server.http.idleTimeout = 3600s
+play.server.http.idleTimeout = ${?PLAY_SERVER_IDLE_TIMEOUT}
+play.server.akka.requestTimeout = 3600s
+play.server.akka.requestTimeout = ${?PLAY_SERVER_REQUEST_TIMEOUT}
 
 http2.enabled = no
 http2.enabled = ${?HTTP2_ENABLED}

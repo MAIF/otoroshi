@@ -16256,6 +16256,10 @@
             "description" : "Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor",
             "type" : "integer"
           },
+          "cacheConnectionSettings" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.utils.http.CacheConnectionSettings"
+          },
           "proxy" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
@@ -17639,6 +17643,21 @@
               "type" : "string"
             } ],
             "description" : "Next client_secret value"
+          }
+        }
+      },
+      "otoroshi.utils.http.CacheConnectionSettings" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "queueSize" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
           }
         }
       },
