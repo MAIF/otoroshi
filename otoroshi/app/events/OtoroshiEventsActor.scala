@@ -21,7 +21,6 @@ import otoroshi.script._
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
-import otoroshi.utils.mailer.EmailLocation
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -29,7 +28,6 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 import otoroshi.utils.syntax.implicits._
 
-import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
 object OtoroshiEventsActorSupervizer {
@@ -588,7 +586,6 @@ object Exporters {
       extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       exporter[FileSettings].map { exporterConfig =>
-        val contentToAppend = events.map(Json.stringify).mkString("\r\n")
         val path            = Paths.get(exporterConfig.path.replace("{day}", DateTime.now().toString("yyyy-MM-dd")))
         val file            = path.toFile
         if (!file.exists()) {
@@ -602,7 +599,14 @@ object Exporters {
             file.createNewFile()
           }
         }
-        Files.write(path, contentToAppend.getBytes(), StandardOpenOption.APPEND)
+
+        val fileIsNotEmpty = file.length() > 0 && events.nonEmpty
+        val prefix = if(fileIsNotEmpty) "\r\n" else ""
+
+        val contentToAppend = events.map(Json.stringify).mkString("\r\n")
+
+        Files.write(path, (prefix + contentToAppend).getBytes, StandardOpenOption.APPEND)
+
         FastFuture.successful(ExportResult.ExportResultSuccess)
       } getOrElse {
         FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
