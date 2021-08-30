@@ -15960,7 +15960,7 @@
             "description" : "Config. for elastic reads"
           },
           "trustXForwarded" : {
-            "description" : "???",
+            "description" : "Use X-Forwarded-* headers for routing",
             "type" : "boolean"
           },
           "tags" : {
@@ -16261,7 +16261,7 @@
             "type" : "integer"
           },
           "cacheConnectionSettings" : {
-            "description" : "???",
+            "description" : "Cached connection settings",
             "$ref" : "#/components/schemas/otoroshi.utils.http.CacheConnectionSettings"
           },
           "proxy" : {
@@ -17470,7 +17470,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Tags for this target"
           },
           "host" : {
             "description" : "The host on which the HTTP call will be forwarded. Can be a domain name, or an IP address. Can also have a port",
@@ -17486,7 +17486,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Metadata for this target"
           },
           "protocol" : {
             "description" : "Protocol for the target",
@@ -17651,16 +17651,16 @@
         }
       },
       "otoroshi.utils.http.CacheConnectionSettings" : {
-        "description" : "???",
+        "description" : "The settings for http cached connection at host level",
         "type" : "object",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "Enable Cached connections at host tevel",
             "type" : "boolean"
           },
           "queueSize" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "The size for the request queue",
             "type" : "integer"
           }
         }
@@ -18389,10 +18389,10 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "List for CAs trusted by otoroshi when performing TLS termination"
           },
           "includeJdkCaClient" : {
-            "description" : "???",
+            "description" : "Use known JDK CAs to build trust when performing request from otoroshi to backends",
             "type" : "boolean"
           },
           "randomIfNotFound" : {
@@ -18408,7 +18408,7 @@
             "description" : "Default domain to choose if not found from current certificates"
           },
           "includeJdkCaServer" : {
-            "description" : "???",
+            "description" : "Use known JDK CAs to build trust for incoming request",
             "type" : "boolean"
           }
         }
