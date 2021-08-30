@@ -142,6 +142,16 @@ case class Cert(
   def theName: String                  = name
   def theTags: Seq[String]             = tags
 
+  lazy val cleanChain: String = {
+    var found = false
+    chain.split("\\n").filter { line =>
+      if (line.startsWith("-----")) {
+        found = true
+      }
+      found
+    }.mkString("\n").debugPrintln
+  }
+
   lazy val certType = {
     if (client) "client"
     else if (ca) "ca"
@@ -265,7 +275,7 @@ case class Cert(
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.certificatesDataStore.exists(this)
   def toJson                                            = Cert.toJson(this)
   lazy val certificatesRaw: Seq[String]                 = Try {
-    chain
+    cleanChain
       .split(PemHeaders.BeginCertificate)
       .toSeq
       .tail
@@ -290,7 +300,7 @@ case class Cert(
 
   lazy val certificatesChain: Array[X509Certificate] = { //certificates.toArray
     Try {
-      chain
+      cleanChain
         .split(PemHeaders.BeginCertificate)
         .toSeq
         .map(_.trim)
@@ -309,7 +319,7 @@ case class Cert(
   }
 
   lazy val certificate: Option[X509Certificate] = Try {
-    chain.split(PemHeaders.BeginCertificate).toSeq.tail.headOption.map { cert =>
+    cleanChain.split(PemHeaders.BeginCertificate).toSeq.tail.headOption.map { cert =>
       val content: String                        = cert.replace(PemHeaders.EndCertificate, "")
       val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
       certificateFactory
@@ -319,7 +329,7 @@ case class Cert(
   }.toOption.flatten
 
   lazy val caFromChain: Option[X509Certificate] = Try {
-    chain.split(PemHeaders.BeginCertificate).toSeq.tail.lastOption.map { cert =>
+    cleanChain.split(PemHeaders.BeginCertificate).toSeq.tail.lastOption.map { cert =>
       val content: String                        = cert.replace(PemHeaders.EndCertificate, "")
       val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
       certificateFactory
@@ -328,7 +338,7 @@ case class Cert(
     }
   }.toOption.flatten
   lazy val metadata: Option[JsValue] = {
-    chain.split(PemHeaders.BeginCertificate).toSeq.tail.headOption.map { cert =>
+    cleanChain.split(PemHeaders.BeginCertificate).toSeq.tail.headOption.map { cert =>
       val content: String = cert.replace(PemHeaders.EndCertificate, "")
       CertificateData(content)
     }
@@ -345,7 +355,7 @@ case class Cert(
           //   .orElse(Try(KeyFactory.getInstance("DiffieHellman")).map(_.generatePrivate(encodedKeySpec)))
           //   .get*/
           val certificateChain: Seq[X509Certificate] =
-            DynamicSSLEngineProvider.readCertificateChain(this.id, this.chain, false)
+            DynamicSSLEngineProvider.readCertificateChain(this.id, this.cleanChain, false)
           if (certificateChain.isEmpty) {
             DynamicSSLEngineProvider.logger.error(s"[${this.id}] Certificate file does not contain any certificates :(")
             false
@@ -1413,7 +1423,7 @@ object DynamicSSLEngineProvider {
       case cert if cert.privateKey.trim.isEmpty => {
         cert.certificate.foreach { certificate =>
           val id                                     = "trusted-" + certificate.getSerialNumber.toString(16)
-          val certificateChain: Seq[X509Certificate] = readCertificateChain(cert.domain, cert.chain)
+          val certificateChain: Seq[X509Certificate] = readCertificateChain(cert.domain, cert.cleanChain)
           val domain                                 = Try {
             certificateChain.head.maybeDomain.getOrElse(cert.domain)
           }.toOption.getOrElse(cert.domain)
@@ -1434,7 +1444,7 @@ object DynamicSSLEngineProvider {
           Try {
             readPrivateKeyUniversal(cert.domain, cert.privateKey, cert.password).foreach { key: PrivateKey =>
               // val key: PrivateKey = readPrivateKey(encodedKeySpec)
-              val certificateChain: Seq[X509Certificate] = readCertificateChain(cert.domain, cert.chain)
+              val certificateChain: Seq[X509Certificate] = readCertificateChain(cert.domain, cert.cleanChain)
               if (certificateChain.isEmpty) {
                 logger.error(s"[${cert.id}] Certificate file does not contain any certificates :(")
               } else {
