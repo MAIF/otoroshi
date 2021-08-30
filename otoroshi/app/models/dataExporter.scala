@@ -143,7 +143,8 @@ object DataExporterConfig {
             case "webhook" => Webhook.format.reads((json \ "config").as[JsObject]).get
             case "kafka"   => KafkaConfig.format.reads((json \ "config").as[JsObject]).get
             case "pulsar"  => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
-            case "file"    => FileSettings((json \ "config" \ "path").as[String], (json \ "config" \ "maxFileSize").as[Int])
+            case "file"    =>
+              FileSettings((json \ "config" \ "path").as[String], (json \ "config" \ "maxFileSize").as[Int])
             case "mailer"  => MailerSettings.format.reads((json \ "config").as[JsObject]).get
             case "custom"  => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])
             case "console" => ConsoleSettings()
