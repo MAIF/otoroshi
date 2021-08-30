@@ -143,13 +143,21 @@ case class Cert(
   def theTags: Seq[String]             = tags
 
   lazy val cleanChain: String = {
-    var found = false
-    chain.split("\\n").filter { line =>
-      if (line.startsWith("-----")) {
-        found = true
-      }
-      found
-    }.mkString("\n")
+    val matcher: Matcher = DynamicSSLEngineProvider.CERT_PATTERN.matcher(chain)
+    var certificates     = Seq.empty[String]
+    var start            = 0
+    while ({ matcher.find(start) }) {
+      certificates = certificates :+ matcher.group(1)
+      start = matcher.end
+    }
+    certificates.map(c => s"${PemHeaders.BeginCertificate}\n$c${PemHeaders.EndCertificate}").mkString("\n").debugPrintln
+    // var found = false
+    // chain.split("\\n").filter { line =>
+    //   if (line.startsWith("-----")) {
+    //     found = true
+    //   }
+    //   found
+    // }.mkString("\n")
   }
 
   lazy val certType = {
@@ -1023,7 +1031,7 @@ object DynamicSSLEngineProvider {
 
   val logger = Logger("otoroshi-ssl-provider")
 
-  private val CERT_PATTERN: Pattern = Pattern.compile(
+  private[ssl] val CERT_PATTERN: Pattern = Pattern.compile(
     "-+BEGIN\\s+.*CERTIFICATE[^-]*-+(?:\\s|\\r|\\n)+" + // Header
     "([a-z0-9+/=\\r\\n]+)" +                            // Base64 text
     "-+END\\s+.*CERTIFICATE[^-]*-+", // Footer
