@@ -149,7 +149,7 @@ case class Cert(
         found = true
       }
       found
-    }.mkString("\n").debugPrintln
+    }.mkString("\n")
   }
 
   lazy val certType = {
