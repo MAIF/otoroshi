@@ -586,8 +586,8 @@ object Exporters {
       extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       exporter[FileSettings].map { exporterConfig =>
-        val path            = Paths.get(exporterConfig.path.replace("{day}", DateTime.now().toString("yyyy-MM-dd")))
-        val file            = path.toFile
+        val path = Paths.get(exporterConfig.path.replace("{day}", DateTime.now().toString("yyyy-MM-dd")))
+        val file = path.toFile
         if (!file.exists()) {
           file.createNewFile()
         } else {
@@ -601,7 +601,7 @@ object Exporters {
         }
 
         val fileIsNotEmpty = file.length() > 0 && events.nonEmpty
-        val prefix = if(fileIsNotEmpty) "\r\n" else ""
+        val prefix         = if (fileIsNotEmpty) "\r\n" else ""
 
         val contentToAppend = events.map(Json.stringify).mkString("\r\n")
 
