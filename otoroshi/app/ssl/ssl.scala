@@ -150,14 +150,7 @@ case class Cert(
       certificates = certificates :+ matcher.group(1)
       start = matcher.end
     }
-    certificates.map(c => s"${PemHeaders.BeginCertificate}\n$c${PemHeaders.EndCertificate}").mkString("\n").debugPrintln
-    // var found = false
-    // chain.split("\\n").filter { line =>
-    //   if (line.startsWith("-----")) {
-    //     found = true
-    //   }
-    //   found
-    // }.mkString("\n")
+    certificates.map(c => s"${PemHeaders.BeginCertificate}\n$c${PemHeaders.EndCertificate}").mkString("\n")
   }
 
   lazy val certType = {
