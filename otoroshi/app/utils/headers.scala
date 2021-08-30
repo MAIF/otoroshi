@@ -73,7 +73,7 @@ object HeadersHelper {
 
   @inline
   def xForwardedHeader(desc: ServiceDescriptor, request: RequestHeader)(implicit env: Env): Seq[(String, String)] = {
-    if (desc.xForwardedHeaders && env.trustXForwarded) {
+    if (desc.xForwardedHeaders && env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
       val xForwardedFor   = request.headers
         .get("X-Forwarded-For")
         .map(v => v + ", " + request.remoteAddress)
@@ -85,7 +85,7 @@ object HeadersHelper {
         "X-Forwarded-Host"  -> xForwardedHost,
         "X-Forwarded-Proto" -> xForwardedProto
       )
-    } else if (desc.xForwardedHeaders && !env.trustXForwarded) {
+    } else if (desc.xForwardedHeaders && !env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
       val xForwardedFor   = request.remoteAddress
       val xForwardedProto = request.theProtocol
       val xForwardedHost  = request.theHost

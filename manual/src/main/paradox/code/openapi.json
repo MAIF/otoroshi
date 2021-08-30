@@ -15959,6 +15959,10 @@
             } ],
             "description" : "Config. for elastic reads"
           },
+          "trustXForwarded" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
           "tags" : {
             "type" : "array",
             "items" : {

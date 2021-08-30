@@ -541,6 +541,14 @@ export class DangerZonePage extends Component {
         help: 'Forces admins to login only with user/password or user/password/u2F device',
       },
     },
+    trustXForwarded: {
+      type: 'bool',
+      props: {
+        label: 'Use X-Forwarded-* headers for routing',
+        placeholder: '--',
+        help: 'When evaluating routing of a request X-Forwarded-* headers will be used if presents',
+      },
+    },
     maintenanceMode: {
       type: 'bool',
       props: {
@@ -945,6 +953,7 @@ export class DangerZonePage extends Component {
     'enableEmbeddedMetrics',
     'middleFingers',
     'limitConcurrentRequests',
+    'trustXForwarded',
     'maxConcurrentRequests',
     'maxHttp10ResponseSize',
     'maxLogsSize',

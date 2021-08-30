@@ -394,6 +394,7 @@ case class GlobalConfig(
     apiReadOnly: Boolean = false,
     u2fLoginOnly: Boolean = false,
     maintenanceMode: Boolean = false,
+    trustXForwarded: Boolean = true,
     ipFiltering: IpFiltering = IpFiltering(),
     throttlingQuota: Long = BaseQuotas.MaxValue,
     perIpThrottlingQuota: Long = BaseQuotas.MaxValue,
@@ -528,6 +529,7 @@ object GlobalConfig {
         "useCircuitBreakers"      -> o.useCircuitBreakers,
         "apiReadOnly"             -> o.apiReadOnly,
         "u2fLoginOnly"            -> o.u2fLoginOnly,
+        "trustXForwarded"         -> o.trustXForwarded,
         "ipFiltering"             -> o.ipFiltering.toJson,
         "throttlingQuota"         -> o.throttlingQuota,
         "perIpThrottlingQuota"    -> o.perIpThrottlingQuota,
@@ -566,6 +568,7 @@ object GlobalConfig {
           streamEntityOnly = (json \ "streamEntityOnly").asOpt[Boolean].getOrElse(true),
           maintenanceMode = (json \ "maintenanceMode").asOpt[Boolean].getOrElse(false),
           autoLinkToDefaultGroup = (json \ "autoLinkToDefaultGroup").asOpt[Boolean].getOrElse(true),
+          trustXForwarded = (json \ "trustXForwarded").asOpt[Boolean].getOrElse(true),
           limitConcurrentRequests = (json \ "limitConcurrentRequests")
             .asOpt[Boolean]
             .getOrElse(false), // TODO : true by default after prod monitoring

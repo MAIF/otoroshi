@@ -870,6 +870,7 @@ class Env(
     .getOrElse("")
 
   lazy val defaultConfig = GlobalConfig(
+    trustXForwarded = trustXForwarded,
     perIpThrottlingQuota = 500,
     throttlingQuota = 100000,
     maxLogsSize = configuration.getOptionalWithFileSupport[Int]("app.events.maxSize").getOrElse(100),
