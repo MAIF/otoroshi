@@ -346,7 +346,7 @@ class Env(
   lazy val requestTimeout: FiniteDuration =
     configuration.getOptionalWithFileSupport[Int]("app.proxy.requestTimeout").map(_.millis).getOrElse(1.hour)
 
-  lazy val trustXForwarded: Boolean =
+  lazy val initialTrustXForwarded: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.trustXForwarded").getOrElse(true)
 
   lazy val manualDnsResolve: Boolean         =
@@ -870,7 +870,7 @@ class Env(
     .getOrElse("")
 
   lazy val defaultConfig = GlobalConfig(
-    trustXForwarded = trustXForwarded,
+    trustXForwarded = initialTrustXForwarded,
     perIpThrottlingQuota = 500,
     throttlingQuota = 100000,
     maxLogsSize = configuration.getOptionalWithFileSupport[Int]("app.events.maxSize").getOrElse(100),
