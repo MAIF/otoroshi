@@ -88,12 +88,15 @@ case class ElasticAnalyticsConfig(
     password: Option[String] = None,
     headers: Map[String, String] = Map.empty[String, String],
     indexSettings: IndexSettings = IndexSettings(),
-    mtlsConfig: MtlsConfig = MtlsConfig.default
+    mtlsConfig: MtlsConfig = MtlsConfig.default,
+    applyTemplate: Boolean = true,
+    version: Option[String] = None
 ) extends Exporter {
   def toJson: JsValue = ElasticAnalyticsConfig.format.writes(this)
 }
 
 object ElasticAnalyticsConfig {
+  def read(json: JsValue): Option[ElasticAnalyticsConfig] = format.reads(json).asOpt
   val format = new Format[ElasticAnalyticsConfig] {
     override def writes(o: ElasticAnalyticsConfig) =
       Json.obj(
@@ -104,7 +107,9 @@ object ElasticAnalyticsConfig {
         "password"   -> o.password.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "headers"    -> JsObject(o.headers.mapValues(JsString.apply)),
         "indexSettings" -> o.indexSettings.json,
-        "mtlsConfig" -> o.mtlsConfig.json
+        "mtlsConfig" -> o.mtlsConfig.json,
+        "applyTemplate" -> o.applyTemplate,
+        "version" -> o.version.map(JsString.apply).getOrElse(JsNull).as[JsValue]
       )
     override def reads(json: JsValue)              =
       Try {
@@ -117,7 +122,9 @@ object ElasticAnalyticsConfig {
             password = (json \ "password").asOpt[String].map(_.trim).filter(_.nonEmpty),
             headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
             indexSettings = IndexSettings.read((json \ "indexSettings").asOpt[JsValue]),
-            mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
+            mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue]),
+            applyTemplate = (json \ "applyTemplate").asOpt[Boolean].getOrElse(true),
+            version = (json \ "version").asOpt[String].filter(_.trim.nonEmpty),
           )
         )
       } recover { case e =>

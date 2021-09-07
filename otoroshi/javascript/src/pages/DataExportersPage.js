@@ -15,6 +15,7 @@ import {
 } from '../components/inputs';
 import { Collapse } from '../components/inputs/Collapse';
 import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
+import { CheckElasticsearchConnection } from '../components/elasticsearch';
 
 function tryOrTrue(f) {
   try {
@@ -436,6 +437,9 @@ const possibleExporterConfigFormValues = {
       'type',
       'user',
       'password',
+      'version',
+      'applyTemplate',
+      'checkConnection',
       '>>>Index settings',
       'indexSettings.clientSide',
       'indexSettings.interval',
@@ -467,12 +471,25 @@ const possibleExporterConfigFormValues = {
         type: 'string',
         props: { label: 'Password', placeholder: 'Elastic password (optional)', type: 'password' },
       },
+      applyTemplate: {
+        type: 'bool',
+        props: { label: 'Apply template', help: 'Automatically apply index template' },
+      },
+      version: {
+        type: 'string',
+        props: { label: 'Version', placeholder: 'Elastic version (optional, if none provided it will be fetched from cluster)' },
+      },
+      checkConnection: {
+        type: CheckElasticsearchConnection,
+        props: { label: 'Check Connection' },
+      },
       'indexSettings.clientSide': {
         type: 'bool',
         props: { label: 'Client side temporal indexes handling' },
       },
       'indexSettings.interval': {
         type: 'select',
+        display: (v) => v.indexSettings.clientSide,
         props: { label: 'One index per', possibleValues: [
           { label: 'Day', value: 'Day' },
           { label: 'Week', value: 'Week' },

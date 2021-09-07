@@ -16,6 +16,7 @@ import otoroshi.actions.{ApiActionContext, BackOfficeAction, BackOfficeActionAut
 import otoroshi.auth._
 import otoroshi.env.Env
 import otoroshi.events._
+import otoroshi.events.impl.ElasticReadsAnalytics
 import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models.RightsChecker.SuperAdminOnly
 import otoroshi.models.{EntityLocation, EntityLocationSupport, TenantId, _}
@@ -1375,4 +1376,30 @@ class BackOfficeController(
         }
       }
     }
+
+  def checkElasticsearchConnection() = BackOfficeActionAuth.async(parse.json) { ctx =>
+    ElasticAnalyticsConfig.read(ctx.request.body) match {
+      case None => Ok(Json.obj("none" -> true)).future
+      case Some(config) => {
+        val read = new ElasticReadsAnalytics(config, env)
+        for {
+          version <- read.checkVersion()
+          search  <- read.checkSearch()
+        } yield {
+          val versionJson = version match {
+            case Left(err) => Json.obj("error" -> err)
+            case Right(v) => JsString(v)
+          }
+          val searchJson = search match {
+            case Left(err) => Json.obj("error" -> err)
+            case Right(v) => JsNumber(v)
+          }
+          Ok(Json.obj(
+            "version" -> versionJson,
+            "search" -> searchJson
+          ))
+        }
+      }
+    }
+  }
 }

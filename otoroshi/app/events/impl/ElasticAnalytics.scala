@@ -319,6 +319,10 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
   private val `type`: String                    = config.`type`.getOrElse("event")
   private implicit val mat                      = Materializer(system)
 
+  if (config.applyTemplate) {
+    init()
+  }
+
   private def url(url: String): WSRequest = {
     val builder =
       env.MtlsWs
@@ -335,28 +339,40 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
 
     import otoroshi.jobs.updates.Version
 
-    url(urlFromPath(""))
-      .get()
-      .map(_.json)
-      .map(json => (json \ "version" \ "number").asOpt[String].getOrElse("6.0.0"))
-      // .map(v => v.split("\\.").headOption.map(_.toInt).getOrElse(6))
-      .map { _v =>
-        Version(_v) match {
+    config.version match {
+      case Some(version) => {
+        (Version(version) match {
           case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven
           case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight
           case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven
           case _                                  => ElasticVersion.AboveSeven
-        }
-      // _v.split("\\.").headOption.map(_.toInt).getOrElse(6) match {
-      //   case v if v <= 6 => ElasticVersion.UnderSeven
-      //   case v if v > 6 => {
-      //     _v.split("\\.").drop(1).headOption.map(_.toInt).getOrElse(1) match {
-      //       case v if v >= 8 => ElasticVersion.AboveSevenEight
-      //       case v if v < 8 => ElasticVersion.AboveSeven
-      //     }
-      //   }
-      // }
+        }).future
       }
+      case None => {
+        url(urlFromPath(""))
+          .get()
+          .map(_.json)
+          .map(json => (json \ "version" \ "number").asOpt[String].getOrElse("6.0.0"))
+          // .map(v => v.split("\\.").headOption.map(_.toInt).getOrElse(6))
+          .map { _v =>
+            Version(_v) match {
+              case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven
+              case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight
+              case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven
+              case _                                  => ElasticVersion.AboveSeven
+            }
+            // _v.split("\\.").headOption.map(_.toInt).getOrElse(6) match {
+            //   case v if v <= 6 => ElasticVersion.UnderSeven
+            //   case v if v > 6 => {
+            //     _v.split("\\.").drop(1).headOption.map(_.toInt).getOrElse(1) match {
+            //       case v if v >= 8 => ElasticVersion.AboveSevenEight
+            //       case v if v < 8 => ElasticVersion.AboveSeven
+            //     }
+            //   }
+            // }
+          }
+      }
+    }
   }
 
   override def init(): Unit = {
@@ -427,13 +443,13 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
                   FastFuture.successful(())
               }
             }
+        }.recover {
+          case t: Throwable => logger.error("error during elasticsearch initialization", t)
         },
         5.second
       )
     }
   }
-
-  init()
 
   private def bulkRequest(source: JsValue): String = {
     val version: ElasticVersion = ElasticWritesAnalytics.isInitialized(config)._2
@@ -536,6 +552,58 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         builder.withHttpHeaders("Authorization" -> h)
       }
       .addHttpHeaders(config.headers.toSeq: _*)
+  }
+
+  def checkAvailability()(implicit ec: ExecutionContext): Future[Either[JsValue, JsValue]] = {
+    url(urlFromPath("/_cluster/health"))
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          // logger.info(resp.json.prettify)
+          Right(resp.json)
+        } else {
+          Left(resp.json)
+        }
+      }
+  }
+
+  def checkSearch()(implicit ec: ExecutionContext): Future[Either[JsValue, Long]] = {
+    config.index match {
+      case None => {
+        url(urlFromPath(s"/_search?size=0"))
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              Right((resp.json \ "hits" \ "total" \ "value").asOpt[Long].getOrElse(0L))
+            } else {
+              Left(resp.json)
+            }
+          }
+      }
+      case Some(index) => {
+        url(urlFromPath(s"/${index}/_search?size=0"))
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              Right((resp.json \ "hits" \ "total" \ "value").asOpt[Long].getOrElse(0L))
+            } else {
+              Left(resp.json)
+            }
+          }
+      }
+    }
+  }
+
+  def checkVersion()(implicit ec: ExecutionContext): Future[Either[JsValue, String]] = {
+    url(urlFromPath(""))
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          Right((resp.json \ "version" \ "number").asOpt[String].getOrElse("6.0.0"))
+        } else {
+          Left(resp.json)
+        }
+      }
   }
 
   def getElasticVersion()(implicit ec: ExecutionContext): Future[ElasticVersion] = {

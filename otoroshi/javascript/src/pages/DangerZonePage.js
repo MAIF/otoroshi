@@ -12,6 +12,8 @@ import _ from 'lodash';
 import Select from 'react-select';
 import Creatable from 'react-select/lib/Creatable';
 
+import { CheckElasticsearchConnection } from '../components/elasticsearch';
+
 function tryOrTrue(f) {
   try {
     return f();
@@ -318,6 +320,9 @@ export class DangerZonePage extends Component {
     'type',
     'user',
     'password',
+    'version',
+    'applyTemplate',
+    'checkConnection',
     //'>>>Index settings',
     'indexSettings.clientSide',
     'indexSettings.interval',
@@ -350,12 +355,25 @@ export class DangerZonePage extends Component {
       type: 'string',
       props: { label: 'Password', placeholder: 'Elastic password (optional)', type: 'password' },
     },
+    version: {
+      type: 'string',
+      props: { label: 'Version', placeholder: 'Elastic version (optional, if none provided it will be fetched from cluster)' },
+    },
+    applyTemplate: {
+      type: 'bool',
+      props: { label: 'Apply template', help: 'Automatically apply index template' },
+    },
+    checkConnection: {
+      type: CheckElasticsearchConnection,
+      props: { label: 'Check Connection' },
+    },
     'indexSettings.clientSide': {
       type: 'bool',
       props: { label: 'Client side temporal indexes handling' },
     },
     'indexSettings.interval': {
       type: 'select',
+      display: (v) => v.indexSettings.clientSide,
       props: { label: 'One index per', possibleValues: [
         { label: 'Day', value: 'Day' },
         { label: 'Week', value: 'Week' },
