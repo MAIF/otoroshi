@@ -457,7 +457,7 @@ const possibleExporterConfigFormValues = {
       },
       type: {
         type: 'string',
-        props: { label: 'Type', placeholder: 'Event type' },
+        props: { label: 'Type', placeholder: 'Event type (not needed for elasticsearch above 6.x)' },
       },
       user: {
         type: 'string',
