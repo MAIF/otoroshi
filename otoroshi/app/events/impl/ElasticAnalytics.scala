@@ -2,15 +2,14 @@ package otoroshi.events.impl
 
 import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
 import otoroshi.events._
-import otoroshi.models.{ApiKey, ElasticAnalyticsConfig, ServiceDescriptor, ServiceGroup}
-import org.joda.time.format.ISODateTimeFormat
+import otoroshi.models.{ApiKey, ElasticAnalyticsConfig, IndexSettingsInterval, ServiceDescriptor, ServiceGroup}
+import org.joda.time.format.{DateTimeFormatterBuilder, ISODateTimeFormat}
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
@@ -377,7 +376,12 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
             case ElasticVersion.AboveSevenEight =>
               (ElasticTemplates.indexTemplate_v7_8, "/_index_template/otoroshi-tpl")
           }
-          val tpl: JsValue                = Json.parse(strTpl.replace("$$$INDEX$$$", index))
+          logger.debug(s"$version, $indexTemplatePath")
+          val tpl: JsValue = if (config.indexSettings.clientSide) {
+            Json.parse(strTpl.replace("$$$INDEX$$$", index))
+          } else {
+            Json.parse(strTpl.replace("$$$INDEX$$$-*", index))
+          }
           logger.debug(s"Creating otoroshi template with \n${Json.prettyPrint(tpl)}")
           url(urlFromPath(indexTemplatePath))
             .get()
@@ -433,8 +437,17 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
 
   private def bulkRequest(source: JsValue): String = {
     val version: ElasticVersion = ElasticWritesAnalytics.isInitialized(config)._2
-    val df                      = ISODateTimeFormat.date().print(DateTime.now())
-    val indexWithDate           = s"$index-$df"
+    val df                      = if (config.indexSettings.clientSide) {
+      config.indexSettings.interval match {
+        case IndexSettingsInterval.Day   => ISODateTimeFormat.date().print(DateTime.now())
+        case IndexSettingsInterval.Week  => ISODateTimeFormat.weekyearWeek().print(DateTime.now())
+        case IndexSettingsInterval.Month => ISODateTimeFormat.yearMonth().print(DateTime.now())
+        case IndexSettingsInterval.Year  => ISODateTimeFormat.year().print(DateTime.now())
+      }
+    } else {
+      ""
+    }
+    val indexWithDate           = if (config.indexSettings.clientSide) s"$index-$df" else index
     val indexClause             = Json.stringify(
       Json.obj(
         "index" -> Json
@@ -475,11 +488,11 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
       .map(_.map(bulkRequest))
       .mapAsync(10) { bulk =>
         val req  = bulk.mkString("", "\n", "\n\n")
-        val post = clientInstance.post(req)
+        val post = clientInstance.withMethod("POST").post(req)
         post.onComplete {
           case Success(resp) =>
             if (resp.status >= 400) {
-              logger.error(s"Error publishing event to elastic: ${resp.status}, ${resp.body} --- event: $event")
+              logger.error(s"Error publishing event to elastic: ${resp.status}, ${resp.body}")// --- event: $event")
             } else {
               val esResponse = Json.parse(resp.body)
               val esError    = (esResponse \ "errors").asOpt[Boolean].getOrElse(false)
@@ -506,7 +519,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   private def urlFromPath(path: String): String = s"${config.clusterUri}$path"
   private val `type`: String                    = config.`type`.getOrElse("type")
   private val index: String                     = config.index.getOrElse("otoroshi-events")
-  private val searchUri                         = urlFromPath(s"/$index*/_search")
+  private val searchUri                         = if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_search") else urlFromPath(s"/$index/_search")
   private implicit val mat                      = Materializer(system)
 
   private def indexUri: String = {

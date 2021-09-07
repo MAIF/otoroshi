@@ -26,9 +26,59 @@ import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.letsencrypt.LetsEncryptSettings
 import otoroshi.utils.mailer.MailerSettings
 import otoroshi.utils._
+import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+
+sealed trait IndexSettingsInterval {
+  def name: String
+  def json: JsValue = JsString(name)
+}
+
+object IndexSettingsInterval {
+  case object Day extends IndexSettingsInterval { def name: String = "Day" }
+  case object Week extends IndexSettingsInterval { def name: String = "Week" }
+  case object Month extends IndexSettingsInterval { def name: String = "Month" }
+  case object Year extends IndexSettingsInterval { def name: String = "Year" }
+  def parse(str: String): Option[IndexSettingsInterval] = {
+    str.trim.toLowerCase() match {
+      case "week" => IndexSettingsInterval.Week.some
+      case "month" => IndexSettingsInterval.Month.some
+      case "year" => IndexSettingsInterval.Year.some
+      case "day" => IndexSettingsInterval.Day.some
+      case _ => None
+    }
+  }
+}
+
+case class IndexSettings(clientSide: Boolean = true, interval: IndexSettingsInterval = IndexSettingsInterval.Day) {
+  def json: JsValue = Json.obj(
+    "clientSide" -> clientSide,
+    "interval" -> interval.json
+  )
+}
+
+object IndexSettings {
+  def read(opt: Option[JsValue]): IndexSettings = {
+    opt match {
+      case None => IndexSettings()
+      case Some(jsv) => format.reads(jsv).asOpt.getOrElse(IndexSettings())
+    }
+  }
+  val format = new Format[IndexSettings] {
+    override def reads(json: JsValue): JsResult[IndexSettings] = Try {
+      IndexSettings(
+        clientSide = json.select("clientSide").asOpt[Boolean].getOrElse(true),
+        interval = IndexSettingsInterval.parse(json.select("interval").asOpt[String].getOrElse("Day")).getOrElse(IndexSettingsInterval.Day)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(is) => JsSuccess(is)
+    }
+    override def writes(o: IndexSettings): JsValue = o.json
+  }
+}
 
 case class ElasticAnalyticsConfig(
     clusterUri: String,
@@ -37,6 +87,7 @@ case class ElasticAnalyticsConfig(
     user: Option[String] = None,
     password: Option[String] = None,
     headers: Map[String, String] = Map.empty[String, String],
+    indexSettings: IndexSettings = IndexSettings(),
     mtlsConfig: MtlsConfig = MtlsConfig.default
 ) extends Exporter {
   def toJson: JsValue = ElasticAnalyticsConfig.format.writes(this)
@@ -52,6 +103,7 @@ object ElasticAnalyticsConfig {
         "user"       -> o.user.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "password"   -> o.password.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "headers"    -> JsObject(o.headers.mapValues(JsString.apply)),
+        "indexSettings" -> o.indexSettings.json,
         "mtlsConfig" -> o.mtlsConfig.json
       )
     override def reads(json: JsValue)              =
@@ -64,6 +116,7 @@ object ElasticAnalyticsConfig {
             user = (json \ "user").asOpt[String].map(_.trim).filter(_.nonEmpty),
             password = (json \ "password").asOpt[String].map(_.trim).filter(_.nonEmpty),
             headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+            indexSettings = IndexSettings.read((json \ "indexSettings").asOpt[JsValue]),
             mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
           )
         )

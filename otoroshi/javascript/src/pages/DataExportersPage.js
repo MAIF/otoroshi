@@ -436,6 +436,10 @@ const possibleExporterConfigFormValues = {
       'type',
       'user',
       'password',
+      '>>>Index settings',
+      'indexSettings.clientSide',
+      'indexSettings.interval',
+      '>>>TLS settings',
       'mtlsConfig.mtls',
       'mtlsConfig.loose',
       'mtlsConfig.trustAll',
@@ -463,20 +467,36 @@ const possibleExporterConfigFormValues = {
         type: 'string',
         props: { label: 'Password', placeholder: 'Elastic password (optional)', type: 'password' },
       },
+      'indexSettings.clientSide': {
+        type: 'bool',
+        props: { label: 'Client side temporal indexes handling' },
+      },
+      'indexSettings.interval': {
+        type: 'select',
+        props: { label: 'One index per', possibleValues: [
+          { label: 'Day', value: 'Day' },
+          { label: 'Week', value: 'Week' },
+          { label: 'Month', value: 'Month' },
+          { label: 'Year', value: 'Year' },
+        ]},
+      },
       'mtlsConfig.mtls': {
         type: 'bool',
         props: { label: 'Custom TLS Settings' },
       },
       'mtlsConfig.loose': {
         type: 'bool',
+        display: (v) => v.mtlsConfig.mtls,
         props: { label: 'TLS loose' },
       },
       'mtlsConfig.trustAll': {
         type: 'bool',
+        display: (v) => v.mtlsConfig.mtls,
         props: { label: 'TrustAll' },
       },
       'mtlsConfig.certs': {
         type: 'array',
+        display: (v) => v.mtlsConfig.mtls,
         props: {
           label: 'Client certificates',
           placeholder: 'Choose a client certificate',
@@ -496,6 +516,7 @@ const possibleExporterConfigFormValues = {
       },
       'mtlsConfig.trustedCerts': {
         type: 'array',
+        display: (v) => v.mtlsConfig.mtls && !v.mtlsConfig.trustAll,
         props: {
           label: 'Trusted certificates',
           placeholder: 'Choose a trusted certificate',
@@ -544,14 +565,17 @@ const possibleExporterConfigFormValues = {
       },
       'mtlsConfig.loose': {
         type: 'bool',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
         props: { label: 'TLS loose' },
       },
       'mtlsConfig.trustAll': {
         type: 'bool',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
         props: { label: 'TrustAll' },
       },
       'mtlsConfig.certs': {
         type: 'array',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
         props: {
           label: 'Client certificates',
           placeholder: 'Choose a client certificate',
@@ -571,6 +595,7 @@ const possibleExporterConfigFormValues = {
       },
       'mtlsConfig.trustedCerts': {
         type: 'array',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls && !v.mtlsConfig.trustAll),
         props: {
           label: 'Trusted certificates',
           placeholder: 'Choose a trusted certificate',
