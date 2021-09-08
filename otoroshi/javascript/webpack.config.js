@@ -3,6 +3,7 @@ const TerserJSPlugin = require('terser-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const CompressionPlugin = require("compression-webpack-plugin");
 
 module.exports = (env, argv) => {
   const isProd = argv.mode === 'production' || process.env.NODE_ENV === 'production';
@@ -103,6 +104,10 @@ module.exports = (env, argv) => {
   if (isProd) {
     return { 
       ...config, 
+      plugins: [
+        ...config.plugins,
+        new CompressionPlugin()
+      ],
       optimization: {
         minimize: true,
         minimizer: [
