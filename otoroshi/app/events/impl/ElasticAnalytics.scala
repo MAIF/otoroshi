@@ -308,6 +308,11 @@ object ElasticUtils {
 
   import otoroshi.utils.http.Implicits._
 
+  // private def indexUri: String = {
+  //   val df = ISODateTimeFormat.date().print(DateTime.now())
+  //   urlFromPath(s"/$index-$df/${`type`}")
+  // }
+
   def urlFromPath(path: String, config: ElasticAnalyticsConfig): String = s"${config.clusterUri}$path"
 
   def authHeader(config: ElasticAnalyticsConfig): Option[String] = {
@@ -432,6 +437,57 @@ object ElasticUtils {
         }
     }
   }
+
+  def checkAvailability(config: ElasticAnalyticsConfig, env: Env)(implicit ec: ExecutionContext): Future[Either[JsValue, JsValue]] = {
+    url(urlFromPath("/_cluster/health", config), config, env)
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          Right(resp.json)
+        } else {
+          Left(resp.json)
+        }
+      }
+  }
+
+  def checkVersion(config: ElasticAnalyticsConfig, env: Env)(implicit ec: ExecutionContext): Future[Either[JsValue, String]] = {
+    url(urlFromPath("", config), config, env)
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          Right((resp.json \ "version" \ "number").asOpt[String].getOrElse("6.0.0"))
+        } else {
+          Left(resp.json)
+        }
+      }
+  }
+
+  def checkSearch(config: ElasticAnalyticsConfig, env: Env)(implicit ec: ExecutionContext): Future[Either[JsValue, Long]] = {
+    config.index match {
+      case None => {
+        url(urlFromPath(s"/_search?size=0", config), config, env)
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              Right((resp.json \ "hits" \ "total" \ "value").asOpt[Long].getOrElse(0L))
+            } else {
+              Left(resp.json)
+            }
+          }
+      }
+      case Some(index) => {
+        url(urlFromPath(s"/${index}/_search?size=0", config), config, env)
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              Right((resp.json \ "hits" \ "total" \ "value").asOpt[Long].getOrElse(0L))
+            } else {
+              Left(resp.json)
+            }
+          }
+      }
+    }
+  }
 }
 
 class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends AnalyticsWritesService {
@@ -550,71 +606,19 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   private val searchUri                         = if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_search") else urlFromPath(s"/$index/_search")
   private implicit val mat                      = Materializer(system)
 
-  private def indexUri: String = {
-    val df = ISODateTimeFormat.date().print(DateTime.now())
-    urlFromPath(s"/$index-$df/${`type`}")
-  }
-
   lazy val logger = Logger("otoroshi-analytics-reads-elastic")
 
   private def authHeader(): Option[String] = ElasticUtils.authHeader(config)
 
   private def url(url: String): WSRequest = ElasticUtils.url(url, config, env)(env.analyticsExecutionContext)
 
-  def checkAvailability()(implicit ec: ExecutionContext): Future[Either[JsValue, JsValue]] = {
-    url(urlFromPath("/_cluster/health"))
-      .get()
-      .map { resp =>
-        if (resp.status == 200) {
-          Right(resp.json)
-        } else {
-          Left(resp.json)
-        }
-      }
-  }
+  def checkAvailability()(implicit ec: ExecutionContext): Future[Either[JsValue, JsValue]] = ElasticUtils.checkAvailability(config, env)
 
-  def checkSearch()(implicit ec: ExecutionContext): Future[Either[JsValue, Long]] = {
-    config.index match {
-      case None => {
-        url(urlFromPath(s"/_search?size=0"))
-          .get()
-          .map { resp =>
-            if (resp.status == 200) {
-              Right((resp.json \ "hits" \ "total" \ "value").asOpt[Long].getOrElse(0L))
-            } else {
-              Left(resp.json)
-            }
-          }
-      }
-      case Some(index) => {
-        url(urlFromPath(s"/${index}/_search?size=0"))
-          .get()
-          .map { resp =>
-            if (resp.status == 200) {
-              Right((resp.json \ "hits" \ "total" \ "value").asOpt[Long].getOrElse(0L))
-            } else {
-              Left(resp.json)
-            }
-          }
-      }
-    }
-  }
+  def checkSearch()(implicit ec: ExecutionContext): Future[Either[JsValue, Long]] = ElasticUtils.checkSearch(config, env)
 
-  def checkVersion()(implicit ec: ExecutionContext): Future[Either[JsValue, String]] = {
-    url(urlFromPath(""))
-      .get()
-      .map { resp =>
-        if (resp.status == 200) {
-          Right((resp.json \ "version" \ "number").asOpt[String].getOrElse("6.0.0"))
-        } else {
-          Left(resp.json)
-        }
-      }
-  }
+  def checkVersion()(implicit ec: ExecutionContext): Future[Either[JsValue, String]] = ElasticUtils.checkVersion(config, env)
 
-  def getElasticVersion()(implicit ec: ExecutionContext): Future[ElasticVersion] = {
-    ElasticUtils.getElasticVersion(config, env)
-  }
+  def getElasticVersion()(implicit ec: ExecutionContext): Future[ElasticVersion] = ElasticUtils.getElasticVersion(config, env)
 
   override def fetchHits(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
       env: Env,

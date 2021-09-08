@@ -73,6 +73,7 @@ POST    /bo/api/auth/_check                                   otoroshi.controlle
 POST    /bo/api/elastic/_check                                otoroshi.controllers.BackOfficeController.checkElasticsearchConnection()
 POST    /bo/api/elastic/_apply_template                       otoroshi.controllers.BackOfficeController.applyElasticsearchTemplate()
 POST    /bo/api/elastic/_template                             otoroshi.controllers.BackOfficeController.elasticTemplate()
+GET     /bo/api/elastic/_version                              otoroshi.controllers.BackOfficeController.elasticVersion()
 
 POST    /bo/api/oidc/_fetchConfig                             otoroshi.controllers.BackOfficeController.fetchOpenIdConfiguration()
 POST    /bo/api/saml/_fetchConfig                             otoroshi.controllers.BackOfficeController.fetchSAMLConfiguration()

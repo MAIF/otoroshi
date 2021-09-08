@@ -1445,4 +1445,21 @@ class BackOfficeController(
       }
     }
   }
+
+  def elasticVersion() = BackOfficeActionAuth.async(parse.json) { ctx =>
+    ElasticAnalyticsConfig.read(ctx.request.body) match {
+      case None => Ok(Json.obj("error" -> "bad configuration")).future
+      case Some(config) => {
+        val index: String = config.index.getOrElse("otoroshi-events")
+        for {
+          version <- ElasticUtils.checkVersion(config, env)
+        } yield {
+          version match {
+            case Left(err) => InternalServerError(Json.obj("error" -> err))
+            case Right(v) => Ok(Json.obj("version" -> v))
+          }
+        }
+      }
+    }
+  }
 }
