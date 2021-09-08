@@ -304,38 +304,32 @@ object ElasticVersion {
   case object AboveSevenEight extends ElasticVersion
 }
 
-class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends AnalyticsWritesService {
+object ElasticUtils {
 
   import otoroshi.utils.http.Implicits._
 
-  lazy val logger = Logger("otoroshi-analytics-writes-elastic")
+  def urlFromPath(path: String, config: ElasticAnalyticsConfig): String = s"${config.clusterUri}$path"
 
-  private val environment: Environment           = env.environment
-  private val executionContext: ExecutionContext = env.analyticsExecutionContext
-  private val system: ActorSystem                = env.analyticsActorSystem
-
-  private def urlFromPath(path: String): String = s"${config.clusterUri}$path"
-  private val index: String                     = config.index.getOrElse("otoroshi-events")
-  private val `type`: String                    = config.`type`.getOrElse("event")
-  private implicit val mat                      = Materializer(system)
-
-  if (config.applyTemplate) {
-    init()
+  def authHeader(config: ElasticAnalyticsConfig): Option[String] = {
+    for {
+      user     <- config.user
+      password <- config.password
+    } yield s"Basic ${Base64.getEncoder.encodeToString(s"$user:$password".getBytes())}"
   }
 
-  private def url(url: String): WSRequest = {
+  def url(url: String, config: ElasticAnalyticsConfig, env: Env)(implicit ec: ExecutionContext): WSRequest = {
     val builder =
       env.MtlsWs
         .url(url, config.mtlsConfig)
         .withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
-    authHeader()
+    authHeader(config)
       .fold(builder) { h =>
         builder.withHttpHeaders("Authorization" -> h)
       }
       .addHttpHeaders(config.headers.toSeq: _*)
   }
 
-  private def getElasticVersion()(implicit ec: ExecutionContext): Future[ElasticVersion] = {
+  def getElasticVersion(config: ElasticAnalyticsConfig, env: Env)(implicit ec: ExecutionContext): Future[ElasticVersion] = {
 
     import otoroshi.jobs.updates.Version
 
@@ -349,7 +343,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
         }).future
       }
       case None => {
-        url(urlFromPath(""))
+        url(urlFromPath("", config), config, env)
           .get()
           .map(_.json)
           .map(json => (json \ "version" \ "number").asOpt[String].getOrElse("6.0.0"))
@@ -375,6 +369,90 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
     }
   }
 
+  def applyTemplate(config: ElasticAnalyticsConfig, logger: Logger, env: Env)(implicit ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    val index: String = config.index.getOrElse("otoroshi-events")
+    getElasticVersion(config, env).flatMap { version =>
+      // from elastic 7.8, we should use /_index_template/otoroshi-tpl and wrap almost everything expect index_patterns in a "template" object
+      val (strTpl, indexTemplatePath) = version match {
+        case ElasticVersion.UnderSeven      => (ElasticTemplates.indexTemplate_v6, "/_template/otoroshi-tpl")
+        case ElasticVersion.AboveSeven      => (ElasticTemplates.indexTemplate_v7, "/_template/otoroshi-tpl")
+        case ElasticVersion.AboveSevenEight =>
+          (ElasticTemplates.indexTemplate_v7_8, "/_index_template/otoroshi-tpl")
+      }
+      logger.debug(s"$version, $indexTemplatePath")
+      val tpl: JsValue = if (config.indexSettings.clientSide) {
+        Json.parse(strTpl.replace("$$$INDEX$$$", index))
+      } else {
+        Json.parse(strTpl.replace("$$$INDEX$$$-*", index))
+      }
+      logger.debug(s"Creating otoroshi template with \n${Json.prettyPrint(tpl)}")
+      url(urlFromPath(indexTemplatePath, config), config, env)
+        .get()
+        .flatMap { resp =>
+          resp.status match {
+            case 200 =>
+              // TODO: check if same ???
+              resp.ignore()
+              val tplCreated = url(urlFromPath(indexTemplatePath, config), config, env).put(tpl)
+              tplCreated.onComplete {
+                case Success(r) if r.status >= 400 =>
+                  logger.error(s"Error creating template ${r.status}: ${r.body}")
+                case Failure(e)                    =>
+                  logger.error("Error creating template", e)
+                case Success(r)                    =>
+                  r.ignore()
+                  logger.debug("Otoroshi template updated")
+                  ElasticWritesAnalytics.initialized(config, version)
+                case _                             =>
+                  logger.debug("Otoroshi template updated")
+                  ElasticWritesAnalytics.initialized(config, version)
+              }
+              tplCreated.map(_ => ())
+            case 404 =>
+              resp.ignore()
+              val tplCreated = url(urlFromPath(indexTemplatePath, config), config, env).post(tpl)
+              tplCreated.onComplete {
+                case Success(r) if r.status >= 400 =>
+                  logger.error(s"Error creating template ${r.status}: ${r.body}")
+                case Failure(e)                    =>
+                  logger.error("Error creating template", e)
+                case Success(r)                    =>
+                  r.ignore()
+                  logger.debug("Otoroshi template created")
+                  ElasticWritesAnalytics.initialized(config, version)
+                case _                             =>
+                  logger.debug("Otoroshi template created")
+                  ElasticWritesAnalytics.initialized(config, version)
+              }
+              tplCreated.map(_ => ())
+            case _   =>
+              logger.error(s"Error creating template ${resp.status}: ${resp.body}")
+              FastFuture.successful(())
+          }
+        }
+    }
+  }
+}
+
+class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends AnalyticsWritesService {
+
+  import otoroshi.utils.http.Implicits._
+
+  lazy val logger = Logger("otoroshi-analytics-writes-elastic")
+
+  private val environment: Environment           = env.environment
+  private val executionContext: ExecutionContext = env.analyticsExecutionContext
+  private val system: ActorSystem                = env.analyticsActorSystem
+
+  private def urlFromPath(path: String): String = ElasticUtils.urlFromPath(path, config)
+  private val index: String                     = config.index.getOrElse("otoroshi-events")
+  private val `type`: String                    = config.`type`.getOrElse("event")
+  private implicit val mat                      = Materializer(system)
+
+  if (config.applyTemplate) {
+    init()
+  }
+
   override def init(): Unit = {
     if (ElasticWritesAnalytics.isInitialized(config)._1) {
       ()
@@ -384,66 +462,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
         s"Creating Otoroshi template for $index on es cluster at ${config.clusterUri}/$index/${`type`}"
       )
       Await.result(
-        getElasticVersion().flatMap { version =>
-          // from elastic 7.8, we should use /_index_template/otoroshi-tpl and wrap almost everything expect index_patterns in a "template" object
-          val (strTpl, indexTemplatePath) = version match {
-            case ElasticVersion.UnderSeven      => (ElasticTemplates.indexTemplate_v6, "/_template/otoroshi-tpl")
-            case ElasticVersion.AboveSeven      => (ElasticTemplates.indexTemplate_v7, "/_template/otoroshi-tpl")
-            case ElasticVersion.AboveSevenEight =>
-              (ElasticTemplates.indexTemplate_v7_8, "/_index_template/otoroshi-tpl")
-          }
-          logger.debug(s"$version, $indexTemplatePath")
-          val tpl: JsValue = if (config.indexSettings.clientSide) {
-            Json.parse(strTpl.replace("$$$INDEX$$$", index))
-          } else {
-            Json.parse(strTpl.replace("$$$INDEX$$$-*", index))
-          }
-          logger.debug(s"Creating otoroshi template with \n${Json.prettyPrint(tpl)}")
-          url(urlFromPath(indexTemplatePath))
-            .get()
-            .flatMap { resp =>
-              resp.status match {
-                case 200 =>
-                  // TODO: check if same ???
-                  resp.ignore()
-                  val tplCreated = url(urlFromPath(indexTemplatePath)).put(tpl)
-                  tplCreated.onComplete {
-                    case Success(r) if r.status >= 400 =>
-                      logger.error(s"Error creating template ${r.status}: ${r.body}")
-                    case Failure(e)                    =>
-                      logger.error("Error creating template", e)
-                    case Success(r)                    =>
-                      r.ignore()
-                      logger.debug("Otoroshi template updated")
-                      ElasticWritesAnalytics.initialized(config, version)
-                    case _                             =>
-                      logger.debug("Otoroshi template updated")
-                      ElasticWritesAnalytics.initialized(config, version)
-                  }
-                  tplCreated.map(_ => ())
-                case 404 =>
-                  resp.ignore()
-                  val tplCreated = url(urlFromPath(indexTemplatePath)).post(tpl)
-                  tplCreated.onComplete {
-                    case Success(r) if r.status >= 400 =>
-                      logger.error(s"Error creating template ${r.status}: ${r.body}")
-                    case Failure(e)                    =>
-                      logger.error("Error creating template", e)
-                    case Success(r)                    =>
-                      r.ignore()
-                      logger.debug("Otoroshi template created")
-                      ElasticWritesAnalytics.initialized(config, version)
-                    case _                             =>
-                      logger.debug("Otoroshi template created")
-                      ElasticWritesAnalytics.initialized(config, version)
-                  }
-                  tplCreated.map(_ => ())
-                case _   =>
-                  logger.error(s"Error creating template ${resp.status}: ${resp.body}")
-                  FastFuture.successful(())
-              }
-            }
-        }.recover {
+        ElasticUtils.applyTemplate(config, logger, env).recover {
           case t: Throwable => logger.error("error during elasticsearch initialization", t)
         },
         5.second
@@ -475,19 +494,12 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
     s"$indexClause\n$sourceClause"
   }
 
-  private def authHeader(): Option[String] = {
-    for {
-      user     <- config.user
-      password <- config.password
-    } yield s"Basic ${Base64.getEncoder.encodeToString(s"$user:$password".getBytes())}"
-  }
-
   override def publish(event: Seq[JsValue])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val builder = env.MtlsWs
       .url(urlFromPath("/_bulk"), config.mtlsConfig)
       .withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
 
-    val clientInstance = authHeader()
+    val clientInstance = ElasticUtils.authHeader(config)
       .fold {
         builder.withHttpHeaders(
           "Content-Type" -> "application/x-ndjson"
@@ -532,7 +544,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   private val executionContext: ExecutionContext = env.analyticsExecutionContext
   private val system: ActorSystem                = env.analyticsActorSystem
 
-  private def urlFromPath(path: String): String = s"${config.clusterUri}$path"
+  private def urlFromPath(path: String): String = ElasticUtils.urlFromPath(path, config)
   private val `type`: String                    = config.`type`.getOrElse("type")
   private val index: String                     = config.index.getOrElse("otoroshi-events")
   private val searchUri                         = if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_search") else urlFromPath(s"/$index/_search")
@@ -545,21 +557,15 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
 
   lazy val logger = Logger("otoroshi-analytics-reads-elastic")
 
-  private def url(url: String): WSRequest = {
-    val builder = env.MtlsWs.url(url, config.mtlsConfig)
-    authHeader()
-      .fold(builder) { h =>
-        builder.withHttpHeaders("Authorization" -> h)
-      }
-      .addHttpHeaders(config.headers.toSeq: _*)
-  }
+  private def authHeader(): Option[String] = ElasticUtils.authHeader(config)
+
+  private def url(url: String): WSRequest = ElasticUtils.url(url, config, env)(env.analyticsExecutionContext)
 
   def checkAvailability()(implicit ec: ExecutionContext): Future[Either[JsValue, JsValue]] = {
     url(urlFromPath("/_cluster/health"))
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          // logger.info(resp.json.prettify)
           Right(resp.json)
         } else {
           Left(resp.json)
@@ -607,21 +613,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   }
 
   def getElasticVersion()(implicit ec: ExecutionContext): Future[ElasticVersion] = {
-
-    import otoroshi.jobs.updates.Version
-
-    url(urlFromPath(""))
-      .get()
-      .map(_.json)
-      .map(json => (json \ "version" \ "number").asOpt[String].getOrElse("6.0.0"))
-      .map { _v =>
-        Version(_v) match {
-          case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven
-          case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight
-          case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven
-          case _                                  => ElasticVersion.AboveSeven
-        }
-      }
+    ElasticUtils.getElasticVersion(config, env)
   }
 
   override def fetchHits(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
@@ -911,13 +903,6 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
             )
         }
       }
-  }
-
-  private def authHeader(): Option[String] = {
-    for {
-      user     <- config.user
-      password <- config.password
-    } yield s"Basic ${Base64.getEncoder.encodeToString(s"$user:$password".getBytes())}"
   }
 
   private def statsHistogram(

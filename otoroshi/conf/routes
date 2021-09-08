@@ -71,6 +71,8 @@ POST    /bo/api/certificates/_createCSR                       otoroshi.controlle
 POST    /bo/api/auth/:id/_check                               otoroshi.controllers.BackOfficeController.checkExistingLdapConnection(id)
 POST    /bo/api/auth/_check                                   otoroshi.controllers.BackOfficeController.checkLdapConnection()
 POST    /bo/api/elastic/_check                                otoroshi.controllers.BackOfficeController.checkElasticsearchConnection()
+POST    /bo/api/elastic/_apply_template                       otoroshi.controllers.BackOfficeController.applyElasticsearchTemplate()
+POST    /bo/api/elastic/_template                             otoroshi.controllers.BackOfficeController.elasticTemplate()
 
 POST    /bo/api/oidc/_fetchConfig                             otoroshi.controllers.BackOfficeController.fetchOpenIdConfiguration()
 POST    /bo/api/saml/_fetchConfig                             otoroshi.controllers.BackOfficeController.fetchSAMLConfiguration()

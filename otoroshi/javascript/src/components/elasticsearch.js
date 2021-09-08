@@ -23,12 +23,55 @@ export class CheckElasticsearchConnection extends Component {
     }); 
   }
 
+  applyTemplate = () => {
+    fetch('/bo/api/elastic/_apply_template', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.props.rawValue)
+    }).then(r => r.json()).then(r => {
+      console.log(r);
+      if (r.error) {
+        window.newAlert(`Error during template apply: ${r.error}`)
+      } else {
+        window.newAlert('Index template has been applied !')
+      }
+    }); 
+  }
+
+  showTemplates = () => {
+    fetch('/bo/api/elastic/_template', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.props.rawValue)
+    }).then(r => r.json()).then(r => {
+      console.log(r);
+      if (r.error) {
+        window.newAlert(`Error while fetching templates: ${r.error}`)
+      } else {
+        window
+        .popup(
+          'Elasticsearch index template',
+          (ok, cancel) => <ElasticsearchTemplate ok={ok} cancel={cancel} template={r.template} />,
+          { __style: { width: '100%' } }
+        )
+      }
+    }); 
+  }
+
   render() {
     return (
       <div className="form-group">
         <label className="col-sm-2 control-label"></label>
         <div className="col-sm-10">
-          <button className="btn btn-sm btn-success" type="button" onClick={this.checkConnection}>Check connection !</button>
+          <div className="btn-group">
+            <button className="btn btn-sm btn-success" style={{ marginRight: 0 }} type="button" onClick={this.checkConnection}>Check connection</button>
+            <button className="btn btn-sm btn-success" style={{ marginRight: 0 }} type="button" onClick={this.applyTemplate}>Manually apply index template</button>
+            <button className="btn btn-sm btn-success" style={{ marginRight: 0 }} type="button" onClick={this.showTemplates}>Show index template</button>
+          </div>
         </div>
       </div>
     );
@@ -58,6 +101,25 @@ class ElasticsearchConnectionDiagnostic extends Component {
           {this.props.resp.search.error && (
             <p style={{ marginTop: 20 }}>Unable to access Elasticsearch search api on your index <span className="label label-default">{this.props.spec.index}</span>. Maybe you don't have the rights to access it.</p>
           )}
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
+            Close
+          </button>
+        </div>
+      </>
+    );
+  }
+}
+
+class ElasticsearchTemplate extends Component {
+  render() {
+    return (
+      <>
+        <div className="modal-body">
+          <pre>
+            <code dangerouslySetInnerHTML={{ __html: this.props.template.replace(/\\n/g, '<br/>').replace(/\\"/g, '"') }}></code>
+          </pre>
         </div>
         <div className="modal-footer">
           <button type="button" className="btn btn-danger" onClick={this.props.cancel}>

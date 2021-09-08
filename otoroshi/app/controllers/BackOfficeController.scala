@@ -16,7 +16,7 @@ import otoroshi.actions.{ApiActionContext, BackOfficeAction, BackOfficeActionAut
 import otoroshi.auth._
 import otoroshi.env.Env
 import otoroshi.events._
-import otoroshi.events.impl.ElasticReadsAnalytics
+import otoroshi.events.impl.{ElasticReadsAnalytics, ElasticTemplates, ElasticUtils, ElasticVersion}
 import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models.RightsChecker.SuperAdminOnly
 import otoroshi.models.{EntityLocation, EntityLocationSupport, TenantId, _}
@@ -1398,6 +1398,49 @@ class BackOfficeController(
             "version" -> versionJson,
             "search" -> searchJson
           ))
+        }
+      }
+    }
+  }
+
+  def applyElasticsearchTemplate() = BackOfficeActionAuth.async(parse.json) { ctx =>
+    ElasticAnalyticsConfig.read(ctx.request.body) match {
+      case None => Ok(Json.obj("error" -> "bad configuration")).future
+      case Some(config) => {
+        // val read = new ElasticReadsAnalytics(config, env)
+        for {
+          res <- ElasticUtils.applyTemplate(config, logger, env).map(_ => Right(())).recover {
+            case t: Throwable => Left(t)
+          }
+        } yield {
+          res match {
+            case Left(t) => InternalServerError(Json.obj("error" -> t.getMessage))
+            case Right(value) => Ok(Json.obj("done" -> true))
+          }
+        }
+      }
+    }
+  }
+
+  def elasticTemplate() = BackOfficeActionAuth.async(parse.json) { ctx =>
+    ElasticAnalyticsConfig.read(ctx.request.body) match {
+      case None => Ok(Json.obj("error" -> "bad configuration")).future
+      case Some(config) => {
+        val index: String = config.index.getOrElse("otoroshi-events")
+        for {
+          version <- ElasticUtils.getElasticVersion(config, env)
+        } yield {
+          val strTpl: String = version match {
+            case ElasticVersion.UnderSeven => ElasticTemplates.indexTemplate_v6
+            case ElasticVersion.AboveSeven => ElasticTemplates.indexTemplate_v7
+            case ElasticVersion.AboveSevenEight => ElasticTemplates.indexTemplate_v7_8
+          }
+          val template: String = if (config.indexSettings.clientSide) {
+            strTpl.replace("$$$INDEX$$$", index)
+          } else {
+            strTpl.replace("$$$INDEX$$$-*", index)
+          }
+          Ok(Json.obj("template" -> template))
         }
       }
     }
