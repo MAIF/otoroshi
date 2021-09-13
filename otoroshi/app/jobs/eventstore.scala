@@ -56,7 +56,7 @@ class EventstoreCheckerJob extends Job {
           read
             .checkAvailability()
             .map {
-              case Left(_) => {
+              case Left(_)  => {
                 EventstoreCheckerJob.initialized.set(true)
                 EventstoreCheckerJob.works.set(false)
               }

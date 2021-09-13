@@ -37,17 +37,17 @@ sealed trait IndexSettingsInterval {
 }
 
 object IndexSettingsInterval {
-  case object Day extends IndexSettingsInterval { def name: String = "Day" }
-  case object Week extends IndexSettingsInterval { def name: String = "Week" }
+  case object Day   extends IndexSettingsInterval { def name: String = "Day"   }
+  case object Week  extends IndexSettingsInterval { def name: String = "Week"  }
   case object Month extends IndexSettingsInterval { def name: String = "Month" }
-  case object Year extends IndexSettingsInterval { def name: String = "Year" }
+  case object Year  extends IndexSettingsInterval { def name: String = "Year"  }
   def parse(str: String): Option[IndexSettingsInterval] = {
     str.trim.toLowerCase() match {
-      case "week" => IndexSettingsInterval.Week.some
+      case "week"  => IndexSettingsInterval.Week.some
       case "month" => IndexSettingsInterval.Month.some
-      case "year" => IndexSettingsInterval.Year.some
-      case "day" => IndexSettingsInterval.Day.some
-      case _ => None
+      case "year"  => IndexSettingsInterval.Year.some
+      case "day"   => IndexSettingsInterval.Day.some
+      case _       => None
     }
   }
 }
@@ -55,14 +55,14 @@ object IndexSettingsInterval {
 case class IndexSettings(clientSide: Boolean = true, interval: IndexSettingsInterval = IndexSettingsInterval.Day) {
   def json: JsValue = Json.obj(
     "clientSide" -> clientSide,
-    "interval" -> interval.json
+    "interval"   -> interval.json
   )
 }
 
 object IndexSettings {
   def read(opt: Option[JsValue]): IndexSettings = {
     opt match {
-      case None => IndexSettings()
+      case None      => IndexSettings()
       case Some(jsv) => format.reads(jsv).asOpt.getOrElse(IndexSettings())
     }
   }
@@ -70,13 +70,15 @@ object IndexSettings {
     override def reads(json: JsValue): JsResult[IndexSettings] = Try {
       IndexSettings(
         clientSide = json.select("clientSide").asOpt[Boolean].getOrElse(true),
-        interval = IndexSettingsInterval.parse(json.select("interval").asOpt[String].getOrElse("Day")).getOrElse(IndexSettingsInterval.Day)
+        interval = IndexSettingsInterval
+          .parse(json.select("interval").asOpt[String].getOrElse("Day"))
+          .getOrElse(IndexSettingsInterval.Day)
       )
     } match {
-      case Failure(e) => JsError(e.getMessage)
+      case Failure(e)  => JsError(e.getMessage)
       case Success(is) => JsSuccess(is)
     }
-    override def writes(o: IndexSettings): JsValue = o.json
+    override def writes(o: IndexSettings): JsValue             = o.json
   }
 }
 
@@ -97,19 +99,19 @@ case class ElasticAnalyticsConfig(
 
 object ElasticAnalyticsConfig {
   def read(json: JsValue): Option[ElasticAnalyticsConfig] = format.reads(json).asOpt
-  val format = new Format[ElasticAnalyticsConfig] {
+  val format                                              = new Format[ElasticAnalyticsConfig] {
     override def writes(o: ElasticAnalyticsConfig) =
       Json.obj(
-        "clusterUri" -> o.clusterUri,
-        "index"      -> o.index.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "type"       -> o.`type`.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "user"       -> o.user.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "password"   -> o.password.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "headers"    -> JsObject(o.headers.mapValues(JsString.apply)),
+        "clusterUri"    -> o.clusterUri,
+        "index"         -> o.index.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "type"          -> o.`type`.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "user"          -> o.user.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "password"      -> o.password.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "headers"       -> JsObject(o.headers.mapValues(JsString.apply)),
         "indexSettings" -> o.indexSettings.json,
-        "mtlsConfig" -> o.mtlsConfig.json,
+        "mtlsConfig"    -> o.mtlsConfig.json,
         "applyTemplate" -> o.applyTemplate,
-        "version" -> o.version.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+        "version"       -> o.version.map(JsString.apply).getOrElse(JsNull).as[JsValue]
       )
     override def reads(json: JsValue)              =
       Try {
@@ -124,7 +126,7 @@ object ElasticAnalyticsConfig {
             indexSettings = IndexSettings.read((json \ "indexSettings").asOpt[JsValue]),
             mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue]),
             applyTemplate = (json \ "applyTemplate").asOpt[Boolean].getOrElse(true),
-            version = (json \ "version").asOpt[String].filter(_.trim.nonEmpty),
+            version = (json \ "version").asOpt[String].filter(_.trim.nonEmpty)
           )
         )
       } recover { case e =>

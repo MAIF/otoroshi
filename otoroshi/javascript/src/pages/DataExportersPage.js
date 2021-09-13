@@ -461,7 +461,10 @@ const possibleExporterConfigFormValues = {
       },
       type: {
         type: 'string',
-        props: { label: 'Type', placeholder: 'Event type (not needed for elasticsearch above 6.x)' },
+        props: {
+          label: 'Type',
+          placeholder: 'Event type (not needed for elasticsearch above 6.x)',
+        },
       },
       user: {
         type: 'string',
@@ -477,7 +480,11 @@ const possibleExporterConfigFormValues = {
       },
       version: {
         type: 'string',
-        props: { label: 'Version', placeholder: 'Elastic version (optional, if none provided it will be fetched from cluster)' },
+        props: {
+          label: 'Version',
+          placeholder:
+            'Elastic version (optional, if none provided it will be fetched from cluster)',
+        },
       },
       checkConnection: {
         type: CheckElasticsearchConnection,
@@ -490,12 +497,15 @@ const possibleExporterConfigFormValues = {
       'indexSettings.interval': {
         type: 'select',
         display: (v) => v.indexSettings.clientSide,
-        props: { label: 'One index per', possibleValues: [
-          { label: 'Day', value: 'Day' },
-          { label: 'Week', value: 'Week' },
-          { label: 'Month', value: 'Month' },
-          { label: 'Year', value: 'Year' },
-        ]},
+        props: {
+          label: 'One index per',
+          possibleValues: [
+            { label: 'Day', value: 'Day' },
+            { label: 'Week', value: 'Week' },
+            { label: 'Month', value: 'Month' },
+            { label: 'Year', value: 'Year' },
+          ],
+        },
       },
       'mtlsConfig.mtls': {
         type: 'bool',

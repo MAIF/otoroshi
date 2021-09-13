@@ -334,7 +334,9 @@ object ElasticUtils {
       .addHttpHeaders(config.headers.toSeq: _*)
   }
 
-  def getElasticVersion(config: ElasticAnalyticsConfig, env: Env)(implicit ec: ExecutionContext): Future[ElasticVersion] = {
+  def getElasticVersion(config: ElasticAnalyticsConfig, env: Env)(implicit
+      ec: ExecutionContext
+  ): Future[ElasticVersion] = {
 
     import otoroshi.jobs.updates.Version
 
@@ -347,7 +349,7 @@ object ElasticUtils {
           case _                                  => ElasticVersion.AboveSeven
         }).future
       }
-      case None => {
+      case None          => {
         url(urlFromPath("", config), config, env)
           .get()
           .map(_.json)
@@ -360,21 +362,24 @@ object ElasticUtils {
               case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven
               case _                                  => ElasticVersion.AboveSeven
             }
-            // _v.split("\\.").headOption.map(_.toInt).getOrElse(6) match {
-            //   case v if v <= 6 => ElasticVersion.UnderSeven
-            //   case v if v > 6 => {
-            //     _v.split("\\.").drop(1).headOption.map(_.toInt).getOrElse(1) match {
-            //       case v if v >= 8 => ElasticVersion.AboveSevenEight
-            //       case v if v < 8 => ElasticVersion.AboveSeven
-            //     }
-            //   }
-            // }
+          // _v.split("\\.").headOption.map(_.toInt).getOrElse(6) match {
+          //   case v if v <= 6 => ElasticVersion.UnderSeven
+          //   case v if v > 6 => {
+          //     _v.split("\\.").drop(1).headOption.map(_.toInt).getOrElse(1) match {
+          //       case v if v >= 8 => ElasticVersion.AboveSevenEight
+          //       case v if v < 8 => ElasticVersion.AboveSeven
+          //     }
+          //   }
+          // }
           }
       }
     }
   }
 
-  def applyTemplate(config: ElasticAnalyticsConfig, logger: Logger, env: Env)(implicit ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  def applyTemplate(config: ElasticAnalyticsConfig, logger: Logger, env: Env)(implicit
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Unit] = {
     val index: String = config.index.getOrElse("otoroshi-events")
     getElasticVersion(config, env).flatMap { version =>
       // from elastic 7.8, we should use /_index_template/otoroshi-tpl and wrap almost everything expect index_patterns in a "template" object
@@ -385,7 +390,7 @@ object ElasticUtils {
           (ElasticTemplates.indexTemplate_v7_8, "/_index_template/otoroshi-tpl")
       }
       logger.debug(s"$version, $indexTemplatePath")
-      val tpl: JsValue = if (config.indexSettings.clientSide) {
+      val tpl: JsValue                = if (config.indexSettings.clientSide) {
         Json.parse(strTpl.replace("$$$INDEX$$$", index))
       } else {
         Json.parse(strTpl.replace("$$$INDEX$$$-*", index))
@@ -438,7 +443,9 @@ object ElasticUtils {
     }
   }
 
-  def checkAvailability(config: ElasticAnalyticsConfig, env: Env)(implicit ec: ExecutionContext): Future[Either[JsValue, JsValue]] = {
+  def checkAvailability(config: ElasticAnalyticsConfig, env: Env)(implicit
+      ec: ExecutionContext
+  ): Future[Either[JsValue, JsValue]] = {
     url(urlFromPath("/_cluster/health", config), config, env)
       .get()
       .map { resp =>
@@ -450,7 +457,9 @@ object ElasticUtils {
       }
   }
 
-  def checkVersion(config: ElasticAnalyticsConfig, env: Env)(implicit ec: ExecutionContext): Future[Either[JsValue, String]] = {
+  def checkVersion(config: ElasticAnalyticsConfig, env: Env)(implicit
+      ec: ExecutionContext
+  ): Future[Either[JsValue, String]] = {
     url(urlFromPath("", config), config, env)
       .get()
       .map { resp =>
@@ -462,9 +471,11 @@ object ElasticUtils {
       }
   }
 
-  def checkSearch(config: ElasticAnalyticsConfig, env: Env)(implicit ec: ExecutionContext): Future[Either[JsValue, Long]] = {
+  def checkSearch(config: ElasticAnalyticsConfig, env: Env)(implicit
+      ec: ExecutionContext
+  ): Future[Either[JsValue, Long]] = {
     config.index match {
-      case None => {
+      case None        => {
         url(urlFromPath(s"/_search?size=0", config), config, env)
           .get()
           .map { resp =>
@@ -518,8 +529,8 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
         s"Creating Otoroshi template for $index on es cluster at ${config.clusterUri}/$index/${`type`}"
       )
       Await.result(
-        ElasticUtils.applyTemplate(config, logger, env).recover {
-          case t: Throwable => logger.error("error during elasticsearch initialization", t)
+        ElasticUtils.applyTemplate(config, logger, env).recover { case t: Throwable =>
+          logger.error("error during elasticsearch initialization", t)
         },
         5.second
       )
@@ -555,7 +566,8 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
       .url(urlFromPath("/_bulk"), config.mtlsConfig)
       .withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
 
-    val clientInstance = ElasticUtils.authHeader(config)
+    val clientInstance = ElasticUtils
+      .authHeader(config)
       .fold {
         builder.withHttpHeaders(
           "Content-Type" -> "application/x-ndjson"
@@ -576,7 +588,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
         post.onComplete {
           case Success(resp) =>
             if (resp.status >= 400) {
-              logger.error(s"Error publishing event to elastic: ${resp.status}, ${resp.body}")// --- event: $event")
+              logger.error(s"Error publishing event to elastic: ${resp.status}, ${resp.body}") // --- event: $event")
             } else {
               val esResponse = Json.parse(resp.body)
               val esError    = (esResponse \ "errors").asOpt[Boolean].getOrElse(false)
@@ -603,7 +615,8 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   private def urlFromPath(path: String): String = ElasticUtils.urlFromPath(path, config)
   private val `type`: String                    = config.`type`.getOrElse("type")
   private val index: String                     = config.index.getOrElse("otoroshi-events")
-  private val searchUri                         = if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_search") else urlFromPath(s"/$index/_search")
+  private val searchUri                         =
+    if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_search") else urlFromPath(s"/$index/_search")
   private implicit val mat                      = Materializer(system)
 
   lazy val logger = Logger("otoroshi-analytics-reads-elastic")
@@ -612,13 +625,17 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
 
   private def url(url: String): WSRequest = ElasticUtils.url(url, config, env)(env.analyticsExecutionContext)
 
-  def checkAvailability()(implicit ec: ExecutionContext): Future[Either[JsValue, JsValue]] = ElasticUtils.checkAvailability(config, env)
+  def checkAvailability()(implicit ec: ExecutionContext): Future[Either[JsValue, JsValue]] =
+    ElasticUtils.checkAvailability(config, env)
 
-  def checkSearch()(implicit ec: ExecutionContext): Future[Either[JsValue, Long]] = ElasticUtils.checkSearch(config, env)
+  def checkSearch()(implicit ec: ExecutionContext): Future[Either[JsValue, Long]] =
+    ElasticUtils.checkSearch(config, env)
 
-  def checkVersion()(implicit ec: ExecutionContext): Future[Either[JsValue, String]] = ElasticUtils.checkVersion(config, env)
+  def checkVersion()(implicit ec: ExecutionContext): Future[Either[JsValue, String]] =
+    ElasticUtils.checkVersion(config, env)
 
-  def getElasticVersion()(implicit ec: ExecutionContext): Future[ElasticVersion] = ElasticUtils.getElasticVersion(config, env)
+  def getElasticVersion()(implicit ec: ExecutionContext): Future[ElasticVersion] =
+    ElasticUtils.getElasticVersion(config, env)
 
   override def fetchHits(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
       env: Env,

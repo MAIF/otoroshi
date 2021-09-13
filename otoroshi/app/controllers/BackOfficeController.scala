@@ -1379,7 +1379,7 @@ class BackOfficeController(
 
   def checkElasticsearchConnection() = BackOfficeActionAuth.async(parse.json) { ctx =>
     ElasticAnalyticsConfig.read(ctx.request.body) match {
-      case None => Ok(Json.obj("none" -> true)).future
+      case None         => Ok(Json.obj("none" -> true)).future
       case Some(config) => {
         val read = new ElasticReadsAnalytics(config, env)
         for {
@@ -1388,16 +1388,18 @@ class BackOfficeController(
         } yield {
           val versionJson = version match {
             case Left(err) => Json.obj("error" -> err)
-            case Right(v) => JsString(v)
+            case Right(v)  => JsString(v)
           }
-          val searchJson = search match {
+          val searchJson  = search match {
             case Left(err) => Json.obj("error" -> err)
-            case Right(v) => JsNumber(v)
+            case Right(v)  => JsNumber(v)
           }
-          Ok(Json.obj(
-            "version" -> versionJson,
-            "search" -> searchJson
-          ))
+          Ok(
+            Json.obj(
+              "version" -> versionJson,
+              "search"  -> searchJson
+            )
+          )
         }
       }
     }
@@ -1405,16 +1407,16 @@ class BackOfficeController(
 
   def applyElasticsearchTemplate() = BackOfficeActionAuth.async(parse.json) { ctx =>
     ElasticAnalyticsConfig.read(ctx.request.body) match {
-      case None => Ok(Json.obj("error" -> "bad configuration")).future
+      case None         => Ok(Json.obj("error" -> "bad configuration")).future
       case Some(config) => {
         // val read = new ElasticReadsAnalytics(config, env)
         for {
-          res <- ElasticUtils.applyTemplate(config, logger, env).map(_ => Right(())).recover {
-            case t: Throwable => Left(t)
-          }
+          res <- ElasticUtils.applyTemplate(config, logger, env).map(_ => Right(())).recover { case t: Throwable =>
+                   Left(t)
+                 }
         } yield {
           res match {
-            case Left(t) => InternalServerError(Json.obj("error" -> t.getMessage))
+            case Left(t)      => InternalServerError(Json.obj("error" -> t.getMessage))
             case Right(value) => Ok(Json.obj("done" -> true))
           }
         }
@@ -1424,15 +1426,15 @@ class BackOfficeController(
 
   def elasticTemplate() = BackOfficeActionAuth.async(parse.json) { ctx =>
     ElasticAnalyticsConfig.read(ctx.request.body) match {
-      case None => Ok(Json.obj("error" -> "bad configuration")).future
+      case None         => Ok(Json.obj("error" -> "bad configuration")).future
       case Some(config) => {
         val index: String = config.index.getOrElse("otoroshi-events")
         for {
           version <- ElasticUtils.getElasticVersion(config, env)
         } yield {
-          val strTpl: String = version match {
-            case ElasticVersion.UnderSeven => ElasticTemplates.indexTemplate_v6
-            case ElasticVersion.AboveSeven => ElasticTemplates.indexTemplate_v7
+          val strTpl: String   = version match {
+            case ElasticVersion.UnderSeven      => ElasticTemplates.indexTemplate_v6
+            case ElasticVersion.AboveSeven      => ElasticTemplates.indexTemplate_v7
             case ElasticVersion.AboveSevenEight => ElasticTemplates.indexTemplate_v7_8
           }
           val template: String = if (config.indexSettings.clientSide) {
@@ -1448,7 +1450,7 @@ class BackOfficeController(
 
   def elasticVersion() = BackOfficeActionAuth.async(parse.json) { ctx =>
     ElasticAnalyticsConfig.read(ctx.request.body) match {
-      case None => Ok(Json.obj("error" -> "bad configuration")).future
+      case None         => Ok(Json.obj("error" -> "bad configuration")).future
       case Some(config) => {
         val index: String = config.index.getOrElse("otoroshi-events")
         for {
@@ -1456,7 +1458,7 @@ class BackOfficeController(
         } yield {
           version match {
             case Left(err) => InternalServerError(Json.obj("error" -> err))
-            case Right(v) => Ok(Json.obj("version" -> v))
+            case Right(v)  => Ok(Json.obj("version" -> v))
           }
         }
       }

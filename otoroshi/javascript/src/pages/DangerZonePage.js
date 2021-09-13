@@ -357,7 +357,10 @@ export class DangerZonePage extends Component {
     },
     version: {
       type: 'string',
-      props: { label: 'Version', placeholder: 'Elastic version (optional, if none provided it will be fetched from cluster)' },
+      props: {
+        label: 'Version',
+        placeholder: 'Elastic version (optional, if none provided it will be fetched from cluster)',
+      },
     },
     applyTemplate: {
       type: 'bool',
@@ -374,12 +377,15 @@ export class DangerZonePage extends Component {
     'indexSettings.interval': {
       type: 'select',
       display: (v) => v.indexSettings.clientSide,
-      props: { label: 'One index per', possibleValues: [
-        { label: 'Day', value: 'Day' },
-        { label: 'Week', value: 'Week' },
-        { label: 'Month', value: 'Month' },
-        { label: 'Year', value: 'Year' },
-      ]},
+      props: {
+        label: 'One index per',
+        possibleValues: [
+          { label: 'Day', value: 'Day' },
+          { label: 'Week', value: 'Week' },
+          { label: 'Month', value: 'Month' },
+          { label: 'Year', value: 'Year' },
+        ],
+      },
     },
     'mtlsConfig.mtls': {
       type: 'bool',
