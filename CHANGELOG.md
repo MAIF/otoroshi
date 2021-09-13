@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-beta.5] - 2021-09-13
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-beta.5+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-beta.4...v1.5.0-beta.5
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-beta.5
+
+- Do not display type in elastic config if version greater than 7 (#909)
+- Enable index per day pattern in elastic exporter or not (#910)
+- Add a "test connection" button in elastic config (#911)
+
 ## [1.5.0-beta.4] - 2021-08-30
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-beta.4+is%3Aclosed
