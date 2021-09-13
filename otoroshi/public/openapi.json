@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "1.5.0-dev",
+    "version" : "1.5.0-beta.5",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -13562,6 +13562,10 @@
             } ],
             "description" : "Elastic password"
           },
+          "indexSettings" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.models.IndexSettings"
+          },
           "mtlsConfig" : {
             "description" : "TLS settings for the http client",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
@@ -13583,6 +13587,18 @@
             "description" : "Object type",
             "type" : "string",
             "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+          },
+          "applyTemplate" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "version" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
           },
           "user" : {
             "oneOf" : [ {
@@ -16525,6 +16541,11 @@
           }
         }
       },
+      "otoroshi.models.IndexSettingsInterval" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : { }
+      },
       "otoroshi.script.plugins.Plugins" : {
         "description" : "Settings for plugins (of any kind)",
         "type" : "object",
@@ -17300,6 +17321,20 @@
           "outageStrategy" : {
             "description" : "",
             "$ref" : "#/components/schemas/otoroshi.models.OutageStrategy"
+          }
+        }
+      },
+      "otoroshi.models.IndexSettings" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "clientSide" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "interval" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.models.IndexSettingsInterval"
           }
         }
       },
