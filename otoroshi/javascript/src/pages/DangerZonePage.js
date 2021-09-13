@@ -22,6 +22,14 @@ function tryOrTrue(f) {
   }
 }
 
+function tryOrFalse(f) {
+  try {
+    return f();
+  } catch (e) {
+    return false;
+  }
+}
+
 const CodeInput = React.lazy(() => Promise.resolve(require('../components/inputs/CodeInput')));
 
 function shallowDiffers(a, b) {
@@ -376,7 +384,7 @@ export class DangerZonePage extends Component {
     },
     'indexSettings.interval': {
       type: 'select',
-      display: (v) => v.indexSettings.clientSide,
+      display: (v) => tryOrFalse(() => v.indexSettings.clientSide),
       props: {
         label: 'One index per',
         possibleValues: [
@@ -393,17 +401,17 @@ export class DangerZonePage extends Component {
     },
     'mtlsConfig.loose': {
       type: 'bool',
-      display: (v) => v.mtlsConfig.mtls,
+      display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
       props: { label: 'TLS loose' },
     },
     'mtlsConfig.trustAll': {
       type: 'bool',
-      display: (v) => v.mtlsConfig.mtls,
+      display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
       props: { label: 'TrustAll' },
     },
     'mtlsConfig.certs': {
       type: 'array',
-      display: (v) => v.mtlsConfig.mtls,
+      display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
       props: {
         label: 'Client certificates',
         placeholder: 'Choose a client certificate',
@@ -423,7 +431,7 @@ export class DangerZonePage extends Component {
     },
     'mtlsConfig.trustedCerts': {
       type: 'array',
-      display: (v) => v.mtlsConfig.mtls && !v.mtlsConfig.trustAll,
+      display: (v) => tryOrTrue(() => v.mtlsConfig.mtls && !v.mtlsConfig.trustAll),
       props: {
         label: 'Trusted certificates',
         placeholder: 'Choose a trusted certificate',

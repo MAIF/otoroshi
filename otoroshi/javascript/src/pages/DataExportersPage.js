@@ -24,6 +24,15 @@ function tryOrTrue(f) {
     return true;
   }
 }
+
+function tryOrFalse(f) {
+  try {
+    return f();
+  } catch (e) {
+    return false;
+  }
+}
+
 class Mailer extends Component {
   genericFormFlow = ['url', 'headers', 'to'];
   mailgunFormFlow = ['eu', 'apiKey', 'domain', 'to'];
@@ -496,7 +505,7 @@ const possibleExporterConfigFormValues = {
       },
       'indexSettings.interval': {
         type: 'select',
-        display: (v) => v.indexSettings.clientSide,
+        display: (v) => tryOrFalse(() => v.indexSettings.clientSide),
         props: {
           label: 'One index per',
           possibleValues: [
@@ -513,17 +522,17 @@ const possibleExporterConfigFormValues = {
       },
       'mtlsConfig.loose': {
         type: 'bool',
-        display: (v) => v.mtlsConfig.mtls,
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
         props: { label: 'TLS loose' },
       },
       'mtlsConfig.trustAll': {
         type: 'bool',
-        display: (v) => v.mtlsConfig.mtls,
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
         props: { label: 'TrustAll' },
       },
       'mtlsConfig.certs': {
         type: 'array',
-        display: (v) => v.mtlsConfig.mtls,
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
         props: {
           label: 'Client certificates',
           placeholder: 'Choose a client certificate',
@@ -543,7 +552,7 @@ const possibleExporterConfigFormValues = {
       },
       'mtlsConfig.trustedCerts': {
         type: 'array',
-        display: (v) => v.mtlsConfig.mtls && !v.mtlsConfig.trustAll,
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls && !v.mtlsConfig.trustAll),
         props: {
           label: 'Trusted certificates',
           placeholder: 'Choose a trusted certificate',
