@@ -1,0 +1,58 @@
+[
+  {
+    "name": "dev",
+    "steps": [
+      { 
+        "name": "screenshot of the home page",
+        "action": "screenshot",
+        "filename": "home.png"
+      },
+      { 
+        "name": "screenshot of the sidebar",
+        "action": "screenshot",
+        "selector": "#sidebar",
+        "filename": "sidebar.png"
+      },
+      { 
+        "name": "screenshot of the searchbar",
+        "action": "screenshot",
+        "selector": "#navbar > div > div",
+        "area": 10,
+        "filename": "searchbar.png"
+      },
+      {
+        "name": "click on all services",
+        "action": "click",
+        "selector": "#sidebar > div > div > ul:nth-child(2) > li:nth-child(2) > a",
+        "wait": 2000
+      },
+      { 
+        "name": "screenshot of the services page",
+        "action": "screenshot",
+        "filename": "service-descriptors.png"
+      },
+      {
+        "name": "click on all apikeys",
+        "action": "click",
+        "selector": "#sidebar > div > div > ul:nth-child(2) > li:nth-child(6) > a",
+        "wait": 2000
+      },
+      { 
+        "name": "screenshot of the apikeys page",
+        "action": "screenshot",
+        "filename": "apikeys.png"
+      },
+      {
+        "name": "click on all tcp services",
+        "action": "click",
+        "selector": "#sidebar > div > div > ul:nth-child(2) > li:nth-child(9) > a",
+        "wait": 2000
+      },
+      { 
+        "name": "screenshot of the tcp services page",
+        "action": "screenshot",
+        "filename": "tcp-services.png"
+      }
+    ]
+  }
+]
