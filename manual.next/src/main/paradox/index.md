@@ -34,15 +34,15 @@ now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blan
 
 ## Documentation
 
-<!-- screenshot
+@@@ div { .centered-img }
+<!-- oto-scenario
  - goto /bo/dashboard
  - wait 1000
  - screenshot index-md-home.png
 -->
-
-@@@ div { .centered-img }
 <img src="../imgs/index-md-home.png" />
 @@@
+
 
 ## Discussion
 

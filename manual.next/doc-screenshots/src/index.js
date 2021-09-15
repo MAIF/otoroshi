@@ -65,14 +65,14 @@ function walkSync(dir, initDir, filelist = []) {
 function parseMdFiles(from) {
   const files = walkSync(from, from);
   const mdFiles = files.filter(f => f.name.indexOf('.md') > -1);
-  const filesWithScenarii = mdFiles.filter(f => f.content.indexOf('<!-- screenshot') > -1)
+  const filesWithScenarii = mdFiles.filter(f => f.content.indexOf('<!-- oto-scenario') > -1)
   if (filesWithScenarii.length > 0) {
     filesWithScenarii.map(file => {
       let inside = false;
       let scens = [];
       let scenlines = [];
       file.content.split('\n').map(line => {
-        if (line.trim().indexOf('<!-- screenshot') === 0) {
+        if (line.trim().indexOf('<!-- oto-scenario') === 0) {
           inside = true;
         }
         if (inside && line.trim().indexOf('-->') === 0) {
@@ -91,33 +91,34 @@ function parseMdFiles(from) {
         lines.filter(l => l.indexOf(' - ') === 0).map(l => l.replace(' - ', '')).map((line, idx2) => {
           const parts = line.split(' ');
           const action = parts[0];
+          const filename = file.name.replace(/\./g, '-');
           if (action === 'goto') {
             scen.steps.push({
-              name: `scenario-${file.name}-${idx}-step-${idx2}-goto`,
+              name: `scenario-${filename}-${idx}-step-${idx2}-goto`,
               action: 'goto',
               path: parts[1]
             })
           } else if (action === 'click') {
             scen.steps.push({
-              name: `scenario-${file.name}-${idx}-step-${idx2}-click`,
+              name: `scenario-${filename}-${idx}-step-${idx2}-click`,
               action: 'click',
               selector: parts[1]
             })
           } else if (action === 'wait') {
             scen.steps.push({
-              name: `scenario-${file.name}-${idx}-step-${idx2}-wait`,
+              name: `scenario-${filename}-${idx}-step-${idx2}-wait`,
               action: 'wait',
               what: parseInt(parts[1], 10)
             })
           } else if (action === 'screenshot') {
             scen.steps.push({
-              name: `scenario-${file.name}-${idx}-step-${idx2}-click`,
+              name: `scenario-${filename}-${idx}-step-${idx2}-screenshot`,
               action: 'screenshot',
               filename: parts[1]
             })
           } else if (action === 'screenshotarea') {
             scen.steps.push({
-              name: `scenario-${file.name}-${idx}-step-${idx2}-click`,
+              name: `scenario-${filename}-${idx}-step-${idx2}-screenshotarea`,
               action: 'screenshot',
               filename: parts[1],
               selector: parts.slice(2).join(' '),
@@ -216,8 +217,9 @@ async function handleStep(step, browser, page, setPage, logger) {
     return Promise.resolve('');
   } else if (action === 'goto') {
     const path = step.path;
-    const page = await browser.newPage();
-    setPage(page);
+    //page.close();
+    //const newPage = await browser.newPage();
+    //setPage(newPage);
     // console.log('goto', otoroshiUrl + path)
     return page.goto(otoroshiUrl + path).then(() => {
       // console.log('waiting ... ')
@@ -274,7 +276,7 @@ async function handleStep(step, browser, page, setPage, logger) {
 }
 
 async function handleScenario(scenario, browser, _page) {
-  console.log('======================================')
+  // console.log('======================================')
   console.log(`running scenario: '${scenario.name}'\n`)
   const logger = (...args) => console.log(`[${scenario.name}]`, ...args)
   let page = _page;
@@ -313,6 +315,7 @@ async function runScreenshots() {
     console.log('closing popup ...')
     await page.click('#app > div > div.topbar-popup > button');
     console.log('login done, running scenarii !')
+    console.log('======================================')
     await handleScenarii(scenarii, browser, page);
     console.log('closing browser ...')
     await browser.close();
