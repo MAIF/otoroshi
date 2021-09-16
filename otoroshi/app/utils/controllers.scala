@@ -167,6 +167,7 @@ trait AdminApiHelper {
                   case JsString(v)  => v == value
                   case JsBoolean(v) => v == value.toBoolean
                   case JsNumber(v)  => v.toDouble == value.toDouble
+                  case JsArray(values) => values.contains(JsString(value))
                   case _            => false
                 }
               }
@@ -757,6 +758,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                 case JsString(v)  => v == value
                 case JsBoolean(v) => v == value.toBoolean
                 case JsNumber(v)  => v.toDouble == value.toDouble
+                case JsArray(values) => values.contains(JsString(value))
                 case _            => false
               }
             }

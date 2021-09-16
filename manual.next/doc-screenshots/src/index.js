@@ -110,6 +110,19 @@ function parseMdFiles(from) {
               action: 'wait',
               what: parseInt(parts[1], 10)
             })
+          } else if (action === 'spot') {
+            // TODO: support spot-at
+            scen.steps.push({
+              name: `scenario-${filename}-${idx}-step-${idx2}-spot`,
+              action: 'spot',
+              selector: parts[1]
+            })
+          }  else if (action === 'scroll-to') {
+            scen.steps.push({
+              name: `scenario-${filename}-${idx}-step-${idx2}-scroll-to`,
+              action: 'scroll-to',
+              selector: parts[1]
+            })
           } else if (action === 'screenshot') {
             scen.steps.push({
               name: `scenario-${filename}-${idx}-step-${idx2}-screenshot`,
@@ -215,6 +228,39 @@ async function handleStep(step, browser, page, setPage, logger) {
   }
   if (action === 'none') {
     return Promise.resolve('');
+  } else if (action === 'spot') {
+    const selector = step.selector;
+    const color = step.color || 'red';
+    const width = step.width || '3px';
+    const borderStyle = step.borderStyle || 'solid';
+    if (step.at) {
+      return page.evaluate((c, w, bs, at) => {
+        const element = document.createElement('div');
+        element.style.outline = `${w} ${bs} ${c}`;
+        element.style.backgroundColor = 'rgba(0, 0, 0, 0);';
+        element.style.width = at.width;
+        element.style.height = at.height;
+        element.style.left = at.left;
+        element.style.top = at.top;
+        element.style.zIndex = '10000';
+        element.style.position = 'fixed';
+        document.body.appendChild(element);
+      }, color, width, borderStyle, step.at);
+    } else if (step.selector) {
+      return page.evaluate((s, c, w, bs) => {
+        const element = document.querySelector(s);
+        if (element) {
+          element.style.outline = `${w} ${bs} ${c}`;
+        }
+      }, selector, color, width, borderStyle);
+    } else {
+      return Promise.resolve('');
+    }
+  } else if (action === 'scroll-to') {
+    return page.evaluate((selector) => {
+      document.querySelector(selector)
+        .scrollIntoView({ behavior: 'auto', block: 'end', inline: 'end' });
+    }, step.selector);
   } else if (action === 'goto') {
     const path = step.path;
     //page.close();

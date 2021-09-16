@@ -172,9 +172,9 @@ export function resetCanaryCampaign(serviceId) {
 
 export function allServices(env, group) {
   const url = env
-    ? `/bo/api/proxy/api/services?env=${env}`
+    ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-    ? `/bo/api/proxy/api/services?group=${group}`
+    ? `/bo/api/proxy/api/services?filter.groups=${group}`
     : `/bo/api/proxy/api/services`;
   return fetch(url, {
     method: 'GET',
