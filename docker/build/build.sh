@@ -18,11 +18,11 @@ prepare_build () {
     sbt dist
     sbt assembly
     cd $LOCATION
-    cp ../../otoroshi/target/universal/otoroshi-1.5.0-beta.7.zip ./otoroshi-dist.zip
+    cp ../../otoroshi/target/universal/otoroshi-1.5.0-dev.zip ./otoroshi-dist.zip
     cp ../../otoroshi/target/scala-2.12/otoroshi.jar ./otoroshi.jar
   fi
   unzip otoroshi-dist.zip
-  mv otoroshi-1.5.0-beta.7 otoroshi
+  mv otoroshi-1.5.0-dev otoroshi
   rm -rf otoroshi-dist.zip
   chmod +x ./otoroshi/bin/otoroshi
   mkdir -p ./otoroshi/imports
@@ -126,28 +126,28 @@ case "${1}" in
   push-all)
     prepare_build
     build_jdk11 $2
-    build_jdk16 $2
-    build_jdk17 $2
-    build_jdk18 $2
+    # build_jdk16 $2
+    # build_jdk17 $2
+    # build_jdk18 $2
     build_graal $2
     cleanup
     docker push "maif/otoroshi:$2"
     docker push "maif/otoroshi:$2-jdk11"
-    docker push "maif/otoroshi:$2-jdk16"
-    docker push "maif/otoroshi:$2-jdk17"
-    docker push "maif/otoroshi:$2-jdk18"
+    #docker push "maif/otoroshi:$2-jdk16"
+    #docker push "maif/otoroshi:$2-jdk17"
+    #docker push "maif/otoroshi:$2-jdk18"
     docker push "maif/otoroshi:$2-graal"
     docker push "maif/otoroshi:latest"
     ;;
   build-and-push-snapshot)
     NBR=`date +%s`
-    echo "Will build version 1.5.0-beta.7-$NBR"
+    echo "Will build version 1.5.0-dev-$NBR"
     cp ../../otoroshi/target/scala-2.12/otoroshi.jar otoroshi.jar
     docker build --no-cache -f ./Dockerfile-jdk11-jar -t otoroshi-jdk11 .
-    docker tag otoroshi-jdk11 "maif/otoroshi:1.5.0-beta.7-$NBR"
+    docker tag otoroshi-jdk11 "maif/otoroshi:1.5.0-dev-$NBR"
     docker tag otoroshi-jdk11 "maif/otoroshi:dev"
     cleanup
-    docker push "maif/otoroshi:1.5.0-beta.7-$NBR"
+    docker push "maif/otoroshi:1.5.0-dev-$NBR"
     docker push "maif/otoroshi:dev"
     ;;
   build-and-push-local)
@@ -164,7 +164,7 @@ case "${1}" in
     cleanup
     ;;
   prepare)
-    cp ../../otoroshi/target/universal/otoroshi-1.5.0-beta.7.zip ./otoroshi-dist.zip
+    cp ../../otoroshi/target/universal/otoroshi-1.5.0-dev.zip ./otoroshi-dist.zip
     cp ../../otoroshi/target/scala-2.12/otoroshi.jar ./otoroshi.jar
     ;;
   *)
