@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [1.5.0-beta.7] - 2021-09-16
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-beta.7+is%3Aclosed
-https://github.com/MAIF/otoroshi/compare/v1.5.0-beta.5...v1.5.0-beta.7
+https://github.com/MAIF/otoroshi/compare/v1.5.0-beta.6...v1.5.0-beta.7
 https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-beta.7
 
 - Service Group list view - No filter for service associated with Service Group (#920)
