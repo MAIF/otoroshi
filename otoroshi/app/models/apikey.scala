@@ -85,8 +85,8 @@ object ApiKeyRotation         {
 object EntityIdentifier       {
   def apply(prefixedId: String): Option[EntityIdentifier] = {
     prefixedId match {
-      case id if id.startsWith("group_")   => Some(ServiceGroupIdentifier(id.replace("group_", "")))
-      case id if id.startsWith("service_") => Some(ServiceDescriptorIdentifier(id.replace("service_", "")))
+      case id if id.startsWith("group_")   => Some(ServiceGroupIdentifier(id.replaceFirst("group_", "")))
+      case id if id.startsWith("service_") => Some(ServiceDescriptorIdentifier(id.replaceFirst("service_", "")))
       case id                              => Some(ServiceGroupIdentifier(id)) // should be None but could be useful for backward compatibility
     }
   }

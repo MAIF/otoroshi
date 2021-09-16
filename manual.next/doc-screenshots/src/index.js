@@ -129,7 +129,7 @@ function parseMdFiles(from) {
               action: 'screenshot',
               filename: parts[1]
             })
-          } else if (action === 'screenshotarea') {
+          } else if (action === 'screenshot-area') {
             scen.steps.push({
               name: `scenario-${filename}-${idx}-step-${idx2}-screenshotarea`,
               action: 'screenshot',
