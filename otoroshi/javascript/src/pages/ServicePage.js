@@ -3196,8 +3196,7 @@ export class ServicePage extends Component {
           <Collapse
             notVisible={
               this.props.env
-                ? this.state.service.redirection.enabled ||
-                  this.state.service.tcpUdpTunneling
+                ? this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling
                 : false
             }
             collapsed={this.state.allCollapsed}
@@ -3260,8 +3259,7 @@ export class ServicePage extends Component {
           <Collapse
             notVisible={
               this.props.env
-                ? this.state.service.redirection.enabled ||
-                  this.state.service.tcpUdpTunneling
+                ? this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling
                 : false
             }
             collapsed={this.state.allCollapsed}

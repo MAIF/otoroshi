@@ -164,11 +164,11 @@ trait AdminApiHelper {
             .filter { case (_, elem) =>
               filters.forall { case (key, value) =>
                 (elem \ key).as[JsValue] match {
-                  case JsString(v)  => v == value
-                  case JsBoolean(v) => v == value.toBoolean
-                  case JsNumber(v)  => v.toDouble == value.toDouble
+                  case JsString(v)     => v == value
+                  case JsBoolean(v)    => v == value.toBoolean
+                  case JsNumber(v)     => v.toDouble == value.toDouble
                   case JsArray(values) => values.contains(JsString(value))
-                  case _            => false
+                  case _               => false
                 }
               }
             }
@@ -755,11 +755,11 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           val items: Seq[JsValue] = jsonElements.filter { elem =>
             filters.forall { case (key, value) =>
               (elem \ key).as[JsValue] match {
-                case JsString(v)  => v == value
-                case JsBoolean(v) => v == value.toBoolean
-                case JsNumber(v)  => v.toDouble == value.toDouble
+                case JsString(v)     => v == value
+                case JsBoolean(v)    => v == value.toBoolean
+                case JsNumber(v)     => v.toDouble == value.toDouble
                 case JsArray(values) => values.contains(JsString(value))
-                case _            => false
+                case _               => false
               }
             }
           }
