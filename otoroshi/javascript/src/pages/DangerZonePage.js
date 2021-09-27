@@ -1634,13 +1634,7 @@ export class Message extends Component {
       <div className="form-group">
         <label className="col-xs-12 col-sm-2 control-label" />
         <div className="col-sm-10">
-          <div
-            style={{
-              padding: 10,
-              borderRadius: 5,
-              backgroundColor: '#494948',
-              width: '100%',
-            }}>
+          <div className="sub-container sub-container__bg-color">
             <p style={{ textAlign: 'justify', marginBottom: 0 }}>{this.props.message}</p>
           </div>
         </div>
