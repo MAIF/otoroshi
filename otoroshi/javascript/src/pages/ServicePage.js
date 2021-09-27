@@ -1968,13 +1968,7 @@ export class ServicePage extends Component {
             <div className="form-group">
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
-                <p
-                  style={{
-                    padding: 10,
-                    borderRadius: 5,
-                    backgroundColor: '#494948',
-                    width: '100%',
-                  }}>
+                <p className="sub-container sub-container__bg-color">
                   When an app. enforces user authentication (ex. privateApp), it can be nice to
                   allow logged users to access apps API without using an apikey (because the user is
                   logged in, the app is exposing UI and API and we don't want to leak apikeys). By
@@ -3310,13 +3304,7 @@ export class Message extends Component {
       <div className="form-group">
         <label className="col-xs-12 col-sm-2 control-label" />
         <div className="col-sm-10">
-          <div
-            style={{
-              padding: 10,
-              borderRadius: 5,
-              backgroundColor: '#494948',
-              width: '100%',
-            }}>
+          <div className="sub-container sub-container__bg-color">
             <p style={{ textAlign: 'justify', marginBottom: 0 }}>{this.props.message}</p>
           </div>
         </div>
@@ -3410,12 +3398,12 @@ export class TemplateInput extends Component {
       <meta name="robots" content="noindex, nofollow">
       <link rel="shortcut icon" type="image/png" href="/__otoroshi_assets/images/favicon.png">
       <link rel="stylesheet" href="/__otoroshi_assets/stylesheets/bootstrap.min.css">
-      <link rel="stylesheet" href="/__otoroshi_assets/stylesheets/bootstrap-theme.min.css">
+      // <link rel="stylesheet" href="/__otoroshi_assets/stylesheets/bootstrap-theme.min.css">
       <link rel="stylesheet" media="screen" href="/__otoroshi_assets/stylesheets/otoroshiapps.css">
       <link href="/assets/fonts/raleway/raleway.css" rel="stylesheet">
       <link rel="stylesheet" media="screen" href="/__otoroshi_assets/stylesheets/error.css">
   </head>
-  <body>
+  <body class="white-mode">
       <div class="container">
         <div class="header clearfix">
             <nav class="navbar-inverse"></nav>
