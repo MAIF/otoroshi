@@ -235,7 +235,7 @@ export class U2FLoginPage extends Component {
   render() {
     return (
       <div className="jumbotron">
-        <h3 style={{ marginBottom: 40 }}>Admin login</h3>
+        <h1>Admin login</h1>
         <form className="form-horizontal" style={{ textAlign: 'left' }} onSubmit={this.simpleLogin}>
           <div className="form-group">
             <label className="col-sm-2 control-label">Username</label>
