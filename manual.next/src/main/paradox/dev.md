@@ -1,7 +1,5 @@
 # Developing Otoroshi
 
-# Developing Otoroshi 
-
 If you want to play with Otoroshis code, here are some tips
 
 ## The tools
