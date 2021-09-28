@@ -7,6 +7,8 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[Input TLS](./input-tls.md)
 * @ref:[Output TLS](./output-tls.md)
 * @ref:[Monitoring](./monitoring.md)
+* @ref:[Events and analytics](./events-and-analytics.md)
+* @ref:[Developer portal with Daikoku](./dev-portal.md)
 
 @@@ index
 
@@ -15,5 +17,7 @@ In this sections, you will find informations about various Otoroshi topics
 * [Input TLS](./input-tls.md)
 * [Output TLS](./output-tls.md)
 * [Monitoring](./monitoring.md)
+* [Events and analytics](./events-and-analytics.md)
+* [Developer portal with Daikoku](./dev-portal.md)
 
 @@@

@@ -135,6 +135,11 @@ class PluginDocTests
       new PluginDocSpec()
     )
 
+class PluginDocNextTests
+    extends Suites(
+      new PluginDocNextSpec()
+    )
+
 class DevOtoroshiTests
     extends Suites(
       new AdminApiSpec("DEV", Configurations.InMemoryConfiguration)

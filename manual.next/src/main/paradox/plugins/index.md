@@ -1,4 +1,4 @@
-# Plugins
+# Otoroshi plugins
 
 In this sections, you will find informations about Otoroshi plugins system
 
