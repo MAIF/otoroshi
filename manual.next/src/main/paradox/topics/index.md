@@ -10,6 +10,7 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[Events and analytics](./events-and-analytics.md)
 * @ref:[Developer portal with Daikoku](./dev-portal.md)
 * @ref:[Sessions management](./sessions-mgmt.md)
+* @ref:[The Otoroshi communication protocol](./otoroshi-protocol.md)
 
 @@@ index
 
@@ -21,5 +22,6 @@ In this sections, you will find informations about various Otoroshi topics
 * [Events and analytics](./events-and-analytics.md)
 * [Developer portal with Daikoku](./dev-portal.md)
 * [Sessions management](./sessions-mgmt.md)
+* [The Otoroshi communication protocol](./otoroshi-protocol.md)
 
 @@@
