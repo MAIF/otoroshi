@@ -9,6 +9,7 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[Monitoring](./monitoring.md)
 * @ref:[Events and analytics](./events-and-analytics.md)
 * @ref:[Developer portal with Daikoku](./dev-portal.md)
+* @ref:[Sessions management](./sessions-mgmt.md)
 
 @@@ index
 
@@ -19,5 +20,6 @@ In this sections, you will find informations about various Otoroshi topics
 * [Monitoring](./monitoring.md)
 * [Events and analytics](./events-and-analytics.md)
 * [Developer portal with Daikoku](./dev-portal.md)
+* [Sessions management](./sessions-mgmt.md)
 
 @@@
