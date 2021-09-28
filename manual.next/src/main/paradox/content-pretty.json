@@ -347,7 +347,7 @@
     "id": "/topics/index.md",
     "url": "/topics/index.html",
     "title": "Detailed topics",
-    "content": "# Detailed topics\n\nIn this sections, you will find informations about various Otoroshi topics  \n\n* @ref:[Chaos engineering](./chaos-engineering.md)\n* @ref:[Otoroshi's PKI](./pki.md)\n* @ref:[Input TLS](./input-tls.md)\n* @ref:[Output TLS](./output-tls.md)\n* @ref:[Monitoring](./monitoring.md)\n* @ref:[Events and analytics](./events-and-analytics.md)\n* @ref:[Developer portal with Daikoku](./dev-portal.md)\n* @ref:[Sessions management](./sessions-mgmt.md)\n\n@@@ index\n\n* [Chaos engineering](./chaos-engineering.md)\n* [Otoroshi's PKI](./pki.md)\n* [Input TLS](./input-tls.md)\n* [Output TLS](./output-tls.md)\n* [Monitoring](./monitoring.md)\n* [Events and analytics](./events-and-analytics.md)\n* [Developer portal with Daikoku](./dev-portal.md)\n* [Sessions management](./sessions-mgmt.md)\n\n@@@\n"
+    "content": "# Detailed topics\n\nIn this sections, you will find informations about various Otoroshi topics  \n\n* @ref:[Chaos engineering](./chaos-engineering.md)\n* @ref:[Otoroshi's PKI](./pki.md)\n* @ref:[Input TLS](./input-tls.md)\n* @ref:[Output TLS](./output-tls.md)\n* @ref:[Monitoring](./monitoring.md)\n* @ref:[Events and analytics](./events-and-analytics.md)\n* @ref:[Developer portal with Daikoku](./dev-portal.md)\n* @ref:[Sessions management](./sessions-mgmt.md)\n* @ref:[The Otoroshi communication protocol](./otoroshi-protocol.md)\n\n@@@ index\n\n* [Chaos engineering](./chaos-engineering.md)\n* [Otoroshi's PKI](./pki.md)\n* [Input TLS](./input-tls.md)\n* [Output TLS](./output-tls.md)\n* [Monitoring](./monitoring.md)\n* [Events and analytics](./events-and-analytics.md)\n* [Developer portal with Daikoku](./dev-portal.md)\n* [Sessions management](./sessions-mgmt.md)\n* [The Otoroshi communication protocol](./otoroshi-protocol.md)\n\n@@@\n"
   },
   {
     "name": "input-tls.md",
@@ -362,6 +362,13 @@
     "url": "/topics/monitoring.html",
     "title": "Monitoring",
     "content": "# Monitoring\n\n@@@ warning\nTODO\n@@@"
+  },
+  {
+    "name": "otoroshi-protocol.md",
+    "id": "/topics/otoroshi-protocol.md",
+    "url": "/topics/otoroshi-protocol.html",
+    "title": "The Otoroshi communication protocol",
+    "content": "# The Otoroshi communication protocol\n\n@@@ warning\nTODO\n@@@"
   },
   {
     "name": "output-tls.md",
