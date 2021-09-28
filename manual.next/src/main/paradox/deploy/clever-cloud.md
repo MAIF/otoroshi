@@ -9,25 +9,25 @@ If you want to customize the configuration @ref:[use env. variables](../install/
 Create a new CleverCloud app based on a clevercloud git repo (not empty) or a github project of your own (not empty).
 
 @@@ div { .centered-img }
-<img src="../img/deploy-cc-jar-0.png" />
+<img src="../imgs/deploy-cc-jar-0.png" />
 @@@
 
 Then choose what kind of app your want to create, for Otoroshi, choose `Java + Jar`
 
 @@@ div { .centered-img }
-<img src="../img/deploy-cc-jar-1.png" />
+<img src="../imgs/deploy-cc-jar-1.png" />
 @@@
 
 Next, set up choose instance size and auto-scalling. Otoroshi can run on small instances, especially if you just want to test it.
 
 @@@ div { .centered-img }
-<img src="../img/deploy-cc-2.png" />
+<img src="../imgs/deploy-cc-2.png" />
 @@@
 
 Finally, choose a name for your app
 
 @@@ div { .centered-img }
-<img src="../img/deploy-cc-3.png" />
+<img src="../imgs/deploy-cc-3.png" />
 @@@
 
 Now you just need to customize environnment variables
@@ -35,13 +35,13 @@ Now you just need to customize environnment variables
 at this point, you can also add other env. variables to configure Otoroshi like in [the example provided below](#example-of-clevercloud-env-variables)
 
 @@@ div { .centered-img }
-<img src="../img/deploy-cc-4-bis.png" />
+<img src="../imgs/deploy-cc-4-bis.png" />
 @@@
 
 You can also use expert mode :
 
 @@@ div { .centered-img }
-<img src="../img/deploy-cc-4.png" />
+<img src="../imgs/deploy-cc-4.png" />
 @@@
 
 Now, your app is ready, don't forget to add a custom domains name on the CleverCloud app matching the Otoroshi app domain. 

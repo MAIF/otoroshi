@@ -48,13 +48,13 @@ First, go to [AWS Elastic Beanstalk Console](https://eu-west-3.console.aws.amazo
 Hit **Get started** 
 
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-0.png" />
+<img src="../imgs/deploy-elb-0.png" />
 @@@
 
 Specify the **Application name** of your application, Otoroshi for example.
 
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-1.png" />
+<img src="../imgs/deploy-elb-1.png" />
 @@@
  
 Choose the **Platform** of the application you want to create, in your case use Docker.
@@ -62,7 +62,7 @@ Choose the **Platform** of the application you want to create, in your case use 
 For **Application code** choose **Upload your code** then hit **Upload**.
 
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-2.png" />
+<img src="../imgs/deploy-elb-2.png" />
 @@@
 
 Browse the zip created in the [previous section](#prepare-your-deployment-target) from your machine. 
@@ -72,7 +72,7 @@ As you can see in the image above, you can also choose an S3 location, you can i
 When the upload is done, hit **Configure more options**.
    
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-3.png" />
+<img src="../imgs/deploy-elb-3.png" />
 @@@ 
  
 Right now an AWS Elastic Beanstalk application has been created, and by default an environment named Otoroshi-env is being created as well.
@@ -87,7 +87,7 @@ For **Configuration presets**, choose custom configuration, now you have a load 
 I'd recommend at least 2 instances, to change that, on the **Capacity** card hit **Modify**.         
 
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-4.png" />
+<img src="../imgs/deploy-elb-4.png" />
 @@@
 
 Change the **Instances** to min 2, max 4 then hit **Save**. For the **Scaling triggers**, I'd keep the default values, but know that you can edit the capacity config any time you want, it only costs a redeploy, which will be done automatically by the way.
@@ -96,7 +96,7 @@ Instances size is by default t2.micro, which is a bit small for running Otoroshi
 On the **Instances** card hit **Modify**.
 
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-5.png" />
+<img src="../imgs/deploy-elb-5.png" />
 @@@
 
 For **Instance type** choose t2.medium, then hit **Save**, no need to change the volume size, unless you have a lot of http call faults, which means a lot more logs, in that case the default volume size may not be enough.
@@ -105,7 +105,7 @@ The default environment created for Otoroshi, for instance Otoroshi-env, is a we
 We have to remove that proxy. So on the **Software** card hit **Modify**.
         
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-6.png" />
+<img src="../imgs/deploy-elb-6.png" />
 @@@        
     
 For **Proxy server** choose None then hit **Save**.
@@ -113,7 +113,7 @@ For **Proxy server** choose None then hit **Save**.
 Also note that you can set Envs for Otoroshi in same page (see image below). 
 
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-7.png" />
+<img src="../imgs/deploy-elb-7.png" />
 @@@  
 
 To finalise the creation process, hit **Create app** on the bottom right.
@@ -129,7 +129,7 @@ Before starting, using a datastore hosted by AWS is not at all mandatory, feel f
 Go to [AWS ElastiCache](https://eu-west-3.console.aws.amazon.com/elasticache/home?region=eu-west-3#) and hit **Get Started Now**.
 
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-8.png" />
+<img src="../imgs/deploy-elb-8.png" />
 @@@  
 
 For **Cluster engine** keep Redis.
@@ -141,7 +141,7 @@ You can keep all the other default values and hit **Create** on the bottom right
 Once your Redis Cluster is created, it would look like the image below.
 
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-9.png" />
+<img src="../imgs/deploy-elb-9.png" />
 @@@  
 
 
@@ -233,31 +233,31 @@ Go to [AWS Certificate Manager](https://eu-west-3.console.aws.amazon.com/acm/hom
 Below **Provision certificates** hit **Get started**.
 
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-10.png" />
+<img src="../imgs/deploy-elb-10.png" />
 @@@   
  
 Keep the default selected value **Request a public certificate** and hit **Request a certificate**.
  
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-11.png" />
+<img src="../imgs/deploy-elb-11.png" />
 @@@  
 
 Put your **Domain name**, use *. for wildcard, for instance *\*.mysubdomain.oto.tools*, then hit **Next**.
 
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-12.png" />
+<img src="../imgs/deploy-elb-12.png" />
 @@@  
 
 You can choose between **Email validation** and **DNS validation**, I'd recommend **DNS validation**, then hit **Review**.    
     
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-13.png" />
+<img src="../imgs/deploy-elb-13.png" />
 @@@ 
  
 Verify that you did put the right **Domain name** then hit **Confirm and request**.   
 
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-14.png" />
+<img src="../imgs/deploy-elb-14.png" />
 @@@
  
 As you see in the image above, to let Amazon do the validation you have to add the `CNAME` record to your DNS configuration. Normally this operation takes around one day.
@@ -269,13 +269,13 @@ For that you need to go to [AWS Elastic Beanstalk applications](https://eu-west-
 hit **Otoroshi-env**, then on the left side hit **Configuration**, then on the **Load balancer** card hit **Modify**.
 
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-15.png" />
+<img src="../imgs/deploy-elb-15.png" />
 @@@
 
 In the **Application Load Balancer** section hit **Add listener**.
 
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-16.png" />
+<img src="../imgs/deploy-elb-16.png" />
 @@@
 
 Fill the popup as the image above, then hit **Add**.   
@@ -283,7 +283,7 @@ Fill the popup as the image above, then hit **Add**.
 You should now be seeing something like this : 
    
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-17.png" />
+<img src="../imgs/deploy-elb-17.png" />
 @@@   
  
  
@@ -300,7 +300,7 @@ To find the DNS name of Otoroshi's load balancer go to [AWS Ec2](https://eu-west
 You would find something like this : 
   
 @@@ div { .centered-img }
-<img src="../img/deploy-elb-18.png" />
+<img src="../imgs/deploy-elb-18.png" />
 @@@   
 
 There is your DNS name, so add your `CNAME` record. 

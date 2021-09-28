@@ -950,7 +950,7 @@ small {
 }
 
 .title-logo {
-  content: url("../img/small-otoroshi-logo.png");
+  content: url("../imgs/small-otoroshi-logo.png");
   margin-right: 10px;
   margin-top: 10px;
 }
