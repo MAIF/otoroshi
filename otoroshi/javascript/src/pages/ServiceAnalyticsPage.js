@@ -181,12 +181,8 @@ export class ServiceAnalyticsPage extends Component {
         {!this.state.loading && (
           <div className="row">
             <div className="col-md-6">
+              <h4>Informations</h4>
               <table className="fulltable table table-bordered table-striped table-condensed table-hover">
-                <thead>
-                  <tr>
-                    <td>Informations</td>
-                  </tr>
-                </thead>
                 <tbody>
                   <tr>
                     <td>{this.row(hits, ' hits')}</td>
