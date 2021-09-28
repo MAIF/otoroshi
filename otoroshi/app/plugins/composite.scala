@@ -29,6 +29,8 @@ class CompositePlugin extends PreRouting with AccessValidator with RequestTransf
 
   val logger = Logger("CompositePlugin")
 
+  override def deprecated: Boolean = true
+
   override def pluginType: PluginType = PluginType.CompositeType
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {

@@ -34,15 +34,18 @@ now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blan
 
 ## Documentation
 
-@@@ div { .centered-img }
-<!-- oto-scenario
- - goto /bo/dashboard
- - wait 1000
- - screenshot index-md-home.png
--->
-<img src="../imgs/index-md-home.png" />
-@@@
-
+* @ref:[About Otoroshi](./about.md)
+* @ref:[Architecture](./architecture.md)
+* @ref:[Features](./features.md)
+* @ref:[Getting started](./getting-started.md)
+* @ref:[Install Otoroshi](./install/index.md)
+* @ref:[Main entities](./entities/index.md)
+* @ref:[Detailed topics](./topics/index.md)
+* @ref:[How to's](./how-to-s/index.md)
+* @ref:[Plugins](./plugins/index.md)
+* @ref:[Admin REST API](./api.md)
+* @ref:[Deploy to production](./deploy/index.md)
+* @ref:[Developing Otoroshi](./dev.md)
 
 ## Discussion
 
@@ -70,4 +73,27 @@ Otoroshi is Open Source and available under the [Apache 2 License](https://opens
 
 @@@ index
 
+* [About Otoroshi](./about.md)
+* [Architecture](./architecture.md)
+* [Features](./features.md)
+* [Getting started](./getting-started.md)
+* [Install Otoroshi](./install/index.md)
+* [Main entities](./entities/index.md)
+* [Detailed topics](./topics/index.md)
+* [How to's](./how-to-s/index.md)
+* [Plugins](./plugins/index.md)
+* [Admin REST API](./api.md)
+* [Deploy to production](./deploy/index.md)
+* [Developing Otoroshi](./dev.md)
+
+@@@
+
+
+@@@ div { .centered-img }
+<!-- oto-scenario
+ - goto /bo/dashboard
+ - wait 1000
+ - screenshot index-md-home.png
+-->
+<img src="../imgs/index-md-home.png" />
 @@@

@@ -1,0 +1,5 @@
+# Global config
+
+@@@ warning
+TODO
+@@@
