@@ -351,7 +351,8 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
                   if valueName == "java.lang.Object" && (name == "maxJwtLifespanSecs" || name == "existingSerialNumber") =>
                 Json.obj("type" -> "integer", "format" -> "int64").some
               case Some(v) =>
-                Json.obj("oneOf" -> Json.arr(nullType, Json.obj("$ref" -> s"#/components/schemas/$valueName"))).some
+                //Json.obj("oneOf" -> Json.arr(nullType, Json.obj("$ref" -> s"#/components/schemas/$valueName"))).some
+                Json.obj("$ref" -> s"#/components/schemas/$valueName").some
               case _       =>
                 println("fuuuuu opt", name, valueName)
                 None
@@ -465,7 +466,29 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           Json.obj(
             "type"        -> "object",
             "description" -> entityDescription(clazz.getName, config),
-            "properties"  -> properties
+            "properties"  -> properties,
+            "openAPIV3Schema" -> Json.obj(
+              "type" -> "object",
+              "description" -> entityDescription(clazz.getName, config),
+              "properties" -> Json.obj(
+                "apiVersion" -> Json.obj(
+                  "description" -> "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+                  "type" -> "string"
+                ),
+                "kind" -> Json.obj(
+                  "description" -> "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+                  "type" -> "string"
+                ),
+                "metadata" -> Json.obj(
+                  "type" -> "object"
+                ),
+                "spec" -> Json.obj(
+                  "type" -> "object",
+                  "description" -> entityDescription(clazz.getName, config),
+                  "properties" -> properties
+                )
+              )
+            )
           )
         )
       )
@@ -859,6 +882,166 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         visitEntity(clazz, None, result, config)
       }
     }
+
+    def applyOnSubObject(key: String, path: String): Unit = {
+      (JsObject(result) \ key \ path).asOpt[JsObject] match {
+        case Some(f) =>
+          f.fields.foreach { case (fieldName, fields) =>
+            fields.asOpt[JsObject].map(v => v.fields.foreach(entry => {
+              entry._2.asOpt[JsObject] match {
+                case Some(_) => applyOnSubObject(key, path + " \\ " + fieldName + " \\ " + entry._1)
+                case _ => ()
+              }
+            }))
+          }
+          (JsObject(result) \ path).as[JsObject].fields.foreach { case (fieldName, fields) =>
+            (fields \ "oneOf").asOpt[JsArray] match {
+              case None => ()
+              case Some(oneOfArray) =>
+                if (oneOfArray.value.size == 2) {
+                  val oneOfType = oneOfArray.value.filter(p => (p \ "$ref").asOpt[String].isEmpty)
+                  oneOfType.length match {
+                    case 0 => ()
+                    case _ =>
+                      (oneOfType.head \ "oneOf").asOpt[JsArray] match {
+                        case None => ()
+                        case Some(oneOf) =>
+                          result.put(key, result(key).transform(
+                            (__ \ path \ fieldName).json.update(
+                              __.read[JsObject].map(o => o ++ oneOf.value.filter(p => (p \ "$ref").as[String] != "#/components/schemas/Null").head.as[JsObject])
+                            )
+                          ).get)
+                      }
+
+                      result.put(key, result(key).transform(
+                        (__ \ path \ fieldName \ "oneOf").json.prune
+                      ).get)
+
+                      result.put(key, result(key).transform((__ \ path \ fieldName).json.update(
+                        __.read[JsObject].map(o => o ++ oneOfType.head.as[JsObject])
+                      )
+                      ).get)
+                  }
+                }
+            }
+          }
+        case _ => ()
+      }
+    }
+
+    def replaceOneOf(): Unit = {
+      JsObject(result).fields.foreach { case (key, value) =>
+        (value \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties").asOpt[JsObject] match {
+          case None => () // if here, not important to treat it cauz openAPIV3Schema is not declared
+          case Some(properties) =>
+            properties.foreach { case (fieldName, fields) =>
+              fields.asOpt[JsObject].map(v => v.fields.foreach(entry => {
+                entry._2.asOpt[JsObject] match {
+                  case Some(_) =>
+                    path match {
+                      case Some(p) => applyOnSubObject(key, "openAPIV3Schema \\ properties \\ spec \\ properties \\ " + p + " \\ " + fieldName + " \\ " + entry._1)
+                      case None =>
+                        println(key, Some(fieldName + " \\ " + entry._1))
+                        println(entry._2)
+                        println()
+                        applyOnSubObject(key, "openAPIV3Schema \\ properties \\ spec \\ properties \\ " + fieldName + " \\ " + entry._1)
+                    }
+
+                  case _ => ()
+                }
+              }))
+            }
+
+            properties.foreach { case (fieldName, fields) =>
+              (fields \ "oneOf").asOpt[JsArray] match {
+                case None => ()
+                case Some(oneOfArray) =>
+                  if(oneOfArray.value.size == 2) {
+                    val oneOfType = oneOfArray.value.filter(p => (p \ "$ref").asOpt[String].isEmpty)
+                    oneOfType.length match {
+                      case 0 => ()
+                      case _ =>
+                        (oneOfType.head \ "oneOf").asOpt[JsArray] match {
+                          case None => ()
+                          case Some(oneOf) =>
+                            result.put(key, result(key).transform(
+                              (path match {
+                                case Some(p) => (__ \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ p \ fieldName)
+                                case None => (__ \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ fieldName)
+                              }).json.update(
+                                __.read[JsObject].map(o => o ++ oneOf.value.filter(p => (p \ "$ref").as[String] != "#/components/schemas/Null").head.as[JsObject])
+                              )
+                            ).get)
+                        }
+
+                        result.put(key, result(key).transform(
+                          (path match {
+                            case Some(p) => (__ \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ p \ fieldName \ "oneOf")
+                            case None => (__ \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ fieldName \ "oneOf")
+                          }).json.prune
+                        ).get)
+
+                        result.put(key, result(key).transform(
+                          (path match {
+                            case Some(p) =>
+                              (__ \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ p \ fieldName)
+                            case None => (__ \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ fieldName)
+                          }).json.update(
+                            __.read[JsObject].map(o => o ++ oneOfType.head.as[JsObject])
+                          )
+                        ).get)
+                    }
+                  }
+              }
+            }
+        }
+      }
+    }
+
+    replaceOneOf()
+
+    def replaceRef(path: Option[String] = None): Unit = {
+      JsObject(result).fields.foreach { case (key, value) =>
+        (path match {
+          case Some(p) => value \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ p
+          case None => value \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties"
+        }).asOpt[Map[String, JsValue]] match {
+          case None => ()
+          case Some(properties) =>
+            properties.foreach { case (fieldName, fields) =>
+              fields.as[JsObject].fields.foreach(entry => {
+                entry._2.asOpt[JsObject] match {
+                  case Some(_) => replaceRef(Some(entry._1))
+                  case _ => ()
+                }
+              })
+            }
+
+            properties.foreach { case (fieldName, fields) =>
+              (fields \ "$ref").asOpt[String] match {
+                case Some(ref) if ref.startsWith("#/components/schemas/otoroshi.") =>
+                  result.put(key, result(key).transform(
+                    (__ \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ fieldName \ "$ref").json.prune
+                  ).get)
+
+                  val reference = ref.replace("#/components/schemas/", "")
+                  result.put(key, result(key).transform(
+                    (__ \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ fieldName).json.update(
+                      __.read[JsObject].map(o => o ++ ((result(reference) \ "properties").asOpt[JsObject] match {
+                        case Some(prop) => prop
+                        case _ => result(reference).as[JsObject]
+                      }))
+                    )
+                  ).get)
+                case _ => ()
+              }
+            }
+        }
+      }
+    }
+
+    replaceRef()
+    replaceOneOf()
 
     val (paths, tags) = scanPaths(config)
 
