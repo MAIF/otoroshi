@@ -14291,11 +14291,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.models.BadResponsesFaultConfig"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.models.BadResponsesFaultConfig"
             } ],
             "description" : "Settings for bad responses"
           },
@@ -14303,11 +14299,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.models.LargeRequestFaultConfig"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.models.LargeRequestFaultConfig"
             } ],
             "description" : "Settings for large requests"
           },
@@ -14315,11 +14307,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.models.LargeResponseFaultConfig"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.models.LargeResponseFaultConfig"
             } ],
             "description" : "Settings for large responses"
           },
@@ -14327,11 +14315,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.models.LatencyInjectionFaultConfig"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.models.LatencyInjectionFaultConfig"
             } ],
             "description" : "Settings for latency injection"
           },
@@ -14669,11 +14653,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
             } ],
             "description" : "Algo. settings to verify JWT token"
           },
@@ -14686,11 +14666,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy configuration for the module's http client"
           },
@@ -15919,11 +15895,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.models.CleverCloudSettings"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.models.CleverCloudSettings"
             } ],
             "description" : "Optional CleverCloud configuration"
           },
@@ -15942,11 +15914,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.events.KafkaConfig"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.events.KafkaConfig"
             } ],
             "description" : "Global kafka settings. deprecated"
           },
@@ -15967,11 +15935,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.models.ElasticAnalyticsConfig"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.models.ElasticAnalyticsConfig"
             } ],
             "description" : "Config. for elastic reads"
           },
@@ -16036,11 +16000,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.utils.mailer.MailerSettings"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.utils.mailer.MailerSettings"
             } ],
             "description" : "Optional mailer configuration"
           },
@@ -16104,11 +16064,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.events.StatsdConfig"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.events.StatsdConfig"
             } ],
             "description" : "Statsd settings (agent connection)"
           },
@@ -16240,11 +16196,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.auth.WebAuthnDetails"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.auth.WebAuthnDetails"
             } ],
             "description" : "Webauthn details"
           },
@@ -16284,11 +16236,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy settings for http client"
           },
@@ -17147,11 +17095,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenCsrQuery"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenCsrQuery"
             } ],
             "description" : "JSON generation query"
           },
@@ -17563,11 +17507,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy used to call elastic"
           },
@@ -17575,11 +17515,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy used to call webhooks"
           },
@@ -17587,11 +17523,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy used to fetch jwks"
           },
@@ -17599,11 +17531,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy used to call OAuth providers"
           },
@@ -17611,11 +17539,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy used to call clevercloud"
           },
@@ -17623,11 +17547,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy used to send alert emails"
           },
@@ -17635,11 +17555,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy used to check authorities"
           },
@@ -17647,11 +17563,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy used to access services targets"
           }
@@ -18714,11 +18626,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy for http client"
           },
