@@ -3,6 +3,7 @@ package otoroshi.openapi
 import io.github.classgraph._
 import otoroshi.models.Entity
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.yaml.Yaml.jsonToYaml
 import play.api.libs.json._
 
 import java.io.File
@@ -11,7 +12,6 @@ import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.JavaConverters._
 import scala.collection.concurrent.TrieMap
-import scala.util.Try
 
 case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
 
@@ -464,7 +464,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         clazz.getName,
         toMerge.deepMerge(
           Json.obj(
-            "type"        -> "object",
+             "type"        -> "object",
             "description" -> entityDescription(clazz.getName, config),
             "properties"  -> properties,
             "openAPIV3Schema" -> Json.obj(
@@ -869,7 +869,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }
   }
 
-  def run(): JsValue = {
+  def run(): (JsValue, JsObject) = {
     val config = getConfig()
     val result = new TrieMap[String, JsValue]()
 
@@ -883,165 +883,123 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       }
     }
 
-    def applyOnSubObject(key: String, path: String): Unit = {
-      (JsObject(result) \ key \ path).asOpt[JsObject] match {
-        case Some(f) =>
-          f.fields.foreach { case (fieldName, fields) =>
-            fields.asOpt[JsObject].map(v => v.fields.foreach(entry => {
-              entry._2.asOpt[JsObject] match {
-                case Some(_) => applyOnSubObject(key, path + " \\ " + fieldName + " \\ " + entry._1)
-                case _ => ()
+    def reads(path: String): JsPath =
+      path.split("/").foldLeft(JsPath()) { (acc, num) =>
+          acc \ num
+      }
+
+    def replaceSubOneOf(key: String, path: String): Boolean = {
+      val currentObj = result(key).as[JsObject].atPointer(path).asOpt[JsObject] match {
+        case Some(p) => p
+        case _ => Json.obj()
+      }
+
+      currentObj.fields.map {
+        case ("oneOf", oneOfArray) =>
+          val fields = oneOfArray.as[Seq[JsValue]]
+
+          result.put(key, result(key).transform(
+            reads(path +  "/oneOf").json.prune
+          ).get)
+
+          fields.find(field => (field \ "type").asOpt[String].isDefined) match {
+            case Some(field) =>
+              result.put(key, result(key).transform(
+                reads(path).json.update(__.read[JsObject].map(o => o ++ field.as[JsObject]))
+              ).get)
+            case None =>
+              result.put(key, result(key).transform(
+                reads(path).json.update(__.read[JsObject].map(o => o ++ Json.obj("type" -> "object")))
+              ).get)
+
+              val refs = fields.map { rawField =>
+                val field = (rawField \ "$ref").as[String]
+                if(field != "#/components/schemas/Null") getRef(field) else Json.obj()
               }
-            }))
-          }
-          (JsObject(result) \ path).as[JsObject].fields.foreach { case (fieldName, fields) =>
-            (fields \ "oneOf").asOpt[JsArray] match {
-              case None => ()
-              case Some(oneOfArray) =>
-                if (oneOfArray.value.size == 2) {
-                  val oneOfType = oneOfArray.value.filter(p => (p \ "$ref").asOpt[String].isEmpty)
-                  oneOfType.length match {
-                    case 0 => ()
-                    case _ =>
-                      (oneOfType.head \ "oneOf").asOpt[JsArray] match {
-                        case None => ()
-                        case Some(oneOf) =>
-                          result.put(key, result(key).transform(
-                            (__ \ path \ fieldName).json.update(
-                              __.read[JsObject].map(o => o ++ oneOf.value.filter(p => (p \ "$ref").as[String] != "#/components/schemas/Null").head.as[JsObject])
-                            )
-                          ).get)
-                      }
+                .filter(f => f.fields.nonEmpty)
 
-                      result.put(key, result(key).transform(
-                        (__ \ path \ fieldName \ "oneOf").json.prune
-                      ).get)
-
-                      result.put(key, result(key).transform((__ \ path \ fieldName).json.update(
-                        __.read[JsObject].map(o => o ++ oneOfType.head.as[JsObject])
-                      )
-                      ).get)
-                  }
-                }
-            }
+              if(refs.length == 1)
+                result.put(key, result(key).transform(
+                  reads(path).json.update(__.read[JsObject].map(o => o ++ Json.obj("properties" -> refs.head)
+                  ))
+                ).get)
+              else
+              result.put(key, result(key).transform(
+                reads(path).json.update(__.read[JsObject].map(o => o ++ Json.obj(
+                  "oneOfConstraints" -> refs.map(ref => Json.obj("required" -> ref.keys)),
+                  "properties" -> refs.foldLeft(Json.obj())((acc, curr) => acc ++ curr)
+                )
+                ))
+              ).get)
           }
-        case _ => ()
+          true
+        case ("$ref", fields) if fields.isInstanceOf[JsString] =>
+          result.put(key, result(key).transform(
+            reads(path +  "/$ref").json.prune
+          ).get)
+          result.put(key, result(key).transform(
+            reads(path).json.update(__.read[JsObject].map(o => o ++ Json.obj("type" -> "object")))
+          ).get)
+
+          replaceRef(key, path, fields.as[String])
+
+          true
+
+        case (fieldName, fields) if fields.isInstanceOf[JsObject] => replaceSubOneOf(key, s"$path/$fieldName")
+        case _ => false
+      }.foldLeft(false)(_ || _)
+    }
+
+    def getRef(ref: String): JsObject = {
+      if (ref.startsWith("#/components/schemas/otoroshi.")) {
+        val reference = ref.replace("#/components/schemas/", "")
+
+        (result(reference) \ "properties").asOpt[JsObject] match {
+          case Some(prop) => prop
+          case _ => result(reference).as[JsObject]
+        }
+      } else
+          Json.obj()
+    }
+
+    def replaceRef(key: String, path: String, ref: String) = {
+      if (ref.startsWith("#/components/schemas/otoroshi.")) {
+        val reference = ref.replace("#/components/schemas/", "")
+
+        val out = (result(reference) \ "properties").asOpt[JsObject] match {
+          case Some(prop) => prop
+          case _ => result(reference).as[JsObject]
+        }
+
+        (out \ "type").asOpt[String] match {
+          case Some(t) if t == "string" && (out \ "enum").asOpt[JsArray].isEmpty =>
+            result.put(key, result(key).transform(
+              reads(path).json.update(__.read[JsObject].map(o => o ++ Json.obj("type" -> "string")))
+            ).get)
+          case _ =>
+            result.put(key, result(key).transform(
+              reads(path).json.update(__.read[JsObject].map(o => o ++
+                ((out \ "oneOf").asOpt[JsArray] match {
+                  case Some(arr) if arr.value.length > 2 => out
+                  case _ => Json.obj("properties" -> out)
+                })))
+            ).get)
+        }
       }
     }
 
-    def replaceOneOf(): Unit = {
-      JsObject(result).fields.foreach { case (key, value) =>
+    def replaceOneOf(): Boolean =
+      JsObject(result).fields.map { case (key, value) =>
         (value \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties").asOpt[JsObject] match {
-          case None => () // if here, not important to treat it cauz openAPIV3Schema is not declared
-          case Some(properties) =>
-            properties.foreach { case (fieldName, fields) =>
-              fields.asOpt[JsObject].map(v => v.fields.foreach(entry => {
-                entry._2.asOpt[JsObject] match {
-                  case Some(_) =>
-                    path match {
-                      case Some(p) => applyOnSubObject(key, "openAPIV3Schema \\ properties \\ spec \\ properties \\ " + p + " \\ " + fieldName + " \\ " + entry._1)
-                      case None =>
-                        println(key, Some(fieldName + " \\ " + entry._1))
-                        println(entry._2)
-                        println()
-                        applyOnSubObject(key, "openAPIV3Schema \\ properties \\ spec \\ properties \\ " + fieldName + " \\ " + entry._1)
-                    }
-
-                  case _ => ()
-                }
-              }))
-            }
-
-            properties.foreach { case (fieldName, fields) =>
-              (fields \ "oneOf").asOpt[JsArray] match {
-                case None => ()
-                case Some(oneOfArray) =>
-                  if(oneOfArray.value.size == 2) {
-                    val oneOfType = oneOfArray.value.filter(p => (p \ "$ref").asOpt[String].isEmpty)
-                    oneOfType.length match {
-                      case 0 => ()
-                      case _ =>
-                        (oneOfType.head \ "oneOf").asOpt[JsArray] match {
-                          case None => ()
-                          case Some(oneOf) =>
-                            result.put(key, result(key).transform(
-                              (path match {
-                                case Some(p) => (__ \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ p \ fieldName)
-                                case None => (__ \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ fieldName)
-                              }).json.update(
-                                __.read[JsObject].map(o => o ++ oneOf.value.filter(p => (p \ "$ref").as[String] != "#/components/schemas/Null").head.as[JsObject])
-                              )
-                            ).get)
-                        }
-
-                        result.put(key, result(key).transform(
-                          (path match {
-                            case Some(p) => (__ \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ p \ fieldName \ "oneOf")
-                            case None => (__ \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ fieldName \ "oneOf")
-                          }).json.prune
-                        ).get)
-
-                        result.put(key, result(key).transform(
-                          (path match {
-                            case Some(p) =>
-                              (__ \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ p \ fieldName)
-                            case None => (__ \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ fieldName)
-                          }).json.update(
-                            __.read[JsObject].map(o => o ++ oneOfType.head.as[JsObject])
-                          )
-                        ).get)
-                    }
-                  }
-              }
-            }
+          case Some(_) => replaceSubOneOf(key, "openAPIV3Schema/properties/spec/properties")
+          case _ => false // if here, not important to treat it cauz openAPIV3Schema is not declared
         }
-      }
-    }
+      }.foldLeft(false)(_ || _)
 
-    replaceOneOf()
-
-    def replaceRef(path: Option[String] = None): Unit = {
-      JsObject(result).fields.foreach { case (key, value) =>
-        (path match {
-          case Some(p) => value \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ p
-          case None => value \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties"
-        }).asOpt[Map[String, JsValue]] match {
-          case None => ()
-          case Some(properties) =>
-            properties.foreach { case (fieldName, fields) =>
-              fields.as[JsObject].fields.foreach(entry => {
-                entry._2.asOpt[JsObject] match {
-                  case Some(_) => replaceRef(Some(entry._1))
-                  case _ => ()
-                }
-              })
-            }
-
-            properties.foreach { case (fieldName, fields) =>
-              (fields \ "$ref").asOpt[String] match {
-                case Some(ref) if ref.startsWith("#/components/schemas/otoroshi.") =>
-                  result.put(key, result(key).transform(
-                    (__ \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ fieldName \ "$ref").json.prune
-                  ).get)
-
-                  val reference = ref.replace("#/components/schemas/", "")
-                  result.put(key, result(key).transform(
-                    (__ \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties" \ fieldName).json.update(
-                      __.read[JsObject].map(o => o ++ ((result(reference) \ "properties").asOpt[JsObject] match {
-                        case Some(prop) => prop
-                        case _ => result(reference).as[JsObject]
-                      }))
-                    )
-                  ).get)
-                case _ => ()
-              }
-            }
-        }
-      }
-    }
-
-    replaceRef()
-    replaceOneOf()
+    var changed = true
+    do {
+      changed = replaceOneOf()
+    } while(changed)
 
     val (paths, tags) = scanPaths(config)
 
@@ -1052,6 +1010,22 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     println("")
     println(s"total found ${found.get() + resFound.get() + inFound
       .get()}, not found ${notFound.get() + resNotFound.get() + inNotFound.get()}")
+
+    val specWithOpenAPIV3Schema = JsObject(result).fields
+        .filter(p => (p._2 \ "openAPIV3Schema").asOpt[JsObject].isDefined)
+        .map(f => (
+          f._1,
+          Json.obj("openAPIV3Schema" -> f._2.transform(reads("openAPIV3Schema").json.pick).get)
+        ))
+
+    result.foreach { case (key, value) =>
+      (result(key) \ "openAPIV3Schema").asOpt[JsObject] match {
+        case Some(_) => result.put(key, result(key).transform(
+          reads("openAPIV3Schema").json.prune
+        ).get)
+        case None => ()
+      }
+    }
 
     val spec = Json.obj(
       "openapi"      -> openApiVersion,
@@ -1104,7 +1078,8 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       ).write()
       println("")
     }
-    spec
+
+    (spec, JsObject(specWithOpenAPIV3Schema))
   }
 
   def readOldSpec(oldSpecPath: String): Unit = {
@@ -1145,12 +1120,106 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
 
 class OpenApiGeneratorRunner extends App {
 
-  val generator = new OpenApiGenerator(
-    "./conf/routes",
-    "./app/openapi/openapi-cfg.json",
-    Seq("./public/openapi.json", "../manual/src/main/paradox/code/openapi.json"),
-    write = true
-  )
+  def generate() = {
+    val generator = new OpenApiGenerator(
+      "./conf/routes",
+      "./app/openapi/openapi-cfg.json",
+      Seq("./public/openapi.json", "../manual/src/main/paradox/code/openapi.json"),
+      write = true
+    )
 
-  generator.run()
+    val spec = generator.run()
+
+    val crdsEntities = Json.obj(
+      "ServiceGroup"-> Json.obj("plural" -> "service-groups", "singular" -> "service-group", "entity" -> "otoroshi.models.ServiceGroup"),
+      "Organization" -> Json.obj("plural" -> "organizations", "singular" -> "organization", "entity" -> "otoroshi.models.Tenant"),
+      "Team" -> Json.obj("plural" -> "teams", "singular" -> "team", "entity" -> "otoroshi.models.Team"),
+      "ServiceDescriptor" -> Json.obj("plural" -> "service-descriptors", "singular" -> "service-descriptor", "entity" -> "otoroshi.models.ServiceDescriptor"),
+      "ApiKey" -> Json.obj("plural" -> "apikeys", "singular" -> "apikey", "entity" -> "otoroshi.models.ApiKey"),
+      "Certificate" -> Json.obj("plural" -> "certificates", "singular" -> "certificate", "entity" -> "otoroshi.ssl.Cert"),
+      "GlobalConfig" -> Json.obj("plural" -> "global-configs", "singular" -> "global-config", "entity" -> "otoroshi.models.GlobalConfig"),
+      "JwtVerifier" -> Json.obj("plural" -> "jwt-verifiers", "singular" -> "jwt-verifier", "entity" -> "otoroshi.models.GlobalJwtVerifier"),
+      "AuthModule" -> Json.obj("plural" -> "auth-modules", "singular" -> "auth-module", "entity" -> "otoroshi.auth.AuthModuleConfig"),
+      "Script" -> Json.obj("plural" -> "scripts", "singular" -> "script", "entity" -> "otoroshi.script.Script"),
+      "TcpService" -> Json.obj("plural" -> "tcp-services", "singular" -> "tcp-service", "entity" -> "otoroshi.tcp.TcpService"),
+      "DataExporter" -> Json.obj("plural" -> "data-exporters", "singular" -> "data-exporter", "entity" -> "otoroshi.models.DataExporterConfig"),
+      "Admin" -> Json.obj("plural" -> "admins", "singular" -> "admin", "entity" -> "otoroshi.models.SimpleOtoroshiAdmin")
+    )
+
+    def crdTemplate(name: String, kind: String, plural: String, singular: String, versions: Map[String, (Boolean, JsObject)]) =
+      Json.obj(
+        "apiVersion" -> "apiextensions.k8s.io/v1",
+          "kind" -> "CustomResourceDefinition",
+          "metadata" -> Json.obj(
+          "name" -> s"$name.proxy.otoroshi.io",
+            "creationTimestamp" -> null
+          ),
+        "spec" -> Json.obj(
+              "group" -> "proxy.otoroshi.io",
+               "names" -> Json.obj(
+                  "kind" -> s"$kind",
+                  "plural" -> s"$plural",
+                  "singular" -> s"$singular"
+               ),
+          "scope" -> "Namespaced",
+          "versions" -> JsArray(versions.map {
+            case (version, (deprecated, content)) => Json.obj(
+              "name" -> version,
+              "served" -> true,
+              "storage" -> !deprecated,
+              "deprecated" -> deprecated,
+              "schema" -> content
+            )
+          }.toSeq)
+      )
+    )
+
+    val schemas = spec._2
+    val openAPIV3Schemas = crdsEntities.fields.map { case (key, value) =>
+      Json.obj("key" -> key) ++ value.as[JsObject] ++ Json.obj("data" ->
+        (schemas \ (value \ "entity").as[String]).asOpt[JsObject]
+      ).as[JsObject]
+    }
+
+    val crds = openAPIV3Schemas.map { schema =>
+      crdTemplate(
+        name = (schema \ "plural").as[String],
+        kind = (schema \ "key").as[String],
+        plural = (schema \ "plural").as[String],
+        singular = (schema \ "singular").as[String],
+        versions = Map(
+          "v1alpha1" -> (true, Json.obj(
+            "openAPIV3Schema" -> Json.obj(
+              "type" -> "object",
+              "properties" -> Json.obj(
+                "spec" -> Json.obj("type" -> "object")
+              )
+            )
+          )),
+          "v1" -> (false, (schema \ "data").asOpt[JsObject].getOrElse(Json.obj()))
+        )
+      )
+    }
+
+    val res = crds.foldLeft("")((acc, curr) => s"$acc${jsonToYaml(curr)}")
+
+    val file = new File("/Users/79966b/Documents/opensource/otoroshi/kubernetes/helm/otoroshi/crds/crds-1.22.yaml")
+
+    Files.write(file.toPath, res.replace("oneOfConstraints", "oneOf").getBytes(StandardCharsets.UTF_8))
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
