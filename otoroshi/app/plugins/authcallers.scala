@@ -100,8 +100,18 @@ class OAuth2Caller extends RequestTransformer {
 
   def getToken(key: String, config: OAuth2CallerConfig)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[(String, Int), String]] = {
     val body: String = config.kind match {
-      case OAuth2Kind.ClientCredentials if config.jsonPayload => (Json.obj("client_id" -> config.clientId, "client_secret" -> config.clientSecret, "grant_type" -> "client_credentials").applyOnWithOpt(config.scope) { (json, scope) => json ++ Json.obj("scope" -> scope) }.applyOnWithOpt(config.audience) { (json, audience) => json ++ Json.obj("audience" -> audience) }).stringify
-      case OAuth2Kind.Password          if config.jsonPayload => (Json.obj("client_id" -> config.clientId, "client_secret" -> config.clientSecret, "grant_type" -> "password", "username" -> config.user.getOrElse("--"), "password" -> config.password.getOrElse("--")).applyOnWithOpt(config.scope) { (json, scope) => json ++ Json.obj("scope" -> scope) }.applyOnWithOpt(config.audience) { (json, audience) => json ++ Json.obj("audience" -> audience) }).stringify
+      case OAuth2Kind.ClientCredentials if config.jsonPayload => (
+        Json.obj("client_id" -> config.clientId, "client_secret" -> config.clientSecret, "grant_type" -> "client_credentials")
+          .applyOnWithOpt(config.scope) { (json, scope) => json ++ Json.obj("scope" -> scope) }
+          .applyOnWithOpt(config.audience) { (json, audience) => json ++ Json.obj("audience" -> audience) }
+      ).stringify
+      case OAuth2Kind.Password          if config.jsonPayload =>
+        val user: String = config.user.getOrElse("--")
+        val password: String = config.password.getOrElse("--")
+        (Json.obj("client_id" -> config.clientId, "client_secret" -> config.clientSecret, "grant_type" -> "password", "username" -> user, "password" -> password)
+            .applyOnWithOpt(config.scope) { (json, scope) => json ++ Json.obj("scope" -> scope) }
+            .applyOnWithOpt(config.audience) { (json, audience) => json ++ Json.obj("audience" -> audience) }
+        ).stringify
       case OAuth2Kind.ClientCredentials => s"client_id=${config.clientId}&client_secret=${config.clientSecret}&grant_type=client_credentials${config.scope.map(s => s"&scope=$s").getOrElse("")}${config.audience.map(s => s"&audience=$s").getOrElse("")}"
       case OAuth2Kind.Password          => s"client_id=${config.clientId}&client_secret=${config.clientSecret}&grant_type=password&username=${config.user.getOrElse("--")}&password=${config.password.getOrElse("--")}${config.scope.map(s => s"&scope=$s").getOrElse("")}${config.audience.map(s => s"&audience=$s").getOrElse("")}"
     }
