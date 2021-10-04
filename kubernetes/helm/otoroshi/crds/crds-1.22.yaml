@@ -18,6 +18,7 @@ spec:
     deprecated: true
     schema:
       openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
         type: "object"
         properties:
           spec:
@@ -99,6 +100,7 @@ spec:
     deprecated: true
     schema:
       openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
         type: "object"
         properties:
           spec:
@@ -167,6 +169,7 @@ spec:
     deprecated: true
     schema:
       openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
         type: "object"
         properties:
           spec:
@@ -239,6 +242,7 @@ spec:
     deprecated: true
     schema:
       openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
         type: "object"
         properties:
           spec:
@@ -832,14 +836,11 @@ spec:
                 description: "TTL for the info token"
                 type: "number"
               secComVersion:
-                description: "Version of the sec. com."
-                type: "object"
-                properties:
-                  type: "string"
-                  enum:
-                  - "V1"
-                  - "v2"
-                  description: "Version of the challenge token"
+                description: "Version of the challenge token"
+                type: "string"
+                enum:
+                - "V1"
+                - "v2"
               targetsLoadBalancing:
                 description: "Loadbalancing strategy"
                 type: "object"
@@ -916,13 +917,10 @@ spec:
                 type: "boolean"
               secComInfoTokenVersion:
                 description: "Version of the info token"
-                type: "object"
-                properties:
-                  type: "string"
-                  enum:
-                  - "Legacy"
-                  - "Latest"
-                  description: "Version of the info token"
+                type: "string"
+                enum:
+                - "Legacy"
+                - "Latest"
               enforceSecureCommunication:
                 description: "When enabled, Otoroshi will try to exchange headers\
                   \ with downstream service to ensure no one else can use the service\
@@ -2339,6 +2337,7 @@ spec:
     deprecated: true
     schema:
       openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
         type: "object"
         properties:
           spec:
@@ -2484,19 +2483,7 @@ spec:
                   \ on which the key is authorized"
                 type: "array"
                 items:
-                  type: "object"
-                  properties:
-                    oneOf:
-                    - required:
-                      - "type"
-                      - "description"
-                    - required:
-                      - "type"
-                      - "description"
-                    type: "object"
-                    properties:
-                      type: "string"
-                      description: "the id of a group prefixed by 'group_'"
+                  type: "string"
               clientSecret:
                 description: "The secret of the Api Key. Usually 64 random alpha numerical\
                   \ characters, but can be anything"
@@ -2537,6 +2524,7 @@ spec:
     deprecated: true
     schema:
       openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
         type: "object"
         properties:
           spec:
@@ -2673,6 +2661,7 @@ spec:
     deprecated: true
     schema:
       openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
         type: "object"
         properties:
           spec:
@@ -3054,80 +3043,78 @@ spec:
                     description: "Blacklisted IP addresses"
               mailerSettings:
                 description: "Optional mailer configuration"
+                oneOf:
+                - required:
+                  - "type"
+                - required:
+                  - "headers"
+                  - "to"
+                  - "type"
+                  - "url"
+                - required:
+                  - "eu"
+                  - "apiKey"
+                  - "domain"
+                  - "to"
+                  - "type"
+                - required:
+                  - "apiKeyPrivate"
+                  - "apiKeyPublic"
+                  - "to"
+                  - "type"
+                - required:
+                  - "type"
+                - required:
+                  - "apiKey"
+                  - "to"
+                  - "type"
                 type: "object"
                 properties:
-                  oneOf:
-                  - required:
-                    - "type"
-                  - required:
-                    - "headers"
-                    - "to"
-                    - "type"
-                    - "url"
-                  - required:
-                    - "eu"
-                    - "apiKey"
-                    - "domain"
-                    - "to"
-                    - "type"
-                  - required:
-                    - "apiKeyPrivate"
-                    - "apiKeyPublic"
-                    - "to"
-                    - "type"
-                  - required:
-                    - "type"
-                  - required:
-                    - "apiKey"
-                    - "to"
-                    - "type"
-                  type: "object"
-                  properties:
-                    eu:
-                      description: "European tenant"
-                      type: "boolean"
-                    headers:
+                  eu:
+                    description: "European tenant"
+                    type: "boolean"
+                  headers:
+                    type: "object"
+                    additionalProperties:
+                      type: "string"
+                    description: "Sender headers"
+                  apiKey:
+                    description: "Sendgrid apikey"
+                    type: "string"
+                  domain:
+                    description: "Mailgun domain"
+                    type: "string"
+                  apiKeyPrivate:
+                    description: "Private key"
+                    type: "string"
+                  apiKeyPublic:
+                    description: "Public key"
+                    type: "string"
+                  to:
+                    description: "Destination email address"
+                    type: "array"
+                    items:
                       type: "object"
-                      additionalProperties:
-                        type: "string"
-                      description: "Sender headers"
-                    apiKey:
-                      description: "Sendgrid apikey"
-                      type: "string"
-                    domain:
-                      description: "Mailgun domain"
-                      type: "string"
-                    apiKeyPrivate:
-                      description: "Private key"
-                      type: "string"
-                    apiKeyPublic:
-                      description: "Public key"
-                      type: "string"
-                    to:
-                      description: "Destination email address"
-                      type: "array"
-                      items:
-                        type: "object"
-                        properties:
-                          name:
-                            description: "Destination name"
-                            type: "string"
-                          email:
-                            description: "Email address"
-                            type: "string"
-                    type:
-                      description: "the kind of mailer"
-                      type: "string"
-                      enum:
-                      - "none"
-                      - "console"
-                      - "generic"
-                      - "mailgun"
-                      - "mailjet"
-                      - "sendgrid"
-                    url:
-                      description: "Sender URL"
-                      type: "string"
+                      properties:
+                        name:
+                          description: "Destination name"
+                          type: "string"
+                        email:
+                          description: "Email address"
+                          type: "string"
+                  type:
+                    description: "the kind of mailer"
+                    type: "string"
+                    enum:
+                    - "none"
+                    - "console"
+                    - "generic"
+                    - "mailgun"
+                    - "mailjet"
+                    - "sendgrid"
+                  url:
+                    description: "Sender URL"
+                    type: "string"
               lines:
                 type: "array"
                 items:
@@ -3473,12 +3460,10 @@ spec:
                     type: "integer"
                   outageStrategy:
                     description: ""
-                    type: "object"
-                    properties:
-                      type: "string"
-                      enum:
-                      - "AllServicesPerGroup"
-                      - "OneServicePerGroup"
+                    type: "string"
+                    enum:
+                    - "AllServicesPerGroup"
+                    - "OneServicePerGroup"
                   enabled:
                     description: "Whether or not this config is enabled"
                     type: "boolean"
@@ -3603,6 +3588,7 @@ spec:
     deprecated: true
     schema:
       openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
         type: "object"
         properties:
           spec:
@@ -4050,6 +4036,7 @@ spec:
     deprecated: true
     schema:
       openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
         type: "object"
         properties:
           spec:
@@ -4058,7 +4045,13 @@ spec:
     served: true
     storage: true
     deprecated: false
-    schema: {}
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: "object"
+        properties:
+          spec:
+            type: "object"
 ---
 apiVersion: "apiextensions.k8s.io/v1"
 kind: "CustomResourceDefinition"
@@ -4079,6 +4072,7 @@ spec:
     deprecated: true
     schema:
       openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
         type: "object"
         properties:
           spec:
@@ -4136,20 +4130,17 @@ spec:
                 description: "The id of the script"
                 type: "string"
               type:
-                description: "Plugin type"
-                type: "object"
-                properties:
-                  type: "string"
-                  enum:
-                  - "app"
-                  - "transformer"
-                  - "validator"
-                  - "preroute"
-                  - "sink"
-                  - "listener"
-                  - "job"
-                  - "exporter"
-                  description: "Plugin kind"
+                description: "Plugin kind"
+                type: "string"
+                enum:
+                - "app"
+                - "transformer"
+                - "validator"
+                - "preroute"
+                - "sink"
+                - "listener"
+                - "job"
+                - "exporter"
               tags:
                 type: "array"
                 items:
@@ -4178,6 +4169,7 @@ spec:
     deprecated: true
     schema:
       openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
         type: "object"
         properties:
           spec:
@@ -4290,14 +4282,11 @@ spec:
                 type: "string"
               tls:
                 description: "TLS mode"
-                type: "object"
-                properties:
-                  type: "string"
-                  enum:
-                  - "Disabled"
-                  - "Enabled"
-                  - "PassThrough"
-                  description: "TLS mode"
+                type: "string"
+                enum:
+                - "Disabled"
+                - "Enabled"
+                - "PassThrough"
               location:
                 description: "Entity location"
                 type: "object"
@@ -4314,15 +4303,12 @@ spec:
                 description: "Entity id"
                 type: "string"
               clientAuth:
-                description: "Use client authentication"
-                type: "object"
-                properties:
-                  type: "string"
-                  enum:
-                  - "Need"
-                  - "None"
-                  - "Want"
-                  description: "Client authentication mode"
+                description: "Client authentication mode"
+                type: "string"
+                enum:
+                - "Need"
+                - "None"
+                - "Want"
 ---
 apiVersion: "apiextensions.k8s.io/v1"
 kind: "CustomResourceDefinition"
@@ -4343,6 +4329,7 @@ spec:
     deprecated: true
     schema:
       openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
         type: "object"
         properties:
           spec:
@@ -4381,21 +4368,18 @@ spec:
                 description: "Metadata"
               typ:
                 description: "Type of data exporter"
-                type: "object"
-                properties:
-                  type: "string"
-                  enum:
-                  - "kafka"
-                  - "pulsar"
-                  - "elastic"
-                  - "webhook"
-                  - "file"
-                  - "mailer"
-                  - "custom"
-                  - "none"
-                  - "console"
-                  - "metrics"
-                  description: "Type of data exporter"
+                type: "string"
+                enum:
+                - "kafka"
+                - "pulsar"
+                - "elastic"
+                - "webhook"
+                - "file"
+                - "mailer"
+                - "custom"
+                - "none"
+                - "console"
+                - "metrics"
               enabled:
                 description: "Boolean"
                 type: "boolean"
@@ -4507,7 +4491,29 @@ spec:
                   - "type"
                   - "url"
                 - required:
-                  - "oneOf"
+                  - "type"
+                - required:
+                  - "headers"
+                  - "to"
+                  - "type"
+                  - "url"
+                - required:
+                  - "eu"
+                  - "apiKey"
+                  - "domain"
+                  - "to"
+                  - "type"
+                - required:
+                  - "apiKeyPrivate"
+                  - "apiKeyPublic"
+                  - "to"
+                  - "type"
+                - required:
+                  - "type"
+                - required:
+                  - "apiKey"
+                  - "to"
+                  - "type"
                 - required:
                   - "eu"
                   - "apiKey"
@@ -4548,32 +4554,41 @@ spec:
                     description: "TLS config when calling webhook"
                     type: "object"
                     properties:
+                      mtls:
+                        description: "Enabled"
+                        type: "boolean"
                       loose:
                         description: "Loose verification"
                         type: "boolean"
                       trustAll:
                         description: "Trust any certificate"
                         type: "boolean"
-                      mtls:
-                        description: "Enabled"
-                        type: "boolean"
-                      certs:
-                        description: "Trusted cert. ids"
-                        type: "array"
-                        items:
-                          type: "string"
                       trustedCerts:
-                        description: "Trusted cert. ids"
                         type: "array"
                         items:
                           type: "string"
+                        description: "Trusted cert. ids"
+                      certs:
+                        type: "array"
+                        items:
+                          type: "string"
+                        description: "Trusted cert. ids"
                   tlsTrustCertsFilePath:
                     description: "Trusted cert path"
                     type: "string"
                   apiKeyPrivate:
                     description: "Private key"
                     type: "string"
-                  type: "object"
+                  type:
+                    description: "the kind of mailer"
+                    type: "string"
+                    enum:
+                    - "none"
+                    - "console"
+                    - "generic"
+                    - "mailgun"
+                    - "mailjet"
+                    - "sendgrid"
                   path:
                     description: "File path"
                     type: "string"
@@ -4584,10 +4599,10 @@ spec:
                     description: "Elastic password"
                     type: "string"
                   servers:
-                    description: "URLs of the kafka servers"
                     type: "array"
                     items:
                       type: "string"
+                    description: "URLs of the kafka servers"
                   truststore:
                     description: "Optional truststore"
                     type: "string"
@@ -4604,10 +4619,10 @@ spec:
                     description: "Pulsar tenant"
                     type: "string"
                   headers:
-                    description: "Sender headers"
+                    type: "object"
                     additionalProperties:
                       type: "string"
-                    type: "object"
+                    description: "Sender headers"
                   index:
                     description: "Index name"
                     type: "string"
@@ -4625,10 +4640,10 @@ spec:
                     description: "Sender URL"
                     type: "string"
                   labels:
-                    description: "Exposed labels"
+                    type: "object"
                     additionalProperties:
                       type: "string"
-                    type: "object"
+                    description: "Exposed labels"
                   eu:
                     description: "European tenant"
                     type: "boolean"
@@ -4644,31 +4659,6 @@ spec:
                   topic:
                     description: "Pulsar topic"
                     type: "string"
-                  oneOf:
-                  - required:
-                    - "type"
-                  - required:
-                    - "headers"
-                    - "to"
-                    - "type"
-                    - "url"
-                  - required:
-                    - "eu"
-                    - "apiKey"
-                    - "domain"
-                    - "to"
-                    - "type"
-                  - required:
-                    - "apiKeyPrivate"
-                    - "apiKeyPublic"
-                    - "to"
-                    - "type"
-                  - required:
-                    - "type"
-                  - required:
-                    - "apiKey"
-                    - "to"
-                    - "type"
                   apiKeyPublic:
                     description: "Public key"
                     type: "string"
@@ -4690,52 +4680,6 @@ spec:
                   user:
                     description: "Elastic user"
                     type: "string"
-                  properties:
-                    eu:
-                      description: "European tenant"
-                      type: "boolean"
-                    headers:
-                      type: "object"
-                      additionalProperties:
-                        type: "string"
-                      description: "Sender headers"
-                    apiKey:
-                      description: "Sendgrid apikey"
-                      type: "string"
-                    domain:
-                      description: "Mailgun domain"
-                      type: "string"
-                    apiKeyPrivate:
-                      description: "Private key"
-                      type: "string"
-                    apiKeyPublic:
-                      description: "Public key"
-                      type: "string"
-                    to:
-                      description: "Destination email address"
-                      type: "array"
-                      items:
-                        type: "object"
-                        properties:
-                          name:
-                            description: "Destination name"
-                            type: "string"
-                          email:
-                            description: "Email address"
-                            type: "string"
-                    type:
-                      description: "the kind of mailer"
-                      type: "string"
-                      enum:
-                      - "none"
-                      - "console"
-                      - "generic"
-                      - "mailgun"
-                      - "mailjet"
-                      - "sendgrid"
-                    url:
-                      description: "Sender URL"
-                      type: "string"
               sendWorkers:
                 format: "int32"
                 description: "send workers"
@@ -4767,6 +4711,7 @@ spec:
     deprecated: true
     schema:
       openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
         type: "object"
         properties:
           spec:
@@ -4846,14 +4791,11 @@ spec:
                               description: "Can this access right read data"
                               type: "boolean"
               typ:
-                description: "Type of user"
-                type: "object"
-                properties:
-                  type: "string"
-                  enum:
-                  - "SIMPLE"
-                  - "WEBAUTHN"
-                  description: "Admin kind"
+                description: "Admin kind"
+                type: "string"
+                enum:
+                - "SIMPLE"
+                - "WEBAUTHN"
               location:
                 description: "Entity location"
                 type: "object"

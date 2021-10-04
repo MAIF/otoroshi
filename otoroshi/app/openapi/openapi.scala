@@ -278,7 +278,9 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         children.flatMap(cl => world.get(cl)).map(cl => visitEntity(cl, clazz.some, result, config))
         adts = adts :+ Json.obj(
           clazz.getName -> Json.obj(
-            "oneOf" -> JsArray(children.map(c => Json.obj("$ref" -> s"#/components/schemas/$c")))
+            "oneOf" -> JsArray(children
+              .map(c => Json.obj("$ref" -> s"#/components/schemas/$c"))
+            )
           )
         )
       }
@@ -350,9 +352,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               case None
                   if valueName == "java.lang.Object" && (name == "maxJwtLifespanSecs" || name == "existingSerialNumber") =>
                 Json.obj("type" -> "integer", "format" -> "int64").some
-              case Some(v) =>
-                //Json.obj("oneOf" -> Json.arr(nullType, Json.obj("$ref" -> s"#/components/schemas/$valueName"))).some
-                Json.obj("$ref" -> s"#/components/schemas/$valueName").some
+              case Some(v) => Json.obj("$ref" -> s"#/components/schemas/$valueName").some
               case _       =>
                 println("fuuuuu opt", name, valueName)
                 None
@@ -894,60 +894,90 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         case _ => Json.obj()
       }
 
-      currentObj.fields.map {
-        case ("oneOf", oneOfArray) =>
-          val fields = oneOfArray.as[Seq[JsValue]]
-
+      ((currentObj \ "type").asOpt[String], (currentObj \ "items").asOpt[JsObject]) match {
+        case (Some(t), Some(items)) if t == "array" && (items \ "$ref").asOpt[String].isDefined =>
           result.put(key, result(key).transform(
-            reads(path +  "/oneOf").json.prune
+            reads(path + "/items/$ref").json.prune
           ).get)
 
-          fields.find(field => (field \ "type").asOpt[String].isDefined) match {
-            case Some(field) =>
+          replaceRef(key, path + "/items", (items \ "$ref").as[String], true)
+
+          true
+        case _ =>
+          currentObj.fields.map {
+            case ("oneOf", oneOfArray) =>
+              val fields = oneOfArray.as[Seq[JsValue]]
+
               result.put(key, result(key).transform(
-                reads(path).json.update(__.read[JsObject].map(o => o ++ field.as[JsObject]))
-              ).get)
-            case None =>
-              result.put(key, result(key).transform(
-                reads(path).json.update(__.read[JsObject].map(o => o ++ Json.obj("type" -> "object")))
+                reads(path + "/oneOf").json.prune
               ).get)
 
-              val refs = fields.map { rawField =>
-                val field = (rawField \ "$ref").as[String]
-                if(field != "#/components/schemas/Null") getRef(field) else Json.obj()
+              fields.find(field => (field \ "type").asOpt[String].isDefined) match {
+                case Some(field) =>
+                  result.put(key, result(key).transform(
+                    reads(path).json.update(__.read[JsObject].map(o => o ++ field.as[JsObject]))
+                  ).get)
+                case None =>
+                  result.put(key, result(key).transform(
+                    reads(path).json.update(__.read[JsObject].map(o => o ++ Json.obj("type" -> "object")))
+                  ).get)
+
+                  val refs = fields.flatMap { rawField =>
+                    val field = (rawField \ "$ref").as[String]
+                    if (field != "#/components/schemas/Null") {
+                      val obj = getRef(field)
+                      (obj \ "oneOf").asOpt[Seq[JsValue]] match {
+                        case Some(arr) => arr.map { f =>
+                          val r = (f \ "$ref").as[String]
+                          if (r != "#/components/schemas/Null")
+                            getRef(r)
+                          else
+                            Json.obj()
+                        }
+                        case _ => Seq(obj)
+                      }
+                    }
+                    else
+                      Seq(Json.obj())
+                  }
+                    .filter(f => f.fields.nonEmpty)
+
+                  if (refs.length == 1)
+                    (refs.head \ "oneOf").asOpt[JsArray] match {
+                      case Some(ob) if ob.value.map(_.as[JsObject]).forall(p => (p \ "$ref").isDefined) =>
+                        result.put(key, result(key).transform(
+                          reads(path).json.update(__.read[JsObject].map(o => o ++ refs.head.as[JsObject])
+                          )
+                        ).get)
+                      case _ =>
+                        result.put(key, result(key).transform(
+                          reads(path).json.update(__.read[JsObject].map(o => o ++ Json.obj("properties" -> refs.head)))
+                        ).get)
+                    }
+                  else
+                    result.put(key, result(key).transform(
+                      reads(path).json.update(__.read[JsObject].map(o => o ++ Json.obj(
+                        "oneOfConstraints" -> refs.map(ref => Json.obj("required" -> ref.keys)),
+                        "properties" -> refs.foldLeft(Json.obj())((acc, curr) => acc ++ curr)
+                      )
+                      ))
+                    ).get)
               }
-                .filter(f => f.fields.nonEmpty)
-
-              if(refs.length == 1)
-                result.put(key, result(key).transform(
-                  reads(path).json.update(__.read[JsObject].map(o => o ++ Json.obj("properties" -> refs.head)
-                  ))
-                ).get)
-              else
+              true
+            case ("$ref", fields) if fields.isInstanceOf[JsString] =>
               result.put(key, result(key).transform(
-                reads(path).json.update(__.read[JsObject].map(o => o ++ Json.obj(
-                  "oneOfConstraints" -> refs.map(ref => Json.obj("required" -> ref.keys)),
-                  "properties" -> refs.foldLeft(Json.obj())((acc, curr) => acc ++ curr)
-                )
-                ))
+                reads(path + "/$ref").json.prune
               ).get)
-          }
-          true
-        case ("$ref", fields) if fields.isInstanceOf[JsString] =>
-          result.put(key, result(key).transform(
-            reads(path +  "/$ref").json.prune
-          ).get)
-          result.put(key, result(key).transform(
-            reads(path).json.update(__.read[JsObject].map(o => o ++ Json.obj("type" -> "object")))
-          ).get)
 
-          replaceRef(key, path, fields.as[String])
+              replaceRef(key, path, fields.as[String])
 
-          true
+              true
 
-        case (fieldName, fields) if fields.isInstanceOf[JsObject] => replaceSubOneOf(key, s"$path/$fieldName")
-        case _ => false
-      }.foldLeft(false)(_ || _)
+            case (fieldName, fields) if fields.isInstanceOf[JsObject] => replaceSubOneOf(key, s"$path/$fieldName")
+            case _ => false
+          }.foldLeft(false)(_ || _)
+
+      }
     }
 
     def getRef(ref: String): JsObject = {
@@ -962,7 +992,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           Json.obj()
     }
 
-    def replaceRef(key: String, path: String, ref: String) = {
+    def replaceRef(key: String, path: String, ref: String, itemsField: Boolean = false) = {
       if (ref.startsWith("#/components/schemas/otoroshi.")) {
         val reference = ref.replace("#/components/schemas/", "")
 
@@ -980,13 +1010,23 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             result.put(key, result(key).transform(
               reads(path).json.update(__.read[JsObject].map(o => o ++
                 ((out \ "oneOf").asOpt[JsArray] match {
-                  case Some(arr) if arr.value.length > 2 => out
-                  case _ => Json.obj("properties" -> out)
+                  case Some(arr) if arr.value.length > 2 || containsNullAndRef(arr.value) => out
+                  case Some(arr) if containsOnlyRef(arr.value) =>
+                    Json.obj("type" -> (getRef((arr.value.head \ "$ref").as[String]) \ "type").as[String])
+                  case None if (out \ "enum").isDefined => out
+                  case _ => Json.obj("properties" -> out, "type" -> "object")
                 })))
             ).get)
         }
       }
     }
+
+    def containsOnlyRef(values: IndexedSeq[JsValue]): Boolean =
+      values.forall(p => (p \ "$ref").as[String] != "#/components/schemas/Null")
+
+    def containsNullAndRef(values: IndexedSeq[JsValue]): Boolean =
+      values.exists(p => (p \ "$ref").as[String] == "#/components/schemas/Null") &&
+        values.exists(p => (p\ "$ref").as[String] != "#/components/schemas/Null")
 
     def replaceOneOf(): Boolean =
       JsObject(result).fields.map { case (key, value) =>
@@ -1018,14 +1058,15 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           Json.obj("openAPIV3Schema" -> f._2.transform(reads("openAPIV3Schema").json.pick).get)
         ))
 
-    result.foreach { case (key, value) =>
+    // TODO - à remettre
+    /*result.foreach { case (key, value) =>
       (result(key) \ "openAPIV3Schema").asOpt[JsObject] match {
         case Some(_) => result.put(key, result(key).transform(
           reads("openAPIV3Schema").json.prune
         ).get)
         case None => ()
       }
-    }
+    }*/
 
     val spec = Json.obj(
       "openapi"      -> openApiVersion,
@@ -1190,13 +1231,24 @@ class OpenApiGeneratorRunner extends App {
         versions = Map(
           "v1alpha1" -> (true, Json.obj(
             "openAPIV3Schema" -> Json.obj(
+              "x-kubernetes-preserve-unknown-fields" -> true,
               "type" -> "object",
               "properties" -> Json.obj(
                 "spec" -> Json.obj("type" -> "object")
               )
             )
           )),
-          "v1" -> (false, (schema \ "data").asOpt[JsObject].getOrElse(Json.obj()))
+          "v1" -> (false, (schema \ "data").asOpt[JsObject].getOrElse(Json.obj(
+            "openAPIV3Schema" -> Json.obj(
+              "x-kubernetes-preserve-unknown-fields" -> true,
+              "type" -> "object",
+              "properties" -> Json.obj(
+                "spec" -> Json.obj(
+                  "type" -> "object"
+                )
+              )
+            )
+          )))
         )
       )
     }
