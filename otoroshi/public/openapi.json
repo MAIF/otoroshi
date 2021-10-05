@@ -15690,6 +15690,22 @@
         "description" : "The otoroshi model for X509 certificates",
         "type" : "object",
         "properties" : {
+          "certType" : {
+            "type" : "string",
+            "description" : "the kind of certificate",
+            "enum" : [ "client", "ca", "letsEncrypt", "keypair", "selfSigned", "certificate" ]
+          },
+          "metadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "Entity metadata"
+          },
+          "subject" : {
+            "description" : "Certificate subject",
+            "type" : "string"
+          },
           "letsEncrypt" : {
             "description" : "Let's encrypt (ACME) generated",
             "type" : "boolean"
@@ -15698,56 +15714,17 @@
             "description" : "Is cert used for its keypair only ?",
             "type" : "boolean"
           },
-          "to" : {
-            "description" : "Stop date",
-            "type" : "number"
-          },
-          "tags" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "Entity tags"
-          },
-          "exposed" : {
-            "description" : "Is the cert exposed (public key exposed in jwks.json)",
-            "type" : "boolean"
-          },
-          "autoRenew" : {
-            "description" : "Auto renew cert",
-            "type" : "boolean"
-          },
-          "id" : {
-            "description" : "Entity id",
+          "description" : {
+            "description" : "Entity description",
             "type" : "string"
           },
           "revoked" : {
             "description" : "Certificate is revoked",
             "type" : "boolean"
           },
-          "from" : {
-            "description" : "Start date",
-            "type" : "number"
-          },
-          "client" : {
-            "description" : "Is cert a client cert ?",
+          "valid" : {
+            "description" : "Is cert valid",
             "type" : "boolean"
-          },
-          "ca" : {
-            "description" : "Is cert a CA ?",
-            "type" : "boolean"
-          },
-          "name" : {
-            "description" : "Entity name",
-            "type" : "string"
-          },
-          "chain" : {
-            "description" : "Certicates chain (PEM encoded)",
-            "type" : "string"
-          },
-          "_loc" : {
-            "description" : "Entity location",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "password" : {
             "oneOf" : [ {
@@ -15757,6 +15734,38 @@
             } ],
             "description" : "Certificate password"
           },
+          "autoRenew" : {
+            "description" : "Auto renew cert",
+            "type" : "boolean"
+          },
+          "exposed" : {
+            "description" : "Is the cert exposed (public key exposed in jwks.json)",
+            "type" : "boolean"
+          },
+          "client" : {
+            "description" : "Is cert a client cert ?",
+            "type" : "boolean"
+          },
+          "from" : {
+            "description" : "Start date",
+            "type" : "number"
+          },
+          "selfSigned" : {
+            "description" : "Is cert self signed",
+            "type" : "boolean"
+          },
+          "id" : {
+            "description" : "Entity id",
+            "type" : "string"
+          },
+          "ca" : {
+            "description" : "Is cert a CA ?",
+            "type" : "boolean"
+          },
+          "chain" : {
+            "description" : "Certicates chain (PEM encoded)",
+            "type" : "string"
+          },
           "sans" : {
             "type" : "array",
             "items" : {
@@ -15764,23 +15773,19 @@
             },
             "description" : "Certificate SANs"
           },
-          "selfSigned" : {
-            "description" : "Is cert self signed",
-            "type" : "boolean"
+          "_loc" : {
+            "description" : "Entity location",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
-          "entityMetadata" : {
-            "type" : "object",
-            "additionalProperties" : {
+          "tags" : {
+            "type" : "array",
+            "items" : {
               "type" : "string"
             },
-            "description" : "Entity metadata"
+            "description" : "Entity tags"
           },
           "privateKey" : {
             "description" : "Certificate private key (PEM encoded)",
-            "type" : "string"
-          },
-          "domain" : {
-            "description" : "Certificate domain",
             "type" : "string"
           },
           "caRef" : {
@@ -15791,17 +15796,17 @@
             } ],
             "description" : "Reference to the CA (if any)"
           },
-          "description" : {
-            "description" : "Entity description",
+          "domain" : {
+            "description" : "Certificate domain",
             "type" : "string"
           },
-          "subject" : {
-            "description" : "Certificate subject",
+          "name" : {
+            "description" : "Entity name",
             "type" : "string"
           },
-          "valid" : {
-            "description" : "Is cert valid",
-            "type" : "boolean"
+          "to" : {
+            "description" : "Stop date",
+            "type" : "number"
           }
         }
       },

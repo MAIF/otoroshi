@@ -379,7 +379,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         typ match {
           case c: BaseTypeSignature                                                                              =>
             val valueName = c.getTypeStr
-            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String].orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String]).getOrElse(name)
+            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String]
+              .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
+              .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
+              .getOrElse(name)
             handleType(name, c.getTypeStr, typ).foreach { r =>
               properties = properties ++ Json.obj(
                 fieldName -> r.deepMerge(
@@ -392,7 +395,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           case c: ClassRefTypeSignature
               if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.immutable.Map" =>
             val valueName = c.getTypeArguments.asScala.tail.head.toString
-            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String].orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String]).getOrElse(name)
+            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String]
+              .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
+              .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
+              .getOrElse(name)
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
                 fieldName -> Json.obj(
@@ -405,7 +411,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           case c: ClassRefTypeSignature
               if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.Seq" =>
             val valueName = c.getTypeArguments.asScala.head.toString
-            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String].orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String]).getOrElse(name)
+            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String]
+              .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
+              .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
+              .getOrElse(name)
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
                 fieldName -> Json.obj(
@@ -418,7 +427,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           case c: ClassRefTypeSignature
               if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.immutable.List" =>
             val valueName = c.getTypeArguments.asScala.head.toString
-            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String].orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String]).getOrElse(name)
+            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String]
+              .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
+              .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
+              .getOrElse(name)
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
                 fieldName -> Json.obj(
@@ -430,7 +442,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             }
           case c: ClassRefTypeSignature if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.Option" =>
             val valueName = c.getTypeArguments.asScala.head.toString
-            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String].orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String]).getOrElse(name)
+            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String]
+              .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
+              .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
+              .getOrElse(name)
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
                 fieldName -> Json.obj(
@@ -444,7 +459,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             }
           case c: ClassRefTypeSignature                                                                          =>
             val valueName = c.getBaseClassName
-            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String].orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String]).getOrElse(name)
+            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String]
+              .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
+              .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
+              .getOrElse(name)
             handleType(name, valueName, typ).map { r =>
               properties = properties ++ Json.obj(
                 fieldName -> r.deepMerge(Json.obj("description" -> getFieldDescription(clazz, name, typ, config)))
