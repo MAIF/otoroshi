@@ -249,17 +249,17 @@ class GatewayRequestHandler(
             case Some((_, _, chain))
                 if chain.headOption.exists(_.getSubjectDN.getName.contains(SSLSessionJavaHelper.NotAllowed)) =>
               Some(badCertReply(request))
-            case a => internalRouteRequest(request)
+            case a => internalRouteRequest(request, config)
           }
         }
         case _         => Some(badCertReply(request)) // TODO: is it accurate ?
       }
     } else {
-      internalRouteRequest(request)
+      internalRouteRequest(request, config)
     }
   }
 
-  def internalRouteRequest(request: RequestHeader): Option[Handler] = {
+  def internalRouteRequest(request: RequestHeader, config: Option[GlobalConfig]): Option[Handler] = {
     if (env.globalMaintenanceMode) {
       if (request.relativeUri.contains("__otoroshi_assets")) {
         super.routeRequest(request)
@@ -357,27 +357,36 @@ class GatewayRequestHandler(
           case h if env.adminApiDomains.contains(h) && env.exposeAdminApi                                          => super.routeRequest(request)
           case h if env.backofficeDomains.contains(h) && env.exposeAdminDashboard                                  => super.routeRequest(request)
           case h if env.privateAppsDomains.contains(h)                                                             => super.routeRequest(request)
-
-          case _ =>
-            request.headers.get("Sec-WebSocket-Version") match {
-              case None    =>
-                Some(
-                  httpHandler.forwardCall(
-                    actionBuilder,
-                    reverseProxyAction,
-                    analyticsQueue,
-                    snowMonkey,
-                    headersInFiltered,
-                    headersOutFiltered
-                  )
-                )
-              case Some(_) =>
-                Some(
-                  webSocketHandler.forwardCall(reverseProxyAction, snowMonkey, headersInFiltered, headersOutFiltered)
-                )
-            }
+          case _ => reverseProxyCall(request, config)
         }
       }
+    }
+  }
+
+  def reverseProxyCall(request: RequestHeader, config: Option[GlobalConfig]): Option[Handler] = {
+    request.headers.get("Sec-WebSocket-Version") match {
+      case None => {
+        if (config.exists(_.plugins.canHandleRequest(request))) {
+          Some(actionBuilder.async(sourceBodyParser) { zeRequest =>
+            config.get.plugins.handleRequest(zeRequest, httpHandler.forwardAction(reverseProxyAction, analyticsQueue, snowMonkey, headersInFiltered, headersOutFiltered))
+          })
+        } else {
+          Some(
+            httpHandler.forwardCall(
+              actionBuilder,
+              reverseProxyAction,
+              analyticsQueue,
+              snowMonkey,
+              headersInFiltered,
+              headersOutFiltered
+            )
+          )
+        }
+      }
+      case Some(_) =>
+        Some(
+          webSocketHandler.forwardCall(reverseProxyAction, snowMonkey, headersInFiltered, headersOutFiltered)
+        )
     }
   }
 

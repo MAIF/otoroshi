@@ -15,6 +15,7 @@ import play.api.{ConfigLoader, Configuration, Logger}
 import play.api.libs.json._
 import otoroshi.utils.Regex
 
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
@@ -278,5 +279,17 @@ object implicits {
     def claimInt(name: String): Option[Int]      = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asInt())
     def claimLng(name: String): Option[Long]     = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asLong())
     def claimDbl(name: String): Option[Double]   = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asDouble())
+  }
+  implicit class BetterAtomicReference[A](val ref: AtomicReference[A]) extends AnyVal {
+    def getOrSet(f: => A): A = {
+      val initValue = ref.get()
+      if (initValue == null) {
+        val value: A = f
+        ref.set(value)
+        value
+      } else {
+        initValue
+      }
+    }
   }
 }

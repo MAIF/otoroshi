@@ -67,6 +67,9 @@ object PluginType {
   object DataExporterType    extends PluginType {
     def name: String = "exporter"
   }
+  object RequestHandlerType       extends PluginType {
+    def name: String = "request-handler"
+  }
   object CompositeType       extends PluginType {
     def name: String = "composite"
   }
@@ -728,7 +731,7 @@ class ScriptManager(env: Env) {
 
   val starting = System.currentTimeMillis()
 
-  lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames, exporterNames) =
+  lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, reqHandlerNames, listenerNames, jobNames, exporterNames) =
     Try {
       import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
 
@@ -890,6 +893,9 @@ class ScriptManager(env: Env) {
         val reqSinks: Seq[String] = (scanResult.getSubclasses(classOf[RequestSink].getName).asScala ++
           scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName)
 
+        val reqHandlers: Seq[String] = (scanResult.getSubclasses(classOf[RequestHandler].getName).asScala ++
+          scanResult.getClassesImplementing(classOf[RequestHandler].getName).asScala).filterNot(predicate).map(_.getName)
+
         val listenerNames: Seq[String] = (scanResult.getSubclasses(classOf[OtoroshiEventListener].getName).asScala ++
           scanResult.getClassesImplementing(classOf[OtoroshiEventListener].getName).asScala)
           .filterNot(predicate)
@@ -905,7 +911,7 @@ class ScriptManager(env: Env) {
           .filterNot(predicate)
           .map(_.getName)
 
-        (requestTransformers, validators, preRoutes, reqSinks, listenerNames, jobNames, customExporters)
+        (requestTransformers, validators, preRoutes, reqSinks, reqHandlers, listenerNames, jobNames, customExporters)
       } catch {
         case e: Throwable =>
           e.printStackTrace()
@@ -916,10 +922,11 @@ class ScriptManager(env: Env) {
             Seq.empty[String],
             Seq.empty[String],
             Seq.empty[String],
+            Seq.empty[String],
             Seq.empty[String]
           )
       } finally if (scanResult != null) scanResult.close()
-    } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq
+    } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq
       .empty[String], Seq.empty[String])
 
   private val allPlugins   = Seq(
@@ -927,6 +934,7 @@ class ScriptManager(env: Env) {
     validatorsNames,
     preRouteNames,
     reqSinkNames,
+    reqHandlerNames,
     listenerNames,
     jobNames,
     exporterNames
@@ -1436,6 +1444,7 @@ object Script {
           case "sink"        => PluginType.RequestSinkType
           case "job"         => PluginType.JobType
           case "exporter"    => PluginType.DataExporterType
+          case "request-handler" => PluginType.RequestHandlerType
           case "composite"   => PluginType.CompositeType
           case _             => PluginType.TransformerType
         }
