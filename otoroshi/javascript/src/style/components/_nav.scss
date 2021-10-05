@@ -26,14 +26,20 @@
   margin-top: 200px;
 }
 
-.nav > li > a {
-  transition-duration: 1s;
+.sidebar{
+  .nav > li > a {
+    // transition-duration: 1s;
 
-  &:focus,
-  &:hover {
-    background-color: $fondGrisclairSurvolMenu;
-    color: #fff;
-    border-color: $primaryColor;
+    // &:focus,
+    &:hover {
+      background-color: $fondGrisclairSurvolMenu;
+      color: #fff;
+      border-color: $primaryColor;
+      border-radius: 5px;
+      margin-left: 5px;
+      margin-right: 5px;
+      padding-left: 31px;;
+    }
   }
 }
 

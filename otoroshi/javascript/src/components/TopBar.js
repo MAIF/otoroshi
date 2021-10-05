@@ -523,6 +523,12 @@ export class TopBar extends Component {
                   </a>
                 </li>
               )}
+              <li>
+                <a href="">
+                  <i className="far fa-moon fa-lg"></i>
+                  <i className="far fa-lightbulb fa-lg"></i>
+                </a>
+              </li>
               <li className="dropdown userManagement">
                 <a
                   href="#"
@@ -538,8 +544,8 @@ export class TopBar extends Component {
                     <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>
                   </li>*/}
                   <li>
-                    <a href="#">
-                      <img src="/assets/images/otoroshi-logo-inverse.png" width="16" /> version{' '}
+                    <a href="#" className="logo-xs">
+                      <img src="/assets/images/otoroshi-logo-inverse.png"  width="16" /> version{' '}
                       {window.__currentVersion}
                     </a>
                   </li>

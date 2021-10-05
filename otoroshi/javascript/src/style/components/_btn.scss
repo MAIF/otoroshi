@@ -172,6 +172,11 @@
   background-color: transparent;
 }
 
+.btn-danger[disabled],.btn-danger[disabled]:hover {
+  background-color: #e2e6e9;
+  color:#000000a6;
+  border-color: #000000a6;
+}
 .prod,
 .prod:hover {
   color: #fff;

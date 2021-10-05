@@ -1,0 +1,164 @@
+@mixin bright-mode_background--light {
+  background: #fff;
+}
+
+@mixin bright-mode_background-color--light {
+  background-color: #fff !important;
+}
+
+@mixin bright-mode_background-color--darker {
+  background-color: #f3f3f4;
+}
+
+@mixin bright-mode_background-color--darkest {
+  background-color: #e8e8e8 !important;
+}
+
+@mixin bright-mode_color--light {
+  color: #fff !important;
+}
+
+@mixin bright-mode_color--darker {
+  color: #333 !important;
+}
+
+body.white-mode,
+.white-mode .fixedH3,
+.white-mode .btnsService {
+  @include bright-mode_background-color--darker;
+}
+
+body.white-mode {
+  @include bright-mode_color--darker;
+}
+
+.white-mode {
+  // general
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .topbar-popup {
+    font-weight: 600;
+  }
+
+  hr {
+    border-color: #333;
+  }
+
+  .navbar-inverse,
+  .sidebar,
+  .metric,
+  .ReactTable input {
+    @include bright-mode_background--light;
+  }
+  .nav > li > a:hover,
+  .btn-primary:not([disabled]):hover,
+  .btn-success:not([disabled]):hover,
+  .btn-info:not([disabled]):hover,
+  .btn-danger:not([disabled]):hover,
+  .btn-danger:hover .fa-lock,
+  .btn-danger .fa-lock,
+  .dropdown-menu > li > a:focus,
+  .dropdown-menu > li > a:hover,
+  .ReactTable .-next .-btn:hover,
+  .ReactTable .-previous .-btn:hover {
+    @include bright-mode_color--light;
+  }
+  .ReactTable input,
+  input.form-control,
+  .Select-value,
+  .Select.has-value.Select--single
+    > .Select-control
+    .Select-value
+    .Select-value-label,
+  .Select.has-value.is-pseudo-focused.Select--single
+    > .Select-control
+    .Select-value
+    .Select-value-label,
+  .Select-control,
+  .Select-option,
+  .modal-content,
+  .navbar-nav > .active > a,
+  .navbar-nav > .open > a,
+  .navbar-nav > .open > a:focus,
+  .navbar-nav > .open > a:hover,
+  .navbar-inverse .navbar-nav > li .dropdown-menu,
+  textarea.form-control,
+  .Select-menu-outer {
+    @include bright-mode_background-color--light;
+  }
+
+  .sidebar a,
+  .fa-cog,
+  .fa-moon,
+  .fa-lightbulb,
+  .metric,
+  .btn-primary,
+  .btn-success,
+  .btn-danger,
+  .btn-danger .fa-lock,
+  .btn-info,
+  label,
+  input.form-control,
+  .Select-option.is-focused,
+  .Select.has-value.Select--single
+    > .Select-control
+    .Select-value
+    .Select-value-label,
+  .navbar-nav > .active > a,
+  .navbar-nav > .open > a,
+  .navbar-nav > .open > a:focus,
+  .navbar-nav > .open > a:hover,
+  .navbar-inverse .navbar-nav > li .dropdown-menu,
+  .dropdown-menu > li > a,
+  .ReactTable input,
+  .ReactTable .-next .-btn,
+  .ReactTable .-previous .-btn,
+  .table,
+  textarea.form-control,
+  .jumbotron h1,
+  .Select-option,
+  .Select-menu-outer,
+  .is-open > .Select-control,
+  .Select.is-focused > .Select-control,
+  .Select.is-focused:not(.is-open) > .Select-control {
+    @include bright-mode_color--darker;
+  }
+
+  .navbar-nav > .active > a,
+  .navbar-nav > .open > a,
+  .navbar-nav > .open > a:focus,
+  .navbar-nav > .open > a:hover {
+    box-shadow: none;
+  }
+  .metric-text-title,
+  .metric-text-value {
+    text-shadow: none;
+  }
+  .dropdown .dropdown-toggle:hover,
+  .sub-container__bg-color,
+  .jumbotron {
+    @include bright-mode_background-color--darkest;
+  }
+
+  .sidebar h2 a {
+    color: $primaryColor !important;
+  }
+  .jumbotron .btn {
+    @include bright-mode_color--light;
+    background-color: $primaryColor;
+  }
+
+  .logo-xs img {
+    filter: invert(100%);
+  }
+  .logo-xs:hover img {
+    filter: invert(0%);
+  }
+  .logo-xs:hover {
+    transition: 1s filter linear;
+  }
+}

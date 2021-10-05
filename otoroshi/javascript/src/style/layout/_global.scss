@@ -85,18 +85,6 @@ h4 {
     margin-left: 0px;
     // margin-right: -5px;
 }
-.backoffice-container .fa-check-circle,.backoffice-container .fa-times-circle{
-    font-size: 16px;
-    top: 4px;
-}
-
-.backoffice-container .fa-globe-americas,.backoffice-container .fa-check-circle, .backoffice-container .fa-lock {
-  color:$savecolor;
-}
-
-.backoffice-container .fa-unlock-alt, .fas fa-times-circle.alertorange {
-  color:orange;
-}
 
 
 .fa-question-circle{
@@ -116,6 +104,17 @@ h4 {
 
 .content{
   margin-top:50px;
+}
+
+.sub-container{
+  border-radius: 4px;
+  padding: 10px;
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+.sub-container__bg-color{
+  background-color:#414141;
 }
 
 .tab-content a,.tab-content a:hover {

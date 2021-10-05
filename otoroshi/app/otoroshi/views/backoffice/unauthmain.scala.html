@@ -8,7 +8,7 @@
         <meta name="robots" content="noindex, nofollow">
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
         <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap.min.css")">
-        <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap-theme.min.css")">
+        <!-- <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap-theme.min.css")"> -->
         <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/otoroshiapps.css")">
         <link href="@routes.Assets.versioned("fonts/font-awesome/css/all.min.css")" rel="stylesheet">
         <link href="@routes.Assets.versioned("fonts/raleway/raleway.css")" rel="stylesheet">
@@ -18,9 +18,13 @@
         <div class="container">
             <div class="header clearfix">
                 <nav class="navbar-inverse">
-                    <ul class="nav navbar-nav navbar-right hide">
-                        <li role="presentation"><a href="@otoroshi.controllers.routes.BackOfficeController.index()">Home</a></li>
-                        <li role="presentation"><a href="@otoroshi.controllers.routes.BackOfficeController.dashboard()"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li>
+                            <a href="">
+                                <i class="far fa-moon fa-lg"></i>
+                                <i class="far fa-lightbulb fa-lg"></i>
+                            </a>
+                        </li>
                     </ul>
                 </nav>
                <a class="navbar-brand" href="/" style="display: flex;">
@@ -28,9 +32,6 @@
                </a>
             </div>
             @content
-            <footer class="footer hide">
-                <p>Otoroshi by MAIF</p>
-            </footer>
         </div>
         <script type="text/javascript" src="@routes.Assets.versioned("javascripts/jquery.js")"></script>
         @moreScripts
