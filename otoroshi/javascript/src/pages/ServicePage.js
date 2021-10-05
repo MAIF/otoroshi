@@ -3407,7 +3407,7 @@ export class TemplateInput extends Component {
       <link href="/assets/fonts/raleway/raleway.css" rel="stylesheet">
       <link rel="stylesheet" media="screen" href="/__otoroshi_assets/stylesheets/error.css">
   </head>
-  <body class="white-mode">
+  <body>
       <div class="container">
         <div class="header clearfix">
             <nav class="navbar-inverse"></nav>
