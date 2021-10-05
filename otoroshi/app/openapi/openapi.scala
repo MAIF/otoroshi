@@ -1305,6 +1305,7 @@ class OpenApiGeneratorRunner extends App {
     )
 
     val schemas = spec._2
+
     val openAPIV3Schemas = crdsEntities.fields.map { case (key, value) =>
       Json.obj("key" -> key) ++ value.as[JsObject] ++ Json.obj("data" ->
         (schemas \ (value \ "entity").as[String]).asOpt[JsObject]
@@ -1346,10 +1347,12 @@ class OpenApiGeneratorRunner extends App {
 
     val res = crds().foldLeft("")((acc, curr) => s"$acc${write(curr)}")
 
-    val file = new File("/Users/79966b/Documents/opensource/otoroshi/kubernetes/helm/otoroshi/crds/crds-1.22.yaml")
+    val file = new File("../kubernetes/helm/otoroshi/crds/crds-1.22.yaml")
+    println(s"write crds-1.22.yaml file: '${file.getAbsolutePath}'")
     Files.write(file.toPath, res.getBytes(StandardCharsets.UTF_8))
 
-    val defaultFile = new File("/Users/79966b/Documents/opensource/otoroshi/kubernetes/helm/otoroshi/crds/crds-1.22-simple.yaml")
+    val defaultFile = new File("../kubernetes/helm/otoroshi/crds/crds-1.22-simple.yaml")
+    println(s"write crds-1.22-simple.yaml file: '${defaultFile.getAbsolutePath}'")
     Files.write(defaultFile.toPath, crds(true).foldLeft("")((acc, curr) => s"$acc${write(curr)}").getBytes(StandardCharsets.UTF_8))
   }
 
