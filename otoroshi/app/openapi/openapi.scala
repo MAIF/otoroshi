@@ -3,7 +3,7 @@ package otoroshi.openapi
 import io.github.classgraph._
 import otoroshi.models.Entity
 import otoroshi.utils.syntax.implicits._
-import otoroshi.utils.yaml.Yaml.jsonToYaml
+import otoroshi.utils.yaml.Yaml.write
 import play.api.libs.json._
 
 import java.io.File
@@ -17,6 +17,8 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
 
   lazy val add_schemas   = raw.select("add_schemas").asOpt[JsObject].getOrElse(Json.obj())
   lazy val merge_schemas = raw.select("merge_schemas").asOpt[JsObject].getOrElse(Json.obj())
+  lazy val fields_rename = raw.select("fields_rename").asOpt[JsObject].getOrElse(Json.obj())
+  lazy val add_fields = raw.select("add_fields").asOpt[JsObject].getOrElse(Json.obj())
 
   lazy val bulkControllerMethods             = raw
     .select("bulkControllerMethods")
@@ -68,7 +70,9 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
       "bulkControllerMethods" -> JsArray(bulkControllerMethods.map(JsString.apply)),
       "crudControllerMethods" -> JsArray(crudControllerMethods.map(JsString.apply)),
       "add_schemas"           -> add_schemas,
-      "merge_schemas"         -> merge_schemas
+      "merge_schemas"         -> merge_schemas,
+      "fields_rename"         -> fields_rename,
+      "add_fields"            -> add_fields
     )
     val f      = new File(filePath)
     if (!f.exists()) {
@@ -89,7 +93,9 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
 $descs
   },
   "add_schemas": ${add_schemas.prettify.split("\n").map(v => "  " + v).mkString("\n")},
-  "merge_schemas": ${merge_schemas.prettify.split("\n").map(v => "  " + v).mkString("\n")}
+  "merge_schemas": ${merge_schemas.prettify.split("\n").map(v => "  " + v).mkString("\n")},
+  "fields_rename": ${fields_rename.prettify.split("\n").map(v => "  " + v).mkString("\n")},
+  "add_fields": ${add_fields.prettify.split("\n").map(v => "  " + v).mkString("\n")}
 }"""
     println(s"write config file: '${f.getAbsolutePath}'")
     Files.write(f.toPath, fileContent.split("\n").toList.asJava, StandardCharsets.UTF_8)
@@ -373,9 +379,11 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         val typ  = field.getTypeSignatureOrTypeDescriptor
         typ match {
           case c: BaseTypeSignature                                                                              =>
+            val valueName = c.getTypeStr
+            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String].orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String]).getOrElse(name)
             handleType(name, c.getTypeStr, typ).foreach { r =>
               properties = properties ++ Json.obj(
-                name -> r.deepMerge(
+                fieldName -> r.deepMerge(
                   Json.obj(
                     "description" -> getFieldDescription(clazz, name, typ, config)
                   )
@@ -385,9 +393,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           case c: ClassRefTypeSignature
               if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.immutable.Map" =>
             val valueName = c.getTypeArguments.asScala.tail.head.toString
+            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String].orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String]).getOrElse(name)
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
-                name -> Json.obj(
+                fieldName -> Json.obj(
                   "type"                 -> "object",
                   "additionalProperties" -> r,
                   "description"          -> getFieldDescription(clazz, name, typ, config)
@@ -397,9 +406,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           case c: ClassRefTypeSignature
               if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.Seq" =>
             val valueName = c.getTypeArguments.asScala.head.toString
+            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String].orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String]).getOrElse(name)
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
-                name -> Json.obj(
+                fieldName -> Json.obj(
                   "type"        -> "array",
                   "items"       -> r,
                   "description" -> getFieldDescription(clazz, name, typ, config)
@@ -409,9 +419,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           case c: ClassRefTypeSignature
               if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.immutable.List" =>
             val valueName = c.getTypeArguments.asScala.head.toString
+            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String].orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String]).getOrElse(name)
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
-                name -> Json.obj(
+                fieldName -> Json.obj(
                   "type"        -> "array",
                   "items"       -> r,
                   "description" -> getFieldDescription(clazz, name, typ, config)
@@ -420,9 +431,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             }
           case c: ClassRefTypeSignature if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.Option" =>
             val valueName = c.getTypeArguments.asScala.head.toString
+            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String].orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String]).getOrElse(name)
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
-                name -> Json.obj(
+                fieldName -> Json.obj(
                   "oneOf"       -> Json.arr(
                     nullType,
                     r
@@ -433,9 +445,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             }
           case c: ClassRefTypeSignature                                                                          =>
             val valueName = c.getBaseClassName
+            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String].orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String]).getOrElse(name)
             handleType(name, valueName, typ).map { r =>
               properties = properties ++ Json.obj(
-                name -> r.deepMerge(Json.obj("description" -> getFieldDescription(clazz, name, typ, config)))
+                fieldName -> r.deepMerge(Json.obj("description" -> getFieldDescription(clazz, name, typ, config)))
               )
             }
           // case c: TypeVariableSignature => println(s"  $name: $typ ${c.toStringWithTypeBound} (var)")
@@ -1331,13 +1344,13 @@ class OpenApiGeneratorRunner extends App {
       )
     }
 
-    val res = crds().foldLeft("")((acc, curr) => s"$acc${jsonToYaml(curr)}")
+    val res = crds().foldLeft("")((acc, curr) => s"$acc${write(curr)}")
 
     val file = new File("/Users/79966b/Documents/opensource/otoroshi/kubernetes/helm/otoroshi/crds/crds-1.22.yaml")
     Files.write(file.toPath, res.getBytes(StandardCharsets.UTF_8))
 
     val defaultFile = new File("/Users/79966b/Documents/opensource/otoroshi/kubernetes/helm/otoroshi/crds/crds-1.22-simple.yaml")
-    Files.write(defaultFile.toPath, crds(true).foldLeft("")((acc, curr) => s"$acc${jsonToYaml(curr)}").getBytes(StandardCharsets.UTF_8))
+    Files.write(defaultFile.toPath, crds(true).foldLeft("")((acc, curr) => s"$acc${write(curr)}").getBytes(StandardCharsets.UTF_8))
   }
 
   def overrideGeneratedOpenapiV3Schema(res: JsObject): JsObject = {
@@ -1347,7 +1360,7 @@ class OpenApiGeneratorRunner extends App {
         case Some(v) => overrideGeneratedOpenapiV3Schema(v)
       }
     res.fields
-      .filter(f => f._1 != "enum")
+      .filter(f => f._1 != "enum" && f != "oneOfConstraints")
       .map { case (key, value) =>
         val updatedValue = t(value)
 
@@ -1366,7 +1379,7 @@ class OpenApiGeneratorRunner extends App {
         }
 
         if(key == "oneOfConstraints")
-          ("oneOf", newValue)
+          ("anyOf", newValue)
         //else if (key == "location")
           //("_loc", newValue)
         else if(key == "typ")

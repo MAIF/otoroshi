@@ -20,6 +20,8 @@ import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
 
+import otoroshi.utils.syntax.implicits._
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -27,8 +29,6 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
     extends AbstractController(cc)
     with BulkControllerHelper[Script, JsValue]
     with CrudControllerHelper[Script, JsValue] {
-
-  import otoroshi.utils.future.Implicits._
 
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
@@ -45,7 +45,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
   def OnlyIfScriptingEnabled(f: => Future[Result]): Future[Result] = {
     env.scriptingEnabled match {
       case true  => f
-      case false => InternalServerError(Json.obj("error" -> "Scripting not enabled !")).asFuture
+      case false => InternalServerError(Json.obj("error" -> "Scripting not enabled !")).future
     }
   }
 
@@ -58,6 +58,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       val listenerNames     = env.scriptManager.listenerNames
       val jobNames          = env.scriptManager.jobNames
       val exporterNames     = env.scriptManager.exporterNames
+      val reqHandlerNames   = env.scriptManager.reqHandlerNames
 
       val typ             = ctx.request.getQueryString("type")
       val cpTransformers  = typ match {
@@ -94,6 +95,11 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       val cpExporterNames = typ match {
         case None             => exporterNames
         case Some("exporter") => exporterNames
+        case _                => Seq.empty
+      }
+      val reqHandlers = typ match {
+        case None             => reqHandlerNames
+        case Some("request-handler") => reqHandlerNames
         case _                => Seq.empty
       }
       def extractInfosFromJob(c: String): JsValue = {
@@ -135,6 +141,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
               case Some("listener") if script.`type` == PluginType.EventListenerType    => true
               case Some("job") if script.`type` == PluginType.JobType                   => true
               case Some("exporter") if script.`type` == PluginType.DataExporterType     => true
+              case Some("request-handler") if script.`type` == PluginType.DataExporterType     => true
               case Some("composite") if script.`type` == PluginType.CompositeType       => true
               case Some("*")                                                            => true
               case _                                                                    => false
@@ -173,6 +180,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
           cpRequestSinks.map(extractInfos) ++
           cpListenerNames.map(extractInfos) ++
           cpExporterNames.map(extractInfos) ++
+          reqHandlers.map(extractInfos) ++
           cpJobNames.map(extractInfosFromJob).filter {
             case JsNull => false
             case _      => true

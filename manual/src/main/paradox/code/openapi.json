@@ -14155,8 +14155,8 @@
             "type" : "string"
           },
           "type" : {
-            "type" : "string",
             "description" : "the type of the module",
+            "type" : "string",
             "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
           },
           "metadataField" : {
@@ -14231,6 +14231,10 @@
             },
             "description" : "LDAP server list of url"
           },
+          "_loc" : {
+            "description" : "Location of the module",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
+          },
           "tags" : {
             "type" : "array",
             "items" : {
@@ -14254,10 +14258,6 @@
           "name" : {
             "description" : "Name of the config",
             "type" : "string"
-          },
-          "location" : {
-            "description" : "Location of the module",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "desc" : {
             "description" : "Description of the config",
@@ -14461,7 +14461,7 @@
             "description" : "This apikey can be used juste with the client_id value",
             "type" : "boolean"
           },
-          "location" : {
+          "_loc" : {
             "description" : "The location of the apikey",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -14594,8 +14594,8 @@
             "type" : "string"
           },
           "type" : {
-            "type" : "string",
             "description" : "the type of the module",
+            "type" : "string",
             "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
           },
           "introspectionUrl" : {
@@ -14684,6 +14684,10 @@
             "description" : "Field name to get otoroshi metadata from. You can specify sub fields using | as separator",
             "type" : "string"
           },
+          "_loc" : {
+            "description" : "Location of the module",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
+          },
           "tags" : {
             "type" : "array",
             "items" : {
@@ -14736,10 +14740,6 @@
             "description" : "The claims of the token",
             "type" : "string"
           },
-          "location" : {
-            "description" : "Location of the module",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
           "desc" : {
             "description" : "Description of the config",
             "type" : "string"
@@ -14765,10 +14765,6 @@
             "description" : "Verifier name",
             "type" : "string"
           },
-          "location" : {
-            "description" : "Entity location",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
           "bitmap$0" : {
             "description" : "???",
             "type" : "boolean"
@@ -14782,9 +14778,9 @@
             "type" : "string"
           },
           "type" : {
-            "type" : "string",
             "description" : "the kind of verifier",
-            "enum" : [ "global", "local", "ref" ]
+            "type" : "string",
+            "enum" : [ "global" ]
           },
           "strict" : {
             "description" : "Does it fail if JWT not found",
@@ -14793,6 +14789,10 @@
           "strategy" : {
             "description" : "The strategy of the verifier",
             "$ref" : "#/components/schemas/otoroshi.models.VerifierStrategy"
+          },
+          "_loc" : {
+            "description" : "Entity location",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "desc" : {
             "description" : "Verifier description",
@@ -14949,7 +14949,7 @@
             "description" : "A unique random string to identify your service",
             "type" : "string"
           },
-          "location" : {
+          "_loc" : {
             "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -15121,7 +15121,7 @@
             },
             "description" : "Entity tags"
           },
-          "location" : {
+          "_loc" : {
             "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -15171,7 +15171,40 @@
       },
       "play.api.libs.ws.WSProxyServer" : {
         "type" : "object",
-        "properties" : { },
+        "properties" : {
+          "host" : {
+            "type" : "string",
+            "description" : "The hostname of the proxy server."
+          },
+          "port" : {
+            "type" : "string",
+            "description" : "The port of the proxy server."
+          },
+          "protocol" : {
+            "type" : "string",
+            "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
+          },
+          "principal" : {
+            "type" : "string",
+            "description" : "The principal (aka username) of the credentials for the proxy server."
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "The password for the credentials for the proxy server."
+          },
+          "ntlmDomain" : {
+            "type" : "string",
+            "description" : "The ntlm domain for the proxy server."
+          },
+          "encoding" : {
+            "type" : "string",
+            "description" : "The realm's charset."
+          },
+          "nonProxyHosts" : {
+            "type" : "string",
+            "description" : "The non proxied hosts"
+          }
+        },
         "description" : "Proxy server"
       },
       "otoroshi.models.ServiceDescriptorIdentifier" : {
@@ -15606,7 +15639,7 @@
             "description" : "Canary settings",
             "$ref" : "#/components/schemas/otoroshi.models.Canary"
           },
-          "location" : {
+          "_loc" : {
             "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -15855,7 +15888,7 @@
             "description" : "???",
             "type" : "boolean"
           },
-          "location" : {
+          "_loc" : {
             "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -16567,10 +16600,6 @@
             "description" : "User rights",
             "$ref" : "#/components/schemas/otoroshi.models.UserRights"
           },
-          "location" : {
-            "description" : "Entity location",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
           "typ" : {
             "description" : "Type of user",
             "$ref" : "#/components/schemas/otoroshi.models.OtoroshiAdminType"
@@ -16583,6 +16612,10 @@
             "description" : "the kind of admin",
             "type" : "string",
             "enum" : [ "simple", "webauthn" ]
+          },
+          "_loc" : {
+            "description" : "Entity location",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "username" : {
             "description" : "User username",
@@ -16889,7 +16922,7 @@
             "description" : "Entity id",
             "type" : "string"
           },
-          "location" : {
+          "_loc" : {
             "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -17363,7 +17396,7 @@
             "description" : "Creation date of the session",
             "type" : "number"
           },
-          "location" : {
+          "_loc" : {
             "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -17929,18 +17962,18 @@
             "description" : "Use webauthn for login",
             "type" : "boolean"
           },
-          "location" : {
-            "description" : "location of the module",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
           "id" : {
             "description" : "id of the module",
             "type" : "string"
           },
           "type" : {
-            "type" : "string",
             "description" : "the type of the module",
+            "type" : "string",
             "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
+          },
+          "_loc" : {
+            "description" : "location of the module",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "users" : {
             "type" : "array",
@@ -18147,7 +18180,7 @@
             "description" : "Expiration date for the session",
             "type" : "number"
           },
-          "location" : {
+          "_loc" : {
             "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -18359,6 +18392,44 @@
         "type" : "string",
         "description" : ""
       },
+      "play.api.libs.ws.DefaultWSProxyServer" : {
+        "type" : "object",
+        "properties" : {
+          "host" : {
+            "type" : "string",
+            "description" : "The hostname of the proxy server."
+          },
+          "port" : {
+            "type" : "string",
+            "description" : "The port of the proxy server."
+          },
+          "protocol" : {
+            "type" : "string",
+            "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
+          },
+          "principal" : {
+            "type" : "string",
+            "description" : "The principal (aka username) of the credentials for the proxy server."
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "The password for the credentials for the proxy server."
+          },
+          "ntlmDomain" : {
+            "type" : "string",
+            "description" : "The ntlm domain for the proxy server."
+          },
+          "encoding" : {
+            "type" : "string",
+            "description" : "The realm's charset."
+          },
+          "nonProxyHosts" : {
+            "type" : "string",
+            "description" : "The non proxied hosts"
+          }
+        },
+        "description" : "Proxy server"
+      },
       "PemCertificateBody" : {
         "type" : "string",
         "description" : "PEM encoded certificate"
@@ -18421,7 +18492,7 @@
             "description" : "Description",
             "type" : "string"
           },
-          "location" : {
+          "_loc" : {
             "description" : "location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -18444,7 +18515,7 @@
             "description" : "Group size",
             "type" : "integer"
           },
-          "typ" : {
+          "type" : {
             "description" : "Type of data exporter",
             "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType"
           },
@@ -18712,9 +18783,13 @@
             "type" : "boolean"
           },
           "type" : {
-            "type" : "string",
             "description" : "the type of the module",
+            "type" : "string",
             "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
+          },
+          "_loc" : {
+            "description" : "Location of the SAML module",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "issuer" : {
             "description" : "Issuer of the SAML requests",
@@ -18759,10 +18834,6 @@
           "nameIDFormat" : {
             "description" : "Format of the name ID",
             "$ref" : "#/components/schemas/otoroshi.auth.NameIDFormat"
-          },
-          "location" : {
-            "description" : "Location of the SAML module",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "singleLogoutProtocolBinding" : {
             "description" : "Protocol binding used by identity provider to logout users",
@@ -19022,13 +19093,17 @@
             "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
           },
           "type" : {
-            "type" : "string",
             "description" : "the type of the module",
+            "type" : "string",
             "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
           },
           "httpMethod" : {
             "description" : "Method used to fetch access and request token",
             "$ref" : "#/components/schemas/otoroshi.auth.OAuth1Provider"
+          },
+          "_loc" : {
+            "description" : "The location of the OAuth 1 module",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "tags" : {
             "type" : "array",
@@ -19064,10 +19139,6 @@
           "callbackURL" : {
             "description" : "The location where the identity provider returns a browser after the user finishes authenticating with their IDP",
             "type" : "string"
-          },
-          "location" : {
-            "description" : "The location of the OAuth 1 module",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "id" : {
             "description" : "Id of the module",
@@ -19288,10 +19359,6 @@
             "description" : "User rights",
             "$ref" : "#/components/schemas/otoroshi.models.UserRights"
           },
-          "location" : {
-            "description" : "Entity location",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
           "typ" : {
             "description" : "User type",
             "$ref" : "#/components/schemas/otoroshi.models.OtoroshiAdminType"
@@ -19308,6 +19375,10 @@
             "description" : "the kind of admin",
             "type" : "string",
             "enum" : [ "simple", "webauthn" ]
+          },
+          "_loc" : {
+            "description" : "Entity location",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "username" : {
             "description" : "User username",

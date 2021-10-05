@@ -15,6 +15,7 @@ import play.api.{ConfigLoader, Configuration, Logger}
 import play.api.libs.json._
 import otoroshi.utils.Regex
 
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
@@ -112,13 +113,14 @@ object implicits {
     def select(index: Int): JsLookupResult   = obj \ index
     def at(path: String): JsLookupResult = {
       val parts = path.split("\\.").toSeq
-      parts.foldLeft(obj) {
-        case (source: JsObject, part) => (source \ part).as[JsValue]
-        case (source: JsArray, part)  => (source \ part.toInt).as[JsValue]
-        case (value, part)            => JsNull
+      parts.foldLeft(Option(obj)) {
+        case (Some(source: JsObject), part) => (source \ part).asOpt[JsValue]
+        case (Some(source: JsArray), part)  => (source \ part.toInt).asOpt[JsValue]
+        case (Some(value), part)            => None
+        case (None, _) => None
       } match {
-        case JsNull => JsUndefined(s"path '${path}' does not exists")
-        case value  => JsDefined(value)
+        case None => JsUndefined(s"path '${path}' does not exists")
+        case Some(value)  => JsDefined(value)
       }
     }
     def atPointer(path: String): JsLookupResult = {
@@ -279,5 +281,17 @@ object implicits {
     def claimInt(name: String): Option[Int]      = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asInt())
     def claimLng(name: String): Option[Long]     = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asLong())
     def claimDbl(name: String): Option[Double]   = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asDouble())
+  }
+  implicit class BetterAtomicReference[A](val ref: AtomicReference[A]) extends AnyVal {
+    def getOrSet(f: => A): A = {
+      val initValue = ref.get()
+      if (initValue == null) {
+        val value: A = f
+        ref.set(value)
+        value
+      } else {
+        initValue
+      }
+    }
   }
 }

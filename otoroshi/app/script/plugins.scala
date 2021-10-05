@@ -2,14 +2,17 @@ package otoroshi.script.plugins
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.script._
 import otoroshi.utils.RegexPool
 import play.api.libs.json.{Format, JsArray, JsError, JsResult, JsString, JsSuccess, JsValue, Json}
-import play.api.mvc.{RequestHeader, Result}
+import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import otoroshi.utils.syntax.implicits._
-import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils
+
+import otoroshi.utils.http.RequestImplicits._
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
@@ -145,6 +148,40 @@ case class Plugins(
       trs
     } else {
       cachedTransformers
+    }
+  }
+
+  private val request_handlers_ref = new AtomicReference[Map[String, RequestHandler]]()
+
+  private def getHandlersMap(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Map[String, RequestHandler] = env.metrics.withTimer("otoroshi.plugins.req-handlers.handlers-map-compute") {
+    request_handlers_ref.getOrSet {
+      val handlers = getPlugins[RequestHandler](request)
+      handlers.flatMap(h => plugin[RequestHandler](h)).flatMap(rh => rh.handledDomains.map(d => (d, rh))).toMap
+    }
+  }
+
+  def canHandleRequest(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Boolean = env.metrics.withTimer("otoroshi.plugins.req-handlers.can-handle-request") {
+    if (enabled) {
+      val handlersMap = getHandlersMap(request)
+      if (handlersMap.nonEmpty) {
+        handlersMap.contains(request.theDomain)
+      } else {
+        false
+      }
+    } else {
+      false
+    }
+  }
+
+  def handleRequest(request: Request[Source[ByteString, _]], defaultRouting: Request[Source[ByteString, _]] => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    if (enabled) {
+      val handlersMap = getHandlersMap(request)
+      handlersMap.get(request.theDomain) match {
+        case None =>          defaultRouting(request)
+        case Some(handler) => handler.handle(request, defaultRouting)
+      }
+    } else {
+      defaultRouting(request)
     }
   }
 }

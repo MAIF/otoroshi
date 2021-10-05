@@ -218,6 +218,26 @@ class MyDataExporter extends CustomDataExporter  {
 new MyDataExporter()
 `;
 
+const basicRequestHandler = `
+
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
+import otoroshi.env.Env
+import otoroshi.script.RequestHandler
+import play.api.mvc.{Request, Result}
+
+import scala.concurrent.{ExecutionContext, Future}
+
+class MyRequestHandler extends RequestHandler {
+  
+  override def handledDomains(implicit ec: ExecutionContext, env: Env): Seq[String] = Seq.empty[String]
+
+  override def handle(request: Request[Source[ByteString, _]], defaultRouting: Request[Source[ByteString, _]] => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    defaultRouting(request)
+  }
+}
+`;
+
 class CompilationTools extends Component {
   state = {
     compiling: false,
@@ -383,6 +403,14 @@ class ScriptTypeSelector extends Component {
               code: basicExporter,
             });
           }
+          if (t === 'request-handler') {
+            this.setState({ type: 'request-handler' });
+            this.props.rawOnChange({
+              ...this.props.rawValue,
+              type: 'request-handler',
+              code: basicRequestHandler,
+            });
+          }
         }}
         possibleValues={[
           { label: 'Request sink', value: 'sink' },
@@ -392,6 +420,7 @@ class ScriptTypeSelector extends Component {
           { label: 'Event listener', value: 'listener' },
           { label: 'Job', value: 'job' },
           { label: 'Exporter', value: 'exporter' },
+          { label: 'Request handler', value: 'request-handler' },
           { label: 'Nano app', value: 'app' },
         ]}
       />

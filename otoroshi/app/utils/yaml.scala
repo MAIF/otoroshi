@@ -15,7 +15,7 @@ object Yaml {
     Json.parse(jsonWriter.writeValueAsString(obj))
   }
 
-  def jsonToYaml(value: JsValue) = {
+  def write(value: JsValue): String = {
     val read = jsonWriter.readValue(Json.stringify(value), classOf[Object])
     yamlReader.writeValueAsString(read)
   }

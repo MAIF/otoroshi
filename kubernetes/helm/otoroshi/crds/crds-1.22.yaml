@@ -60,7 +60,10 @@ spec:
               description:
                 description: "Entity description"
                 type: "string"
-              location:
+              id:
+                description: "A unique random string to identify your service"
+                type: "string"
+              _loc:
                 description: "Entity location"
                 type: "object"
                 properties:
@@ -72,9 +75,6 @@ spec:
                   tenant:
                     description: "Organization of the current entity"
                     type: "string"
-              id:
-                description: "A unique random string to identify your service"
-                type: "string"
               tags:
                 type: "array"
                 items:
@@ -441,42 +441,6 @@ spec:
                     type: "boolean"
               secComSettings:
                 description: "Sec. com. settings"
-                oneOf:
-                - required:
-                  - "privateKey"
-                  - "size"
-                  - "publicKey"
-                  - "type"
-                - required:
-                  - "size"
-                  - "certId"
-                  - "type"
-                - required:
-                  - "size"
-                  - "base64"
-                  - "secret"
-                  - "type"
-                - required:
-                  - "kty"
-                  - "proxy"
-                  - "headers"
-                  - "mtlsConfig"
-                  - "type"
-                  - "ttl"
-                  - "url"
-                  - "timeout"
-                - required:
-                  - "onlyExposedCerts"
-                  - "type"
-                - required:
-                  - "size"
-                  - "certId"
-                  - "type"
-                - required:
-                  - "privateKey"
-                  - "size"
-                  - "publicKey"
-                  - "type"
                 type: "object"
                 properties:
                   headers:
@@ -580,6 +544,18 @@ spec:
                             isValid:
                               description: "???"
                               type: "boolean"
+                            _loc:
+                              description: "Entity location"
+                              type: "object"
+                              properties:
+                                teams:
+                                  description: "Teams of the current entity"
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                                tenant:
+                                  description: "Organization of the current entity"
+                                  type: "string"
                             tags:
                               description: "Entity tags"
                               type: "array"
@@ -615,18 +591,6 @@ spec:
                               format: "int32"
                               description: "???"
                               type: "integer"
-                            location:
-                              description: "Entity location"
-                              type: "object"
-                              properties:
-                                teams:
-                                  description: "Teams of the current entity"
-                                  type: "array"
-                                  items:
-                                    type: "string"
-                                tenant:
-                                  description: "Organization of the current entity"
-                                  type: "string"
                             to:
                               description: "Stop date"
                               type: "number"
@@ -733,6 +697,18 @@ spec:
                             isValid:
                               description: "???"
                               type: "boolean"
+                            _loc:
+                              description: "Entity location"
+                              type: "object"
+                              properties:
+                                teams:
+                                  description: "Teams of the current entity"
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                                tenant:
+                                  description: "Organization of the current entity"
+                                  type: "string"
                             tags:
                               description: "Entity tags"
                               type: "array"
@@ -768,18 +744,6 @@ spec:
                               format: "int32"
                               description: "???"
                               type: "integer"
-                            location:
-                              description: "Entity location"
-                              type: "object"
-                              properties:
-                                teams:
-                                  description: "Teams of the current entity"
-                                  type: "array"
-                                  items:
-                                    type: "string"
-                                tenant:
-                                  description: "Organization of the current entity"
-                                  type: "string"
                             to:
                               description: "Stop date"
                               type: "number"
@@ -853,42 +817,6 @@ spec:
               secComAlgoInfoToken:
                 description: "Algorithm to verify/sign challenge token coming from/to\
                   \ the backend"
-                oneOf:
-                - required:
-                  - "privateKey"
-                  - "size"
-                  - "publicKey"
-                  - "type"
-                - required:
-                  - "size"
-                  - "certId"
-                  - "type"
-                - required:
-                  - "size"
-                  - "base64"
-                  - "secret"
-                  - "type"
-                - required:
-                  - "kty"
-                  - "proxy"
-                  - "headers"
-                  - "mtlsConfig"
-                  - "type"
-                  - "ttl"
-                  - "url"
-                  - "timeout"
-                - required:
-                  - "onlyExposedCerts"
-                  - "type"
-                - required:
-                  - "size"
-                  - "certId"
-                  - "type"
-                - required:
-                  - "privateKey"
-                  - "size"
-                  - "publicKey"
-                  - "type"
                 type: "object"
                 properties:
                   headers:
@@ -992,6 +920,18 @@ spec:
                             isValid:
                               description: "???"
                               type: "boolean"
+                            _loc:
+                              description: "Entity location"
+                              type: "object"
+                              properties:
+                                teams:
+                                  description: "Teams of the current entity"
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                                tenant:
+                                  description: "Organization of the current entity"
+                                  type: "string"
                             tags:
                               description: "Entity tags"
                               type: "array"
@@ -1027,18 +967,6 @@ spec:
                               format: "int32"
                               description: "???"
                               type: "integer"
-                            location:
-                              description: "Entity location"
-                              type: "object"
-                              properties:
-                                teams:
-                                  description: "Teams of the current entity"
-                                  type: "array"
-                                  items:
-                                    type: "string"
-                                tenant:
-                                  description: "Organization of the current entity"
-                                  type: "string"
                             to:
                               description: "Stop date"
                               type: "number"
@@ -1145,6 +1073,18 @@ spec:
                             isValid:
                               description: "???"
                               type: "boolean"
+                            _loc:
+                              description: "Entity location"
+                              type: "object"
+                              properties:
+                                teams:
+                                  description: "Teams of the current entity"
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                                tenant:
+                                  description: "Organization of the current entity"
+                                  type: "string"
                             tags:
                               description: "Entity tags"
                               type: "array"
@@ -1180,18 +1120,6 @@ spec:
                               format: "int32"
                               description: "???"
                               type: "integer"
-                            location:
-                              description: "Entity location"
-                              type: "object"
-                              properties:
-                                teams:
-                                  description: "Teams of the current entity"
-                                  type: "array"
-                                  items:
-                                    type: "string"
-                                tenant:
-                                  description: "Organization of the current entity"
-                                  type: "string"
                             to:
                               description: "Stop date"
                               type: "number"
@@ -1261,42 +1189,6 @@ spec:
                 type: "object"
               secComAlgoChallengeOtoToBack:
                 description: "Algorithm to sign challenge token to the backend"
-                oneOf:
-                - required:
-                  - "privateKey"
-                  - "size"
-                  - "publicKey"
-                  - "type"
-                - required:
-                  - "size"
-                  - "certId"
-                  - "type"
-                - required:
-                  - "size"
-                  - "base64"
-                  - "secret"
-                  - "type"
-                - required:
-                  - "kty"
-                  - "proxy"
-                  - "headers"
-                  - "mtlsConfig"
-                  - "type"
-                  - "ttl"
-                  - "url"
-                  - "timeout"
-                - required:
-                  - "onlyExposedCerts"
-                  - "type"
-                - required:
-                  - "size"
-                  - "certId"
-                  - "type"
-                - required:
-                  - "privateKey"
-                  - "size"
-                  - "publicKey"
-                  - "type"
                 type: "object"
                 properties:
                   headers:
@@ -1400,6 +1292,18 @@ spec:
                             isValid:
                               description: "???"
                               type: "boolean"
+                            _loc:
+                              description: "Entity location"
+                              type: "object"
+                              properties:
+                                teams:
+                                  description: "Teams of the current entity"
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                                tenant:
+                                  description: "Organization of the current entity"
+                                  type: "string"
                             tags:
                               description: "Entity tags"
                               type: "array"
@@ -1435,18 +1339,6 @@ spec:
                               format: "int32"
                               description: "???"
                               type: "integer"
-                            location:
-                              description: "Entity location"
-                              type: "object"
-                              properties:
-                                teams:
-                                  description: "Teams of the current entity"
-                                  type: "array"
-                                  items:
-                                    type: "string"
-                                tenant:
-                                  description: "Organization of the current entity"
-                                  type: "string"
                             to:
                               description: "Stop date"
                               type: "number"
@@ -1553,6 +1445,18 @@ spec:
                             isValid:
                               description: "???"
                               type: "boolean"
+                            _loc:
+                              description: "Entity location"
+                              type: "object"
+                              properties:
+                                teams:
+                                  description: "Teams of the current entity"
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                                tenant:
+                                  description: "Organization of the current entity"
+                                  type: "string"
                             tags:
                               description: "Entity tags"
                               type: "array"
@@ -1588,18 +1492,6 @@ spec:
                               format: "int32"
                               description: "???"
                               type: "integer"
-                            location:
-                              description: "Entity location"
-                              type: "object"
-                              properties:
-                                teams:
-                                  description: "Teams of the current entity"
-                                  type: "array"
-                                  items:
-                                    type: "string"
-                                tenant:
-                                  description: "Organization of the current entity"
-                                  type: "string"
                             to:
                               description: "Stop date"
                               type: "number"
@@ -1771,6 +1663,18 @@ spec:
               secComInfoTokenVersion:
                 description: "Version of the info token"
                 type: "string"
+              _loc:
+                description: "Entity location"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
               enforceSecureCommunication:
                 description: "When enabled, Otoroshi will try to exchange headers\
                   \ with downstream service to ensure no one else can use the service\
@@ -1969,34 +1873,6 @@ spec:
                       properties:
                         predicate:
                           description: "Predicate to choose this target"
-                          oneOf:
-                          - required:
-                            - "type"
-                          - required:
-                            - "type"
-                            - "dc"
-                          - required:
-                            - "positions"
-                            - "type"
-                          - required:
-                            - "provider"
-                            - "type"
-                          - required:
-                            - "rack"
-                            - "provider"
-                            - "dataCenter"
-                            - "zone"
-                            - "type"
-                            - "region"
-                          - required:
-                            - "rack"
-                            - "type"
-                          - required:
-                            - "type"
-                            - "region"
-                          - required:
-                            - "zone"
-                            - "type"
                           type: "object"
                           properties:
                             rack:
@@ -2154,6 +2030,19 @@ spec:
                                   isValid:
                                     description: "???"
                                     type: "boolean"
+                                  _loc:
+                                    description: "Entity location"
+                                    type: "object"
+                                    properties:
+                                      teams:
+                                        description: "Teams of the current entity"
+                                        type: "array"
+                                        items:
+                                          type: "string"
+                                      tenant:
+                                        description: "Organization of the current\
+                                          \ entity"
+                                        type: "string"
                                   tags:
                                     description: "Entity tags"
                                     type: "array"
@@ -2189,19 +2078,6 @@ spec:
                                     format: "int32"
                                     description: "???"
                                     type: "integer"
-                                  location:
-                                    description: "Entity location"
-                                    type: "object"
-                                    properties:
-                                      teams:
-                                        description: "Teams of the current entity"
-                                        type: "array"
-                                        items:
-                                          type: "string"
-                                      tenant:
-                                        description: "Organization of the current\
-                                          \ entity"
-                                        type: "string"
                                   to:
                                     description: "Stop date"
                                     type: "number"
@@ -2309,6 +2185,19 @@ spec:
                                   isValid:
                                     description: "???"
                                     type: "boolean"
+                                  _loc:
+                                    description: "Entity location"
+                                    type: "object"
+                                    properties:
+                                      teams:
+                                        description: "Teams of the current entity"
+                                        type: "array"
+                                        items:
+                                          type: "string"
+                                      tenant:
+                                        description: "Organization of the current\
+                                          \ entity"
+                                        type: "string"
                                   tags:
                                     description: "Entity tags"
                                     type: "array"
@@ -2344,19 +2233,6 @@ spec:
                                     format: "int32"
                                     description: "???"
                                     type: "integer"
-                                  location:
-                                    description: "Entity location"
-                                    type: "object"
-                                    properties:
-                                      teams:
-                                        description: "Teams of the current entity"
-                                        type: "array"
-                                        items:
-                                          type: "string"
-                                      tenant:
-                                        description: "Organization of the current\
-                                          \ entity"
-                                        type: "string"
                                   to:
                                     description: "Stop date"
                                     type: "number"
@@ -2705,35 +2581,6 @@ spec:
                 type: "string"
               jwtVerifier:
                 description: "JWT verifiers settings"
-                oneOf:
-                - required:
-                  - "metadata"
-                  - "algoSettings"
-                  - "name"
-                  - "location"
-                  - "bitmap$0"
-                  - "source"
-                  - "id"
-                  - "type"
-                  - "strict"
-                  - "strategy"
-                  - "desc"
-                  - "tags"
-                - required:
-                  - "excludedPatterns"
-                  - "algoSettings"
-                  - "bitmap$0"
-                  - "source"
-                  - "type"
-                  - "strict"
-                  - "strategy"
-                  - "enabled"
-                - required:
-                  - "excludedPatterns"
-                  - "ids"
-                  - "bitmap$0"
-                  - "type"
-                  - "enabled"
                 type: "object"
                 properties:
                   excludedPatterns:
@@ -2748,17 +2595,6 @@ spec:
                     type: "object"
                   source:
                     description: "Token source"
-                    oneOf:
-                    - required:
-                      - "name"
-                      - "type"
-                    - required:
-                      - "name"
-                      - "type"
-                      - "remove"
-                    - required:
-                      - "name"
-                      - "type"
                     type: "object"
                     properties:
                       name:
@@ -2773,6 +2609,18 @@ spec:
                   type:
                     description: "the kind of verifier"
                     type: "string"
+                  _loc:
+                    description: "Entity location"
+                    type: "object"
+                    properties:
+                      teams:
+                        description: "Teams of the current entity"
+                        type: "array"
+                        items:
+                          type: "string"
+                      tenant:
+                        description: "Organization of the current entity"
+                        type: "string"
                   enabled:
                     description: "Verifier enabled"
                     type: "boolean"
@@ -2783,42 +2631,6 @@ spec:
                       type: "string"
                   algoSettings:
                     description: "Algo settings"
-                    oneOf:
-                    - required:
-                      - "privateKey"
-                      - "size"
-                      - "publicKey"
-                      - "type"
-                    - required:
-                      - "size"
-                      - "certId"
-                      - "type"
-                    - required:
-                      - "size"
-                      - "base64"
-                      - "secret"
-                      - "type"
-                    - required:
-                      - "kty"
-                      - "proxy"
-                      - "headers"
-                      - "mtlsConfig"
-                      - "type"
-                      - "ttl"
-                      - "url"
-                      - "timeout"
-                    - required:
-                      - "onlyExposedCerts"
-                      - "type"
-                    - required:
-                      - "size"
-                      - "certId"
-                      - "type"
-                    - required:
-                      - "privateKey"
-                      - "size"
-                      - "publicKey"
-                      - "type"
                     type: "object"
                     properties:
                       headers:
@@ -2923,6 +2735,18 @@ spec:
                                 isValid:
                                   description: "???"
                                   type: "boolean"
+                                _loc:
+                                  description: "Entity location"
+                                  type: "object"
+                                  properties:
+                                    teams:
+                                      description: "Teams of the current entity"
+                                      type: "array"
+                                      items:
+                                        type: "string"
+                                    tenant:
+                                      description: "Organization of the current entity"
+                                      type: "string"
                                 tags:
                                   description: "Entity tags"
                                   type: "array"
@@ -2958,18 +2782,6 @@ spec:
                                   format: "int32"
                                   description: "???"
                                   type: "integer"
-                                location:
-                                  description: "Entity location"
-                                  type: "object"
-                                  properties:
-                                    teams:
-                                      description: "Teams of the current entity"
-                                      type: "array"
-                                      items:
-                                        type: "string"
-                                    tenant:
-                                      description: "Organization of the current entity"
-                                      type: "string"
                                 to:
                                   description: "Stop date"
                                   type: "number"
@@ -3077,6 +2889,18 @@ spec:
                                 isValid:
                                   description: "???"
                                   type: "boolean"
+                                _loc:
+                                  description: "Entity location"
+                                  type: "object"
+                                  properties:
+                                    teams:
+                                      description: "Teams of the current entity"
+                                      type: "array"
+                                      items:
+                                        type: "string"
+                                    tenant:
+                                      description: "Organization of the current entity"
+                                      type: "string"
                                 tags:
                                   description: "Entity tags"
                                   type: "array"
@@ -3112,18 +2936,6 @@ spec:
                                   format: "int32"
                                   description: "???"
                                   type: "integer"
-                                location:
-                                  description: "Entity location"
-                                  type: "object"
-                                  properties:
-                                    teams:
-                                      description: "Teams of the current entity"
-                                      type: "array"
-                                      items:
-                                        type: "string"
-                                    tenant:
-                                      description: "Organization of the current entity"
-                                      type: "string"
                                 to:
                                   description: "Stop date"
                                   type: "number"
@@ -3197,18 +3009,6 @@ spec:
                   bitmap$0:
                     description: "???"
                     type: "boolean"
-                  location:
-                    description: "Entity location"
-                    type: "object"
-                    properties:
-                      teams:
-                        description: "Teams of the current entity"
-                        type: "array"
-                        items:
-                          type: "string"
-                      tenant:
-                        description: "Organization of the current entity"
-                        type: "string"
                   id:
                     description: "Verifier id"
                     type: "string"
@@ -3217,24 +3017,6 @@ spec:
                     type: "boolean"
                   strategy:
                     description: "Token strategy"
-                    oneOf:
-                    - required:
-                      - "verificationSettings"
-                      - "type"
-                      - "strict"
-                      - "token"
-                    - required:
-                      - "verificationSettings"
-                      - "type"
-                    - required:
-                      - "algoSettings"
-                      - "verificationSettings"
-                      - "type"
-                    - required:
-                      - "transformSettings"
-                      - "algoSettings"
-                      - "verificationSettings"
-                      - "type"
                     type: "object"
                     properties:
                       transformSettings:
@@ -3260,17 +3042,6 @@ spec:
                                   type: "string"
                           location:
                             description: "Location of the token"
-                            oneOf:
-                            - required:
-                              - "name"
-                              - "type"
-                            - required:
-                              - "name"
-                              - "type"
-                              - "remove"
-                            - required:
-                              - "name"
-                              - "type"
                             type: "object"
                             properties:
                               name:
@@ -3284,42 +3055,6 @@ spec:
                                 type: "string"
                       algoSettings:
                         description: "Algorithm settings for re-signing token"
-                        oneOf:
-                        - required:
-                          - "privateKey"
-                          - "size"
-                          - "publicKey"
-                          - "type"
-                        - required:
-                          - "size"
-                          - "certId"
-                          - "type"
-                        - required:
-                          - "size"
-                          - "base64"
-                          - "secret"
-                          - "type"
-                        - required:
-                          - "kty"
-                          - "proxy"
-                          - "headers"
-                          - "mtlsConfig"
-                          - "type"
-                          - "ttl"
-                          - "url"
-                          - "timeout"
-                        - required:
-                          - "onlyExposedCerts"
-                          - "type"
-                        - required:
-                          - "size"
-                          - "certId"
-                          - "type"
-                        - required:
-                          - "privateKey"
-                          - "size"
-                          - "publicKey"
-                          - "type"
                         type: "object"
                         properties:
                           headers:
@@ -3424,6 +3159,19 @@ spec:
                                     isValid:
                                       description: "???"
                                       type: "boolean"
+                                    _loc:
+                                      description: "Entity location"
+                                      type: "object"
+                                      properties:
+                                        teams:
+                                          description: "Teams of the current entity"
+                                          type: "array"
+                                          items:
+                                            type: "string"
+                                        tenant:
+                                          description: "Organization of the current\
+                                            \ entity"
+                                          type: "string"
                                     tags:
                                       description: "Entity tags"
                                       type: "array"
@@ -3459,19 +3207,6 @@ spec:
                                       format: "int32"
                                       description: "???"
                                       type: "integer"
-                                    location:
-                                      description: "Entity location"
-                                      type: "object"
-                                      properties:
-                                        teams:
-                                          description: "Teams of the current entity"
-                                          type: "array"
-                                          items:
-                                            type: "string"
-                                        tenant:
-                                          description: "Organization of the current\
-                                            \ entity"
-                                          type: "string"
                                     to:
                                       description: "Stop date"
                                       type: "number"
@@ -3579,6 +3314,19 @@ spec:
                                     isValid:
                                       description: "???"
                                       type: "boolean"
+                                    _loc:
+                                      description: "Entity location"
+                                      type: "object"
+                                      properties:
+                                        teams:
+                                          description: "Teams of the current entity"
+                                          type: "array"
+                                          items:
+                                            type: "string"
+                                        tenant:
+                                          description: "Organization of the current\
+                                            \ entity"
+                                          type: "string"
                                     tags:
                                       description: "Entity tags"
                                       type: "array"
@@ -3614,19 +3362,6 @@ spec:
                                       format: "int32"
                                       description: "???"
                                       type: "integer"
-                                    location:
-                                      description: "Entity location"
-                                      type: "object"
-                                      properties:
-                                        teams:
-                                          description: "Teams of the current entity"
-                                          type: "array"
-                                          items:
-                                            type: "string"
-                                        tenant:
-                                          description: "Organization of the current\
-                                            \ entity"
-                                          type: "string"
                                     to:
                                       description: "Stop date"
                                       type: "number"
@@ -3731,42 +3466,6 @@ spec:
               secComAlgoChallengeBackToOto:
                 description: "Algorithm to verify challenge token coming from the\
                   \ backend"
-                oneOf:
-                - required:
-                  - "privateKey"
-                  - "size"
-                  - "publicKey"
-                  - "type"
-                - required:
-                  - "size"
-                  - "certId"
-                  - "type"
-                - required:
-                  - "size"
-                  - "base64"
-                  - "secret"
-                  - "type"
-                - required:
-                  - "kty"
-                  - "proxy"
-                  - "headers"
-                  - "mtlsConfig"
-                  - "type"
-                  - "ttl"
-                  - "url"
-                  - "timeout"
-                - required:
-                  - "onlyExposedCerts"
-                  - "type"
-                - required:
-                  - "size"
-                  - "certId"
-                  - "type"
-                - required:
-                  - "privateKey"
-                  - "size"
-                  - "publicKey"
-                  - "type"
                 type: "object"
                 properties:
                   headers:
@@ -3870,6 +3569,18 @@ spec:
                             isValid:
                               description: "???"
                               type: "boolean"
+                            _loc:
+                              description: "Entity location"
+                              type: "object"
+                              properties:
+                                teams:
+                                  description: "Teams of the current entity"
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                                tenant:
+                                  description: "Organization of the current entity"
+                                  type: "string"
                             tags:
                               description: "Entity tags"
                               type: "array"
@@ -3905,18 +3616,6 @@ spec:
                               format: "int32"
                               description: "???"
                               type: "integer"
-                            location:
-                              description: "Entity location"
-                              type: "object"
-                              properties:
-                                teams:
-                                  description: "Teams of the current entity"
-                                  type: "array"
-                                  items:
-                                    type: "string"
-                                tenant:
-                                  description: "Organization of the current entity"
-                                  type: "string"
                             to:
                               description: "Stop date"
                               type: "number"
@@ -4023,6 +3722,18 @@ spec:
                             isValid:
                               description: "???"
                               type: "boolean"
+                            _loc:
+                              description: "Entity location"
+                              type: "object"
+                              properties:
+                                teams:
+                                  description: "Teams of the current entity"
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                                tenant:
+                                  description: "Organization of the current entity"
+                                  type: "string"
                             tags:
                               description: "Entity tags"
                               type: "array"
@@ -4058,18 +3769,6 @@ spec:
                               format: "int32"
                               description: "???"
                               type: "integer"
-                            location:
-                              description: "Entity location"
-                              type: "object"
-                              properties:
-                                teams:
-                                  description: "Teams of the current entity"
-                                  type: "array"
-                                  items:
-                                    type: "string"
-                                tenant:
-                                  description: "Organization of the current entity"
-                                  type: "string"
                             to:
                               description: "Stop date"
                               type: "number"
@@ -4161,18 +3860,6 @@ spec:
               overrideHost:
                 description: "Host header will be overriden with Host of the target"
                 type: "boolean"
-              location:
-                description: "Entity location"
-                type: "object"
-                properties:
-                  teams:
-                    description: "Teams of the current entity"
-                    type: "array"
-                    items:
-                      type: "string"
-                  tenant:
-                    description: "Organization of the current entity"
-                    type: "string"
               secComUseSameAlgo:
                 description: "Use the same algo for info token, challenge token signing,\
                   \ challenge token verification"
@@ -4336,6 +4023,18 @@ spec:
                 description: "The apikey only allow access for GET, HEAD and OPTIONS\
                   \ verbs"
                 type: "boolean"
+              _loc:
+                description: "The location of the apikey"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
               enabled:
                 description: "Whether or not the key is enabled. If disabled, resources\
                   \ won't be available to calls using this key"
@@ -4377,18 +4076,6 @@ spec:
                 description: "The secret of the Api Key. Usually 64 random alpha numerical\
                   \ characters, but can be anything"
                 type: "string"
-              location:
-                description: "The location of the apikey"
-                type: "object"
-                properties:
-                  teams:
-                    description: "Teams of the current entity"
-                    type: "array"
-                    items:
-                      type: "string"
-                  tenant:
-                    description: "Organization of the current entity"
-                    type: "string"
               dailyQuota:
                 format: "int64"
                 description: "Authorized number of calls per day"
@@ -4588,6 +4275,18 @@ spec:
               isValid:
                 description: "???"
                 type: "boolean"
+              _loc:
+                description: "Entity location"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
               tags:
                 description: "Entity tags"
                 type: "array"
@@ -4623,18 +4322,6 @@ spec:
                 format: "int32"
                 description: "???"
                 type: "integer"
-              location:
-                description: "Entity location"
-                type: "object"
-                properties:
-                  teams:
-                    description: "Teams of the current entity"
-                    type: "array"
-                    items:
-                      type: "string"
-                  tenant:
-                    description: "Organization of the current entity"
-                    type: "string"
               to:
                 description: "Stop date"
                 type: "number"
@@ -4843,6 +4530,18 @@ spec:
                             isValid:
                               description: "???"
                               type: "boolean"
+                            _loc:
+                              description: "Entity location"
+                              type: "object"
+                              properties:
+                                teams:
+                                  description: "Teams of the current entity"
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                                tenant:
+                                  description: "Organization of the current entity"
+                                  type: "string"
                             tags:
                               type: "array"
                               items:
@@ -4878,18 +4577,6 @@ spec:
                               format: "int32"
                               description: "???"
                               type: "integer"
-                            location:
-                              description: "Entity location"
-                              type: "object"
-                              properties:
-                                teams:
-                                  description: "Teams of the current entity"
-                                  type: "array"
-                                  items:
-                                    type: "string"
-                                tenant:
-                                  description: "Organization of the current entity"
-                                  type: "string"
                             to:
                               description: "Stop date"
                               type: "number"
@@ -4996,6 +4683,18 @@ spec:
                             isValid:
                               description: "???"
                               type: "boolean"
+                            _loc:
+                              description: "Entity location"
+                              type: "object"
+                              properties:
+                                teams:
+                                  description: "Teams of the current entity"
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                                tenant:
+                                  description: "Organization of the current entity"
+                                  type: "string"
                             tags:
                               type: "array"
                               items:
@@ -5031,18 +4730,6 @@ spec:
                               format: "int32"
                               description: "???"
                               type: "integer"
-                            location:
-                              description: "Entity location"
-                              type: "object"
-                              properties:
-                                teams:
-                                  description: "Teams of the current entity"
-                                  type: "array"
-                                  items:
-                                    type: "string"
-                                tenant:
-                                  description: "Organization of the current entity"
-                                  type: "string"
                             to:
                               description: "Stop date"
                               type: "number"
@@ -5108,18 +4795,6 @@ spec:
                     type: "boolean"
               geolocationSettings:
                 description: "Settings for geolocation extraction"
-                oneOf:
-                - required:
-                  - "apikey"
-                  - "type"
-                  - "enabled"
-                  - "timeout"
-                - required:
-                  - "path"
-                  - "type"
-                  - "enabled"
-                - required:
-                  - "type"
                 type: "object"
                 properties:
                   apikey:
@@ -5287,6 +4962,18 @@ spec:
                               isValid:
                                 description: "???"
                                 type: "boolean"
+                              _loc:
+                                description: "Entity location"
+                                type: "object"
+                                properties:
+                                  teams:
+                                    description: "Teams of the current entity"
+                                    type: "array"
+                                    items:
+                                      type: "string"
+                                  tenant:
+                                    description: "Organization of the current entity"
+                                    type: "string"
                               tags:
                                 type: "array"
                                 items:
@@ -5322,18 +5009,6 @@ spec:
                                 format: "int32"
                                 description: "???"
                                 type: "integer"
-                              location:
-                                description: "Entity location"
-                                type: "object"
-                                properties:
-                                  teams:
-                                    description: "Teams of the current entity"
-                                    type: "array"
-                                    items:
-                                      type: "string"
-                                  tenant:
-                                    description: "Organization of the current entity"
-                                    type: "string"
                               to:
                                 description: "Stop date"
                                 type: "number"
@@ -5440,6 +5115,18 @@ spec:
                               isValid:
                                 description: "???"
                                 type: "boolean"
+                              _loc:
+                                description: "Entity location"
+                                type: "object"
+                                properties:
+                                  teams:
+                                    description: "Teams of the current entity"
+                                    type: "array"
+                                    items:
+                                      type: "string"
+                                  tenant:
+                                    description: "Organization of the current entity"
+                                    type: "string"
                               tags:
                                 type: "array"
                                 items:
@@ -5475,18 +5162,6 @@ spec:
                                 format: "int32"
                                 description: "???"
                                 type: "integer"
-                              location:
-                                description: "Entity location"
-                                type: "object"
-                                properties:
-                                  teams:
-                                    description: "Teams of the current entity"
-                                    type: "array"
-                                    items:
-                                      type: "string"
-                                  tenant:
-                                    description: "Organization of the current entity"
-                                    type: "string"
                               to:
                                 description: "Stop date"
                                 type: "number"
@@ -5603,31 +5278,6 @@ spec:
                     description: "Blacklisted IP addresses"
               mailerSettings:
                 description: "Optional mailer configuration"
-                oneOf:
-                - required:
-                  - "type"
-                - required:
-                  - "headers"
-                  - "to"
-                  - "type"
-                  - "url"
-                - required:
-                  - "eu"
-                  - "apiKey"
-                  - "domain"
-                  - "to"
-                  - "type"
-                - required:
-                  - "apiKeyPrivate"
-                  - "apiKeyPublic"
-                  - "to"
-                  - "type"
-                - required:
-                  - "type"
-                - required:
-                  - "apiKey"
-                  - "to"
-                  - "type"
                 type: "object"
                 properties:
                   eu:
@@ -5842,6 +5492,18 @@ spec:
                               isValid:
                                 description: "???"
                                 type: "boolean"
+                              _loc:
+                                description: "Entity location"
+                                type: "object"
+                                properties:
+                                  teams:
+                                    description: "Teams of the current entity"
+                                    type: "array"
+                                    items:
+                                      type: "string"
+                                  tenant:
+                                    description: "Organization of the current entity"
+                                    type: "string"
                               tags:
                                 type: "array"
                                 items:
@@ -5877,18 +5539,6 @@ spec:
                                 format: "int32"
                                 description: "???"
                                 type: "integer"
-                              location:
-                                description: "Entity location"
-                                type: "object"
-                                properties:
-                                  teams:
-                                    description: "Teams of the current entity"
-                                    type: "array"
-                                    items:
-                                      type: "string"
-                                  tenant:
-                                    description: "Organization of the current entity"
-                                    type: "string"
                               to:
                                 description: "Stop date"
                                 type: "number"
@@ -5995,6 +5645,18 @@ spec:
                               isValid:
                                 description: "???"
                                 type: "boolean"
+                              _loc:
+                                description: "Entity location"
+                                type: "object"
+                                properties:
+                                  teams:
+                                    description: "Teams of the current entity"
+                                    type: "array"
+                                    items:
+                                      type: "string"
+                                  tenant:
+                                    description: "Organization of the current entity"
+                                    type: "string"
                               tags:
                                 type: "array"
                                 items:
@@ -6030,18 +5692,6 @@ spec:
                                 format: "int32"
                                 description: "???"
                                 type: "integer"
-                              location:
-                                description: "Entity location"
-                                type: "object"
-                                properties:
-                                  teams:
-                                    description: "Teams of the current entity"
-                                    type: "array"
-                                    items:
-                                      type: "string"
-                                  tenant:
-                                    description: "Organization of the current entity"
-                                    type: "string"
                               to:
                                 description: "Stop date"
                                 type: "number"
@@ -6177,6 +5827,18 @@ spec:
                             isValid:
                               description: "???"
                               type: "boolean"
+                            _loc:
+                              description: "Entity location"
+                              type: "object"
+                              properties:
+                                teams:
+                                  description: "Teams of the current entity"
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                                tenant:
+                                  description: "Organization of the current entity"
+                                  type: "string"
                             tags:
                               type: "array"
                               items:
@@ -6212,18 +5874,6 @@ spec:
                               format: "int32"
                               description: "???"
                               type: "integer"
-                            location:
-                              description: "Entity location"
-                              type: "object"
-                              properties:
-                                teams:
-                                  description: "Teams of the current entity"
-                                  type: "array"
-                                  items:
-                                    type: "string"
-                                tenant:
-                                  description: "Organization of the current entity"
-                                  type: "string"
                             to:
                               description: "Stop date"
                               type: "number"
@@ -6330,6 +5980,18 @@ spec:
                             isValid:
                               description: "???"
                               type: "boolean"
+                            _loc:
+                              description: "Entity location"
+                              type: "object"
+                              properties:
+                                teams:
+                                  description: "Teams of the current entity"
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                                tenant:
+                                  description: "Organization of the current entity"
+                                  type: "string"
                             tags:
                               type: "array"
                               items:
@@ -6365,18 +6027,6 @@ spec:
                               format: "int32"
                               description: "???"
                               type: "integer"
-                            location:
-                              description: "Entity location"
-                              type: "object"
-                              properties:
-                                teams:
-                                  description: "Teams of the current entity"
-                                  type: "array"
-                                  items:
-                                    type: "string"
-                                tenant:
-                                  description: "Organization of the current entity"
-                                  type: "string"
                             to:
                               description: "Stop date"
                               type: "number"
@@ -6731,6 +6381,18 @@ spec:
                               isValid:
                                 description: "???"
                                 type: "boolean"
+                              _loc:
+                                description: "Entity location"
+                                type: "object"
+                                properties:
+                                  teams:
+                                    description: "Teams of the current entity"
+                                    type: "array"
+                                    items:
+                                      type: "string"
+                                  tenant:
+                                    description: "Organization of the current entity"
+                                    type: "string"
                               tags:
                                 type: "array"
                                 items:
@@ -6766,18 +6428,6 @@ spec:
                                 format: "int32"
                                 description: "???"
                                 type: "integer"
-                              location:
-                                description: "Entity location"
-                                type: "object"
-                                properties:
-                                  teams:
-                                    description: "Teams of the current entity"
-                                    type: "array"
-                                    items:
-                                      type: "string"
-                                  tenant:
-                                    description: "Organization of the current entity"
-                                    type: "string"
                               to:
                                 description: "Stop date"
                                 type: "number"
@@ -6884,6 +6534,18 @@ spec:
                               isValid:
                                 description: "???"
                                 type: "boolean"
+                              _loc:
+                                description: "Entity location"
+                                type: "object"
+                                properties:
+                                  teams:
+                                    description: "Teams of the current entity"
+                                    type: "array"
+                                    items:
+                                      type: "string"
+                                  tenant:
+                                    description: "Organization of the current entity"
+                                    type: "string"
                               tags:
                                 type: "array"
                                 items:
@@ -6919,18 +6581,6 @@ spec:
                                 format: "int32"
                                 description: "???"
                                 type: "integer"
-                              location:
-                                description: "Entity location"
-                                type: "object"
-                                properties:
-                                  teams:
-                                    description: "Teams of the current entity"
-                                    type: "array"
-                                    items:
-                                      type: "string"
-                                  tenant:
-                                    description: "Organization of the current entity"
-                                    type: "string"
                               to:
                                 description: "Stop date"
                                 type: "number"
@@ -7027,42 +6677,6 @@ spec:
                 type: "object"
               algoSettings:
                 description: "Algo settings of the verifier"
-                oneOf:
-                - required:
-                  - "privateKey"
-                  - "size"
-                  - "publicKey"
-                  - "type"
-                - required:
-                  - "size"
-                  - "certId"
-                  - "type"
-                - required:
-                  - "size"
-                  - "base64"
-                  - "secret"
-                  - "type"
-                - required:
-                  - "kty"
-                  - "proxy"
-                  - "headers"
-                  - "mtlsConfig"
-                  - "type"
-                  - "ttl"
-                  - "url"
-                  - "timeout"
-                - required:
-                  - "onlyExposedCerts"
-                  - "type"
-                - required:
-                  - "size"
-                  - "certId"
-                  - "type"
-                - required:
-                  - "privateKey"
-                  - "size"
-                  - "publicKey"
-                  - "type"
                 type: "object"
                 properties:
                   headers:
@@ -7166,6 +6780,18 @@ spec:
                             isValid:
                               description: "???"
                               type: "boolean"
+                            _loc:
+                              description: "Entity location"
+                              type: "object"
+                              properties:
+                                teams:
+                                  description: "Teams of the current entity"
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                                tenant:
+                                  description: "Organization of the current entity"
+                                  type: "string"
                             tags:
                               description: "Entity tags"
                               type: "array"
@@ -7201,18 +6827,6 @@ spec:
                               format: "int32"
                               description: "???"
                               type: "integer"
-                            location:
-                              description: "Entity location"
-                              type: "object"
-                              properties:
-                                teams:
-                                  description: "Teams of the current entity"
-                                  type: "array"
-                                  items:
-                                    type: "string"
-                                tenant:
-                                  description: "Organization of the current entity"
-                                  type: "string"
                             to:
                               description: "Stop date"
                               type: "number"
@@ -7319,6 +6933,18 @@ spec:
                             isValid:
                               description: "???"
                               type: "boolean"
+                            _loc:
+                              description: "Entity location"
+                              type: "object"
+                              properties:
+                                teams:
+                                  description: "Teams of the current entity"
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                                tenant:
+                                  description: "Organization of the current entity"
+                                  type: "string"
                             tags:
                               description: "Entity tags"
                               type: "array"
@@ -7354,18 +6980,6 @@ spec:
                               format: "int32"
                               description: "???"
                               type: "integer"
-                            location:
-                              description: "Entity location"
-                              type: "object"
-                              properties:
-                                teams:
-                                  description: "Teams of the current entity"
-                                  type: "array"
-                                  items:
-                                    type: "string"
-                                tenant:
-                                  description: "Organization of the current entity"
-                                  type: "string"
                             to:
                               description: "Stop date"
                               type: "number"
@@ -7434,34 +7048,11 @@ spec:
               bitmap$0:
                 description: "???"
                 type: "boolean"
-              location:
-                description: "Entity location"
-                type: "object"
-                properties:
-                  teams:
-                    description: "Teams of the current entity"
-                    type: "array"
-                    items:
-                      type: "string"
-                  tenant:
-                    description: "Organization of the current entity"
-                    type: "string"
               id:
                 description: "Verifier id"
                 type: "string"
               source:
                 description: "Where to find the jwt token"
-                oneOf:
-                - required:
-                  - "name"
-                  - "type"
-                - required:
-                  - "name"
-                  - "type"
-                  - "remove"
-                - required:
-                  - "name"
-                  - "type"
                 type: "object"
                 properties:
                   name:
@@ -7478,24 +7069,6 @@ spec:
                 type: "boolean"
               strategy:
                 description: "The strategy of the verifier"
-                oneOf:
-                - required:
-                  - "verificationSettings"
-                  - "type"
-                  - "strict"
-                  - "token"
-                - required:
-                  - "verificationSettings"
-                  - "type"
-                - required:
-                  - "algoSettings"
-                  - "verificationSettings"
-                  - "type"
-                - required:
-                  - "transformSettings"
-                  - "algoSettings"
-                  - "verificationSettings"
-                  - "type"
                 type: "object"
                 properties:
                   transformSettings:
@@ -7521,17 +7094,6 @@ spec:
                               type: "string"
                       location:
                         description: "Location of the token"
-                        oneOf:
-                        - required:
-                          - "name"
-                          - "type"
-                        - required:
-                          - "name"
-                          - "type"
-                          - "remove"
-                        - required:
-                          - "name"
-                          - "type"
                         type: "object"
                         properties:
                           name:
@@ -7545,42 +7107,6 @@ spec:
                             type: "string"
                   algoSettings:
                     description: "Algorithm settings for re-signing token"
-                    oneOf:
-                    - required:
-                      - "privateKey"
-                      - "size"
-                      - "publicKey"
-                      - "type"
-                    - required:
-                      - "size"
-                      - "certId"
-                      - "type"
-                    - required:
-                      - "size"
-                      - "base64"
-                      - "secret"
-                      - "type"
-                    - required:
-                      - "kty"
-                      - "proxy"
-                      - "headers"
-                      - "mtlsConfig"
-                      - "type"
-                      - "ttl"
-                      - "url"
-                      - "timeout"
-                    - required:
-                      - "onlyExposedCerts"
-                      - "type"
-                    - required:
-                      - "size"
-                      - "certId"
-                      - "type"
-                    - required:
-                      - "privateKey"
-                      - "size"
-                      - "publicKey"
-                      - "type"
                     type: "object"
                     properties:
                       headers:
@@ -7685,6 +7211,18 @@ spec:
                                 isValid:
                                   description: "???"
                                   type: "boolean"
+                                _loc:
+                                  description: "Entity location"
+                                  type: "object"
+                                  properties:
+                                    teams:
+                                      description: "Teams of the current entity"
+                                      type: "array"
+                                      items:
+                                        type: "string"
+                                    tenant:
+                                      description: "Organization of the current entity"
+                                      type: "string"
                                 tags:
                                   description: "Entity tags"
                                   type: "array"
@@ -7720,18 +7258,6 @@ spec:
                                   format: "int32"
                                   description: "???"
                                   type: "integer"
-                                location:
-                                  description: "Entity location"
-                                  type: "object"
-                                  properties:
-                                    teams:
-                                      description: "Teams of the current entity"
-                                      type: "array"
-                                      items:
-                                        type: "string"
-                                    tenant:
-                                      description: "Organization of the current entity"
-                                      type: "string"
                                 to:
                                   description: "Stop date"
                                   type: "number"
@@ -7839,6 +7365,18 @@ spec:
                                 isValid:
                                   description: "???"
                                   type: "boolean"
+                                _loc:
+                                  description: "Entity location"
+                                  type: "object"
+                                  properties:
+                                    teams:
+                                      description: "Teams of the current entity"
+                                      type: "array"
+                                      items:
+                                        type: "string"
+                                    tenant:
+                                      description: "Organization of the current entity"
+                                      type: "string"
                                 tags:
                                   description: "Entity tags"
                                   type: "array"
@@ -7874,18 +7412,6 @@ spec:
                                   format: "int32"
                                   description: "???"
                                   type: "integer"
-                                location:
-                                  description: "Entity location"
-                                  type: "object"
-                                  properties:
-                                    teams:
-                                      description: "Teams of the current entity"
-                                      type: "array"
-                                      items:
-                                        type: "string"
-                                    tenant:
-                                      description: "Organization of the current entity"
-                                      type: "string"
                                 to:
                                   description: "Stop date"
                                   type: "number"
@@ -7975,6 +7501,18 @@ spec:
               type:
                 type: "string"
                 description: "???"
+              _loc:
+                description: "Entity location"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
               desc:
                 description: "Verifier description"
                 type: "string"
@@ -8081,7 +7619,13 @@ spec:
               name:
                 description: "The name of the script"
                 type: "string"
-              location:
+              id:
+                description: "The id of the script"
+                type: "string"
+              type:
+                description: "Plugin kind"
+                type: "string"
+              _loc:
                 description: "Entity location"
                 type: "object"
                 properties:
@@ -8093,12 +7637,6 @@ spec:
                   tenant:
                     description: "Organization of the current entity"
                     type: "string"
-              id:
-                description: "The id of the script"
-                type: "string"
-              type:
-                description: "Plugin kind"
-                type: "string"
               tags:
                 type: "array"
                 items:
@@ -8196,6 +7734,18 @@ spec:
               interface:
                 description: "Network interface"
                 type: "string"
+              _loc:
+                description: "Entity location"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
               enabled:
                 description: "Service enabled"
                 type: "boolean"
@@ -8241,18 +7791,6 @@ spec:
               tls:
                 description: "TLS mode"
                 type: "string"
-              location:
-                description: "Entity location"
-                type: "object"
-                properties:
-                  teams:
-                    description: "Teams of the current entity"
-                    type: "array"
-                    items:
-                      type: "string"
-                  tenant:
-                    description: "Organization of the current entity"
-                    type: "string"
               id:
                 description: "Entity id"
                 type: "string"
@@ -8319,6 +7857,18 @@ spec:
               type:
                 description: "Type of data exporter"
                 type: "string"
+              _loc:
+                description: "location"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
               enabled:
                 description: "Boolean"
                 type: "boolean"
@@ -8341,18 +7891,6 @@ spec:
                 format: "int32"
                 description: "Group size"
                 type: "integer"
-              location:
-                description: "location"
-                type: "object"
-                properties:
-                  teams:
-                    description: "Teams of the current entity"
-                    type: "array"
-                    items:
-                      type: "string"
-                  tenant:
-                    description: "Organization of the current entity"
-                    type: "string"
               id:
                 description: "Id"
                 type: "string"
@@ -8375,101 +7913,6 @@ spec:
                     description: "Include the events matching one of those filters"
               config:
                 description: "Data Exporter config"
-                oneOf:
-                - required:
-                  - "servers"
-                  - "keyPass"
-                  - "mtlsConfig"
-                  - "topic"
-                  - "truststore"
-                  - "keystore"
-                  - "sendEvents"
-                  - "type"
-                - required:
-                  - "mtlsConfig"
-                  - "tlsTrustCertsFilePath"
-                  - "namespace"
-                  - "topic"
-                  - "type"
-                  - "uri"
-                  - "tenant"
-                - required:
-                  - "type"
-                - required:
-                  - "clusterUri"
-                  - "headers"
-                  - "password"
-                  - "indexSettings"
-                  - "mtlsConfig"
-                  - "index"
-                  - "type"
-                  - "applyTemplate"
-                  - "version"
-                  - "user"
-                - required:
-                  - "ref"
-                  - "type"
-                  - "config"
-                - required:
-                  - "path"
-                  - "maxFileSize"
-                  - "type"
-                - required:
-                  - "type"
-                  - "labels"
-                - required:
-                  - "headers"
-                  - "mtlsConfig"
-                  - "type"
-                  - "url"
-                - required:
-                  - "type"
-                - required:
-                  - "headers"
-                  - "to"
-                  - "type"
-                  - "url"
-                - required:
-                  - "type"
-                - required:
-                  - "headers"
-                  - "to"
-                  - "type"
-                  - "url"
-                - required:
-                  - "eu"
-                  - "apiKey"
-                  - "domain"
-                  - "to"
-                  - "type"
-                - required:
-                  - "apiKeyPrivate"
-                  - "apiKeyPublic"
-                  - "to"
-                  - "type"
-                - required:
-                  - "type"
-                - required:
-                  - "apiKey"
-                  - "to"
-                  - "type"
-                - required:
-                  - "eu"
-                  - "apiKey"
-                  - "domain"
-                  - "to"
-                  - "type"
-                - required:
-                  - "apiKeyPrivate"
-                  - "apiKeyPublic"
-                  - "to"
-                  - "type"
-                - required:
-                  - "type"
-                - required:
-                  - "apiKey"
-                  - "to"
-                  - "type"
                 type: "object"
                 properties:
                   clusterUri:
@@ -8585,6 +8028,18 @@ spec:
                             isValid:
                               description: "???"
                               type: "boolean"
+                            _loc:
+                              description: "Entity location"
+                              type: "object"
+                              properties:
+                                teams:
+                                  description: "Teams of the current entity"
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                                tenant:
+                                  description: "Organization of the current entity"
+                                  type: "string"
                             tags:
                               type: "array"
                               items:
@@ -8620,18 +8075,6 @@ spec:
                               format: "int32"
                               description: "???"
                               type: "integer"
-                            location:
-                              description: "Entity location"
-                              type: "object"
-                              properties:
-                                teams:
-                                  description: "Teams of the current entity"
-                                  type: "array"
-                                  items:
-                                    type: "string"
-                                tenant:
-                                  description: "Organization of the current entity"
-                                  type: "string"
                             to:
                               description: "Stop date"
                               type: "number"
@@ -8738,6 +8181,18 @@ spec:
                             isValid:
                               description: "???"
                               type: "boolean"
+                            _loc:
+                              description: "Entity location"
+                              type: "object"
+                              properties:
+                                teams:
+                                  description: "Teams of the current entity"
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                                tenant:
+                                  description: "Organization of the current entity"
+                                  type: "string"
                             tags:
                               type: "array"
                               items:
@@ -8773,18 +8228,6 @@ spec:
                               format: "int32"
                               description: "???"
                               type: "integer"
-                            location:
-                              description: "Entity location"
-                              type: "object"
-                              properties:
-                                teams:
-                                  description: "Teams of the current entity"
-                                  type: "array"
-                                  items:
-                                    type: "string"
-                                tenant:
-                                  description: "Organization of the current entity"
-                                  type: "string"
                             to:
                               description: "Stop date"
                               type: "number"
@@ -9055,7 +8498,10 @@ spec:
               type:
                 description: "Admin kind"
                 type: "string"
-              location:
+              label:
+                description: "User label"
+                type: "string"
+              _loc:
                 description: "Entity location"
                 type: "object"
                 properties:
@@ -9067,9 +8513,6 @@ spec:
                   tenant:
                     description: "Organization of the current entity"
                     type: "string"
-              label:
-                description: "User label"
-                type: "string"
               username:
                 description: "User username"
                 type: "string"
