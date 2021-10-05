@@ -1,0 +1,3980 @@
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "service-groups.proxy.otoroshi.io"
+  creationTimestamp: null
+spec:
+  group: "proxy.otoroshi.io"
+  names:
+    kind: "ServiceGroup"
+    plural: "service-groups"
+    singular: "service-group"
+  scope: "Namespaced"
+  versions:
+  - name: "v1alpha1"
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+  - name: "v1"
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        description: "The otoroshi model for a group of services"
+        type: "object"
+        properties:
+          metadata:
+            type: "object"
+          apiVersion:
+            description: "APIVersion defines the versioned schema of this representation\
+              \ of an object. Servers should convert recognized schemas to the latest\
+              \ internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            type: "string"
+          kind:
+            description: "Kind is a string value representing the REST resource this\
+              \ object represents. Servers may infer this from the endpoint the client\
+              \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            type: "string"
+          spec:
+            description: "The otoroshi model for a group of services"
+            type: "object"
+            properties:
+              metadata:
+                type: "object"
+                additionalProperties:
+                  type: "string"
+                description: "Just a bunch of random properties"
+              name:
+                description: "The name of your service. Only for debug and human readability\
+                  \ purposes"
+                type: "string"
+              description:
+                description: "Entity description"
+                type: "string"
+              id:
+                description: "A unique random string to identify your service"
+                type: "string"
+              _loc:
+                description: "Entity location"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
+              tags:
+                type: "array"
+                items:
+                  type: "string"
+                description: "Entity tags"
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "organizations.proxy.otoroshi.io"
+  creationTimestamp: null
+spec:
+  group: "proxy.otoroshi.io"
+  names:
+    kind: "Organization"
+    plural: "organizations"
+    singular: "organization"
+  scope: "Namespaced"
+  versions:
+  - name: "v1alpha1"
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+  - name: "v1"
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        description: "An otoroshi model for an organization (otoroshi-ui)"
+        type: "object"
+        properties:
+          metadata:
+            type: "object"
+          apiVersion:
+            description: "APIVersion defines the versioned schema of this representation\
+              \ of an object. Servers should convert recognized schemas to the latest\
+              \ internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            type: "string"
+          kind:
+            description: "Kind is a string value representing the REST resource this\
+              \ object represents. Servers may infer this from the endpoint the client\
+              \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            type: "string"
+          spec:
+            description: "An otoroshi model for an organization (otoroshi-ui)"
+            type: "object"
+            properties:
+              metadata:
+                type: "object"
+                additionalProperties:
+                  type: "string"
+                description: "Entity metadata"
+              name:
+                description: "Entity name"
+                type: "string"
+              description:
+                description: "Entity description"
+                type: "string"
+              id:
+                description: "Entity id"
+                type: "string"
+              tags:
+                type: "array"
+                items:
+                  type: "string"
+                description: "Entity tags"
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "teams.proxy.otoroshi.io"
+  creationTimestamp: null
+spec:
+  group: "proxy.otoroshi.io"
+  names:
+    kind: "Team"
+    plural: "teams"
+    singular: "team"
+  scope: "Namespaced"
+  versions:
+  - name: "v1alpha1"
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+  - name: "v1"
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        description: "An otoroshi model for a team of users in the organization (otoroshi-ui)"
+        type: "object"
+        properties:
+          metadata:
+            type: "object"
+          apiVersion:
+            description: "APIVersion defines the versioned schema of this representation\
+              \ of an object. Servers should convert recognized schemas to the latest\
+              \ internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            type: "string"
+          kind:
+            description: "Kind is a string value representing the REST resource this\
+              \ object represents. Servers may infer this from the endpoint the client\
+              \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            type: "string"
+          spec:
+            description: "An otoroshi model for a team of users in the organization\
+              \ (otoroshi-ui)"
+            type: "object"
+            properties:
+              metadata:
+                type: "object"
+                additionalProperties:
+                  type: "string"
+                description: "Entity metadata"
+              name:
+                description: "Entity name"
+                type: "string"
+              description:
+                description: "Entity description"
+                type: "string"
+              id:
+                description: "Entity id"
+                type: "string"
+              tenant:
+                description: "Entity organization"
+                type: "string"
+              tags:
+                type: "array"
+                items:
+                  type: "string"
+                description: "Entity tags"
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "service-descriptors.proxy.otoroshi.io"
+  creationTimestamp: null
+spec:
+  group: "proxy.otoroshi.io"
+  names:
+    kind: "ServiceDescriptor"
+    plural: "service-descriptors"
+    singular: "service-descriptor"
+  scope: "Namespaced"
+  versions:
+  - name: "v1alpha1"
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+  - name: "v1"
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        description: "The otoroshi model for a service (handles routing)"
+        type: "object"
+        properties:
+          metadata:
+            type: "object"
+          apiVersion:
+            description: "APIVersion defines the versioned schema of this representation\
+              \ of an object. Servers should convert recognized schemas to the latest\
+              \ internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            type: "string"
+          kind:
+            description: "Kind is a string value representing the REST resource this\
+              \ object represents. Servers may infer this from the endpoint the client\
+              \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            type: "string"
+          spec:
+            description: "The otoroshi model for a service (handles routing)"
+            type: "object"
+            properties:
+              removeHeadersIn:
+                description: "Remove headers on client request"
+                type: "array"
+                items:
+                  type: "string"
+              missingOnlyHeadersOut:
+                description: "Add header on client response if they are not present"
+                additionalProperties:
+                  type: "string"
+                type: "object"
+              metadata:
+                description: "Just a bunch of random properties"
+                additionalProperties:
+                  type: "string"
+                type: "object"
+              tcpUdpTunneling:
+                description: "Enabled TCP/UDP tunneling through websocket connection"
+                type: "boolean"
+              cors:
+                description: "CORS settings"
+                type: "object"
+                properties:
+                  excludedPatterns:
+                    description: "The cors excluded patterns"
+                    type: "array"
+                    items:
+                      type: "string"
+                  allowMethods:
+                    description: "The cors allowed methods"
+                    type: "array"
+                    items:
+                      type: "string"
+                  allowHeaders:
+                    description: "The cors allowed headers"
+                    type: "array"
+                    items:
+                      type: "string"
+                  exposeHeaders:
+                    description: "The cors exposed header"
+                    type: "array"
+                    items:
+                      type: "string"
+                  maxAge:
+                    description: "Cors max age"
+                    type: "number"
+                  enabled:
+                    description: "Whether or not cors is enabled"
+                    type: "boolean"
+                  allowCredentials:
+                    description: "Allow to pass credentials"
+                    type: "boolean"
+                  allowOrigin:
+                    description: "The cors allowed origin"
+                    type: "string"
+              forceHttps:
+                description: "Will force redirection to https:// if not present"
+                type: "boolean"
+              matchingRoot:
+                description: "The root path on which the service is available"
+                type: "string"
+              plugins:
+                description: "Plugins enabled for this service. will replace separate\
+                  \ plugins fields in a near future"
+                type: "object"
+                properties:
+                  excluded:
+                    description: "Excluded paths"
+                    type: "array"
+                    items:
+                      type: "string"
+                  refs:
+                    description: "Enabled plugins"
+                    type: "array"
+                    items:
+                      type: "string"
+                  config:
+                    description: "Plugins configuration"
+                    type: "object"
+                  enabled:
+                    description: "Plugins enabled"
+                    type: "boolean"
+              letsEncrypt:
+                description: "Flag to automatically issue a let's encrypt (ACME) cert\
+                  \ for this service"
+                type: "boolean"
+              useNewWSClient:
+                description: "Use akka http client for this service on websocket calls"
+                type: "boolean"
+              chaosConfig:
+                description: "Chaos engineering settings"
+                type: "object"
+                properties:
+                  badResponsesFaultConfig:
+                    description: "Settings for bad responses"
+                    type: "object"
+                    properties:
+                      responses:
+                        description: "The possibles responses"
+                        type: "array"
+                        items:
+                          type: "object"
+                          properties:
+                            headers:
+                              description: "The HTTP headers of the response"
+                              additionalProperties:
+                                type: "string"
+                              type: "object"
+                            body:
+                              description: "The body of the HTTP response"
+                              type: "string"
+                            status:
+                              format: "int32"
+                              description: "The HTTP status for the response"
+                              type: "integer"
+                      ratio:
+                        format: "double"
+                        description: "The percentage of requests affected by this\
+                          \ fault. Value should be between 0.0 and 1.0"
+                        type: "number"
+                  largeResponseFaultConfig:
+                    description: "Settings for large responses"
+                    type: "object"
+                    properties:
+                      ratio:
+                        format: "double"
+                        description: "The percentage of requests affected by this\
+                          \ fault. Value should be between 0.0 and 1.0"
+                        type: "number"
+                      additionalResponseSize:
+                        format: "int32"
+                        description: "Add n 0 bytes"
+                        type: "integer"
+                  latencyInjectionFaultConfig:
+                    description: "Settings for latency injection"
+                    type: "object"
+                    properties:
+                      from:
+                        description: "The start range of latency added to the request"
+                        type: "number"
+                      to:
+                        description: "The end range of latency added to the request"
+                        type: "number"
+                      ratio:
+                        format: "double"
+                        description: "The percentage of requests affected by this\
+                          \ fault. Value should be between 0.0 and 1.0"
+                        type: "number"
+                  largeRequestFaultConfig:
+                    description: "Settings for large requests"
+                    type: "object"
+                    properties:
+                      additionalRequestSize:
+                        format: "int32"
+                        description: "The size added to the request body in bytes.\
+                          \ Added payload will be spaces only."
+                        type: "integer"
+                      ratio:
+                        format: "double"
+                        description: "The percentage of requests affected by this\
+                          \ fault. Value should be between 0.0 and 1.0"
+                        type: "number"
+                  enabled:
+                    description: "Whether or not this config is enabled"
+                    type: "boolean"
+              secComSettings:
+                description: "Sec. com. settings"
+                type: "object"
+                properties:
+                  headers:
+                    description: "Http header when fetching JWKS"
+                    additionalProperties:
+                      type: "string"
+                    type: "object"
+                  mtlsConfig:
+                    description: "TLS settings for http client"
+                    type: "object"
+                    properties:
+                      loose:
+                        description: "Loose verification"
+                        type: "boolean"
+                      trustAll:
+                        description: "Trust any certificate"
+                        type: "boolean"
+                      mtls:
+                        description: "Enabled"
+                        type: "boolean"
+                      certs:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
+                      trustedCerts:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
+                  base64:
+                    description: "The secret is base64 encoded"
+                    type: "boolean"
+                  publicKey:
+                    description: "Public key (for verification)"
+                    type: "string"
+                  certId:
+                    description: "Certificate id"
+                    type: "string"
+                  secret:
+                    description: "HMAC secret"
+                    type: "string"
+                  type:
+                    description: "the kind of algosettings"
+                    type: "string"
+                  ttl:
+                    description: "Cache ttl"
+                    type: "number"
+                  url:
+                    description: "JWKS url"
+                    type: "string"
+                  timeout:
+                    description: "Timeout when fetching JWKS"
+                    type: "number"
+                  kty:
+                    description: "Key type"
+                    type: "string"
+                  privateKey:
+                    description: "Private key (for signing)"
+                    type: "string"
+                  proxy:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "Web proxy for http client"
+                  onlyExposedCerts:
+                    description: "Use only exposed certs"
+                    type: "boolean"
+                  size:
+                    format: "int32"
+                    description: "SHA function size"
+                    type: "integer"
+              detectApiKeySooner:
+                description: "Detect if an apikey is present but do not fail if not"
+                type: "boolean"
+              transformerRefs:
+                description: "Enabled transformer plugins"
+                type: "array"
+                items:
+                  type: "string"
+              secComAlgoInfoToken:
+                description: "Algorithm to verify/sign challenge token coming from/to\
+                  \ the backend"
+                type: "object"
+                properties:
+                  headers:
+                    description: "Http header when fetching JWKS"
+                    additionalProperties:
+                      type: "string"
+                    type: "object"
+                  mtlsConfig:
+                    description: "TLS settings for http client"
+                    type: "object"
+                    properties:
+                      loose:
+                        description: "Loose verification"
+                        type: "boolean"
+                      trustAll:
+                        description: "Trust any certificate"
+                        type: "boolean"
+                      mtls:
+                        description: "Enabled"
+                        type: "boolean"
+                      certs:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
+                      trustedCerts:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
+                  base64:
+                    description: "The secret is base64 encoded"
+                    type: "boolean"
+                  publicKey:
+                    description: "Public key (for verification)"
+                    type: "string"
+                  certId:
+                    description: "Certificate id"
+                    type: "string"
+                  secret:
+                    description: "HMAC secret"
+                    type: "string"
+                  type:
+                    description: "the kind of algosettings"
+                    type: "string"
+                  ttl:
+                    description: "Cache ttl"
+                    type: "number"
+                  url:
+                    description: "JWKS url"
+                    type: "string"
+                  timeout:
+                    description: "Timeout when fetching JWKS"
+                    type: "number"
+                  kty:
+                    description: "Key type"
+                    type: "string"
+                  privateKey:
+                    description: "Private key (for signing)"
+                    type: "string"
+                  proxy:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "Web proxy for http client"
+                  onlyExposedCerts:
+                    description: "Use only exposed certs"
+                    type: "boolean"
+                  size:
+                    format: "int32"
+                    description: "SHA function size"
+                    type: "integer"
+              missingOnlyHeadersIn:
+                description: "Add header on client request if they are not present"
+                additionalProperties:
+                  type: "string"
+                type: "object"
+              secComAlgoChallengeOtoToBack:
+                description: "Algorithm to sign challenge token to the backend"
+                type: "object"
+                properties:
+                  headers:
+                    description: "Http header when fetching JWKS"
+                    additionalProperties:
+                      type: "string"
+                    type: "object"
+                  mtlsConfig:
+                    description: "TLS settings for http client"
+                    type: "object"
+                    properties:
+                      loose:
+                        description: "Loose verification"
+                        type: "boolean"
+                      trustAll:
+                        description: "Trust any certificate"
+                        type: "boolean"
+                      mtls:
+                        description: "Enabled"
+                        type: "boolean"
+                      certs:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
+                      trustedCerts:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
+                  base64:
+                    description: "The secret is base64 encoded"
+                    type: "boolean"
+                  publicKey:
+                    description: "Public key (for verification)"
+                    type: "string"
+                  certId:
+                    description: "Certificate id"
+                    type: "string"
+                  secret:
+                    description: "HMAC secret"
+                    type: "string"
+                  type:
+                    description: "the kind of algosettings"
+                    type: "string"
+                  ttl:
+                    description: "Cache ttl"
+                    type: "number"
+                  url:
+                    description: "JWKS url"
+                    type: "string"
+                  timeout:
+                    description: "Timeout when fetching JWKS"
+                    type: "number"
+                  kty:
+                    description: "Key type"
+                    type: "string"
+                  privateKey:
+                    description: "Private key (for signing)"
+                    type: "string"
+                  proxy:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "Web proxy for http client"
+                  onlyExposedCerts:
+                    description: "Use only exposed certs"
+                    type: "boolean"
+                  size:
+                    format: "int32"
+                    description: "SHA function size"
+                    type: "integer"
+              removeHeadersOut:
+                description: "Remove headers on client response"
+                type: "array"
+                items:
+                  type: "string"
+              stripPath:
+                description: "Strip matching path in the forwarded request path"
+                type: "boolean"
+              localHost:
+                description: "The host used localy, mainly localhost:xxxx"
+                type: "string"
+              sendOtoroshiHeadersBack:
+                description: "When enabled, Otoroshi will send headers to consumer\
+                  \ like request id, client latency, overhead, etc ..."
+                type: "boolean"
+              id:
+                description: "A unique random string to identify your service"
+                type: "string"
+              api:
+                description: "Api exposition settings"
+                type: "object"
+                properties:
+                  exposeApi:
+                    description: "Is this an API"
+                    type: "boolean"
+                  openApiDescriptorUrl:
+                    description: "openapi descriptor url"
+                    type: "string"
+              secComTtl:
+                description: "TTL for the info token"
+                type: "number"
+              secComVersion:
+                description: "Version of the challenge token"
+                type: "string"
+              targetsLoadBalancing:
+                description: "Loadbalancing strategy"
+                type: "object"
+                properties:
+                  type:
+                    type: "string"
+                  ratio:
+                    format: "double"
+                    type: "number"
+              userFacing:
+                description: "The fact that this service will be seen by users and\
+                  \ cannot be impacted by the Snow Monkey"
+                type: "boolean"
+              hosts:
+                description: "Possible hosts for the service"
+                type: "array"
+                items:
+                  type: "string"
+              restrictions:
+                description: "Restriction settings"
+                type: "object"
+                properties:
+                  allowed:
+                    description: "Allowed paths"
+                    type: "array"
+                    items:
+                      type: "object"
+                      properties:
+                        path:
+                          description: "Path of the http request"
+                          type: "string"
+                        method:
+                          description: "Method of the http request"
+                          type: "string"
+                  allowLast:
+                    description: "Evalute allowed paths after everything else"
+                    type: "boolean"
+                  forbidden:
+                    description: "Forbidden paths (return 403)"
+                    type: "array"
+                    items:
+                      type: "object"
+                      properties:
+                        path:
+                          description: "Path of the http request"
+                          type: "string"
+                        method:
+                          description: "Method of the http request"
+                          type: "string"
+                  notFound:
+                    description: "Not found paths (return 404)"
+                    type: "array"
+                    items:
+                      type: "object"
+                      properties:
+                        path:
+                          description: "Path of the http request"
+                          type: "string"
+                        method:
+                          description: "Method of the http request"
+                          type: "string"
+                  enabled:
+                    description: "Restrictions enabled"
+                    type: "boolean"
+              readOnly:
+                description: "Service only accepts GET, HEAD and OPTIONS requests"
+                type: "boolean"
+              secComInfoTokenVersion:
+                description: "Version of the info token"
+                type: "string"
+              _loc:
+                description: "Entity location"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
+              enforceSecureCommunication:
+                description: "When enabled, Otoroshi will try to exchange headers\
+                  \ with downstream service to ensure no one else can use the service\
+                  \ from outside"
+                type: "boolean"
+              tags:
+                description: "Entity tags"
+                type: "array"
+                items:
+                  type: "string"
+              clientValidatorRef:
+                description: "A reference to validation authority"
+                type: "string"
+              privateApp:
+                description: "When enabled, user will be allowed to use the service\
+                  \ (UI) only if they are registered users of the private apps domain"
+                type: "boolean"
+              enabledAdditionalHosts:
+                type: "boolean"
+                description: "???"
+              paths:
+                description: "Matching paths on request"
+                type: "array"
+                items:
+                  type: "string"
+              domain:
+                description: "The domain on which the service is available."
+                type: "string"
+              name:
+                description: "The name of your service. Only for debug and human readability\
+                  \ purposes"
+                type: "string"
+              transformerConfig:
+                description: "Transformer plugins configuration"
+                type: "object"
+              subdomain:
+                description: "The subdomain on which the service is available"
+                type: "string"
+              maintenanceMode:
+                description: "Display a maintainance page when a user try to use the\
+                  \ service"
+                type: "boolean"
+              secComHeaders:
+                description: "Header names for sec. com. protocol"
+                type: "object"
+                properties:
+                  stateResponseName:
+                    description: "Header name where the validation token respondewill\
+                      \ be"
+                    type: "string"
+                  claimRequestName:
+                    description: "Header name where the info token will be"
+                    type: "string"
+                  stateRequestName:
+                    description: "Header name where the validation token will be"
+                    type: "string"
+              handleLegacyDomain:
+                description: "Use 'domain', 'subdomain', 'env' and 'matchingRoot'\
+                  \ for routing in addition to hosts, or just use hosts."
+                type: "boolean"
+              logAnalyticsOnServer:
+                description: "Log analytics event on the server"
+                type: "boolean"
+              strictlyPrivate:
+                description: "When strictly private, private app session will not\
+                  \ pass apikey filters"
+                type: "boolean"
+              description:
+                description: "Entity description"
+                type: "string"
+              buildMode:
+                description: "Display a construction page when a user try to use the\
+                  \ service"
+                type: "boolean"
+              targets:
+                x-kubernetes-preserve-unknown-fields: true
+                type: "object"
+              enabled:
+                description: "Activate or deactivate your service. Once disabled,\
+                  \ users will get an error page saying the service does not exist"
+                type: "boolean"
+              additionalHeadersOut:
+                description: "Specify headers that will be added to each client response"
+                additionalProperties:
+                  type: "string"
+                type: "object"
+              sendStateChallenge:
+                description: "Should otoroshi send challenge token"
+                type: "boolean"
+              root:
+                description: "Otoroshi will append this root to any target choosen.\
+                  \ If the specified root is '/api/foo', then a request to https://yyyyyyy/bar\
+                  \ will actually hit https://xxxxxxxxx/api/foo/bar"
+                type: "string"
+              additionalHeaders:
+                description: "Specify headers that will be added to each client request.\
+                  \ Useful to add authentication"
+                additionalProperties:
+                  type: "string"
+                type: "object"
+              issueCertCA:
+                description: "CA for cert issuance"
+                type: "string"
+              ipFiltering:
+                description: "Ip filtering settings"
+                type: "object"
+                properties:
+                  blacklist:
+                    description: "Blacklisted IP addresses"
+                    type: "array"
+                    items:
+                      type: "string"
+                  whitelist:
+                    description: "Whitelisted IP addresses"
+                    type: "array"
+                    items:
+                      type: "string"
+              redirection:
+                description: "Redirection settings"
+                type: "object"
+                properties:
+                  code:
+                    format: "int32"
+                    description: "The http redirect code"
+                    type: "integer"
+                  to:
+                    description: "The location for redirection"
+                    type: "string"
+                  enabled:
+                    description: "Whether or not redirection is enabled"
+                    type: "boolean"
+              redirectToLocal:
+                description: "If you work locally with Otoroshi, you may want to use\
+                  \ that feature to redirect one particuliar service to a local host.\
+                  \ For example, you can relocate https://foo.preprod.bar.com to http://localhost:8080\
+                  \ to make some tests"
+                type: "boolean"
+              headersVerification:
+                description: "Specify headers that will be verified after routing."
+                additionalProperties:
+                  type: "string"
+                type: "object"
+              useAkkaHttpClient:
+                description: "Use akka http client for this service"
+                type: "boolean"
+              securityExcludedPatterns:
+                description: "Exclude some paths"
+                type: "array"
+                items:
+                  type: "string"
+              authConfigRef:
+                description: "A reference to a global auth module config"
+                type: "string"
+              preRouting:
+                description: "Pre routing plugin settings"
+                type: "object"
+                properties:
+                  excludedPatterns:
+                    description: "Excluded paths"
+                    type: "array"
+                    items:
+                      type: "string"
+                  refs:
+                    description: "Enabled plugins"
+                    type: "array"
+                    items:
+                      type: "string"
+                  config:
+                    description: "pre-routing plugins configuration"
+                    type: "object"
+                  enabled:
+                    description: "pre-routing plugins enabled"
+                    type: "boolean"
+              canary:
+                description: "Canary settings"
+                type: "object"
+                properties:
+                  root:
+                    description: "Otoroshi will append this root to any target choosen.\
+                      \ If the specified root is '/api/foo', then a request to https://yyyyyyy/bar\
+                      \ will actually hit https://xxxxxxxxx/api/foo/bar"
+                    type: "string"
+                  targets:
+                    description: "The list of target that Otoroshi will proxy and\
+                      \ expose through the subdomain defined before. Otoroshi will\
+                      \ do round-robin load balancing between all those targets with\
+                      \ circuit breaker mecanism to avoid cascading failures"
+                    type: "array"
+                    items:
+                      type: "object"
+                      properties:
+                        predicate:
+                          description: "Predicate to choose this target"
+                          type: "object"
+                          properties:
+                            rack:
+                              description: "Rack name"
+                              type: "string"
+                            provider:
+                              description: "Provider name"
+                              type: "string"
+                            dataCenter:
+                              description: "Datacenter name"
+                              type: "string"
+                            zone:
+                              description: "Zone name"
+                              type: "string"
+                            positions:
+                              description: "Possible positions"
+                              type: "array"
+                              items:
+                                type: "object"
+                                properties:
+                                  latitude:
+                                    format: "double"
+                                    description: "Latitude of the position"
+                                    type: "number"
+                                  radius:
+                                    format: "double"
+                                    description: "Radius of the circle in meters"
+                                    type: "number"
+                                  longitude:
+                                    format: "double"
+                                    description: "Longitude of the position"
+                                    type: "number"
+                            type:
+                              description: "the kind of predicate"
+                              type: "string"
+                            region:
+                              description: "Region name"
+                              type: "string"
+                            dc:
+                              description: "DC name"
+                              type: "string"
+                        metadata:
+                          description: "Metadata for this target"
+                          additionalProperties:
+                            type: "string"
+                          type: "object"
+                        protocol:
+                          description: "Protocol for the target"
+                          type: "string"
+                        scheme:
+                          description: "The protocol used for communication. Can be\
+                            \ http or https"
+                          type: "string"
+                        mtlsConfig:
+                          description: "TLS settings to contact this target"
+                          type: "object"
+                          properties:
+                            loose:
+                              description: "Loose verification"
+                              type: "boolean"
+                            trustAll:
+                              description: "Trust any certificate"
+                              type: "boolean"
+                            mtls:
+                              description: "Enabled"
+                              type: "boolean"
+                            certs:
+                              description: "Trusted cert. ids"
+                              type: "array"
+                              items:
+                                type: "string"
+                            trustedCerts:
+                              description: "Trusted cert. ids"
+                              type: "array"
+                              items:
+                                type: "string"
+                        host:
+                          description: "The host on which the HTTP call will be forwarded.\
+                            \ Can be a domain name, or an IP address. Can also have\
+                            \ a port"
+                          type: "string"
+                        ipAddress:
+                          description: "Target ip address. Usefull to make manual\
+                            \ DNS resolution without breaking SNI"
+                          type: "string"
+                        weight:
+                          format: "int32"
+                          description: "The weight of the target when choosing"
+                          type: "integer"
+                        tags:
+                          description: "Tags for this target"
+                          type: "array"
+                          items:
+                            type: "string"
+                  enabled:
+                    description: "Use canary mode for this service"
+                    type: "boolean"
+                  traffic:
+                    format: "double"
+                    description: "Ratio of traffic that will be sent to canary targets."
+                    type: "number"
+              secComExcludedPatterns:
+                description: "URI patterns excluded from secured communications"
+                type: "array"
+                items:
+                  type: "string"
+              xForwardedHeaders:
+                description: "Send X-Forwarded-* headers"
+                type: "boolean"
+              apiKeyConstraints:
+                description: "Routing and extraction constraints for the apikeyh"
+                type: "object"
+                properties:
+                  routing:
+                    description: "Routing settings for this apikey"
+                    type: "object"
+                    properties:
+                      oneMetaKeyIn:
+                        description: "Routing if one meta key presents in apikey"
+                        type: "array"
+                        items:
+                          type: "string"
+                      allTagsIn:
+                        description: "Routing if all tags presents in apikey"
+                        type: "array"
+                        items:
+                          type: "string"
+                      allMetaIn:
+                        description: "Routing if all meta presents in apikey"
+                        additionalProperties:
+                          type: "string"
+                        type: "object"
+                      noneTagIn:
+                        description: "Routing if none tags presents in apikey"
+                        type: "array"
+                        items:
+                          type: "string"
+                      noneMetaKeysIn:
+                        description: "Routing if none meta keys presents in apikey"
+                        type: "array"
+                        items:
+                          type: "string"
+                      oneMetaIn:
+                        description: "Routing if one meta presents in apikey"
+                        additionalProperties:
+                          type: "string"
+                        type: "object"
+                      allMetaKeysIn:
+                        description: "Routing if all meta keys presents in apikey"
+                        type: "array"
+                        items:
+                          type: "string"
+                      noneMetaIn:
+                        description: "Routing if none meta presents in apikey"
+                        additionalProperties:
+                          type: "string"
+                        type: "object"
+                      oneTagIn:
+                        description: "outing if one tag presents in apikey"
+                        type: "array"
+                        items:
+                          type: "string"
+                  customHeadersAuth:
+                    description: "Settings to extract apikey from custom headers"
+                    type: "object"
+                    properties:
+                      clientSecretHeaderName:
+                        description: "Header name to find client_secret"
+                        type: "string"
+                      enabled:
+                        description: "Constraint enabled"
+                        type: "boolean"
+                      clientIdHeaderName:
+                        description: "Header name to find client_id"
+                        type: "string"
+                  basicAuth:
+                    description: "Settings to extract basic auth style apikey"
+                    type: "object"
+                    properties:
+                      headerName:
+                        description: "Header name to get client_id:client_secret base64\
+                          \ encoded"
+                        type: "string"
+                      queryName:
+                        description: "Query param name to get client_id:client_secret\
+                          \ base64 encoded"
+                        type: "string"
+                      enabled:
+                        description: "Constraint enabled"
+                        type: "boolean"
+                  jwtAuth:
+                    description: "Settings to extract apikey from jwt token"
+                    type: "object"
+                    properties:
+                      headerName:
+                        description: "Header name to extract jwt token"
+                        type: "string"
+                      maxJwtLifespanSecs:
+                        format: "int64"
+                        description: "Check if token does not have a long lifespan"
+                        type: "integer"
+                      keyPairSigned:
+                        description: "The jwt token is signed by a keypair from a\
+                          \ cert found from its id in apikey meta. 'jwt-sign-keypair'"
+                        type: "boolean"
+                      secretSigned:
+                        description: "Jwt token signed with the client_secret"
+                        type: "boolean"
+                      queryName:
+                        description: "Query param name to extract jwt token"
+                        type: "string"
+                      enabled:
+                        description: "Constraint enabled"
+                        type: "boolean"
+                      cookieName:
+                        description: "Cookie name to extract jwt token"
+                        type: "string"
+                      includeRequestAttributes:
+                        description: "Jwt token should include verb and path"
+                        type: "boolean"
+                  clientIdAuth:
+                    description: "Settings to extract client_id only apikey"
+                    type: "object"
+                    properties:
+                      headerName:
+                        description: "Header name to find client_id"
+                        type: "string"
+                      queryName:
+                        description: "Query param name to find client_id"
+                        type: "string"
+                      enabled:
+                        description: "Constraint enabled"
+                        type: "boolean"
+              sendInfoToken:
+                description: "Should otoroshi send info token"
+                type: "boolean"
+              issueCert:
+                description: "Flag to automatically issue a cert for this service"
+                type: "boolean"
+              groups:
+                description: "Each service descriptor is attached to groups. A group\
+                  \ can have one or more services. Each API key is linked to a group\
+                  \ and allow access to every service in the group"
+                type: "array"
+                items:
+                  type: "string"
+              privatePatterns:
+                description: "If you define a public pattern that is a little bit\
+                  \ too much, you can make some of public URL private again"
+                type: "array"
+                items:
+                  type: "string"
+              gzip:
+                description: "GZIP settings"
+                type: "object"
+                properties:
+                  excludedPatterns:
+                    description: "Excluded paths"
+                    type: "array"
+                    items:
+                      type: "string"
+                  blackList:
+                    description: "blocklisted content types"
+                    type: "array"
+                    items:
+                      type: "string"
+                  whiteList:
+                    description: "allow listed content types"
+                    type: "array"
+                    items:
+                      type: "string"
+                  chunkedThreshold:
+                    format: "int32"
+                    description: "Chunk size"
+                    type: "integer"
+                  compressionLevel:
+                    format: "int32"
+                    description: "Compression level (0 - 9)"
+                    type: "integer"
+                  enabled:
+                    description: "Gzip enabled"
+                    type: "boolean"
+                  bufferSize:
+                    format: "int32"
+                    description: "Buffer size in bytes"
+                    type: "integer"
+              clientConfig:
+                description: "Http client settings"
+                type: "object"
+                properties:
+                  sampleInterval:
+                    format: "int64"
+                    description: "Specify the sliding window time for the circuit\
+                      \ breaker in milliseconds, after this time, error count will\
+                      \ be reseted"
+                    type: "integer"
+                  backoffFactor:
+                    format: "int64"
+                    description: "Specify the factor to multiply the delay for each\
+                      \ retry"
+                    type: "integer"
+                  customTimeouts:
+                    description: "Custom timeouts per path"
+                    type: "array"
+                    items:
+                      type: "object"
+                      properties:
+                        path:
+                          description: "path on which this configuration works"
+                          type: "string"
+                        callAndStreamTimeout:
+                          format: "int64"
+                          description: "Specify how long each call should last at\
+                            \ most in milliseconds (hard timeout, connection will\
+                            \ be closed after that duration)"
+                          type: "integer"
+                        idleTimeout:
+                          format: "int64"
+                          description: "Timeout on idle connection"
+                          type: "integer"
+                        callTimeout:
+                          format: "int64"
+                          description: "Specify how long each call should last at\
+                            \ most in milliseconds (soft timeout as it's enforced\
+                            \ by the circuit breaker)"
+                          type: "integer"
+                        globalTimeout:
+                          format: "int64"
+                          description: "Specify how long the global call (with retries)\
+                            \ should last at most in milliseconds"
+                          type: "integer"
+                        connectionTimeout:
+                          format: "int64"
+                          description: "Timeout at connection"
+                          type: "integer"
+                  callAndStreamTimeout:
+                    format: "int64"
+                    description: "Specify how long each call should last at most in\
+                      \ milliseconds (hard timeout, connection will be closed after\
+                      \ that duration)"
+                    type: "integer"
+                  retryInitialDelay:
+                    format: "int64"
+                    description: "Specify the delay between two retries. Each retry,\
+                      \ the delay is multiplied by the backoff factor"
+                    type: "integer"
+                  callTimeout:
+                    format: "int64"
+                    description: "Specify how long each call should last at most in\
+                      \ milliseconds (soft timeout as it's enforced by the circuit\
+                      \ breaker)"
+                    type: "integer"
+                  useCircuitBreaker:
+                    description: "Use a circuit breaker to avoid cascading failure\
+                      \ when calling chains of services. Highly recommended !"
+                    type: "boolean"
+                  retries:
+                    format: "int32"
+                    description: "Specify how many times the client will try to fetch\
+                      \ the result of the request after an error before giving up."
+                    type: "integer"
+                  proxy:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "Web proxy settings for http client"
+                  maxErrors:
+                    format: "int32"
+                    description: "Specify how many errors can pass before opening\
+                      \ the circuit breaker"
+                    type: "integer"
+                  idleTimeout:
+                    format: "int64"
+                    description: "Timeout on idle connection"
+                    type: "integer"
+                  globalTimeout:
+                    format: "int64"
+                    description: "Specify how long the global call (with retries)\
+                      \ should last at most in milliseconds"
+                    type: "integer"
+                  cacheConnectionSettings:
+                    description: "Cached connection settings"
+                    type: "object"
+                    properties:
+                      queueSize:
+                        format: "int32"
+                        description: "The size for the request queue"
+                        type: "integer"
+                      enabled:
+                        description: "Enable Cached connections at host tevel"
+                        type: "boolean"
+                  connectionTimeout:
+                    format: "int64"
+                    description: "Timeout at connection"
+                    type: "integer"
+              env:
+                description: "The line on which the service is available. Based on\
+                  \ that value, the name of the line will be appended to the subdomain.\
+                  \ For line prod, nothing will be appended. For example, if the subdomain\
+                  \ is 'foo' and line is 'preprod', then the exposed service will\
+                  \ be available at 'foo.preprod.mydomain'"
+                type: "string"
+              jwtVerifier:
+                description: "JWT verifiers settings"
+                type: "object"
+                properties:
+                  excludedPatterns:
+                    description: "Verifier excluded paths"
+                    type: "array"
+                    items:
+                      type: "string"
+                  metadata:
+                    description: "Entity metadata"
+                    additionalProperties:
+                      type: "string"
+                    type: "object"
+                  source:
+                    description: "Token source"
+                    type: "object"
+                    properties:
+                      name:
+                        description: "Query param name"
+                        type: "string"
+                      type:
+                        description: "the kind of location"
+                        type: "string"
+                      remove:
+                        description: "Remove from value"
+                        type: "string"
+                  type:
+                    description: "the kind of verifier"
+                    type: "string"
+                  _loc:
+                    description: "Entity location"
+                    type: "object"
+                    properties:
+                      teams:
+                        description: "Teams of the current entity"
+                        type: "array"
+                        items:
+                          type: "string"
+                      tenant:
+                        description: "Organization of the current entity"
+                        type: "string"
+                  enabled:
+                    description: "Verifier enabled"
+                    type: "boolean"
+                  tags:
+                    description: "Entity tags"
+                    type: "array"
+                    items:
+                      type: "string"
+                  algoSettings:
+                    description: "Algo settings"
+                    type: "object"
+                    properties:
+                      headers:
+                        description: "Http header when fetching JWKS"
+                        additionalProperties:
+                          type: "string"
+                        type: "object"
+                      mtlsConfig:
+                        description: "TLS settings for http client"
+                        type: "object"
+                        properties:
+                          loose:
+                            description: "Loose verification"
+                            type: "boolean"
+                          trustAll:
+                            description: "Trust any certificate"
+                            type: "boolean"
+                          mtls:
+                            description: "Enabled"
+                            type: "boolean"
+                          certs:
+                            description: "Trusted cert. ids"
+                            type: "array"
+                            items:
+                              type: "string"
+                          trustedCerts:
+                            description: "Trusted cert. ids"
+                            type: "array"
+                            items:
+                              type: "string"
+                      base64:
+                        description: "The secret is base64 encoded"
+                        type: "boolean"
+                      publicKey:
+                        description: "Public key (for verification)"
+                        type: "string"
+                      certId:
+                        description: "Certificate id"
+                        type: "string"
+                      secret:
+                        description: "HMAC secret"
+                        type: "string"
+                      type:
+                        description: "the kind of algosettings"
+                        type: "string"
+                      ttl:
+                        description: "Cache ttl"
+                        type: "number"
+                      url:
+                        description: "JWKS url"
+                        type: "string"
+                      timeout:
+                        description: "Timeout when fetching JWKS"
+                        type: "number"
+                      kty:
+                        description: "Key type"
+                        type: "string"
+                      privateKey:
+                        description: "Private key (for signing)"
+                        type: "string"
+                      proxy:
+                        type: "object"
+                        x-kubernetes-preserve-unknown-fields: true
+                        description: "Web proxy for http client"
+                      onlyExposedCerts:
+                        description: "Use only exposed certs"
+                        type: "boolean"
+                      size:
+                        format: "int32"
+                        description: "SHA function size"
+                        type: "integer"
+                  name:
+                    description: "Verifier name"
+                    type: "string"
+                  ids:
+                    description: "Verifiers ids"
+                    type: "array"
+                    items:
+                      type: "string"
+                  id:
+                    description: "Verifier id"
+                    type: "string"
+                  strict:
+                    description: "Strict token verification"
+                    type: "boolean"
+                  strategy:
+                    description: "Token strategy"
+                    type: "object"
+                    properties:
+                      transformSettings:
+                        description: "Transformation settings"
+                        type: "object"
+                        properties:
+                          mappingSettings:
+                            description: "Token mapping settings"
+                            type: "object"
+                            properties:
+                              values:
+                                description: "Add values"
+                                type: "object"
+                              map:
+                                description: "Change values"
+                                additionalProperties:
+                                  type: "string"
+                                type: "object"
+                              remove:
+                                description: "Remove some token claims"
+                                type: "array"
+                                items:
+                                  type: "string"
+                          location:
+                            description: "Location of the token"
+                            type: "object"
+                            properties:
+                              name:
+                                description: "Query param name"
+                                type: "string"
+                              type:
+                                description: "the kind of location"
+                                type: "string"
+                              remove:
+                                description: "Remove from value"
+                                type: "string"
+                      algoSettings:
+                        description: "Algorithm settings for re-signing token"
+                        type: "object"
+                        properties:
+                          headers:
+                            description: "Http header when fetching JWKS"
+                            additionalProperties:
+                              type: "string"
+                            type: "object"
+                          mtlsConfig:
+                            description: "TLS settings for http client"
+                            type: "object"
+                            properties:
+                              loose:
+                                description: "Loose verification"
+                                type: "boolean"
+                              trustAll:
+                                description: "Trust any certificate"
+                                type: "boolean"
+                              mtls:
+                                description: "Enabled"
+                                type: "boolean"
+                              certs:
+                                description: "Trusted cert. ids"
+                                type: "array"
+                                items:
+                                  type: "string"
+                              trustedCerts:
+                                description: "Trusted cert. ids"
+                                type: "array"
+                                items:
+                                  type: "string"
+                          base64:
+                            description: "The secret is base64 encoded"
+                            type: "boolean"
+                          publicKey:
+                            description: "Public key (for verification)"
+                            type: "string"
+                          certId:
+                            description: "Certificate id"
+                            type: "string"
+                          secret:
+                            description: "HMAC secret"
+                            type: "string"
+                          type:
+                            description: "the kind of algosettings"
+                            type: "string"
+                          ttl:
+                            description: "Cache ttl"
+                            type: "number"
+                          url:
+                            description: "JWKS url"
+                            type: "string"
+                          timeout:
+                            description: "Timeout when fetching JWKS"
+                            type: "number"
+                          kty:
+                            description: "Key type"
+                            type: "string"
+                          privateKey:
+                            description: "Private key (for signing)"
+                            type: "string"
+                          proxy:
+                            type: "object"
+                            x-kubernetes-preserve-unknown-fields: true
+                            description: "Web proxy for http client"
+                          onlyExposedCerts:
+                            description: "Use only exposed certs"
+                            type: "boolean"
+                          size:
+                            format: "int32"
+                            description: "SHA function size"
+                            type: "integer"
+                      verificationSettings:
+                        description: "Verification settings"
+                        type: "object"
+                        properties:
+                          arrayFields:
+                            description: "Fields array validation"
+                            additionalProperties:
+                              type: "string"
+                            type: "object"
+                          fields:
+                            description: "Fields validation"
+                            additionalProperties:
+                              type: "string"
+                            type: "object"
+                      type:
+                        description: "the kind of strategy"
+                        type: "string"
+                      strict:
+                        description: "If the token already exists in the request,\
+                          \ then fail"
+                        type: "boolean"
+                      token:
+                        description: "The default token"
+                        type: "object"
+                  desc:
+                    description: "Verifier description"
+                    type: "string"
+              allowHttp10:
+                description: "Allow HTTP/1.0 requests"
+                type: "boolean"
+              publicPatterns:
+                description: "By default, every services are private only and you'll\
+                  \ need an API key to access it. However, if you want to expose a\
+                  \ public UI, you can define one or more public patterns (regex)\
+                  \ to allow access to anybody. For example if you want to allow anybody\
+                  \ on any URL, just use '/.*'"
+                type: "array"
+                items:
+                  type: "string"
+              secComAlgoChallengeBackToOto:
+                description: "Algorithm to verify challenge token coming from the\
+                  \ backend"
+                type: "object"
+                properties:
+                  headers:
+                    description: "Http header when fetching JWKS"
+                    additionalProperties:
+                      type: "string"
+                    type: "object"
+                  mtlsConfig:
+                    description: "TLS settings for http client"
+                    type: "object"
+                    properties:
+                      loose:
+                        description: "Loose verification"
+                        type: "boolean"
+                      trustAll:
+                        description: "Trust any certificate"
+                        type: "boolean"
+                      mtls:
+                        description: "Enabled"
+                        type: "boolean"
+                      certs:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
+                      trustedCerts:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
+                  base64:
+                    description: "The secret is base64 encoded"
+                    type: "boolean"
+                  publicKey:
+                    description: "Public key (for verification)"
+                    type: "string"
+                  certId:
+                    description: "Certificate id"
+                    type: "string"
+                  secret:
+                    description: "HMAC secret"
+                    type: "string"
+                  type:
+                    description: "the kind of algosettings"
+                    type: "string"
+                  ttl:
+                    description: "Cache ttl"
+                    type: "number"
+                  url:
+                    description: "JWKS url"
+                    type: "string"
+                  timeout:
+                    description: "Timeout when fetching JWKS"
+                    type: "number"
+                  kty:
+                    description: "Key type"
+                    type: "string"
+                  privateKey:
+                    description: "Private key (for signing)"
+                    type: "string"
+                  proxy:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "Web proxy for http client"
+                  onlyExposedCerts:
+                    description: "Use only exposed certs"
+                    type: "boolean"
+                  size:
+                    format: "int32"
+                    description: "SHA function size"
+                    type: "integer"
+              localScheme:
+                description: "The scheme used localy, mainly http"
+                type: "string"
+              healthCheck:
+                description: "Healthcheck settings"
+                type: "object"
+                properties:
+                  enabled:
+                    description: "Whether or not healthcheck is enabled on the current\
+                      \ service descriptor"
+                    type: "boolean"
+                  url:
+                    description: "The URL to check"
+                    type: "string"
+              matchingHeaders:
+                description: "Specify headers that MUST be present on client request\
+                  \ to route it. Useful to implement versioning"
+                additionalProperties:
+                  type: "string"
+                type: "object"
+              overrideHost:
+                description: "Host header will be overriden with Host of the target"
+                type: "boolean"
+              secComUseSameAlgo:
+                description: "Use the same algo for info token, challenge token signing,\
+                  \ challenge token verification"
+                type: "boolean"
+              accessValidator:
+                description: "Service access validatiors"
+                type: "object"
+                properties:
+                  excludedPatterns:
+                    description: "Excluded paths"
+                    type: "array"
+                    items:
+                      type: "string"
+                  refs:
+                    description: "Enabled plugins"
+                    type: "array"
+                    items:
+                      type: "string"
+                  config:
+                    description: "Access validator plugins configuration"
+                    type: "object"
+                  enabled:
+                    description: "Access validator plugins enabled"
+                    type: "boolean"
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "apikeys.proxy.otoroshi.io"
+  creationTimestamp: null
+spec:
+  group: "proxy.otoroshi.io"
+  names:
+    kind: "ApiKey"
+    plural: "apikeys"
+    singular: "apikey"
+  scope: "Namespaced"
+  versions:
+  - name: "v1alpha1"
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+  - name: "v1"
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        description: "An otoroshi apikey that can allow you to access some services"
+        type: "object"
+        properties:
+          metadata:
+            type: "object"
+          apiVersion:
+            description: "APIVersion defines the versioned schema of this representation\
+              \ of an object. Servers should convert recognized schemas to the latest\
+              \ internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            type: "string"
+          kind:
+            description: "Kind is a string value representing the REST resource this\
+              \ object represents. Servers may infer this from the endpoint the client\
+              \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            type: "string"
+          spec:
+            description: "An otoroshi apikey that can allow you to access some services"
+            type: "object"
+            properties:
+              daikokuToken:
+                description: "???"
+                type: "string"
+              metadata:
+                description: "Bunch of metadata for the key"
+                additionalProperties:
+                  type: "string"
+                type: "object"
+              secretName:
+                type: "string"
+                description: "???"
+              clientId:
+                description: "The unique id of the Api Key. Usually 16 random alpha\
+                  \ numerical characters, but can be anything"
+                type: "string"
+              clientName:
+                description: "The name of the api key, for humans ;-)"
+                type: "string"
+              rotation:
+                description: "Apikey rotation settings"
+                type: "object"
+                properties:
+                  gracePeriod:
+                    format: "int64"
+                    description: "period (in hours) during which both secrets works"
+                    type: "integer"
+                  rotationEvery:
+                    format: "int64"
+                    description: "Rotate every n hours"
+                    type: "integer"
+                  nextSecret:
+                    description: "Next client_secret value"
+                    type: "string"
+                  enabled:
+                    description: "Rotation enabled"
+                    type: "boolean"
+              description:
+                description: "Description of this apikey"
+                type: "string"
+              restrictions:
+                description: "Apikey restrictions settings"
+                type: "object"
+                properties:
+                  allowed:
+                    description: "Allowed paths"
+                    type: "array"
+                    items:
+                      type: "object"
+                      properties:
+                        path:
+                          description: "Path of the http request"
+                          type: "string"
+                        method:
+                          description: "Method of the http request"
+                          type: "string"
+                  allowLast:
+                    description: "Evalute allowed paths after everything else"
+                    type: "boolean"
+                  forbidden:
+                    description: "Forbidden paths (return 403)"
+                    type: "array"
+                    items:
+                      type: "object"
+                      properties:
+                        path:
+                          description: "Path of the http request"
+                          type: "string"
+                        method:
+                          description: "Method of the http request"
+                          type: "string"
+                  notFound:
+                    description: "Not found paths (return 404)"
+                    type: "array"
+                    items:
+                      type: "object"
+                      properties:
+                        path:
+                          description: "Path of the http request"
+                          type: "string"
+                        method:
+                          description: "Method of the http request"
+                          type: "string"
+                  enabled:
+                    description: "Restrictions enabled"
+                    type: "boolean"
+              readOnly:
+                description: "The apikey only allow access for GET, HEAD and OPTIONS\
+                  \ verbs"
+                type: "boolean"
+              _loc:
+                description: "The location of the apikey"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
+              enabled:
+                description: "Whether or not the key is enabled. If disabled, resources\
+                  \ won't be available to calls using this key"
+                type: "boolean"
+              tags:
+                description: "Apikey tags"
+                type: "array"
+                items:
+                  type: "string"
+              throttlingQuota:
+                format: "int64"
+                description: "Authorized number of calls per second, measured on 10\
+                  \ seconds"
+                type: "integer"
+              constrainedServicesOnly:
+                description: "This apikey can only be used on services that constrained\
+                  \ their apikey routing"
+                type: "boolean"
+              allowClientIdOnly:
+                description: "This apikey can be used juste with the client_id value"
+                type: "boolean"
+              monthlyQuota:
+                format: "int64"
+                description: "Authorized number of calls per month"
+                type: "integer"
+              exportSecret:
+                description: "???"
+                type: "boolean"
+              validUntil:
+                description: "Date until when the apikey is valid"
+                type: "number"
+              authorizedEntities:
+                description: "The group/service ids (prefixed by group_ or service_\
+                  \ on which the key is authorized"
+                type: "array"
+                items:
+                  type: "string"
+              clientSecret:
+                description: "The secret of the Api Key. Usually 64 random alpha numerical\
+                  \ characters, but can be anything"
+                type: "string"
+              dailyQuota:
+                format: "int64"
+                description: "Authorized number of calls per day"
+                type: "integer"
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "certificates.proxy.otoroshi.io"
+  creationTimestamp: null
+spec:
+  group: "proxy.otoroshi.io"
+  names:
+    kind: "Certificate"
+    plural: "certificates"
+    singular: "certificate"
+  scope: "Namespaced"
+  versions:
+  - name: "v1alpha1"
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+  - name: "v1"
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        description: "The otoroshi model for X509 certificates"
+        type: "object"
+        properties:
+          metadata:
+            type: "object"
+          apiVersion:
+            description: "APIVersion defines the versioned schema of this representation\
+              \ of an object. Servers should convert recognized schemas to the latest\
+              \ internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            type: "string"
+          kind:
+            description: "Kind is a string value representing the REST resource this\
+              \ object represents. Servers may infer this from the endpoint the client\
+              \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            type: "string"
+          spec:
+            description: "The otoroshi model for X509 certificates"
+            type: "object"
+            properties:
+              csr:
+                description: "Settings for generating a certificate"
+                type: "object"
+                properties:
+                  duration:
+                    description: "Certificate lifespan"
+                    type: "number"
+                  includeAIA:
+                    description: "Include AIA extension (if generated from otoroshi\
+                      \ CA)"
+                    type: "boolean"
+                  signatureAlg:
+                    description: "Signature algorithm"
+                    type: "string"
+                  digestAlg:
+                    description: "Digest algo"
+                    type: "string"
+                  hosts:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "Certificate SANs"
+                  subject:
+                    description: "Certificate subject"
+                    type: "string"
+                  name:
+                    type: "object"
+                    additionalProperties:
+                      type: "string"
+                    description: "Certificate name"
+                  client:
+                    description: "Is cert client ?"
+                    type: "boolean"
+                  existingSerialNumber:
+                    format: "int64"
+                    description: ""
+                    type: "integer"
+                  ca:
+                    description: "Is cert ca ?"
+                    type: "boolean"
+                  key:
+                    description: "Keypair specs"
+                    type: "object"
+                    properties:
+                      algo:
+                        description: "Keypair algorithm"
+                        type: "string"
+                      size:
+                        format: "int32"
+                        description: "Keypair size"
+                        type: "integer"
+                  issuer:
+                    type: "string"
+                    description: "???"
+              subject:
+                description: "Certificate subject"
+                type: "string"
+              letsEncrypt:
+                description: "Let's encrypt (ACME) generated"
+                type: "boolean"
+              keypair:
+                description: "Is cert used for its keypair only ?"
+                type: "boolean"
+              description:
+                description: "Entity description"
+                type: "string"
+              revoked:
+                description: "Certificate is revoked"
+                type: "boolean"
+              valid:
+                description: "Is cert valid"
+                type: "boolean"
+              password:
+                description: "Certificate password"
+                type: "string"
+              exportSecret:
+                description: "???"
+                type: "boolean"
+              exposed:
+                description: "Is the cert exposed (public key exposed in jwks.json)"
+                type: "boolean"
+              autoRenew:
+                description: "Auto renew cert"
+                type: "boolean"
+              client:
+                description: "Is cert a client cert ?"
+                type: "boolean"
+              from:
+                description: "Start date"
+                type: "number"
+              selfSigned:
+                description: "Is cert self signed"
+                type: "boolean"
+              id:
+                description: "Entity id"
+                type: "string"
+              ca:
+                description: "Is cert a CA ?"
+                type: "boolean"
+              chain:
+                description: "Certicates chain (PEM encoded)"
+                type: "string"
+              secretName:
+                description: "???"
+                type: "string"
+              sans:
+                description: "Certificate SANs"
+                type: "array"
+                items:
+                  type: "string"
+              _loc:
+                description: "Entity location"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
+              tags:
+                description: "Entity tags"
+                type: "array"
+                items:
+                  type: "string"
+              privateKey:
+                description: "Certificate private key (PEM encoded)"
+                type: "string"
+              entityMetadata:
+                description: "Entity metadata"
+                additionalProperties:
+                  type: "string"
+                type: "object"
+              caRef:
+                description: "Reference to the CA (if any)"
+                type: "string"
+              domain:
+                description: "Certificate domain"
+                type: "string"
+              name:
+                description: "Entity name"
+                type: "string"
+              to:
+                description: "Stop date"
+                type: "number"
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "global-configs.proxy.otoroshi.io"
+  creationTimestamp: null
+spec:
+  group: "proxy.otoroshi.io"
+  names:
+    kind: "GlobalConfig"
+    plural: "global-configs"
+    singular: "global-config"
+  scope: "Namespaced"
+  versions:
+  - name: "v1alpha1"
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+  - name: "v1"
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        description: "The global config (dynamic) for otoroshi"
+        type: "object"
+        properties:
+          metadata:
+            type: "object"
+          apiVersion:
+            description: "APIVersion defines the versioned schema of this representation\
+              \ of an object. Servers should convert recognized schemas to the latest\
+              \ internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            type: "string"
+          kind:
+            description: "Kind is a string value representing the REST resource this\
+              \ object represents. Servers may infer this from the endpoint the client\
+              \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            type: "string"
+          spec:
+            description: "The global config (dynamic) for otoroshi"
+            type: "object"
+            properties:
+              metadata:
+                type: "object"
+                additionalProperties:
+                  type: "string"
+                description: "Entity metadata"
+              backOfficeAuthRef:
+                description: "Id of the auth module used for otoroshi-ui login"
+                type: "string"
+              plugins:
+                description: "global plugins settings"
+                type: "object"
+                properties:
+                  config:
+                    description: "Plugins configuration"
+                    type: "object"
+                  enabled:
+                    description: "Plugins enabled"
+                    type: "boolean"
+                  excluded:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "Excluded paths"
+                  refs:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "Enabled plugins"
+              elasticReadsConfig:
+                description: "Config. for elastic reads"
+                type: "object"
+                properties:
+                  clusterUri:
+                    description: "Cluster URL"
+                    type: "string"
+                  headers:
+                    type: "object"
+                    additionalProperties:
+                      type: "string"
+                    description: "Additionnal headers in the http request"
+                  password:
+                    description: "Elastic password"
+                    type: "string"
+                  indexSettings:
+                    description: "???"
+                    type: "object"
+                    properties:
+                      clientSide:
+                        description: "???"
+                        type: "boolean"
+                      interval:
+                        type: "string"
+                        x-kubernetes-preserve-unknown-fields: true
+                        description: "???"
+                  mtlsConfig:
+                    description: "TLS settings for the http client"
+                    type: "object"
+                    properties:
+                      mtls:
+                        description: "Enabled"
+                        type: "boolean"
+                      loose:
+                        description: "Loose verification"
+                        type: "boolean"
+                      trustAll:
+                        description: "Trust any certificate"
+                        type: "boolean"
+                      trustedCerts:
+                        type: "array"
+                        items:
+                          type: "string"
+                        description: "Trusted cert. ids"
+                      certs:
+                        type: "array"
+                        items:
+                          type: "string"
+                        description: "Trusted cert. ids"
+                  index:
+                    description: "Index name"
+                    type: "string"
+                  type:
+                    description: "Object type"
+                    type: "string"
+                  applyTemplate:
+                    description: "???"
+                    type: "boolean"
+                  version:
+                    description: "???"
+                    type: "string"
+                  user:
+                    description: "Elastic user"
+                    type: "string"
+              logAnalyticsOnServer:
+                description: "Log analytics event on the server"
+                type: "boolean"
+              tlsSettings:
+                description: "TLS settings"
+                type: "object"
+                properties:
+                  randomIfNotFound:
+                    description: "Use a random one"
+                    type: "boolean"
+                  trustedCAsServer:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "List for CAs trusted by otoroshi when performing\
+                      \ TLS termination"
+                  includeJdkCaClient:
+                    description: "Use known JDK CAs to build trust when performing\
+                      \ request from otoroshi to backends"
+                    type: "boolean"
+                  defaultDomain:
+                    description: "Default domain to choose if not found from current\
+                      \ certificates"
+                    type: "string"
+                  includeJdkCaServer:
+                    description: "Use known JDK CAs to build trust for incoming request"
+                    type: "boolean"
+              geolocationSettings:
+                description: "Settings for geolocation extraction"
+                type: "object"
+                properties:
+                  apikey:
+                    description: "IpStack apikey"
+                    type: "string"
+                  type:
+                    type: "string"
+                  enabled:
+                    description: "Geolocation using maxmind db enabled"
+                    type: "boolean"
+                  timeout:
+                    format: "int64"
+                    description: "API call timeout"
+                    type: "integer"
+                  path:
+                    description: "Maxmlind db file path"
+                    type: "string"
+              autoCert:
+                description: "Auto certs settings"
+                type: "object"
+                properties:
+                  caRef:
+                    description: "Generate cert from the following CA"
+                    type: "string"
+                  allowed:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "allowed domains"
+                  replyNicely:
+                    description: "Reply TLS error with an auto generated certificate\
+                      \ for the domain"
+                    type: "boolean"
+                  notAllowed:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "not allowed domains"
+                  enabled:
+                    description: "Enable auto cert"
+                    type: "boolean"
+              endlessIpAddresses:
+                type: "array"
+                items:
+                  type: "string"
+                description: "IP addresses for which any request to Otoroshi will\
+                  \ respond with 128 Gb of zeros"
+              streamEntityOnly:
+                description: "HTTP will be streamed only. Doesn't work with old browsers"
+                type: "boolean"
+              alertsEmails:
+                type: "array"
+                items:
+                  type: "string"
+                description: "Email addresses that will receive all Otoroshi alert\
+                  \ events"
+              middleFingers:
+                description: "Use middle finger emoji as a response character for\
+                  \ endless HTTP responses"
+                type: "boolean"
+              alertsWebhooks:
+                description: "Webhook that will receive all Otoroshi alert events"
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    headers:
+                      type: "object"
+                      additionalProperties:
+                        type: "string"
+                      description: "Headers to authorize the call or whatever"
+                    mtlsConfig:
+                      description: "TLS config when calling webhook"
+                      type: "object"
+                      properties:
+                        mtls:
+                          description: "Enabled"
+                          type: "boolean"
+                        loose:
+                          description: "Loose verification"
+                          type: "boolean"
+                        trustAll:
+                          description: "Trust any certificate"
+                          type: "boolean"
+                        trustedCerts:
+                          type: "array"
+                          items:
+                            type: "string"
+                          description: "Trusted cert. ids"
+                        certs:
+                          type: "array"
+                          items:
+                            type: "string"
+                          description: "Trusted cert. ids"
+                    type:
+                      description: "the kind of exporter"
+                      type: "string"
+                    url:
+                      description: "The URL where events are posted"
+                      type: "string"
+              maxWebhookSize:
+                format: "int32"
+                description: "Max number of items in webhooks"
+                type: "integer"
+              cleverSettings:
+                description: "Optional CleverCloud configuration"
+                type: "object"
+                properties:
+                  consumerSecret:
+                    description: "Clever-Cloud oauth consumer secret"
+                    type: "string"
+                  consumerKey:
+                    description: "Clever-Cloud oauth consumer key"
+                    type: "string"
+                  secret:
+                    description: "Clever-Cloud oauth secret"
+                    type: "string"
+                  token:
+                    description: "Clever-Cloud oauth token"
+                    type: "string"
+                  orgaId:
+                    description: "Clever-Cloud organization id"
+                    type: "string"
+              u2fLoginOnly:
+                description: "If enabled, login to backoffice through Auth0 will be\
+                  \ disabled"
+                type: "boolean"
+              userAgentSettings:
+                description: "Settings for useragent extraction"
+                type: "object"
+                properties:
+                  enabled:
+                    description: "User agent extraction enabled"
+                    type: "boolean"
+              otoroshiId:
+                description: "Unique id for this otoroshi instance"
+                type: "string"
+              proxies:
+                description: "Web proxies settings"
+                type: "object"
+                properties:
+                  auth:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "Web proxy used to call OAuth providers"
+                  clevercloud:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "Web proxy used to call clevercloud"
+                  authority:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "Web proxy used to check authorities"
+                  elastic:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "Web proxy used to call elastic"
+                  alertEmails:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "Web proxy used to send alert emails"
+                  services:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "Web proxy used to access services targets"
+                  eventsWebhooks:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "Web proxy used to call webhooks"
+                  jwk:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "Web proxy used to fetch jwks"
+              ipFiltering:
+                description: "Global ip filtering settings"
+                type: "object"
+                properties:
+                  whitelist:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "Whitelisted IP addresses"
+                  blacklist:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "Blacklisted IP addresses"
+              mailerSettings:
+                description: "Optional mailer configuration"
+                type: "object"
+                properties:
+                  eu:
+                    description: "European tenant"
+                    type: "boolean"
+                  headers:
+                    type: "object"
+                    additionalProperties:
+                      type: "string"
+                    description: "Sender headers"
+                  apiKey:
+                    description: "Sendgrid apikey"
+                    type: "string"
+                  domain:
+                    description: "Mailgun domain"
+                    type: "string"
+                  apiKeyPrivate:
+                    description: "Private key"
+                    type: "string"
+                  apiKeyPublic:
+                    description: "Public key"
+                    type: "string"
+                  to:
+                    description: "Destination email address"
+                    type: "array"
+                    items:
+                      type: "object"
+                      properties:
+                        name:
+                          description: "Destination name"
+                          type: "string"
+                        email:
+                          description: "Email address"
+                          type: "string"
+                  type:
+                    description: "the kind of mailer"
+                    type: "string"
+                  url:
+                    description: "Sender URL"
+                    type: "string"
+              lines:
+                type: "array"
+                items:
+                  type: "string"
+                description: "Possibles lines for Otoroshi"
+              useCircuitBreakers:
+                description: "If enabled, services will be authorized to use circuit\
+                  \ breakers"
+                type: "boolean"
+              scripts:
+                description: "global plugins settings. will be deprecated soon"
+                type: "object"
+                properties:
+                  jobConfig:
+                    description: "jobs enabled"
+                    type: "object"
+                  enabled:
+                    description: "Global scripts enabled"
+                    type: "boolean"
+                  transformersConfig:
+                    description: "transformers config"
+                    type: "object"
+                  transformersRefs:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "transformers enabled"
+                  preRouteRefs:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "pre-route plugins enabled"
+                  sinkConfig:
+                    description: "sinks config"
+                    type: "object"
+                  jobRefs:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "running jobs"
+                  validatorRefs:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "validator enabled"
+                  sinkRefs:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "sinks enabled"
+                  preRouteConfig:
+                    description: "pre-route config"
+                    type: "object"
+                  validatorConfig:
+                    description: "validator config"
+                    type: "object"
+              maxLogsSize:
+                format: "int32"
+                description: "Number of events kept locally"
+                type: "integer"
+              useAkkaHttpClient:
+                description: "Globally use akka http client for everything"
+                type: "boolean"
+              apiReadOnly:
+                description: "If enabled, Admin API won't be able to write/update/delete\
+                  \ entities"
+                type: "boolean"
+              analyticsWebhooks:
+                description: "Webhook that will receive all internal Otoroshi events"
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    headers:
+                      type: "object"
+                      additionalProperties:
+                        type: "string"
+                      description: "Headers to authorize the call or whatever"
+                    mtlsConfig:
+                      description: "TLS config when calling webhook"
+                      type: "object"
+                      properties:
+                        mtls:
+                          description: "Enabled"
+                          type: "boolean"
+                        loose:
+                          description: "Loose verification"
+                          type: "boolean"
+                        trustAll:
+                          description: "Trust any certificate"
+                          type: "boolean"
+                        trustedCerts:
+                          type: "array"
+                          items:
+                            type: "string"
+                          description: "Trusted cert. ids"
+                        certs:
+                          type: "array"
+                          items:
+                            type: "string"
+                          description: "Trusted cert. ids"
+                    type:
+                      description: "the kind of exporter"
+                      type: "string"
+                    url:
+                      description: "The URL where events are posted"
+                      type: "string"
+              kafkaConfig:
+                description: "Global kafka settings. deprecated"
+                type: "object"
+                properties:
+                  servers:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "URLs of the kafka servers"
+                  keyPass:
+                    description: "Optional keypass"
+                    type: "string"
+                  mtlsConfig:
+                    description: "TLS config to access the cluster"
+                    type: "object"
+                    properties:
+                      mtls:
+                        description: "Enabled"
+                        type: "boolean"
+                      loose:
+                        description: "Loose verification"
+                        type: "boolean"
+                      trustAll:
+                        description: "Trust any certificate"
+                        type: "boolean"
+                      trustedCerts:
+                        type: "array"
+                        items:
+                          type: "string"
+                        description: "Trusted cert. ids"
+                      certs:
+                        type: "array"
+                        items:
+                          type: "string"
+                        description: "Trusted cert. ids"
+                  topic:
+                    description: "Optional kafka topic (otoroshi-events by default)"
+                    type: "string"
+                  truststore:
+                    description: "Optional truststore"
+                    type: "string"
+                  keystore:
+                    description: "Optional keystore"
+                    type: "string"
+                  sendEvents:
+                    description: "Send events to it, or just connect"
+                    type: "boolean"
+                  type:
+                    description: "the kind of exporter"
+                    type: "string"
+              enableEmbeddedMetrics:
+                description: "Enable embedded metrics"
+                type: "boolean"
+              limitConcurrentRequests:
+                description: "If enabled, Otoroshi will reject new request if too\
+                  \ much at the same time"
+                type: "boolean"
+              maxConcurrentRequests:
+                format: "int64"
+                description: "The number of authorized request processed at the same\
+                  \ time"
+                type: "integer"
+              maxHttp10ResponseSize:
+                format: "int64"
+                description: "The max size in bytes of an HTTP 1.0 response"
+                type: "integer"
+              tags:
+                type: "array"
+                items:
+                  type: "string"
+                description: "Entity tags"
+              letsEncryptSettings:
+                description: "Let's encrypt (ACME) settings"
+                type: "object"
+                properties:
+                  privateKey:
+                    description: "Let's encrypt (ACME) private key"
+                    type: "string"
+                  contacts:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "Let's encrypt (ACME) contacts"
+                  emails:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "Let's encrypt (ACME) contact emails"
+                  enabled:
+                    description: "Let's encrypt (ACME) enabled"
+                    type: "boolean"
+                  publicKey:
+                    description: "Let's encrypt (ACME) public key"
+                    type: "string"
+                  server:
+                    description: "Let's encrypt (ACME) server"
+                    type: "string"
+              autoLinkToDefaultGroup:
+                description: "If not defined, every new service descriptor will be\
+                  \ added to the default group"
+                type: "boolean"
+              throttlingQuota:
+                format: "int64"
+                description: "Authorized number of calls per second globally, measured\
+                  \ on 10 seconds"
+                type: "integer"
+              snowMonkeyConfig:
+                description: "Snowmonky settings"
+                type: "object"
+                properties:
+                  dryRun:
+                    description: "Whether or not outages will actualy impact requests"
+                    type: "boolean"
+                  targetGroups:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "Groups impacted by Snow Monkey. If empty, all groups\
+                      \ will be impacted"
+                  includeUserFacingDescriptors:
+                    description: "Whether or not user facing apps. will be impacted\
+                      \ by Snow Monkey"
+                    type: "boolean"
+                  outageDurationTo:
+                    description: "End of outage duration range"
+                    type: "number"
+                  outageDurationFrom:
+                    description: "Start of outage duration range"
+                    type: "number"
+                  startTime:
+                    description: "Start time of Snow Monkey each day"
+                    type: "string"
+                  stopTime:
+                    description: "Stop time of Snow Monkey each day"
+                    type: "string"
+                  chaosConfig:
+                    description: "Chaos settings"
+                    type: "object"
+                    properties:
+                      badResponsesFaultConfig:
+                        description: "Settings for bad responses"
+                        type: "object"
+                        properties:
+                          responses:
+                            description: "The possibles responses"
+                            type: "array"
+                            items:
+                              type: "object"
+                              properties:
+                                status:
+                                  format: "int32"
+                                  description: "The HTTP status for the response"
+                                  type: "integer"
+                                body:
+                                  description: "The body of the HTTP response"
+                                  type: "string"
+                                headers:
+                                  type: "object"
+                                  additionalProperties:
+                                    type: "string"
+                                  description: "The HTTP headers of the response"
+                          ratio:
+                            format: "double"
+                            description: "The percentage of requests affected by this\
+                              \ fault. Value should be between 0.0 and 1.0"
+                            type: "number"
+                      largeResponseFaultConfig:
+                        description: "Settings for large responses"
+                        type: "object"
+                        properties:
+                          ratio:
+                            format: "double"
+                            description: "The percentage of requests affected by this\
+                              \ fault. Value should be between 0.0 and 1.0"
+                            type: "number"
+                          additionalResponseSize:
+                            format: "int32"
+                            description: "Add n 0 bytes"
+                            type: "integer"
+                      latencyInjectionFaultConfig:
+                        description: "Settings for latency injection"
+                        type: "object"
+                        properties:
+                          ratio:
+                            format: "double"
+                            description: "The percentage of requests affected by this\
+                              \ fault. Value should be between 0.0 and 1.0"
+                            type: "number"
+                          from:
+                            description: "The start range of latency added to the\
+                              \ request"
+                            type: "number"
+                          to:
+                            description: "The end range of latency added to the request"
+                            type: "number"
+                      largeRequestFaultConfig:
+                        description: "Settings for large requests"
+                        type: "object"
+                        properties:
+                          ratio:
+                            format: "double"
+                            description: "The percentage of requests affected by this\
+                              \ fault. Value should be between 0.0 and 1.0"
+                            type: "number"
+                          additionalRequestSize:
+                            format: "int32"
+                            description: "The size added to the request body in bytes.\
+                              \ Added payload will be spaces only."
+                            type: "integer"
+                      enabled:
+                        description: "Whether or not this config is enabled"
+                        type: "boolean"
+                  timesPerDay:
+                    format: "int32"
+                    description: "Number of time per day each service will be outage"
+                    type: "integer"
+                  outageStrategy:
+                    description: ""
+                    type: "string"
+                  enabled:
+                    description: "Whether or not this config is enabled"
+                    type: "boolean"
+              statsdConfig:
+                description: "Statsd settings (agent connection)"
+                type: "object"
+                properties:
+                  datadog:
+                    description: "Datadog agent"
+                    type: "boolean"
+                  host:
+                    description: "The host of the StatsD agent"
+                    type: "string"
+                  port:
+                    format: "int32"
+                    description: "The port of the StatsD agent"
+                    type: "integer"
+              maintenanceMode:
+                description: "Global maintenant mode"
+                type: "boolean"
+              perIpThrottlingQuota:
+                format: "int64"
+                description: "Authorized number of calls per second globally per IP\
+                  \ address, measured on 10 seconds"
+                type: "integer"
+              elasticWritesConfigs:
+                description: "Configs. for Elastic writes"
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    clusterUri:
+                      description: "Cluster URL"
+                      type: "string"
+                    headers:
+                      type: "object"
+                      additionalProperties:
+                        type: "string"
+                      description: "Additionnal headers in the http request"
+                    password:
+                      description: "Elastic password"
+                      type: "string"
+                    indexSettings:
+                      description: "???"
+                      type: "object"
+                      properties:
+                        clientSide:
+                          description: "???"
+                          type: "boolean"
+                        interval:
+                          type: "string"
+                          x-kubernetes-preserve-unknown-fields: true
+                          description: "???"
+                    mtlsConfig:
+                      description: "TLS settings for the http client"
+                      type: "object"
+                      properties:
+                        mtls:
+                          description: "Enabled"
+                          type: "boolean"
+                        loose:
+                          description: "Loose verification"
+                          type: "boolean"
+                        trustAll:
+                          description: "Trust any certificate"
+                          type: "boolean"
+                        trustedCerts:
+                          type: "array"
+                          items:
+                            type: "string"
+                          description: "Trusted cert. ids"
+                        certs:
+                          type: "array"
+                          items:
+                            type: "string"
+                          description: "Trusted cert. ids"
+                    index:
+                      description: "Index name"
+                      type: "string"
+                    type:
+                      description: "Object type"
+                      type: "string"
+                    applyTemplate:
+                      description: "???"
+                      type: "boolean"
+                    version:
+                      description: "???"
+                      type: "string"
+                    user:
+                      description: "Elastic user"
+                      type: "string"
+              trustXForwarded:
+                description: "Use X-Forwarded-* headers for routing"
+                type: "boolean"
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "jwt-verifiers.proxy.otoroshi.io"
+  creationTimestamp: null
+spec:
+  group: "proxy.otoroshi.io"
+  names:
+    kind: "JwtVerifier"
+    plural: "jwt-verifiers"
+    singular: "jwt-verifier"
+  scope: "Namespaced"
+  versions:
+  - name: "v1alpha1"
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+  - name: "v1"
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        description: "Otoroshi model for JWT token verifier"
+        type: "object"
+        properties:
+          metadata:
+            type: "object"
+          apiVersion:
+            description: "APIVersion defines the versioned schema of this representation\
+              \ of an object. Servers should convert recognized schemas to the latest\
+              \ internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            type: "string"
+          kind:
+            description: "Kind is a string value representing the REST resource this\
+              \ object represents. Servers may infer this from the endpoint the client\
+              \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            type: "string"
+          spec:
+            description: "Otoroshi model for JWT token verifier"
+            type: "object"
+            properties:
+              metadata:
+                description: "Entity metadata"
+                additionalProperties:
+                  type: "string"
+                type: "object"
+              algoSettings:
+                description: "Algo settings of the verifier"
+                type: "object"
+                properties:
+                  headers:
+                    description: "Http header when fetching JWKS"
+                    additionalProperties:
+                      type: "string"
+                    type: "object"
+                  mtlsConfig:
+                    description: "TLS settings for http client"
+                    type: "object"
+                    properties:
+                      loose:
+                        description: "Loose verification"
+                        type: "boolean"
+                      trustAll:
+                        description: "Trust any certificate"
+                        type: "boolean"
+                      mtls:
+                        description: "Enabled"
+                        type: "boolean"
+                      certs:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
+                      trustedCerts:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
+                  base64:
+                    description: "The secret is base64 encoded"
+                    type: "boolean"
+                  publicKey:
+                    description: "Public key (for verification)"
+                    type: "string"
+                  certId:
+                    description: "Certificate id"
+                    type: "string"
+                  secret:
+                    description: "HMAC secret"
+                    type: "string"
+                  type:
+                    description: "the kind of algosettings"
+                    type: "string"
+                  ttl:
+                    description: "Cache ttl"
+                    type: "number"
+                  url:
+                    description: "JWKS url"
+                    type: "string"
+                  timeout:
+                    description: "Timeout when fetching JWKS"
+                    type: "number"
+                  kty:
+                    description: "Key type"
+                    type: "string"
+                  privateKey:
+                    description: "Private key (for signing)"
+                    type: "string"
+                  proxy:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "Web proxy for http client"
+                  onlyExposedCerts:
+                    description: "Use only exposed certs"
+                    type: "boolean"
+                  size:
+                    format: "int32"
+                    description: "SHA function size"
+                    type: "integer"
+              name:
+                description: "Verifier name"
+                type: "string"
+              id:
+                description: "Verifier id"
+                type: "string"
+              source:
+                description: "Where to find the jwt token"
+                type: "object"
+                properties:
+                  name:
+                    description: "Query param name"
+                    type: "string"
+                  type:
+                    description: "the kind of location"
+                    type: "string"
+                  remove:
+                    description: "Remove from value"
+                    type: "string"
+              strict:
+                description: "Does it fail if JWT not found"
+                type: "boolean"
+              strategy:
+                description: "The strategy of the verifier"
+                type: "object"
+                properties:
+                  transformSettings:
+                    description: "Transformation settings"
+                    type: "object"
+                    properties:
+                      mappingSettings:
+                        description: "Token mapping settings"
+                        type: "object"
+                        properties:
+                          values:
+                            description: "Add values"
+                            type: "object"
+                          map:
+                            description: "Change values"
+                            additionalProperties:
+                              type: "string"
+                            type: "object"
+                          remove:
+                            description: "Remove some token claims"
+                            type: "array"
+                            items:
+                              type: "string"
+                      location:
+                        description: "Location of the token"
+                        type: "object"
+                        properties:
+                          name:
+                            description: "Query param name"
+                            type: "string"
+                          type:
+                            description: "the kind of location"
+                            type: "string"
+                          remove:
+                            description: "Remove from value"
+                            type: "string"
+                  algoSettings:
+                    description: "Algorithm settings for re-signing token"
+                    type: "object"
+                    properties:
+                      headers:
+                        description: "Http header when fetching JWKS"
+                        additionalProperties:
+                          type: "string"
+                        type: "object"
+                      mtlsConfig:
+                        description: "TLS settings for http client"
+                        type: "object"
+                        properties:
+                          loose:
+                            description: "Loose verification"
+                            type: "boolean"
+                          trustAll:
+                            description: "Trust any certificate"
+                            type: "boolean"
+                          mtls:
+                            description: "Enabled"
+                            type: "boolean"
+                          certs:
+                            description: "Trusted cert. ids"
+                            type: "array"
+                            items:
+                              type: "string"
+                          trustedCerts:
+                            description: "Trusted cert. ids"
+                            type: "array"
+                            items:
+                              type: "string"
+                      base64:
+                        description: "The secret is base64 encoded"
+                        type: "boolean"
+                      publicKey:
+                        description: "Public key (for verification)"
+                        type: "string"
+                      certId:
+                        description: "Certificate id"
+                        type: "string"
+                      secret:
+                        description: "HMAC secret"
+                        type: "string"
+                      type:
+                        description: "the kind of algosettings"
+                        type: "string"
+                      ttl:
+                        description: "Cache ttl"
+                        type: "number"
+                      url:
+                        description: "JWKS url"
+                        type: "string"
+                      timeout:
+                        description: "Timeout when fetching JWKS"
+                        type: "number"
+                      kty:
+                        description: "Key type"
+                        type: "string"
+                      privateKey:
+                        description: "Private key (for signing)"
+                        type: "string"
+                      proxy:
+                        type: "object"
+                        x-kubernetes-preserve-unknown-fields: true
+                        description: "Web proxy for http client"
+                      onlyExposedCerts:
+                        description: "Use only exposed certs"
+                        type: "boolean"
+                      size:
+                        format: "int32"
+                        description: "SHA function size"
+                        type: "integer"
+                  verificationSettings:
+                    description: "Verification settings"
+                    type: "object"
+                    properties:
+                      arrayFields:
+                        description: "Fields array validation"
+                        additionalProperties:
+                          type: "string"
+                        type: "object"
+                      fields:
+                        description: "Fields validation"
+                        additionalProperties:
+                          type: "string"
+                        type: "object"
+                  type:
+                    description: "the kind of strategy"
+                    type: "string"
+                  strict:
+                    description: "If the token already exists in the request, then\
+                      \ fail"
+                    type: "boolean"
+                  token:
+                    description: "The default token"
+                    type: "object"
+              type:
+                type: "string"
+                description: "???"
+              _loc:
+                description: "Entity location"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
+              desc:
+                description: "Verifier description"
+                type: "string"
+              tags:
+                description: "Entity tags"
+                type: "array"
+                items:
+                  type: "string"
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "auth-modules.proxy.otoroshi.io"
+  creationTimestamp: null
+spec:
+  group: "proxy.otoroshi.io"
+  names:
+    kind: "AuthModule"
+    plural: "auth-modules"
+    singular: "auth-module"
+  scope: "Namespaced"
+  versions:
+  - name: "v1alpha1"
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+  - name: "v1"
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "scripts.proxy.otoroshi.io"
+  creationTimestamp: null
+spec:
+  group: "proxy.otoroshi.io"
+  names:
+    kind: "Script"
+    plural: "scripts"
+    singular: "script"
+  scope: "Namespaced"
+  versions:
+  - name: "v1alpha1"
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+  - name: "v1"
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        description: "An otoroshi plugins stored as scala code in the otoroshi datastore"
+        type: "object"
+        properties:
+          metadata:
+            type: "object"
+          apiVersion:
+            description: "APIVersion defines the versioned schema of this representation\
+              \ of an object. Servers should convert recognized schemas to the latest\
+              \ internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            type: "string"
+          kind:
+            description: "Kind is a string value representing the REST resource this\
+              \ object represents. Servers may infer this from the endpoint the client\
+              \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            type: "string"
+          spec:
+            description: "An otoroshi plugins stored as scala code in the otoroshi\
+              \ datastore"
+            type: "object"
+            properties:
+              metadata:
+                type: "object"
+                additionalProperties:
+                  type: "string"
+                description: "Entity metadata"
+              code:
+                description: "The code of the script"
+                type: "string"
+              name:
+                description: "The name of the script"
+                type: "string"
+              id:
+                description: "The id of the script"
+                type: "string"
+              type:
+                description: "Plugin kind"
+                type: "string"
+              _loc:
+                description: "Entity location"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
+              tags:
+                type: "array"
+                items:
+                  type: "string"
+                description: "Entity tags"
+              desc:
+                description: "The description of the script"
+                type: "string"
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "tcp-services.proxy.otoroshi.io"
+  creationTimestamp: null
+spec:
+  group: "proxy.otoroshi.io"
+  names:
+    kind: "TcpService"
+    plural: "tcp-services"
+    singular: "tcp-service"
+  scope: "Namespaced"
+  versions:
+  - name: "v1alpha1"
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+  - name: "v1"
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        description: "Model for a TCP proxy"
+        type: "object"
+        properties:
+          metadata:
+            type: "object"
+          apiVersion:
+            description: "APIVersion defines the versioned schema of this representation\
+              \ of an object. Servers should convert recognized schemas to the latest\
+              \ internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            type: "string"
+          kind:
+            description: "Kind is a string value representing the REST resource this\
+              \ object represents. Servers may infer this from the endpoint the client\
+              \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            type: "string"
+          spec:
+            description: "Model for a TCP proxy"
+            type: "object"
+            properties:
+              metadata:
+                type: "object"
+                additionalProperties:
+                  type: "string"
+                description: "Entity metadata"
+              description:
+                description: "Entity description"
+                type: "string"
+              rules:
+                description: "Routing rules"
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    domain:
+                      description: "match on SNI domain"
+                      type: "string"
+                    targets:
+                      description: "TCP targets"
+                      type: "array"
+                      items:
+                        type: "object"
+                        properties:
+                          port:
+                            format: "int32"
+                            description: "Target port"
+                            type: "integer"
+                          ip:
+                            description: "Target ip"
+                            type: "string"
+                          host:
+                            description: "Target host"
+                            type: "string"
+                          tls:
+                            description: "Use tls"
+                            type: "boolean"
+              interface:
+                description: "Network interface"
+                type: "string"
+              _loc:
+                description: "Entity location"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
+              enabled:
+                description: "Service enabled"
+                type: "boolean"
+              tags:
+                type: "array"
+                items:
+                  type: "string"
+                description: "Entity tags"
+              sni:
+                description: "SNI settings"
+                type: "object"
+                properties:
+                  forwardIfNoMatch:
+                    description: ""
+                    type: "boolean"
+                  enabled:
+                    description: "SNI extraction enabled"
+                    type: "boolean"
+                  forwardsTo:
+                    description: "forwards call to"
+                    type: "object"
+                    properties:
+                      port:
+                        format: "int32"
+                        description: "Target port"
+                        type: "integer"
+                      ip:
+                        description: "Target ip"
+                        type: "string"
+                      host:
+                        description: "Target host"
+                        type: "string"
+                      tls:
+                        description: "Use tls"
+                        type: "boolean"
+              port:
+                format: "int32"
+                description: "network port"
+                type: "integer"
+              name:
+                description: "Entity name"
+                type: "string"
+              tls:
+                description: "TLS mode"
+                type: "string"
+              id:
+                description: "Entity id"
+                type: "string"
+              clientAuth:
+                description: "Client authentication mode"
+                type: "string"
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "data-exporters.proxy.otoroshi.io"
+  creationTimestamp: null
+spec:
+  group: "proxy.otoroshi.io"
+  names:
+    kind: "DataExporter"
+    plural: "data-exporters"
+    singular: "data-exporter"
+  scope: "Namespaced"
+  versions:
+  - name: "v1alpha1"
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+  - name: "v1"
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        description: "Module to export otoroshi specific events to whatever destination\
+          \ you want"
+        type: "object"
+        properties:
+          metadata:
+            type: "object"
+          apiVersion:
+            description: "APIVersion defines the versioned schema of this representation\
+              \ of an object. Servers should convert recognized schemas to the latest\
+              \ internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            type: "string"
+          kind:
+            description: "Kind is a string value representing the REST resource this\
+              \ object represents. Servers may infer this from the endpoint the client\
+              \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            type: "string"
+          spec:
+            description: "Module to export otoroshi specific events to whatever destination\
+              \ you want"
+            type: "object"
+            properties:
+              metadata:
+                type: "object"
+                additionalProperties:
+                  type: "string"
+                description: "Metadata"
+              type:
+                description: "Type of data exporter"
+                type: "string"
+              _loc:
+                description: "location"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
+              enabled:
+                description: "Boolean"
+                type: "boolean"
+              groupDuration:
+                description: "duration"
+                type: "number"
+              tags:
+                type: "array"
+                items:
+                  type: "string"
+                description: "Entity tags"
+              jsonWorkers:
+                format: "int32"
+                description: "nb workers"
+                type: "integer"
+              name:
+                description: "Name"
+                type: "string"
+              groupSize:
+                format: "int32"
+                description: "Group size"
+                type: "integer"
+              id:
+                description: "Id"
+                type: "string"
+              projection:
+                description: "projection"
+                type: "object"
+              filtering:
+                description: "filtering"
+                type: "object"
+                properties:
+                  include:
+                    type: "array"
+                    items:
+                      type: "object"
+                    description: "Exclude the events matching one of those filters"
+                  exclude:
+                    type: "array"
+                    items:
+                      type: "object"
+                    description: "Include the events matching one of those filters"
+              config:
+                description: "Data Exporter config"
+                type: "object"
+                properties:
+                  clusterUri:
+                    description: "Cluster URL"
+                    type: "string"
+                  apiKey:
+                    description: "Sendgrid apikey"
+                    type: "string"
+                  indexSettings:
+                    description: "???"
+                    type: "object"
+                    properties:
+                      clientSide:
+                        description: "???"
+                        type: "boolean"
+                      interval:
+                        type: "string"
+                        x-kubernetes-preserve-unknown-fields: true
+                        description: "???"
+                  mtlsConfig:
+                    description: "TLS config when calling webhook"
+                    type: "object"
+                    properties:
+                      mtls:
+                        description: "Enabled"
+                        type: "boolean"
+                      loose:
+                        description: "Loose verification"
+                        type: "boolean"
+                      trustAll:
+                        description: "Trust any certificate"
+                        type: "boolean"
+                      trustedCerts:
+                        type: "array"
+                        items:
+                          type: "string"
+                        description: "Trusted cert. ids"
+                      certs:
+                        type: "array"
+                        items:
+                          type: "string"
+                        description: "Trusted cert. ids"
+                  tlsTrustCertsFilePath:
+                    description: "Trusted cert path"
+                    type: "string"
+                  apiKeyPrivate:
+                    description: "Private key"
+                    type: "string"
+                  type:
+                    description: "the kind of mailer"
+                    type: "string"
+                  path:
+                    description: "File path"
+                    type: "string"
+                  ref:
+                    description: "Script id"
+                    type: "string"
+                  password:
+                    description: "Elastic password"
+                    type: "string"
+                  servers:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "URLs of the kafka servers"
+                  truststore:
+                    description: "Optional truststore"
+                    type: "string"
+                  keystore:
+                    description: "Optional keystore"
+                    type: "string"
+                  sendEvents:
+                    description: "Send events to it, or just connect"
+                    type: "boolean"
+                  applyTemplate:
+                    description: "???"
+                    type: "boolean"
+                  tenant:
+                    description: "Pulsar tenant"
+                    type: "string"
+                  headers:
+                    type: "object"
+                    additionalProperties:
+                      type: "string"
+                    description: "Sender headers"
+                  index:
+                    description: "Index name"
+                    type: "string"
+                  maxFileSize:
+                    format: "int32"
+                    description: "Max file size in bytes"
+                    type: "integer"
+                  uri:
+                    description: "Pulsar cluster url"
+                    type: "string"
+                  version:
+                    description: "???"
+                    type: "string"
+                  url:
+                    description: "Sender URL"
+                    type: "string"
+                  labels:
+                    type: "object"
+                    additionalProperties:
+                      type: "string"
+                    description: "Exposed labels"
+                  eu:
+                    description: "European tenant"
+                    type: "boolean"
+                  keyPass:
+                    description: "Optional keypass"
+                    type: "string"
+                  domain:
+                    description: "Mailgun domain"
+                    type: "string"
+                  namespace:
+                    description: "Pulsar namespace"
+                    type: "string"
+                  topic:
+                    description: "Pulsar topic"
+                    type: "string"
+                  apiKeyPublic:
+                    description: "Public key"
+                    type: "string"
+                  to:
+                    description: "Destination email address"
+                    type: "array"
+                    items:
+                      type: "object"
+                      properties:
+                        name:
+                          description: "Destination name"
+                          type: "string"
+                        email:
+                          description: "Email address"
+                          type: "string"
+                  config:
+                    description: "Script config"
+                    type: "object"
+                  user:
+                    description: "Elastic user"
+                    type: "string"
+              sendWorkers:
+                format: "int32"
+                description: "send workers"
+                type: "integer"
+              desc:
+                description: "Description"
+                type: "string"
+              bufferSize:
+                format: "int32"
+                description: "buffer size"
+                type: "integer"
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "admins.proxy.otoroshi.io"
+  creationTimestamp: null
+spec:
+  group: "proxy.otoroshi.io"
+  names:
+    kind: "Admin"
+    plural: "admins"
+    singular: "admin"
+  scope: "Namespaced"
+  versions:
+  - name: "v1alpha1"
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+  - name: "v1"
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        description: "An otoroshi admin user"
+        type: "object"
+        properties:
+          metadata:
+            type: "object"
+          apiVersion:
+            description: "APIVersion defines the versioned schema of this representation\
+              \ of an object. Servers should convert recognized schemas to the latest\
+              \ internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            type: "string"
+          kind:
+            description: "Kind is a string value representing the REST resource this\
+              \ object represents. Servers may infer this from the endpoint the client\
+              \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            type: "string"
+          spec:
+            description: "An otoroshi admin user"
+            type: "object"
+            properties:
+              createdAt:
+                description: "User creation date"
+                type: "number"
+              password:
+                description: "User password (bcrypt hashed)"
+                type: "string"
+              metadata:
+                type: "object"
+                additionalProperties:
+                  type: "string"
+                description: "Entity metadata"
+              rights:
+                description: "User rights"
+                type: "object"
+                properties:
+                  rights:
+                    description: "Access rights of a user"
+                    type: "array"
+                    items:
+                      type: "object"
+                      properties:
+                        teams:
+                          description: "Access rights on teams"
+                          type: "array"
+                          items:
+                            type: "object"
+                            properties:
+                              canRead:
+                                description: "Can this access right read data"
+                                type: "boolean"
+                              value:
+                                description: "Access pattern"
+                                type: "string"
+                              canWrite:
+                                description: "Can this access right write data"
+                                type: "boolean"
+                        tenant:
+                          description: "Access rights on organizations"
+                          type: "object"
+                          properties:
+                            canWrite:
+                              description: "Can this access right write data"
+                              type: "boolean"
+                            value:
+                              description: "Access pattern"
+                              type: "string"
+                            canRead:
+                              description: "Can this access right read data"
+                              type: "boolean"
+              type:
+                description: "Admin kind"
+                type: "string"
+              label:
+                description: "User label"
+                type: "string"
+              _loc:
+                description: "Entity location"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
+              username:
+                description: "User username"
+                type: "string"
+              tags:
+                type: "array"
+                items:
+                  type: "string"
+                description: "Entity tags"

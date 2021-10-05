@@ -13780,23 +13780,9 @@
             "description" : "Enabled",
             "type" : "boolean"
           },
-          "actualTrustedCerts" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.ssl.Cert"
-            },
-            "description" : "???"
-          },
           "loose" : {
             "description" : "Loose verification",
             "type" : "boolean"
-          },
-          "actualCerts" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.ssl.Cert"
-            },
-            "description" : "???"
           },
           "trustAll" : {
             "description" : "Trust any certificate",
@@ -13835,10 +13821,6 @@
               "type" : "string"
             },
             "description" : "Verifiers ids"
-          },
-          "bitmap$0" : {
-            "description" : "???",
-            "type" : "boolean"
           },
           "type" : {
             "description" : "the kind of verifier",
@@ -14367,22 +14349,6 @@
             "description" : "Did the service respond with the logic check",
             "type" : "boolean"
           },
-          "$atproduct" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "$attimestamp" : {
-            "description" : "???",
-            "type" : "number"
-          },
-          "$attype" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "$atserviceId" : {
-            "description" : "???",
-            "type" : "string"
-          },
           "status" : {
             "format" : "int32",
             "description" : "Check status",
@@ -14390,14 +14356,6 @@
           },
           "url" : {
             "description" : "Checked url",
-            "type" : "string"
-          },
-          "$atid" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "$atservice" : {
-            "description" : "???",
             "type" : "string"
           },
           "duration" : {
@@ -14765,10 +14723,6 @@
             "description" : "Verifier name",
             "type" : "string"
           },
-          "bitmap$0" : {
-            "description" : "???",
-            "type" : "boolean"
-          },
           "source" : {
             "description" : "Where to find the jwt token",
             "$ref" : "#/components/schemas/otoroshi.models.JwtTokenLocation"
@@ -14822,40 +14776,16 @@
         "description" : "Access rights for organizations",
         "type" : "object",
         "properties" : {
-          "wildcard" : {
-            "description" : "???",
-            "type" : "boolean"
-          },
           "canWrite" : {
             "description" : "Can this access right write data",
-            "type" : "boolean"
-          },
-          "containsWildcard" : {
-            "description" : "???",
-            "type" : "boolean"
-          },
-          "raw" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "plain" : {
-            "description" : "???",
             "type" : "boolean"
           },
           "value" : {
             "description" : "Access pattern",
             "type" : "string"
           },
-          "asTenantId" : {
-            "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.models.TenantId"
-          },
           "canRead" : {
             "description" : "Can this access right read data",
-            "type" : "boolean"
-          },
-          "canReadWrite" : {
-            "description" : "???",
             "type" : "boolean"
           }
         }
@@ -15388,31 +15318,9 @@
             "description" : "Detect if an apikey is present but do not fail if not",
             "type" : "boolean"
           },
-          "_domain" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "allPaths" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "???"
-          },
           "allowHttp10" : {
             "description" : "Allow HTTP/1.0 requests",
             "type" : "boolean"
-          },
-          "allHosts" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "???"
-          },
-          "toHost" : {
-            "description" : "???",
-            "type" : "string"
           },
           "subdomain" : {
             "description" : "The subdomain on which the service is available",
@@ -15486,10 +15394,6 @@
           "id" : {
             "description" : "A unique random string to identify your service",
             "type" : "string"
-          },
-          "hasNoRoutingConstraints" : {
-            "description" : "???",
-            "type" : "boolean"
           },
           "removeHeadersIn" : {
             "type" : "array",
@@ -15739,24 +15643,8 @@
         "description" : "Access rights for teams",
         "type" : "object",
         "properties" : {
-          "canReadWrite" : {
-            "description" : "???",
-            "type" : "boolean"
-          },
-          "asTeamId" : {
-            "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.models.TeamId"
-          },
           "canRead" : {
             "description" : "Can this access right read data",
-            "type" : "boolean"
-          },
-          "raw" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "containsWildcard" : {
-            "description" : "???",
             "type" : "boolean"
           },
           "value" : {
@@ -15765,14 +15653,6 @@
           },
           "canWrite" : {
             "description" : "Can this access right write data",
-            "type" : "boolean"
-          },
-          "wildcard" : {
-            "description" : "???",
-            "type" : "boolean"
-          },
-          "plain" : {
-            "description" : "???",
             "type" : "boolean"
           }
         }
@@ -15790,31 +15670,9 @@
             "description" : "Let's encrypt (ACME) generated",
             "type" : "boolean"
           },
-          "bitmap$0" : {
-            "format" : "int32",
-            "description" : "???",
-            "type" : "integer"
-          },
           "keypair" : {
             "description" : "Is cert used for its keypair only ?",
             "type" : "boolean"
-          },
-          "metadata" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "object"
-            } ],
-            "description" : "???"
-          },
-          "certificate" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string",
-              "description" : "pem encoded X509 certificate"
-            } ],
-            "description" : "???"
           },
           "to" : {
             "description" : "Stop date",
@@ -15839,14 +15697,6 @@
             "description" : "Entity id",
             "type" : "string"
           },
-          "certificates" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "description" : "pem encoded X509 certificate"
-            },
-            "description" : "???"
-          },
           "revoked" : {
             "description" : "Certificate is revoked",
             "type" : "boolean"
@@ -15859,10 +15709,6 @@
             "description" : "Is cert a client cert ?",
             "type" : "boolean"
           },
-          "notRevoked" : {
-            "description" : "???",
-            "type" : "boolean"
-          },
           "ca" : {
             "description" : "Is cert a CA ?",
             "type" : "boolean"
@@ -15871,33 +15717,13 @@
             "description" : "Entity name",
             "type" : "string"
           },
-          "caFromChain" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string",
-              "description" : "pem encoded X509 certificate"
-            } ],
-            "description" : "???"
-          },
           "chain" : {
             "description" : "Certicates chain (PEM encoded)",
             "type" : "string"
           },
-          "expired" : {
-            "description" : "???",
-            "type" : "boolean"
-          },
           "_loc" : {
             "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
-          "certificatesRaw" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "???"
           },
           "password" : {
             "oneOf" : [ {
@@ -15907,23 +15733,12 @@
             } ],
             "description" : "Certificate password"
           },
-          "allDomains" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "???"
-          },
           "sans" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Certificate SANs"
-          },
-          "certType" : {
-            "description" : "???",
-            "type" : "string"
           },
           "selfSigned" : {
             "description" : "Is cert self signed",
@@ -15936,20 +15751,12 @@
             },
             "description" : "Entity metadata"
           },
-          "cacheKey" : {
-            "description" : "???",
-            "type" : "string"
-          },
           "privateKey" : {
             "description" : "Certificate private key (PEM encoded)",
             "type" : "string"
           },
           "domain" : {
             "description" : "Certificate domain",
-            "type" : "string"
-          },
-          "contentHash" : {
-            "description" : "???",
             "type" : "string"
           },
           "caRef" : {
@@ -15959,10 +15766,6 @@
               "type" : "string"
             } ],
             "description" : "Reference to the CA (if any)"
-          },
-          "notExpired" : {
-            "description" : "???",
-            "type" : "boolean"
           },
           "description" : {
             "description" : "Entity description",
@@ -15975,14 +15778,6 @@
           "valid" : {
             "description" : "Is cert valid",
             "type" : "boolean"
-          },
-          "isValid" : {
-            "description" : "???",
-            "type" : "boolean"
-          },
-          "cleanChain" : {
-            "description" : "???",
-            "type" : "string"
           }
         }
       },
@@ -16955,10 +16750,6 @@
             "description" : "Algo settings",
             "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
           },
-          "bitmap$0" : {
-            "description" : "???",
-            "type" : "boolean"
-          },
           "source" : {
             "description" : "Token source",
             "$ref" : "#/components/schemas/otoroshi.models.JwtTokenLocation"
@@ -17693,10 +17484,6 @@
             },
             "description" : "Tags for this target"
           },
-          "theHost" : {
-            "description" : "???",
-            "type" : "string"
-          },
           "host" : {
             "description" : "The host on which the HTTP call will be forwarded. Can be a domain name, or an IP address. Can also have a port",
             "type" : "string"
@@ -17728,11 +17515,6 @@
               "type" : "string"
             } ],
             "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI"
-          },
-          "thePort" : {
-            "format" : "int32",
-            "description" : "???",
-            "type" : "integer"
           },
           "mtlsConfig" : {
             "description" : "TLS settings to contact this target",

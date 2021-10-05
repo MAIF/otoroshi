@@ -300,8 +300,8 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       }
 
       val fields     = (clazz.getFieldInfo.asScala ++ clazz.getDeclaredFieldInfo.asScala).toSet
-        //.filter(_.isFinal)
-        //.filter(i => paramNames.contains(i.getName))
+        .filter(_.isFinal)
+        .filter(i => paramNames.contains(i.getName))
       var properties = Json.obj()
       var required   = Json.arr()
 
@@ -1347,12 +1347,12 @@ class OpenApiGeneratorRunner extends App {
 
     val res = crds().foldLeft("")((acc, curr) => s"$acc${write(curr)}")
 
-    val file = new File("../kubernetes/helm/otoroshi/crds/crds-1.22.yaml")
-    println(s"write crds-1.22.yaml file: '${file.getAbsolutePath}'")
+    val file = new File("../kubernetes/helm/otoroshi/crds/crds-with-schema.yaml")
+    println(s"write crds-with-schema.yaml file: '${file.getAbsolutePath}'")
     Files.write(file.toPath, res.getBytes(StandardCharsets.UTF_8))
 
-    val defaultFile = new File("../kubernetes/helm/otoroshi/crds/crds-1.22-simple.yaml")
-    println(s"write crds-1.22-simple.yaml file: '${defaultFile.getAbsolutePath}'")
+    val defaultFile = new File("../kubernetes/helm/otoroshi/crds/crds.yaml")
+    println(s"write crds.yaml file: '${defaultFile.getAbsolutePath}'")
     Files.write(defaultFile.toPath, crds(true).foldLeft("")((acc, curr) => s"$acc${write(curr)}").getBytes(StandardCharsets.UTF_8))
   }
 
