@@ -2,7 +2,7 @@
 @import otoroshi.models.GlobalConfig
 @import play.api.libs.json.Json
 
-@(user: BackOfficeUser, config: GlobalConfig, _env: otoroshi.env.Env, version: String, possibleTenants: Seq[String])
+@(user: BackOfficeUser, config: GlobalConfig, _env: otoroshi.env.Env, version: String, possibleTenants: Seq[String], uiMode: String)
 
 @moreScripts = {
     <script src="@routes.Assets.versioned("javascripts/d3.v3.min.js")"></script>
@@ -33,6 +33,7 @@
     </script>
 }
 
-@main(_env.title, user, _env, moreScripts = moreScripts) {
+@main(_env.title, user, _env, moreScripts = moreScripts, uiMode = uiMode) {
     <div id="app"></div>
+    <span>@(uiMode)</span>
 }

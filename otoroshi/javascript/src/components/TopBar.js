@@ -524,9 +524,8 @@ export class TopBar extends Component {
                 </li>
               )}
               <li>
-                <a href="">
-                  <i className="far fa-moon fa-lg"></i>
-                  <i className="far fa-lightbulb fa-lg"></i>
+                <a className="prevent-click" href="#">
+                  <i id="otoroshi-dark-light-icon" className=" far fa-moon fa-lg" title="Dark/Light Mode" />
                 </a>
               </li>
               <li className="dropdown userManagement">
