@@ -55,10 +55,10 @@ body.white-mode {
     @include bright-mode_background--light;
   }
   .nav > li > a:hover,
-  .btn-primary:hover,
-  .btn-success:hover,
-  .btn-info:hover,
-  .btn-danger:hover,
+  .btn-primary:not([disabled]):hover,
+  .btn-success:not([disabled]):hover,
+  .btn-info:not([disabled]):hover,
+  .btn-danger:not([disabled]):hover,
   .btn-danger:hover .fa-lock,
   .btn-danger .fa-lock,
   .dropdown-menu > li > a:focus,
@@ -93,6 +93,8 @@ body.white-mode {
 
   .sidebar a,
   .fa-cog,
+  .fa-moon,
+  .fa-lightbulb,
   .metric,
   .btn-primary,
   .btn-success,
