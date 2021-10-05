@@ -55,16 +55,18 @@
     color: $primaryColor;
   }
 
-  .navbar-right > li {
-    display: inline-block;
+  .navbar-right {
+    > li {
+      display: inline-block;
 
-    > a {
-      color: $primaryColor;
+      > a {
+        color: $primaryColor;
 
-      &:focus,
-      &:hover {
-        background: none;
-        cursor: pointer;
+        &:focus,
+        &:hover {
+          background: none;
+          cursor: pointer;
+        }
       }
     }
   }
@@ -82,10 +84,13 @@
 .fa-cog {
   font-size: 1.5em;
   top: 5px;
-  color: #fff;
   @media screen and (min-width:768px) {
     padding-right: 15px;
   }
+}
+
+.fa-lightbulb, .fa-moon, .fa-cog{
+  color: #fff;
 }
 
 #navbar .Select-control {

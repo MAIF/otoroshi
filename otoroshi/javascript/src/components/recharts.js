@@ -76,15 +76,15 @@ export class Histogram extends Component {
 
     return (
       <div
+        className="sub-container__bg-color"
         style={{
-          backgroundColor: '#494948',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
           width: '100%',
         }}>
-        <h4 style={{ color: 'white' }}>{this.props.title}</h4>
+        <h4 style={{marginTop: 10}}>{this.props.title}</h4>
         <ResponsiveContainer height={this.props.height || 200}>
           <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <XAxis dataKey="name" hide={!!this.props.hideXAxis} />
@@ -152,14 +152,14 @@ export class RoundChart extends Component {
 
     return (
       <div
+        className="sub-container__bg-color"
         style={{
-          backgroundColor: '#494948',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
         }}>
-        <h4 style={{ color: 'white' }}>{this.props.title}</h4>
+        <h4 style={{marginTop: 10}}>{this.props.title}</h4>
         <ResponsiveContainer height={this.props.size ? this.props.size + 100 : 200}>
           <PieChart>
             <Pie

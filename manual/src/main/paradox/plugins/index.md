@@ -7,6 +7,7 @@ Otoroshi provides some plugins out of the box
 * @ref:[Allowed users only](./otoroshi-plugins-users-hasallowedusersvalidator.md)
 * @ref:[Apikey auth module](./otoroshi-plugins-apikeys-apikeyauthmodule.md)
 * @ref:[Apikey from Biscuit token extractor](./otoroshi-plugins-biscuit-biscuitextractor.md)
+* @ref:[Basic Auth. caller](./otoroshi-plugins-authcallers-basicauthcaller.md)
 * @ref:[Biscuit token validator](./otoroshi-plugins-biscuit-biscuitvalidator.md)
 * @ref:[Body logger](./otoroshi-plugins-loggers-bodylogger.md)
 * @ref:[Client Certificate + Api Key only](./otoroshi-plugins-clientcert-hasclientcertmatchingapikeyvalidator.md)
@@ -37,6 +38,7 @@ Otoroshi provides some plugins out of the box
 * @ref:[Kubernetes sidecar injector webhook](./otoroshi-plugins-jobs-kubernetes-kubernetesadmissionwebhooksidecarinjector.md)
 * @ref:[Kubernetes to Otoroshi certs. synchronizer](./otoroshi-plugins-jobs-kubernetes-kubernetestootoroshicertsyncjob.md)
 * @ref:[Mirroring plugin](./otoroshi-plugins-mirror-mirroringplugin.md)
+* @ref:[OAuth2 caller](./otoroshi-plugins-authcallers-oauth2caller.md)
 * @ref:[OIDC access_token as apikey](./otoroshi-plugins-oidc-oidcaccesstokenasapikey.md)
 * @ref:[OIDC access_token validator](./otoroshi-plugins-oidc-oidcaccesstokenvalidator.md)
 * @ref:[OIDC headers](./otoroshi-plugins-oidc-oidcheaders.md)
@@ -55,7 +57,6 @@ Otoroshi provides some plugins out of the box
 * @ref:[User-Agent header](./otoroshi-plugins-useragent-useragentinfoheader.md)
 * @ref:[Workflow endpoint](./otoroshi-plugins-workflow-workflowendpoint.md)
 * @ref:[Workflow job](./otoroshi-plugins-workflow-workflowjob.md)
-* @ref:[otoroshi.plugins.composite.CompositePlugin](./otoroshi-plugins-composite-compositeplugin.md)
 
 @@@ index
 
@@ -64,6 +65,7 @@ Otoroshi provides some plugins out of the box
 * [Allowed users only](./otoroshi-plugins-users-hasallowedusersvalidator.md)
 * [Apikey auth module](./otoroshi-plugins-apikeys-apikeyauthmodule.md)
 * [Apikey from Biscuit token extractor](./otoroshi-plugins-biscuit-biscuitextractor.md)
+* [Basic Auth. caller](./otoroshi-plugins-authcallers-basicauthcaller.md)
 * [Biscuit token validator](./otoroshi-plugins-biscuit-biscuitvalidator.md)
 * [Body logger](./otoroshi-plugins-loggers-bodylogger.md)
 * [Client Certificate + Api Key only](./otoroshi-plugins-clientcert-hasclientcertmatchingapikeyvalidator.md)
@@ -94,6 +96,7 @@ Otoroshi provides some plugins out of the box
 * [Kubernetes sidecar injector webhook](./otoroshi-plugins-jobs-kubernetes-kubernetesadmissionwebhooksidecarinjector.md)
 * [Kubernetes to Otoroshi certs. synchronizer](./otoroshi-plugins-jobs-kubernetes-kubernetestootoroshicertsyncjob.md)
 * [Mirroring plugin](./otoroshi-plugins-mirror-mirroringplugin.md)
+* [OAuth2 caller](./otoroshi-plugins-authcallers-oauth2caller.md)
 * [OIDC access_token as apikey](./otoroshi-plugins-oidc-oidcaccesstokenasapikey.md)
 * [OIDC access_token validator](./otoroshi-plugins-oidc-oidcaccesstokenvalidator.md)
 * [OIDC headers](./otoroshi-plugins-oidc-oidcheaders.md)
@@ -112,7 +115,6 @@ Otoroshi provides some plugins out of the box
 * [User-Agent header](./otoroshi-plugins-useragent-useragentinfoheader.md)
 * [Workflow endpoint](./otoroshi-plugins-workflow-workflowendpoint.md)
 * [Workflow job](./otoroshi-plugins-workflow-workflowjob.md)
-* [otoroshi.plugins.composite.CompositePlugin](./otoroshi-plugins-composite-compositeplugin.md)
 
 @@@
 

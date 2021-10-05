@@ -208,6 +208,7 @@ a.navbar-brand :focus, a.navbar-brand:hover {
   color: white;
   font-weight: 700;
   margin-bottom: 40px;
+  font-size: 36px;
 }
 
 /* Supporting marketing content */

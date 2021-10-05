@@ -237,7 +237,7 @@ class BackOfficeController(
             .filter(t => ctx.user.rights.rights.exists(r => r.tenant.canRead && r.tenant.matches(t.id)))
             .filterNot(_.id == TenantId.all)
             .map(_.id.value)
-          Ok(otoroshi.views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, userTenants))
+          Ok(otoroshi.views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, userTenants, ctx.request.session.get("ui-mode").getOrElse("dark")))
         }
       }
     }
@@ -250,7 +250,7 @@ class BackOfficeController(
             .filter(t => ctx.user.rights.rights.exists(r => r.tenant.canRead && r.tenant.matches(t.id)))
             .filterNot(_.id == TenantId.all)
             .map(_.id.value)
-          Ok(otoroshi.views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, userTenants))
+          Ok(otoroshi.views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, userTenants, ctx.request.session.get("ui-mode").getOrElse("dark")))
         }
       }
     }
@@ -1463,5 +1463,11 @@ class BackOfficeController(
         }
       }
     }
+  }
+
+  def updateUiMode() =  BackOfficeActionAuth.async(parse.json) { ctx =>
+    implicit val reqh = ctx.request
+    val mode = ctx.request.body.select("mode").asOpt[String].getOrElse("dark")
+    NoContent.addingToSession("ui-mode" -> mode).future
   }
 }

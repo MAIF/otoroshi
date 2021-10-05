@@ -11,7 +11,7 @@
         <meta name="robots" content="noindex, nofollow">
         <link rel="shortcut icon" type="image/png" href="/__otoroshi_assets/images/favicon.png">
         <link rel="stylesheet" href="/__otoroshi_assets/stylesheets/bootstrap.min.css">
-        <link rel="stylesheet" href="/__otoroshi_assets/stylesheets/bootstrap-theme.min.css">
+        <!-- <link rel="stylesheet" href="/__otoroshi_assets/stylesheets/bootstrap-theme.min.css"> -->
         <link rel="stylesheet" media="screen" href="/__otoroshi_assets/stylesheets/otoroshiapps.css">
         <link href="@routes.Assets.versioned("fonts/font-awesome/css/fontawesome.min.css")" rel="stylesheet">
         <link href="@routes.Assets.versioned("fonts/raleway/raleway.css")" rel="stylesheet">
@@ -21,9 +21,12 @@
         <div class="container">
             <div class="header clearfix">
                 <nav class="navbar-inverse">
-                    <ul class="nav navbar-nav navbar-right hide">
-                        <li role="presentation"><a href="@otoroshi.controllers.routes.BackOfficeController.index()">Home</a></li>
-                        <li role="presentation"><a href="@otoroshi.controllers.routes.BackOfficeController.dashboard()"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li>
+                            <a href="">
+                                <i id="otoroshi-dark-light-icon" class=" far fa-moon fa-lg"></i>
+                            </a>
+                        </li>
                     </ul>
                 </nav>
                 <a class="navbar-brand" href="/" style="display: flex;">
@@ -33,6 +36,7 @@
             @content
         </div>
         <script type="text/javascript" src="@routes.Assets.versioned("javascripts/jquery.js")"></script>
+        <script type="text/javascript" src="@routes.Assets.versioned(s"javascripts/dark-light-mode.js?v=${_env.hash}")"></script>
         @moreScripts
     </body>
 </html>

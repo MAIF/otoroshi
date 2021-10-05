@@ -44,13 +44,7 @@ class Target extends Component {
     const target = this.props.target;
     return (
       <div
-        style={{
-          backgroundColor: 'rgb(65, 65, 65)',
-          borderRadius: 4,
-          padding: 10,
-          width: '100%',
-          marginBottom: 5,
-        }}>
+      className="sub-container sub-container__bg-color">
         <Form
           value={{ domain, target }}
           onChange={this.props.onChange}

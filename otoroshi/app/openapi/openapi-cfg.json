@@ -2236,12 +2236,22 @@
           "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
         }
       }
+    },
+    "otoroshi.ssl.Cert" : {
+      "properties" : {
+        "certType" : {
+          "type" : "string",
+          "description" : "the kind of certificate",
+          "enum" : [ "client", "ca", "letsEncrypt", "keypair", "selfSigned", "certificate" ]
+        }
+      }
     }
   },
   "fields_rename":   {
     "location:otoroshi.models.EntityLocation" : "_loc",
     "typ:java.lang.String" : "type",
-    "typ:otoroshi.models.DataExporterConfigType" : "type"
+    "typ:otoroshi.models.DataExporterConfigType" : "type",
+    "otoroshi.ssl.Cert.entityMetadata" : "metadata"
   },
   "add_fields":   { }
 }

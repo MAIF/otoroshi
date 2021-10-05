@@ -27,7 +27,7 @@ export class Collapse extends Component {
           <div className="form-group">
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10" onClick={this.toggle} style={{ cursor: 'pointer' }}>
-              <span style={{ color: 'grey', fontWeight: 'bold', marginTop: 7 }}>
+              <span style={{ color: '#f9b000', fontWeight: 'bold', marginTop: 7 }}>
                 {this.props.label}
               </span>
               <button
@@ -48,7 +48,7 @@ export class Collapse extends Component {
           <div className="form-group">
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10" onClick={this.toggle} style={{ cursor: 'pointer' }}>
-              <span style={{ color: 'grey', fontWeight: 'bold', marginTop: 7 }}>
+              <span style={{ color: '#f9b000', fontWeight: 'bold', marginTop: 7 }}>
                 {this.props.label}
               </span>
               <button
@@ -86,7 +86,7 @@ export class Panel extends Component {
   render() {
     return (
       <div className="col-xs-12 col-sm-3">
-        <div className="panel panel-primary" style={{ marginBottom: 0 }}>
+        <div className="panel panel-primary sub-container__bg-color" style={{ marginBottom: 0 }}>
           <div className="panel-heading" style={{ cursor: 'pointer' }} onClick={this.toggle}>
             {this.props.title}
           </div>

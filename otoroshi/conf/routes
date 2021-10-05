@@ -40,6 +40,7 @@ GET     /bo/api/apps                                          otoroshi.controlle
 # GET     /bo/api/papps/sessions                              otoroshi.controllers.BackOfficeController.privateAppsSessions()
 # DELETE  /bo/api/papps/sessions/:id                          otoroshi.controllers.BackOfficeController.discardPrivateAppsSession(id)
 # DELETE  /bo/api/papps/sessions                              otoroshi.controllers.BackOfficeController.discardAllPrivateAppsSessions()
+POST    /bo/api/ui-mode                                       otoroshi.controllers.BackOfficeController.updateUiMode()
 POST    /bo/api/panic                                         otoroshi.controllers.BackOfficeController.panicMode()
 GET     /bo/api/events/audit                                  otoroshi.controllers.BackOfficeController.auditEvents()
 GET     /bo/api/events/alert                                  otoroshi.controllers.BackOfficeController.alertEvents()

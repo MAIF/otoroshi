@@ -523,6 +523,11 @@ export class TopBar extends Component {
                   </a>
                 </li>
               )}
+              <li>
+                <a className="prevent-click" href="#">
+                  <i id="otoroshi-dark-light-icon" className=" far fa-moon fa-lg" title="Dark/Light Mode" />
+                </a>
+              </li>
               <li className="dropdown userManagement">
                 <a
                   href="#"
@@ -538,8 +543,8 @@ export class TopBar extends Component {
                     <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>
                   </li>*/}
                   <li>
-                    <a href="#">
-                      <img src="/assets/images/otoroshi-logo-inverse.png" width="16" /> version{' '}
+                    <a href="#" className="logo-xs">
+                      <img src="/assets/images/otoroshi-logo-inverse.png"  width="16" /> version{' '}
                       {window.__currentVersion}
                     </a>
                   </li>

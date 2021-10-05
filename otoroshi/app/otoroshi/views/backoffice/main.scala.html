@@ -1,6 +1,6 @@
 @import otoroshi.models.BackOfficeUser
 
-@(title: String, user: BackOfficeUser, _env: otoroshi.env.Env, moreScripts: Html = play.twirl.api.Html(""), moreStyles: Html = play.twirl.api.Html(""))(content: Html)
+@(title: String, user: BackOfficeUser, _env: otoroshi.env.Env, moreScripts: Html = play.twirl.api.Html(""), moreStyles: Html = play.twirl.api.Html(""), uiMode: String = "dark")(content: Html)
 
 <!DOCTYPE html>
 <html lang="en">
@@ -11,7 +11,7 @@
         <meta name="theme-color" content="#000000">
         <meta name="robots" content="noindex, nofollow">
         <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap.min.css")">
-        <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap-theme.min.css")">
+        <!-- <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap-theme.min.css")"> -->
         @if(_env.liveJs) {
             <link rel="stylesheet" href="//localhost:3040/assets/javascripts/bundle/backoffice.css">
 
@@ -27,7 +27,7 @@
         <link href="@routes.Assets.versioned("fonts/font-awesome/css/fontawesome.min.css")" rel="stylesheet">
         @moreStyles
     </head>
-    <body>
+    <body class="@(uiMode)-mode">
         @content
         <div id="topbar-popup"></div>
         @if(_env.liveJs) {
@@ -36,6 +36,7 @@
             <script type="text/javascript" src="@routes.Assets.versioned(s"javascripts/bundle/backoffice.js?v=${_env.hash}")"></script>
         }
         <script type="text/javascript">window.__env = '@_env.env';</script>
+        <script type="text/javascript" src="@routes.Assets.versioned(s"javascripts/dark-light-mode.js?v=${_env.hash}")"></script>
         @moreScripts
     </body>
 </html>
