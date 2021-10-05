@@ -113,24 +113,26 @@ object implicits {
     def select(index: Int): JsLookupResult   = obj \ index
     def at(path: String): JsLookupResult = {
       val parts = path.split("\\.").toSeq
-      parts.foldLeft(obj) {
-        case (source: JsObject, part) => (source \ part).as[JsValue]
-        case (source: JsArray, part)  => (source \ part.toInt).as[JsValue]
-        case (value, part)            => JsNull
+      parts.foldLeft(Option(obj)) {
+        case (Some(source: JsObject), part) => (source \ part).asOpt[JsValue]
+        case (Some(source: JsArray), part)  => (source \ part.toInt).asOpt[JsValue]
+        case (Some(value), part)            => None
+        case (None, _) => None
       } match {
-        case JsNull => JsUndefined(s"path '${path}' does not exists")
-        case value  => JsDefined(value)
+        case None => JsUndefined(s"path '${path}' does not exists")
+        case Some(value)  => JsDefined(value)
       }
     }
     def atPointer(path: String): JsLookupResult = {
       val parts = path.split("/").toSeq.filterNot(_.trim.isEmpty)
-      parts.foldLeft(obj) {
-        case (source: JsObject, part) => (source \ part).as[JsValue]
-        case (source: JsArray, part)  => (source \ part.toInt).as[JsValue]
-        case (value, part)            => JsNull
+      parts.foldLeft(Option(obj)) {
+        case (Some(source: JsObject), part) => (source \ part).asOpt[JsValue]
+        case (Some(source: JsArray), part)  => (source \ part.toInt).asOpt[JsValue]
+        case (Some(value), part)            => None
+        case (None, _) => None
       } match {
-        case JsNull => JsUndefined(s"path '${path}' does not exists")
-        case value  => JsDefined(value)
+        case None => JsUndefined(s"path '${path}' does not exists")
+        case Some(value)  => JsDefined(value)
       }
     }
     def atPath(path: String): JsLookupResult = {

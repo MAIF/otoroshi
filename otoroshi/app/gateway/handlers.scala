@@ -363,6 +363,7 @@ class GatewayRequestHandler(
     }
   }
 
+  @inline
   def reverseProxyCall(request: RequestHeader, config: Option[GlobalConfig]): Option[Handler] = {
     request.headers.get("Sec-WebSocket-Version") match {
       case None => {
