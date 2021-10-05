@@ -1531,9 +1531,80 @@
         "$ref" : "#/components/schemas/otoroshi.auth.SamlAuthModuleConfig"
       } ]
     },
+    "play.api.libs.ws.DefaultWSProxyServer" : {
+      "type" : "object",
+      "properties" : {
+        "host" : {
+          "type" : "string",
+          "description" : "The hostname of the proxy server."
+        },
+        "port" : {
+          "type" : "string",
+          "description" : "The port of the proxy server."
+        },
+        "protocol" : {
+          "type" : "string",
+          "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
+        },
+        "principal" : {
+          "type" : "string",
+          "description" : "The principal (aka username) of the credentials for the proxy server."
+        },
+        "password" : {
+          "type" : "string",
+          "description" : "The password for the credentials for the proxy server."
+        },
+        "ntlmDomain" : {
+          "type" : "string",
+          "description" : "The ntlm domain for the proxy server."
+        },
+        "encoding" : {
+          "type" : "string",
+          "description" : "The realm's charset."
+        },
+        "nonProxyHosts" : {
+          "type" : "string",
+          "description" : "The non proxied hosts"
+        }
+      },
+      "description" : "Proxy server"
+    },
     "play.api.libs.ws.WSProxyServer" : {
       "type" : "object",
-      "properties" : { },
+      "properties" : {
+        "host" : {
+          "type" : "string",
+          "description" : "The hostname of the proxy server."
+        },
+        "port" : {
+          "type" : "string",
+          "description" : "The port of the proxy server."
+        },
+        "protocol" : {
+          "type" : "string",
+          "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
+        },
+        "principal" : {
+          "type" : "string",
+          "description" : "The principal (aka username) of the credentials for the proxy server."
+        },
+        "password" : {
+          "type" : "string",
+          "description" : "The password for the credentials for the proxy server."
+        },
+        "ntlmDomain" : {
+          "type" : "string",
+          "description" : "The ntlm domain for the proxy server."
+        },
+        "encoding" : {
+          "type" : "string",
+          "description" : "The realm's charset."
+        },
+        "nonProxyHosts" : {
+          "type" : "string",
+          "description" : "The non proxied hosts"
+        }
+      },
       "description" : "Proxy server"
     },
     "PatchDocument" : {
@@ -2022,6 +2093,60 @@
     }
   },
   "merge_schemas":   {
+    "otoroshi.models.GlobalJwtVerifier" : {
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "description" : "the kind of verifier",
+          "enum" : [ "global" ]
+        }
+      }
+    },
+    "otoroshi.auth.BasicAuthModuleConfig" : {
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "description" : "the type of the module",
+          "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
+        }
+      }
+    },
+    "otoroshi.auth.GenericOauth2ModuleConfig" : {
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "description" : "the type of the module",
+          "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
+        }
+      }
+    },
+    "otoroshi.auth.LdapAuthModuleConfig" : {
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "description" : "the type of the module",
+          "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
+        }
+      }
+    },
+    "otoroshi.auth.Oauth1ModuleConfig" : {
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "description" : "the type of the module",
+          "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
+        }
+      }
+    },
+    "otoroshi.auth.SamlAuthModuleConfig" : {
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "description" : "the type of the module",
+          "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
+        }
+      }
+    },
     "otoroshi.auth.AuthModuleConfig" : {
       "properties" : {
         "type" : {
@@ -2112,5 +2237,11 @@
         }
       }
     }
-  }
+  },
+  "fields_rename":   {
+    "location:otoroshi.models.EntityLocation" : "_loc",
+    "typ:java.lang.String" : "type",
+    "typ:otoroshi.models.DataExporterConfigType" : "type"
+  },
+  "add_fields":   { }
 }
