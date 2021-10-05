@@ -1,12 +1,13 @@
 package otoroshi.utils.yaml
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.dataformat.yaml.{YAMLFactory, YAMLGenerator}
 import play.api.libs.json.{JsValue, Json}
 
 object Yaml {
 
   private val yamlReader = new ObjectMapper(new YAMLFactory())
+  private val yamlMinimizeQuotesReader = new ObjectMapper(new YAMLFactory().enable(YAMLGenerator.Feature.MINIMIZE_QUOTES))
   private val jsonWriter = new ObjectMapper()
 
   def parse(content: String): JsValue = {

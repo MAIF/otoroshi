@@ -3,6 +3,7 @@ package otoroshi.openapi
 import io.github.classgraph._
 import otoroshi.models.Entity
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.yaml.Yaml.write
 import play.api.libs.json._
 
 import java.io.File
@@ -11,7 +12,6 @@ import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.JavaConverters._
 import scala.collection.concurrent.TrieMap
-import scala.util.Try
 
 case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
 
@@ -284,7 +284,8 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         children.flatMap(cl => world.get(cl)).map(cl => visitEntity(cl, clazz.some, result, config))
         adts = adts :+ Json.obj(
           clazz.getName -> Json.obj(
-            "oneOf" -> JsArray(children.map(c => Json.obj("$ref" -> s"#/components/schemas/$c")))
+            "oneOf" -> JsArray(children.map(c => Json.obj("$ref" -> s"#/components/schemas/$c"))
+            )
           )
         )
       }
@@ -297,6 +298,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       val paramNames = params.map { param =>
         param.getName
       }
+
       val fields     = (clazz.getFieldInfo.asScala ++ clazz.getDeclaredFieldInfo.asScala).toSet
         .filter(_.isFinal)
         .filter(i => paramNames.contains(i.getName))
@@ -356,8 +358,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               case None
                   if valueName == "java.lang.Object" && (name == "maxJwtLifespanSecs" || name == "existingSerialNumber") =>
                 Json.obj("type" -> "integer", "format" -> "int64").some
-              case Some(v) =>
-                Json.obj("oneOf" -> Json.arr(nullType, Json.obj("$ref" -> s"#/components/schemas/$valueName"))).some
+              case Some(v) => Json.obj("$ref" -> s"#/components/schemas/$valueName").some
               case _       =>
                 println("fuuuuu opt", name, valueName)
                 None
@@ -494,9 +495,31 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         clazz.getName,
         toMerge.deepMerge(
           Json.obj(
-            "type"        -> "object",
+             "type"        -> "object",
             "description" -> entityDescription(clazz.getName, config),
-            "properties"  -> properties
+            "properties"  -> properties,
+            "openAPIV3Schema" -> Json.obj(
+              "type" -> "object",
+              "description" -> entityDescription(clazz.getName, config),
+              "properties" -> Json.obj(
+                "apiVersion" -> Json.obj(
+                  "description" -> "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+                  "type" -> "string"
+                ),
+                "kind" -> Json.obj(
+                  "description" -> "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+                  "type" -> "string"
+                ),
+                "metadata" -> Json.obj(
+                  "type" -> "object"
+                ),
+                "spec" -> Json.obj(
+                  "type" -> "object",
+                  "description" -> entityDescription(clazz.getName, config),
+                  "properties" -> properties
+                )
+              )
+            )
           )
         )
       )
@@ -877,7 +900,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }
   }
 
-  def run(): JsValue = {
+  def run(): (JsValue, JsObject) = {
     val config = getConfig()
     val result = new TrieMap[String, JsValue]()
 
@@ -891,6 +914,160 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       }
     }
 
+    def reads(path: String): JsPath =
+      path.split("/").foldLeft(JsPath()) { (acc, num) =>
+          acc \ num
+      }
+
+    def replaceSubOneOf(key: String, path: String): Boolean = {
+      val currentObj = result(key).as[JsObject].atPointer(path).asOpt[JsObject] match {
+        case Some(p) => p
+        case _ => Json.obj()
+      }
+
+      ((currentObj \ "type").asOpt[String], (currentObj \ "items").asOpt[JsObject]) match {
+        case (Some(t), Some(items)) if t == "array" && (items \ "$ref").asOpt[String].isDefined =>
+          result.put(key, result(key).transform(
+            reads(path + "/items/$ref").json.prune
+          ).get)
+
+          replaceRef(key, path + "/items", (items \ "$ref").as[String], true)
+
+          true
+        case _ =>
+          currentObj.fields.map {
+            case ("oneOf", oneOfArray) =>
+              val fields = oneOfArray.as[Seq[JsValue]]
+
+              result.put(key, result(key).transform(
+                reads(path + "/oneOf").json.prune
+              ).get)
+
+              fields.find(field => (field \ "type").asOpt[String].isDefined) match {
+                case Some(field) =>
+                  result.put(key, result(key).transform(
+                    reads(path).json.update(__.read[JsObject].map(o => o ++ field.as[JsObject]))
+                  ).get)
+                case None =>
+                  result.put(key, result(key).transform(
+                    reads(path).json.update(__.read[JsObject].map(o => o ++ Json.obj("type" -> "object")))
+                  ).get)
+
+                  val refs = fields.flatMap { rawField =>
+                    val field = (rawField \ "$ref").as[String]
+                    if (field != "#/components/schemas/Null") {
+                      val obj = getRef(field)
+                      (obj \ "oneOf").asOpt[Seq[JsValue]] match {
+                        case Some(arr) => arr.map { f =>
+                          val r = (f \ "$ref").as[String]
+                          if (r != "#/components/schemas/Null")
+                            getRef(r)
+                          else
+                            Json.obj()
+                        }
+                        case _ => Seq(obj)
+                      }
+                    }
+                    else
+                      Seq(Json.obj())
+                  }
+                    .filter(f => f.fields.nonEmpty)
+
+                  if (refs.length == 1)
+                    (refs.head \ "oneOf").asOpt[JsArray] match {
+                      case Some(ob) if ob.value.map(_.as[JsObject]).forall(p => (p \ "$ref").isDefined) =>
+                        result.put(key, result(key).transform(
+                          reads(path).json.update(__.read[JsObject].map(o => o ++ refs.head.as[JsObject])
+                          )
+                        ).get)
+                      case _ =>
+                        result.put(key, result(key).transform(
+                          reads(path).json.update(__.read[JsObject].map(o => o ++ Json.obj("properties" -> refs.head)))
+                        ).get)
+                    }
+                  else
+                    result.put(key, result(key).transform(
+                      reads(path).json.update(__.read[JsObject].map(o => o ++ Json.obj(
+                        "oneOfConstraints" -> refs.map(ref => Json.obj("required" -> ref.keys)),
+                        "properties" -> refs.foldLeft(Json.obj())((acc, curr) => acc ++ curr)
+                      )
+                      ))
+                    ).get)
+              }
+              true
+            case ("$ref", fields) if fields.isInstanceOf[JsString] =>
+              result.put(key, result(key).transform(
+                reads(path + "/$ref").json.prune
+              ).get)
+
+              replaceRef(key, path, fields.as[String])
+
+              true
+
+            case (fieldName, fields) if fields.isInstanceOf[JsObject] => replaceSubOneOf(key, s"$path/$fieldName")
+            case _ => false
+          }.foldLeft(false)(_ || _)
+
+      }
+    }
+
+    def getRef(ref: String): JsObject = {
+      if (ref.startsWith("#/components/schemas/otoroshi.")) {
+        val reference = ref.replace("#/components/schemas/", "")
+
+        (result(reference) \ "properties").asOpt[JsObject] match {
+          case Some(prop) => prop
+          case _ => result(reference).as[JsObject]
+        }
+      } else
+          Json.obj()
+    }
+
+    def replaceRef(key: String, path: String, ref: String, itemsField: Boolean = false) = {
+      if (ref.startsWith("#/components/schemas/otoroshi.")) {
+        val out = getRef(ref)
+
+        (out \ "type").asOpt[String] match {
+          case Some(t) if t == "string" && (out \ "enum").asOpt[JsArray].isEmpty =>
+            result.put(key, result(key).transform(
+              reads(path).json.update(__.read[JsObject].map(o => o ++ Json.obj("type" -> "string")))
+            ).get)
+          case _ =>
+            result.put(key, result(key).transform(
+              reads(path).json.update(__.read[JsObject].map(o => o ++
+                ((out \ "oneOf").asOpt[JsArray] match {
+                  case Some(arr) if arr.value.length > 2 || containsNullAndRef(arr.value) => out
+                  case Some(arr) if containsOnlyRef(arr.value) =>
+                    Json.obj("type" -> (getRef((arr.value.head \ "$ref").as[String]) \ "type").as[String])
+                  case None if (out \ "enum").isDefined =>
+                    out
+                  case _ => Json.obj("properties" -> out, "type" -> "object")
+                })))
+            ).get)
+        }
+      }
+    }
+
+    def containsOnlyRef(values: IndexedSeq[JsValue]): Boolean =
+      values.forall(p => (p \ "$ref").as[String] != "#/components/schemas/Null")
+
+    def containsNullAndRef(values: IndexedSeq[JsValue]): Boolean =
+      values.exists(p => (p \ "$ref").as[String] == "#/components/schemas/Null") &&
+        values.exists(p => (p\ "$ref").as[String] != "#/components/schemas/Null")
+
+    def replaceOneOf(): Boolean =
+      JsObject(result).fields.map { case (key, value) =>
+        (value \ "openAPIV3Schema" \ "properties" \ "spec" \ "properties").asOpt[JsObject] match {
+          case Some(_) => replaceSubOneOf(key, "openAPIV3Schema/properties/spec/properties")
+          case _ => false // if here, not important to treat it cauz openAPIV3Schema is not declared
+        }
+      }.foldLeft(false)(_ || _)
+
+    var changed = true
+    do {
+      changed = replaceOneOf()
+    } while(changed)
+
     val (paths, tags) = scanPaths(config)
 
     println("")
@@ -900,6 +1077,22 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     println("")
     println(s"total found ${found.get() + resFound.get() + inFound
       .get()}, not found ${notFound.get() + resNotFound.get() + inNotFound.get()}")
+
+    val specWithOpenAPIV3Schema = JsObject(result).fields
+        .filter(p => (p._2 \ "openAPIV3Schema").asOpt[JsObject].isDefined)
+        .map(f => (
+          f._1,
+          Json.obj("openAPIV3Schema" -> f._2.transform(reads("openAPIV3Schema").json.pick).get)
+        ))
+
+    /*result.foreach { case (key, value) =>
+      (result(key) \ "openAPIV3Schema").asOpt[JsObject] match {
+        case Some(_) => result.put(key, result(key).transform(
+          reads("openAPIV3Schema").json.prune
+        ).get)
+        case None => ()
+      }
+    }*/
 
     val spec = Json.obj(
       "openapi"      -> openApiVersion,
@@ -952,7 +1145,8 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       ).write()
       println("")
     }
-    spec
+
+    (spec, JsObject(specWithOpenAPIV3Schema))
   }
 
   def readOldSpec(oldSpecPath: String): Unit = {
@@ -993,12 +1187,242 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
 
 class OpenApiGeneratorRunner extends App {
 
-  val generator = new OpenApiGenerator(
-    "./conf/routes",
-    "./app/openapi/openapi-cfg.json",
-    Seq("./public/openapi.json", "../manual/src/main/paradox/code/openapi.json"),
-    write = true
-  )
+  def generate() = {
+    val generator = new OpenApiGenerator(
+      "./conf/routes",
+      "./app/openapi/openapi-cfg.json",
+      Seq("./public/openapi.json", "../manual/src/main/paradox/code/openapi.json"),
+      write = true
+    )
 
-  generator.run()
+    val spec = generator.run()
+
+    def getRef(reference: String): JsObject = (spec._2(reference) \ "openAPIV3Schema" \ "properties" \ "spec").as[JsObject] ++ Json.obj(
+      "type" -> "object"
+    )
+
+    val crdsEntities = Json.obj(
+      "ServiceGroup"-> Json.obj("plural" -> "service-groups", "singular" -> "service-group", "entity" -> "otoroshi.models.ServiceGroup"),
+      "Organization" -> Json.obj("plural" -> "organizations", "singular" -> "organization", "entity" -> "otoroshi.models.Tenant"),
+      "Team" -> Json.obj("plural" -> "teams", "singular" -> "team", "entity" -> "otoroshi.models.Team"),
+      "ServiceDescriptor" -> Json.obj(
+        "plural" -> "service-descriptors",
+        "singular" -> "service-descriptor",
+        "entity" -> "otoroshi.models.ServiceDescriptor",
+        "rawSpec" -> Json.obj(
+          "targets" -> Json.obj(
+            "x-kubernetes-preserve-unknown-fields" -> true
+          ),
+          "enabledAdditionalHosts" -> Json.obj(
+            "type" -> "boolean",
+            "description" -> "???"
+          )
+        )
+      ),
+      "ApiKey" -> Json.obj(
+        "plural" -> "apikeys",
+        "singular" -> "apikey",
+        "entity" -> "otoroshi.models.ApiKey",
+        "rawSpec" -> Json.obj(
+          "daikokuToken" -> Json.obj("type" -> "string", "description" -> "???"),
+          "exportSecret" -> Json.obj("type" -> "boolean", "description" -> "???"),
+          "secretName" -> Json.obj("type" -> "string", "description" -> "???")
+        )
+      ),
+      "Certificate" -> Json.obj(
+        "plural" -> "certificates",
+        "singular" -> "certificate",
+        "entity" -> "otoroshi.ssl.Cert",
+        "rawSpec" -> Json.obj(
+          "certType" -> Json.obj("type" -> "string", "description" -> "the kind of certificate"),
+          "exportSecret" -> Json.obj("type" -> "boolean", "description" -> "???"),
+          "secretName" -> Json.obj("type" -> "string", "description" -> "???"),
+          "csr" -> (getRef("otoroshi.ssl.pki.models.GenCsrQuery").deepMerge(Json.obj("properties" -> Json.obj(
+            "issuer" -> Json.obj(
+              "type" -> "string",
+              "description" -> "???"
+            )))
+          ))
+        )
+      ),
+      "GlobalConfig" -> Json.obj("plural" -> "global-configs", "singular" -> "global-config", "entity" -> "otoroshi.models.GlobalConfig"),
+      "JwtVerifier" -> Json.obj("plural" -> "jwt-verifiers", "singular" -> "jwt-verifier", "entity" -> "otoroshi.models.GlobalJwtVerifier",
+      "rawSpec" -> Json.obj(
+        "type" -> Json.obj(
+          "type" -> "string",
+          "description" -> "???"
+        )
+      )),
+      "AuthModule" -> Json.obj("plural" -> "auth-modules", "singular" -> "auth-module", "entity" -> "otoroshi.auth.AuthModuleConfig"),
+      "Script" -> Json.obj("plural" -> "scripts", "singular" -> "script", "entity" -> "otoroshi.script.Script"),
+      "TcpService" -> Json.obj("plural" -> "tcp-services", "singular" -> "tcp-service", "entity" -> "otoroshi.tcp.TcpService"),
+      "DataExporter" -> Json.obj("plural" -> "data-exporters", "singular" -> "data-exporter", "entity" -> "otoroshi.models.DataExporterConfig"),
+      "Admin" -> Json.obj("plural" -> "admins", "singular" -> "admin", "entity" -> "otoroshi.models.SimpleOtoroshiAdmin")
+    )
+
+    def reads(path: String): JsPath = path.split("/").foldLeft(JsPath())((acc, num) => acc \ num)
+
+    def patchSchema(kind: String, schema: JsObject): JsObject = {
+      val crdEntity = crdsEntities(kind)
+
+      (crdEntity \ "rawSpec").asOpt[JsObject] match {
+        case Some(rawSpec) =>
+          rawSpec.fields.foldLeft(schema)((acc, curr) => {
+            (curr._2 \ "x-kubernetes-preserve-unknown-fields").asOpt[Boolean] match {
+              case Some(true) =>
+                acc.atPointer(s"openAPIV3Schema/properties/spec/properties/${curr._1}").asOpt[JsObject] match {
+                  case Some(_) =>
+                    acc.transform(reads(s"openAPIV3Schema/properties/spec/properties/${curr._1}").json.prune)
+                      .get
+                      .transform(reads(s"openAPIV3Schema/properties/spec/properties")
+                      .json.update(__.read[JsObject].map(_ => Json.obj(curr._1 -> Json.obj(
+                      "x-kubernetes-preserve-unknown-fields" -> true,
+                      "type" -> "object"
+                    ))))
+                    ).get
+                  case None => acc
+                }
+              case _ =>
+                acc.atPointer(s"openAPIV3Schema/properties/spec/properties").asOpt[JsObject] match {
+                  case Some(_) =>
+                    acc.transform(reads(s"openAPIV3Schema/properties/spec/properties")
+                      .json.update(__.read[JsObject].map(o => o ++ Json.obj(curr._1 -> curr._2.as[JsObject])))
+                    ).get
+                  case None => acc
+                }
+            }
+          })
+        case _ => schema
+      }
+    }
+
+    def crdTemplate(name: String, kind: String, plural: String, singular: String, versions: Map[String, (Boolean, JsObject)]) =
+      Json.obj(
+        "apiVersion" -> "apiextensions.k8s.io/v1",
+          "kind" -> "CustomResourceDefinition",
+          "metadata" -> Json.obj(
+          "name" -> s"$name.proxy.otoroshi.io",
+            "creationTimestamp" -> null
+          ),
+        "spec" -> Json.obj(
+              "group" -> "proxy.otoroshi.io",
+               "names" -> Json.obj(
+                  "kind" -> s"$kind",
+                  "plural" -> s"$plural",
+                  "singular" -> s"$singular"
+               ),
+          "scope" -> "Namespaced",
+          "versions" -> JsArray(versions.map {
+            case (version, (deprecated, content)) => Json.obj(
+              "name" -> version,
+              "served" -> true,
+              "storage" -> !deprecated,
+              "deprecated" -> deprecated,
+              "schema" -> overrideGeneratedOpenapiV3Schema(content)
+            )
+          }.toSeq)
+      )
+    )
+
+    val schemas = spec._2
+
+    val openAPIV3Schemas = crdsEntities.fields.map { case (key, value) =>
+      Json.obj("key" -> key) ++ value.as[JsObject] ++ Json.obj("data" ->
+        (schemas \ (value \ "entity").as[String]).asOpt[JsObject]
+      ).as[JsObject]
+    }
+
+    def defaultSchema = Json.obj(
+      "openAPIV3Schema" -> Json.obj(
+        "x-kubernetes-preserve-unknown-fields" -> true,
+        "type" -> "object",
+        "properties" -> Json.obj(
+          "spec" -> Json.obj(
+            "type" -> "object"
+          )
+        )
+      )
+    )
+
+    def crds(withoutSchema: Boolean = false) = openAPIV3Schemas.map { schema =>
+      crdTemplate(
+        name = (schema \ "plural").as[String],
+        kind = (schema \ "key").as[String],
+        plural = (schema \ "plural").as[String],
+        singular = (schema \ "singular").as[String],
+        versions = Map(
+          "v1alpha1" -> (true, Json.obj(
+            "openAPIV3Schema" -> Json.obj(
+              "x-kubernetes-preserve-unknown-fields" -> true,
+              "type" -> "object",
+              "properties" -> Json.obj(
+                "spec" -> Json.obj("type" -> "object")
+              )
+            )
+          )),
+          "v1" -> (false, if(withoutSchema) defaultSchema else (schema \ "data").asOpt[JsObject].map(s => patchSchema((schema \ "key").as[String], s)).getOrElse(defaultSchema))
+        )
+      )
+    }
+
+    val res = crds().foldLeft("")((acc, curr) => s"$acc${write(curr)}")
+
+    val file = new File("../kubernetes/helm/otoroshi/crds/crds-with-schema.yaml")
+    println(s"write crds-with-schema.yaml file: '${file.getAbsolutePath}'")
+    Files.write(file.toPath, res.getBytes(StandardCharsets.UTF_8))
+
+    val defaultFile = new File("../kubernetes/helm/otoroshi/crds/crds.yaml")
+    println(s"write crds.yaml file: '${defaultFile.getAbsolutePath}'")
+    Files.write(defaultFile.toPath, crds(true).foldLeft("")((acc, curr) => s"$acc${write(curr)}").getBytes(StandardCharsets.UTF_8))
+  }
+
+  def overrideGeneratedOpenapiV3Schema(res: JsObject): JsObject = {
+    def t(o: JsValue) =
+      o.asOpt[JsObject] match {
+        case None => o
+        case Some(v) => overrideGeneratedOpenapiV3Schema(v)
+      }
+    res.fields
+      .filter(f => f._1 != "enum" && f._1 != "oneOfConstraints")
+      .map { case (key, value) =>
+        val updatedValue = t(value)
+
+        val newValue = (updatedValue \ "properties").asOpt[JsObject] match {
+          case Some(o) if o.fields.isEmpty && key == "interval" => Json.obj(
+            "type" -> "string",
+            "x-kubernetes-preserve-unknown-fields" -> true,
+            "description" -> (updatedValue \ "description").as[String]
+          )
+          case Some(o) if o.fields.isEmpty => Json.obj(
+            "type" -> "object",
+            "x-kubernetes-preserve-unknown-fields" -> true,
+            "description" -> (updatedValue \ "description").as[String]
+          )
+          case _ => updatedValue
+        }
+
+        if(key == "oneOfConstraints")
+          ("anyOf", newValue)
+        else if(key == "typ")
+          ("type", newValue)
+        else
+          (key, newValue)
+      }
+      .foldLeft(Json.obj())((acc, curr) => acc ++ Json.obj(curr._1-> curr._2))
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
