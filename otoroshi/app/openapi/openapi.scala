@@ -1360,7 +1360,7 @@ class OpenApiGeneratorRunner extends App {
         case Some(v) => overrideGeneratedOpenapiV3Schema(v)
       }
     res.fields
-      .filter(f => f._1 != "enum" && f != "oneOfConstraints")
+      .filter(f => f._1 != "enum" && f._1 != "oneOfConstraints")
       .map { case (key, value) =>
         val updatedValue = t(value)
 
@@ -1380,8 +1380,6 @@ class OpenApiGeneratorRunner extends App {
 
         if(key == "oneOfConstraints")
           ("anyOf", newValue)
-        //else if (key == "location")
-          //("_loc", newValue)
         else if(key == "typ")
           ("type", newValue)
         else
