@@ -1039,7 +1039,8 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
                   case Some(arr) if arr.value.length > 2 || containsNullAndRef(arr.value) => out
                   case Some(arr) if containsOnlyRef(arr.value) =>
                     Json.obj("type" -> (getRef((arr.value.head \ "$ref").as[String]) \ "type").as[String])
-                  case None if (out \ "enum").isDefined => out
+                  case None if (out \ "enum").isDefined =>
+                    out
                   case _ => Json.obj("properties" -> out, "type" -> "object")
                 })))
             ).get)
@@ -1084,14 +1085,14 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           Json.obj("openAPIV3Schema" -> f._2.transform(reads("openAPIV3Schema").json.pick).get)
         ))
 
-    result.foreach { case (key, value) =>
+    /*result.foreach { case (key, value) =>
       (result(key) \ "openAPIV3Schema").asOpt[JsObject] match {
         case Some(_) => result.put(key, result(key).transform(
           reads("openAPIV3Schema").json.prune
         ).get)
         case None => ()
       }
-    }
+    }*/
 
     val spec = Json.obj(
       "openapi"      -> openApiVersion,
@@ -1233,6 +1234,7 @@ class OpenApiGeneratorRunner extends App {
         "singular" -> "certificate",
         "entity" -> "otoroshi.ssl.Cert",
         "rawSpec" -> Json.obj(
+          "certType" -> Json.obj("type" -> "string", "description" -> "the kind of certificate"),
           "exportSecret" -> Json.obj("type" -> "boolean", "description" -> "???"),
           "secretName" -> Json.obj("type" -> "string", "description" -> "???"),
           "csr" -> (getRef("otoroshi.ssl.pki.models.GenCsrQuery").deepMerge(Json.obj("properties" -> Json.obj(

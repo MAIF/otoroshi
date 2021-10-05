@@ -2033,6 +2033,14 @@ spec:
             description: "The otoroshi model for X509 certificates"
             type: "object"
             properties:
+              metadata:
+                description: "Entity metadata"
+                additionalProperties:
+                  type: "string"
+                type: "object"
+              certType:
+                description: "the kind of certificate"
+                type: "string"
               csr:
                 description: "Settings for generating a certificate"
                 type: "object"
@@ -2163,11 +2171,6 @@ spec:
               privateKey:
                 description: "Certificate private key (PEM encoded)"
                 type: "string"
-              entityMetadata:
-                description: "Entity metadata"
-                additionalProperties:
-                  type: "string"
-                type: "object"
               caRef:
                 description: "Reference to the CA (if any)"
                 type: "string"
