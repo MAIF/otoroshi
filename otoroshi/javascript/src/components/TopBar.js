@@ -523,6 +523,12 @@ export class TopBar extends Component {
                   </a>
                 </li>
               )}
+              <li>
+                <a href="" className="">
+                  <i className="far fa-moon fa-lg"></i>
+                  <i class="far fa-lightbulb fa-lg"></i>
+                </a>
+              </li>
               <li className="dropdown userManagement">
                 <a
                   href="#"
