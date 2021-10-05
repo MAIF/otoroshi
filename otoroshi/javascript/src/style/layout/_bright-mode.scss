@@ -48,9 +48,15 @@ body.white-mode {
     border-color: #333;
   }
 
+  // remove if needed
+  .metric {
+    background-color: #f9b000;
+    color: white;
+  }
+
   .navbar-inverse,
   .sidebar,
-  .metric,
+  //.metric,
   .ReactTable input {
     @include bright-mode_background--light;
   }
