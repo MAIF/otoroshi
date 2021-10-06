@@ -13563,7 +13563,7 @@
             "description" : "Elastic password"
           },
           "indexSettings" : {
-            "description" : "???",
+            "description" : "Indexation settings",
             "$ref" : "#/components/schemas/otoroshi.models.IndexSettings"
           },
           "mtlsConfig" : {
@@ -13589,7 +13589,7 @@
             "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
           },
           "applyTemplate" : {
-            "description" : "???",
+            "description" : "Enable template creation/update",
             "type" : "boolean"
           },
           "version" : {
@@ -13598,7 +13598,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Version of Elasticsearch"
           },
           "user" : {
             "oneOf" : [ {
@@ -13606,7 +13606,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "Elastic user"
+            "description" : "Elasticsearch user"
           }
         }
       },
@@ -16528,7 +16528,7 @@
         }
       },
       "otoroshi.models.IndexSettingsInterval" : {
-        "description" : "???",
+        "description" : "Elasticseach indexation interval",
         "type" : "object",
         "properties" : { }
       },
@@ -17307,15 +17307,15 @@
         }
       },
       "otoroshi.models.IndexSettings" : {
-        "description" : "???",
+        "description" : "Elasticseach indexation settings",
         "type" : "object",
         "properties" : {
           "clientSide" : {
-            "description" : "???",
+            "description" : "Enable index splitting on client side",
             "type" : "boolean"
           },
           "interval" : {
-            "description" : "???",
+            "description" : "Index splitting interval",
             "$ref" : "#/components/schemas/otoroshi.models.IndexSettingsInterval"
           }
         }

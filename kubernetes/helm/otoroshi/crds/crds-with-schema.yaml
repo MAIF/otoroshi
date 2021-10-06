@@ -2009,16 +2009,16 @@ spec:
                     description: "Elastic password"
                     type: "string"
                   indexSettings:
-                    description: "???"
+                    description: "Indexation settings"
                     type: "object"
                     properties:
                       clientSide:
-                        description: "???"
+                        description: "Enable index splitting on client side"
                         type: "boolean"
                       interval:
                         type: "string"
                         x-kubernetes-preserve-unknown-fields: true
-                        description: "???"
+                        description: "Index splitting interval"
                   mtlsConfig:
                     description: "TLS settings for the http client"
                     type: "object"
@@ -2049,13 +2049,13 @@ spec:
                     description: "Object type"
                     type: "string"
                   applyTemplate:
-                    description: "???"
+                    description: "Enable template creation/update"
                     type: "boolean"
                   version:
-                    description: "???"
+                    description: "Version of Elasticsearch"
                     type: "string"
                   user:
-                    description: "Elastic user"
+                    description: "Elasticsearch user"
                     type: "string"
               logAnalyticsOnServer:
                 description: "Log analytics event on the server"
@@ -2684,16 +2684,16 @@ spec:
                       description: "Elastic password"
                       type: "string"
                     indexSettings:
-                      description: "???"
+                      description: "Indexation settings"
                       type: "object"
                       properties:
                         clientSide:
-                          description: "???"
+                          description: "Enable index splitting on client side"
                           type: "boolean"
                         interval:
                           type: "string"
                           x-kubernetes-preserve-unknown-fields: true
-                          description: "???"
+                          description: "Index splitting interval"
                     mtlsConfig:
                       description: "TLS settings for the http client"
                       type: "object"
@@ -2724,13 +2724,13 @@ spec:
                       description: "Object type"
                       type: "string"
                     applyTemplate:
-                      description: "???"
+                      description: "Enable template creation/update"
                       type: "boolean"
                     version:
-                      description: "???"
+                      description: "Version of Elasticsearch"
                       type: "string"
                     user:
-                      description: "Elastic user"
+                      description: "Elasticsearch user"
                       type: "string"
               trustXForwarded:
                 description: "Use X-Forwarded-* headers for routing"
@@ -4227,16 +4227,16 @@ spec:
                     description: "Sendgrid apikey"
                     type: "string"
                   indexSettings:
-                    description: "???"
+                    description: "Indexation settings"
                     type: "object"
                     properties:
                       clientSide:
-                        description: "???"
+                        description: "Enable index splitting on client side"
                         type: "boolean"
                       interval:
                         type: "string"
                         x-kubernetes-preserve-unknown-fields: true
-                        description: "???"
+                        description: "Index splitting interval"
                   mtlsConfig:
                     description: "TLS config when calling webhook"
                     type: "object"
@@ -4293,7 +4293,7 @@ spec:
                     description: "Send events to it, or just connect"
                     type: "boolean"
                   applyTemplate:
-                    description: "???"
+                    description: "Enable template creation/update"
                     type: "boolean"
                   tenant:
                     description: "Pulsar tenant"
@@ -4314,7 +4314,7 @@ spec:
                     description: "Pulsar cluster url"
                     type: "string"
                   version:
-                    description: "???"
+                    description: "Version of Elasticsearch"
                     type: "string"
                   url:
                     description: "Sender URL"
@@ -4355,7 +4355,7 @@ spec:
                           description: "Email address"
                           type: "string"
                   user:
-                    description: "Elastic user"
+                    description: "Elasticsearch user"
                     type: "string"
                   config:
                     description: "Script config"
