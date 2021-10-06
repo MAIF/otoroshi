@@ -42,7 +42,11 @@ provide the authentication modules needed for most cases and associated tools
 
 - [ ] multi-instances
   - [ ] where to store access_keys ?
+  - [ ] multi-cluster monitoring
 - [ ] customizable embbeded dashboarding
+- [ ] introduce simplified wizard to enhance user experience
+- [ ] introduce graphical service creation/design mode  to enhance user experience
+- [ ] "try it" feature with debug mode
 
 ## container orchestrators
 
