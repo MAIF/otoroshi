@@ -64,6 +64,18 @@ function walkSync(dir, initDir, filelist = []) {
   return filelist;
 }
 
+/* supported steps
+
+- goto theUrl
+- click #theSelector>.foo
+- wait 10
+- spot #theSelector>.foo
+- scroll-to #theSelector>.foo
+- screenshot foo.png
+- screenshot-area foo.png #theSelector>.foo
+- type #theSelector>.foo hello world !
+
+*/
 function parseMdFiles(from) {
   const files = walkSync(from, from);
   const mdFiles = files.filter(f => f.name.indexOf('.md') > -1);
