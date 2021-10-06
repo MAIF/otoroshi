@@ -137,6 +137,13 @@ function parseMdFiles(from) {
               selector: parts.slice(2).join(' '),
               area: 10
             })
+          } else if (action === 'type') {
+            scen.steps.push({
+              name: `scenario-${filename}-${idx}-step-${idx2}-type`,
+              action: 'type',
+              selector: parts[1],
+              input: parts.slice(2).join(' '),
+            })
           }
         });
         // console.log(scen)
