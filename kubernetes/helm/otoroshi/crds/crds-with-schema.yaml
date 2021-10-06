@@ -191,7 +191,7 @@ spec:
                         type: "integer"
                   issuer:
                     type: "string"
-                    description: "???"
+                    description: "the issuer of the csr query"
               subject:
                 description: "Certificate subject"
                 type: "string"
@@ -862,7 +862,8 @@ spec:
                 type: "boolean"
               enabledAdditionalHosts:
                 type: "boolean"
-                description: "???"
+                description: "if enabled, the additional hosts will be add to hosts\
+                  \ array"
               paths:
                 description: "Matching paths on request"
                 type: "array"
@@ -3941,7 +3942,7 @@ spec:
                     description: "Remove from value"
                     type: "string"
               type:
-                description: "???"
+                description: "the kind of jwt verifier"
                 type: "string"
               strict:
                 description: "Does it fail if JWT not found"
@@ -4469,14 +4470,11 @@ spec:
                             canRead:
                               description: "Can this access right read data"
                               type: "boolean"
-              typ:
-                description: "Admin kind"
+              type:
+                description: "the kind of admin"
                 type: "string"
               label:
                 description: "User label"
-                type: "string"
-              type:
-                description: "the kind of admin"
                 type: "string"
               _loc:
                 description: "Entity location"
