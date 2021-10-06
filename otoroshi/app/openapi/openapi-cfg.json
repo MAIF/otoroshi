@@ -2251,6 +2251,8 @@
     "location:otoroshi.models.EntityLocation" : "_loc",
     "typ:java.lang.String" : "type",
     "typ:otoroshi.models.DataExporterConfigType" : "type",
+    "typ:otoroshi.models.SimpleOtoroshiAdmin" : "type",
+    "typ:otoroshi.models.WebAuthnOtoroshiAdmin" : "type",
     "otoroshi.ssl.Cert.entityMetadata" : "metadata"
   },
   "add_fields":   { }

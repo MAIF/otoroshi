@@ -29,7 +29,7 @@ class CrdsGenerator(spec: JsValue)  {
         ),
         "enabledAdditionalHosts" -> Json.obj(
           "type" -> "boolean",
-          "description" -> "???"
+          "description" -> "if enabled, the additional hosts will be add to hosts array"
         )
       )
     ),
@@ -38,9 +38,9 @@ class CrdsGenerator(spec: JsValue)  {
       "singular" -> "apikey",
       "entity" -> "otoroshi.models.ApiKey",
       "rawSpec" -> Json.obj(
-        "daikokuToken" -> Json.obj("type" -> "string", "description" -> "???"),
-        "exportSecret" -> Json.obj("type" -> "boolean", "description" -> "???"),
-        "secretName" -> Json.obj("type" -> "string", "description" -> "???")
+        "daikokuToken" -> Json.obj("type" -> "string", "description" -> "Integration token for Daikoku"),
+        "exportSecret" -> Json.obj("type" -> "boolean", "description" -> "export api key as a kubernetes secret"),
+        "secretName" -> Json.obj("type" -> "string", "description" -> "name of the kubernetes secret")
       )
     ),
     "Certificate" -> Json.obj(
@@ -49,14 +49,14 @@ class CrdsGenerator(spec: JsValue)  {
       "entity" -> "otoroshi.ssl.Cert",
       "rawSpec" -> Json.obj(
         "certType" -> Json.obj("type" -> "string", "description" -> "the kind of certificate"),
-        "exportSecret" -> Json.obj("type" -> "boolean", "description" -> "???"),
-        "secretName" -> Json.obj("type" -> "string", "description" -> "???"),
+        "exportSecret" -> Json.obj("type" -> "boolean", "description" -> "export certificate as a kubernetes secret"),
+        "secretName" -> Json.obj("type" -> "string", "description" -> "name of the kubernetes secret"),
         "csr" -> Json.obj(
           "entity" -> "otoroshi.ssl.pki.models.GenCsrQuery",
           "mergeWith" -> Json.obj("properties" -> Json.obj(
           "issuer" -> Json.obj(
             "type" -> "string",
-            "description" -> "???"
+            "description" -> "the issuer of the csr query"
           )))
         )
       )
@@ -66,13 +66,10 @@ class CrdsGenerator(spec: JsValue)  {
       "rawSpec" -> Json.obj(
         "type" -> Json.obj(
           "type" -> "string",
-          "description" -> "???"
+          "description" -> "the kind of jwt verifier"
         )
       )),
-    "AuthModule" -> Json.obj("plural" -> "auth-modules", "singular" -> "auth-module", "entity" -> "otoroshi.auth.AuthModuleConfig",
-    "rawSpec" -> Json.obj(
-      "mod-type" -> Json.obj("type" -> "string", "description" -> "???")
-    )),
+    "AuthModule" -> Json.obj("plural" -> "auth-modules", "singular" -> "auth-module", "entity" -> "otoroshi.auth.AuthModuleConfig"),
     "Script" -> Json.obj("plural" -> "scripts", "singular" -> "script", "entity" -> "otoroshi.script.Script"),
     "TcpService" -> Json.obj("plural" -> "tcp-services", "singular" -> "tcp-service", "entity" -> "otoroshi.tcp.TcpService"),
     "DataExporter" -> Json.obj("plural" -> "data-exporters", "singular" -> "data-exporter", "entity" -> "otoroshi.models.DataExporterConfig"),

@@ -214,7 +214,7 @@ spec:
                 description: "Certificate password"
                 type: "string"
               exportSecret:
-                description: "???"
+                description: "export certificate as a kubernetes secret"
                 type: "boolean"
               autoRenew:
                 description: "Auto renew cert"
@@ -241,7 +241,7 @@ spec:
                 description: "Certicates chain (PEM encoded)"
                 type: "string"
               secretName:
-                description: "???"
+                description: "name of the kubernetes secret"
                 type: "string"
               sans:
                 description: "Certificate SANs"
@@ -2785,7 +2785,7 @@ spec:
             type: "object"
             properties:
               daikokuToken:
-                description: "???"
+                description: "Integration token for Daikoku"
                 type: "string"
               metadata:
                 description: "Bunch of metadata for the key"
@@ -2794,7 +2794,7 @@ spec:
                 type: "object"
               secretName:
                 type: "string"
-                description: "???"
+                description: "name of the kubernetes secret"
               clientId:
                 description: "The unique id of the Api Key. Usually 16 random alpha\
                   \ numerical characters, but can be anything"
@@ -2911,7 +2911,7 @@ spec:
                 description: "Authorized number of calls per month"
                 type: "integer"
               exportSecret:
-                description: "???"
+                description: "export api key as a kubernetes secret"
                 type: "boolean"
               validUntil:
                 description: "Date until when the apikey is valid"
@@ -3186,11 +3186,9 @@ spec:
     deprecated: false
     schema:
       openAPIV3Schema:
-        description: "???"
         type: "object"
+        description: "???"
         properties:
-          metadata:
-            type: "object"
           apiVersion:
             description: "APIVersion defines the versioned schema of this representation\
               \ of an object. Servers should convert recognized schemas to the latest\
@@ -3201,15 +3199,17 @@ spec:
               \ object represents. Servers may infer this from the endpoint the client\
               \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
             type: "string"
-          spec:
-            description: "???"
+          metadata:
             type: "object"
+          spec:
+            type: "object"
+            description: "???"
             properties:
               metadata:
-                description: "Metadata of the SAML module"
+                type: "object"
                 additionalProperties:
                   type: "string"
-                type: "object"
+                description: "Metadata of the SAML module"
               tokenUrl:
                 description: "OAuth token URL"
                 type: "string"
@@ -3226,25 +3226,25 @@ spec:
                   \ like tokenUrl, introspectionUrl, etc)"
                 type: "object"
                 properties:
+                  mtls:
+                    description: "Enabled"
+                    type: "boolean"
                   loose:
                     description: "Loose verification"
                     type: "boolean"
                   trustAll:
                     description: "Trust any certificate"
                     type: "boolean"
-                  mtls:
-                    description: "Enabled"
-                    type: "boolean"
-                  certs:
-                    description: "Trusted cert. ids"
-                    type: "array"
-                    items:
-                      type: "string"
                   trustedCerts:
-                    description: "Trusted cert. ids"
                     type: "array"
                     items:
                       type: "string"
+                    description: "Trusted cert. ids"
+                  certs:
+                    type: "array"
+                    items:
+                      type: "string"
+                    description: "Trusted cert. ids"
               searchBase:
                 description: "LDAP search base"
                 type: "string"
@@ -3283,25 +3283,25 @@ spec:
                                 canRead:
                                   description: "Can this access right read data"
                                   type: "boolean"
-                                canWrite:
-                                  description: "Can this access right write data"
-                                  type: "boolean"
                                 value:
                                   description: "Access pattern"
                                   type: "string"
+                                canWrite:
+                                  description: "Can this access right write data"
+                                  type: "boolean"
                           tenant:
                             description: "Access rights on organizations"
                             type: "object"
                             properties:
-                              canRead:
-                                description: "Can this access right read data"
-                                type: "boolean"
                               canWrite:
                                 description: "Can this access right write data"
                                 type: "boolean"
                               value:
                                 description: "Access pattern"
                                 type: "string"
+                              canRead:
+                                description: "Can this access right read data"
+                                type: "boolean"
                 type: "object"
               nameIDFormat:
                 type: "object"
@@ -3348,15 +3348,15 @@ spec:
                     description: "Is cookie for https only"
                     type: "boolean"
               dataOverride:
-                description: "Overiddes user data. Object with email as key"
+                type: "object"
                 additionalProperties:
                   type: "object"
-                type: "object"
+                description: "Overiddes user data. Object with email as key"
               validatingCertificates:
-                description: "Certificates used to validate SAML response signature"
                 type: "array"
                 items:
                   type: "string"
+                description: "Certificates used to validate SAML response signature"
               apiKeyMetaField:
                 description: "Field name to extract apikey metadata"
                 type: "string"
@@ -3371,9 +3371,6 @@ spec:
                 description: "Field name to get otoroshi metadata from. You can specify\
                   \ sub fields using | as separator"
                 type: "string"
-              mod-type:
-                type: "string"
-                description: "???"
               _loc:
                 description: "Location of the SAML module"
                 type: "object"
@@ -3417,25 +3414,25 @@ spec:
                                     canRead:
                                       description: "Can this access right read data"
                                       type: "boolean"
-                                    canWrite:
-                                      description: "Can this access right write data"
-                                      type: "boolean"
                                     value:
                                       description: "Access pattern"
                                       type: "string"
+                                    canWrite:
+                                      description: "Can this access right write data"
+                                      type: "boolean"
                               tenant:
                                 description: "Access rights on organizations"
                                 type: "object"
                                 properties:
-                                  canRead:
-                                    description: "Can this access right read data"
-                                    type: "boolean"
                                   canWrite:
                                     description: "Can this access right write data"
                                     type: "boolean"
                                   value:
                                     description: "Access pattern"
                                     type: "string"
+                                  canRead:
+                                    description: "Can this access right read data"
+                                    type: "boolean"
                     name:
                       description: "User name"
                       type: "string"
@@ -3443,27 +3440,27 @@ spec:
                       description: "Webauthn details"
                       type: "object"
                       properties:
-                        credentials:
-                          description: "Webauthn credentials"
-                          additionalProperties:
-                            type: "object"
-                          type: "object"
                         handle:
                           description: "Webauthn user handle"
                           type: "string"
+                        credentials:
+                          type: "object"
+                          additionalProperties:
+                            type: "object"
+                          description: "Webauthn credentials"
                     email:
                       description: "User email"
                       type: "string"
                     tags:
-                      description: "User tags"
                       type: "array"
                       items:
                         type: "string"
+                      description: "User tags"
               tags:
-                description: "SAML module tags"
                 type: "array"
                 items:
                   type: "string"
+                description: "SAML module tags"
               adminUsername:
                 description: "The admin username"
                 type: "string"
@@ -3506,15 +3503,15 @@ spec:
                       description: "The tenant associated with this group"
                       type: "object"
                       properties:
-                        canRead:
-                          description: "Can this access right read data"
-                          type: "boolean"
                         canWrite:
                           description: "Can this access right write data"
                           type: "boolean"
                         value:
                           description: "Access pattern"
                           type: "string"
+                        canRead:
+                          description: "Can this access right read data"
+                          type: "boolean"
                     group:
                       description: "The LDAP group"
                       type: "string"
@@ -3641,30 +3638,30 @@ spec:
                                     canRead:
                                       description: "Can this access right read data"
                                       type: "boolean"
-                                    canWrite:
-                                      description: "Can this access right write data"
-                                      type: "boolean"
                                     value:
                                       description: "Access pattern"
                                       type: "string"
+                                    canWrite:
+                                      description: "Can this access right write data"
+                                      type: "boolean"
                               tenant:
                                 description: "Access rights on organizations"
                                 type: "object"
                                 properties:
-                                  canRead:
-                                    description: "Can this access right read data"
-                                    type: "boolean"
                                   canWrite:
                                     description: "Can this access right write data"
                                     type: "boolean"
                                   value:
                                     description: "Access pattern"
                                     type: "string"
+                                  canRead:
+                                    description: "Can this access right read data"
+                                    type: "boolean"
                     users:
-                      description: "The users associated with this group"
                       type: "array"
                       items:
                         type: "string"
+                      description: "The users associated with this group"
                 type: "object"
               consumerKey:
                 description: "Client ID obtained on identity provider"
@@ -3700,42 +3697,42 @@ spec:
                 description: "Field name to extract apikey tags"
                 type: "string"
               serverUrls:
-                description: "LDAP server list of url"
                 type: "array"
                 items:
                   type: "string"
+                description: "LDAP server list of url"
               jwtVerifier:
                 description: "Algo. settings to verify JWT token"
                 type: "object"
                 properties:
                   headers:
-                    description: "Http header when fetching JWKS"
+                    type: "object"
                     additionalProperties:
                       type: "string"
-                    type: "object"
+                    description: "Http header when fetching JWKS"
                   mtlsConfig:
                     description: "TLS settings for http client"
                     type: "object"
                     properties:
+                      mtls:
+                        description: "Enabled"
+                        type: "boolean"
                       loose:
                         description: "Loose verification"
                         type: "boolean"
                       trustAll:
                         description: "Trust any certificate"
                         type: "boolean"
-                      mtls:
-                        description: "Enabled"
-                        type: "boolean"
-                      certs:
-                        description: "Trusted cert. ids"
-                        type: "array"
-                        items:
-                          type: "string"
                       trustedCerts:
-                        description: "Trusted cert. ids"
                         type: "array"
                         items:
                           type: "string"
+                        description: "Trusted cert. ids"
+                      certs:
+                        type: "array"
+                        items:
+                          type: "string"
+                        description: "Trusted cert. ids"
                   base64:
                     description: "The secret is base64 encoded"
                     type: "boolean"
