@@ -19,9 +19,9 @@ provide the authentication modules needed for most cases and associated tools
 - [x] support ocsp, aia, public keys access through jwks.json
 - [x] support oauth2 `client_credentials` flow
 - [ ] pluggable authentication modules using the existing discovery mecanism
-- [ ] plugin to handle basic auth calls
+- [x] plugin to handle basic auth calls
 - [ ] plugin to handle OAuth1 calls
-- [ ] plugin to handle OAuth2 calls
+- [x] plugin to handle OAuth2 calls
 - [ ] more integration of biscuit tokens
   - [ ] add biscuit playground to the UI
 - [ ] access control helpers
@@ -42,7 +42,11 @@ provide the authentication modules needed for most cases and associated tools
 
 - [ ] multi-instances
   - [ ] where to store access_keys ?
+  - [ ] multi-cluster monitoring
 - [ ] customizable embbeded dashboarding
+- [ ] introduce simplified wizard to enhance user experience
+- [ ] introduce graphical service creation/design mode  to enhance user experience
+- [ ] "try it" feature with debug mode
 
 ## container orchestrators
 

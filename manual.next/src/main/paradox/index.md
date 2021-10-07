@@ -93,7 +93,7 @@ Otoroshi is Open Source and available under the [Apache 2 License](https://opens
 <!-- oto-scenario
  - goto /bo/dashboard
  - wait 1000
- - screenshot index-md-home.png
+ - screenshot generated-index-md-home.png
 -->
-<img src="../imgs/index-md-home.png" />
+<img src="../imgs/generated-index-md-home.png" />
 @@@

@@ -327,6 +327,52 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   }
 }
 </code></pre>
+<h2><a href="#basic-auth-caller" name="basic-auth-caller" class="anchor"><span class="anchor-link"></span></a>Basic Auth. caller</h2>
+<h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
+<ul>
+  <li>plugin type: <code>transformer</code></li>
+  <li>configuration root: <code>BasicAuthCaller</code></li>
+</ul>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin can be used to call api that are authenticated using basic auth.</p>
+<p>This plugin accepts the following configuration</p>
+<p>{  &ldquo;username&rdquo; : &ldquo;the_username&rdquo;,  &ldquo;password&rdquo; : &ldquo;the_password&rdquo;,  &ldquo;headerName&rdquo; : &ldquo;Authorization&rdquo;,  &ldquo;headerValueFormat&rdquo; : &ldquo;Basic %s&rdquo; }</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;username&quot; : &quot;the_username&quot;,
+  &quot;password&quot; : &quot;the_password&quot;,
+  &quot;headerName&quot; : &quot;Authorization&quot;,
+  &quot;headerValueFormat&quot; : &quot;Basic %s&quot;
+}
+</code></pre>
+<h2><a href="#oauth2-caller" name="oauth2-caller" class="anchor"><span class="anchor-link"></span></a>OAuth2 caller</h2>
+<h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
+<ul>
+  <li>plugin type: <code>transformer</code></li>
+  <li>configuration root: <code>OAuth2Caller</code></li>
+</ul>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin can be used to call api that are authenticated using OAuth2 client_credential/password flow. Do not forget to enable client retry to handle token generation on expire.</p>
+<p>This plugin accepts the following configuration</p>
+<p>{  &ldquo;kind&rdquo; : &ldquo;the oauth2 flow, can be &lsquo;client_credentials&rsquo; or &lsquo;password&rsquo;&rdquo;,  &ldquo;url&rdquo; : &ldquo;<a href="https://127.0.0.1:8080/oauth/token"">https://127.0.0.1:8080/oauth/token"</a>,  &rdquo;method&ldquo; : &rdquo;POST&ldquo;,  &rdquo;headerName&ldquo; : &rdquo;Authorization&ldquo;,  &rdquo;headerValueFormat&ldquo; : &rdquo;Bearer %s&ldquo;,  &rdquo;jsonPayload&ldquo; : false,  &rdquo;clientId&ldquo; : &rdquo;the client_id&ldquo;,  &rdquo;clientSecret&ldquo; : &rdquo;the client_secret&ldquo;,  &rdquo;scope&ldquo; : &rdquo;an optional scope&ldquo;,  &rdquo;audience&ldquo; : &rdquo;an optional audience&ldquo;,  &rdquo;user&ldquo; : &rdquo;an optional username if using password flow&ldquo;,  &rdquo;password&ldquo; : &rdquo;an optional password if using password flow&ldquo;,  &rdquo;cacheTokenSeconds&ldquo; : &rdquo;the number of second to wait before asking for a new token&ldquo;,  &rdquo;tlsConfig&ldquo; : &rdquo;an optional TLS settings object&quot; }</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;kind&quot; : &quot;the oauth2 flow, can be &#39;client_credentials&#39; or &#39;password&#39;&quot;,
+  &quot;url&quot; : &quot;https://127.0.0.1:8080/oauth/token&quot;,
+  &quot;method&quot; : &quot;POST&quot;,
+  &quot;headerName&quot; : &quot;Authorization&quot;,
+  &quot;headerValueFormat&quot; : &quot;Bearer %s&quot;,
+  &quot;jsonPayload&quot; : false,
+  &quot;clientId&quot; : &quot;the client_id&quot;,
+  &quot;clientSecret&quot; : &quot;the client_secret&quot;,
+  &quot;scope&quot; : &quot;an optional scope&quot;,
+  &quot;audience&quot; : &quot;an optional audience&quot;,
+  &quot;user&quot; : &quot;an optional username if using password flow&quot;,
+  &quot;password&quot; : &quot;an optional password if using password flow&quot;,
+  &quot;cacheTokenSeconds&quot; : &quot;the number of second to wait before asking for a new token&quot;,
+  &quot;tlsConfig&quot; : &quot;an optional TLS settings object&quot;
+}
+</code></pre>
 <h2><a href="#response-cache" name="response-cache" class="anchor"><span class="anchor-link"></span></a>Response Cache</h2>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
 <ul>
@@ -2123,6 +2169,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#access-log-clf-" class="header">Access log (CLF)</a></li>
     <li><a href="../plugins/built-in-plugins.html#access-log-json-" class="header">Access log (JSON)</a></li>
     <li><a href="../plugins/built-in-plugins.html#kafka-access-log" class="header">Kafka access log</a></li>
+    <li><a href="../plugins/built-in-plugins.html#basic-auth-caller" class="header">Basic Auth. caller</a></li>
+    <li><a href="../plugins/built-in-plugins.html#oauth2-caller" class="header">OAuth2 caller</a></li>
     <li><a href="../plugins/built-in-plugins.html#response-cache" class="header">Response Cache</a></li>
     <li><a href="../plugins/built-in-plugins.html#client-certificate-header" class="header">Client certificate header</a></li>
     <li><a href="../plugins/built-in-plugins.html#defer-responses" class="header">Defer Responses</a></li>

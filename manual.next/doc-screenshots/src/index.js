@@ -18,6 +18,8 @@ const otoroshiUser = argv.user || process.env.OTOROSHI_DOCSCREENS_USER || "admin
 const otoroshiPassword = argv.pwd || process.env.OTOROSHI_DOCSCREENS_PWD || "password";
 
 let scenarii = [];
+const otoroshiPath = argv['otoroshi-path'] || process.env.OTOROSHI_DOCSCREENS_OTOROSHI_PATH || './otoroshi.jar';
+const noOtoroshi = argv['no-otoroshi'] || (process.env.OTOROSHI_DOCSCREENS_OTOROSHI_PATH === "true") || false
 const screenshotsPath = argv['screenshot-path'] || process.env.OTOROSHI_DOCSCREENS_SCREENSHOTS_PATH || 'screenshots';
 const rawScenarii = argv.raw || process.env.OTOROSHI_DOCSCREENS_RAW || '[]';
 const scenariiPath = argv.scenarii || process.env.OTOROSHI_DOCSCREENS_SCENARII_PATH;
@@ -137,6 +139,13 @@ function parseMdFiles(from) {
               selector: parts.slice(2).join(' '),
               area: 10
             })
+          } else if (action === 'type') {
+            scen.steps.push({
+              name: `scenario-${filename}-${idx}-step-${idx2}-type`,
+              action: 'type',
+              selector: parts[1],
+              input: parts.slice(2).join(' '),
+            })
           }
         });
         // console.log(scen)
@@ -161,6 +170,8 @@ function runSystemCommand(command, args, location, env = {}) {
   return echoReadable(source.stdout);
 }
 
+let lastProcess = null;
+
 function runScript(script, where, env = {}, fit) {
   return new Promise((success, failure) => {
     const source = spawn(script, [], {
@@ -180,6 +191,7 @@ function runScript(script, where, env = {}, fit) {
         }
       }
     });
+    lastProcess = source;
     return echoReadable(source.stdout);
   });
 }  
@@ -214,11 +226,20 @@ function asyncForEach(_arr, f) {
   });
 }
 
-function runOtoroshi() {
-  // TODO: actually run oto
-  console.log('trying to run otoroshi ...');
-  console.log('otoroshi already running !')
-  return Promise.resolve('');
+async function runOtoroshi() {
+  if (!noOtoroshi) {
+    console.log('trying to run otoroshi ...');
+    runScript(`
+      java -Dhttp.port=9999 -Dhttps.port=9998 -Dapp.adminLogin=${otoroshiUser} -Dapp.adminPassword=${otoroshiPassword} -Dapp.importFrom=${__dirname}/../data/otoroshi.json -jar ${__dirname}/${otoroshiPath}
+    `, 
+    __dirname, 
+    {})
+    await waitFor(15000);
+    console.log('otoroshi is running !')
+    return lastProcess;
+  } else {
+    return Promise.resolve('');
+  }
 }
 
 async function handleStep(step, browser, page, setPage, logger) {
@@ -339,7 +360,7 @@ async function handleScenarii(scenarii, browser, page) {
   });
 }
 
-async function runScreenshots() {
+async function runScreenshots(process) {
   try {
     console.log('launching browser ...')
     const browser = await puppeteer.launch({
@@ -359,12 +380,18 @@ async function runScreenshots() {
     await page.waitForNavigation();
     await waitFor(2000);
     console.log('closing popup ...')
-    await page.click('#app > div > div.topbar-popup > button');
+    try {
+      await page.click('#app > div > div.topbar-popup > button');
+    } catch (e) {
+      console.log('ignoring', e.message)
+    }
     console.log('login done, running scenarii !')
     console.log('======================================')
     await handleScenarii(scenarii, browser, page);
     console.log('closing browser ...')
     await browser.close();
+    process.kill();
+    await waitFor(2000);
   } catch(ex) {
     console.log(ex);
   }
@@ -373,12 +400,14 @@ async function runScreenshots() {
 function cleanupScreenshots() {
   const files = fs.readdirSync(screenshotsPath);
   files.filter(f => f.endsWith('.png')).map(f => {
-    fs.rmSync(screenshotsPath + '/' + f)
+    fs.removeSync(screenshotsPath + '/' + f)
   })
 }
 
 setupScenarii();
-runOtoroshi().then(() => {
-  cleanupScreenshots();
-  runScreenshots();
+runOtoroshi().then((p) => {
+  // cleanupScreenshots();
+  runScreenshots(p).then(() => {
+    process.exit(0);
+  });
 });
