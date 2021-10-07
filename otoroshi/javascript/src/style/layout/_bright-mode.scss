@@ -74,7 +74,7 @@ body.white-mode {
     @include bright-mode_color--light;
   }
   .ReactTable input,
-  input.form-control,
+  input.form-control:not([disabled]),
   .Select-value,
   .Select.has-value.Select--single
     > .Select-control
@@ -124,9 +124,11 @@ body.white-mode {
   .ReactTable .-next .-btn,
   .ReactTable .-previous .-btn,
   .table,
+  thead > tr, 
+  thead > tr > td > span,
   textarea.form-control,
   .jumbotron h1,
-  .Select-option,
+  .Select-option, 
   .Select-menu-outer,
   .is-open > .Select-control,
   .Select.is-focused > .Select-control,
