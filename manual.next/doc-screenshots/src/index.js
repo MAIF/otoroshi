@@ -199,7 +199,7 @@ function runScript(script, where, env = {}, fit) {
         if (code === 0) {
           success('return code: ' + code)
         } else {
-          failure(new Error('bad return code: ' + code));
+          success(new Error('bad return code: ' + code));
         }
       }
     });
@@ -238,19 +238,74 @@ function asyncForEach(_arr, f) {
   });
 }
 
+async function waitForOtoroshi(max) {
+  let count = 0;
+  return new Promise((success, failure) => {
+
+    function call() {
+      if (count <= max) {
+        count = count + 1;
+        return fetch(`${otoroshiUrl}/ready`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        }).then(r => {
+          if (r.status === 200) {
+            success();
+          } else {
+            setTimeout(() => {
+              call()
+            }, 1000);
+          }
+        }).catch(e => {
+          setTimeout(() => {
+            call()
+          }, 1000);
+        }) 
+      } else {
+        failure('too much calls: ' + count);
+      }
+    }
+
+    call();
+
+  });
+
+}
+
+async function isOtoroshiRunning() {
+  return fetch(`${otoroshiUrl}/ready`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json'
+    }
+  }).then(r => {
+    return true;
+  }).catch(e => {
+    return false;
+  }) 
+}
+
 async function runOtoroshi() {
   if (!noOtoroshi) {
     console.log('trying to run otoroshi ...');
-    runScript(`
-      java -Dhttp.port=9999 -Dhttps.port=9998 -Dapp.adminLogin=${otoroshiUser} -Dapp.adminPassword=${otoroshiPassword} -Dapp.importFrom=${__dirname}/../data/otoroshi.json -jar ${__dirname}/${otoroshiPath}
-    `, 
-    __dirname, 
-    {})
-    await waitFor(15000);
-    console.log('otoroshi is running !')
-    return lastProcess;
+    const running = await isOtoroshiRunning();
+    if (running) {
+      console.log('otoroshi is already running !');
+      return Promise.resolve(lastProcess);
+    } else {
+      runScript(`
+        java -DrunMode=screenshot-generator-otoroshi -Dhttp.port=9999 -Dhttps.port=9998 -Dapp.adminLogin=${otoroshiUser} -Dapp.adminPassword=${otoroshiPassword} -Dapp.importFrom=${__dirname}/../data/otoroshi.json -jar ${__dirname}/${otoroshiPath}
+      `, 
+      __dirname, 
+      {})
+      await waitForOtoroshi(30);
+      console.log('otoroshi is running !')
+      return lastProcess;
+    }
   } else {
-    return Promise.resolve('');
+    return Promise.resolve(lastProcess);
   }
 }
 
@@ -402,7 +457,17 @@ async function runScreenshots(process) {
     await handleScenarii(scenarii, browser, page);
     console.log('closing browser ...')
     await browser.close();
-    process.kill();
+    if (process) {
+      console.log('killing the process !', process.pid)
+      process.kill(9);
+      try {
+        await runScript(`ps aux  |  grep -i screenshot-generator-otoroshi  |  awk '{print $2}'  |  xargs kill -9`, __dirname, {}).catch(e => {
+          console.log('kill catch error', e.message)
+        });
+      } catch(e) {
+        console.log('kill error', e.message)
+      }
+    }
     await waitFor(2000);
   } catch(ex) {
     console.log(ex);
