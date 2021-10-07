@@ -64,6 +64,58 @@ function walkSync(dir, initDir, filelist = []) {
   return filelist;
 }
 
+const shortCuts = {
+
+  'goto-organizations': [{ name: 'goto-organizations', action: 'goto', path: '/bo/dashboard/organizations' }],
+  'goto-edit-organization': [{ name: 'goto-edit-organization', action: 'goto', path: '/bo/dashboard/organizations/edit/$id' }],
+  'goto-add-organization': [{ name: 'goto-add-organization', action: 'goto', path: '/bo/dashboard/organizations/add/$id' }],
+
+  'goto-teams': [{ name: 'goto-teams', action: 'goto', path: '/bo/dashboard/teams' }],
+  'goto-edit-team': [{ name: 'goto-edit-team', action: 'goto', path: '/bo/dashboard/teams/edit/$id' }],
+  'goto-add-team': [{ name: 'goto-add-team', action: 'goto', path: '/bo/dashboard/teams/add/$id' }],
+
+  'goto-groups': [{ name: 'goto-groups', action: 'goto', path: '/bo/dashboard/groups' }],
+  'goto-edit-group': [{ name: 'goto-edit-group', action: 'goto', path: '/bo/dashboard/groups/edit/$id' }],
+  'goto-add-group': [{ name: 'goto-add-group', action: 'goto', path: '/bo/dashboard/groups/add/$id' }],
+
+  'goto-services': [{ name: 'goto-services', action: 'goto', path: '/bo/dashboard/services' }],
+  'goto-edit-service': [{ name: 'goto-edit-service', action: 'goto', path: '/bo/dashboard/services/edit/$1' }],
+  'goto-add-service': [{ name: 'goto-add-service', action: 'goto', path: '/bo/dashboard/services/add/$1' }],
+
+  'goto-apikeys': [{ name: 'goto-apikeys', action: 'goto', path: '/bo/dashboard/apikeys' }],
+  'goto-edit-apikey': [{ name: 'goto-edit-apikey', action: 'goto', path: '/bo/dashboard/apikeys/edit/$1' }],
+  'goto-add-apikey': [{ name: 'goto-add-apikey', action: 'goto', path: '/bo/dashboard/apikeys/add/$1' }],
+
+  'goto-auths': [{ name: 'goto-auths', action: 'goto', path: '/bo/dashboard/auth-configs' }],
+  'goto-edit-auth': [{ name: 'goto-edit-auth', action: 'goto', path: '/bo/dashboard/auth-configs/edit/$1' }],
+  'goto-add-auth': [{ name: 'goto-add-auth', action: 'goto', path: '/bo/dashboard/auth-configs/add/$1' }],
+
+  'goto-jwts': [{ name: 'goto-jwts', action: 'goto', path: '/bo/dashboard/jwt-verifiers' }],
+  'goto-edit-jwt': [{ name: 'goto-edit-jwt', action: 'goto', path: '/bo/dashboard/jwt-verifiers/edit/$1' }],
+  'goto-add-jwt': [{ name: 'goto-add-jwt', action: 'goto', path: '/bo/dashboard/jwt-verifiers/add/$1' }],
+
+  'goto-certificates': [{ name: 'goto-certificates', action: 'goto', path: '/bo/dashboard/certificates' }],
+  'goto-edit-certificate': [{ name: 'goto-edit-certificate', action: 'goto', path: '/bo/dashboard/certificates/edit/$1' }],
+  'goto-add-certificate': [{ name: 'goto-add-certificate', action: 'goto', path: '/bo/dashboard/certificates/add/$1' }],
+
+  'goto-plugins': [{ name: 'goto-plugins', action: 'goto', path: '/bo/dashboard/plugins' }],
+  'goto-edit-plugin': [{ name: 'goto-edit-plugin', action: 'goto', path: '/bo/dashboard/plugins/edit/$1' }],
+  'goto-add-plugin': [{ name: 'goto-add-plugin', action: 'goto', path: '/bo/dashboard/plugins/add/$1' }],
+
+  'goto-cluster': [{ name: 'goto-cluster', action: 'goto', path: '/bo/dashboard/cluster' }],
+
+  'goto-exporters': [{ name: 'goto-exporters', action: 'goto', path: '/bo/dashboard/exporters' }],
+  'goto-edit-exporter': [{ name: 'goto-edit-exporter', action: 'goto', path: '/bo/dashboard/exporters/edit/$1' }],
+  'goto-add-exporter': [{ name: 'goto-add-exporter', action: 'goto', path: '/bo/dashboard/exporters/add/$1' }],
+
+  'goto-dangerzone': [{ name: 'goto-dangerzone', action: 'goto', path: '/bo/dashboard/dangerzone' }],
+
+  'goto-tcp-services': [{ name: 'goto-tcp-services', action: 'goto', path: '/bo/dashboard/tcp/services' }],
+  'goto-edit-tcp-service': [{ name: 'goto-edit-tcp-service', action: 'goto', path: '/bo/dashboard/tcp/services/edit/$1' }],
+  'goto-add-tcp-service': [{ name: 'goto-add-tcp-service', action: 'goto', path: '/bo/dashboard/tcp/services/add/$1' }],
+
+}
+
 /* supported steps
 
 - goto theUrl
@@ -73,6 +125,7 @@ function walkSync(dir, initDir, filelist = []) {
 - scroll-to #theSelector>.foo
 - screenshot foo.png
 - screenshot-area foo.png #theSelector>.foo
+- screenshot-static foo.png left:top:width:height
 - type #theSelector>.foo hello world !
 
 */
@@ -106,7 +159,10 @@ function parseMdFiles(from) {
           const parts = line.split(' ');
           const action = parts[0];
           const filename = file.name.replace(/\./g, '-');
-          if (action === 'goto') {
+          if (shortCuts[action]) {
+            const id = parts[1];
+            scen.steps = [ ...scen.steps, ...shortCuts[action].map(s => ({ ...s, path: s.path.replace('$1', id)})) ]
+          } else if (action === 'goto') {
             scen.steps.push({
               name: `scenario-${filename}-${idx}-step-${idx2}-goto`,
               action: 'goto',
@@ -150,6 +206,15 @@ function parseMdFiles(from) {
               filename: parts[1],
               selector: parts.slice(2).join(' '),
               area: 10
+            })
+          } else if (action === 'screenshot-static') {
+            const boxParams = parts[2].split(':');
+            const box = { left: boxParams[0], top: boxParams[1], width: boxParams[2], height: boxParams[3] };
+            scen.steps.push({
+              name: `scenario-${filename}-${idx}-step-${idx2}-screenshotstatic`,
+              action: 'screenshot-static',
+              filename: parts[1],
+              box: box
             })
           } else if (action === 'type') {
             scen.steps.push({
@@ -396,6 +461,11 @@ async function handleStep(step, browser, page, setPage, logger) {
     } else {
       return page.screenshot({ path: `${screenshotsPath}/${step.filename}`, fullPage: step.fullPage || false });
     }
+  } else if (action === 'screenshot-static') {   
+    const box = step.box;   
+    const margin = 0;
+    const clip = { 'x': box.x - margin, 'y': box.y - margin, 'width': box.width + (margin * 2), 'height': box.height + (margin * 2) };
+    return element.screenshot({ path: `${screenshotsPath}/${step.filename}`, clip });
   } else if (action === 'focus') {
     return Promise.resolve('');
   } else if (action === 'hover') {
