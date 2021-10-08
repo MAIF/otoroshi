@@ -66,51 +66,50 @@ function walkSync(dir, initDir, filelist = []) {
 }
 
 const shortCuts = {
-
   'goto-organizations': [{ name: 'goto-organizations', action: 'goto', path: '/bo/dashboard/organizations' }],
   'goto-edit-organization': [{ name: 'goto-edit-organization', action: 'goto', path: '/bo/dashboard/organizations/edit/$id' }],
   'goto-add-organization': [{ name: 'goto-add-organization', action: 'goto', path: '/bo/dashboard/organizations/add/$id' }],
-
+  //////////////////
   'goto-teams': [{ name: 'goto-teams', action: 'goto', path: '/bo/dashboard/teams' }],
   'goto-edit-team': [{ name: 'goto-edit-team', action: 'goto', path: '/bo/dashboard/teams/edit/$id' }],
   'goto-add-team': [{ name: 'goto-add-team', action: 'goto', path: '/bo/dashboard/teams/add/$id' }],
-
+  //////////////////
   'goto-groups': [{ name: 'goto-groups', action: 'goto', path: '/bo/dashboard/groups' }],
   'goto-edit-group': [{ name: 'goto-edit-group', action: 'goto', path: '/bo/dashboard/groups/edit/$id' }],
   'goto-add-group': [{ name: 'goto-add-group', action: 'goto', path: '/bo/dashboard/groups/add/$id' }],
-
+  //////////////////
   'goto-services': [{ name: 'goto-services', action: 'goto', path: '/bo/dashboard/services' }],
-  'goto-edit-service': [{ name: 'goto-edit-service', action: 'goto', path: '/bo/dashboard/services/edit/$1' }],
-  'goto-add-service': [{ name: 'goto-add-service', action: 'goto', path: '/bo/dashboard/services/add/$1' }],
-
+  'goto-edit-service': [{ name: 'goto-edit-service', action: 'goto', path: '/bo/dashboard/services/edit/$id' }],
+  'goto-add-service': [{ name: 'goto-add-service', action: 'goto', path: '/bo/dashboard/services/add/$id' }],
+  //////////////////
   'goto-apikeys': [{ name: 'goto-apikeys', action: 'goto', path: '/bo/dashboard/apikeys' }],
-  'goto-edit-apikey': [{ name: 'goto-edit-apikey', action: 'goto', path: '/bo/dashboard/apikeys/edit/$1' }],
-  'goto-add-apikey': [{ name: 'goto-add-apikey', action: 'goto', path: '/bo/dashboard/apikeys/add/$1' }],
-
+  'goto-edit-apikey': [{ name: 'goto-edit-apikey', action: 'goto', path: '/bo/dashboard/apikeys/edit/$id' }],
+  'goto-add-apikey': [{ name: 'goto-add-apikey', action: 'goto', path: '/bo/dashboard/apikeys/add/$id' }],
+  //////////////////
   'goto-auths': [{ name: 'goto-auths', action: 'goto', path: '/bo/dashboard/auth-configs' }],
-  'goto-edit-auth': [{ name: 'goto-edit-auth', action: 'goto', path: '/bo/dashboard/auth-configs/edit/$1' }],
-  'goto-add-auth': [{ name: 'goto-add-auth', action: 'goto', path: '/bo/dashboard/auth-configs/add/$1' }],
-
+  'goto-edit-auth': [{ name: 'goto-edit-auth', action: 'goto', path: '/bo/dashboard/auth-configs/edit/$id' }],
+  'goto-add-auth': [{ name: 'goto-add-auth', action: 'goto', path: '/bo/dashboard/auth-configs/add/$id' }],
+  //////////////////
   'goto-jwts': [{ name: 'goto-jwts', action: 'goto', path: '/bo/dashboard/jwt-verifiers' }],
-  'goto-edit-jwt': [{ name: 'goto-edit-jwt', action: 'goto', path: '/bo/dashboard/jwt-verifiers/edit/$1' }],
-  'goto-add-jwt': [{ name: 'goto-add-jwt', action: 'goto', path: '/bo/dashboard/jwt-verifiers/add/$1' }],
-
+  'goto-edit-jwt': [{ name: 'goto-edit-jwt', action: 'goto', path: '/bo/dashboard/jwt-verifiers/edit/$id' }],
+  'goto-add-jwt': [{ name: 'goto-add-jwt', action: 'goto', path: '/bo/dashboard/jwt-verifiers/add/$id' }],
+  //////////////////
   'goto-certificates': [{ name: 'goto-certificates', action: 'goto', path: '/bo/dashboard/certificates' }],
-  'goto-edit-certificate': [{ name: 'goto-edit-certificate', action: 'goto', path: '/bo/dashboard/certificates/edit/$1' }],
-  'goto-add-certificate': [{ name: 'goto-add-certificate', action: 'goto', path: '/bo/dashboard/certificates/add/$1' }],
-
+  'goto-edit-certificate': [{ name: 'goto-edit-certificate', action: 'goto', path: '/bo/dashboard/certificates/edit/$id' }],
+  'goto-add-certificate': [{ name: 'goto-add-certificate', action: 'goto', path: '/bo/dashboard/certificates/add/$id' }],
+  //////////////////
   'goto-plugins': [{ name: 'goto-plugins', action: 'goto', path: '/bo/dashboard/plugins' }],
-  'goto-edit-plugin': [{ name: 'goto-edit-plugin', action: 'goto', path: '/bo/dashboard/plugins/edit/$1' }],
-  'goto-add-plugin': [{ name: 'goto-add-plugin', action: 'goto', path: '/bo/dashboard/plugins/add/$1' }],
-
+  'goto-edit-plugin': [{ name: 'goto-edit-plugin', action: 'goto', path: '/bo/dashboard/plugins/edit/$id' }],
+  'goto-add-plugin': [{ name: 'goto-add-plugin', action: 'goto', path: '/bo/dashboard/plugins/add/$id' }],
+  //////////////////
   'goto-exporters': [{ name: 'goto-exporters', action: 'goto', path: '/bo/dashboard/exporters' }],
-  'goto-edit-exporter': [{ name: 'goto-edit-exporter', action: 'goto', path: '/bo/dashboard/exporters/edit/$1' }],
-  'goto-add-exporter': [{ name: 'goto-add-exporter', action: 'goto', path: '/bo/dashboard/exporters/add/$1' }],
-
+  'goto-edit-exporter': [{ name: 'goto-edit-exporter', action: 'goto', path: '/bo/dashboard/exporters/edit/$id' }],
+  'goto-add-exporter': [{ name: 'goto-add-exporter', action: 'goto', path: '/bo/dashboard/exporters/add/$id' }],
+  //////////////////
   'goto-tcp-services': [{ name: 'goto-tcp-services', action: 'goto', path: '/bo/dashboard/tcp/services' }],
-  'goto-edit-tcp-service': [{ name: 'goto-edit-tcp-service', action: 'goto', path: '/bo/dashboard/tcp/services/edit/$1' }],
-  'goto-add-tcp-service': [{ name: 'goto-add-tcp-service', action: 'goto', path: '/bo/dashboard/tcp/services/add/$1' }],
-
+  'goto-edit-tcp-service': [{ name: 'goto-edit-tcp-service', action: 'goto', path: '/bo/dashboard/tcp/services/edit/$id' }],
+  'goto-add-tcp-service': [{ name: 'goto-add-tcp-service', action: 'goto', path: '/bo/dashboard/tcp/services/add/$id' }],
+  //////////////////
   'goto-dangerzone': [{ name: 'goto-dangerzone', action: 'goto', path: '/bo/dashboard/dangerzone' }],
   'goto-cluster': [{ name: 'goto-cluster', action: 'goto', path: '/bo/dashboard/cluster' }],
   'goto-snowmonkey': [{ name: 'goto-snowmonkey', action: 'goto', path: '/bo/dashboard/snowmonkey' }],
@@ -171,7 +170,7 @@ function parseMdFiles(from) {
           const filename = file.name.replace(/\./g, '-');
           if (shortCuts[action]) {
             const id = parts[1];
-            scen.steps = [ ...scen.steps, ...shortCuts[action].map(s => ({ ...s, path: s.path.replace('$1', id)})) ]
+            scen.steps = [ ...scen.steps, ...shortCuts[action].map(s => ({ ...s, path: s.path.replace('$id', id)})) ]
           } else if (action === 'goto') {
             scen.steps.push({
               name: `scenario-${filename}-${idx}-step-${idx2}-goto`,
