@@ -9,13 +9,14 @@ import otoroshi.controllers.routes
 import otoroshi.env.Env
 
 import javax.naming.{CommunicationException, Context, ServiceUnavailableException}
-import javax.naming.directory.{InitialDirContext, SearchControls}
+import javax.naming.directory.{Attribute, InitialDirContext, SearchControls}
 import otoroshi.models._
 import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights}
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, _}
 import play.api.mvc._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
+import otoroshi.utils.RegexPool
 
 import javax.naming.ldap.{Control, InitialLdapContext}
 import scala.annotation.tailrec
@@ -26,7 +27,8 @@ case class LdapAuthUser(
     name: String,
     email: String,
     metadata: JsObject = Json.obj(),
-    userRights: Option[UserRights]
+    userRights: Option[UserRights],
+    ldapProfile: Option[JsValue]
 ) {
   def asJson: JsValue = LdapAuthUser.fmt.writes(this)
 }
@@ -39,6 +41,7 @@ object LdapAuthUser {
           "name"       -> o.name,
           "email"      -> o.email,
           "metadata"   -> o.metadata,
+          "ldapProfile"    -> o.ldapProfile.getOrElse(JsNull).as[JsValue],
           "userRights" -> o.userRights.map(UserRights.format.writes)
         )
       override def reads(json: JsValue)    =
@@ -47,6 +50,7 @@ object LdapAuthUser {
             LdapAuthUser(
               name = (json \ "name").as[String],
               email = (json \ "email").as[String],
+              ldapProfile = (json \ "ldapProfile").asOpt[JsObject],
               metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj()),
               userRights = (json \ "userRights").asOpt[UserRights](UserRights.format)
             )
@@ -120,6 +124,8 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           sessionCookieValues =
             (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(false), // for backward compatibility reasons
+          extractProfile = (json \ "extractProfile").asOpt[Boolean].getOrElse(false),
+          extractProfileFilter = (json \ "extractProfileFilter").asOpt[Seq[String]].getOrElse(Seq.empty),
           rightsOverride = (json \ "rightsOverride")
             .asOpt[Map[String, JsArray]]
             .map(_.mapValues(UserRights.readFromArray))
@@ -215,6 +221,8 @@ case class LdapAuthModuleConfig(
     sessionCookieValues: SessionCookieValues,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
     superAdmins: Boolean = false,
+    extractProfile: Boolean = false,
+    extractProfileFilter: Seq[String] = Seq.empty,
     rightsOverride: Map[String, UserRights] = Map.empty,
     dataOverride: Map[String, JsObject] = Map.empty,
     groupRights: Map[String, GroupRights] = Map.empty
@@ -252,6 +260,8 @@ case class LdapAuthModuleConfig(
       "tags"                -> JsArray(tags.map(JsString.apply)),
       "sessionCookieValues" -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "superAdmins"         -> superAdmins,
+      "extractProfile"      -> extractProfile,
+      "extractProfileFilter" -> extractProfileFilter,
       "rightsOverride"      -> JsObject(rightsOverride.mapValues(_.json)),
       "dataOverride"        -> JsObject(dataOverride),
       "groupRights"         -> JsObject(groupRights.mapValues(GroupRights._fmt.writes))
@@ -374,6 +384,29 @@ case class LdapAuthModuleConfig(
 
               val email = attrs.get(emailField).toString.split(":").last.trim
 
+              val profile: Option[JsValue] = if (extractProfile) {
+                val all = attrs.getAll
+                var jsonAttrs = Json.obj()
+                val regexes = extractProfileFilter.map(f => RegexPool.regex(f))
+                while (all.hasMore) {
+                  val next: Attribute = all.next()
+                  val name = next.getID
+                  if (regexes.forall(rx => !rx.matches(name))) {
+                    val value = if (next.size() > 1) {
+                      JsArray((0 until next.size()).map(idx => JsString(next.get(idx).toString)).toSeq)
+                    } else if (next.size() == 1) {
+                      JsString(next.get(0).toString)
+                    } else {
+                      JsNull
+                    }
+                    jsonAttrs = jsonAttrs ++ Json.obj(name -> value)
+                  }
+                }
+                Some(jsonAttrs)
+              } else {
+                None
+              }
+
               Right(
                 LdapAuthUser(
                   name = attrs.get(nameField).toString.split(":").last.trim,
@@ -383,6 +416,7 @@ case class LdapAuthModuleConfig(
                       .map(m => Json.parse(attrs.get(m).toString.split(":").last.trim).as[JsObject])
                       .getOrElse(Json.obj())
                   ),
+                  ldapProfile = profile,
                   userRights = Some(
                     UserRights(
                       (
