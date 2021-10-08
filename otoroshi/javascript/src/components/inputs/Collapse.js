@@ -20,9 +20,10 @@ export class Collapse extends Component {
     if (this.props.notVisible) {
       return null;
     }
+    console.log(this.props.dataScreenshot)
     if (this.state.collapsed) {
       return (
-        <div>
+        <div data-screenshot={this.props.dataScreenshot || ""}>
           <hr />
           <div className="form-group">
             <label className="col-sm-2 control-label" />
@@ -43,7 +44,7 @@ export class Collapse extends Component {
       );
     } else {
       return (
-        <div>
+        <div data-screenshot={this.props.dataScreenshot || ""}>
           <hr />
           <div className="form-group">
             <label className="col-sm-2 control-label" />

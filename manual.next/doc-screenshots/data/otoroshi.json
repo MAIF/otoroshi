@@ -561,11 +561,378 @@
       "handleLegacyDomain": true,
       "issueCert": false,
       "issueCertCA": null
+    },
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "service_mirror_opunmaif_fr",
+      "groupId": "default",
+      "groups": [
+        "default"
+      ],
+      "name": "my-service",
+      "description": "a service",
+      "env": "prod",
+      "domain": "oto.tools",
+      "subdomain": "myservice",
+      "targetsLoadBalancing": {
+        "type": "RoundRobin"
+      },
+      "targets": [
+        {
+          "host": "mirror.opunmaif.fr",
+          "scheme": "http",
+          "weight": 1,
+          "mtlsConfig": {
+            "certs": [],
+            "trustedCerts": [],
+            "mtls": false,
+            "loose": false,
+            "trustAll": false
+          },
+          "tags": [],
+          "metadata": {},
+          "protocol": "HTTP/1.1",
+          "predicate": {
+            "type": "AlwaysMatch"
+          },
+          "ipAddress": null
+        }
+      ],
+      "root": "/",
+      "matchingRoot": null,
+      "stripPath": true,
+      "localHost": "localhost:8080",
+      "localScheme": "http",
+      "redirectToLocal": false,
+      "enabled": true,
+      "userFacing": false,
+      "privateApp": true,
+      "forceHttps": false,
+      "logAnalyticsOnServer": false,
+      "useAkkaHttpClient": false,
+      "useNewWSClient": false,
+      "tcpUdpTunneling": false,
+      "detectApiKeySooner": false,
+      "maintenanceMode": false,
+      "buildMode": false,
+      "strictlyPrivate": true,
+      "enforceSecureCommunication": false,
+      "sendInfoToken": true,
+      "sendStateChallenge": true,
+      "sendOtoroshiHeadersBack": false,
+      "readOnly": false,
+      "xForwardedHeaders": false,
+      "overrideHost": true,
+      "allowHttp10": true,
+      "letsEncrypt": false,
+      "secComHeaders": {
+        "claimRequestName": null,
+        "stateRequestName": null,
+        "stateResponseName": null
+      },
+      "secComTtl": 30000,
+      "secComVersion": 1,
+      "secComInfoTokenVersion": "Legacy",
+      "secComExcludedPatterns": [],
+      "securityExcludedPatterns": [],
+      "publicPatterns": [
+        "/.*"
+      ],
+      "privatePatterns": [],
+      "additionalHeaders": {},
+      "additionalHeadersOut": {},
+      "missingOnlyHeadersIn": {},
+      "missingOnlyHeadersOut": {},
+      "removeHeadersIn": [],
+      "removeHeadersOut": [],
+      "headersVerification": {},
+      "matchingHeaders": {},
+      "ipFiltering": {
+        "whitelist": [],
+        "blacklist": []
+      },
+      "api": {
+        "exposeApi": false
+      },
+      "healthCheck": {
+        "enabled": false,
+        "url": "/"
+      },
+      "clientConfig": {
+        "useCircuitBreaker": true,
+        "retries": 1,
+        "maxErrors": 20,
+        "retryInitialDelay": 50,
+        "backoffFactor": 2,
+        "callTimeout": 30000,
+        "callAndStreamTimeout": 120000,
+        "connectionTimeout": 10000,
+        "idleTimeout": 60000,
+        "globalTimeout": 30000,
+        "sampleInterval": 2000,
+        "proxy": {},
+        "customTimeouts": [],
+        "cacheConnectionSettings": {
+          "enabled": false,
+          "queueSize": 2048
+        }
+      },
+      "canary": {
+        "enabled": false,
+        "traffic": 0.2,
+        "targets": [],
+        "root": "/"
+      },
+      "gzip": {
+        "enabled": false,
+        "excludedPatterns": [],
+        "whiteList": [
+          "text/*",
+          "application/javascript",
+          "application/json"
+        ],
+        "blackList": [],
+        "bufferSize": 8192,
+        "chunkedThreshold": 102400,
+        "compressionLevel": 5
+      },
+      "metadata": {},
+      "tags": [],
+      "chaosConfig": {
+        "enabled": false,
+        "largeRequestFaultConfig": null,
+        "largeResponseFaultConfig": null,
+        "latencyInjectionFaultConfig": null,
+        "badResponsesFaultConfig": null
+      },
+      "jwtVerifier": {
+        "type": "ref",
+        "ids": [],
+        "id": null,
+        "enabled": false,
+        "excludedPatterns": []
+      },
+      "secComSettings": {
+        "type": "HSAlgoSettings",
+        "size": 512,
+        "secret": "${config.app.claim.sharedKey}",
+        "base64": false
+      },
+      "secComUseSameAlgo": true,
+      "secComAlgoChallengeOtoToBack": {
+        "type": "HSAlgoSettings",
+        "size": 512,
+        "secret": "secret",
+        "base64": false
+      },
+      "secComAlgoChallengeBackToOto": {
+        "type": "HSAlgoSettings",
+        "size": 512,
+        "secret": "secret",
+        "base64": false
+      },
+      "secComAlgoInfoToken": {
+        "type": "HSAlgoSettings",
+        "size": 512,
+        "secret": "secret",
+        "base64": false
+      },
+      "cors": {
+        "enabled": false,
+        "allowOrigin": "*",
+        "exposeHeaders": [],
+        "allowHeaders": [],
+        "allowMethods": [],
+        "excludedPatterns": [],
+        "maxAge": null,
+        "allowCredentials": true
+      },
+      "redirection": {
+        "enabled": false,
+        "code": 303,
+        "to": "https://www.otoroshi.io"
+      },
+      "authConfigRef": "auth_mod_ldap_tutorial_with_groups",
+      "clientValidatorRef": null,
+      "transformerRef": null,
+      "transformerRefs": [],
+      "transformerConfig": {},
+      "apiKeyConstraints": {
+        "basicAuth": {
+          "enabled": true,
+          "headerName": null,
+          "queryName": null
+        },
+        "customHeadersAuth": {
+          "enabled": true,
+          "clientIdHeaderName": null,
+          "clientSecretHeaderName": null
+        },
+        "clientIdAuth": {
+          "enabled": true,
+          "headerName": null,
+          "queryName": null
+        },
+        "jwtAuth": {
+          "enabled": true,
+          "secretSigned": true,
+          "keyPairSigned": true,
+          "includeRequestAttributes": false,
+          "maxJwtLifespanSecs": null,
+          "headerName": null,
+          "queryName": null,
+          "cookieName": null
+        },
+        "routing": {
+          "noneTagIn": [],
+          "oneTagIn": [],
+          "allTagsIn": [],
+          "noneMetaIn": {},
+          "oneMetaIn": {},
+          "allMetaIn": {},
+          "noneMetaKeysIn": [],
+          "oneMetaKeyIn": [],
+          "allMetaKeysIn": []
+        }
+      },
+      "restrictions": {
+        "enabled": false,
+        "allowLast": true,
+        "allowed": [],
+        "forbidden": [],
+        "notFound": []
+      },
+      "accessValidator": {
+        "enabled": false,
+        "refs": [],
+        "config": {},
+        "excludedPatterns": []
+      },
+      "preRouting": {
+        "enabled": false,
+        "refs": [],
+        "config": {},
+        "excludedPatterns": []
+      },
+      "plugins": {
+        "enabled": false,
+        "refs": [],
+        "config": {},
+        "excluded": []
+      },
+      "hosts": [],
+      "paths": [],
+      "handleLegacyDomain": true,
+      "issueCert": false,
+      "issueCertCA": null
     }
   ],
   "errorTemplates": [],
   "jwtVerifiers": [],
-  "authConfigs": [],
+  "authConfigs": [
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "type": "ldap",
+      "id": "auth_mod_09975547-a186-4a2d-a550-ca71a0a03c0c",
+      "name": "LDAP tutorial",
+      "desc": "LDAP tutorial",
+      "basicAuth": false,
+      "allowEmptyPassword": false,
+      "sessionMaxAge": 86400,
+      "serverUrls": [
+        "ldap://localhost:389"
+      ],
+      "searchBase": "dc=otoroshi,dc=tools",
+      "userBase": null,
+      "groupFilters": [
+        {
+          "group": "objectClass=groupOfNames",
+          "team": "*",
+          "tenant": "*:rw"
+        }
+      ],
+      "searchFilter": "(uid=${username})",
+      "adminUsername": "cn=admin,dc=otoroshi,dc=tools",
+      "adminPassword": "otoroshi",
+      "nameField": "cn",
+      "emailField": "mail",
+      "metadataField": null,
+      "extraMetadata": {},
+      "metadata": {},
+      "tags": [],
+      "sessionCookieValues": {
+        "httpOnly": true,
+        "secure": false
+      },
+      "superAdmins": false,
+      "rightsOverride": {},
+      "dataOverride": {},
+      "groupRights": {}
+    },
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "type": "ldap",
+      "id": "auth_mod_91bb8b38-620e-4c18-9bbc-7c8d1efd63cc",
+      "name": "LDAP tutorial with groups",
+      "desc": "LDAP tutorial with groups",
+      "basicAuth": false,
+      "allowEmptyPassword": false,
+      "sessionMaxAge": 86400,
+      "serverUrls": [
+        "ldap://localhost:389"
+      ],
+      "searchBase": "dc=otoroshi,dc=tools",
+      "userBase": null,
+      "groupFilters": [
+        {
+          "group": "cn=singers",
+          "team": "default",
+          "tenant": "default:r"
+        },
+        {
+          "group": "cn=scientists",
+          "team": "*",
+          "tenant": "*:rw"
+        }
+      ],
+      "searchFilter": "(uid=${username})",
+      "adminUsername": "cn=admin,dc=otoroshi,dc=tools",
+      "adminPassword": "otoroshi",
+      "nameField": "cn",
+      "emailField": "mail",
+      "metadataField": null,
+      "extraMetadata": {
+        "jhonny@otoroshi.tools": {
+          "username": "toto"
+        }
+      },
+      "metadata": {},
+      "tags": [],
+      "sessionCookieValues": {
+        "httpOnly": true,
+        "secure": false
+      },
+      "superAdmins": false,
+      "rightsOverride": {},
+      "dataOverride": {},
+      "groupRights": {}
+    }
+  ],
   "certificates": [
     {
       "_loc": {

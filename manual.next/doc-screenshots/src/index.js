@@ -13,6 +13,7 @@ const argv = require('minimist')(process.argv.slice(2));
 //console.log(process.argv);
 // console.log(argv);
 
+const otoroshiLoginUrl = argv.url || process.env.OTOROSHI_DOCSCREENS_URL || "http://otoroshi.oto.tools:9999/bo/simple/login"
 const otoroshiUrl = argv.url || process.env.OTOROSHI_DOCSCREENS_URL || "http://otoroshi.oto.tools:9999";
 const otoroshiUser = argv.user || process.env.OTOROSHI_DOCSCREENS_USER || "admin@otoroshi.io";
 const otoroshiPassword = argv.pwd || process.env.OTOROSHI_DOCSCREENS_PWD || "password";
@@ -28,15 +29,15 @@ const parseMdFilesFrom = argv['parse-md-files-from'] || process.env.OTOROSHI_DOC
 
 function setupScenarii() {
   if (rawScenarii) {
-    scenarii = [ ...scenarii, ...JSON.parse(rawScenarii) ];
+    scenarii = [...scenarii, ...JSON.parse(rawScenarii)];
   }
   if (scenariiPath) {
-    scenarii = [ ...scenarii, ...JSON.parse(fs.readFileSync(scenariiPath)) ];
+    scenarii = [...scenarii, ...JSON.parse(fs.readFileSync(scenariiPath))];
   }
   if (scenariiFolderPath) {
     const files = fs.readdirSync(scenariiFolderPath);
     files.filter(f => f.endsWith('.json')).map(f => {
-      scenarii = [ ...scenarii, ...JSON.parse(fs.readFileSync(scenariiFolderPath + '/' + f)) ];
+      scenarii = [...scenarii, ...JSON.parse(fs.readFileSync(scenariiFolderPath + '/' + f))];
     })
   }
   if (parseMdFilesFrom) {
@@ -54,8 +55,8 @@ function walkSync(dir, initDir, filelist = []) {
       filelist = walkSync(dir + '/' + file, initDir, filelist);
     } else {
       const content = fs.readFileSync(dir + '/' + file).toString('utf8');
-      filelist.push({ 
-        name: file, 
+      filelist.push({
+        name: file,
         path: dir + '/' + file,
         content: content
       });
@@ -79,12 +80,12 @@ function parseMdFiles(from) {
         }
         if (inside && line.trim().indexOf('-->') === 0) {
           inside = false;
-          scens = [ ...scens, scenlines]
+          scens = [...scens, scenlines]
           scenlines = [];
         }
         if (inside) {
           if (line.trim().length > 0) {
-            scenlines = [ ...scenlines, line ];
+            scenlines = [...scenlines, line];
           }
         }
       })
@@ -119,7 +120,7 @@ function parseMdFiles(from) {
               action: 'spot',
               selector: parts[1]
             })
-          }  else if (action === 'scroll-to') {
+          } else if (action === 'scroll-to') {
             scen.steps.push({
               name: `scenario-${filename}-${idx}-step-${idx2}-scroll-to`,
               action: 'scroll-to',
@@ -149,7 +150,7 @@ function parseMdFiles(from) {
           }
         });
         // console.log(scen)
-        scenarii = [ ...scenarii, scen ];
+        scenarii = [...scenarii, scen];
       })
     })
   }
@@ -164,7 +165,7 @@ async function echoReadable(readable) {
 function runSystemCommand(command, args, location, env = {}) {
   const source = spawn(command, args, {
     cwd: location,
-    env: { ...process.env, ...env },
+    env: { ...process.env, ...env },
     stdio: ['ignore', 'pipe', process.stderr]
   });
   return echoReadable(source.stdout);
@@ -177,7 +178,7 @@ function runScript(script, where, env = {}, fit) {
     const source = spawn(script, [], {
       cwd: where,
       shell: true,
-      env: { ...process.env, ...env },
+      env: { ...process.env, ...env },
       stdio: ['ignore', 'pipe', process.stderr]
     });
     source.on('close', (code) => {
@@ -194,19 +195,19 @@ function runScript(script, where, env = {}, fit) {
     lastProcess = source;
     return echoReadable(source.stdout);
   });
-}  
+}
 
 function waitFor(millis) {
   return new Promise(s => {
     setTimeout(() => {
       s();
     }, millis)
-  }) 
+  })
 }
 
 function asyncForEach(_arr, f) {
   return new Promise((success, failure) => {
-    const arr = [ ..._arr ];
+    const arr = [..._arr];
     function next() {
       const item = arr.shift();
       if (item) {
@@ -231,9 +232,9 @@ async function runOtoroshi() {
     console.log('trying to run otoroshi ...');
     runScript(`
       java -Dhttp.port=9999 -Dhttps.port=9998 -Dapp.adminLogin=${otoroshiUser} -Dapp.adminPassword=${otoroshiPassword} -Dapp.importFrom=${__dirname}/../data/otoroshi.json -jar ${__dirname}/${otoroshiPath}
-    `, 
-    __dirname, 
-    {})
+    `,
+      __dirname,
+      {})
     await waitFor(15000);
     console.log('otoroshi is running !')
     return lastProcess;
@@ -316,9 +317,23 @@ async function handleStep(step, browser, page, setPage, logger) {
   } else if (action === 'screenshot') {
     if (step.selector && step.area) {
       return page.$(step.selector).then(element => {
-        return element.boundingBox().then(box => {
+        return page.evaluate(el => {
+          const { height,
+            left,
+            top,
+            width } = el.getBoundingClientRect()
+          return {
+            height, left, top, width
+          }
+        }, element).then(async coordinates => {
+          const offsetY = await page.evaluate(() => window.scrollY)
           const margin = step.area || 10;
-          const clip = { 'x': box.x - margin, 'y': box.y - margin, 'width': box.width + (margin * 2), 'height': box.height + (margin * 2) };
+          const clip = {
+            'x': coordinates.left - margin,
+            'y': coordinates.top + offsetY - margin,
+            'width': coordinates.width + (margin * 2),
+            'height': coordinates.height + (margin * 2)
+          };
           return element.screenshot({ path: `${screenshotsPath}/${step.filename}`, fullPage: step.fullPage || false, clip });
         });
       });
@@ -372,7 +387,7 @@ async function runScreenshots(process) {
     });
     const page = await browser.newPage();
     await page.deleteCookie({ name: 'otoroshi-session', domain: '.oto.tools' });
-    await page.goto(otoroshiUrl);
+    await page.goto(otoroshiLoginUrl);
     console.log('login default admin user ...')
     await page.type('input[name=email]', otoroshiUser)
     await page.type('input[name="password"]', otoroshiPassword)
@@ -392,7 +407,7 @@ async function runScreenshots(process) {
     await browser.close();
     process.kill();
     await waitFor(2000);
-  } catch(ex) {
+  } catch (ex) {
     console.log(ex);
   }
 }
