@@ -24,6 +24,7 @@ const screenshotsPath = argv['screenshot-path'] || process.env.OTOROSHI_DOCSCREE
 const rawScenarii = argv.raw || process.env.OTOROSHI_DOCSCREENS_RAW || '[]';
 const scenariiPath = argv.scenarii || process.env.OTOROSHI_DOCSCREENS_SCENARII_PATH;
 const scenariiFolderPath = argv['scenarii-folder'] || process.env.OTOROSHI_DOCSCREENS_SCENARII_FOLDER_PATH;
+const apiCommandsFolder = argv['api-commands-folder'] || process.env.OTOROSHI_DOCSCREENS_API_COMMANDS_FOLDER_PATH;
 const parseMdFilesFrom = argv['parse-md-files-from'] || process.env.OTOROSHI_DOCSCREENS_PARSE_MD_FILES_FROM;
 
 function setupScenarii() {
@@ -102,18 +103,25 @@ const shortCuts = {
   'goto-edit-plugin': [{ name: 'goto-edit-plugin', action: 'goto', path: '/bo/dashboard/plugins/edit/$1' }],
   'goto-add-plugin': [{ name: 'goto-add-plugin', action: 'goto', path: '/bo/dashboard/plugins/add/$1' }],
 
-  'goto-cluster': [{ name: 'goto-cluster', action: 'goto', path: '/bo/dashboard/cluster' }],
-
   'goto-exporters': [{ name: 'goto-exporters', action: 'goto', path: '/bo/dashboard/exporters' }],
   'goto-edit-exporter': [{ name: 'goto-edit-exporter', action: 'goto', path: '/bo/dashboard/exporters/edit/$1' }],
   'goto-add-exporter': [{ name: 'goto-add-exporter', action: 'goto', path: '/bo/dashboard/exporters/add/$1' }],
-
-  'goto-dangerzone': [{ name: 'goto-dangerzone', action: 'goto', path: '/bo/dashboard/dangerzone' }],
 
   'goto-tcp-services': [{ name: 'goto-tcp-services', action: 'goto', path: '/bo/dashboard/tcp/services' }],
   'goto-edit-tcp-service': [{ name: 'goto-edit-tcp-service', action: 'goto', path: '/bo/dashboard/tcp/services/edit/$1' }],
   'goto-add-tcp-service': [{ name: 'goto-add-tcp-service', action: 'goto', path: '/bo/dashboard/tcp/services/add/$1' }],
 
+  'goto-dangerzone': [{ name: 'goto-dangerzone', action: 'goto', path: '/bo/dashboard/dangerzone' }],
+  'goto-cluster': [{ name: 'goto-cluster', action: 'goto', path: '/bo/dashboard/cluster' }],
+  'goto-snowmonkey': [{ name: 'goto-snowmonkey', action: 'goto', path: '/bo/dashboard/snowmonkey' }],
+  'goto-privappssessions': [{ name: 'goto-privappssessions', action: 'goto', path: '/bo/dashboard/sessions/private' }],
+  'goto-adminssessions': [{ name: 'goto-adminssessions', action: 'goto', path: '/bo/dashboard/sessions/admin' }],
+  'goto-alerts': [{ name: 'goto-alerts', action: 'goto', path: '/bo/dashboard/alerts' }],
+  'goto-audits': [{ name: 'goto-audits', action: 'goto', path: '/bo/dashboard/audits' }],
+  'goto-global-events': [{ name: 'goto-global-events', action: 'goto', path: '/bo/dashboard/events' }],
+  'goto-global-status': [{ name: 'goto-global-status', action: 'goto', path: '/bo/dashboard/status' }],
+  'goto-global-stats': [{ name: 'goto-global-stats', action: 'goto', path: '/bo/dashboard/stats' }],
+  'goto-home': [{ name: 'goto-home', action: 'goto', path: '/bo/dashboard' }],
 }
 
 /* supported steps
@@ -127,6 +135,8 @@ const shortCuts = {
 - screenshot-area foo.png #theSelector>.foo
 - screenshot-static foo.png left:top:width:height
 - type #theSelector>.foo hello world !
+- send-api foo.json
+- all shortcuts
 
 */
 function parseMdFiles(from) {
@@ -222,6 +232,12 @@ function parseMdFiles(from) {
               action: 'type',
               selector: parts[1],
               input: parts.slice(2).join(' '),
+            })
+          } else if (action === 'send-api') {
+            scen.steps.push({
+              name: `scenario-${filename}-${idx}-step-${idx2}-sendapi`,
+              action: 'send-api',
+              filename: parts[1],
             })
           }
         });
@@ -466,6 +482,41 @@ async function handleStep(step, browser, page, setPage, logger) {
     const margin = 0;
     const clip = { 'x': box.x - margin, 'y': box.y - margin, 'width': box.width + (margin * 2), 'height': box.height + (margin * 2) };
     return element.screenshot({ path: `${screenshotsPath}/${step.filename}`, clip });
+  } else if (action === 'send-api') {   
+    if (apiCommandsFolder) {
+      const filename = step.filename;   
+      const commandsRaw = fs.readFileSync(`${apiCommandsFolder}/${filename}`);
+      const commands = JSON.parse(commandsRaw);
+      return new Promise((success, failure) => {
+        function next() {
+          const action = commands.shift();
+          if (action) {
+            const headers = action.headers || {};
+            fetch(`${otoroshiUrl}${action.path}`, {
+              method: action.method,
+              headers: { 
+                ...headers,
+                'Accept': 'application/json',
+                'Content-Type': headers['Content-Type'] || (action.body ? 'application/json' : headers['Content-Type']),
+                Authorization: `Basic ${Buffer.from('admin-api-apikey-id:admin-api-apikey-secret').toString('base64')}`
+              },
+              body: action.body
+            }).then(r => {
+              return r.json().then(body => {
+                if (argv.debug) {
+                  console.log(`api call "${step.name}": ${r.status} - ${body}`)
+                }
+              });
+            })
+          } else {
+            success();
+          }
+        }
+        next();
+      });
+    } else {
+      console.log('error: api-commands-folder not specified ...')
+    }
   } else if (action === 'focus') {
     return Promise.resolve('');
   } else if (action === 'hover') {
