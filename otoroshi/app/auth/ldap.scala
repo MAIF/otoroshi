@@ -363,7 +363,54 @@ case class LdapAuthModuleConfig(
           val userGroup = usersInGroup
             .find { group => group._2.exists(g => g.contains(dn)) }
 
-          if (userGroup.isDefined) {
+          if(groupFilters.isEmpty) {
+            LdapAuthModuleConfig.logger.debug(s"none groups defined - user found anyway")
+            val attrs = item.getAttributes
+
+            try {
+              val ctx2 = getInitialDirContext(dn, password, url)
+              ctx2.close()
+
+              val email = attrs.get(emailField).toString.split(":").last.trim
+
+              val metadata = extraMetadata.deepMerge(
+                metadataField
+                  .map(m => Json.parse(attrs.get(m).toString.split(":").last.trim).as[JsObject])
+                  .getOrElse(Json.obj())
+              )
+
+              Right(
+                LdapAuthUser(
+                  name = attrs.get(nameField).toString.split(":").last.trim,
+                  email,
+                  metadata = dataOverride
+                    .get(email)
+                    .map(v => metadata.deepMerge(v))
+                    .getOrElse(metadata),
+                  userRights = Some(
+                    UserRights(
+                      UserRights.default
+                        .rights
+                        ++
+                        groupRights.values
+                          .filter { group => group.users.contains(email) }
+                          .flatMap { group => group.userRights.rights }
+                          .toList
+                        .groupBy(f => f.tenant)
+                        .map(m => UserRight(m._1, m._2.flatMap(_.teams)))
+                        .toSeq
+                    )
+                  )
+                )
+              )
+            } catch {
+              case _: ServiceUnavailableException | _: CommunicationException => Left(s"Communication error")
+              case e: Throwable                                               =>
+                LdapAuthModuleConfig.logger.debug(s"bind failed", e)
+                Left(s"bind failed ${e.getMessage}")
+            }
+          }
+          else if (userGroup.isDefined) {
             val group = userGroup.get
             LdapAuthModuleConfig.logger.debug(s"user found in ${group._1} group")
             val attrs = item.getAttributes
