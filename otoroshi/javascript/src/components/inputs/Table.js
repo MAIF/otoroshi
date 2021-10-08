@@ -474,7 +474,7 @@ export class Table extends Component {
               this.props.injectToolbar
                 ? this.props.injectToolbar(this.state, (s) => this.setState(s))
                 : null,
-              <form className="form-horizontal" style={this.props.style}>
+              <form className="form-horizontal" style={{paddingTop: '30px', ...this.props.style }}>
                 {React.createElement(this.props.formComponent, {
                   onChange: (currentItem) => this.setState({ currentItem }),
                   value: this.state.currentItem,
@@ -512,7 +512,7 @@ export class Table extends Component {
               this.props.injectToolbar
                 ? this.props.injectToolbar(this.state, (s) => this.setState(s))
                 : null,
-              <form className="form-horizontal" style={this.props.style}>
+              <form className="form-horizontal" style={{paddingTop: '30px', ...this.props.style }}>
                 {React.createElement(this.props.formComponent, {
                   onChange: (currentItem) => {
                     this.setState({ currentItem });

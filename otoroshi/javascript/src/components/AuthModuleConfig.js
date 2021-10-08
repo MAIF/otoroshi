@@ -936,8 +936,7 @@ export class BasicModuleConfig extends Component {
             <button
               type="button"
               className="btn btn-info"
-              onClick={this.addUser}
-              style={{ marginTop: 20 }}>
+              onClick={this.addUser}>
               <i className="fas fa-plus-circle" /> Add user
             </button>
           </div>
