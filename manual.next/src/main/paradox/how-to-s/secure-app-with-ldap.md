@@ -3,16 +3,16 @@
 ### Cover by this tutorial
 
 - [Secure an app and/or your Otoroshi UI with LDAP](#secure-an-app-andor-your-otoroshi-ui-with-ldap)
-    - [Cover by this tutorial](#cover-by-this-tutorial)
-    - [Download Otoroshi](#download-otoroshi)
-    - [Create an Authentication configuration](#create-an-authentication-configuration)
-    - [Connect to Otoroshi with LDAP authentication](#connect-to-otoroshi-with-ldap-authentication)
-      - [Testing your configuration](#testing-your-configuration)
-      - [Secure an app with LDAP authentication](#secure-an-app-with-ldap-authentication)
-      - [Manage LDAP users rights on Otoroshi](#manage-ldap-users-rights-on-otoroshi)
-      - [Advanced usage of LDAP Authentication](#advanced-usage-of-ldap-authentication)
+- [Cover by this tutorial](#cover-by-this-tutorial)
+- [Download Otoroshi](#download-otoroshi)
+- [Create an Authentication configuration](#create-an-authentication-configuration)
+- [Connect to Otoroshi with LDAP authentication](#connect-to-otoroshi-with-ldap-authentication)
+- [Testing your configuration](#testing-your-configuration)
+- [Secure an app with LDAP authentication](#secure-an-app-with-ldap-authentication)
+- [Manage LDAP users rights on Otoroshi](#manage-ldap-users-rights-on-otoroshi)
+- [Advanced usage of LDAP Authentication](#advanced-usage-of-ldap-authentication)
 
-<img src="../imgs/ldap-tutorial.png">
+<img src="../imgs/ldap-tutorial.png" height="400px"> 
 
 ### Download Otoroshi
 
