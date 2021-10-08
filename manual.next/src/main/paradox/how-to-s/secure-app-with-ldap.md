@@ -264,18 +264,16 @@ The last 4 fields of the authentication form cover this.
 
 Each field take the `Email field name` as keys, and a json value.
 
-Let's start by adding the lastname of Johnny as `Extra metadata`of his profile. The `Email field name` is configured to match with the `mail` field from LDAP user data.
+Let's start by adding few properties for each connected users with `Extra metadata`.
 
 ```json
 // Add this configuration in extra metadata part
 {
-  "johnny@otoroshi.tools": {
-    "lastname": "Hallyday"
-  }
+  "provider": "OpenLDAP"
 }
 ```
 
-The next field `Data override` is merged with extra metadata when a user connects to a `private app` (Inside Otoroshi, private app is a service secure by any authentication plugin).  
+The next field `Data override` is merged with extra metadata when a user connects to a `private app` (Inside Otoroshi, private app is a service secure by any authentication plugin) or to the UI. The `Email field name` is configured to match with the `mail` field from LDAP user data.
 
 ```json 
 {
