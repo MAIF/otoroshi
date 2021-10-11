@@ -103,6 +103,9 @@ at some point we will have the opportunity to rewrite otoroshi with major breaki
 - [ ] rewrite http handler to be mostly plugin based
 - [ ] targets should be a separate entity to allow reuse
 - [ ] extract standard plugins from legacy http handler
+- [ ] move all `app.*` config. keys to `otoroshi.*`
+- [ ] all env. variables should start with `OTOROSHI_`
+- [ ] all env. variables about initial data should start with `OTOROSHI_INITIAL_`
 - [ ] rewrite datastore layer to be less redis specific and offer better performance improvement possibilities
   - [ ] default template (customizable) for services with standard plugins
 - [ ] rewrite entities
