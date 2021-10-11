@@ -234,6 +234,7 @@ Once the configuration is done, you can secure any of Otoroshi services with it.
 #### Manage LDAP users rights on Otoroshi
 
 For each LDAP groups, you can affect a list of rights : 
+
 - on an `Organization` : only ressources of an organization
 - on a `Team` : only ressources belonging to this team
 - and a level of rights : `Read`, `Write` or `Read/Write`
