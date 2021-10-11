@@ -46,7 +46,7 @@ $ java -jar otoroshi.jar
 [info] p.c.s.AkkaHttpServer - Listening for HTTPS on /0:0:0:0:0:0:0:0:9998
 [info] otoroshi-script-manager - Finding and starting plugins done in 4681 ms.
 ...
-````
+```
 
 #### Running an simple OpenLDAP server 
 
