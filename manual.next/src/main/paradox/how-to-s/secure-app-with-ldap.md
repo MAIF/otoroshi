@@ -274,7 +274,7 @@ Let's start by adding few properties for each connected users with `Extra metada
 }
 ```
 
-The next field `Data override` is merged with extra metadata when a user connects to a `private app` (Inside Otoroshi, private app is a service secure by any authentication plugin) or to the UI. The `Email field name` is configured to match with the `mail` field from LDAP user data.
+The next field `Data override` is merged with extra metadata when a user connects to a `private app` (Inside Otoroshi, private app is a service secure by any authentication module) or to the UI. The `Email field name` is configured to match with the `mail` field from LDAP user data.
 
 ```json 
 {
