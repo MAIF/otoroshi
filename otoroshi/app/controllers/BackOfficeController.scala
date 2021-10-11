@@ -1328,7 +1328,7 @@ class BackOfficeController(
           case Right(module) => {
             module.bindUser(username, password) match {
               case Left(err) => FastFuture.successful(Ok(Json.obj("works" -> false, "error" -> err)))
-              case Right(_)  => FastFuture.successful(Ok(Json.obj("works" -> true)))
+              case Right(user)  => FastFuture.successful(Ok(Json.obj("works" -> true, "user" -> user.asJson)))
             }
           }
         }
