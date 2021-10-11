@@ -433,7 +433,12 @@ ldapadd -x -w otoroshi -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -f bootstrap
 -->
 <img src="../imgs/generated-hows-to-secure-an-app-with-ldap.png">
 <h4><a href="#manage-ldap-users-rights-on-otoroshi" name="manage-ldap-users-rights-on-otoroshi" class="anchor"><span class="anchor-link"></span></a>Manage LDAP users rights on Otoroshi</h4>
-<p>For each LDAP groups, you can affect a list of rights : - on an <code>Organization</code> : only ressources of an organization - on a <code>Team</code> : only ressources belonging to this team - and a level of rights : <code>Read</code>, <code>Write</code> or <code>Read/Write</code></p>
+<p>For each LDAP groups, you can affect a list of rights : </p>
+<ul>
+  <li>on an <code>Organization</code> : only ressources of an organization</li>
+  <li>on a <code>Team</code> : only ressources belonging to this team</li>
+  <li>and a level of rights : <code>Read</code>, <code>Write</code> or <code>Read/Write</code></li>
+</ul>
 <p>Start by navigate to your authentication configuration (created in <a href="#create-an-authentication-configuration">previous</a> step).</p>
 <p>Then, replace the values of the <code>Mapping group filter</code> field to match LDAP groups with Otoroshi rights.</p>
 <!-- oto-scenario
