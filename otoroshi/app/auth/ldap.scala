@@ -126,6 +126,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(false), // for backward compatibility reasons
           extractProfile = (json \ "extractProfile").asOpt[Boolean].getOrElse(false),
           extractProfileFilter = (json \ "extractProfileFilter").asOpt[Seq[String]].getOrElse(Seq.empty),
+          extractProfileFilterNot = (json \ "extractProfileFilterNot").asOpt[Seq[String]].getOrElse(Seq.empty),
           rightsOverride = (json \ "rightsOverride")
             .asOpt[Map[String, JsArray]]
             .map(_.mapValues(UserRights.readFromArray))
@@ -223,6 +224,7 @@ case class LdapAuthModuleConfig(
     superAdmins: Boolean = false,
     extractProfile: Boolean = false,
     extractProfileFilter: Seq[String] = Seq.empty,
+    extractProfileFilterNot: Seq[String] = Seq.empty,
     rightsOverride: Map[String, UserRights] = Map.empty,
     dataOverride: Map[String, JsObject] = Map.empty,
     groupRights: Map[String, GroupRights] = Map.empty
@@ -262,6 +264,7 @@ case class LdapAuthModuleConfig(
       "superAdmins"         -> superAdmins,
       "extractProfile"      -> extractProfile,
       "extractProfileFilter" -> extractProfileFilter,
+      "extractProfileFilterNot" -> extractProfileFilterNot,
       "rightsOverride"      -> JsObject(rightsOverride.mapValues(_.json)),
       "dataOverride"        -> JsObject(dataOverride),
       "groupRights"         -> JsObject(groupRights.mapValues(GroupRights._fmt.writes))
@@ -461,10 +464,11 @@ case class LdapAuthModuleConfig(
                 val all = attrs.getAll
                 var jsonAttrs = Json.obj()
                 val regexes = extractProfileFilter.map(f => RegexPool.regex(f))
+                val regexesNot = extractProfileFilterNot.map(f => RegexPool.regex(f))
                 while (all.hasMore) {
                   val next: Attribute = all.next()
                   val name = next.getID
-                  if (regexes.isEmpty || regexes.exists(_.matches(name))) {
+                  if (regexes.isEmpty || (regexes.exists(_.matches(name))) && regexesNot.forall(rx => !rx.matches(name))) {
                     val value = if (next.size() > 1) {
                       JsArray((0 until next.size()).map(idx => JsString(next.get(idx).toString)).toSeq)
                     } else if (next.size() == 1) {

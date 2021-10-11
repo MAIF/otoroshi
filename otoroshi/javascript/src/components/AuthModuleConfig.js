@@ -1262,10 +1262,16 @@ export class LdapModuleConfig extends Component {
           onChange={(v) => changeTheValue(path + '.adminPassword', v)}
         />
         <ArrayInput 
-          label="Extract profile filters"
+          label="Extract profile filters attributes in"
           value={settings.extractProfileFilter}
           help="..."
           onChange={(v) => changeTheValue(path + '.extractProfileFilter', v)}
+        />
+        <ArrayInput 
+          label="Extract profile filters attributes not in"
+          value={settings.extractProfileFilterNot}
+          help="..."
+          onChange={(v) => changeTheValue(path + '.extractProfileFilterNot', v)}
         />
         <div className="form-group">
           <label className="col-xs-12 col-sm-2 control-label"></label>
