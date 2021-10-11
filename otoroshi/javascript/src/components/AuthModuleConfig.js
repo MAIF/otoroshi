@@ -1082,6 +1082,12 @@ export class LdapModuleConfig extends Component {
           help="All logged in users will have super admins rights"
           onChange={(v) => changeTheValue(path + '.superAdmins', v)}
         />
+        <BooleanInput
+          label="Extract profile"
+          value={settings.extractProfile}
+          help="..."
+          onChange={(v) => changeTheValue(path + '.extractProfile', v)}
+        />
         <ArrayInput
           label="LDAP Server URL"
           placeholder="Set your LDAP server"
@@ -1253,6 +1259,12 @@ export class LdapModuleConfig extends Component {
           value={settings.adminPassword}
           help="if one"
           onChange={(v) => changeTheValue(path + '.adminPassword', v)}
+        />
+        <ArrayInput 
+          label="Extract profile filters"
+          value={settings.extractProfileFilter}
+          help="..."
+          onChange={(v) => changeTheValue(path + '.extractProfileFilter', v)}
         />
         <div className="form-group">
           <label className="col-xs-12 col-sm-2 control-label"></label>
