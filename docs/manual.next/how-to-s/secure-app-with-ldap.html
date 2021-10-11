@@ -455,7 +455,7 @@ ldapadd -x -w otoroshi -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -f bootstrap
   &quot;provider&quot;: &quot;OpenLDAP&quot;
 }
 </code></pre>
-<p>The next field <code>Data override</code> is merged with extra metadata when a user connects to a <code>private app</code> (Inside Otoroshi, private app is a service secure by any authentication plugin) or to the UI. The <code>Email field name</code> is configured to match with the <code>mail</code> field from LDAP user data.</p>
+<p>The next field <code>Data override</code> is merged with extra metadata when a user connects to a <code>private app</code> (Inside Otoroshi, private app is a service secure by any authentication module) or to the UI. The <code>Email field name</code> is configured to match with the <code>mail</code> field from LDAP user data.</p>
 <pre class="prettyprint"><code class="language-json ">{
   &quot;johnny@otoroshi.tools&quot;: {
     &quot;stage_name&quot;: &quot;Jean-Philippe Smet&quot;
