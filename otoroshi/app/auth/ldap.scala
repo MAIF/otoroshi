@@ -391,6 +391,29 @@ case class LdapAuthModuleConfig(
                   .getOrElse(Json.obj())
               )
 
+              val profile: Option[JsValue] = if (extractProfile) {
+                val all = attrs.getAll
+                var jsonAttrs = Json.obj()
+                val regexes = extractProfileFilter.map(f => RegexPool.regex(f))
+                while (all.hasMore) {
+                  val next: Attribute = all.next()
+                  val name = next.getID
+                  if (regexes.isEmpty || regexes.exists(_.matches(name))) {
+                    val value = if (next.size() > 1) {
+                      JsArray((0 until next.size()).map(idx => JsString(next.get(idx).toString)).toSeq)
+                    } else if (next.size() == 1) {
+                      JsString(next.get(0).toString)
+                    } else {
+                      JsNull
+                    }
+                    jsonAttrs = jsonAttrs ++ Json.obj(name -> value)
+                  }
+                }
+                Some(jsonAttrs)
+              } else {
+                None
+              }
+
               Right(
                 LdapAuthUser(
                   name = attrs.get(nameField).toString.split(":").last.trim,
@@ -399,6 +422,7 @@ case class LdapAuthModuleConfig(
                     .get(email)
                     .map(v => metadata.deepMerge(v))
                     .getOrElse(metadata),
+                  ldapProfile = profile,
                   userRights = Some(
                     UserRights(
                       UserRights.default
