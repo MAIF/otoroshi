@@ -35,6 +35,7 @@ java -jar otoroshi.jar
 ```
 
 This should display
+
 ```sh
 $ java -jar otoroshi.jar
 
