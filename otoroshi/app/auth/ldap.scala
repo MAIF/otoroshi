@@ -391,7 +391,7 @@ case class LdapAuthModuleConfig(
                 while (all.hasMore) {
                   val next: Attribute = all.next()
                   val name = next.getID
-                  if (regexes.forall(rx => !rx.matches(name))) {
+                  if (regexes.isEmpty || regexes.forall(rx => !rx.matches(name))) {
                     val value = if (next.size() > 1) {
                       JsArray((0 until next.size()).map(idx => JsString(next.get(idx).toString)).toSeq)
                     } else if (next.size() == 1) {
