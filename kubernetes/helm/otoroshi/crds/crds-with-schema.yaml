@@ -3469,6 +3469,9 @@ spec:
                 type: "object"
                 x-kubernetes-preserve-unknown-fields: true
                 description: "Web proxy configuration for the module's http client"
+              extractProfile:
+                description: "???"
+                type: "boolean"
               logoutUrl:
                 description: "OAuth logout URL"
                 type: "string"
@@ -3591,6 +3594,11 @@ spec:
                 description: "Indicates if assertions have to be validate when otoroshi\
                   \ got SAML responses from identity provider"
                 type: "boolean"
+              extractProfileFilterNot:
+                type: "array"
+                items:
+                  type: "string"
+                description: "???"
               httpMethod:
                 type: "object"
                 x-kubernetes-preserve-unknown-fields: true
@@ -3683,6 +3691,11 @@ spec:
               authorizeUrl:
                 description: "OAuth authorize URL"
                 type: "string"
+              extractProfileFilter:
+                type: "array"
+                items:
+                  type: "string"
+                description: "???"
               authorizeURL:
                 description: "The authorize URL used to initiates the authorization\
                   \ flow that authenticates the user with the Identity Provider"

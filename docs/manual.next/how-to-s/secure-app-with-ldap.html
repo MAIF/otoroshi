@@ -269,179 +269,241 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 [info] p.c.s.AkkaHttpServer - Listening for HTTPS on /0:0:0:0:0:0:0:0:9998
 [info] otoroshi-script-manager - Finding and starting plugins done in 4681 ms.
 ...
-````
-
-#### Running an simple OpenLDAP server 
-
-Run OpenLDAP docker image : 
 </code></pre>
-<p>docker run \ -p 389:389 \ -p 636:636 \ &ndash;env LDAP_ORGANISATION=&ldquo;Otoroshi company&rdquo; \ &ndash;env LDAP_DOMAIN=&ldquo;otoroshi.tools&rdquo; \ &ndash;env LDAP_ADMIN_PASSWORD=&ldquo;otoroshi&rdquo; \ &ndash;env LDAP_READONLY_USER=&ldquo;false&rdquo; \ &ndash;env LDAP_TLS&ldquo;false&rdquo; \ &ndash;env LDAP_TLS_ENFORCE&ldquo;false&rdquo; \ &ndash;name my-openldap-container \ &ndash;detach osixia/openldap:1.5.0</p>
-<pre><code><br/>Let&#39;s make the first search in our LDAP container :
+<h4><a href="#running-an-simple-openldap-server" name="running-an-simple-openldap-server" class="anchor"><span class="anchor-link"></span></a>Running an simple OpenLDAP server</h4>
+<p>Run OpenLDAP docker image : </p>
+<pre class="prettyprint"><code class="language-sh">docker run \
+-p 389:389 \
+-p 636:636  \
+--env LDAP_ORGANISATION=&quot;Otoroshi company&quot; \
+--env LDAP_DOMAIN=&quot;otoroshi.tools&quot; \
+--env LDAP_ADMIN_PASSWORD=&quot;otoroshi&quot; \
+--env LDAP_READONLY_USER=&quot;false&quot; \
+--env LDAP_TLS&quot;false&quot; \
+--env LDAP_TLS_ENFORCE&quot;false&quot; \
+--name my-openldap-container \
+--detach osixia/openldap:1.5.0
 </code></pre>
-<p>docker exec my-openldap-container ldapsearch -x -H <a href="ldap://localhost">ldap://localhost</a> -b dc=otoroshi,dc=tools -D &ldquo;cn=admin,dc=otoroshi,dc=tools&rdquo; -w otoroshi</p>
-<pre><code><br/>This should output :
+<p>Let&rsquo;s make the first search in our LDAP container :</p>
+<pre class="prettyprint"><code class="language-sh">docker exec my-openldap-container ldapsearch -x -H ldap://localhost -b dc=otoroshi,dc=tools -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -w otoroshi
 </code></pre>
-<h1><a href="#extended-ldif" name="extended-ldif" class="anchor"><span class="anchor-link"></span></a>extended LDIF</h1>
-<p>&hellip;</p>
-<h1><a href="#otoroshi-tools" name="otoroshi-tools" class="anchor"><span class="anchor-link"></span></a>otoroshi.tools</h1>
-<p>dn: dc=otoroshi,dc=tools objectClass: top objectClass: dcObject objectClass: organization o: Otoroshi company dc: otoroshi</p>
-<h1><a href="#search-result" name="search-result" class="anchor"><span class="anchor-link"></span></a>search result</h1>
-<p>search: 2 result: 0 Success &hellip;</p>
-<pre><code><br/>Now you can seed the open LDAP server with a few users. 
+<p>This should output :</p>
+<pre class="prettyprint"><code class="language-sh"># extended LDIF
+ ...
+# otoroshi.tools
+dn: dc=otoroshi,dc=tools
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+o: Otoroshi company
+dc: otoroshi
 
-Join your LDAP container.
+# search result
+search: 2
+result: 0 Success
+...
 </code></pre>
-<p>docker exec -it my-openldap-container &ldquo;/bin/bash&rdquo;</p>
-<pre><code><br/>The command `ldapadd` needs of a file to run.
-
-Launch this command to create a `bootstrap.ldif` with one organization, one singers group with Johnny user and a last group with Einstein as scientist.
+<p>Now you can seed the open LDAP server with a few users. </p>
+<p>Join your LDAP container.</p>
+<pre class="prettyprint"><code class="language-sh">docker exec -it my-openldap-container &quot;/bin/bash&quot;
 </code></pre>
-<p>echo -e &quot; dn: ou=People,dc=otoroshi,dc=tools objectclass: top objectclass: organizationalUnit ou: People</p>
-<p>dn: ou=Role,dc=otoroshi,dc=tools objectclass: top objectclass: organizationalUnit ou: Role</p>
-<p>dn: uid=johnny,ou=People,dc=otoroshi,dc=tools objectclass: top objectclass: person objectclass: organizationalPerson objectclass: inetOrgPerson uid: johnny cn: Jhonny sn: Brown mail: <a href="mailto:&#106;o&#104;&#x6e;&#x6e;&#x79;&#x40;&#111;&#x74;&#x6f;r&#111;&#x73;&#104;i&#46;&#116;&#111;o&#108;s">&#106;o&#104;&#x6e;&#x6e;&#x79;&#x40;&#111;&#x74;&#x6f;r&#111;&#x73;&#104;i&#46;&#116;&#111;o&#108;s</a> postalCode: 88442 userPassword: password</p>
-<p>dn: uid=einstein,ou=People,dc=otoroshi,dc=tools objectclass: top objectclass: person objectclass: organizationalPerson objectclass: inetOrgPerson uid: einstein cn: Einstein sn: Wilson mail: <a href="mailto:&#x65;&#105;&#x6e;&#x73;&#116;&#101;i&#x6e;&#x40;o&#116;&#x6f;&#x72;&#111;&#115;&#104;&#105;&#46;&#x74;&#x6f;&#111;&#108;&#115;">&#x65;&#105;&#x6e;&#x73;&#116;&#101;i&#x6e;&#x40;o&#116;&#x6f;&#x72;&#111;&#115;&#104;&#105;&#46;&#x74;&#x6f;&#111;&#108;&#115;</a> postalCode: 88443 userPassword: password</p>
-<p>dn: cn=singers,ou=Role,dc=otoroshi,dc=tools objectclass: top objectclass: groupOfNames cn: singers member: uid=johnny,ou=People,dc=otoroshi,dc=tools</p>
-<p>dn: cn=scientists,ou=Role,dc=otoroshi,dc=tools objectclass: top objectclass: groupOfNames cn: scientists member: uid=einstein,ou=People,dc=otoroshi,dc=tools &quot; &gt; bootstrap.ldif</p>
-<p>ldapadd -x -w otoroshi -D &ldquo;cn=admin,dc=otoroshi,dc=tools&rdquo; -f bootstrap.ldif -v</p>
-<pre><code><br/>### Create an Authentication configuration
+<p>The command <code>ldapadd</code> needs of a file to run.</p>
+<p>Launch this command to create a <code>bootstrap.ldif</code> with one organization, one singers group with Johnny user and a last group with Einstein as scientist.</p>
+<pre class="prettyprint"><code class="language-sh">echo -e &quot;
+dn: ou=People,dc=otoroshi,dc=tools
+objectclass: top
+objectclass: organizationalUnit
+ou: People
 
-1. Go ahead, and navigate to http://otoroshi.oto.tools:9999
-1. Click on the cog icon on the top right
-1. Then `Authentication confis` button
-1. And add a new configuration when clicking on the `Add item` button
-1. Select the `Ldap auth. provider` in the type selector field
-1. Set a basic name and description
-1. Then set `ldap://localhost:389` as `LDAP Server URL`and `dc=otoroshi,dc=tools` as `Search Base`
-1. Create a group filter (in the next part, we&#39;ll change this filter to spread users in different groups with given rights) with 
+dn: ou=Role,dc=otoroshi,dc=tools
+objectclass: top
+objectclass: organizationalUnit
+ou: Role
 
-objectClass=groupOfNames as *Group filter* \
-All as *Tenant*\
-All as *Team*\
-Read/Write as *Rights*
+dn: uid=johnny,ou=People,dc=otoroshi,dc=tools
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+uid: johnny
+cn: Jhonny
+sn: Brown
+mail: johnny@otoroshi.tools
+postalCode: 88442
+userPassword: password
 
-9. Set the search filter as (uid=${username})`
-1. Set `cn=admin,dc=otoroshi,dc=tools` as *Admin username*
-1. Set `otoroshi` as *Admin password*
-2. At the bottom of the page, disable the `secure` button (because we&#39;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)
+dn: uid=einstein,ou=People,dc=otoroshi,dc=tools
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+uid: einstein
+cn: Einstein
+sn: Wilson
+mail: einstein@otoroshi.tools
+postalCode: 88443
+userPassword: password
 
+dn: cn=singers,ou=Role,dc=otoroshi,dc=tools
+objectclass: top
+objectclass: groupOfNames
+cn: singers
+member: uid=johnny,ou=People,dc=otoroshi,dc=tools
 
- At this point, your configuration should be similar to :
-&lt;!-- oto-scenario
+dn: cn=scientists,ou=Role,dc=otoroshi,dc=tools
+objectclass: top
+objectclass: groupOfNames
+cn: scientists
+member: uid=einstein,ou=People,dc=otoroshi,dc=tools
+&quot; &gt; bootstrap.ldif
+
+ldapadd -x -w otoroshi -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -f bootstrap.ldif -v
+</code></pre>
+<h3><a href="#create-an-authentication-configuration" name="create-an-authentication-configuration" class="anchor"><span class="anchor-link"></span></a>Create an Authentication configuration</h3>
+<ol>
+  <li>Go ahead, and navigate to <a href="http://otoroshi.oto.tools:9999">http://otoroshi.oto.tools:9999</a></li>
+  <li>Click on the cog icon on the top right</li>
+  <li>Then <code>Authentication confis</code> button</li>
+  <li>And add a new configuration when clicking on the <code>Add item</code> button</li>
+  <li>Select the <code>Ldap auth. provider</code> in the type selector field</li>
+  <li>Set a basic name and description</li>
+  <li>Then set <code>ldap://localhost:389</code> as <code>LDAP Server URL</code>and <code>dc=otoroshi,dc=tools</code> as <code>Search Base</code></li>
+  <li>Create a group filter (in the next part, we&rsquo;ll change this filter to spread users in different groups with given rights) with</li>
+</ol>
+<p>objectClass=groupOfNames as <em>Group filter</em> \ All as <em>Tenant</em>\ All as <em>Team</em>\ Read/Write as <em>Rights</em></p>
+<ol>
+  <li>Set the search filter as (uid=${username})`</li>
+  <li>Set <code>cn=admin,dc=otoroshi,dc=tools</code> as <em>Admin username</em></li>
+  <li>Set <code>otoroshi</code> as <em>Admin password</em></li>
+  <li>At the bottom of the page, disable the <code>secure</code> button (because we&rsquo;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)</li>
+</ol>
+<p>At this point, your configuration should be similar to : <!-- oto-scenario
  - goto /bo/dashboard/auth-configs/edit/auth_mod_09975547-a186-4a2d-a550-ca71a0a03c0c
  - wait 1000
- - screenshot-area generated-hows-to-ldap-auth-configs.png #app&gt;div&gt;div.container-fluid&gt;div&gt;div.col-sm-10.col-sm-offset-2.main
---&gt;
-&lt;img src=&quot;../imgs/generated-hows-to-ldap-auth-configs.png&quot; /&gt;
-
-&gt; Dont&#39; forget to save on the bottom page your configuration before to quit the page.
-
-12. Test the connection when clicking on `Test admin connection` button
-
-This should display a `It works!` message
-
-13. Finally, test the user connection button and set `johnny/password` or `einstein/password` as credentials.
-
-This should display a `It works!` message
-
-&gt; Dont&#39; forget to save on the bottom page your configuration before to quit the page.
-
-### Connect to Otoroshi with LDAP authentication
-
-To secure Otoroshi with your LDAP configuration, we have to register an Authentication configuration as a BackOffice Auth. configuration.
-
-1. Navigate to the *danger zone* (when clicking on the cog on the top right and selecting Danger zone)
-1. Scroll to the *BackOffice auth. settings*
-1. Select your last Authentication configuration (created in the previous section)
-1. Save the global configuration with the button on the top right
-
-#### Testing your configuration
-
-1. Disconnect from your instance
-1. Then click on the *Login using third-party* button (or navigate to *http://otoroshi.oto.tools:9999/backoffice/auth0/login*)
-1. Set `johnny/password` or `einstein/password` as credentials
-
-&gt; A fallback solution is always available, by going to *http://otoroshi.oto.tools:9999/bo/simple/login*, for administrators in case your LDAP is not available
-
-
-#### Secure an app with LDAP authentication
-
-Once the configuration is done, you can secure any of Otoroshi services with it. 
-
-1. Navigate to any created service
-2. Jump to the `URL Patterns` section
-3. Enable your service as `Public UI`
-4. Then scroll to `Authentication` section
-5. Enable `Enforce user authentication`
-6. Select your Authentication config inside the list
-7. Enable `Strict mode`
-
-&lt;!-- oto-scenario
+ - screenshot-area generated-hows-to-ldap-auth-configs.png #app>div>div.container-fluid>div>div.col-sm-10.col-sm-offset-2.main
+--> <img src="../imgs/generated-hows-to-ldap-auth-configs.png" /></p>
+<blockquote>
+  <p>Dont&rsquo; forget to save on the bottom page your configuration before to quit the page.</p>
+</blockquote>
+<ol>
+  <li>Test the connection when clicking on <code>Test admin connection</code> button</li>
+</ol>
+<p>This should display a <code>It works!</code> message</p>
+<ol>
+  <li>Finally, test the user connection button and set <code>johnny/password</code> or <code>einstein/password</code> as credentials.</li>
+</ol>
+<p>This should display a <code>It works!</code> message</p>
+<blockquote>
+  <p>Dont&rsquo; forget to save on the bottom page your configuration before to quit the page.</p>
+</blockquote>
+<h3><a href="#connect-to-otoroshi-with-ldap-authentication" name="connect-to-otoroshi-with-ldap-authentication" class="anchor"><span class="anchor-link"></span></a>Connect to Otoroshi with LDAP authentication</h3>
+<p>To secure Otoroshi with your LDAP configuration, we have to register an Authentication configuration as a BackOffice Auth. configuration.</p>
+<ol>
+  <li>Navigate to the <em>danger zone</em> (when clicking on the cog on the top right and selecting Danger zone)</li>
+  <li>Scroll to the <em>BackOffice auth. settings</em></li>
+  <li>Select your last Authentication configuration (created in the previous section)</li>
+  <li>Save the global configuration with the button on the top right</li>
+</ol>
+<h4><a href="#testing-your-configuration" name="testing-your-configuration" class="anchor"><span class="anchor-link"></span></a>Testing your configuration</h4>
+<ol>
+  <li>Disconnect from your instance</li>
+  <li>Then click on the <em>Login using third-party</em> button (or navigate to *<a href="http://otoroshi.oto.tools:9999/backoffice/auth0/login*">http://otoroshi.oto.tools:9999/backoffice/auth0/login*</a>)
+</li>
+  <li>Set <code>johnny/password</code> or <code>einstein/password</code> as credentials</li>
+</ol>
+<blockquote>
+  <p>A fallback solution is always available, by going to *<a href="http://otoroshi.oto.tools:9999/bo/simple/login*">http://otoroshi.oto.tools:9999/bo/simple/login*</a>, for administrators in case your LDAP is not available</p>
+</blockquote>
+<h4><a href="#secure-an-app-with-ldap-authentication" name="secure-an-app-with-ldap-authentication" class="anchor"><span class="anchor-link"></span></a>Secure an app with LDAP authentication</h4>
+<p>Once the configuration is done, you can secure any of Otoroshi services with it. </p>
+<ol>
+  <li>Navigate to any created service</li>
+  <li>Jump to the <code>URL Patterns</code> section</li>
+  <li>Enable your service as <code>Public UI</code></li>
+  <li>Then scroll to <code>Authentication</code> section</li>
+  <li>Enable <code>Enforce user authentication</code></li>
+  <li>Select your Authentication config inside the list</li>
+  <li>Enable <code>Strict mode</code></li>
+</ol>
+<!-- oto-scenario
  - goto /bo/dashboard/lines/prod/services/service_mirror_opunmaif_fr
  - wait 1000
- - click div[data-screenshot=&quot;ldap-tutorial-authentication&quot;]&gt;div:nth-child(2)&gt;div
- - screenshot-area generated-hows-to-secure-an-app-with-ldap.png div[data-screenshot=&quot;ldap-tutorial-authentication&quot;]
---&gt;
-&lt;img src=&quot;../imgs/generated-hows-to-secure-an-app-with-ldap.png&quot;&gt;
-
-#### Manage LDAP users rights on Otoroshi
-
-For each LDAP groups, you can affect a list of rights : 
-- on an `Organization` : only ressources of an organization
-- on a `Team` : only ressources belonging to this team
-- and a level of rights : `Read`, `Write` or `Read/Write`
-
-
-Start by navigate to your authentication configuration (created in [previous](#create-an-authentication-configuration) step).
-
-Then, replace the values of the `Mapping group filter` field to match LDAP groups with Otoroshi rights.
-
-&lt;!-- oto-scenario
+ - click div[data-screenshot="ldap-tutorial-authentication"]>div:nth-child(2)>div
+ - screenshot-area generated-hows-to-secure-an-app-with-ldap.png div[data-screenshot="ldap-tutorial-authentication"]
+-->
+<img src="../imgs/generated-hows-to-secure-an-app-with-ldap.png">
+<h4><a href="#manage-ldap-users-rights-on-otoroshi" name="manage-ldap-users-rights-on-otoroshi" class="anchor"><span class="anchor-link"></span></a>Manage LDAP users rights on Otoroshi</h4>
+<p>For each LDAP groups, you can affect a list of rights : - on an <code>Organization</code> : only ressources of an organization - on a <code>Team</code> : only ressources belonging to this team - and a level of rights : <code>Read</code>, <code>Write</code> or <code>Read/Write</code></p>
+<p>Start by navigate to your authentication configuration (created in <a href="#create-an-authentication-configuration">previous</a> step).</p>
+<p>Then, replace the values of the <code>Mapping group filter</code> field to match LDAP groups with Otoroshi rights.</p>
+<!-- oto-scenario
  - goto /bo/dashboard/auth-configs/edit/auth_mod_91bb8b38-620e-4c18-9bbc-7c8d1efd63cc
  - wait 1000
- - screenshot-area generated-hows-to-ldap-manage-users.png #app&gt;div&gt;div.container-fluid&gt;div&gt;div.col-sm-10.col-sm-offset-2.main&gt;div&gt;div&gt; div.row&gt;div&gt;div&gt;div&gt;form&gt;div&gt;div:nth-child(3)&gt;div:nth-child(11)
---&gt;
-&lt;img src=&quot;../imgs/generated-hows-to-ldap-manage-users.png&quot; /&gt;
-
-With this configuration, Einstein is an administrator of Otoroshi with full rights (read / write) on all organizations.
-
-Conversely, Johnny can&#39;t see any configuration pages (like the danger zone) because he has only the read rights on Otoroshi.
-
-You can easily test this behaviour by [testing](#testing-your-configuration) with both credentials.
-
-
-#### Advanced usage of LDAP Authentication
-
-In the previous section, we have set rights for each LDAP groups. But in some case, we want to have a finer granularity like set rights for a specific user.
-
-The last 4 fields of the authentication form cover this. 
-
-Each field take the `Email field name` as keys, and a json value.
-
-Let&#39;s start by adding few properties for each connected users with `Extra metadata`.
-
+ - screenshot-area generated-hows-to-ldap-manage-users.png #app>div>div.container-fluid>div>div.col-sm-10.col-sm-offset-2.main>div>div> div.row>div>div>div>form>div>div:nth-child(3)>div:nth-child(11)
+-->
+<img src="../imgs/generated-hows-to-ldap-manage-users.png" />
+<p>With this configuration, Einstein is an administrator of Otoroshi with full rights (read / write) on all organizations.</p>
+<p>Conversely, Johnny can&rsquo;t see any configuration pages (like the danger zone) because he has only the read rights on Otoroshi.</p>
+<p>You can easily test this behaviour by <a href="#testing-your-configuration">testing</a> with both credentials.</p>
+<h4><a href="#advanced-usage-of-ldap-authentication" name="advanced-usage-of-ldap-authentication" class="anchor"><span class="anchor-link"></span></a>Advanced usage of LDAP Authentication</h4>
+<p>In the previous section, we have set rights for each LDAP groups. But in some case, we want to have a finer granularity like set rights for a specific user.</p>
+<p>The last 4 fields of the authentication form cover this. </p>
+<p>Each field take the <code>Email field name</code> as keys, and a json value.</p>
+<p>Let&rsquo;s start by adding few properties for each connected users with <code>Extra metadata</code>.</p>
+<pre class="prettyprint"><code class="language-json">// Add this configuration in extra metadata part
+{
+  &quot;provider&quot;: &quot;OpenLDAP&quot;
+}
 </code></pre>
-<p>// Add this configuration in extra metadata part {  &ldquo;provider&rdquo;: &ldquo;OpenLDAP&rdquo; }</p>
-<pre><code><br/>The next field `Data override` is merged with extra metadata when a user connects to a `private app` (Inside Otoroshi, private app is a service secure by any authentication plugin) or to the UI. The `Email field name` is configured to match with the `mail` field from LDAP user data.
-
+<p>The next field <code>Data override</code> is merged with extra metadata when a user connects to a <code>private app</code> (Inside Otoroshi, private app is a service secure by any authentication plugin) or to the UI. The <code>Email field name</code> is configured to match with the <code>mail</code> field from LDAP user data.</p>
+<pre class="prettyprint"><code class="language-json ">{
+  &quot;johnny@otoroshi.tools&quot;: {
+    &quot;stage_name&quot;: &quot;Jean-Philippe Smet&quot;
+  }
+}
 </code></pre>
-<p>{  &ldquo;<a href="mailto:&#106;&#x6f;&#104;&#110;&#110;&#x79;&#64;&#111;&#x74;&#111;&#x72;&#x6f;&#x73;&#x68;&#105;&#x2e;&#116;&#111;o&#108;&#x73;&#x22;">&#106;&#x6f;&#104;&#110;&#110;&#x79;&#64;&#111;&#x74;&#111;&#x72;&#x6f;&#x73;&#x68;&#105;&#x2e;&#116;&#111;o&#108;&#x73;&#x22;</a>: {  &rdquo;stage_name&ldquo;: &rdquo;Jean-Philippe Smet&quot;  } }</p>
-<pre><code><br/>If you try to connect to an app with this configuration, the user result profile should be :
+<p>If you try to connect to an app with this configuration, the user result profile should be :</p>
+<pre class="prettyprint"><code class="language-json">{
+  ...,
+  &quot;metadata&quot;: {
+    &quot;lastname&quot;: &quot;Hallyday&quot;,
+    &quot;stage_name&quot;: &quot;Jean-Philippe Smet&quot;
+  }
+}
 </code></pre>
-<p>{  &hellip;,  &ldquo;metadata&rdquo;: {  &ldquo;lastname&rdquo;: &ldquo;Hallyday&rdquo;,  &ldquo;stage_name&rdquo;: &ldquo;Jean-Philippe Smet&rdquo;  } }</p>
-<pre><code><br/>Let&#39;s try to increase the Johnny rights with the `Additional rights group`.
-
-This field supports the creation of virtual groups. A virtual group is composed of a list of users and a list of rights for each teams/organizations.
-
+<p>Let&rsquo;s try to increase the Johnny rights with the <code>Additional rights group</code>.</p>
+<p>This field supports the creation of virtual groups. A virtual group is composed of a list of users and a list of rights for each teams/organizations.</p>
+<pre class="prettyprint"><code class="language-json">// increase_johnny_rights is a virtual group which adds full access rights at johnny 
+{
+  &quot;increase_johnny_rights&quot;: {
+    &quot;rights&quot;: [
+      {
+        &quot;tenant&quot;: &quot;*:rw&quot;,
+        &quot;teams&quot;: [
+          &quot;*:rw&quot;
+        ]
+      }
+    ],
+    &quot;users&quot;: [
+      &quot;jhonny@otoroshi.tools&quot;
+    ]
+  }
+}
 </code></pre>
-<p>// increase_johnny_rights is a virtual group which adds full access rights at johnny {  &ldquo;increase_johnny_rights&rdquo;: {  &ldquo;rights&rdquo;: [  {  &ldquo;tenant&rdquo;: &ldquo;<em>:rw&ldquo;,  &rdquo;teams&ldquo;: [  &rdquo;</em>:rw&rdquo;  ]  }  ],  &ldquo;users&rdquo;: [  &ldquo;<a href="mailto:j&#x68;&#111;&#110;&#110;&#x79;&#64;o&#x74;&#111;&#114;&#x6f;&#115;&#x68;&#105;&#46;&#116;&#x6f;&#x6f;&#x6c;&#115;">j&#x68;&#111;&#110;&#110;&#x79;&#64;o&#x74;&#111;&#114;&#x6f;&#115;&#x68;&#105;&#46;&#116;&#x6f;&#x6f;&#x6c;&#115;</a>&rdquo;  ]  } }</p>
-<pre><code><br/>The last field `Rights override` is useful when you want erase the rights of an user with only specific rights.
-
-The rights override field is the last to be applied on the user rights. 
-
-To resume, when Johnny connects to Otoroshi, he receives the rights to read only on the default Organization (from `Mapping group filter`), then he is promote to administrator role (from `Additional rights group`) and finally his rights are reset with the last field `Rights override` to the read rights.
-
+<p>The last field <code>Rights override</code> is useful when you want erase the rights of an user with only specific rights.</p>
+<p>The rights override field is the last to be applied on the user rights. </p>
+<p>To resume, when Johnny connects to Otoroshi, he receives the rights to read only on the default Organization (from <code>Mapping group filter</code>), then he is promote to administrator role (from <code>Additional rights group</code>) and finally his rights are reset with the last field <code>Rights override</code> to the read rights.</p>
+<pre class="prettyprint"><code class="language-json ">{
+  &quot;jhonny@otoroshi.tools&quot;: [
+    {
+      &quot;tenant&quot;: &quot;*:r&quot;,
+      &quot;teams&quot;: [
+        &quot;*:r&quot;
+      ]
+    }
+  ]
+}
 </code></pre>
-<p>{  &quot;<a href="mailto:&#106;&#104;&#x6f;&#x6e;&#110;&#121;@&#x6f;t&#111;&#114;o&#x73;&#x68;&#x69;&#46;&#116;o&#111;&#108;&#x73;&quot;">&#106;&#104;&#x6f;&#x6e;&#110;&#121;@&#x6f;t&#111;&#114;o&#x73;&#x68;&#x69;&#46;&#116;o&#111;&#108;&#x73;&quot;</a>: [  {  &ldquo;tenant&rdquo;: &quot;*:r&ldquo;,  &rdquo;teams&quot;: [  &quot;*:r&quot;  ]  }  ] } ```</p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../how-to-s/secure-with-apikey.html">Secure an api with apikeys</a></p>
 </div>
@@ -456,9 +518,8 @@ To resume, when Johnny connects to Otoroshi, he receives the rights to read only
   <ul>
     <li><a href="../how-to-s/secure-app-with-ldap.html#cover-by-this-tutorial" class="header">Cover by this tutorial</a></li>
     <li><a href="../how-to-s/secure-app-with-ldap.html#download-otoroshi" class="header">Download Otoroshi</a></li>
-    <li><a href="../how-to-s/secure-app-with-ldap.html#extended-ldif" class="header">extended LDIF</a></li>
-    <li><a href="../how-to-s/secure-app-with-ldap.html#otoroshi-tools" class="header">otoroshi.tools</a></li>
-    <li><a href="../how-to-s/secure-app-with-ldap.html#search-result" class="header">search result</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html#create-an-authentication-configuration" class="header">Create an Authentication configuration</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html#connect-to-otoroshi-with-ldap-authentication" class="header">Connect to Otoroshi with LDAP authentication</a></li>
   </ul></li>
 </ul>
 </div>

@@ -14136,6 +14136,13 @@
             "description" : "Field name to get email from user profile",
             "type" : "string"
           },
+          "extractProfileFilterNot" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
           "type" : {
             "description" : "the type of the module",
             "type" : "string",
@@ -14182,6 +14189,13 @@
               "type" : "string"
             } ],
             "description" : "The admin password"
+          },
+          "extractProfileFilter" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
           },
           "sessionCookieValues" : {
             "description" : "Settings for the session cookie",
@@ -14236,6 +14250,10 @@
               "type" : "string"
             } ],
             "description" : "The admin username"
+          },
+          "extractProfile" : {
+            "description" : "???",
+            "type" : "boolean"
           },
           "name" : {
             "description" : "Name of the config",
