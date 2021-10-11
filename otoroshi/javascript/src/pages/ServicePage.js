@@ -1916,7 +1916,8 @@ export class ServicePage extends Component {
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
-            label="Authentication">
+            label="Authentication"
+            dataScreenshot="ldap-tutorial-authentication">
             <BooleanInput
               label="Enforce user authentication"
               value={this.state.service.privateApp}

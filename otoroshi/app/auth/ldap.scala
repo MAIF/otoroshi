@@ -343,6 +343,8 @@ case class LdapAuthModuleConfig(
             val uids: Seq[String] = if (groupSearch.hasMore) {
               val item  = groupSearch.next()
               val attrs = item.getAttributes
+
+
               attrs.getAll.asScala.toSeq.filter(a => a.getID == "uniqueMember" || a.getID == "member").flatMap { attr =>
                 attr.getAll.asScala.toSeq.map(_.toString)
               }
@@ -371,7 +373,7 @@ case class LdapAuthModuleConfig(
           LdapAuthModuleConfig.logger.debug(s"found user with dn `$dn`")
 
           val userGroup = usersInGroup
-            .find { group => group._2.exists(g => g.contains(dn)) }
+            .find(group => group._2.exists(g => g.contains(dn)))
 
           if(groupFilters.isEmpty) {
             LdapAuthModuleConfig.logger.debug(s"none groups defined - user found anyway")
