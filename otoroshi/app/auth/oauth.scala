@@ -370,7 +370,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   }
 
   def extractOtoroshiRights(profile: JsValue, default: Option[UserRights]): UserRights = {
-    val rights: Seq[JsValue] = (profile \ authConfig.otoroshiDataField).asOpt[JsValue] match {
+    val rights: Seq[JsValue] = (profile \ authConfig.otoroshiRightsField).asOpt[JsValue] match {
       case Some(JsArray(values)) => values.flatMap {
         case JsArray(value) => value
         case obj @ JsObject(_) => Seq(obj)
@@ -382,7 +382,35 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     if (rights.isEmpty && default.isDefined) {
       default.get
     } else {
-      UserRights.apply(rights.flatMap(r => UserRight.format.reads(r).asOpt))
+      val zeRights = rights.flatMap(r => UserRight.format.reads(r).asOpt)
+
+        def merge(accesses: Seq[TeamAccess]): Seq[TeamAccess] = {
+        accesses.groupBy(_.value).map {
+          case (teamName, group) => {
+            if (group.exists(_.canReadWrite)) {
+              TeamAccess(teamName, true, true)
+            } else if (group.exists(_.canWrite)) {
+              TeamAccess(teamName, false, true)
+            } else {
+              TeamAccess(teamName, true, false)
+            }
+          }
+        }.toSeq.distinct
+      }
+
+      val newRights = zeRights.groupBy(_.tenant.value).map {
+        case (tenantName, group) => {
+          if (group.exists(_.tenant.canReadWrite)) {
+            UserRight(TenantAccess(tenantName, true, true), merge(group.flatMap(_.teams)))
+          } else if (group.exists(_.tenant.canWrite)) {
+            UserRight(TenantAccess(tenantName, false, true), merge(group.flatMap(_.teams)))
+          } else {
+            UserRight(TenantAccess(tenantName, true, false), merge(group.flatMap(_.teams)))
+          }
+        }
+      }.toSeq
+
+      UserRights(newRights)
     }
   }
 

@@ -66,6 +66,7 @@ case class UserRights(rights: Seq[UserRight]) {
 }
 
 object UserRights {
+  val empty      = UserRights.apply(Seq.empty)
   val default    = UserRights.varargs(UserRight.default)
   val superAdmin = UserRights.varargs(UserRight.superAdmin)
   val format     = new Format[UserRights] {
