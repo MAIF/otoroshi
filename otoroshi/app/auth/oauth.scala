@@ -482,7 +482,12 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   )(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] = {
     val clientId     = authConfig.clientId
     val clientSecret = Option(authConfig.clientSecret).map(_.trim).filterNot(_.isEmpty)
-    val redirectUri  = authConfig.callbackUrl
+    val hash         = env.sign(s"${authConfig.id}:::backoffice")
+    val redirectUri  = authConfig.callbackUrl.applyOn {
+      case url if !authConfig.useCookie && url.contains("?")  => url + s"&hash=$hash"
+      case url if !authConfig.useCookie && !url.contains("?") => url + s"?hash=$hash"
+      case url                                                => url
+    }
     request.getQueryString("error") match {
       case Some(error) => Left(error).asFuture
       case None        => {
