@@ -81,7 +81,8 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
             .asOpt[Map[String, JsArray]]
             .map(_.mapValues(UserRights.readFromArray))
             .getOrElse(Map.empty),
-          dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
+          dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
+          otoroshiRightsField = (json \ "otoroshiRightsField").asOpt[String].getOrElse("otoroshi_rights")
         )
       )
     } recover { case e =>
@@ -126,7 +127,8 @@ case class GenericOauth2ModuleConfig(
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
     superAdmins: Boolean = false,
     rightsOverride: Map[String, UserRights] = Map.empty,
-    dataOverride: Map[String, JsObject] = Map.empty
+    dataOverride: Map[String, JsObject] = Map.empty,
+    otoroshiRightsField: String = "otoroshi_rights"
 ) extends OAuth2ModuleConfig {
   def theDescription: String                                           = desc
   def theMetadata: Map[String, String]                                 = metadata
@@ -172,7 +174,8 @@ case class GenericOauth2ModuleConfig(
       "sessionCookieValues"  -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "superAdmins"          -> superAdmins,
       "rightsOverride"       -> JsObject(rightsOverride.mapValues(_.json)),
-      "dataOverride"         -> JsObject(dataOverride)
+      "dataOverride"         -> JsObject(dataOverride),
+      "otoroshiRightsField"  -> this.otoroshiRightsField
     )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"global-oauth-$id"
@@ -366,6 +369,23 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     future2
   }
 
+  def extractOtoroshiRights(profile: JsValue, default: Option[UserRights]): UserRights = {
+    val rights: Seq[JsValue] = (profile \ authConfig.otoroshiDataField).asOpt[JsValue] match {
+      case Some(JsArray(values)) => values.flatMap {
+        case JsArray(value) => value
+        case obj @ JsObject(_) => Seq(obj)
+        case _ => Seq.empty
+      }
+      case Some(obj @ JsObject(_)) => Seq(obj)
+      case _ => Seq.empty
+    }
+    if (rights.isEmpty && default.isDefined) {
+      default.get
+    } else {
+      UserRights.apply(rights.flatMap(r => UserRight.format.reads(r).asOpt))
+    }
+  }
+
   def getUserInfo(accessToken: String, config: GlobalConfig)(implicit
       env: Env,
       ec: ExecutionContext
@@ -500,14 +520,14 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                       else {
                         authConfig.rightsOverride.getOrElse(
                           email,
-                          UserRights(
+                          extractOtoroshiRights(user, UserRights(
                             Seq(
                               UserRight(
                                 TenantAccess(authConfig.location.tenant.value),
                                 authConfig.location.teams.map(t => TeamAccess(t.value))
                               )
                             )
-                          )
+                          ).some)
                         )
                       },
                     location = authConfig.location

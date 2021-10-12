@@ -146,6 +146,7 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
   def superAdmins: Boolean
   def rightsOverride: Map[String, UserRights]
   def dataOverride: Map[String, JsObject]
+  def otoroshiRightsField: String
 }
 
 trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
