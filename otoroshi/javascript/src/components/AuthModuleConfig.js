@@ -164,6 +164,7 @@ export class Oauth2ModuleConfig extends Component {
     emailField: 'email',
     apiKeyMetaField: 'apkMeta',
     apiKeyTagsField: 'apkTags',
+    otoroshiRightsField: 'otoroshi_rights',
     otoroshiDataField: 'app_metadata | otoroshi_data',
     extraMetadata: {},
     dataOverride: {},
@@ -431,6 +432,12 @@ export class Oauth2ModuleConfig extends Component {
           value={settings.otoroshiDataField}
           help="Retrieve metadata from LDAP field"
           onChange={(v) => changeTheValue(path + '.otoroshiDataField', v)}
+        />
+        <TextInput
+          label="Otoroshi rights field name"
+          value={settings.otoroshiRightsField}
+          help="Retrieve user rights from user profile"
+          onChange={(v) => changeTheValue(path + '.otoroshiRightsField', v)}
         />
         <Suspense fallback={<div>loading ...</div>}>
           <CodeInput
