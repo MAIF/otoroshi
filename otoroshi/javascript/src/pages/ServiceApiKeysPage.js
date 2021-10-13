@@ -29,11 +29,9 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
-            rawValue.clientId
-          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
-            rawValue.clientSecret
-          }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${rawValue.clientId
+            }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${rawValue.clientSecret
+            }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -52,6 +50,24 @@ const BasicAuthToken = ({ label, rawValue }) => (
           rawValue.clientId + ':' + rawValue.clientSecret
         )}`}
       />
+    </div>
+  </div>
+);
+
+const CurlCommandWithBasicAuth = ({ label, rawValue, env }) => (
+  <div className="form-group">
+    <label className="col-sm-2 control-label">{label}</label>
+    <div className="col-sm-10">
+      {env && (
+        <input
+          onChange={(e) => ''}
+          type="text"
+          className="form-control"
+          value={`curl -X GET -H 'Authorization: Basic ${window.btoa(
+            rawValue.clientId + ':' + rawValue.clientSecret
+          )}' http://xxxxxx --include`}
+        />
+      )}
     </div>
   </div>
 );
@@ -322,6 +338,7 @@ const ApiKeysConstants = {
     both: { type: Both, props: { label: 'Both' } },
     curlCommand: { type: CurlCommand, props: { label: 'Curl Command', env: that.props.env } },
     basicAuth: { type: BasicAuthToken, props: { label: 'Basic Auth. Header' } },
+    curlCommandWithBasicAuth: { type: CurlCommandWithBasicAuth, props: { label: 'Curl Command with Basic Auth. Header', env: that.props.env } },
     clientName: {
       type: 'string',
       props: {
@@ -539,8 +556,7 @@ const ApiKeysConstants = {
           type="button"
           className="btn btn-sm btn-success"
           onClick={(e) =>
-            (window.location = `/bo/dashboard/lines/prod/services/${
-              that.state.service ? that.state.service.id : '-'
+          (window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
             }/apikeys/edit/${item.clientId}/stats`)
           }>
           <i className="fas fa-chart-bar" />
@@ -579,6 +595,7 @@ const ApiKeysConstants = {
     '>>>Call examples',
     'curlCommand',
     'basicAuth',
+    'curlCommandWithBasicAuth',
     '>>>Quotas',
     'throttlingQuota',
     'dailyQuota',
