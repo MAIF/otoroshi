@@ -733,6 +733,7 @@
     "otoroshi.auth.GenericOauth2ModuleConfig.nameField": "Field name to get name from user profile",
     "otoroshi.auth.GenericOauth2ModuleConfig.oidConfig": "URL of the OIDC config. file",
     "otoroshi.auth.GenericOauth2ModuleConfig.otoroshiDataField": "Field name to get otoroshi metadata from. You can specify sub fields using | as separator",
+    "otoroshi.auth.GenericOauth2ModuleConfig.otoroshiRightsField": "???",
     "otoroshi.auth.GenericOauth2ModuleConfig.proxy": "Web proxy configuration for the module's http client",
     "otoroshi.auth.GenericOauth2ModuleConfig.readProfileFromToken": "The user profile will be read from the JWT token in id_token",
     "otoroshi.auth.GenericOauth2ModuleConfig.refreshTokens": "Refresh token support",

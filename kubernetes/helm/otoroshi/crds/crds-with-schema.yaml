@@ -3522,6 +3522,9 @@ spec:
               refreshTokens:
                 description: "Refresh token support"
                 type: "boolean"
+              otoroshiRightsField:
+                description: "???"
+                type: "string"
               signature:
                 description: "Algorithm and canonicalization method to sign SAML documents"
                 type: "object"

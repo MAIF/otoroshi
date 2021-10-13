@@ -14557,6 +14557,10 @@
             "description" : "OAuth token URL",
             "type" : "string"
           },
+          "otoroshiRightsField" : {
+            "description" : "???",
+            "type" : "string"
+          },
           "mtlsConfig" : {
             "description" : "TLS config. for the module (for server accessed endpoints like tokenUrl, introspectionUrl, etc)",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
