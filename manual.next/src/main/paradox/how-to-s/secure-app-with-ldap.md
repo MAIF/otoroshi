@@ -12,7 +12,7 @@
 - [Manage LDAP users rights on Otoroshi](#manage-ldap-users-rights-on-otoroshi)
 - [Advanced usage of LDAP Authentication](#advanced-usage-of-ldap-authentication)
 
-<img src="../imgs/ldap-tutorial.png" height="400px"> 
+<img src="../imgs/ldap-tutorial.png" height="300px"> 
 
 ### Download Otoroshi
 
@@ -31,7 +31,7 @@ sudo nano /etc/hosts
 
 Run Otoroshi
 ```sh
-java -jar otoroshi.jar
+java -Dapp.adminPassword=password -jar otoroshi.jar 
 ```
 
 This should display
@@ -224,7 +224,7 @@ Once the configuration is done, you can secure any of Otoroshi services with it.
 7. Enable `Strict mode`
 
 <!-- oto-scenario
- - goto /bo/dashboard/lines/prod/services/service_mirror_opunmaif_fr
+ - goto /bo/dashboard/lines/prod/services/service_mirror_otoroshi_fr
  - wait 1000
  - click div[data-screenshot="ldap-tutorial-authentication"]>div:nth-child(2)>div
  - screenshot-area generated-hows-to-secure-an-app-with-ldap.png div[data-screenshot="ldap-tutorial-authentication"]
