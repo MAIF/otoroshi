@@ -8,7 +8,7 @@
 - [Override defaults headers names for a service](#override-defaults-headers-names-for-a-service)
 - [Accept only api keys with expected values](#accept-only-api-keys-with-expected-values)
 
-<img src="../imgs/secure-an-app-with-apikey-tutorial.png" height="300px"> 
+<img src="../imgs/secure-an-app-with-apikey-tutorial.png" height="440px"> 
 
 Let's start by start Otoroshi ([available here](./secure-with-apikey.md#download-otoroshi))
 
@@ -126,7 +126,7 @@ With this configuration, all others default services will accept the api keys wi
 
 By default, a secure service only accepts requests with api key. But all generated api keys are eligible to call our service and in some case, we want authorize only a couple of api keys.
 
-One feature of Otoroshi is to restrict the list of accepted api keys by giving a list of `metadatas` or/and `tags`. Each api key supports a list of `tags` and `metadatas` which can be used, for example by Otoroshi, to accept api keys or not on a service call.
+One feature of Otoroshi is to restrict the list of accepted api keys by giving a list of `metadatas` or/and `tags`. Each api key has a list of `tags` and `metadatas`, which can be used by Otoroshi to forward or not a call with an api key. All api key metadatas/tags can be forward to your service (see `HTTP Headers` section of a service to get more information).
 
 Let's starting by accept only the api keys which come with the tag of `otoroshi` as value.
 
