@@ -14,6 +14,7 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * @ref:[Secure an api with OAuth2 client_credentials flow](./secure-with-oauth2-client-credentials.md)
 * @ref:[Setup an Otoroshi cluster](./setup-otoroshi-cluster.md)
 * @ref:[TLS termination using Let's Encrypt](./tls-using-lets-encrypt.md)
+* @ref:[Secure an app with jwt verifiers](./secure-an-app-with-jwt-verifiers.md)
 
 @@@ index
 
@@ -28,5 +29,6 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * [Secure an api with OAuth2 client_credentials flow](./secure-with-oauth2-client-credentials.md)
 * [Setup an Otoroshi cluster](./setup-otoroshi-cluster.md)
 * [TLS termination using Let's Encrypt](./tls-using-lets-encrypt.md)
+* [Secure an app with jwt verifiers](./secure-an-app-with-jwt-verifiers.md)
 
 @@@
