@@ -398,7 +398,8 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
 
         val userParams = getOauth1TemplateRequest(None) ++ Map(
           "oauth_consumer_key" -> authConfig.consumerKey,
-          "oauth_token"        -> oauth_token
+          "oauth_token"        -> oauth_token,
+          "oauth_verifier"     -> queries("oauth_verifier") // test
         )
 
         val oauthTokenSecret = bodyParams("oauth_token_secret")
@@ -413,7 +414,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
               "Authorization",
               s"""OAuth oauth_consumer_key="${authConfig.consumerKey}",oauth_token="$oauth_token",oauth_signature_method="HMAC-SHA1",oauth_signature="$signature",oauth_timestamp="${userParams(
                 "oauth_timestamp"
-              )}",oauth_nonce="${userParams("oauth_nonce")}",oauth_version="1.0""""
+              )}",oauth_nonce="${userParams("oauth_nonce")}",oauth_version="1.0",oauth_verifier="${userParams("oauth_verifier")}""""
             )
           )
           .get()
