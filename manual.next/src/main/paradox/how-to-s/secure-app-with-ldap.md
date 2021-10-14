@@ -31,7 +31,7 @@ sudo nano /etc/hosts
 
 Run Otoroshi
 ```sh
-java -Dapp.adminPassword=password -jar otoroshi.jar 
+java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
 ```
 
 This should display
