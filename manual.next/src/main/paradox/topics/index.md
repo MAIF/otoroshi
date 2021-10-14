@@ -11,6 +11,7 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[Developer portal with Daikoku](./dev-portal.md)
 * @ref:[Sessions management](./sessions-mgmt.md)
 * @ref:[The Otoroshi communication protocol](./otoroshi-protocol.md)
+* @ref:[Expression language](./expression-language.md)
 
 @@@ index
 
@@ -23,5 +24,6 @@ In this sections, you will find informations about various Otoroshi topics
 * [Developer portal with Daikoku](./dev-portal.md)
 * [Sessions management](./sessions-mgmt.md)
 * [The Otoroshi communication protocol](./otoroshi-protocol.md)
-
+* [Expression language](./expression-language.md)
+  
 @@@
