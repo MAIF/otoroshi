@@ -757,7 +757,7 @@
         "code": 303,
         "to": "https://www.otoroshi.io"
       },
-      "authConfigRef": "auth_mod_ldap_tutorial_with_groups",
+      "authConfigRef": "auth_mod_91bb8b38-620e-4c18-9bbc-7c8d1efd63cc",
       "clientValidatorRef": null,
       "transformerRef": null,
       "transformerRefs": [],
@@ -931,6 +931,35 @@
       "rightsOverride": {},
       "dataOverride": {},
       "groupRights": {}
+    },
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "type": "oauth1",
+      "id": "auth_mod_oauth1.0_provider",
+      "name": "oauth1-provider",
+      "desc": "oauth1-provider",
+      "consumerKey": "2NVVBip7I5kfl0TwVmGzTphhC98kmXScpZaoz7ET",
+      "consumerSecret": "wXzb8tGqXNbBQ5juA0ZKuFAmSW7RwOw8uSbdE3MvbrI8wjcbGp",
+      "requestTokenURL": "http://localhost:5000/oauth/request_token",
+      "authorizeURL": "http://localhost:5000/oauth/authorize",
+      "profileURL": "http://localhost:5000/api/me",
+      "accessTokenURL": "http://localhost:5000/oauth/access_token",
+      "callbackURL": "http://otoroshi.oto.tools:9999/backoffice/auth0/callback",
+      "sessionMaxAge": 86400,
+      "metadata": {},
+      "tags": [],
+      "rightsOverride": {},
+      "httpMethod": "post",
+      "sessionCookieValues": {
+        "httpOnly": true,
+        "secure": true
+      },
+      "mod-type": "oauth1"
     }
   ],
   "certificates": [

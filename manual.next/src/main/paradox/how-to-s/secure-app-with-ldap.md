@@ -155,7 +155,7 @@ ldapadd -x -w otoroshi -D "cn=admin,dc=otoroshi,dc=tools" -f bootstrap.ldif -v
 
 1. Go ahead, and navigate to http://otoroshi.oto.tools:9999
 1. Click on the cog icon on the top right
-1. Then `Authentication confis` button
+1. Then `Authentication configs` button
 1. And add a new configuration when clicking on the `Add item` button
 1. Select the `Ldap auth. provider` in the type selector field
 1. Set a basic name and description
@@ -202,7 +202,7 @@ To secure Otoroshi with your LDAP configuration, we have to register an Authenti
 1. Select your last Authentication configuration (created in the previous section)
 1. Save the global configuration with the button on the top right
 
-#### Testing your configuration
+### Testing your configuration
 
 1. Disconnect from your instance
 1. Then click on the *Login using third-party* button (or navigate to *http://otoroshi.oto.tools:9999/backoffice/auth0/login*)
@@ -222,14 +222,17 @@ Once the configuration is done, you can secure any of Otoroshi services with it.
 5. Enable `Enforce user authentication`
 6. Select your Authentication config inside the list
 7. Enable `Strict mode`
+6. Don't forget to save your configuration
 
 <!-- oto-scenario
  - goto /bo/dashboard/lines/prod/services/service_mirror_otoroshi_fr
- - wait 1000
+ - wait 2000
  - click div[data-screenshot="ldap-tutorial-authentication"]>div:nth-child(2)>div
  - screenshot-area generated-hows-to-secure-an-app-with-ldap.png div[data-screenshot="ldap-tutorial-authentication"]
 -->
 <img src="../imgs/generated-hows-to-secure-an-app-with-ldap.png">
+
+Now you can try to call your defined service and see the login module appears.
 
 #### Manage LDAP users rights on Otoroshi
 
