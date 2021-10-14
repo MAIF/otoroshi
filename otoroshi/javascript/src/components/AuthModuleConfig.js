@@ -1268,13 +1268,13 @@ export class LdapModuleConfig extends Component {
           help="if one"
           onChange={(v) => changeTheValue(path + '.adminPassword', v)}
         />
-        <ArrayInput 
+        <ArrayInput
           label="Extract profile filters attributes in"
           value={settings.extractProfileFilter}
           help="..."
           onChange={(v) => changeTheValue(path + '.extractProfileFilter', v)}
         />
-        <ArrayInput 
+        <ArrayInput
           label="Extract profile filters attributes not in"
           value={settings.extractProfileFilterNot}
           help="..."
@@ -2055,14 +2055,22 @@ export class OAuth1ModuleConfig extends Component {
       },
     },
     rightsOverride: {
-      type: ({ }) => (
-        <JsonObjectAsCodeInput
-          label="Rights override"
-          mode="json"
-          value={this.props.value.rightsOverride || {}}
-          onChange={(e) => this.changeTheValue(path + '.rightsOverride', e)}
-        />
-      ),
+      type: ({ }) => <JsonObjectAsCodeInput
+        label="Rights override"
+        mode="json"
+        value={this.props.value.rightsOverride || {}}
+        onChange={(e) => this.changeTheValue('rightsOverride', e)}
+        example={{
+          "my_user@oto.tools": [
+            {
+              "tenant": "*:r",
+              "teams": [
+                "*:r"
+              ]
+            }
+          ]
+        }}
+      />,
       props: {
         label: 'Override rights',
       },

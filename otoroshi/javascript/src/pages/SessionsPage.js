@@ -24,6 +24,44 @@ export class SessionsPage extends Component {
         item.expiredAt ? moment(item.expiredAt).format('DD/MM/YYYY HH:mm:ss') : '',
     },
     {
+      title: 'Profile',
+      content: (item) => 0,
+      notFilterable: true,
+      style: { textAlign: 'center', width: 70 },
+      cell: (v, item) => (
+        <button
+          type="button"
+          className="btn btn-success btn-xs"
+          onClick={(e) =>
+            window.newAlert(
+              <pre style={{ height: 300 }}>{JSON.stringify(item.profile, null, 2)}</pre>,
+              'Profile'
+            )
+          }>
+          Profile
+        </button>
+      ),
+    },
+    {
+      title: 'Rights.',
+      content: (item) => 0,
+      notFilterable: true,
+      style: { textAlign: 'center', width: 70 },
+      cell: (v, item) => (
+        <button
+          type="button"
+          className="btn btn-success btn-xs"
+          onClick={(e) =>
+            window.newAlert(
+              <pre style={{ height: 300 }}>{JSON.stringify(item.rights, null, 2)}</pre>,
+              'Rights'
+            )
+          }>
+          Meta.
+        </button>
+      ),
+    },
+    {
       title: 'Action',
       style: { textAlign: 'center', width: 150 },
       notSortable: true,

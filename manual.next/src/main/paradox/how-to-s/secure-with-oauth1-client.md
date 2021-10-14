@@ -61,6 +61,20 @@ After this command, the container logs should output :
 -->
 <img src="../imgs/generated-hows-to-secure-with-oauth1-provider.png" />
 
+With this configuration, the connected user will receive default access on teams and organizations. If you want to change the access rights for a specific user, you can achieve it with the `Rights override` field and a configuration like :
+```json
+{
+  "foo@example.com": [
+    {
+      "tenant": "*:rw",
+      "teams": [
+        "*:rw"
+      ]
+    }
+  ]
+}
+```
+
 Save your configuration at the bottom of the page, then navigate to the `danger zone` to use your module as a third-party connection to the Otoroshi UI.
 
 ### Connect to Otoroshi with OAuth1 authentication
