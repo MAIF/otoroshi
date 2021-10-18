@@ -57,7 +57,7 @@ export class SessionsPage extends Component {
               'Rights'
             )
           }>
-          Meta.
+          Rights
         </button>
       ),
     },
