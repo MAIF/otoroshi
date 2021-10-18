@@ -277,3 +277,25 @@ Now, your rights should be :
 ```
 
 ### Secure an app with Keycloak authentication
+
+The only change to apply on the previous authentication module, is on the callback URL. When you want secure a Otoroshi service, and transform it on `Private App`, you need to set the `Callback URL` at `http://privateapps.oto.tools:9999/privateapps/generic/callback`
+
+1 Go back to the authentication module
+1. Jump to the `Callback URL` field
+2. Paste this value `http://privateapps.oto.tools:9999/privateapps/generic/callback`
+3. Save your configuration
+4. Navigate to `http://myservice.oto.tools:9999`.
+5. You should redirect to the keycloak login page.
+6. Once logged in, you can check the content of the private app session created.
+The rights should be : 
+```json
+[
+  {
+    "tenant": "*:rw",
+    "teams": [
+      "*:rw",
+      "my-future-team:rw"
+    ]
+  }
+]
+```
