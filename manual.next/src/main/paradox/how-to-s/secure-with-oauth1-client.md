@@ -105,7 +105,7 @@ The first step is to apply a little change on the previous configuration.
 
 1. Navigate to *http://otoroshi.oto.tools:9999/bo/dashboard/auth-configs*.
 2. Create a new auth module configuration with the same values.
-3. Replace the end of the value `/backoffice/auth0/callback` of `Callback URL` field to `/privateapps/generic/callback` (we changed this value because the redirection of a logged user by a third-party server is cover by an other route by Otoroshi).
+3. Replace the `Callback URL` field to `http://privateapps.oto.tools:9999/privateapps/generic/callback` (we changed this value because the redirection of a logged user by a third-party server is cover by an other route by Otoroshi).
 4. Disable the `secure` button (because we're using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)
 
 > Note : a Otoroshi service is call a private app when it is protected by an authentication module.
