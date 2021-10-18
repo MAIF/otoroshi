@@ -8,8 +8,9 @@ A Jwt verifier is the guard which check the signature of tokens present in incom
 - [Your first jwt verifier : a verifier of tokens](#your-first-jwt-verifier--a-verifier-of-tokens)
 - [Verify ang generate a new token](#verify-and-generate-a-new-token)
 
-
-<img src="../imgs/secure-an-app-with-jwt-verifiers.png" height="440px"> 
+@@@ warning
+TODO - schema
+@@@
 
 ### Requisites
 
