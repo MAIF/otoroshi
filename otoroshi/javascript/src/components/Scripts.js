@@ -172,12 +172,6 @@ class PluginsDescription extends Component {
                     <div
                       className="plugin-doc"
                       style={{
-                        marginTop: 10,
-                        padding: 10,
-                        borderRadius: 5,
-                        backgroundColor: '#494948',
-                        width: '100%',
-                        display: 'flex',
                         flexDirection: 'row',
                         justifyContent: 'flex-end',
                         height: 40,
@@ -201,12 +195,6 @@ class PluginsDescription extends Component {
                     <div
                       className="plugin-doc"
                       style={{
-                        marginTop: 10,
-                        padding: 10,
-                        borderRadius: 5,
-                        backgroundColor: '#494948',
-                        width: '100%',
-                        display: 'flex',
                         flexDirection: 'column',
                       }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -282,12 +270,7 @@ class PluginsDescription extends Component {
                           }}
                           flow={script.configFlow}
                           schema={script.configSchema}
-                          style={{
-                            marginTop: 20,
-                            backgroundColor: '#373735',
-                            padding: 10,
-                            borderRadius: 5,
-                          }}
+                          styleName="sub-container sub-container__bg-color"
                         />
                       )}
                     </div>

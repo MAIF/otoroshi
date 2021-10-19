@@ -1,0 +1,12 @@
+.plugin-doc {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: $fondNavbar;
+  width: 100%;
+  display: flex;
+  pre {
+    height: auto;
+    background-color: rgb(39, 40, 34);
+  }
+}
