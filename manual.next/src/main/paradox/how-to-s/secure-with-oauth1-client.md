@@ -1,15 +1,15 @@
 # Secure an app with OAuth1 client flow
 
 ### Cover by this tutorial
-- [Requisites](#requisites)
+- [Before you start](#before-you-start)
 - [Running an simple OAuth 1 server](#running-an-simple-oauth-1-server)
 - [Create an OAuth 1 provider module](#create-an-oauth-1-provider-module)
 
 <img src="../imgs/how-to-secure-an-app-with-oauth1-server.png" height="440px"> 
 
-### Requisites
+### Before you start
 
-Let's start by start Otoroshi ([instructions are available here](./secure-with-apikey.md#download-otoroshi))
+Let's start by run Otoroshi ([instructions are available here](./secure-with-apikey.md#download-otoroshi))
 
 Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
 

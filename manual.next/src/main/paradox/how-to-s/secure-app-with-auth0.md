@@ -1,7 +1,7 @@
 # Secure an app with Auth0
 
 ### Cover by this tutorial
-- [Requisites](#requisites)
+- [Before you start](#before-you-start)
 - [Configure an Auth0 client](#configure-an-auth0-client)
 - [Create an Auth0 provider module](#create-an-auth0-provider-module)
 - [Connect to Otoroshi with Auth0 authentication](#connect-to-otoroshi-with-keycloak-authentication)
@@ -12,9 +12,9 @@
 TODO - schema
 @@@
 
-### Requisites
+### Before you start
 
-Let's start by start Otoroshi ([instructions are available here](./secure-with-apikey.md#download-otoroshi))
+Let's start by run Otoroshi ([instructions are available here](./secure-with-apikey.md#download-otoroshi))
 
 Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
 
