@@ -15,14 +15,10 @@ import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterAgent
 import otoroshi.env.Env
-import otoroshi.models.{
-  ApiKey,
-  ApiKeyRouteMatcher,
-  RemainingQuotas,
-  ServiceDescriptorIdentifier,
-  ServiceGroupIdentifier
-}
+import otoroshi.events.AlertEvent
+import otoroshi.models.{ApiKey, ApiKeyRouteMatcher, RemainingQuotas, ServiceDescriptorIdentifier, ServiceGroupIdentifier}
 import otoroshi.plugins.JsonPathUtils
+import otoroshi.plugins.core.apikeys.{BasicAuthApikeyExtractor, ClientIdApikeyExtractor, CustomHeadersApikeyExtractor, JwtApikeyExtractor}
 import otoroshi.script._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
@@ -1511,6 +1507,97 @@ class ApikeyAuthModule extends PreRouting {
           }
         }
       case _                                       => unauthorized(ctx)
+    }
+  }
+}
+
+class QuotasExceeded extends PreRouting {
+  override def name: String = "Alerting when quotas exceeded"
+  override def configFlow: Seq[String] = Seq("remainingCallsPerDay", "remainingCallsPerMonth")
+  override def description: Option[String] = {
+    Some(
+      s"""This plugin triggers an alert if an api key exceeded his monthly or daily quotas.
+         |
+         |```json
+         |${Json.prettyPrint(defaultConfig.get)}
+         |```
+      """.stripMargin
+    )
+  }
+  override def configSchema: Option[JsObject] =
+    Some(
+      Json
+        .parse("""{
+                 |  "remainingCallsPerDay": {
+                 |    "type": "number",
+                 |    "props": { "label": "Remaining calls per day" }
+                 |  },
+                 |  "remainingCallsPerMonth": {
+                 |    "type": "number",
+                 |    "props": { "label": "Remaining calls per month" }
+                 |  }
+                 |}""".stripMargin)
+        .as[JsObject]
+    )
+  override def configRoot: Option[String] = Some("QuotasExceeded")
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+        configRoot.get -> Json.obj(
+          "remainingCallsPerDay"      -> 1,
+          "remainingCallsPerMonth"    -> 1
+        )
+      )
+    )
+  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    for {
+      _ <- new JwtApikeyExtractor().preRoute(ctx)
+      _ <- new BasicAuthApikeyExtractor().preRoute(ctx)
+      _ <- new CustomHeadersApikeyExtractor().preRoute(ctx)
+      _ <- new ClientIdApikeyExtractor().preRoute(ctx)
+    } yield ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
+      case Some(apikey) =>
+        apikey.remainingQuotas().flatMap(remainingQuotas => {
+          val remainingCallsPerDay = remainingQuotas.remainingCallsPerDay
+          val remainingCallsPerMonth = remainingQuotas.remainingCallsPerMonth
+          val thresholdCallsPerDay: Long = (ctx.config \ "QuotasExceeded" \ "remainingCallsPerDay").asOpt[Long].getOrElse(1)
+          val thresholdCallsPerMonth: Long = (ctx.config \ "QuotasExceeded" \ "remainingCallsPerMonth").asOpt[Long].getOrElse(1)
+          if (remainingCallsPerDay <= thresholdCallsPerDay || remainingCallsPerMonth <= thresholdCallsPerMonth) {
+            case class ApiKeyQuotasAlert(
+                                          `@id`: String,
+                                          `@env`: String,
+                                          apikey: ApiKey,
+                                          `@timestamp`: DateTime = DateTime.now()
+                                        ) extends AlertEvent {
+              override def `@service`: String = "Otoroshi"
+              override def `@serviceId`: String = "--"
+              override def fromOrigin: Option[String] = None
+              override def fromUserAgent: Option[String] = None
+              override def toJson(implicit _env: Env): JsValue =
+                Json.obj(
+                  "@id" -> `@id`,
+                  "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+                  "@type" -> `@type`,
+                  "@product" -> _env.eventsName,
+                  "@serviceId" -> `@serviceId`,
+                  "@service" -> `@service`,
+                  "@env" -> `@env`,
+                  "alert" -> "QuotasExceeded",
+                  "apikey" -> apikey.toJson,
+                  "remaining" -> remainingQuotas.toJson
+                )
+            }
+            ApiKeyQuotasAlert(
+              `@id` = env.snowflakeGenerator.nextIdStr(),
+              `@env` = env.env,
+              apikey = apikey
+            ).toAnalytics()
+            ().future
+          } else {
+            ().future
+          }
+        })
+      case None => ().future
     }
   }
 }
