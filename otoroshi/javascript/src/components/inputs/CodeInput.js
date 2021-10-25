@@ -52,7 +52,6 @@ export default class CodeInput extends Component {
     if (e && e.preventDefault) e.preventDefault();
     if (this.props.mode === 'json') {
       const clean_source = e.replace('}{}', '}');
-      console.log(clean_source)
       try {
         const parsed = JSON.parse(clean_source);
         this.setState({ value: clean_source }, () => {
