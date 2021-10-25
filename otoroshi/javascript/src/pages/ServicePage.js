@@ -3180,7 +3180,7 @@ export class ServicePage extends Component {
               <div className="form-group">
                 <label className="col-xs-12 col-sm-2 control-label" />
                 <div className="col-sm-10">
-                  <p style={{ padding: 10, borderRadius: 5, backgroundColor: '#494948' }}>
+                  <p className="sub-container sub-container__bg-color">
                     Custom error templates are not available on a service descriptor that hasn't
                     been created yet. Just save the service descriptor and it will be available.
                   </p>

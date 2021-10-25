@@ -93,7 +93,8 @@ body.white-mode {
   .navbar-nav > .open > a:hover,
   .navbar-inverse .navbar-nav > li .dropdown-menu,
   textarea.form-control,
-  .Select-menu-outer {
+  .Select-menu-outer,
+  .plugin-doc {
     @include bright-mode_background-color--light;
   }
 

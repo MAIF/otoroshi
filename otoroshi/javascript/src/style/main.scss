@@ -11,6 +11,7 @@
 @import 'components/reactTable';
 @import 'components/modal';
 @import 'components/panel';
+@import 'components/plugin';
 @import 'components/sweet-alert';
 @import 'components/toggleButton';
 @import 'components/selectReact';
@@ -25,9 +26,3 @@
 @import 'layout/header';
 @import 'layout/sidebar';
 @import 'layout/bright-mode';
-
-
-.plugin-doc pre {
-  height: auto;
-  background-color: rgb(39, 40, 34);
-}
