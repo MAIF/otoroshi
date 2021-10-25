@@ -51,23 +51,25 @@ export default class CodeInput extends Component {
   onChange = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (this.props.mode === 'json') {
+      const clean_source = e.replace('}{}', '}');
+      console.log(clean_source)
       try {
-        const parsed = JSON.parse(e);
-        this.setState({ value: e }, () => {
-          this.props.onChange(e);
+        const parsed = JSON.parse(clean_source);
+        this.setState({ value: clean_source }, () => {
+          this.props.onChange(clean_source);
         });
       } catch (ex) {
-        if (e.trim() === '') {
+        if (clean_source.trim() === '') {
           this.setState({ value: '{}' });
-        } else if (e.indexOf('}{}') > -1) {
-          this.setState({ value: e.replace('}{}', '}') });
+        } else if (clean_source.indexOf('}{}') > -1) {
+          this.setState({ value: clean_source.replace('}{}', '}') });
         } else {
-          this.setState({ value: e });
+          this.setState({ value: clean_source });
         }
       }
     } else {
-      this.setState({ value: e });
-      this.props.onChange(e);
+      this.setState({ value: clean_source });
+      this.props.onChange(clean_source);
     }
   };
 
