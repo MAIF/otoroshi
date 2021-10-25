@@ -240,8 +240,8 @@ Now you can try to call your defined service and see the login module appears.
 
 For each LDAP groups, you can affect a list of rights : 
 
-- on an `Organization` : only ressources of an organization
-- on a `Team` : only ressources belonging to this team
+- on an `Organization` : only resources of an organization
+- on a `Team` : only resources belonging to this team
 - and a level of rights : `Read`, `Write` or `Read/Write`
 
 

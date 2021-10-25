@@ -4,7 +4,7 @@ A Jwt verifier is the guard which check the signature of tokens present in incom
 
 ### Cover by this tutorial
 
-- [Requisites](#requisites)
+- [Before you start](#before-you-start)
 - [Your first jwt verifier : a verifier of tokens](#your-first-jwt-verifier--a-verifier-of-tokens)
 - [Verify ang generate a new token](#verify-and-generate-a-new-token)
 
@@ -12,9 +12,9 @@ A Jwt verifier is the guard which check the signature of tokens present in incom
 TODO - schema
 @@@
 
-### Requisites
+### Before you start
 
-Let's start by start Otoroshi ([instructions are available here](./secure-with-apikey.md#download-otoroshi))
+Let's start by run Otoroshi ([instructions are available here](./secure-with-apikey.md#download-otoroshi))
 
 Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
 
@@ -33,7 +33,7 @@ Create the following verifier :
 * Remove the default field in `Verify token fields` array
 * Create your verifier when clicking on `Create and stay on this Jwt verifier` button.
 
-Once created, navigate to the simple service (created in [Requisites](#Requisites) section) and jump to the `JWT tokens verification` section.
+Once created, navigate to the simple service (created in [Before you start](#Before you start) section) and jump to the `JWT tokens verification` section.
 
 In the verifiers list, choose the `simple-jwt-verifier` and `enabled` the section.
 

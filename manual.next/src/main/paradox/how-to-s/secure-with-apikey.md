@@ -12,7 +12,7 @@
 TODO - schema
 @@@
 
-Let's start by start Otoroshi ([available here](./secure-with-apikey.md#download-otoroshi))
+Let's start by run Otoroshi ([available here](./secure-with-apikey.md#download-otoroshi))
 
 Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
 
