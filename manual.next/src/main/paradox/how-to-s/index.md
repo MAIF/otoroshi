@@ -15,6 +15,7 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * @ref:[Setup an Otoroshi cluster](./setup-otoroshi-cluster.md)
 * @ref:[TLS termination using Let's Encrypt](./tls-using-lets-encrypt.md)
 * @ref:[Secure an app with jwt verifiers](./secure-an-app-with-jwt-verifiers.md)
+* @ref:[Secure the communication between a downstream app and Otoroshi](./secure-the-communication-between-a-downstream-app-and-otoroshi.md)
 
 @@@ index
 
@@ -30,5 +31,6 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * [Setup an Otoroshi cluster](./setup-otoroshi-cluster.md)
 * [TLS termination using Let's Encrypt](./tls-using-lets-encrypt.md)
 * [Secure an app with jwt verifiers](./secure-an-app-with-jwt-verifiers.md)
+* [Secure the communication between a downstream app and Otoroshi](./secure-the-communication-between-a-downstream-app-and-otoroshi.md)
 
 @@@
