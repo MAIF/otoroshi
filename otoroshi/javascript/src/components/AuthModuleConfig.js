@@ -418,19 +418,19 @@ export class Oauth2ModuleConfig extends Component {
         <TextInput
           label="Name field name"
           value={settings.nameField}
-          help="Retrieve name from LDAP field"
+          help="Retrieve name from token field"
           onChange={(v) => changeTheValue(path + '.nameField', v)}
         />
         <TextInput
           label="Email field name"
           value={settings.emailField}
-          help="Retrieve email from LDAP field"
+          help="Retrieve email from token field"
           onChange={(v) => changeTheValue(path + '.emailField', v)}
         />
         <TextInput
           label="Otoroshi metadata field name"
           value={settings.otoroshiDataField}
-          help="Retrieve metadata from LDAP field"
+          help="Retrieve metadata from token field"
           onChange={(v) => changeTheValue(path + '.otoroshiDataField', v)}
         />
         <TextInput
@@ -446,10 +446,14 @@ export class Oauth2ModuleConfig extends Component {
             value={JSON.stringify(settings.extraMetadata, null, 2)}
             onChange={(e) => {
               if (e.trim() === '') {
-                this.changeTheValue(path + '.extraMetadata', {});
+                changeTheValue(path + '.extraMetadata', {});
               } else {
-                this.changeTheValue(path + '.extraMetadata', JSON.parse(e));
+                changeTheValue(path + '.extraMetadata', JSON.parse(e));
               }
+            }}
+            example={{
+              "provider": "Keycloak",
+              "foo": "bar"
             }}
           />
         </Suspense>
@@ -457,13 +461,30 @@ export class Oauth2ModuleConfig extends Component {
           label="Data override"
           mode="json"
           value={settings.dataOverride || {}}
-          onChange={(e) => this.changeTheValue(path + '.dataOverride', e)}
+          onChange={(e) => changeTheValue(path + '.dataOverride', e)}
+          example={{
+            "no.name@oto.tools": {
+              "lastname": "bar"
+            }
+          }}
         />
         <JsonObjectAsCodeInput
           label="Rights override"
           mode="json"
           value={settings.rightsOverride || {}}
-          onChange={(e) => this.changeTheValue(path + '.rightsOverride', e)}
+          onChange={(e) => {
+            changeTheValue(path + '.rightsOverride', e)
+          }}
+          example={{
+            "jhonny@otoroshi.tools": [
+              {
+                "tenant": "*:r",
+                "teams": [
+                  "*:r"
+                ]
+              }
+            ]
+          }}
         />
         <TextInput
           label="Api key metadata field name"
@@ -2061,7 +2082,7 @@ export class OAuth1ModuleConfig extends Component {
         value={this.props.value.rightsOverride || {}}
         onChange={(e) => this.changeTheValue('rightsOverride', e)}
         example={{
-          "my_user@oto.tools": [
+          "no.name@oto.tools": [
             {
               "tenant": "*:r",
               "teams": [

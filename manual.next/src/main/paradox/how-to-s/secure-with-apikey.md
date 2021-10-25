@@ -8,7 +8,9 @@
 - [Override defaults headers names for a service](#override-defaults-headers-names-for-a-service)
 - [Accept only api keys with expected values](#accept-only-api-keys-with-expected-values)
 
-<img src="../imgs/secure-an-app-with-apikey-tutorial.png" height="440px"> 
+@@@ warning
+TODO - schema
+@@@
 
 Let's start by start Otoroshi ([available here](./secure-with-apikey.md#download-otoroshi))
 

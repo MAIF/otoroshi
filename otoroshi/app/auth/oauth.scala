@@ -492,8 +492,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                       .get(email)
                       .map(v => authConfig.extraMetadata.deepMerge(v))
                       .orElse(Some(authConfig.extraMetadata.deepMerge(meta.getOrElse(Json.obj())))),
-                    tags = Seq.empty,
-                    metadata = Map.empty,
+                    tags = authConfig.theTags,
+                    metadata = authConfig.metadata,
                     location = authConfig.location
                   )
                 )
@@ -535,6 +535,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
               .map { tuple =>
                 val (user, rawToken) = tuple
                 val email            = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools")
+
                 Right(
                   BackOfficeUser(
                     randomId = IdGenerator.token(64),

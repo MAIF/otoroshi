@@ -4,8 +4,13 @@
 - [Requisites](#requisites)
 - [Running an simple OAuth 1 server](#running-an-simple-oauth-1-server)
 - [Create an OAuth 1 provider module](#create-an-oauth-1-provider-module)
+- [Connect to Otoroshi with OAuth1 authentication](#connect-to-otoroshi-with-oauth1-authentication)
+- [Testing your configuration](#testing-your-configuration)
+- [Secure an app with OAuth 1 authentication](#secure-an-app-with-oauth-1-authentication)
 
-<img src="../imgs/how-to-secure-an-app-with-oauth1-server.png" height="440px"> 
+@@@ warning
+TODO - schema
+@@@
 
 ### Requisites
 
@@ -86,18 +91,18 @@ To secure Otoroshi with your OAuth1 configuration, we have to register an Authen
 1. Select your last Authentication configuration (created in the previous section)
 1. Save the global configuration with the button on the top right
 
-#### Testing your configuration
+### Testing your configuration
 
 1. Disconnect from your instance
 1. Then click on the *Login using third-party* button (or navigate to *http://otoroshi.oto.tools:9999*)
 2. Click on `Login using Third-party` button
 3. If all is configured, Otoroshi will redirect you to the oauth 1 server login page
 4. Set `example-user` as user and trust the user by clicking on `yes` button.
-5. Good works! You're connected to Otoroshi with an OAuth1 module.
+5. Good work! You're connected to Otoroshi with an OAuth1 module.
 
 > A fallback solution is always available, by going to *http://otoroshi.oto.tools:9999/bo/simple/login*, for administrators in case your Authentication module is not available
 
-#### Secure an app with OAuth 1 authentication
+### Secure an app with OAuth 1 authentication
 
 With the previous configuration, you can secure any of Otoroshi services with it. 
 
