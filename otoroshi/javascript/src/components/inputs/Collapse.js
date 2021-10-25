@@ -20,7 +20,6 @@ export class Collapse extends Component {
     if (this.props.notVisible) {
       return null;
     }
-    console.log(this.props.dataScreenshot)
     if (this.state.collapsed) {
       return (
         <div data-screenshot={this.props.dataScreenshot || ""}>
