@@ -9,20 +9,21 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.{OverflowStrategy, QueueOfferResult, ThrottleMode}
 import akka.util.ByteString
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.{QuotasAlmostExceededSettings, _}
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsValue, Json, Writes}
+import play.api.libs.json.{Format, JsArray, JsError, JsResult, JsString, JsSuccess, JsValue, Json, Writes}
 import play.api.libs.ws.WSAuthScheme
 import play.api.mvc.RequestHeader
 import otoroshi.ssl.Cert
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration.FiniteDuration
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.mailer.EmailLocation
+import otoroshi.utils.syntax.implicits._
 
 trait AlertEvent extends AnalyticEvent {
   override def `@type`: String = "AlertEvent"
@@ -912,6 +913,84 @@ case class GlobalConfigModification(
       "newConfig"     -> newConfig,
       "user"          -> user,
       "audit"         -> audit.toJson
+    )
+}
+
+trait ApiKeyQuotasAlmostExceededReason {
+  def name: String
+  def json: JsValue = JsString(name)
+}
+
+object ApiKeyQuotasAlmostExceededReason {
+  case object DailyQuotasAlmostExceeded extends ApiKeyQuotasAlmostExceededReason { def name: String = "daily_quotas_almost_exceeded" }
+  case object MonthlyQuotasAlmostExceeded extends ApiKeyQuotasAlmostExceededReason  { def name: String = "monthly_quotas_almost_exceeded" }
+}
+
+trait ApiKeyQuotasExceededReason {
+  def name: String
+  def json: JsValue = JsString(name)
+}
+
+object ApiKeyQuotasExceededReason {
+  case object DailyQuotasExceeded extends ApiKeyQuotasExceededReason { def name: String = "daily_quotas_exceeded" }
+  case object MonthlyQuotasExceeded extends ApiKeyQuotasExceededReason  { def name: String = "monthly_quotas_exceeded" }
+}
+
+case class ApiKeyQuotasAlmostExceededAlert(
+  `@id`: String,
+  `@env`: String,
+  apikey: ApiKey,
+  remainingQuotas: RemainingQuotas,
+  reason: ApiKeyQuotasAlmostExceededReason,
+  settings: QuotasAlmostExceededSettings,
+  `@timestamp`: DateTime = DateTime.now()
+) extends AlertEvent {
+  override def `@service`: String = "Otoroshi"
+  override def `@serviceId`: String = "--"
+  override def fromOrigin: Option[String] = None
+  override def fromUserAgent: Option[String] = None
+  override def toJson(implicit _env: Env): JsValue =
+    Json.obj(
+      "@id" -> `@id`,
+      "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+      "@type" -> `@type`,
+      "@product" -> _env.eventsName,
+      "@serviceId" -> `@serviceId`,
+      "@service" -> `@service`,
+      "@env" -> `@env`,
+      "alert" -> "QuotasAlmostExceeded",
+      "apikey" -> apikey.toJson,
+      "remaining" -> remainingQuotas.toJson,
+      "settings" -> settings.json,
+      "reason" -> reason.json
+    )
+}
+
+case class ApiKeyQuotasExceededAlert(
+  `@id`: String,
+  `@env`: String,
+  apikey: ApiKey,
+  remainingQuotas: RemainingQuotas,
+  reason: ApiKeyQuotasExceededReason,
+  `@timestamp`: DateTime = DateTime.now()
+) extends AlertEvent {
+  override def `@service`: String = "Otoroshi"
+  override def `@serviceId`: String = "--"
+  override def fromOrigin: Option[String] = None
+  override def fromUserAgent: Option[String] = None
+  override def toJson(implicit _env: Env): JsValue =
+    Json.obj(
+      "@id" -> `@id`,
+      "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+      "@type" -> `@type`,
+      "@product" -> _env.eventsName,
+      "@serviceId" -> `@serviceId`,
+      "@service" -> `@service`,
+      "@env" -> `@env`,
+      "alert" -> "QuotasExceeded",
+      "apikey" -> apikey.toJson,
+      "remaining" -> remainingQuotas.toJson,
+      "reason" -> reason.json
     )
 }
 

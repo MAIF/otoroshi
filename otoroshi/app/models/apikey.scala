@@ -8,7 +8,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import otoroshi.env.Env
-import otoroshi.events.{Alerts, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
+import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import play.api.Logger
@@ -187,6 +187,20 @@ case class ApiKey(
       within   <- env.datastores.apiKeyDataStore.withingQuotas(this)
       rotation <- env.datastores.apiKeyDataStore.keyRotation(this)
     } yield (within, rotation)
+  }
+  def withinQuotasAndRotationQuotas()(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[(Boolean, Option[ApiKeyRotationInfo], RemainingQuotas)] = {
+    for {
+      quotas   <- env.datastores.apiKeyDataStore.remainingQuotas(this)
+      rotation <- env.datastores.apiKeyDataStore.keyRotation(this)
+    } yield {
+      val within = (quotas.currentCallsPerSec <= (throttlingQuota * env.throttlingWindow)) &&
+        (quotas.currentCallsPerDay < dailyQuota) &&
+        (quotas.currentCallsPerMonth < monthlyQuota)
+      (within, rotation, quotas)
+    }
   }
   def metadataJson: JsValue                                                               = JsObject(metadata.mapValues(JsString.apply))
   def lightJson: JsObject                                                                 =
@@ -891,6 +905,52 @@ object ApiKeyHelper {
       )
     }
 
+    def sendQuotasAlmostExceededError(key: ApiKey, quotas: RemainingQuotas): Unit = {
+      if (ctx.config.quotasSettings.enabled) {
+        if (quotas.currentCallsPerDay >= (ctx.config.quotasSettings.dailyQuotasThreshold * quotas.authorizedCallsPerDay)) {
+          ApiKeyQuotasAlmostExceededAlert(
+            `@id` = env.snowflakeGenerator.nextIdStr(),
+            `@env` = env.env,
+            apikey = key,
+            remainingQuotas = quotas,
+            settings = ctx.config.quotasSettings,
+            reason = ApiKeyQuotasAlmostExceededReason.DailyQuotasAlmostExceeded
+          ).toAnalytics()
+        }
+        if (quotas.currentCallsPerMonth >= (ctx.config.quotasSettings.monthlyQuotasThreshold * quotas.authorizedCallsPerMonth)) {
+          ApiKeyQuotasAlmostExceededAlert(
+            `@id` = env.snowflakeGenerator.nextIdStr(),
+            `@env` = env.env,
+            apikey = key,
+            remainingQuotas = quotas,
+            settings = ctx.config.quotasSettings,
+            reason = ApiKeyQuotasAlmostExceededReason.MonthlyQuotasAlmostExceeded
+          ).toAnalytics()
+        }
+      }
+    }
+
+    def sendQuotasExceededError(key: ApiKey, quotas: RemainingQuotas): Unit = {
+      if (quotas.currentCallsPerDay >= (ctx.config.quotasSettings.dailyQuotasThreshold * quotas.authorizedCallsPerDay)) {
+        ApiKeyQuotasExceededAlert(
+          `@id` = env.snowflakeGenerator.nextIdStr(),
+          `@env` = env.env,
+          apikey = key,
+          remainingQuotas = quotas,
+          reason = ApiKeyQuotasExceededReason.DailyQuotasExceeded
+        ).toAnalytics()
+      }
+      if (quotas.currentCallsPerMonth >= (ctx.config.quotasSettings.monthlyQuotasThreshold * quotas.authorizedCallsPerMonth)) {
+        ApiKeyQuotasExceededAlert(
+          `@id` = env.snowflakeGenerator.nextIdStr(),
+          `@env` = env.env,
+          apikey = key,
+          remainingQuotas = quotas,
+          reason = ApiKeyQuotasExceededReason.MonthlyQuotasExceeded
+        ).toAnalytics()
+      }
+    }
+
     // if (req.headers.get("Otoroshi-Client-Id").isEmpty) {
     //   println("no apikey", req.method, req.path)
     // } else {
@@ -995,13 +1055,16 @@ object ApiKeyHelper {
             .map(v => Left(v))
         }
         case Some(key) if key.isValid(key.clientSecret)   =>
-          key.withinQuotasAndRotation().flatMap {
-            case (true, rotationInfos) =>
+          key.withinQuotasAndRotationQuotas().flatMap {
+            case (true, rotationInfos, quotas) =>
               rotationInfos.foreach { i =>
                 attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
               }
+              attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+              sendQuotasAlmostExceededError(key, quotas)
               callDownstream(config, Some(key), None)
-            case (false, _)            =>
+            case (false, _, quotas)            =>
+              sendQuotasExceededError(key, quotas)
               errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
           }
       }
@@ -1031,13 +1094,16 @@ object ApiKeyHelper {
               .map(v => Left(v))
           }
           case Some(key) if key.allowClientIdOnly         =>
-            key.withinQuotasAndRotation().flatMap {
-              case (true, rotationInfos) =>
+            key.withinQuotasAndRotationQuotas().flatMap {
+              case (true, rotationInfos, quotas) =>
                 rotationInfos.foreach { i =>
                   attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
                 }
+                attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+                sendQuotasAlmostExceededError(key, quotas)
                 callDownstream(config, Some(key), None)
-              case (false, _)            =>
+              case (false, _, quotas)            =>
+                sendQuotasExceededError(key, quotas)
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
         }
@@ -1064,13 +1130,16 @@ object ApiKeyHelper {
               .map(v => Left(v))
           }
           case Some(key) if key.isValid(clientSecret)     =>
-            key.withinQuotasAndRotation().flatMap {
-              case (true, rotationInfos) =>
+            key.withinQuotasAndRotationQuotas().flatMap {
+              case (true, rotationInfos, quotas) =>
                 rotationInfos.foreach { i =>
                   attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
                 }
+                attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+                sendQuotasAlmostExceededError(key, quotas)
                 callDownstream(config, Some(key), None)
-              case (false, _)            =>
+              case (false, _, quotas)            =>
+                sendQuotasExceededError(key, quotas)
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
         }
@@ -1203,13 +1272,16 @@ object ApiKeyHelper {
                             .map(v => Left(v))
                         }
                         case Success(_)                                     =>
-                          apiKey.withinQuotasAndRotation().flatMap {
-                            case (true, rotationInfos) =>
+                          apiKey.withinQuotasAndRotationQuotas().flatMap {
+                            case (true, rotationInfos, quotas) =>
                               rotationInfos.foreach { i =>
                                 attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
                               }
+                              attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+                              sendQuotasAlmostExceededError(apiKey, quotas)
                               callDownstream(config, Some(apiKey), None)
-                            case (false, _)            =>
+                            case (false, _, quotas)            =>
+                              sendQuotasExceededError(apiKey, quotas)
                               errorResult(
                                 TooManyRequests,
                                 "You performed too much requests",
@@ -1261,13 +1333,16 @@ object ApiKeyHelper {
                   .map(v => Left(v))
               }
               case Some(key) if key.isValid(apiKeySecret)     =>
-                key.withinQuotasAndRotation().flatMap {
-                  case (true, rotationInfos) =>
+                key.withinQuotasAndRotationQuotas().flatMap {
+                  case (true, rotationInfos, quotas) =>
                     rotationInfos.foreach { i =>
                       attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
                     }
+                    attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+                    sendQuotasAlmostExceededError(key, quotas)
                     callDownstream(config, Some(key), None)
-                  case (false, _)            =>
+                  case (false, _, quotas)            =>
+                    sendQuotasExceededError(key, quotas)
                     errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
                 }
             }

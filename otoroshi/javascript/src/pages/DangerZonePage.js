@@ -983,6 +983,35 @@ export class DangerZonePage extends Component {
           'When the SNI domain cannot be found, this one will be used to find the matching certificate',
       },
     },
+    'quotasSettings.enabled': {
+      type: 'bool',
+      props: {
+        label: 'Enable quotas exceeding alerts',
+        placeholder: '--',
+        help:
+            'When apikey quotas is almost exceeded, an alert will be sent',
+      },
+    },
+    'quotasSettings.dailyQuotasThreshold': {
+      type: 'number',
+      props: {
+        label: 'Daily quotas threshold',
+        placeholder: '0.8',
+        suffix: 'percentage',
+        help:
+            'The percentage of daily calls before sending alerts',
+      },
+    },
+    'quotasSettings.monthlyQuotasThreshold': {
+      type: 'number',
+      props: {
+        label: 'Monthly quotas threshold',
+        placeholder: '0.8',
+        suffix: 'percentage',
+        help:
+            'The percentage of monthly calls before sending alerts',
+      },
+    },
     metadata: {
       type: 'object',
       props: { label: 'Metadata' },
@@ -1061,6 +1090,10 @@ export class DangerZonePage extends Component {
     'proxies.jwk',
     '-- Proxy for elastic access',
     'proxies.elastic',
+    '>>>Quotas alerting settings',
+    'quotasSettings.enabled',
+    'quotasSettings.dailyQuotasThreshold',
+    'quotasSettings.monthlyQuotasThreshold',
     '>>>User-Agent extraction settings',
     'userAgentSettings.enabled',
     '>>>Geolocation extraction settings',

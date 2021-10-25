@@ -135,6 +135,31 @@ object ElasticAnalyticsConfig {
   }
 }
 
+object QuotasAlmostExceededSettings {
+  val format = new Format[QuotasAlmostExceededSettings] {
+    override def reads(json: JsValue): JsResult[QuotasAlmostExceededSettings] = Try {
+      QuotasAlmostExceededSettings(
+        enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
+        dailyQuotasThreshold = json.select("dailyQuotasThreshold").asOpt[Double].getOrElse(0.8),
+        monthlyQuotasThreshold = json.select("monthlyQuotasThreshold").asOpt[Double].getOrElse(0.8),
+      )
+    } match {
+      case Success(o) => JsSuccess(o)
+      case Failure(exception) => JsError(exception.getMessage)
+    }
+
+    override def writes(o: QuotasAlmostExceededSettings): JsValue = o.json
+  }
+}
+
+case class QuotasAlmostExceededSettings(enabled: Boolean, dailyQuotasThreshold: Double, monthlyQuotasThreshold: Double) {
+  def json: JsValue = Json.obj(
+    "enabled" -> enabled,
+    "dailyQuotasThreshold" -> dailyQuotasThreshold,
+    "monthlyQuotasThreshold" -> monthlyQuotasThreshold
+  )
+}
+
 case class Webhook(
     url: String,
     headers: Map[String, String] = Map.empty[String, String],
@@ -485,6 +510,7 @@ case class GlobalConfig(
     userAgentSettings: UserAgentSettings = UserAgentSettings(false),
     autoCert: AutoCert = AutoCert(),
     tlsSettings: TlsSettings = TlsSettings(),
+    quotasSettings: QuotasAlmostExceededSettings = QuotasAlmostExceededSettings(false, 0.8, 0.8),
     plugins: Plugins = Plugins(),
     tags: Seq[String] = Seq.empty,
     metadata: Map[String, String] = Map.empty
@@ -618,6 +644,7 @@ object GlobalConfig {
         "userAgentSettings"       -> o.userAgentSettings.json,
         "autoCert"                -> o.autoCert.json,
         "tlsSettings"             -> o.tlsSettings.json,
+        "quotasSettings"          -> o.quotasSettings.json,
         "plugins"                 -> o.plugins.json,
         "metadata"                -> o.metadata
       )
@@ -742,6 +769,9 @@ object GlobalConfig {
           tlsSettings = TlsSettings.format
             .reads((json \ "tlsSettings").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(TlsSettings()),
+          quotasSettings = QuotasAlmostExceededSettings.format
+            .reads((json \ "quotasSettings").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(QuotasAlmostExceededSettings(false, 0.8, 0.8)),
           plugins = Plugins.format
             .reads((json \ "plugins").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(Plugins()),
