@@ -49,6 +49,7 @@ function shallowDiffers(a, b) {
 
 class Target extends Component {
   state = {
+    firstUrlError: null,
     showMore: false,
     dirtyTarget: null,
     url: this.props.itemValue.scheme + '://' + this.props.itemValue.host,
@@ -85,8 +86,8 @@ class Target extends Component {
   //   }
   // };
 
-  changeTheUrl = (t) => {
-    this.setState({ url: t });
+  changeTheUrl = (t, f) => {
+    this.setState({ url: t }, f);
     if (t.indexOf('://') > -1) {
       const scheme = (t.split('://')[0] || '').replace('://', '');
       const host = (t.split('://')[1] || '').replace('://', '');
@@ -101,55 +102,65 @@ class Target extends Component {
 
   renderFirstLine = (value) => {
     return (
-      <TextInput
-        label={`Target ${this.props.idx + 1}`}
-        placeholder={
-          this.props.tunnelingEnabled ? 'tcp://192.168.42.42:22' : 'https://changeme.oto.tools'
-        }
-        value={
-          this.state.url
-          //this.state.dirtyTarget ? this.state.dirtyTarget : value.scheme + '://' + value.host
-        }
-        help="The URL of the target. Do not put anything more than scheme://domain:port. Not path supported"
-        onChange={(e) => {
-          const domain = e
-            .replace('http://', '')
-            .replace('https://', '')
-            .replace('tcp://', '')
-            .replace('udp://', '');
-          if (this.containsOneValueOf(domain, ['http:', 'https:', 'tcp:', 'udp:'])) {
-            window.newAlert('You cannot put the path here, use target root');
-            return;
-          } else if (this.containsOneValueOf(domain, ['/'])) {
-            const parts = e.split('://');
-            const afterScheme = parts[1];
-            const afterSchemeParts = afterScheme.split('/');
-            const domain = afterSchemeParts[0];
-            this.changeTheUrl(`${parts[0]}://${domain}`);
-            if (this.props.changeTargetRoot) {
-              afterSchemeParts.shift();
-              this.props.changeTargetRoot('/' + afterSchemeParts.join('/'));
+      <>
+        <TextInput
+          label={`Target ${this.props.idx + 1}`}
+          placeholder={
+            this.props.tunnelingEnabled ? 'tcp://192.168.42.42:22' : 'https://changeme.oto.tools'
+          }
+          value={
+            this.state.url
+            //this.state.dirtyTarget ? this.state.dirtyTarget : value.scheme + '://' + value.host
+          }
+          help="The URL of the target. Do not put anything more than scheme://domain:port. Not path supported"
+          onChange={(e) => {
+            try {
+              const protocols = ['http://', 'https://', 'udp://', 'tcp://'];
+              const hasProtocol = protocols.filter(p => e.toLowerCase().startsWith(p)).length > 0;
+              if (hasProtocol) {
+                const parts = e.split('://');
+                const scheme = parts[0]
+                const afterScheme = parts[1];
+                const afterSchemeParts = afterScheme.split('/');
+                const domain = afterSchemeParts[0];
+                afterSchemeParts.shift();
+                const pathname = '/' + afterSchemeParts.join('/');
+                this.changeTheUrl(`${scheme}://${domain}`, () => {
+                  this.setState({ url: e, firstUrlError: afterSchemeParts.length > 0 });
+                });
+                if (this.props.changeTargetRoot) this.props.changeTargetRoot(pathname);
+              } else {
+                this.setState({ url: e, firstUrlError: false });
+              }
+            } catch (ex) {
+              this.setState({ url: e, firstUrlError: false });
             }
-          } else {
-            this.changeTheUrl(e);
-          }
-        }}
-        after={() => {
-          if (!this.props.itemValue.mtlsConfig) {
-            return null;
-          } else {
-            return (
-              <button
-                type="button"
-                className="btn btn-primary btn-xs"
-                style={{ marginLeft: 5, height: 32, marginTop: 1 }}
-                onClick={(e) => this.setState({ showMore: !this.state.showMore })}>
-                <i className="fas fa-eye" /> Show more
-              </button>
-            );
-          }
-        }}
-      />
+          }}
+          after={() => {
+            if (!this.props.itemValue.mtlsConfig) {
+              return null;
+            } else {
+              return (
+                <button
+                  type="button"
+                  className="btn btn-primary btn-xs"
+                  style={{ marginLeft: 5, height: 32, marginTop: 1 }}
+                  onClick={(e) => this.setState({ showMore: !this.state.showMore })}>
+                  <i className="fas fa-eye" /> Show more
+                </button>
+              );
+            }
+          }}
+        />
+        {this.state.firstUrlError && (
+          <div className="form-group">
+            <label className="col-xs-12 col-sm-2 control-label" />
+            <div className="col-sm-10" style={{ display: 'flex' }}>
+              <span className="label label-danger">Your target has a path after the host. The path will be ignored when saving the service descriptor</span>
+            </div>
+          </div>
+        )}
+      </>
     );
   };
 
