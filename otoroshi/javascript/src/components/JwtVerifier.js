@@ -474,7 +474,7 @@ export class JwtVerifier extends Component {
       <div>
         {verifier.type === 'global' && (
           <>
-            <Collapse initCollapsed={false} label="Location">
+            <Collapse initCollapsed={false} label="Location" lineEnd={true}>
               <Location
                 tenant={verifier._loc.tenant || 'default'}
                 onChangeTenant={(v) => this.changeTheValue('_loc.tenant', v)}

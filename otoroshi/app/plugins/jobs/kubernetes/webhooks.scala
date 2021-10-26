@@ -86,7 +86,7 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val json: JsValue = ctx.request.contentType match {
         case Some(v) if v.contains("application/json") => Json.parse(bodyRaw.utf8String)
-        case Some(v) if v.contains("application/yaml") => Yaml.parse(bodyRaw.utf8String)
+        case Some(v) if v.contains("application/yaml") => Yaml.parse(bodyRaw.utf8String).get
         case _                                         => Json.parse(bodyRaw.utf8String)
       }
       val operation     = (json \ "request" \ "operation").as[String]
@@ -295,7 +295,7 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val json: JsValue = ctx.request.contentType match {
         case Some(v) if v.contains("application/json") => Json.parse(bodyRaw.utf8String)
-        case Some(v) if v.contains("application/yaml") => Yaml.parse(bodyRaw.utf8String)
+        case Some(v) if v.contains("application/yaml") => Yaml.parse(bodyRaw.utf8String).get
         case _                                         => Json.parse(bodyRaw.utf8String)
       }
       val operation     = (json \ "request" \ "operation").as[String]

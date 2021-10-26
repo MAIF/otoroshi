@@ -1578,7 +1578,7 @@ export class AuthModuleConfig extends Component {
 
     return (
       <div>
-        <Collapse initCollapsed={false} label="Location">
+        <Collapse initCollapsed={false} label="Location" lineEnd={true}>
           <Location
             tenant={settings._loc.tenant || 'default'}
             onChangeTenant={(v) => this.changeTheValue('_loc.tenant', v)}

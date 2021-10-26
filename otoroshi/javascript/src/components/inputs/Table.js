@@ -253,7 +253,7 @@ export class Table extends Component {
       .replace(/\(/g, '')
       .replace(/\)/g, '')
       .toLowerCase();
-    const json = JSON.stringify(this.state.currentItem, null, 2);
+    const json = JSON.stringify({ ...this.state.currentItem, kind: this.props.kubernetesKind }, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -474,7 +474,7 @@ export class Table extends Component {
               this.props.injectToolbar
                 ? this.props.injectToolbar(this.state, (s) => this.setState(s))
                 : null,
-              <form className="form-horizontal" style={{paddingTop: '30px', ...this.props.style }}>
+              <form className="form-horizontal" style={{ paddingTop: '30px', ...this.props.style }}>
                 {React.createElement(this.props.formComponent, {
                   onChange: (currentItem) => this.setState({ currentItem }),
                   value: this.state.currentItem,
@@ -512,7 +512,7 @@ export class Table extends Component {
               this.props.injectToolbar
                 ? this.props.injectToolbar(this.state, (s) => this.setState(s))
                 : null,
-              <form className="form-horizontal" style={{paddingTop: '30px', ...this.props.style }}>
+              <form className="form-horizontal" style={{ paddingTop: '30px', ...this.props.style }}>
                 {React.createElement(this.props.formComponent, {
                   onChange: (currentItem) => {
                     this.setState({ currentItem });

@@ -544,7 +544,7 @@ export class TopBar extends Component {
                   </li>*/}
                   <li>
                     <a href="#" className="logo-xs">
-                      <img src="/assets/images/otoroshi-logo-inverse.png"  width="16" /> version{' '}
+                      <img src="/assets/images/otoroshi-logo-inverse.png" width="16" /> version{' '}
                       {window.__currentVersion}
                     </a>
                   </li>
@@ -574,6 +574,12 @@ export class TopBar extends Component {
                         <span className="fas fa-list-alt" /> Clever apps
                       </a>
                     )}
+                  </li>
+                  <li role="separator" className="divider" />
+                  <li>
+                    <a href="/bo/dashboard/resources-loader">
+                      <span className="fas fa-hammer" /> Resources Loader
+                    </a>
                   </li>
                   <li role="separator" className="divider" />
                   <li>

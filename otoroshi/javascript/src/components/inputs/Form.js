@@ -160,6 +160,7 @@ export class Form extends Component {
               disabled={disabled}
               key={name}
               {...props}
+              lineEnd={true}
               tenant={this.getValue(name + '.tenant', 'default')}
               onChangeTenant={(v) => this.changeValue(name + '.tenant', v)}
               teams={this.getValue(name + '.teams', ['default'])}

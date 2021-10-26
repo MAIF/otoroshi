@@ -711,7 +711,7 @@ export class ServicePage extends Component {
 
   exportService = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const json = JSON.stringify(this.state.service, null, 2);
+    const json = JSON.stringify({ ...this.state.service, kind: 'ServiceDescriptor' }, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1176,7 +1176,7 @@ export class ServicePage extends Component {
               </button>
             </div>
           </div>
-          <Collapse collapsed={this.state.allCollapsed} initCollapsed={false} label="Location">
+          <Collapse collapsed={this.state.allCollapsed} initCollapsed={false} label="Location" lineEnd={true}>
             <Location
               tenant={this.state.service._loc.tenant || 'default'}
               onChangeTenant={(v) => this.changeTheValue('_loc.tenant', v)}
@@ -1438,26 +1438,22 @@ export class ServicePage extends Component {
                 {this.state.service.env === 'prod' &&
                   this.state.service.subdomain.trim().length === 0 && (
                     <LinkDisplay
-                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                        this.state.service.domain
-                      }${this.state.service.matchingRoot || ''}/`}
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.domain
+                        }${this.state.service.matchingRoot || ''}/`}
                     />
                   )}
                 {this.state.service.env === 'prod' &&
                   this.state.service.subdomain.trim().length > 0 && (
                     <LinkDisplay
-                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                        this.state.service.subdomain
-                      }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
+                        }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
                     />
                   )}
                 {this.state.service.env !== 'prod' && (
                   <LinkDisplay
-                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                      this.state.service.subdomain
-                    }.${this.state.service.env}.${this.state.service.domain}${
-                      this.state.service.matchingRoot || ''
-                    }/`}
+                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
+                      }.${this.state.service.env}.${this.state.service.domain}${this.state.service.matchingRoot || ''
+                      }/`}
                   />
                 )}
               </>
@@ -3413,11 +3409,10 @@ export class TemplateInput extends Component {
             </a>
         </div>
         <div class="jumbotron">
-            ${
-              error
-                ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
-                : `<h2 style="color:white;">${title}</h2>`
-            }
+            ${error
+        ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
+        : `<h2 style="color:white;">${title}</h2>`
+      }
             <p class="lead">
               ${message}
             </p>
