@@ -120,6 +120,7 @@ GET     /api/new/apikey                                       otoroshi.controlle
 GET     /api/new/service                                      otoroshi.controllers.adminapi.TemplatesController.initiateService()
 GET     /api/new/tcp/service                                  otoroshi.controllers.adminapi.TemplatesController.initiateTcpService()
 GET     /api/new/group                                        otoroshi.controllers.adminapi.TemplatesController.initiateServiceGroup()
+POST    /api/new/resources                                    otoroshi.controllers.adminapi.TemplatesController.initiateResources()
 
 
 # Create entity from template

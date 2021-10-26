@@ -114,7 +114,7 @@ export class Location extends Component {
             )}
           </div>
         </div>
-        <hr />
+        {this.props.lineEnd && <hr />}
       </>
     );
   }

@@ -39,6 +39,7 @@ import { GroupStatsPage } from '../pages/GroupStatsPage';
 import { ApiKeyStatsPage } from '../pages/ApiKeyStatsPage';
 import { TcpServicesPage } from '../pages/TcpServicesPage';
 import { ProvidersDashboardPage } from '../pages/ProvidersDashboardPage';
+import { ResourceLoaderPage } from '../pages/ResourceLoaderPage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -432,6 +433,10 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/jwt-verifiers"
                           component={(props) => this.decorate(JwtVerifiersPage, props)}
+                        />
+                        <Route
+                          path="/resources-loader"
+                          component={props => this.decorate(ResourceLoaderPage, props)}
                         />
                         <Route
                           path="/validation-authorities/:taction/:titem"

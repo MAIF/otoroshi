@@ -86,7 +86,7 @@ object KubernetesConfig {
         // val obj = yamlReader.readValue(configContent, classOf[Object])
         // val jsonWriter = new ObjectMapper()
         // val json = Json.parse(jsonWriter.writeValueAsString(obj))
-        val json                  = Yaml.parse(configContent)
+        val json                  = Yaml.parse(configContent).get
         val currentContextName    = (json \ "current-context").as[String]
         val currentContextUser    = (json \ "contexts")
           .as[JsArray]
