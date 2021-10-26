@@ -61,6 +61,10 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       val reqHandlerNames   = env.scriptManager.reqHandlerNames
 
       val typ             = ctx.request.getQueryString("type")
+      val excludedTypes: Seq[String] = ctx.request.getQueryString("excluded_types")
+        .map(a => a.split(",").toList)
+        .getOrElse(Seq.empty[String])
+
       val cpTransformers  = typ match {
         case None                => transformersNames
         case Some("transformer") => transformersNames
@@ -185,7 +189,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
             case JsNull => false
             case _      => true
           }
-        Ok(JsArray(allClasses))
+        Ok(JsArray(allClasses.filter(p => !excludedTypes.contains((p \"pluginType").as[String]))))
       }
     }
 

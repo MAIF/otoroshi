@@ -3276,6 +3276,9 @@ export class ServicePage extends Component {
             />
             <Scripts
               label="Plugins"
+              excludedTypes={[
+                "sink", "request-handler", "job"
+              ]}
               refs={this.state.service.plugins.refs}
               onChange={(e) => this.changeTheValue('plugins.refs', e)}
               config={this.state.service.plugins.config}
