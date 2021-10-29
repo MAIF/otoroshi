@@ -40,19 +40,21 @@ export function ObjectInput(props) {
     if (e && e.preventDefault) e.preventDefault();
     setData([
       { key: '', value: '', idx: 0 },
-      ...data.map((item, i) => ({ ...item, idx: i + 1 }))
-    ])
+      ...data
+    ].map((item, i) => ({ ...item, idx: i })))
   };
 
   const addNext = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     const out = [...data, { key: '', value: '', idx: data.length }]
-    setData(out)
+    setData(out.map((item, i) => ({ ...item, idx: i })))
   };
 
   const remove = (idx, key, e) => {
     if (e && e.preventDefault) e.preventDefault();
-    setData(data.filter(item => item.idx !== idx))
+    setData(data
+      .filter(item => item.idx !== idx)
+      .map((item, i) => ({ ...item, idx: i })))
   };
 
   const onChange = out => {
