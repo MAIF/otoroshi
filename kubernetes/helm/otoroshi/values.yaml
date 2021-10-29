@@ -33,7 +33,7 @@ loadbalancer:
   enabled: true
   name: otoroshi-external-service
   https: 443
-  http: 443
+  http: 80
   nodePort:
     http: 31080
     https: 31443
