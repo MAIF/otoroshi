@@ -102,7 +102,9 @@ class OAuth1CallerPlugin extends RequestTransformer {
 
   override def defaultConfig: Option[JsObject] = Some(
     Json.obj(
+      "OAuth1Caller" -> Json.obj(
       "algo" -> "HmacSHA512"
+      )
     )
   )
 
