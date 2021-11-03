@@ -1037,6 +1037,7 @@ export class FlagsForm extends Component {
             example={{
               "useAkkaHttpClient": false,
               "logUrl": false,
+              "logStats": false,
               "requestTimeout": 60000,
             }}
           />
