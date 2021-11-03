@@ -6,6 +6,7 @@ import fuzzy from 'fuzzy';
 import { DefaultAdminPopover } from '../components/inputs';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
+import { JsonObjectAsCodeInput } from './inputs/CodeInput';
 
 function extractEnv(value = '') {
   const parts = value.split(' ');
@@ -215,6 +216,18 @@ export class TopBar extends Component {
             value: providerDashboardTitle.toLowerCase(),
           });
         }
+        options.push({
+          action: () => {
+            window
+              .popup(
+                'Flags',
+                (ok, cancel) => <FlagsForm ok={ok} cancel={cancel}/>
+              )
+          },
+          env: <span className="fas fa-flag" />,
+          label: 'Flags',
+          value: 'flags',
+        });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/snowmonkey'),
           env: (
@@ -971,6 +984,77 @@ export class TopBar extends Component {
           </div>
         </div>
       </nav>
+    );
+  }
+}
+
+export class FlagsForm extends Component {
+  state = {
+    flags: {}
+  };
+
+  read = () => {
+    fetch('/bo/api/backoffice/flags', {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        Accepts: 'application/json'
+      }
+    }).then(r => r.json()).then(flags => {
+      this.setState({ flags })
+    })
+  }
+
+  write = () => {
+    fetch('/bo/api/backoffice/flags', {
+      method: 'PUT',
+      credentials: 'include',
+      headers: {
+        Accepts: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state.flags)
+    }).then(r => r.json()).then(flags => {
+      this.setState({ flags })
+    })
+  }
+
+  componentDidMount() {
+    this.read();
+  }
+  
+  render() {
+    return (
+      <>
+        <div className="modal-body">
+          <form className="form-horizontal" style={{ overflowY: 'auto', maxHeight: '80vh' }}>
+          <JsonObjectAsCodeInput
+            hideLabel
+            label="-"
+            mode="json"
+            value={this.state.flags || {}}
+            onChange={(e) => this.setState({ flags: e })}
+            example={{
+              "useAkkaHttpClient": false,
+              "logUrl": false,
+              "requestTimeout": 60000,
+            }}
+          />
+          </form>
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-primary" onClick={this.write}>
+            Write
+          </button>
+          <button
+            type="button"
+            className="btn btn-success"
+            ref={(r) => (this.okRef = r)}
+            onClick={(e) => this.props.ok(this.state)}>
+            Close
+          </button>
+        </div>
+      </>
     );
   }
 }

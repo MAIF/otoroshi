@@ -2,7 +2,7 @@ package otoroshi.controllers
 
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.auth0.jwt.JWT
@@ -36,9 +36,23 @@ import play.api.mvc._
 
 import java.util.Base64
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Try
+
+case class BackofficeFlags(env: Env, _useAkkaHttpClient: Option[Boolean], _logUrl: Option[Boolean], _logStats: Option[Boolean], _requestTimeout: Option[FiniteDuration]) {
+  lazy val useAkkaHttpClient: Boolean = _useAkkaHttpClient.orElse(env.configuration.getOptional[Boolean]("otoroshi.backoffice.flags.useAkkaHttpClient")).getOrElse(false)
+  lazy val logUrl: Boolean = _logUrl.orElse(env.configuration.getOptional[Boolean]("otoroshi.backoffice.flags.logUrl")).getOrElse(false)
+  lazy val logStats: Boolean = _logStats.orElse(env.configuration.getOptional[Boolean]("otoroshi.backoffice.flags.logStats")).getOrElse(false)
+  lazy val requestTimeout: FiniteDuration = _requestTimeout.orElse(env.configuration.getOptional[Long]("otoroshi.backoffice.flags.requestTimeout").map(v => FiniteDuration(v, TimeUnit.MILLISECONDS))).getOrElse(1.minute)
+  def json: JsValue = Json.obj(
+    "useAkkaHttpClient" -> useAkkaHttpClient,
+    "logUrl" -> logUrl,
+    "logStats" -> logStats,
+    "requestTimeout" -> requestTimeout.toMillis,
+  )
+}
 
 class BackOfficeController(
     BackOfficeAction: BackOfficeAction,
@@ -58,8 +72,28 @@ class BackOfficeController(
   // Proxy
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+  val flags = new AtomicReference[BackofficeFlags](BackofficeFlags(env, None, None, None, None))
+
   val sourceBodyParser = BodyParser("BackOfficeApi BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
+  }
+
+  def getFlags() = BackOfficeActionAuth.async { ctx =>
+    ctx.checkRights(RightsChecker.SuperAdminOnly) {
+      Ok(flags.get().json).future
+    }
+  }
+
+  def writeFlags() = BackOfficeActionAuth.async(parse.json) { ctx =>
+    ctx.checkRights(RightsChecker.SuperAdminOnly) {
+      val body = ctx.request.body
+      val useAkkaHttpClient = body.select("useAkkaHttpClient").asOpt[Boolean].getOrElse(flags.get().useAkkaHttpClient)
+      val logUrl = body.select("logUrl").asOpt[Boolean].getOrElse(flags.get().logUrl)
+      val logStats = body.select("logStats").asOpt[Boolean].getOrElse(flags.get().logStats)
+      val requestTimeout = body.select("requestTimeout").asOpt[Long].map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(flags.get().requestTimeout)
+      flags.set(BackofficeFlags(env, useAkkaHttpClient.some, logUrl.some, logStats.some, requestTimeout.some))
+      Ok(flags.get().json).future
+    }
   }
 
   def proxyAdminApi(path: String) =
@@ -74,25 +108,28 @@ class BackOfficeController(
             )
           )
         case Some(apikey) => {
-          val host                   = env.adminApiExposedHost
-          val localUrl               =
+          val host = env.adminApiExposedHost
+          val localUrl =
             if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.httpsPort}" else s"http://127.0.0.1:${env.port}"
-          val url                    =
+          val url =
             if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}${env.exposedHttpsPort}"
           lazy val currentReqHasBody = ctx.request.theHasBody
+          if (flags.get().logUrl) {
+            logger.info(s"[${ctx.request.id}] calling ${ctx.request.method} $url/$path with Host = $host")
+          }
           logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
-          val headers                = Seq(
-            "Host"                           -> host,
-            "X-Forwarded-For"                -> ctx.request.theIpAddress,
+          val headers = Seq(
+            "Host" -> host,
+            "X-Forwarded-For" -> ctx.request.theIpAddress,
             env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",
-            env.Headers.OtoroshiVizFrom      -> "otoroshi-admin-ui",
-            env.Headers.OtoroshiClientId     -> apikey.clientId,
+            env.Headers.OtoroshiVizFrom -> "otoroshi-admin-ui",
+            env.Headers.OtoroshiClientId -> apikey.clientId,
             env.Headers.OtoroshiClientSecret -> apikey.clientSecret,
             env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
               Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
             ),
-            "Otoroshi-Tenant"                -> ctx.request.headers.get("Otoroshi-Tenant").getOrElse("default"),
-            "Otoroshi-BackOffice-User"       -> JWT
+            "Otoroshi-Tenant" -> ctx.request.headers.get("Otoroshi-Tenant").getOrElse("default"),
+            "Otoroshi-BackOffice-User" -> JWT
               .create()
               .withClaim("user", Json.stringify(ctx.user.toJson))
               .sign(Algorithm.HMAC512(apikey.clientSecret))
@@ -102,12 +139,61 @@ class BackOfficeController(
             "Accept" -> accept
           } ++ ctx.request.headers.get("X-Content-Type").map(v => "X-Content-Type" -> v)
 
-          val builder                = env.Ws // MTLS needed here ???
-            .akkaUrl(s"$url/$path")
+          if (flags.get().useAkkaHttpClient) {
+
+            val builder = env.Ws // MTLS needed here ???
+              .akkaUrl(s"$url/$path")
+              .withHttpHeaders(headers: _*)
+              .withFollowRedirects(false)
+              .withMethod(ctx.request.method)
+              .withRequestTimeout(flags.get().requestTimeout)
+              .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
+
+            val builderWithBody = if (currentReqHasBody) {
+              builder.withBody(SourceBody(ctx.request.body))
+            } else {
+              builder
+            }
+
+            val start = System.currentTimeMillis()
+            if (flags.get().logStats) logger.info(s"[${ctx.request.id}] akka - starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}")
+            logger.debug(s"[${ctx.request.id}] akka - starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}")
+            builderWithBody
+              .stream()
+              .fast
+              .map { res =>
+                if (flags.get().logStats) logger.info(s"[${ctx.request.id}] akka - got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System.currentTimeMillis() - start}ms : ${res.status} - ${res.headers}")
+                logger.debug(s"[${ctx.request.id}] akka - got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System.currentTimeMillis() - start}ms : ${res.status} - ${res.headers}")
+                val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
+                Status(res.status)
+                  .sendEntity(
+                    HttpEntity.Streamed(
+                      res.bodyAsSource.alsoTo(Sink.onComplete {
+                        case e =>
+                          if (flags.get().logStats) logger.info(s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System.currentTimeMillis() - start}ms")
+                          logger.debug(s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System.currentTimeMillis() - start}ms")
+                      }),
+                      res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
+                      res.headers.get("Content-Type").flatMap(_.headOption)
+                    )
+                  )
+                  .withHeaders(
+                    res.headers
+                      .mapValues(_.head)
+                      .toSeq
+                      .filter(_._1 != "Content-Type")
+                      .filter(_._1 != "Content-Length")
+                      .filter(_._1 != "Transfer-Encoding"): _*
+                  )
+                  .as(ctype)
+              }
+        } else {
+          val builder = env.Ws // MTLS needed here ???
+            .url(s"$url/$path")
             .withHttpHeaders(headers: _*)
             .withFollowRedirects(false)
             .withMethod(ctx.request.method)
-            .withRequestTimeout(1.minute)
+            .withRequestTimeout(flags.get().requestTimeout)
             .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
 
           val builderWithBody = if (currentReqHasBody) {
@@ -116,15 +202,24 @@ class BackOfficeController(
             builder
           }
 
+          val start = System.currentTimeMillis()
+          if (flags.get().logStats) logger.info(s"[${ctx.request.id}] starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}")
+          logger.debug(s"[${ctx.request.id}] starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}")
           builderWithBody
             .stream()
             .fast
-            .flatMap { res =>
+            .map { res =>
+              if (flags.get().logStats) logger.info(s"[${ctx.request.id}] got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System.currentTimeMillis() - start}ms : ${res.status} - ${res.headers}")
+              logger.debug(s"[${ctx.request.id}] got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System.currentTimeMillis() - start}ms : ${res.status} - ${res.headers}")
               val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
               Status(res.status)
                 .sendEntity(
                   HttpEntity.Streamed(
-                    Source.lazySource(() => res.bodyAsSource),
+                    Source.lazySource(() => res.bodyAsSource).alsoTo(Sink.onComplete {
+                      case e =>
+                        if (flags.get().logStats) logger.info(s"[${ctx.request.id}] for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System.currentTimeMillis() - start}ms")
+                        logger.debug(s"[${ctx.request.id}] for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System.currentTimeMillis() - start}ms")
+                    }),
                     res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
                     res.headers.get("Content-Type").flatMap(_.headOption)
                   )
@@ -138,8 +233,8 @@ class BackOfficeController(
                     .filter(_._1 != "Transfer-Encoding"): _*
                 )
                 .as(ctype)
-                .future
             }
+        }
         }
       }
     }

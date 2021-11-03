@@ -79,6 +79,9 @@ GET     /bo/api/elastic/_version                              otoroshi.controlle
 POST    /bo/api/oidc/_fetchConfig                             otoroshi.controllers.BackOfficeController.fetchOpenIdConfiguration()
 POST    /bo/api/saml/_fetchConfig                             otoroshi.controllers.BackOfficeController.fetchSAMLConfiguration()
 
+PUT    /bo/api/backoffice/flags                              otoroshi.controllers.BackOfficeController.writeFlags()
+GET    /bo/api/backoffice/flags                              otoroshi.controllers.BackOfficeController.getFlags()
+
 # Admin API proxy
 GET     /bo/api/proxy/*path                                   otoroshi.controllers.BackOfficeController.proxyAdminApi(path)
 POST    /bo/api/proxy/*path                                   otoroshi.controllers.BackOfficeController.proxyAdminApi(path)

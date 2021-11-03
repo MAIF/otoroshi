@@ -119,11 +119,11 @@ export default class CodeInput extends Component {
     />
 
     return <div className="form-group">
-      <label htmlFor={`input-${this.props.label}`} className="col-sm-2 control-label">
+      {!this.props.hideLabel && <label htmlFor={`input-${this.props.label}`} className="col-sm-2 control-label">
         {this.props.label} <Help text={this.props.help} />
-      </label>
+      </label>}
 
-      <div className="col-sm-10">
+      <div className={this.props.hideLabel ? 'col-sm-12' : 'col-sm-10'}>
         {this.props.example ? <div className="row">
           <div className="col-sm-8">
             {editor}
