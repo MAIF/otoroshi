@@ -232,13 +232,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val responseType = "code"
     val scope        = authConfig.scope // "openid profile email name"
     val claims       = Option(authConfig.claims).filterNot(_.isEmpty).map(v => s"claims=$v&").getOrElse("")
-    val queryParam   = if (authConfig.useCookie) "" else s"?desc=${descriptor.id}"
     val hash         = env.sign(s"${authConfig.id}:::${descriptor.id}")
-    val redirectUri  = (authConfig.callbackUrl + queryParam).applyOn {
-      case url if !authConfig.useCookie && url.contains("?")  => url + s"&hash=$hash"
-      case url if !authConfig.useCookie && !url.contains("?") => url + s"?hash=$hash"
-      case url                                                => url
-    }
+    val redirectUri  = authConfig.callbackUrl
 
     val (loginUrl, sessionParams) = authConfig.pkce match {
       case Some(pcke) if pcke.enabled =>
@@ -259,7 +254,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     Redirect(
       loginUrl
     ).addingToSession(
-      sessionParams ++ Map(
+      sessionParams ++
+        Map(
         s"desc"                                                           -> descriptor.id,
         "hash"                                                            -> hash,
         s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
@@ -298,11 +294,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val scope        = authConfig.scope // "openid profile email name"
     val claims       = Option(authConfig.claims).filterNot(_.isEmpty).map(v => s"claims=$v&").getOrElse("")
     val hash         = env.sign(s"${authConfig.id}:::backoffice")
-    val redirectUri  = authConfig.callbackUrl.applyOn {
-      case url if !authConfig.useCookie && url.contains("?")  => url + s"&hash=$hash"
-      case url if !authConfig.useCookie && !url.contains("?") => url + s"?hash=$hash"
-      case url                                                => url
-    }
+    val redirectUri  = authConfig.callbackUrl
 
     val (loginUrl, sessionParams) = authConfig.pkce match {
       case Some(pcke) if pcke.enabled =>
@@ -539,8 +531,9 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   ): Future[Either[String, PrivateAppsUser]] = {
     val clientId     = authConfig.clientId
     val clientSecret = Option(authConfig.clientSecret).map(_.trim).filterNot(_.isEmpty)
-    val queryParam   = if (authConfig.useCookie) "" else s"?desc=${descriptor.id}"
-    val redirectUri  = authConfig.callbackUrl + queryParam
+    // val queryParam   = if (authConfig.useCookie) Seq.empty[(String,String)] else Seq(("desc" -> descriptor.id))
+    val redirectUri  = authConfig.callbackUrl
+
     request.getQueryString("error") match {
       case Some(error) => Left(error).asFuture
       case None        => {
@@ -603,11 +596,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val clientId     = authConfig.clientId
     val clientSecret = Option(authConfig.clientSecret).map(_.trim).filterNot(_.isEmpty)
     val hash         = env.sign(s"${authConfig.id}:::backoffice")
-    val redirectUri  = authConfig.callbackUrl.applyOn {
-      case url if !authConfig.useCookie && url.contains("?")  => url + s"&hash=$hash"
-      case url if !authConfig.useCookie && !url.contains("?") => url + s"?hash=$hash"
-      case url                                                => url
-    }
+    val redirectUri  = authConfig.callbackUrl
     request.getQueryString("error") match {
       case Some(error) => Left(error).asFuture
       case None        => {
