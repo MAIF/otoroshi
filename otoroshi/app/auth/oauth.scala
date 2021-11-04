@@ -15,7 +15,14 @@ import play.api.libs.ws.{WSProxyServer, WSResponse}
 import play.api.mvc.Results.Redirect
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import otoroshi.security.IdGenerator
+import otoroshi.utils.crypto.Signatures
 
+import java.nio.charset.StandardCharsets
+import java.security.{MessageDigest, SecureRandom}
+import java.time.Instant
+import java.util.Base64
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -61,6 +68,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           claims = (json \ "claims").asOpt[String].getOrElse("email name"),
           refreshTokens = (json \ "refreshTokens").asOpt[Boolean].getOrElse(false),
           useJson = (json \ "useJson").asOpt[Boolean].getOrElse(false),
+          pkce = (json \ "pkce").asOpt[PKCEConfig](PKCEConfig._fmt.reads),
           useCookie = (json \ "useCookie").asOpt[Boolean].getOrElse(false),
           readProfileFromToken = (json \ "readProfileFromToken").asOpt[Boolean].getOrElse(false),
           jwtVerifier = (json \ "jwtVerifier").asOpt[JsValue].flatMap(v => AlgoSettings.fromJson(v).toOption),
@@ -90,6 +98,28 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
     } get
 }
 
+case class PKCEConfig(enabled: Boolean = false, algorithm: String = "S256") extends AsJson {
+  def asJson: JsValue = {
+    Json.obj(
+      "enabled" -> enabled,
+      "algorithm" -> algorithm
+    )
+  }
+}
+
+object PKCEConfig {
+  val _fmt: Format[PKCEConfig] = new Format[PKCEConfig] {
+    override def reads(json: JsValue): JsResult[PKCEConfig] =
+      JsSuccess(
+        PKCEConfig(
+          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+          algorithm = (json \ "algorithm").asOpt[String].getOrElse("S256")
+        )
+      )
+    override def writes(o: PKCEConfig): JsValue             = o.asJson
+  }
+}
+
 case class GenericOauth2ModuleConfig(
     id: String,
     name: String,
@@ -107,6 +137,7 @@ case class GenericOauth2ModuleConfig(
     claims: String = "email name",
     useCookie: Boolean = false,
     useJson: Boolean = false,
+    pkce: Option[PKCEConfig] = None,
     readProfileFromToken: Boolean = false,
     jwtVerifier: Option[AlgoSettings] = None,
     accessTokenField: String = "access_token",
@@ -155,6 +186,7 @@ case class GenericOauth2ModuleConfig(
       "claims"               -> this.claims,
       "useCookie"            -> this.useCookie,
       "useJson"              -> this.useJson,
+      "pkce"                 -> this.pkce.map(_.asJson).getOrElse(JsNull).as[JsValue],
       "readProfileFromToken" -> this.readProfileFromToken,
       "accessTokenField"     -> this.accessTokenField,
       "jwtVerifier"          -> jwtVerifier.map(_.asJson).getOrElse(JsNull).as[JsValue],
@@ -183,6 +215,8 @@ case class GenericOauth2ModuleConfig(
 
 case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModule {
 
+  lazy val logger = Logger("otoroshi-global-oauth2-module")
+
   import play.api.libs.ws.DefaultBodyWritables._
   import otoroshi.utils.http.Implicits._
   import otoroshi.utils.syntax.implicits._
@@ -205,17 +239,51 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       case url if !authConfig.useCookie && !url.contains("?") => url + s"?hash=$hash"
       case url                                                => url
     }
-    val loginUrl     =
-      s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
+
+    val (loginUrl, sessionParams) = authConfig.pkce match {
+      case Some(pcke) if pcke.enabled =>
+        val (codeVerifier, codeChallenge, codeChallengeMethod) = generatePKCECodes(authConfig.pkce.map(_.algorithm))
+        logger.info(s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod")
+        (
+          s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri&code_challenge=$codeChallenge&code_challenge_method=$codeChallengeMethod",
+          Seq(("code_verifier" -> codeVerifier))
+        )
+      case _ =>
+        logger.info(s"not using pkce flow")
+        (
+          s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri",
+          Seq.empty[(String, String)]
+        )
+    }
+
     Redirect(
       loginUrl
     ).addingToSession(
-      s"desc"                                                           -> descriptor.id,
-      "hash"                                                            -> hash,
-      s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
-        routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
-      )
+      sessionParams ++ Map(
+        s"desc"                                                           -> descriptor.id,
+        "hash"                                                            -> hash,
+        s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
+          routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
+        )):_*
     ).asFuture
+  }
+
+  private def generatePKCECodes(codeChallengeMethod: Option[String] = Some("S256")) = {
+    val code = new Array[Byte](120)
+    val secureRandom = new SecureRandom()
+    secureRandom.nextBytes(code)
+
+    val codeVerifier = new String(Base64.getUrlEncoder.withoutPadding().encodeToString(code)).slice(0, 120)
+
+    val bytes = codeVerifier.getBytes("US-ASCII")
+    val md = MessageDigest.getInstance("SHA-256")
+    md.update(bytes, 0, bytes.length)
+    val digest = md.digest
+
+    codeChallengeMethod match {
+      case Some("S256") => (codeVerifier, org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(digest), "S256")
+      case _ => (codeVerifier, codeVerifier, "plain")
+    }
   }
 
   override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
@@ -235,15 +303,31 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       case url if !authConfig.useCookie && !url.contains("?") => url + s"?hash=$hash"
       case url                                                => url
     }
-    val loginUrl     =
-      s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
+
+    val (loginUrl, sessionParams) = authConfig.pkce match {
+      case Some(pcke) if pcke.enabled =>
+        val (codeVerifier, codeChallenge, codeChallengeMethod) = generatePKCECodes(authConfig.pkce.map(_.algorithm))
+        logger.info(s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod")
+        (
+          s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri&code_challenge=$codeChallenge&code_challenge_method=$codeChallengeMethod",
+          Seq(("code_verifier" -> codeVerifier))
+        )
+      case _ =>
+        logger.info(s"not using pkce flow")
+        (
+        s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri",
+        Seq.empty[(String, String)]
+      )
+    }
+
     Redirect(
       loginUrl
     ).addingToSession(
-      "hash"                    -> hash,
+    sessionParams ++ Map(
+        "hash"                    -> hash,
       "bo-redirect-after-login" -> redirect.getOrElse(
         routes.BackOfficeController.dashboard().absoluteURL(env.exposedRootSchemeIsHttps)
-      )
+      )):_*
     ).asFuture
   }
 
@@ -280,7 +364,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       .asFuture
   }
 
-  def getToken(code: String, clientId: String, clientSecret: Option[String], redirectUri: String, config: GlobalConfig)(
+  def getToken(code: String, clientId: String, clientSecret: Option[String], redirectUri: String, config: GlobalConfig, codeVerifier: Option[String] = None)(
       implicit
       env: Env,
       ec: ExecutionContext
@@ -289,23 +373,31 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       env.MtlsWs
         .url(authConfig.tokenUrl, authConfig.mtlsConfig)
         .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
+
     val future1 = if (authConfig.useJson) {
-      builder.post(
-        Json.obj(
-          "code"         -> code,
-          "grant_type"   -> "authorization_code",
-          "client_id"    -> clientId,
-          "redirect_uri" -> redirectUri
-        ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
-      )
+      val params = Json.obj(
+        "code"         -> code,
+        "grant_type"   -> "authorization_code",
+        "client_id"    -> clientId,
+        "redirect_uri" -> redirectUri
+      ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
+
+      builder.post(codeVerifier match {
+        case None => params
+        case Some(verifier) => params ++ Json.obj("code_verifier" -> verifier)
+      })
     } else {
+      val params = Map(
+        "code"         -> code,
+        "grant_type"   -> "authorization_code",
+        "client_id"    -> clientId,
+        "redirect_uri" -> redirectUri
+      ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
       builder.post(
-        Map(
-          "code"         -> code,
-          "grant_type"   -> "authorization_code",
-          "client_id"    -> clientId,
-          "redirect_uri" -> redirectUri
-        ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
+        codeVerifier match {
+          case None => params
+          case Some(verifier) => params ++ Map("code_verifier" -> verifier)
+        }
       )(writeableOf_urlEncodedSimpleForm)
     }
     // TODO: check status code
@@ -455,7 +547,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         request.getQueryString("code") match {
           case None       => Left("No code :(").asFuture
           case Some(code) => {
-            getToken(code, clientId, clientSecret, redirectUri, config)
+            getToken(code, clientId, clientSecret, redirectUri, config, request.session.get("code_verifier"))
               .flatMap { rawToken =>
                 val accessToken = (rawToken \ authConfig.accessTokenField).as[String]
                 val f           = if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
@@ -522,7 +614,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         request.getQueryString("code") match {
           case None       => Left("No code :(").asFuture
           case Some(code) => {
-            getToken(code, clientId, clientSecret, redirectUri, config)
+            getToken(code, clientId, clientSecret, redirectUri, config, request.session.get("code_verifier"))
               .flatMap { rawToken =>
                 val accessToken = (rawToken \ authConfig.accessTokenField).as[String]
                 val f           = if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
