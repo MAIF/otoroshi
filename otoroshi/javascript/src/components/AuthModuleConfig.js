@@ -324,6 +324,22 @@ export class Oauth2ModuleConfig extends Component {
           onChange={(v) => changeTheValue(path + '.useJson', v)}
         />
         <BooleanInput
+          label="Enabled PKCE flow"
+          value={settings.pkce ? settings.pkce.enabled : false}
+          help="Prevent malicious attacker to exchange token without a code verifier"
+          onChange={v => changeTheValue(path + '.pkce.enabled', v)}
+        />
+        {settings.pkce && settings.pkce.enabled && <SelectInput
+          label="PKCE Algorithm"
+          value={settings.pkce.algorithm}
+          defaultValue="S256"
+          possibleValues={[
+            { value: 'S256', label: 'HMAC-SHA256' },
+            { value: 'plain', label: 'PLAIN (not recommended)' }
+          ]}
+          onChange={v => changeTheValue(path + '.pkce.algorithm', v)}
+        />}
+        <BooleanInput
           label="Refresh tokens"
           value={settings.refreshTokens}
           help="Automatically refresh access token using the refresh token if available"
