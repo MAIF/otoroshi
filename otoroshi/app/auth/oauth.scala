@@ -243,13 +243,13 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val (loginUrl, sessionParams) = authConfig.pkce match {
       case Some(pcke) if pcke.enabled =>
         val (codeVerifier, codeChallenge, codeChallengeMethod) = generatePKCECodes(authConfig.pkce.map(_.algorithm))
-        logger.info(s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod")
+        logger.debug(s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod")
         (
           s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri&code_challenge=$codeChallenge&code_challenge_method=$codeChallengeMethod",
-          Seq(("code_verifier" -> codeVerifier))
+          Seq((s"${authConfig.id}-code_verifier" -> codeVerifier))
         )
       case _ =>
-        logger.info(s"not using pkce flow")
+        logger.debug(s"not using pkce flow")
         (
           s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri",
           Seq.empty[(String, String)]
@@ -307,13 +307,13 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val (loginUrl, sessionParams) = authConfig.pkce match {
       case Some(pcke) if pcke.enabled =>
         val (codeVerifier, codeChallenge, codeChallengeMethod) = generatePKCECodes(authConfig.pkce.map(_.algorithm))
-        logger.info(s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod")
+        logger.debug(s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod")
         (
           s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri&code_challenge=$codeChallenge&code_challenge_method=$codeChallengeMethod",
-          Seq(("code_verifier" -> codeVerifier))
+          Seq((s"${authConfig.id}-code_verifier" -> codeVerifier))
         )
       case _ =>
-        logger.info(s"not using pkce flow")
+        logger.debug(s"not using pkce flow")
         (
         s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri",
         Seq.empty[(String, String)]
@@ -384,7 +384,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 
       builder.post(codeVerifier match {
         case None => params
-        case Some(verifier) => params ++ Json.obj("code_verifier" -> verifier)
+        case Some(verifier) => params ++ Json.obj("code_verifier" -> verifier.replace(s"${authConfig.id}-", ""))
       })
     } else {
       val params = Map(
@@ -396,7 +396,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       builder.post(
         codeVerifier match {
           case None => params
-          case Some(verifier) => params ++ Map("code_verifier" -> verifier)
+          case Some(verifier) => params ++ Map("code_verifier" -> verifier.replace(s"${authConfig.id}-", ""))
         }
       )(writeableOf_urlEncodedSimpleForm)
     }
@@ -547,7 +547,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         request.getQueryString("code") match {
           case None       => Left("No code :(").asFuture
           case Some(code) => {
-            getToken(code, clientId, clientSecret, redirectUri, config, request.session.get("code_verifier"))
+            getToken(code, clientId, clientSecret, redirectUri, config, request.session.get(s"${authConfig.id}-code_verifier"))
               .flatMap { rawToken =>
                 val accessToken = (rawToken \ authConfig.accessTokenField).as[String]
                 val f           = if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
@@ -614,7 +614,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         request.getQueryString("code") match {
           case None       => Left("No code :(").asFuture
           case Some(code) => {
-            getToken(code, clientId, clientSecret, redirectUri, config, request.session.get("code_verifier"))
+            getToken(code, clientId, clientSecret, redirectUri, config, request.session.get(s"${authConfig.id}-code_verifier"))
               .flatMap { rawToken =>
                 val accessToken = (rawToken \ authConfig.accessTokenField).as[String]
                 val f           = if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
