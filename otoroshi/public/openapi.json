@@ -14205,7 +14205,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Exclude LDAP properties matching"
           },
           "type" : {
             "description" : "the type of the module",
@@ -14259,7 +14259,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Only include LDAP properties matching"
           },
           "sessionCookieValues" : {
             "description" : "Settings for the session cookie",
@@ -14316,7 +14316,7 @@
             "description" : "The admin username"
           },
           "extractProfile" : {
-            "description" : "???",
+            "description" : "Extract profile from LDAP profile",
             "type" : "boolean"
           },
           "name" : {
@@ -14330,21 +14330,21 @@
         }
       },
       "otoroshi.models.QuotasAlmostExceededSettings" : {
-        "description" : "???",
+        "description" : "Settings for apikey quotas alerts",
         "type" : "object",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "Is quotas alert enabled",
             "type" : "boolean"
           },
           "dailyQuotasThreshold" : {
             "format" : "double",
-            "description" : "???",
+            "description" : "The daily quotas threshold before generating alert",
             "type" : "number"
           },
           "monthlyQuotasThreshold" : {
             "format" : "double",
-            "description" : "???",
+            "description" : "The monthly quotas threshold before generating alert",
             "type" : "number"
           }
         }
@@ -14642,7 +14642,7 @@
             "type" : "string"
           },
           "otoroshiRightsField" : {
-            "description" : "???",
+            "description" : "Field in user profile to find otoroshi UI rights",
             "type" : "string"
           },
           "mtlsConfig" : {
@@ -14746,7 +14746,7 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.auth.PKCEConfig"
             } ],
-            "description" : "???"
+            "description" : "Use PKCE challenge (OAuth 2.1)"
           },
           "apiKeyTagsField" : {
             "description" : "Field name to extract apikey tags",
@@ -14801,7 +14801,7 @@
             "description" : "URL of the OIDC config. file"
           },
           "noWildcardRedirectURI" : {
-            "description" : "???",
+            "description" : "Manage redirection without query params for exact string comparison (OAuth 2.1)",
             "type" : "boolean"
           },
           "readProfileFromToken" : {
@@ -16100,7 +16100,7 @@
             "type" : "boolean"
           },
           "quotasSettings" : {
-            "description" : "???",
+            "description" : "Settings to generate alert when an apikey almost exceeded or exceeded its quotas",
             "$ref" : "#/components/schemas/otoroshi.models.QuotasAlmostExceededSettings"
           },
           "tags" : {
@@ -18794,15 +18794,15 @@
         }
       },
       "otoroshi.auth.PKCEConfig" : {
-        "description" : "???",
+        "description" : "Settings for PKCE challenge (OAuth 2.1)",
         "type" : "object",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "Is PKCE challenge enabled",
             "type" : "boolean"
           },
           "algorithm" : {
-            "description" : "???",
+            "description" : "Hashing algorithm used in PKCE challenge",
             "type" : "string"
           }
         }

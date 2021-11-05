@@ -2379,19 +2379,20 @@ spec:
                 description: "Globally use akka http client for everything"
                 type: "boolean"
               quotasSettings:
-                description: "???"
+                description: "Settings to generate alert when an apikey almost exceeded\
+                  \ or exceeded its quotas"
                 type: "object"
                 properties:
                   enabled:
-                    description: "???"
+                    description: "Is quotas alert enabled"
                     type: "boolean"
                   dailyQuotasThreshold:
                     format: "double"
-                    description: "???"
+                    description: "The daily quotas threshold before generating alert"
                     type: "number"
                   monthlyQuotasThreshold:
                     format: "double"
-                    description: "???"
+                    description: "The monthly quotas threshold before generating alert"
                     type: "number"
               apiReadOnly:
                 description: "If enabled, Admin API won't be able to write/update/delete\
@@ -3381,14 +3382,14 @@ spec:
                   \ provider"
                 type: "boolean"
               pkce:
-                description: "???"
+                description: "Use PKCE challenge (OAuth 2.1)"
                 type: "object"
                 properties:
                   enabled:
-                    description: "???"
+                    description: "Is PKCE challenge enabled"
                     type: "boolean"
                   algorithm:
-                    description: "???"
+                    description: "Hashing algorithm used in PKCE challenge"
                     type: "string"
               userBase:
                 description: "LDAP user base DN"
@@ -3495,7 +3496,7 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
                 description: "Web proxy configuration for the module's http client"
               extractProfile:
-                description: "???"
+                description: "Extract profile from LDAP profile"
                 type: "boolean"
               logoutUrl:
                 description: "OAuth logout URL"
@@ -3548,7 +3549,7 @@ spec:
                 description: "Refresh token support"
                 type: "boolean"
               otoroshiRightsField:
-                description: "???"
+                description: "Field in user profile to find otoroshi UI rights"
                 type: "string"
               signature:
                 description: "Algorithm and canonicalization method to sign SAML documents"
@@ -3626,7 +3627,7 @@ spec:
                 type: "array"
                 items:
                   type: "string"
-                description: "???"
+                description: "Exclude LDAP properties matching"
               httpMethod:
                 type: "object"
                 x-kubernetes-preserve-unknown-fields: true
@@ -3723,7 +3724,7 @@ spec:
                 type: "array"
                 items:
                   type: "string"
-                description: "???"
+                description: "Only include LDAP properties matching"
               authorizeURL:
                 description: "The authorize URL used to initiates the authorization\
                   \ flow that authenticates the user with the Identity Provider"
@@ -3828,7 +3829,8 @@ spec:
                   \ provider"
                 type: "string"
               noWildcardRedirectURI:
-                description: "???"
+                description: "Manage redirection without query params for exact string\
+                  \ comparison (OAuth 2.1)"
                 type: "boolean"
               readProfileFromToken:
                 description: "The user profile will be read from the JWT token in\
