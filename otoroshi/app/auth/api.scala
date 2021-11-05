@@ -130,6 +130,7 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
   def claims: String
   def useJson: Boolean
   def pkce: Option[PKCEConfig]
+  def noWildcardRedirectURI: Boolean
   def useCookie: Boolean
   def readProfileFromToken: Boolean
   def refreshTokens: Boolean
