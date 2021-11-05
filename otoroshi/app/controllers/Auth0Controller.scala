@@ -34,8 +34,8 @@ class AuthController(
 
   lazy val logger = Logger("otoroshi-auth-controller")
 
-  def unsignState(req: RequestHeader, secret: String): JsValue = {
-    val secretToBytes = secret.padTo(16, "0").mkString("").take(16).getBytes
+  def decryptState(req: RequestHeader): JsValue = {
+    val secretToBytes = env.otoroshiSecret.padTo(16, "0").mkString("").take(16).getBytes
 
     val cipher: Cipher    = Cipher.getInstance("AES")
     cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(secretToBytes, "AES"))
@@ -55,7 +55,7 @@ class AuthController(
 
     val hash     = auth match {
       case module: GenericOauth2ModuleConfig if module.noWildcardRedirectURI =>
-        val unsignedState = unsignState(req, s"${req.theUrl.split("\\?")(0)}")
+        val unsignedState = decryptState(req)
         logger.debug(s"Decoded state : ${Json.prettyPrint(unsignedState)}")
         (unsignedState \ "hash").asOpt[String].getOrElse(Some("--"))
       case _ => req.getQueryString("hash").orElse(req.session.get("hash")).getOrElse(Some("--"))
@@ -403,9 +403,7 @@ class AuthController(
         case (Some(serviceId), _)   => process(serviceId)
         case (_, Some(state))       =>
           logger.debug(s"Received state : $state")
-          val redirectUri = ctx.request.theUrl.split("\\?")(0)
-          val unsignedState = unsignState(ctx.request.requestHeader, redirectUri)
-          println(unsignedState)
+          val unsignedState = decryptState(ctx.request.requestHeader)
           (unsignedState \ "descriptor").asOpt[String] match {
             case Some(descriptor) => process(descriptor)
             case _ => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture

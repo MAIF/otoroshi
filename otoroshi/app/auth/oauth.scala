@@ -221,9 +221,9 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   import otoroshi.utils.syntax.implicits._
   import play.api.libs.ws.DefaultBodyWritables._
 
-  private def signString(secret: String, signingObject: JsValue) = {
+  private def encryptState(signingObject: JsValue)(implicit env: Env) = {
     val cipher: Cipher    = Cipher.getInstance("AES")
-    cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(secret.padTo(16, "0").mkString("").take(16).getBytes, "AES"))
+    cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(env.otoroshiSecret.padTo(16, "0").mkString("").take(16).getBytes, "AES"))
     val bytes             = cipher.doFinal(Json.stringify(signingObject).getBytes)
     java.util.Base64.getUrlEncoder.encodeToString(bytes)
   }
@@ -247,7 +247,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       case url                                                => url
     }
 
-    val state = if(authConfig.noWildcardRedirectURI) signString(redirectUri, Json.obj(
+    val state = if(authConfig.noWildcardRedirectURI) encryptState(Json.obj(
       "descriptor" -> descriptor.id,
       "hash" -> hash
     )) else ""
@@ -321,7 +321,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       case url                                                => url
     }
 
-    val state = if(authConfig.noWildcardRedirectURI) signString(redirectUri, Json.obj("hash" -> hash)) else ""
+    val state = if(authConfig.noWildcardRedirectURI) encryptState(Json.obj("hash" -> hash)) else ""
 
     val (loginUrl, sessionParams) = authConfig.pkce match {
       case Some(pcke) if pcke.enabled =>
