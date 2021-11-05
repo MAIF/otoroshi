@@ -2378,6 +2378,21 @@ spec:
               useAkkaHttpClient:
                 description: "Globally use akka http client for everything"
                 type: "boolean"
+              quotasSettings:
+                description: "???"
+                type: "object"
+                properties:
+                  enabled:
+                    description: "???"
+                    type: "boolean"
+                  dailyQuotasThreshold:
+                    format: "double"
+                    description: "???"
+                    type: "number"
+                  monthlyQuotasThreshold:
+                    format: "double"
+                    description: "???"
+                    type: "number"
               apiReadOnly:
                 description: "If enabled, Admin API won't be able to write/update/delete\
                   \ entities"
@@ -3365,6 +3380,16 @@ spec:
                 description: "Use JSON or URL Form Encoded as payload with the OAuth\
                   \ provider"
                 type: "boolean"
+              pkce:
+                description: "???"
+                type: "object"
+                properties:
+                  enabled:
+                    description: "???"
+                    type: "boolean"
+                  algorithm:
+                    description: "???"
+                    type: "string"
               userBase:
                 description: "LDAP user base DN"
                 type: "string"
@@ -3802,6 +3827,9 @@ spec:
                 description: "URL used by otoroshi to disconnect users from identity\
                   \ provider"
                 type: "string"
+              noWildcardRedirectURI:
+                description: "???"
+                type: "boolean"
               readProfileFromToken:
                 description: "The user profile will be read from the JWT token in\
                   \ id_token"
