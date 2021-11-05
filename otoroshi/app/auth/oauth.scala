@@ -2,26 +2,23 @@ package otoroshi.auth
 
 import akka.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
-import otoroshi.controllers.routes
-import otoroshi.env.Env
-import otoroshi.models._
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import org.joda.time.DateTime
-import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights}
+import otoroshi.controllers.routes
+import otoroshi.env.Env
+import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights, _}
+import otoroshi.security.IdGenerator
 import otoroshi.utils.http.MtlsConfig
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.{WSProxyServer, WSResponse}
 import play.api.mvc.Results.Redirect
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
-import otoroshi.security.IdGenerator
-import otoroshi.utils.crypto.Signatures
 
 import java.nio.charset.StandardCharsets
 import java.security.{MessageDigest, SecureRandom}
-import java.time.Instant
 import java.util.Base64
-import javax.crypto.Mac
+import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -69,6 +66,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           refreshTokens = (json \ "refreshTokens").asOpt[Boolean].getOrElse(false),
           useJson = (json \ "useJson").asOpt[Boolean].getOrElse(false),
           pkce = (json \ "pkce").asOpt[PKCEConfig](PKCEConfig._fmt.reads),
+          noWildcardRedirectURI = (json \ "noWildcardRedirectURI").asOpt[Boolean].getOrElse(false),
           useCookie = (json \ "useCookie").asOpt[Boolean].getOrElse(false),
           readProfileFromToken = (json \ "readProfileFromToken").asOpt[Boolean].getOrElse(false),
           jwtVerifier = (json \ "jwtVerifier").asOpt[JsValue].flatMap(v => AlgoSettings.fromJson(v).toOption),
@@ -138,6 +136,7 @@ case class GenericOauth2ModuleConfig(
     useCookie: Boolean = false,
     useJson: Boolean = false,
     pkce: Option[PKCEConfig] = None,
+    noWildcardRedirectURI: Boolean = false,
     readProfileFromToken: Boolean = false,
     jwtVerifier: Option[AlgoSettings] = None,
     accessTokenField: String = "access_token",
@@ -160,7 +159,7 @@ case class GenericOauth2ModuleConfig(
     rightsOverride: Map[String, UserRights] = Map.empty,
     dataOverride: Map[String, JsObject] = Map.empty,
     otoroshiRightsField: String = "otoroshi_rights"
-) extends OAuth2ModuleConfig {
+  ) extends OAuth2ModuleConfig {
   def theDescription: String                                           = desc
   def theMetadata: Map[String, String]                                 = metadata
   def theName: String                                                  = name
@@ -187,6 +186,7 @@ case class GenericOauth2ModuleConfig(
       "useCookie"            -> this.useCookie,
       "useJson"              -> this.useJson,
       "pkce"                 -> this.pkce.map(_.asJson).getOrElse(JsNull).as[JsValue],
+      "noWildcardRedirectURI" -> this.noWildcardRedirectURI,
       "readProfileFromToken" -> this.readProfileFromToken,
       "accessTokenField"     -> this.accessTokenField,
       "jwtVerifier"          -> jwtVerifier.map(_.asJson).getOrElse(JsNull).as[JsValue],
@@ -217,13 +217,20 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 
   lazy val logger = Logger("otoroshi-global-oauth2-module")
 
-  import play.api.libs.ws.DefaultBodyWritables._
   import otoroshi.utils.http.Implicits._
   import otoroshi.utils.syntax.implicits._
+  import play.api.libs.ws.DefaultBodyWritables._
+
+  private def signString(secret: String, signingObject: JsValue) = {
+    val cipher: Cipher    = Cipher.getInstance("AES")
+    cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(secret.padTo(16, "0").mkString("").take(16).getBytes, "AES"))
+    val bytes             = cipher.doFinal(Json.stringify(signingObject).getBytes)
+    java.util.Base64.getUrlEncoder.encodeToString(bytes)
+  }
 
   override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
-      ec: ExecutionContext,
-      env: Env
+                                                                                                        ec: ExecutionContext,
+                                                                                                        env: Env
   ): Future[Result] = {
     implicit val req = request
 
@@ -232,19 +239,34 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val responseType = "code"
     val scope        = authConfig.scope // "openid profile email name"
     val claims       = Option(authConfig.claims).filterNot(_.isEmpty).map(v => s"claims=$v&").getOrElse("")
+    val queryParam   = if (authConfig.useCookie) "" else s"?desc=${descriptor.id}"
     val hash         = env.sign(s"${authConfig.id}:::${descriptor.id}")
-    val redirectUri  = authConfig.callbackUrl
+    val redirectUri  = if(authConfig.noWildcardRedirectURI) authConfig.callbackUrl else (authConfig.callbackUrl + queryParam).applyOn {
+      case url if !authConfig.useCookie && url.contains("?")  => url + s"&hash=$hash"
+      case url if !authConfig.useCookie && !url.contains("?") => url + s"?hash=$hash"
+      case url                                                => url
+    }
+
+    val state = if(authConfig.noWildcardRedirectURI) signString(redirectUri, Json.obj(
+      "descriptor" -> descriptor.id,
+      "hash" -> hash
+    )) else ""
+
+    if(authConfig.noWildcardRedirectURI) {
+      logger.info(s"secret used $redirectUri")
+      logger.info(state)
+    }
 
     val (loginUrl, sessionParams) = authConfig.pkce match {
       case Some(pcke) if pcke.enabled =>
         val (codeVerifier, codeChallenge, codeChallengeMethod) = generatePKCECodes(authConfig.pkce.map(_.algorithm))
-        logger.info(s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod")
+        logger.debug(s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod")
         (
           s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri&code_challenge=$codeChallenge&code_challenge_method=$codeChallengeMethod",
-          Seq(("code_verifier" -> codeVerifier))
+          Seq((s"${authConfig.id}-code_verifier" -> codeVerifier))
         )
       case _ =>
-        logger.info(s"not using pkce flow")
+        logger.debug(s"not using pkce flow")
         (
           s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri",
           Seq.empty[(String, String)]
@@ -252,11 +274,10 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     }
 
     Redirect(
-      loginUrl
+      if(authConfig.noWildcardRedirectURI) s"$loginUrl&state=$state" else loginUrl,
     ).addingToSession(
-      sessionParams ++
-        Map(
-        s"desc"                                                           -> descriptor.id,
+      sessionParams ++ Map(
+        // s"${authConfig.id}-desc"                                          -> descriptor.id,
         "hash"                                                            -> hash,
         s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
           routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
@@ -283,8 +304,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   }
 
   override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
-      ec: ExecutionContext,
-      env: Env
+                                                                         ec: ExecutionContext,
+                                                                         env: Env
   ): Future[Result] = {
     implicit val req = request
 
@@ -294,57 +315,63 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val scope        = authConfig.scope // "openid profile email name"
     val claims       = Option(authConfig.claims).filterNot(_.isEmpty).map(v => s"claims=$v&").getOrElse("")
     val hash         = env.sign(s"${authConfig.id}:::backoffice")
-    val redirectUri  = authConfig.callbackUrl
+    val redirectUri  = if(authConfig.noWildcardRedirectURI) authConfig.callbackUrl else authConfig.callbackUrl.applyOn {
+      case url if !authConfig.useCookie && url.contains("?")  => url + s"&hash=$hash"
+      case url if !authConfig.useCookie && !url.contains("?") => url + s"?hash=$hash"
+      case url                                                => url
+    }
+
+    val state = if(authConfig.noWildcardRedirectURI) signString(redirectUri, Json.obj("hash" -> hash)) else ""
 
     val (loginUrl, sessionParams) = authConfig.pkce match {
       case Some(pcke) if pcke.enabled =>
         val (codeVerifier, codeChallenge, codeChallengeMethod) = generatePKCECodes(authConfig.pkce.map(_.algorithm))
-        logger.info(s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod")
+        logger.debug(s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod")
         (
           s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri&code_challenge=$codeChallenge&code_challenge_method=$codeChallengeMethod",
-          Seq(("code_verifier" -> codeVerifier))
+          Seq((s"${authConfig.id}-code_verifier" -> codeVerifier))
         )
       case _ =>
-        logger.info(s"not using pkce flow")
+        logger.debug(s"not using pkce flow")
         (
-        s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri",
-        Seq.empty[(String, String)]
-      )
+          s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri",
+          Seq.empty[(String, String)]
+        )
     }
 
     Redirect(
-      loginUrl
+      if(authConfig.noWildcardRedirectURI) s"$loginUrl&state=$state" else loginUrl
     ).addingToSession(
-    sessionParams ++ Map(
+      sessionParams ++ Map(
         "hash"                    -> hash,
-      "bo-redirect-after-login" -> redirect.getOrElse(
-        routes.BackOfficeController.dashboard().absoluteURL(env.exposedRootSchemeIsHttps)
-      )):_*
+        "bo-redirect-after-login" -> redirect.getOrElse(
+          routes.BackOfficeController.dashboard().absoluteURL(env.exposedRootSchemeIsHttps)
+        )):_*
     ).asFuture
   }
 
-  override def paLogout(
-      request: RequestHeader,
-      user: Option[PrivateAppsUser],
-      config: GlobalConfig,
-      descriptor: ServiceDescriptor
-  )(implicit
-      ec: ExecutionContext,
-      env: Env
-  ): Future[Either[Result, Option[String]]] = {
-    Option(authConfig.logoutUrl)
-      .filterNot(_.isEmpty)
-      .map {
-        case url if url.contains("?") => Right(Some(s"$url&client_id=${authConfig.clientId}"))
-        case url                      => Right(Some(s"$url?client_id=${authConfig.clientId}"))
-      }
-      .getOrElse(Right(None))
-      .asFuture
-  }
+	override def paLogout(
+												 request: RequestHeader,
+												 user: Option[PrivateAppsUser],
+												 config: GlobalConfig,
+												 descriptor: ServiceDescriptor
+											 )(implicit
+												 ec: ExecutionContext,
+												 env: Env
+											 ): Future[Either[Result, Option[String]]] = {
+		Option(authConfig.logoutUrl)
+			.filterNot(_.isEmpty)
+			.map {
+				case url if url.contains("?") => Right(Some(s"$url&client_id=${authConfig.clientId}"))
+				case url                      => Right(Some(s"$url?client_id=${authConfig.clientId}"))
+			}
+			.getOrElse(Right(None))
+			.asFuture
+	}
 
   override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
-      ec: ExecutionContext,
-      env: Env
+                                                                                            ec: ExecutionContext,
+                                                                                            env: Env
   ): Future[Either[Result, Option[String]]] = {
     Option(authConfig.logoutUrl)
       .filterNot(_.isEmpty)
@@ -357,9 +384,9 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   }
 
   def getToken(code: String, clientId: String, clientSecret: Option[String], redirectUri: String, config: GlobalConfig, codeVerifier: Option[String] = None)(
-      implicit
-      env: Env,
-      ec: ExecutionContext
+    implicit
+    env: Env,
+    ec: ExecutionContext
   ): Future[JsValue] = {
     val builder =
       env.MtlsWs
@@ -376,7 +403,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 
       builder.post(codeVerifier match {
         case None => params
-        case Some(verifier) => params ++ Json.obj("code_verifier" -> verifier)
+        case Some(verifier) => params ++ Json.obj("code_verifier" -> verifier.replace(s"${authConfig.id}-", ""))
       })
     } else {
       val params = Map(
@@ -388,7 +415,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       builder.post(
         codeVerifier match {
           case None => params
-          case Some(verifier) => params ++ Map("code_verifier" -> verifier)
+          case Some(verifier) => params ++ Map("code_verifier" -> verifier.replace(s"${authConfig.id}-", ""))
         }
       )(writeableOf_urlEncodedSimpleForm)
     }
@@ -397,12 +424,12 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   }
 
   def refreshTheToken(
-      refreshToken: String,
-      clientId: String,
-      clientSecret: Option[String],
-      redirectUri: String,
-      config: GlobalConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+                       refreshToken: String,
+                       clientId: String,
+                       clientSecret: Option[String],
+                       redirectUri: String,
+                       config: GlobalConfig
+                     )(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
     val builder =
       env.MtlsWs
         .url(authConfig.tokenUrl, authConfig.mtlsConfig)
@@ -431,8 +458,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   }
 
   def getUserInfoRaw(accessToken: String, config: GlobalConfig)(implicit
-      env: Env,
-      ec: ExecutionContext
+                                                                env: Env,
+                                                                ec: ExecutionContext
   ): Future[WSResponse] = {
     val builder2 = env.MtlsWs
       .url(authConfig.userInfoUrl, authConfig.mtlsConfig)
@@ -468,7 +495,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     } else {
       val zeRights = rights.flatMap(r => UserRight.format.reads(r).asOpt)
 
-        def merge(accesses: Seq[TeamAccess]): Seq[TeamAccess] = {
+      def merge(accesses: Seq[TeamAccess]): Seq[TeamAccess] = {
         accesses.groupBy(_.value).map {
           case (teamName, group) => {
             if (group.exists(_.canReadWrite)) {
@@ -499,8 +526,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   }
 
   def getUserInfo(accessToken: String, config: GlobalConfig)(implicit
-      env: Env,
-      ec: ExecutionContext
+                                                             env: Env,
+                                                             ec: ExecutionContext
   ): Future[JsValue] = {
     getUserInfoRaw(accessToken, config).map(_.json)
   }
@@ -526,13 +553,15 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   }
 
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
-      ec: ExecutionContext,
-      env: Env
+                                                                                                             ec: ExecutionContext,
+                                                                                                             env: Env
   ): Future[Either[String, PrivateAppsUser]] = {
     val clientId     = authConfig.clientId
     val clientSecret = Option(authConfig.clientSecret).map(_.trim).filterNot(_.isEmpty)
-    // val queryParam   = if (authConfig.useCookie) Seq.empty[(String,String)] else Seq(("desc" -> descriptor.id))
-    val redirectUri  = authConfig.callbackUrl
+    val redirectUri  = if(authConfig.noWildcardRedirectURI)
+      authConfig.callbackUrl
+    else
+      authConfig.callbackUrl + (if (authConfig.useCookie) "" else s"?desc=${descriptor.id}")
 
     request.getQueryString("error") match {
       case Some(error) => Left(error).asFuture
@@ -540,7 +569,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         request.getQueryString("code") match {
           case None       => Left("No code :(").asFuture
           case Some(code) => {
-            getToken(code, clientId, clientSecret, redirectUri, config, request.session.get("code_verifier"))
+            getToken(code, clientId, clientSecret, redirectUri, config, request.session.get(s"${authConfig.id}-code_verifier"))
               .flatMap { rawToken =>
                 val accessToken = (rawToken \ authConfig.accessTokenField).as[String]
                 val f           = if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
@@ -590,20 +619,27 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   }
 
   override def boCallback(
-      request: Request[AnyContent],
-      config: GlobalConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] = {
+                           request: Request[AnyContent],
+                           config: GlobalConfig
+                         )(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] = {
     val clientId     = authConfig.clientId
     val clientSecret = Option(authConfig.clientSecret).map(_.trim).filterNot(_.isEmpty)
     val hash         = env.sign(s"${authConfig.id}:::backoffice")
-    val redirectUri  = authConfig.callbackUrl
+    val redirectUri  = if (authConfig.noWildcardRedirectURI)
+      authConfig.callbackUrl
+    else authConfig.callbackUrl.applyOn {
+      case url if !authConfig.useCookie && url.contains("?")  => url + s"&hash=$hash"
+      case url if !authConfig.useCookie && !url.contains("?") => url + s"?hash=$hash"
+      case url                                                => url
+    }
+
     request.getQueryString("error") match {
       case Some(error) => Left(error).asFuture
       case None        => {
         request.getQueryString("code") match {
           case None       => Left("No code :(").asFuture
           case Some(code) => {
-            getToken(code, clientId, clientSecret, redirectUri, config, request.session.get("code_verifier"))
+            getToken(code, clientId, clientSecret, redirectUri, config, request.session.get(s"${authConfig.id}-code_verifier"))
               .flatMap { rawToken =>
                 val accessToken = (rawToken \ authConfig.accessTokenField).as[String]
                 val f           = if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
@@ -656,8 +692,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   }
 
   private def isAccessTokenAValidJwtToken(
-      accessToken: String
-  )(f: Option[Boolean] => Future[Unit])(implicit executionContext: ExecutionContext, env: Env): Future[Unit] = {
+                                           accessToken: String
+                                         )(f: Option[Boolean] => Future[Unit])(implicit executionContext: ExecutionContext, env: Env): Future[Unit] = {
     Try {
       val algoSettings = authConfig.jwtVerifier.get
       val tokenHeader  =
@@ -682,8 +718,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   }
 
   private def renewToken(refreshToken: String, user: RefreshableUser)(implicit
-      executionContext: ExecutionContext,
-      env: Env
+                                                                      executionContext: ExecutionContext,
+                                                                      env: Env
   ): Future[Unit] = {
     refreshTheToken(
       refreshToken,
@@ -702,8 +738,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   // https://auth0.com/docs/tokens/guides/use-refresh-tokens
   // https://auth0.com/docs/tokens/concepts/refresh-tokens
   def handleTokenRefresh(auth: OAuth2ModuleConfig, user: RefreshableUser)(implicit
-      env: Env,
-      ec: ExecutionContext
+                                                                          env: Env,
+                                                                          ec: ExecutionContext
   ): Future[Unit] = {
     if (auth.refreshTokens) {
       (user.token \ "refresh_token").asOpt[String] match { // TODO: config 10 min
@@ -731,8 +767,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 
 object GenericOauth2Module {
   def handleTokenRefresh(auth: AuthModuleConfig, user: RefreshableUser)(implicit
-      ec: ExecutionContext,
-      env: Env
+                                                                        ec: ExecutionContext,
+                                                                        env: Env
   ): Future[Unit] = {
     auth match {
       case a: OAuth2ModuleConfig =>

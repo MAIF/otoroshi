@@ -340,6 +340,12 @@ export class Oauth2ModuleConfig extends Component {
           onChange={v => changeTheValue(path + '.pkce.algorithm', v)}
         />}
         <BooleanInput
+          label="Disable wildcard on redirect URIs"
+          value={settings.noWildcardRedirectURI}
+          help="As of OAuth 2.1, query parameters on redirect URIs are no longer allowed"
+          onChange={v => changeTheValue(path + '.noWildcardRedirectURI', v)}
+        />
+        <BooleanInput
           label="Refresh tokens"
           value={settings.refreshTokens}
           help="Automatically refresh access token using the refresh token if available"

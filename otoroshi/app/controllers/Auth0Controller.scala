@@ -13,11 +13,12 @@ import otoroshi.gateway.Errors
 import otoroshi.models.{BackOfficeUser, CorsSettings, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.utils.TypedMap
 import play.api.Logger
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import otoroshi.security.IdGenerator
+import javax.crypto.Cipher
 import otoroshi.utils.future.Implicits._
-
+import javax.crypto.spec.SecretKeySpec
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
@@ -33,10 +34,33 @@ class AuthController(
 
   lazy val logger = Logger("otoroshi-auth-controller")
 
+  def unsignState(req: RequestHeader, secret: String): JsValue = {
+    val secretToBytes = secret.padTo(16, "0").mkString("").take(16).getBytes
+
+    val cipher: Cipher    = Cipher.getInstance("AES")
+    cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(secretToBytes, "AES"))
+    val decoded = java.util.Base64.getUrlDecoder.decode(req.getQueryString("state").getOrElse(Json.stringify(Json.obj())))
+
+    scala.util.Try {
+      Json.parse(new String(cipher.doFinal(decoded)))
+    } recover {
+      case _ => Json.obj()
+    } get
+  }
+
   def verifyHash(descId: String, auth: AuthModuleConfig, req: RequestHeader)(
       f: AuthModuleConfig => Future[Result]
   ): Future[Result] = {
-    val hash     = req.getQueryString("hash").orElse(req.session.get("hash")).getOrElse("--")
+    import otoroshi.utils.http.RequestImplicits._
+
+    val hash     = auth match {
+      case module: GenericOauth2ModuleConfig if module.noWildcardRedirectURI =>
+        val unsignedState = unsignState(req, s"${req.theUrl.split("\\?")(0)}")
+        logger.debug(s"Decoded state : ${Json.prettyPrint(unsignedState)}")
+        (unsignedState \ "hash").asOpt[String].getOrElse(Some("--"))
+      case _ => req.getQueryString("hash").orElse(req.session.get("hash")).getOrElse(Some("--"))
+    }
+
     val expected = env.sign(s"${auth.id}:::$descId")
     if (
       (hash != "--" && hash == expected) || auth.isInstanceOf[SamlAuthModuleConfig] || auth
@@ -319,62 +343,74 @@ class AuthController(
             else
               desc = params("desc").some
           }
-
         case None =>
       }
 
-      desc match {
-        case None            => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
-        case Some(serviceId) =>
-          env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-            case None                                                                                      => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
-            case Some(descriptor) if !descriptor.privateApp                                                =>
-              NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).asFuture
-            case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
-              withAuthConfig(descriptor, ctx.request) { _auth =>
-                verifyHash(descriptor.id, _auth, ctx.request) {
-                  case auth if auth.`type` == "basic" && auth.asInstanceOf[BasicAuthModuleConfig].webauthn => {
-                    val authModule = auth.authModule(ctx.globalConfig).asInstanceOf[BasicAuthModule]
-                    req.headers.get("WebAuthn-Login-Step") match {
-                      case Some("start")  => {
-                        authModule.webAuthnLoginStart(ctx.request.body.asJson.get, descriptor).map {
-                          case Left(error) => BadRequest(Json.obj("error" -> error))
-                          case Right(reg)  => Ok(reg)
-                        }
+      def process(serviceId: String) = {
+        logger.debug(s"redirect to service descriptor : $serviceId")
+        env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+          case None                                                                                      => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
+          case Some(descriptor) if !descriptor.privateApp                                                =>
+            NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).asFuture
+          case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
+            withAuthConfig(descriptor, ctx.request) { _auth =>
+              verifyHash(descriptor.id, _auth, ctx.request) {
+                case auth if auth.`type` == "basic" && auth.asInstanceOf[BasicAuthModuleConfig].webauthn => {
+                  val authModule = auth.authModule(ctx.globalConfig).asInstanceOf[BasicAuthModule]
+                  req.headers.get("WebAuthn-Login-Step") match {
+                    case Some("start")  => {
+                      authModule.webAuthnLoginStart(ctx.request.body.asJson.get, descriptor).map {
+                        case Left(error) => BadRequest(Json.obj("error" -> error))
+                        case Right(reg)  => Ok(reg)
                       }
-                      case Some("finish") => {
-                        authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, descriptor).flatMap {
-                          case Left(error) => BadRequest(Json.obj("error" -> error)).future
-                          case Right(user) => saveUser(user, auth, descriptor, true)(ctx.request)
-                        }
-                      }
-                      case _              =>
-                        BadRequest(
-                          otoroshi.views.html.oto
-                            .error(message = s"Missing step", _env = env, title = "Authorization error")
-                        ).asFuture
                     }
+                    case Some("finish") => {
+                      authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, descriptor).flatMap {
+                        case Left(error) => BadRequest(Json.obj("error" -> error)).future
+                        case Right(user) => saveUser(user, auth, descriptor, true)(ctx.request)
+                      }
+                    }
+                    case _              =>
+                      BadRequest(
+                        otoroshi.views.html.oto
+                          .error(message = s"Missing step", _env = env, title = "Authorization error")
+                      ).asFuture
                   }
-                  case auth                                                                                => {
-                    auth.authModule(ctx.globalConfig).paCallback(ctx.request, ctx.globalConfig, descriptor).flatMap {
-                      case Left(error) => {
-                        BadRequest(
-                          otoroshi.views.html.oto
-                            .error(
-                              message = s"You're not authorized here: ${error}",
-                              _env = env,
-                              title = "Authorization error"
-                            )
-                        ).asFuture
-                      }
-                      case Right(user) => saveUser(user, auth, descriptor, false)(ctx.request)
+                }
+                case auth                                                                                => {
+                  auth.authModule(ctx.globalConfig).paCallback(ctx.request, ctx.globalConfig, descriptor).flatMap {
+                    case Left(error) => {
+                      BadRequest(
+                        otoroshi.views.html.oto
+                          .error(
+                            message = s"You're not authorized here: ${error}",
+                            _env = env,
+                            title = "Authorization error"
+                          )
+                      ).asFuture
                     }
+                    case Right(user) => saveUser(user, auth, descriptor, false)(ctx.request)
                   }
                 }
               }
             }
-            case _                                                                                         => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).asFuture
           }
+          case _                                                                                         => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).asFuture
+        }
+      }
+
+      (desc, ctx.request.getQueryString("state")) match {
+        case (Some(serviceId), _)   => process(serviceId)
+        case (_, Some(state))       =>
+          logger.debug(s"Received state : $state")
+          val redirectUri = ctx.request.theUrl.split("\\?")(0)
+          val unsignedState = unsignState(ctx.request.requestHeader, redirectUri)
+          println(unsignedState)
+          (unsignedState \ "descriptor").asOpt[String] match {
+            case Some(descriptor) => process(descriptor)
+            case _ => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
+          }
+        case (_,_)                  => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
       }
     }
 
