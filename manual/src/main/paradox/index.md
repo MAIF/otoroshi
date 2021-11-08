@@ -70,7 +70,7 @@ The work on Otoroshi was funded by <a href="https://www.maif.fr/" target="_blank
 
 ## Licence
 
-Otoroshi is Open Source and available under the [Apache 2 License](https://opensource.org/licenses/Apache-2.0)
+Otoroshi is Open Source and available under the [Apache 2 License](https://opensource.org/licenses/Apache-2.0) 
 
 @@@ index
 
