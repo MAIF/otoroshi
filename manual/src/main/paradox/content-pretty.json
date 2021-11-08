@@ -322,13 +322,6 @@
     "content": "\n# Client Certificate Only\n\n## Infos\n\n* plugin type: `validator`\n* configuration root: ``none``\n\n## Description\n\nCheck if a client certificate is present in the request\n\n\n\n\n\n\n\n"
   },
   {
-    "name": "otoroshi-plugins-composite-compositeplugin.md",
-    "id": "/plugins/otoroshi-plugins-composite-compositeplugin.md",
-    "url": "/plugins/otoroshi-plugins-composite-compositeplugin.html",
-    "title": "",
-    "content": "\n# otoroshi.plugins.composite.CompositePlugin\n\n## Infos\n\n* plugin type: `composite`\n* configuration root: ``none``\n\n\n\n\n\n\n\n"
-  },
-  {
     "name": "otoroshi-plugins-defer-deferplugin.md",
     "id": "/plugins/otoroshi-plugins-defer-deferplugin.md",
     "url": "/plugins/otoroshi-plugins-defer-deferplugin.html",

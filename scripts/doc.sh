@@ -14,6 +14,8 @@ clean () {
 }
 
 build () {
+  cd $LOCATION/otoroshi
+  sbt ';clean;compile;testOnly OpenapiGeneratorTests;testOnly PluginDocTests'
   cd $LOCATION/manual
   cp -R $LOCATION/kubernetes $LOCATION/manual/src/main/paradox/snippets
   rm -rf $LOCATION/manual/src/main/paradox/snippets/kubernetes/.old
