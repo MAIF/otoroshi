@@ -109,6 +109,8 @@ libraryDependencies ++= Seq(
   "org.shredzone.acme4j"             % "acme4j"                      % acme4jVersion,
   "io.lettuce"                       % "lettuce-core"                % "6.0.2.RELEASE",
   "io.vertx"                         % "vertx-pg-client"             % "4.0.3",
+  "com.ongres.scram"                 % "common"                      % "2.1",
+  "com.ongres.scram"                 % "client"                      % "2.1",
   "com.jayway.jsonpath"              % "json-path"                   % "2.5.0",
   "com.cronutils"                    % "cron-utils"                  % "9.1.3",
   "commons-lang"                     % "commons-lang"                % "2.6",
