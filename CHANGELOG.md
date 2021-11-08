@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.5.0-beta.8] - 2021-11-08
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-beta.8+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-beta.7...v1.5.0-beta.8
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-beta.8
+
+- Add CRDs loader in UI to create resources from yaml/json file (#929)
+- OAuth1 caller plugin (#930)
+- HMAC caller plugin (#931)
+- HMAC access validator plugin (#932)
+- ES data exporter fail to export events with to field (#940)
+- Add quotas exceeded alerts (#941)
+- fix target ui (#943)
+- request sink plugins should not be visible in service plugins select box (#945)
+- Support Authorization code + PKCE flow in OAuth2/OIDC auth. module (#947)
+- Handle OAuth2 service redirection using cookies only (#951)
+- Errors while installing with helm to Minikube (#956)
+
 ## [1.5.0-beta.7] - 2021-09-16
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-beta.7+is%3Aclosed
