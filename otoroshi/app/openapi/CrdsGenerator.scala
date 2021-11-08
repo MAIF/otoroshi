@@ -278,7 +278,7 @@ class CrdsGenerator(spec: JsValue)  {
   def writeFiles(entitiesWithSchema: TrieMap[String, JsValue], data: TrieMap[String, JsValue]) = {
     val folderPath = "../kubernetes/helm/otoroshi/crds"
 
-    val file = new File(s"$folderPath/crds-with-schema.yaml")
+    val file = new File(s"$folderPath/../crds-with-schema.yaml")
     val schemasAsString = crds(entitiesWithSchema, data).foldLeft("")((acc, curr) => s"$acc${write(curr)}")
     println(s"write crds-with-schema.yaml file: '${file.getAbsolutePath}'")
     Files.write(file.toPath, schemasAsString.getBytes(StandardCharsets.UTF_8))

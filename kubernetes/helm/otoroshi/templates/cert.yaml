@@ -1,8 +1,12 @@
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: {{ .Values.service.name }}-certificate
+  labels:
+    app.kubernetes.io/managed-by: "Helm"
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+    meta.helm.sh/release-name: {{ .Release.Name }}
 spec:
   description: "certificate for {{ .Values.service.name }}"
   autoRenew: true

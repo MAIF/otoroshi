@@ -5,6 +5,9 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: otoroshi-admission-webhook-validation
   labels:
+    app.kubernetes.io/managed-by: "Helm"
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+    meta.helm.sh/release-name: {{ .Release.Name }}
     app: otoroshi
     component: otoroshi-validation-webhook
 webhooks:
@@ -40,6 +43,9 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: otoroshi-admission-webhook-injector
   labels:
+    app.kubernetes.io/managed-by: "Helm"
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+    meta.helm.sh/release-name: {{ .Release.Name }}
     app: otoroshi
     component: otoroshi-validation-webhook
 webhooks:
