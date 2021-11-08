@@ -85,7 +85,9 @@ export class ArrayInput extends Component {
   };
 
   render() {
-    const values = this.props.initTransform ? this.props.initTransform(this.props.value || []) : (this.props.value || []);
+    const values = this.props.initTransform
+      ? this.props.initTransform(this.props.value || [])
+      : this.props.value || [];
     const Component = this.props.component;
     const AdditionalButton = this.props.additionalButton;
 

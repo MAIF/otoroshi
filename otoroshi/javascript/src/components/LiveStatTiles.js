@@ -43,12 +43,12 @@ class Metric extends Component {
 
   render() {
     const props = this.props;
-    const mode = window.localStorage.getItem("otoroshi-dark-light-mode") || "dark"
+    const mode = window.localStorage.getItem('otoroshi-dark-light-mode') || 'dark';
     return (
       <div
         className="metric"
         style={{
-          width: props.width || 300
+          width: props.width || 300,
         }}>
         <div className="metric-text">
           <span className="metric-text-value">{props.value}</span>
@@ -56,7 +56,10 @@ class Metric extends Component {
         </div>
         <div className="metric-box">
           <Sparklines data={this.state.values} limit={this.state.values.length} height={65}>
-            <SparklinesLine color={mode === 'dark' ? 'rgb(249, 176, 0)' : 'black'} _color="rgb(249, 176, 0)" />
+            <SparklinesLine
+              color={mode === 'dark' ? 'rgb(249, 176, 0)' : 'black'}
+              _color="rgb(249, 176, 0)"
+            />
             <SparklinesSpots />
           </Sparklines>
         </div>

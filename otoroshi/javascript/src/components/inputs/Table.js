@@ -253,7 +253,11 @@ export class Table extends Component {
       .replace(/\(/g, '')
       .replace(/\)/g, '')
       .toLowerCase();
-    const json = JSON.stringify({ ...this.state.currentItem, kind: this.props.kubernetesKind }, null, 2);
+    const json = JSON.stringify(
+      { ...this.state.currentItem, kind: this.props.kubernetesKind },
+      null,
+      2
+    );
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

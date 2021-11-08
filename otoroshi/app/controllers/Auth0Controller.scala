@@ -37,14 +37,15 @@ class AuthController(
   def decryptState(req: RequestHeader): JsValue = {
     val secretToBytes = env.otoroshiSecret.padTo(16, "0").mkString("").take(16).getBytes
 
-    val cipher: Cipher    = Cipher.getInstance("AES")
+    val cipher: Cipher = Cipher.getInstance("AES")
     cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(secretToBytes, "AES"))
-    val decoded = java.util.Base64.getUrlDecoder.decode(req.getQueryString("state").getOrElse(Json.stringify(Json.obj())))
+    val decoded        =
+      java.util.Base64.getUrlDecoder.decode(req.getQueryString("state").getOrElse(Json.stringify(Json.obj())))
 
     scala.util.Try {
       Json.parse(new String(cipher.doFinal(decoded)))
-    } recover {
-      case _ => Json.obj()
+    } recover { case _ =>
+      Json.obj()
     } get
   }
 
@@ -53,12 +54,12 @@ class AuthController(
   ): Future[Result] = {
     import otoroshi.utils.http.RequestImplicits._
 
-    val hash     = auth match {
+    val hash = auth match {
       case module: GenericOauth2ModuleConfig if module.noWildcardRedirectURI =>
         val unsignedState = decryptState(req)
         logger.debug(s"Decoded state : ${Json.prettyPrint(unsignedState)}")
         (unsignedState \ "hash").asOpt[String].getOrElse(Some("--"))
-      case _ => req.getQueryString("hash").orElse(req.session.get("hash")).getOrElse(Some("--"))
+      case _                                                                 => req.getQueryString("hash").orElse(req.session.get("hash")).getOrElse(Some("--"))
     }
 
     val expected = env.sign(s"${auth.id}:::$descId")
@@ -343,7 +344,7 @@ class AuthController(
             else
               desc = params("desc").some
           }
-        case None =>
+        case None       =>
       }
 
       def process(serviceId: String) = {
@@ -400,15 +401,15 @@ class AuthController(
       }
 
       (desc, ctx.request.getQueryString("state")) match {
-        case (Some(serviceId), _)   => process(serviceId)
-        case (_, Some(state))       =>
+        case (Some(serviceId), _) => process(serviceId)
+        case (_, Some(state))     =>
           logger.debug(s"Received state : $state")
           val unsignedState = decryptState(ctx.request.requestHeader)
           (unsignedState \ "descriptor").asOpt[String] match {
             case Some(descriptor) => process(descriptor)
-            case _ => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
+            case _                => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
           }
-        case (_,_)                  => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
+        case (_, _)               => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
       }
     }
 

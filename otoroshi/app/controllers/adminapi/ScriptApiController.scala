@@ -60,8 +60,9 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       val exporterNames     = env.scriptManager.exporterNames
       val reqHandlerNames   = env.scriptManager.reqHandlerNames
 
-      val typ             = ctx.request.getQueryString("type")
-      val excludedTypes: Seq[String] = ctx.request.getQueryString("excluded_types")
+      val typ                        = ctx.request.getQueryString("type")
+      val excludedTypes: Seq[String] = ctx.request
+        .getQueryString("excluded_types")
         .map(a => a.split(",").toList)
         .getOrElse(Seq.empty[String])
 
@@ -101,10 +102,10 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
         case Some("exporter") => exporterNames
         case _                => Seq.empty
       }
-      val reqHandlers = typ match {
-        case None             => reqHandlerNames
+      val reqHandlers     = typ match {
+        case None                    => reqHandlerNames
         case Some("request-handler") => reqHandlerNames
-        case _                => Seq.empty
+        case _                       => Seq.empty
       }
       def extractInfosFromJob(c: String): JsValue = {
         env.scriptManager.getAnyScript[Job](s"cp:$c") match {
@@ -135,20 +136,20 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
           .filter(ctx.canUserRead)
           .filter { script =>
             typ match {
-              case None                                                                 => true
-              case Some("transformer") if script.`type` == PluginType.TransformerType   => true
-              case Some("transformer") if script.`type` == PluginType.AppType           => true
-              case Some("app") if script.`type` == PluginType.AppType                   => true
-              case Some("validator") if script.`type` == PluginType.AccessValidatorType => true
-              case Some("preroute") if script.`type` == PluginType.PreRoutingType       => true
-              case Some("sink") if script.`type` == PluginType.RequestSinkType          => true
-              case Some("listener") if script.`type` == PluginType.EventListenerType    => true
-              case Some("job") if script.`type` == PluginType.JobType                   => true
-              case Some("exporter") if script.`type` == PluginType.DataExporterType     => true
-              case Some("request-handler") if script.`type` == PluginType.DataExporterType     => true
-              case Some("composite") if script.`type` == PluginType.CompositeType       => true
-              case Some("*")                                                            => true
-              case _                                                                    => false
+              case None                                                                    => true
+              case Some("transformer") if script.`type` == PluginType.TransformerType      => true
+              case Some("transformer") if script.`type` == PluginType.AppType              => true
+              case Some("app") if script.`type` == PluginType.AppType                      => true
+              case Some("validator") if script.`type` == PluginType.AccessValidatorType    => true
+              case Some("preroute") if script.`type` == PluginType.PreRoutingType          => true
+              case Some("sink") if script.`type` == PluginType.RequestSinkType             => true
+              case Some("listener") if script.`type` == PluginType.EventListenerType       => true
+              case Some("job") if script.`type` == PluginType.JobType                      => true
+              case Some("exporter") if script.`type` == PluginType.DataExporterType        => true
+              case Some("request-handler") if script.`type` == PluginType.DataExporterType => true
+              case Some("composite") if script.`type` == PluginType.CompositeType          => true
+              case Some("*")                                                               => true
+              case _                                                                       => false
             }
           }
           .map(c => (c, env.scriptManager.getAnyScript[NamedPlugin](c.id)))
@@ -189,7 +190,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
             case JsNull => false
             case _      => true
           }
-        Ok(JsArray(allClasses.filter(p => !excludedTypes.contains((p \"pluginType").as[String]))))
+        Ok(JsArray(allClasses.filter(p => !excludedTypes.contains((p \ "pluginType").as[String]))))
       }
     }
 

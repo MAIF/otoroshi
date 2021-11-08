@@ -296,8 +296,7 @@ export class Warning extends Component {
       <div className="form-group">
         <label className="col-xs-12 col-sm-2 control-label" />
         <div className="col-sm-10">
-          <div
-            className="sub-container sub-container__bg-color">
+          <div className="sub-container sub-container__bg-color">
             <div
               style={{
                 width: '100%',

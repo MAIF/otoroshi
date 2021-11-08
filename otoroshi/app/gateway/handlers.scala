@@ -357,7 +357,7 @@ class GatewayRequestHandler(
           case h if env.adminApiDomains.contains(h) && env.exposeAdminApi                                          => super.routeRequest(request)
           case h if env.backofficeDomains.contains(h) && env.exposeAdminDashboard                                  => super.routeRequest(request)
           case h if env.privateAppsDomains.contains(h)                                                             => super.routeRequest(request)
-          case _ => reverseProxyCall(request, config)
+          case _                                                                                                   => reverseProxyCall(request, config)
         }
       }
     }
@@ -366,10 +366,19 @@ class GatewayRequestHandler(
   @inline
   def reverseProxyCall(request: RequestHeader, config: Option[GlobalConfig]): Option[Handler] = {
     request.headers.get("Sec-WebSocket-Version") match {
-      case None => {
+      case None    => {
         if (config.exists(_.plugins.canHandleRequest(request))) {
           Some(actionBuilder.async(sourceBodyParser) { zeRequest =>
-            config.get.plugins.handleRequest(zeRequest, httpHandler.forwardAction(reverseProxyAction, analyticsQueue, snowMonkey, headersInFiltered, headersOutFiltered))
+            config.get.plugins.handleRequest(
+              zeRequest,
+              httpHandler.forwardAction(
+                reverseProxyAction,
+                analyticsQueue,
+                snowMonkey,
+                headersInFiltered,
+                headersOutFiltered
+              )
+            )
           })
         } else {
           Some(

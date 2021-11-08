@@ -116,10 +116,10 @@ class Target extends Component {
           onChange={(e) => {
             try {
               const protocols = ['http://', 'https://', 'udp://', 'tcp://'];
-              const hasProtocol = protocols.filter(p => e.toLowerCase().startsWith(p)).length > 0;
+              const hasProtocol = protocols.filter((p) => e.toLowerCase().startsWith(p)).length > 0;
               if (hasProtocol) {
                 const parts = e.split('://');
-                const scheme = parts[0]
+                const scheme = parts[0];
                 const afterScheme = parts[1];
                 const afterSchemeParts = afterScheme.split('/');
                 const domain = afterSchemeParts[0];
@@ -156,7 +156,10 @@ class Target extends Component {
           <div className="form-group">
             <label className="col-xs-12 col-sm-2 control-label" />
             <div className="col-sm-10" style={{ display: 'flex' }}>
-              <span className="label label-danger">Your target has a path after the host. The path will be ignored when saving the service descriptor</span>
+              <span className="label label-danger">
+                Your target has a path after the host. The path will be ignored when saving the
+                service descriptor
+              </span>
             </div>
           </div>
         )}
@@ -1187,7 +1190,11 @@ export class ServicePage extends Component {
               </button>
             </div>
           </div>
-          <Collapse collapsed={this.state.allCollapsed} initCollapsed={false} label="Location" lineEnd={true}>
+          <Collapse
+            collapsed={this.state.allCollapsed}
+            initCollapsed={false}
+            label="Location"
+            lineEnd={true}>
             <Location
               tenant={this.state.service._loc.tenant || 'default'}
               onChangeTenant={(v) => this.changeTheValue('_loc.tenant', v)}
@@ -1449,22 +1456,26 @@ export class ServicePage extends Component {
                 {this.state.service.env === 'prod' &&
                   this.state.service.subdomain.trim().length === 0 && (
                     <LinkDisplay
-                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.domain
-                        }${this.state.service.matchingRoot || ''}/`}
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
+                        this.state.service.domain
+                      }${this.state.service.matchingRoot || ''}/`}
                     />
                   )}
                 {this.state.service.env === 'prod' &&
                   this.state.service.subdomain.trim().length > 0 && (
                     <LinkDisplay
-                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
-                        }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
+                        this.state.service.subdomain
+                      }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
                     />
                   )}
                 {this.state.service.env !== 'prod' && (
                   <LinkDisplay
-                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
-                      }.${this.state.service.env}.${this.state.service.domain}${this.state.service.matchingRoot || ''
-                      }/`}
+                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
+                      this.state.service.subdomain
+                    }.${this.state.service.env}.${this.state.service.domain}${
+                      this.state.service.matchingRoot || ''
+                    }/`}
                   />
                 )}
               </>
@@ -3276,9 +3287,7 @@ export class ServicePage extends Component {
             />
             <Scripts
               label="Plugins"
-              excludedTypes={[
-                "sink", "request-handler", "job"
-              ]}
+              excludedTypes={['sink', 'request-handler', 'job']}
               refs={this.state.service.plugins.refs}
               onChange={(e) => this.changeTheValue('plugins.refs', e)}
               config={this.state.service.plugins.config}
@@ -3423,10 +3432,11 @@ export class TemplateInput extends Component {
             </a>
         </div>
         <div class="jumbotron">
-            ${error
-        ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
-        : `<h2 style="color:white;">${title}</h2>`
-      }
+            ${
+              error
+                ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
+                : `<h2 style="color:white;">${title}</h2>`
+            }
             <p class="lead">
               ${message}
             </p>

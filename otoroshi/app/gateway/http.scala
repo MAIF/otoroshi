@@ -91,11 +91,11 @@ class HttpHandler()(implicit env: Env) {
     }
 
   def forwardAction(
-    reverseProxyAction: ReverseProxyAction,
-    analyticsQueue: ActorRef,
-    snowMonkey: SnowMonkey,
-    headersInFiltered: Seq[String],
-    headersOutFiltered: Seq[String]
+      reverseProxyAction: ReverseProxyAction,
+      analyticsQueue: ActorRef,
+      snowMonkey: SnowMonkey,
+      headersInFiltered: Seq[String],
+      headersOutFiltered: Seq[String]
   ): Request[Source[ByteString, _]] => Future[Result] = (req: Request[Source[ByteString, _]]) => {
     reverseProxyAction
       .async[Result](
@@ -108,7 +108,6 @@ class HttpHandler()(implicit env: Env) {
         case Right(r) => r
       }
   }
-
 
   def actuallyCallDownstream(
       ctx: ActualCallContext,

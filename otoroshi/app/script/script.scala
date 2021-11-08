@@ -67,7 +67,7 @@ object PluginType {
   object DataExporterType    extends PluginType {
     def name: String = "exporter"
   }
-  object RequestHandlerType       extends PluginType {
+  object RequestHandlerType  extends PluginType {
     def name: String = "request-handler"
   }
   object CompositeType       extends PluginType {
@@ -731,7 +731,16 @@ class ScriptManager(env: Env) {
 
   val starting = System.currentTimeMillis()
 
-  lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, reqHandlerNames, listenerNames, jobNames, exporterNames) =
+  lazy val (
+    transformersNames,
+    validatorsNames,
+    preRouteNames,
+    reqSinkNames,
+    reqHandlerNames,
+    listenerNames,
+    jobNames,
+    exporterNames
+  ) =
     Try {
       import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
 
@@ -894,7 +903,9 @@ class ScriptManager(env: Env) {
           scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName)
 
         val reqHandlers: Seq[String] = (scanResult.getSubclasses(classOf[RequestHandler].getName).asScala ++
-          scanResult.getClassesImplementing(classOf[RequestHandler].getName).asScala).filterNot(predicate).map(_.getName)
+          scanResult.getClassesImplementing(classOf[RequestHandler].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName)
 
         val listenerNames: Seq[String] = (scanResult.getSubclasses(classOf[OtoroshiEventListener].getName).asScala ++
           scanResult.getClassesImplementing(classOf[OtoroshiEventListener].getName).asScala)
@@ -926,7 +937,8 @@ class ScriptManager(env: Env) {
             Seq.empty[String]
           )
       } finally if (scanResult != null) scanResult.close()
-    } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq
+    } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq
+      .empty[String], Seq
       .empty[String], Seq.empty[String])
 
   private val allPlugins   = Seq(
@@ -1437,16 +1449,16 @@ object Script {
     override def reads(json: JsValue): JsResult[Script] =
       Try {
         val scriptType = (json \ "type").asOpt[String].getOrElse("transformer") match {
-          case "app"         => PluginType.AppType
-          case "transformer" => PluginType.TransformerType
-          case "validator"   => PluginType.AccessValidatorType
-          case "preroute"    => PluginType.PreRoutingType
-          case "sink"        => PluginType.RequestSinkType
-          case "job"         => PluginType.JobType
-          case "exporter"    => PluginType.DataExporterType
+          case "app"             => PluginType.AppType
+          case "transformer"     => PluginType.TransformerType
+          case "validator"       => PluginType.AccessValidatorType
+          case "preroute"        => PluginType.PreRoutingType
+          case "sink"            => PluginType.RequestSinkType
+          case "job"             => PluginType.JobType
+          case "exporter"        => PluginType.DataExporterType
           case "request-handler" => PluginType.RequestHandlerType
-          case "composite"   => PluginType.CompositeType
-          case _             => PluginType.TransformerType
+          case "composite"       => PluginType.CompositeType
+          case _                 => PluginType.TransformerType
         }
         Script(
           location = otoroshi.models.EntityLocation.readFromKey(json),

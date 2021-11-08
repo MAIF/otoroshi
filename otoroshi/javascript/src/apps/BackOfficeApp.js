@@ -436,7 +436,7 @@ class BackOfficeAppContainer extends Component {
                         />
                         <Route
                           path="/resources-loader"
-                          component={props => this.decorate(ResourceLoaderPage, props)}
+                          component={(props) => this.decorate(ResourceLoaderPage, props)}
                         />
                         <Route
                           path="/validation-authorities/:taction/:titem"

@@ -6,71 +6,73 @@ export function ObjectInput(props) {
 
   useEffect(() => {
     if (props.value) {
-      setData(Object.entries(props.value).map(([key, value], i) => ({
-        idx: i,
-        key,
-        value
-      })))
+      setData(
+        Object.entries(props.value).map(([key, value], i) => ({
+          idx: i,
+          key,
+          value,
+        }))
+      );
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     onChange(data);
-  }, [data])
+  }, [data]);
 
   const changeValue = (idx, key, e) => {
     if (e && e.preventDefault) e.preventDefault();
-    setData(data.map(item => {
-      if (item.idx === idx)
-        return { ...item, value: e.target.value }
-      return item;
-    }))
+    setData(
+      data.map((item) => {
+        if (item.idx === idx) return { ...item, value: e.target.value };
+        return item;
+      })
+    );
   };
 
   const changeKey = (idx, key, e) => {
     if (e && e.preventDefault) e.preventDefault();
-    setData(data.map(item => {
-      if (item.idx === idx)
-        return { ...item, key: e.target.value }
-      return item;
-    }))
+    setData(
+      data.map((item) => {
+        if (item.idx === idx) return { ...item, key: e.target.value };
+        return item;
+      })
+    );
   };
 
   const addFirst = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    setData([
-      { key: '', value: '', idx: 0 },
-      ...data
-    ].map((item, i) => ({ ...item, idx: i })))
+    setData([{ key: '', value: '', idx: 0 }, ...data].map((item, i) => ({ ...item, idx: i })));
   };
 
   const addNext = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const out = [...data, { key: '', value: '', idx: data.length }]
-    setData(out.map((item, i) => ({ ...item, idx: i })))
+    const out = [...data, { key: '', value: '', idx: data.length }];
+    setData(out.map((item, i) => ({ ...item, idx: i })));
   };
 
   const remove = (idx, key, e) => {
     if (e && e.preventDefault) e.preventDefault();
-    setData(data
-      .filter(item => item.idx !== idx)
-      .map((item, i) => ({ ...item, idx: i })))
+    setData(data.filter((item) => item.idx !== idx).map((item, i) => ({ ...item, idx: i })));
   };
 
-  const onChange = out => {
-    props.onChange(out.reduce((acc, curr) => ({
-      ...acc,
-      [curr.key]: curr.value
-    }), {}));
-  }
+  const onChange = (out) => {
+    props.onChange(
+      out.reduce(
+        (acc, curr) => ({
+          ...acc,
+          [curr.key]: curr.value,
+        }),
+        {}
+      )
+    );
+  };
 
   return (
     <div>
       {data.length === 0 && (
         <div className="form-group">
-          <label
-            htmlFor={`input-${props.label}`}
-            className="col-xs-12 col-sm-2 control-label">
+          <label htmlFor={`input-${props.label}`} className="col-xs-12 col-sm-2 control-label">
             {props.label} <Help text={props.help} />
           </label>
           <div className="col-sm-10">

@@ -327,23 +327,25 @@ export class Oauth2ModuleConfig extends Component {
           label="Enabled PKCE flow"
           value={settings.pkce ? settings.pkce.enabled : false}
           help="Prevent malicious attacker to exchange token without a code verifier"
-          onChange={v => changeTheValue(path + '.pkce.enabled', v)}
+          onChange={(v) => changeTheValue(path + '.pkce.enabled', v)}
         />
-        {settings.pkce && settings.pkce.enabled && <SelectInput
-          label="PKCE Algorithm"
-          value={settings.pkce.algorithm}
-          defaultValue="S256"
-          possibleValues={[
-            { value: 'S256', label: 'HMAC-SHA256' },
-            { value: 'plain', label: 'PLAIN (not recommended)' }
-          ]}
-          onChange={v => changeTheValue(path + '.pkce.algorithm', v)}
-        />}
+        {settings.pkce && settings.pkce.enabled && (
+          <SelectInput
+            label="PKCE Algorithm"
+            value={settings.pkce.algorithm}
+            defaultValue="S256"
+            possibleValues={[
+              { value: 'S256', label: 'HMAC-SHA256' },
+              { value: 'plain', label: 'PLAIN (not recommended)' },
+            ]}
+            onChange={(v) => changeTheValue(path + '.pkce.algorithm', v)}
+          />
+        )}
         <BooleanInput
           label="Disable wildcard on redirect URIs"
           value={settings.noWildcardRedirectURI}
           help="As of OAuth 2.1, query parameters on redirect URIs are no longer allowed"
-          onChange={v => changeTheValue(path + '.noWildcardRedirectURI', v)}
+          onChange={(v) => changeTheValue(path + '.noWildcardRedirectURI', v)}
         />
         <BooleanInput
           label="Refresh tokens"
@@ -474,8 +476,8 @@ export class Oauth2ModuleConfig extends Component {
               }
             }}
             example={{
-              "provider": "Keycloak",
-              "foo": "bar"
+              provider: 'Keycloak',
+              foo: 'bar',
             }}
           />
         </Suspense>
@@ -485,9 +487,9 @@ export class Oauth2ModuleConfig extends Component {
           value={settings.dataOverride || {}}
           onChange={(e) => changeTheValue(path + '.dataOverride', e)}
           example={{
-            "no.name@oto.tools": {
-              "lastname": "bar"
-            }
+            'no.name@oto.tools': {
+              lastname: 'bar',
+            },
           }}
         />
         <JsonObjectAsCodeInput
@@ -495,17 +497,15 @@ export class Oauth2ModuleConfig extends Component {
           mode="json"
           value={settings.rightsOverride || {}}
           onChange={(e) => {
-            changeTheValue(path + '.rightsOverride', e)
+            changeTheValue(path + '.rightsOverride', e);
           }}
           example={{
-            "jhonny@otoroshi.tools": [
+            'jhonny@otoroshi.tools': [
               {
-                "tenant": "*:r",
-                "teams": [
-                  "*:r"
-                ]
-              }
-            ]
+                tenant: '*:r',
+                teams: ['*:r'],
+              },
+            ],
           }}
         />
         <TextInput
@@ -984,10 +984,7 @@ export class BasicModuleConfig extends Component {
                 save={this.save}
               />
             ))}
-            <button
-              type="button"
-              className="btn btn-info"
-              onClick={this.addUser}>
+            <button type="button" className="btn btn-info" onClick={this.addUser}>
               <i className="fas fa-plus-circle" /> Add user
             </button>
           </div>
@@ -1160,7 +1157,9 @@ export class LdapModuleConfig extends Component {
         />
         <Separator title="Match LDAP group to Otoroshi rights" />
         <div className="form-group">
-          <label className="col-xs-12 col-sm-2 control-label">Mapping group filter <Help text="Map LDAP groups with Otoroshi rights" /></label>
+          <label className="col-xs-12 col-sm-2 control-label">
+            Mapping group filter <Help text="Map LDAP groups with Otoroshi rights" />
+          </label>
           <div className="col-sm-10" style={{ display: 'flex' }}>
             {settings.groupFilters && settings.groupFilters.length > 0 ? (
               <table style={{ width: '100%' }}>
@@ -1366,8 +1365,8 @@ export class LdapModuleConfig extends Component {
               }
             }}
             example={{
-              "provider": "Open LDAP",
-              "foo": "bar"
+              provider: 'Open LDAP',
+              foo: 'bar',
             }}
           />
         </Suspense>
@@ -1377,9 +1376,9 @@ export class LdapModuleConfig extends Component {
           value={settings.dataOverride || {}}
           onChange={(e) => this.changeTheValue(path + '.dataOverride', e)}
           example={{
-            "my_user@oto.tools": {
-              "lastname": "bar"
-            }
+            'my_user@oto.tools': {
+              lastname: 'bar',
+            },
           }}
         />
         <JsonObjectAsCodeInput
@@ -1388,19 +1387,15 @@ export class LdapModuleConfig extends Component {
           value={settings.groupRights || {}}
           onChange={(e) => this.changeTheValue(path + '.groupRights', e)}
           example={{
-            "virtual_group": {
-              "rights": [
+            virtual_group: {
+              rights: [
                 {
-                  "tenant": "*:rw",
-                  "teams": [
-                    "*:rw"
-                  ]
-                }
+                  tenant: '*:rw',
+                  teams: ['*:rw'],
+                },
               ],
-              "users": [
-                "my_user@oto.tools"
-              ]
-            }
+              users: ['my_user@oto.tools'],
+            },
           }}
         />
         <JsonObjectAsCodeInput
@@ -1409,14 +1404,12 @@ export class LdapModuleConfig extends Component {
           value={settings.rightsOverride || {}}
           onChange={(e) => this.changeTheValue(path + '.rightsOverride', e)}
           example={{
-            "my_user@oto.tools": [
+            'my_user@oto.tools': [
               {
-                "tenant": "*:r",
-                "teams": [
-                  "*:r"
-                ]
-              }
-            ]
+                tenant: '*:r',
+                teams: ['*:r'],
+              },
+            ],
           }}
         />
       </div>
@@ -1487,9 +1480,11 @@ class LdapUserLoginTest extends Component {
             </button>
             <span className="label label-success">{this.state.message}</span>
             <span className="label label-danger">{this.state.error}</span>
-            {Object.keys(this.state.body).length > 0 && <pre style={{ maxHeight: "250px", marginTop: "12px" }}>
-              {JSON.stringify(this.state.body, null, 2)}
-            </pre>}
+            {Object.keys(this.state.body).length > 0 && (
+              <pre style={{ maxHeight: '250px', marginTop: '12px' }}>
+                {JSON.stringify(this.state.body, null, 2)}
+              </pre>
+            )}
           </div>
         </div>
       </form>
@@ -1687,7 +1682,7 @@ export class SamlModuleConfig extends Component {
 
   schema = {
     warning: {
-      type: ({ }) => {
+      type: ({}) => {
         if (this.props.value.warning) {
           const { warning } = this.props.value;
           return (
@@ -1758,7 +1753,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     credentials: {
-      type: ({ }) => {
+      type: ({}) => {
         const {
           signingKey,
           encryptionKey,
@@ -1808,8 +1803,9 @@ export class SamlModuleConfig extends Component {
             config.show && (
               <div key={`config${i}`}>
                 <BooleanInput
-                  label={`${i === 0 ? 'Sign' : 'Validate'} ${config.element
-                    } with Otoroshi certificate`}
+                  label={`${i === 0 ? 'Sign' : 'Validate'} ${
+                    config.element
+                  } with Otoroshi certificate`}
                   value={config.switch.value}
                   onChange={() => config.switch.setValue(!config.switch.value)}
                 />
@@ -1883,7 +1879,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     usedNameIDAsEmail: {
-      type: ({ }) => {
+      type: ({}) => {
         const { emailAttributeName, usedNameIDAsEmail } = this.props.value;
         return (
           <div>
@@ -2098,22 +2094,22 @@ export class OAuth1ModuleConfig extends Component {
       },
     },
     rightsOverride: {
-      type: ({ }) => <JsonObjectAsCodeInput
-        label="Rights override"
-        mode="json"
-        value={this.props.value.rightsOverride || {}}
-        onChange={(e) => this.changeTheValue('rightsOverride', e)}
-        example={{
-          "no.name@oto.tools": [
-            {
-              "tenant": "*:r",
-              "teams": [
-                "*:r"
-              ]
-            }
-          ]
-        }}
-      />,
+      type: ({}) => (
+        <JsonObjectAsCodeInput
+          label="Rights override"
+          mode="json"
+          value={this.props.value.rightsOverride || {}}
+          onChange={(e) => this.changeTheValue('rightsOverride', e)}
+          example={{
+            'no.name@oto.tools': [
+              {
+                tenant: '*:r',
+                teams: ['*:r'],
+              },
+            ],
+          }}
+        />
+      ),
       props: {
         label: 'Override rights',
       },

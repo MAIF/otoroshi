@@ -18,7 +18,7 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
   lazy val add_schemas   = raw.select("add_schemas").asOpt[JsObject].getOrElse(Json.obj())
   lazy val merge_schemas = raw.select("merge_schemas").asOpt[JsObject].getOrElse(Json.obj())
   lazy val fields_rename = raw.select("fields_rename").asOpt[JsObject].getOrElse(Json.obj())
-  lazy val add_fields = raw.select("add_fields").asOpt[JsObject].getOrElse(Json.obj())
+  lazy val add_fields    = raw.select("add_fields").asOpt[JsObject].getOrElse(Json.obj())
 
   lazy val bulkControllerMethods             = raw
     .select("bulkControllerMethods")
@@ -284,8 +284,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         children.flatMap(cl => world.get(cl)).map(cl => visitEntity(cl, clazz.some, result, config))
         adts = adts :+ Json.obj(
           clazz.getName -> Json.obj(
-            "oneOf" -> JsArray(children.map(c => Json.obj("$ref" -> s"#/components/schemas/$c"))
-            )
+            "oneOf" -> JsArray(children.map(c => Json.obj("$ref" -> s"#/components/schemas/$c")))
           )
         )
       }
@@ -380,7 +379,9 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         typ match {
           case c: BaseTypeSignature                                                                              =>
             val valueName = c.getTypeStr
-            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String]
+            val fieldName = config.fields_rename
+              .select(s"$name:$valueName")
+              .asOpt[String]
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
@@ -396,7 +397,9 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           case c: ClassRefTypeSignature
               if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.immutable.Map" =>
             val valueName = c.getTypeArguments.asScala.tail.head.toString
-            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String]
+            val fieldName = config.fields_rename
+              .select(s"$name:$valueName")
+              .asOpt[String]
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
@@ -412,7 +415,9 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           case c: ClassRefTypeSignature
               if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.Seq" =>
             val valueName = c.getTypeArguments.asScala.head.toString
-            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String]
+            val fieldName = config.fields_rename
+              .select(s"$name:$valueName")
+              .asOpt[String]
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
@@ -428,7 +433,9 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           case c: ClassRefTypeSignature
               if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.immutable.List" =>
             val valueName = c.getTypeArguments.asScala.head.toString
-            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String]
+            val fieldName = config.fields_rename
+              .select(s"$name:$valueName")
+              .asOpt[String]
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
@@ -443,7 +450,9 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             }
           case c: ClassRefTypeSignature if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.Option" =>
             val valueName = c.getTypeArguments.asScala.head.toString
-            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String]
+            val fieldName = config.fields_rename
+              .select(s"$name:$valueName")
+              .asOpt[String]
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
@@ -460,7 +469,9 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             }
           case c: ClassRefTypeSignature                                                                          =>
             val valueName = c.getBaseClassName
-            val fieldName = config.fields_rename.select(s"$name:$valueName").asOpt[String]
+            val fieldName = config.fields_rename
+              .select(s"$name:$valueName")
+              .asOpt[String]
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
@@ -495,7 +506,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         clazz.getName,
         toMerge.deepMerge(
           Json.obj(
-             "type"        -> "object",
+            "type"        -> "object",
             "description" -> entityDescription(clazz.getName, config),
             "properties"  -> properties
           )
@@ -634,16 +645,23 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       val reqBody   = (config.descriptions.get(finalPath).filterNot(_ == unknownValue) match {
         case None if isBulk && controllerMethod == "bulkUpdateAction" => (true, foundDescription(finalPath, "BulkBody"))
         case None if isBulk && controllerMethod == "bulkCreateAction" => (true, foundDescription(finalPath, "BulkBody"))
-        case None if isBulk && controllerMethod == "bulkPatchAction"  => (true, foundDescription(finalPath, "BulkPatchBody"))
+        case None if isBulk && controllerMethod == "bulkPatchAction"  =>
+          (true, foundDescription(finalPath, "BulkPatchBody"))
         case None if isBulk && controllerMethod == "bulkDeleteAction" => (true, foundDescription(finalPath, "BulkBody"))
 
         case None if isCrud && controllerMethod == "createAction"          => (false, foundDescription(finalPath, entity.get))
-        case None if isCrud && controllerMethod == "findAllEntitiesAction" => (false, foundDescription(finalPath, entity.get))
-        case None if isCrud && controllerMethod == "findEntityByIdAction"  => (false, foundDescription(finalPath, entity.get))
-        case None if isCrud && controllerMethod == "updateEntityAction"    => (false, foundDescription(finalPath, entity.get))
-        case None if isCrud && controllerMethod == "patchEntityAction"     => (false, foundDescription(finalPath, entity.get))
-        case None if isCrud && controllerMethod == "deleteEntityAction"    => (false, foundDescription(finalPath, entity.get))
-        case None if isCrud && controllerMethod == "deleteEntitiesAction"  => (false, foundDescription(finalPath, entity.get))
+        case None if isCrud && controllerMethod == "findAllEntitiesAction" =>
+          (false, foundDescription(finalPath, entity.get))
+        case None if isCrud && controllerMethod == "findEntityByIdAction"  =>
+          (false, foundDescription(finalPath, entity.get))
+        case None if isCrud && controllerMethod == "updateEntityAction"    =>
+          (false, foundDescription(finalPath, entity.get))
+        case None if isCrud && controllerMethod == "patchEntityAction"     =>
+          (false, foundDescription(finalPath, entity.get))
+        case None if isCrud && controllerMethod == "deleteEntityAction"    =>
+          (false, foundDescription(finalPath, entity.get))
+        case None if isCrud && controllerMethod == "deleteEntitiesAction"  =>
+          (false, foundDescription(finalPath, entity.get))
 
         case None        =>
           inNotFound.incrementAndGet()
@@ -658,16 +676,16 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             (false, value)
           }
       }) match {
-        case (_, v) if v == unknownValue => Json.obj("$ref" -> "#/components/schemas/Unknown")
+        case (_, v) if v == unknownValue                        => Json.obj("$ref" -> "#/components/schemas/Unknown")
         case (true, v) if controllerMethod == "bulkPatchAction" => {
           Json.obj("$ref" -> s"#/components/schemas/BulkPatchBody")
         }
-        case (true, v) =>
+        case (true, v)                                          =>
           Json.obj(
-            "type" -> "array",
+            "type"  -> "array",
             "items" -> Json.obj("$ref" -> s"#/components/schemas/${entity.get}")
           )
-        case (_, v)                      => Json.obj("$ref" -> s"#/components/schemas/$v")
+        case (_, v)                                             => Json.obj("$ref" -> s"#/components/schemas/$v")
       }
       reqBody.some
     } else {
@@ -854,7 +872,9 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
                     ) { c =>
                       c ++ Json.obj(
                         "requestBody" -> Json.obj(
-                          "description" -> (if (isBulk) "the request body in nd-json format (1 stringified entity per line)" else "the request body") ,
+                          "description" -> (if (isBulk)
+                                              "the request body in nd-json format (1 stringified entity per line)"
+                                            else "the request body"),
                           "required"    -> true,
                           "content"     -> Json.obj(
                             (if (isBulk) "application/x-ndjson" else "application/json") -> Json.obj(
@@ -903,7 +923,6 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         visitEntity(clazz, None, result, config)
       }
     }
-
 
     val (paths, tags) = scanPaths(config)
 
@@ -1022,18 +1041,3 @@ class OpenApiGeneratorRunner extends App {
     crdsGenerator.run()
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

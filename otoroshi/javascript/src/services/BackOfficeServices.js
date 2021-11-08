@@ -174,8 +174,8 @@ export function allServices(env, group) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-      ? `/bo/api/proxy/api/services?filter.groups=${group}`
-      : `/bo/api/proxy/api/services`;
+    ? `/bo/api/proxy/api/services?filter.groups=${group}`
+    : `/bo/api/proxy/api/services`;
   return fetch(url, {
     method: 'GET',
     credentials: 'include',
@@ -1752,10 +1752,10 @@ export function createResources(resources) {
     credentials: 'include',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      content: ["[", "{"].includes(resources.substring(0, 1)) ? JSON.parse(resources) : resources
-    })
+      content: ['[', '{'].includes(resources.substring(0, 1)) ? JSON.parse(resources) : resources,
+    }),
   }).then((r) => r.json());
 }

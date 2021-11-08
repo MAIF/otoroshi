@@ -141,10 +141,10 @@ object QuotasAlmostExceededSettings {
       QuotasAlmostExceededSettings(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
         dailyQuotasThreshold = json.select("dailyQuotasThreshold").asOpt[Double].getOrElse(0.8),
-        monthlyQuotasThreshold = json.select("monthlyQuotasThreshold").asOpt[Double].getOrElse(0.8),
+        monthlyQuotasThreshold = json.select("monthlyQuotasThreshold").asOpt[Double].getOrElse(0.8)
       )
     } match {
-      case Success(o) => JsSuccess(o)
+      case Success(o)         => JsSuccess(o)
       case Failure(exception) => JsError(exception.getMessage)
     }
 
@@ -152,10 +152,14 @@ object QuotasAlmostExceededSettings {
   }
 }
 
-case class QuotasAlmostExceededSettings(enabled: Boolean, dailyQuotasThreshold: Double, monthlyQuotasThreshold: Double) {
+case class QuotasAlmostExceededSettings(
+    enabled: Boolean,
+    dailyQuotasThreshold: Double,
+    monthlyQuotasThreshold: Double
+) {
   def json: JsValue = Json.obj(
-    "enabled" -> enabled,
-    "dailyQuotasThreshold" -> dailyQuotasThreshold,
+    "enabled"                -> enabled,
+    "dailyQuotasThreshold"   -> dailyQuotasThreshold,
     "monthlyQuotasThreshold" -> monthlyQuotasThreshold
   )
 }

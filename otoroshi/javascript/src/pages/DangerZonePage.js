@@ -988,8 +988,7 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Enable quotas exceeding alerts',
         placeholder: '--',
-        help:
-            'When apikey quotas is almost exceeded, an alert will be sent',
+        help: 'When apikey quotas is almost exceeded, an alert will be sent',
       },
     },
     'quotasSettings.dailyQuotasThreshold': {
@@ -998,8 +997,7 @@ export class DangerZonePage extends Component {
         label: 'Daily quotas threshold',
         placeholder: '0.8',
         suffix: 'percentage',
-        help:
-            'The percentage of daily calls before sending alerts',
+        help: 'The percentage of daily calls before sending alerts',
       },
     },
     'quotasSettings.monthlyQuotasThreshold': {
@@ -1008,8 +1006,7 @@ export class DangerZonePage extends Component {
         label: 'Monthly quotas threshold',
         placeholder: '0.8',
         suffix: 'percentage',
-        help:
-            'The percentage of monthly calls before sending alerts',
+        help: 'The percentage of monthly calls before sending alerts',
       },
     },
     metadata: {
@@ -1225,7 +1222,7 @@ export class DangerZonePage extends Component {
 
   exportJson = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const json = JSON.stringify({ ...this.state.value, kind: 'GlobalConfig', }, null, 2);
+    const json = JSON.stringify({ ...this.state.value, kind: 'GlobalConfig' }, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

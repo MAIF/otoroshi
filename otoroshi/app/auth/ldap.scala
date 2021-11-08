@@ -38,11 +38,11 @@ object LdapAuthUser {
     new Format[LdapAuthUser] {
       override def writes(o: LdapAuthUser) =
         Json.obj(
-          "name"       -> o.name,
-          "email"      -> o.email,
-          "metadata"   -> o.metadata,
-          "ldapProfile"    -> o.ldapProfile.getOrElse(JsNull).as[JsValue],
-          "userRights" -> o.userRights.map(UserRights.format.writes)
+          "name"        -> o.name,
+          "email"       -> o.email,
+          "metadata"    -> o.metadata,
+          "ldapProfile" -> o.ldapProfile.getOrElse(JsNull).as[JsValue],
+          "userRights"  -> o.userRights.map(UserRights.format.writes)
         )
       override def reads(json: JsValue)    =
         Try {
@@ -240,34 +240,34 @@ case class LdapAuthModuleConfig(
 
   override def asJson =
     location.jsonWithKey ++ Json.obj(
-      "type"                -> "ldap",
-      "id"                  -> id,
-      "name"                -> name,
-      "desc"                -> desc,
-      "basicAuth"           -> basicAuth,
-      "allowEmptyPassword"  -> allowEmptyPassword,
-      "sessionMaxAge"       -> sessionMaxAge,
-      "serverUrls"          -> serverUrls,
-      "searchBase"          -> searchBase,
-      "userBase"            -> userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "groupFilters"        -> JsArray(groupFilters.map(o => GroupFilter._fmt.writes(o))),
-      "searchFilter"        -> searchFilter,
-      "adminUsername"       -> adminUsername.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "adminPassword"       -> adminPassword.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "nameField"           -> nameField,
-      "emailField"          -> emailField,
-      "metadataField"       -> metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "extraMetadata"       -> extraMetadata,
-      "metadata"            -> metadata,
-      "tags"                -> JsArray(tags.map(JsString.apply)),
-      "sessionCookieValues" -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
-      "superAdmins"         -> superAdmins,
-      "extractProfile"      -> extractProfile,
-      "extractProfileFilter" -> extractProfileFilter,
+      "type"                    -> "ldap",
+      "id"                      -> id,
+      "name"                    -> name,
+      "desc"                    -> desc,
+      "basicAuth"               -> basicAuth,
+      "allowEmptyPassword"      -> allowEmptyPassword,
+      "sessionMaxAge"           -> sessionMaxAge,
+      "serverUrls"              -> serverUrls,
+      "searchBase"              -> searchBase,
+      "userBase"                -> userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "groupFilters"            -> JsArray(groupFilters.map(o => GroupFilter._fmt.writes(o))),
+      "searchFilter"            -> searchFilter,
+      "adminUsername"           -> adminUsername.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "adminPassword"           -> adminPassword.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "nameField"               -> nameField,
+      "emailField"              -> emailField,
+      "metadataField"           -> metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "extraMetadata"           -> extraMetadata,
+      "metadata"                -> metadata,
+      "tags"                    -> JsArray(tags.map(JsString.apply)),
+      "sessionCookieValues"     -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
+      "superAdmins"             -> superAdmins,
+      "extractProfile"          -> extractProfile,
+      "extractProfileFilter"    -> extractProfileFilter,
       "extractProfileFilterNot" -> extractProfileFilterNot,
-      "rightsOverride"      -> JsObject(rightsOverride.mapValues(_.json)),
-      "dataOverride"        -> JsObject(dataOverride),
-      "groupRights"         -> JsObject(groupRights.mapValues(GroupRights._fmt.writes))
+      "rightsOverride"          -> JsObject(rightsOverride.mapValues(_.json)),
+      "dataOverride"            -> JsObject(dataOverride),
+      "groupRights"             -> JsObject(groupRights.mapValues(GroupRights._fmt.writes))
     )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
@@ -347,7 +347,6 @@ case class LdapAuthModuleConfig(
               val item  = groupSearch.next()
               val attrs = item.getAttributes
 
-
               attrs.getAll.asScala.toSeq.filter(a => a.getID == "uniqueMember" || a.getID == "member").flatMap { attr =>
                 attr.getAll.asScala.toSeq.map(_.toString)
               }
@@ -378,7 +377,7 @@ case class LdapAuthModuleConfig(
           val userGroup = usersInGroup
             .find(group => group._2.exists(g => g.contains(dn)))
 
-          if(groupFilters.isEmpty) {
+          if (groupFilters.isEmpty) {
             LdapAuthModuleConfig.logger.debug(s"none groups defined - user found anyway")
             val attrs = item.getAttributes
 
@@ -395,12 +394,12 @@ case class LdapAuthModuleConfig(
               )
 
               val profile: Option[JsValue] = if (extractProfile) {
-                val all = attrs.getAll
+                val all       = attrs.getAll
                 var jsonAttrs = Json.obj()
-                val regexes = extractProfileFilter.map(f => RegexPool.regex(f))
+                val regexes   = extractProfileFilter.map(f => RegexPool.regex(f))
                 while (all.hasMore) {
                   val next: Attribute = all.next()
-                  val name = next.getID
+                  val name            = next.getID
                   if (regexes.isEmpty || regexes.exists(_.matches(name))) {
                     val value = if (next.size() > 1) {
                       JsArray((0 until next.size()).map(idx => JsString(next.get(idx).toString)).toSeq)
@@ -428,13 +427,12 @@ case class LdapAuthModuleConfig(
                   ldapProfile = profile,
                   userRights = Some(
                     UserRights(
-                      UserRights.default
-                        .rights
-                        ++
-                        groupRights.values
-                          .filter { group => group.users.contains(email) }
-                          .flatMap { group => group.userRights.rights }
-                          .toList
+                      UserRights.default.rights
+                      ++
+                      groupRights.values
+                        .filter { group => group.users.contains(email) }
+                        .flatMap { group => group.userRights.rights }
+                        .toList
                         .groupBy(f => f.tenant)
                         .map(m => UserRight(m._1, m._2.flatMap(_.teams)))
                         .toSeq
@@ -448,8 +446,7 @@ case class LdapAuthModuleConfig(
                 LdapAuthModuleConfig.logger.debug(s"bind failed", e)
                 Left(s"bind failed ${e.getMessage}")
             }
-          }
-          else if (userGroup.isDefined) {
+          } else if (userGroup.isDefined) {
             val group = userGroup.get
             LdapAuthModuleConfig.logger.debug(s"user found in ${group._1} group")
             val attrs = item.getAttributes
@@ -461,14 +458,16 @@ case class LdapAuthModuleConfig(
               val email = attrs.get(emailField).toString.split(":").last.trim
 
               val profile: Option[JsValue] = if (extractProfile) {
-                val all = attrs.getAll
-                var jsonAttrs = Json.obj()
-                val regexes = extractProfileFilter.map(f => RegexPool.regex(f))
+                val all        = attrs.getAll
+                var jsonAttrs  = Json.obj()
+                val regexes    = extractProfileFilter.map(f => RegexPool.regex(f))
                 val regexesNot = extractProfileFilterNot.map(f => RegexPool.regex(f))
                 while (all.hasMore) {
                   val next: Attribute = all.next()
-                  val name = next.getID
-                  if (regexes.isEmpty || (regexes.exists(_.matches(name))) && regexesNot.forall(rx => !rx.matches(name))) {
+                  val name            = next.getID
+                  if (
+                    regexes.isEmpty || (regexes.exists(_.matches(name))) && regexesNot.forall(rx => !rx.matches(name))
+                  ) {
                     val value = if (next.size() > 1) {
                       JsArray((0 until next.size()).map(idx => JsString(next.get(idx).toString)).toSeq)
                     } else if (next.size() == 1) {

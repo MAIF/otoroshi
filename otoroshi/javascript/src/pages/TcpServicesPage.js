@@ -43,8 +43,7 @@ class Target extends Component {
     const domain = this.props.domain;
     const target = this.props.target;
     return (
-      <div
-      className="sub-container sub-container__bg-color">
+      <div className="sub-container sub-container__bg-color">
         <Form
           value={{ domain, target }}
           onChange={this.props.onChange}

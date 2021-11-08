@@ -2,7 +2,14 @@ package otoroshi.controllers.adminapi
 
 import otoroshi.actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
-import otoroshi.auth.{AuthModuleConfig, BasicAuthModuleConfig, GenericOauth2ModuleConfig, LdapAuthModuleConfig, Oauth1ModuleConfig, SamlAuthModuleConfig}
+import otoroshi.auth.{
+  AuthModuleConfig,
+  BasicAuthModuleConfig,
+  GenericOauth2ModuleConfig,
+  LdapAuthModuleConfig,
+  Oauth1ModuleConfig,
+  SamlAuthModuleConfig
+}
 import otoroshi.env.Env
 import otoroshi.events.GatewayEvent
 import otoroshi.models._
@@ -440,27 +447,31 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
 
   def initiateResources() =
     ApiAction.async(parse.json) { ctx =>
-        ctx.request.body \ "content" match {
-          case JsDefined(content @ JsArray(_)) =>
-            Future.sequence(content.value.map(createResource)).map(created => Ok(Json.obj("created" -> created )))
-          case JsDefined(content @ JsObject(_)) =>
-            createResource(content).map(created => Ok(Json.obj("created" -> created)))
-          case JsDefined(_ @ JsString(content)) if content.contains("---") =>
-            Future.sequence(splitContent(content)
-              .flatMap(f => Yaml.parse(f))
-              .map(createResource)).map(created => Ok(Json.obj("created" -> created )))
-          case JsDefined(_ @ JsString(content)) if Yaml.parse(content).isDefined =>
-            createResource(Yaml.parse(content).get).map(created => Ok(Json.obj("created" -> created )))
-          case _ => FastFuture.successful(BadRequest(Json.obj("error" -> "Can't create resources")))
-        }
+      ctx.request.body \ "content" match {
+        case JsDefined(content @ JsArray(_))                                  =>
+          Future.sequence(content.value.map(createResource)).map(created => Ok(Json.obj("created" -> created)))
+        case JsDefined(content @ JsObject(_))                                 =>
+          createResource(content).map(created => Ok(Json.obj("created" -> created)))
+        case JsDefined(_ @JsString(content)) if content.contains("---")       =>
+          Future
+            .sequence(
+              splitContent(content)
+                .flatMap(f => Yaml.parse(f))
+                .map(createResource)
+            )
+            .map(created => Ok(Json.obj("created" -> created)))
+        case JsDefined(_ @JsString(content)) if Yaml.parse(content).isDefined =>
+          createResource(Yaml.parse(content).get).map(created => Ok(Json.obj("created" -> created)))
+        case _                                                                => FastFuture.successful(BadRequest(Json.obj("error" -> "Can't create resources")))
+      }
     }
 
   private def splitContent(content: String) = {
-    var out = Seq.empty[String]
+    var out     = Seq.empty[String]
     var current = Seq.empty[String]
-    val lines = content.split("\n")
+    val lines   = content.split("\n")
     lines.foreach(line => {
-      if(line == "---") {
+      if (line == "---") {
         out = out :+ current.mkString("\n")
         current = Seq.empty[String]
       } else {
@@ -468,7 +479,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       }
     })
 
-    if(current.nonEmpty)
+    if (current.nonEmpty)
       out = out :+ current.mkString("\n")
 
     out
@@ -476,65 +487,120 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
 
   private def createResource(content: JsValue): Future[JsValue] = {
     scala.util.Try {
-      val resource = ((content \ "spec").asOpt[JsObject] match {
-        case None => content.as[JsObject] - "kind"
+      val resource = (content \ "spec").asOpt[JsObject] match {
+        case None       => content.as[JsObject] - "kind"
         case Some(spec) => spec - "kind"
-      })
+      }
 
       val kind = (content \ "kind").as[String]
       (kind match {
-        case "DataExporter" => FastFuture.successful(
-            DataExporterConfig.fromJsons(env.datastores.dataExporterConfigDataStore.template((resource \ "type").asOpt[String]).json.as[JsObject].deepMerge(resource))
+        case "DataExporter"      =>
+          FastFuture.successful(
+            DataExporterConfig
+              .fromJsons(
+                env.datastores.dataExporterConfigDataStore
+                  .template((resource \ "type").asOpt[String])
+                  .json
+                  .as[JsObject]
+                  .deepMerge(resource)
+              )
               .json
-        )
-        case "ServiceDescriptor" => FastFuture.successful(
-            ServiceDescriptor.fromJsons(toJson(env.datastores.serviceDescriptorDataStore.template(env)).as[JsObject].deepMerge(resource)).json
-        )
-        case "ServiceGroup" => FastFuture.successful(
-          ServiceGroup.fromJsons(env.datastores.serviceGroupDataStore.template(env).json.as[JsObject].deepMerge(resource)).json
-        )
-        case "Certificate" => env.datastores.certificatesDataStore.template(ec, env).map(c => Cert.fromJsons(c.json.as[JsObject].deepMerge(resource)).json)
-        case "Tenant" => FastFuture.successful(
-          Tenant.fromJsons(env.datastores.tenantDataStore.template(env).json.as[JsObject].deepMerge(resource)).json
-        )
-        case "GlobalConfig" => FastFuture.successful(
-          GlobalConfig.fromJsons(env.datastores.globalConfigDataStore.template.json.as[JsObject].deepMerge(resource)).json
-        )
-        case "ApiKey" => FastFuture.successful(
-          ApiKey.fromJsons(env.datastores.apiKeyDataStore.template(env).json.as[JsObject].deepMerge(resource)).json
-        )
-        case "Team" => FastFuture.successful(
-            Team.fromJsons(env.datastores.teamDataStore.template(TenantId((resource \ "tenant").asOpt[String].getOrElse("default-tenant"))).json.as[JsObject].deepMerge(resource))
+          )
+        case "ServiceDescriptor" =>
+          FastFuture.successful(
+            ServiceDescriptor
+              .fromJsons(
+                toJson(env.datastores.serviceDescriptorDataStore.template(env)).as[JsObject].deepMerge(resource)
+              )
               .json
-        )
-        case "TcpService" => FastFuture.successful(
-          TcpService.fromJsons(env.datastores.tcpServiceDataStore.template(env).json.as[JsObject].deepMerge(resource)).json
-        )
-        case "AuthModule" => FastFuture.successful(
-          AuthModuleConfig.fromJsons(env.datastores.authConfigsDataStore.template((resource \ "type").asOpt[String], env).json.as[JsObject].deepMerge(resource)).json
-        )
-        case "JwtVerifier" => FastFuture.successful(
-            GlobalJwtVerifier.fromJsons(env.datastores.globalJwtVerifierDataStore.template(env).json.as[JsObject].deepMerge(resource)).json
-        )
-        case "ClientValidator" => FastFuture.successful(
-            ClientCertificateValidator.fromJsons(env.datastores.clientCertificateValidationDataStore.template.json.as[JsObject].deepMerge(resource)).json
-        )
-        case "Script" => FastFuture.successful(
-          Script.fromJsons(env.datastores.scriptDataStore.template(env).json.as[JsObject].deepMerge(resource)).json
-        )
-        case "ErrorTemplate" => FastFuture.successful(ErrorTemplate.fromJsons(resource).toJson.as[JsObject])
+          )
+        case "ServiceGroup"      =>
+          FastFuture.successful(
+            ServiceGroup
+              .fromJsons(env.datastores.serviceGroupDataStore.template(env).json.as[JsObject].deepMerge(resource))
+              .json
+          )
+        case "Certificate"       =>
+          env.datastores.certificatesDataStore
+            .template(ec, env)
+            .map(c => Cert.fromJsons(c.json.as[JsObject].deepMerge(resource)).json)
+        case "Tenant"            =>
+          FastFuture.successful(
+            Tenant.fromJsons(env.datastores.tenantDataStore.template(env).json.as[JsObject].deepMerge(resource)).json
+          )
+        case "GlobalConfig"      =>
+          FastFuture.successful(
+            GlobalConfig
+              .fromJsons(env.datastores.globalConfigDataStore.template.json.as[JsObject].deepMerge(resource))
+              .json
+          )
+        case "ApiKey"            =>
+          FastFuture.successful(
+            ApiKey.fromJsons(env.datastores.apiKeyDataStore.template(env).json.as[JsObject].deepMerge(resource)).json
+          )
+        case "Team"              =>
+          FastFuture.successful(
+            Team
+              .fromJsons(
+                env.datastores.teamDataStore
+                  .template(TenantId((resource \ "tenant").asOpt[String].getOrElse("default-tenant")))
+                  .json
+                  .as[JsObject]
+                  .deepMerge(resource)
+              )
+              .json
+          )
+        case "TcpService"        =>
+          FastFuture.successful(
+            TcpService
+              .fromJsons(env.datastores.tcpServiceDataStore.template(env).json.as[JsObject].deepMerge(resource))
+              .json
+          )
+        case "AuthModule"        =>
+          FastFuture.successful(
+            AuthModuleConfig
+              .fromJsons(
+                env.datastores.authConfigsDataStore
+                  .template((resource \ "type").asOpt[String], env)
+                  .json
+                  .as[JsObject]
+                  .deepMerge(resource)
+              )
+              .json
+          )
+        case "JwtVerifier"       =>
+          FastFuture.successful(
+            GlobalJwtVerifier
+              .fromJsons(env.datastores.globalJwtVerifierDataStore.template(env).json.as[JsObject].deepMerge(resource))
+              .json
+          )
+        case "ClientValidator"   =>
+          FastFuture.successful(
+            ClientCertificateValidator
+              .fromJsons(
+                env.datastores.clientCertificateValidationDataStore.template.json.as[JsObject].deepMerge(resource)
+              )
+              .json
+          )
+        case "Script"            =>
+          FastFuture.successful(
+            Script.fromJsons(env.datastores.scriptDataStore.template(env).json.as[JsObject].deepMerge(resource)).json
+          )
+        case "ErrorTemplate"     => FastFuture.successful(ErrorTemplate.fromJsons(resource).toJson.as[JsObject])
       })
-      .map(resource => {
+        .map(resource => {
+          Json.obj(
+            "kind"     -> kind,
+            "resource" -> resource
+          )
+        })
+    } recover { case error: Throwable =>
+      FastFuture.successful(
         Json.obj(
-          "kind" -> kind,
-          "resource" -> resource
+          "error" -> error.getMessage,
+          "name"  -> JsString((content \ "name").asOpt[String].getOrElse("Unknown"))
         )
-      })
-    } recover {  case error: Throwable =>
-      FastFuture.successful(Json.obj(
-        "error" -> error.getMessage,
-        "name" -> JsString((content \ "name").asOpt[String].getOrElse("Unknown"))
-      ))
+      )
     } get
   }
 }

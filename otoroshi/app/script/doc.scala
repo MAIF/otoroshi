@@ -278,8 +278,8 @@ class PluginDocumentationGenerator(docPath: String) {
   }
 
   def runOnePage(): Unit = {
-    val root                         = ensureRootDir()
-    val plugins                      =
+    val root                  = ensureRootDir()
+    val plugins               =
       (transformersNames ++ validatorsNames ++ preRouteNames ++ reqSinkNames ++ listenerNames ++ jobNames ++ exporterNames).distinct
     val contents: Seq[String] = plugins
       .map { pl =>
@@ -292,7 +292,7 @@ class PluginDocumentationGenerator(docPath: String) {
       .map { pl =>
         makePluginContent(pl).replace("\n## ", "\n### ").replace("\n# ", "\n## ")
       }
-    val index = new File(root, "built-in-plugins.md")
+    val index                 = new File(root, "built-in-plugins.md")
     if (index.exists()) {
       index.delete()
     }

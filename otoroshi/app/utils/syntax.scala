@@ -117,10 +117,10 @@ object implicits {
         case (Some(source: JsObject), part) => (source \ part).asOpt[JsValue]
         case (Some(source: JsArray), part)  => (source \ part.toInt).asOpt[JsValue]
         case (Some(value), part)            => None
-        case (None, _) => None
+        case (None, _)                      => None
       } match {
-        case None => JsUndefined(s"path '${path}' does not exists")
-        case Some(value)  => JsDefined(value)
+        case None        => JsUndefined(s"path '${path}' does not exists")
+        case Some(value) => JsDefined(value)
       }
     }
     def atPointer(path: String): JsLookupResult = {
@@ -129,10 +129,10 @@ object implicits {
         case (Some(source: JsObject), part) => (source \ part).asOpt[JsValue]
         case (Some(source: JsArray), part)  => (source \ part.toInt).asOpt[JsValue]
         case (Some(value), part)            => None
-        case (None, _) => None
+        case (None, _)                      => None
       } match {
-        case None => JsUndefined(s"path '${path}' does not exists")
-        case Some(value)  => JsDefined(value)
+        case None        => JsUndefined(s"path '${path}' does not exists")
+        case Some(value) => JsDefined(value)
       }
     }
     def atPath(path: String): JsLookupResult = {
@@ -275,7 +275,7 @@ object implicits {
     }
   }
 
-  implicit class BetterDecodedJWT(val jwt: DecodedJWT) extends AnyVal {
+  implicit class BetterDecodedJWT(val jwt: DecodedJWT)                 extends AnyVal {
     def claimStr(name: String): Option[String]   = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asString())
     def claimBool(name: String): Option[Boolean] = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asBoolean())
     def claimInt(name: String): Option[Int]      = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asInt())

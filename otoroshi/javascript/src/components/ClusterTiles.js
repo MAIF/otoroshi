@@ -13,7 +13,7 @@ function init(size, value = 0) {
 
 class Metric extends Component {
   size = 30;
-  
+
   state = {
     values: init(this.size),
   };
@@ -43,7 +43,7 @@ class Metric extends Component {
 
   render() {
     const props = this.props;
-    const mode = window.localStorage.getItem("otoroshi-dark-light-mode") || "dark"
+    const mode = window.localStorage.getItem('otoroshi-dark-light-mode') || 'dark';
     return (
       <a href={this.props.link}>
         <div
@@ -57,7 +57,10 @@ class Metric extends Component {
           </div>
           <div className="metric-box">
             <Sparklines data={this.state.values} limit={this.state.values.length} height={65}>
-              <SparklinesLine color={mode === 'dark' ? 'rgb(249, 176, 0)' : 'black'} _color="rgb(249, 176, 0)" />
+              <SparklinesLine
+                color={mode === 'dark' ? 'rgb(249, 176, 0)' : 'black'}
+                _color="rgb(249, 176, 0)"
+              />
               <SparklinesSpots />
             </Sparklines>
           </div>

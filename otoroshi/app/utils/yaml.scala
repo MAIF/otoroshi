@@ -8,9 +8,11 @@ import scala.util.Try
 
 object Yaml {
 
-  private val yamlReader = new ObjectMapper(new YAMLFactory())
-  private val yamlMinimizeQuotesReader = new ObjectMapper(new YAMLFactory().enable(YAMLGenerator.Feature.MINIMIZE_QUOTES))
-  private val jsonWriter = new ObjectMapper()
+  private val yamlReader               = new ObjectMapper(new YAMLFactory())
+  private val yamlMinimizeQuotesReader = new ObjectMapper(
+    new YAMLFactory().enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+  )
+  private val jsonWriter               = new ObjectMapper()
 
   def parse(content: String): Option[JsValue] = {
     Try {

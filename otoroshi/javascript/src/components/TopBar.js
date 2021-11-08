@@ -218,11 +218,7 @@ export class TopBar extends Component {
         }
         options.push({
           action: () => {
-            window
-              .popup(
-                'Flags',
-                (ok, cancel) => <FlagsForm ok={ok} cancel={cancel}/>
-              )
+            window.popup('Flags', (ok, cancel) => <FlagsForm ok={ok} cancel={cancel} />);
           },
           env: <span className="fas fa-flag" />,
           label: 'Flags',
@@ -538,7 +534,11 @@ export class TopBar extends Component {
               )}
               <li>
                 <a className="prevent-click" href="#">
-                  <i id="otoroshi-dark-light-icon" className=" far fa-moon fa-lg" title="Dark/Light Mode" />
+                  <i
+                    id="otoroshi-dark-light-icon"
+                    className=" far fa-moon fa-lg"
+                    title="Dark/Light Mode"
+                  />
                 </a>
               </li>
               <li className="dropdown userManagement">
@@ -990,7 +990,7 @@ export class TopBar extends Component {
 
 export class FlagsForm extends Component {
   state = {
-    flags: {}
+    flags: {},
   };
 
   read = () => {
@@ -998,12 +998,14 @@ export class FlagsForm extends Component {
       method: 'GET',
       credentials: 'include',
       headers: {
-        Accepts: 'application/json'
-      }
-    }).then(r => r.json()).then(flags => {
-      this.setState({ flags })
+        Accepts: 'application/json',
+      },
     })
-  }
+      .then((r) => r.json())
+      .then((flags) => {
+        this.setState({ flags });
+      });
+  };
 
   write = () => {
     fetch('/bo/api/backoffice/flags', {
@@ -1011,36 +1013,38 @@ export class FlagsForm extends Component {
       credentials: 'include',
       headers: {
         Accepts: 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(this.state.flags)
-    }).then(r => r.json()).then(flags => {
-      this.setState({ flags })
+      body: JSON.stringify(this.state.flags),
     })
-  }
+      .then((r) => r.json())
+      .then((flags) => {
+        this.setState({ flags });
+      });
+  };
 
   componentDidMount() {
     this.read();
   }
-  
+
   render() {
     return (
       <>
         <div className="modal-body">
           <form className="form-horizontal" style={{ overflowY: 'auto', maxHeight: '80vh' }}>
-          <JsonObjectAsCodeInput
-            hideLabel
-            label="-"
-            mode="json"
-            value={this.state.flags || {}}
-            onChange={(e) => this.setState({ flags: e })}
-            example={{
-              "useAkkaHttpClient": false,
-              "logUrl": false,
-              "logStats": false,
-              "requestTimeout": 60000,
-            }}
-          />
+            <JsonObjectAsCodeInput
+              hideLabel
+              label="-"
+              mode="json"
+              value={this.state.flags || {}}
+              onChange={(e) => this.setState({ flags: e })}
+              example={{
+                useAkkaHttpClient: false,
+                logUrl: false,
+                logStats: false,
+                requestTimeout: 60000,
+              }}
+            />
           </form>
         </div>
         <div className="modal-footer">

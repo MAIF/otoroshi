@@ -8,7 +8,16 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import otoroshi.env.Env
-import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
+import otoroshi.events.{
+  Alerts,
+  ApiKeyQuotasAlmostExceededAlert,
+  ApiKeyQuotasAlmostExceededReason,
+  ApiKeyQuotasExceededAlert,
+  ApiKeyQuotasExceededReason,
+  ApiKeySecretHasRotated,
+  ApiKeySecretWillRotate,
+  RevokedApiKeyUsageAlert
+}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import play.api.Logger
@@ -907,7 +916,9 @@ object ApiKeyHelper {
 
     def sendQuotasAlmostExceededError(key: ApiKey, quotas: RemainingQuotas): Unit = {
       if (ctx.config.quotasSettings.enabled) {
-        if (quotas.currentCallsPerDay >= (ctx.config.quotasSettings.dailyQuotasThreshold * quotas.authorizedCallsPerDay)) {
+        if (
+          quotas.currentCallsPerDay >= (ctx.config.quotasSettings.dailyQuotasThreshold * quotas.authorizedCallsPerDay)
+        ) {
           ApiKeyQuotasAlmostExceededAlert(
             `@id` = env.snowflakeGenerator.nextIdStr(),
             `@env` = env.env,
@@ -917,7 +928,9 @@ object ApiKeyHelper {
             reason = ApiKeyQuotasAlmostExceededReason.DailyQuotasAlmostExceeded
           ).toAnalytics()
         }
-        if (quotas.currentCallsPerMonth >= (ctx.config.quotasSettings.monthlyQuotasThreshold * quotas.authorizedCallsPerMonth)) {
+        if (
+          quotas.currentCallsPerMonth >= (ctx.config.quotasSettings.monthlyQuotasThreshold * quotas.authorizedCallsPerMonth)
+        ) {
           ApiKeyQuotasAlmostExceededAlert(
             `@id` = env.snowflakeGenerator.nextIdStr(),
             `@env` = env.env,
@@ -931,7 +944,9 @@ object ApiKeyHelper {
     }
 
     def sendQuotasExceededError(key: ApiKey, quotas: RemainingQuotas): Unit = {
-      if (quotas.currentCallsPerDay >= (ctx.config.quotasSettings.dailyQuotasThreshold * quotas.authorizedCallsPerDay)) {
+      if (
+        quotas.currentCallsPerDay >= (ctx.config.quotasSettings.dailyQuotasThreshold * quotas.authorizedCallsPerDay)
+      ) {
         ApiKeyQuotasExceededAlert(
           `@id` = env.snowflakeGenerator.nextIdStr(),
           `@env` = env.env,
@@ -940,7 +955,9 @@ object ApiKeyHelper {
           reason = ApiKeyQuotasExceededReason.DailyQuotasExceeded
         ).toAnalytics()
       }
-      if (quotas.currentCallsPerMonth >= (ctx.config.quotasSettings.monthlyQuotasThreshold * quotas.authorizedCallsPerMonth)) {
+      if (
+        quotas.currentCallsPerMonth >= (ctx.config.quotasSettings.monthlyQuotasThreshold * quotas.authorizedCallsPerMonth)
+      ) {
         ApiKeyQuotasExceededAlert(
           `@id` = env.snowflakeGenerator.nextIdStr(),
           `@env` = env.env,

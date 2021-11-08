@@ -58,9 +58,9 @@ class Mailer extends Component {
         label: 'Email addresses',
         placeholder: 'Email address to receive events',
         help: 'Every email address will be notified with a summary of Otoroshi events',
-        initTransform: values => values.map(value => value.email)
-      }
-    }
+        initTransform: (values) => values.map((value) => value.email),
+      },
+    },
   };
   sendgridFormSchema = {
     apiKey: {
@@ -76,7 +76,7 @@ class Mailer extends Component {
         label: 'Email addresses',
         placeholder: 'Email address to receive events',
         help: 'Every email address will be notified with a summary of Otoroshi events',
-        initTransform: values => values.map(value => value.email)
+        initTransform: (values) => values.map((value) => value.email),
       },
     },
   };
@@ -107,7 +107,7 @@ class Mailer extends Component {
         label: 'Email addresses',
         placeholder: 'Email address to receive events',
         help: 'Every email address will be notified with a summary of Otoroshi events',
-        initTransform: values => values.map(value => value.email)
+        initTransform: (values) => values.map((value) => value.email),
       },
     },
   };
@@ -132,7 +132,7 @@ class Mailer extends Component {
         label: 'Email addresses',
         placeholder: 'Email address to receive events',
         help: 'Every email address will be notified with a summary of Otoroshi events',
-        initTransform: values => values.map(value => value.email)
+        initTransform: (values) => values.map((value) => value.email),
       },
     },
   };
