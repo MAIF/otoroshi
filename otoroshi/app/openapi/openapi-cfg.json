@@ -1658,6 +1658,13 @@
       "type" : "string",
       "description" : "Body composed of stringified JSON lines, each one representing an entity"
     },
+    "BulkPatchBody" : {
+      "type" : "array",
+      "description" : "Body composed of stringified JSON-Patch lines, each one representing updates to an entity",
+      "items" : {
+        "$ref" : "#/components/schemas/PatchDocument"
+      }
+    },
     "Unknown" : {
       "type" : "object",
       "description" : "value used by the openapi generator when no matching type found. Should be fixed in a near future."

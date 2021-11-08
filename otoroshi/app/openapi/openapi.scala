@@ -632,30 +632,42 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
 
       val finalPath = s"operations_input_entity.$controllerName.${controllerMethod}_$tag"
       val reqBody   = (config.descriptions.get(finalPath).filterNot(_ == unknownValue) match {
-        case None if isBulk && controllerMethod == "bulkUpdateAction" => foundDescription(finalPath, "BulkBody")
-        case None if isBulk && controllerMethod == "bulkCreateAction" => foundDescription(finalPath, "BulkBody")
-        case None if isBulk && controllerMethod == "bulkPatchAction"  => foundDescription(finalPath, "BulkBody")
-        case None if isBulk && controllerMethod == "bulkDeleteAction" => foundDescription(finalPath, "BulkBody")
+        case None if isBulk && controllerMethod == "bulkUpdateAction" => (true, foundDescription(finalPath, "BulkBody"))
+        case None if isBulk && controllerMethod == "bulkCreateAction" => (true, foundDescription(finalPath, "BulkBody"))
+        case None if isBulk && controllerMethod == "bulkPatchAction"  => (true, foundDescription(finalPath, "BulkPatchBody"))
+        case None if isBulk && controllerMethod == "bulkDeleteAction" => (true, foundDescription(finalPath, "BulkBody"))
 
-        case None if isCrud && controllerMethod == "createAction"          => foundDescription(finalPath, entity.get)
-        case None if isCrud && controllerMethod == "findAllEntitiesAction" => foundDescription(finalPath, entity.get)
-        case None if isCrud && controllerMethod == "findEntityByIdAction"  => foundDescription(finalPath, entity.get)
-        case None if isCrud && controllerMethod == "updateEntityAction"    => foundDescription(finalPath, entity.get)
-        case None if isCrud && controllerMethod == "patchEntityAction"     => foundDescription(finalPath, entity.get)
-        case None if isCrud && controllerMethod == "deleteEntityAction"    => foundDescription(finalPath, entity.get)
-        case None if isCrud && controllerMethod == "deleteEntitiesAction"  => foundDescription(finalPath, entity.get)
+        case None if isCrud && controllerMethod == "createAction"          => (false, foundDescription(finalPath, entity.get))
+        case None if isCrud && controllerMethod == "findAllEntitiesAction" => (false, foundDescription(finalPath, entity.get))
+        case None if isCrud && controllerMethod == "findEntityByIdAction"  => (false, foundDescription(finalPath, entity.get))
+        case None if isCrud && controllerMethod == "updateEntityAction"    => (false, foundDescription(finalPath, entity.get))
+        case None if isCrud && controllerMethod == "patchEntityAction"     => (false, foundDescription(finalPath, entity.get))
+        case None if isCrud && controllerMethod == "deleteEntityAction"    => (false, foundDescription(finalPath, entity.get))
+        case None if isCrud && controllerMethod == "deleteEntitiesAction"  => (false, foundDescription(finalPath, entity.get))
 
         case None        =>
           inNotFound.incrementAndGet()
           foundDescriptions.put(finalPath, unknownValue)
-          unknownValue
+          (false, unknownValue)
         case Some(value) =>
           inFound.incrementAndGet()
           foundDescriptions.put(finalPath, value)
-          value
+          if (isBulk && value == "BulkBody") {
+            (true, value)
+          } else {
+            (false, value)
+          }
       }) match {
-        case v if v == unknownValue => Json.obj("$ref" -> "#/components/schemas/Unknown")
-        case v                      => Json.obj("$ref" -> s"#/components/schemas/$v")
+        case (_, v) if v == unknownValue => Json.obj("$ref" -> "#/components/schemas/Unknown")
+        case (true, v) if controllerMethod == "bulkPatchAction" => {
+          Json.obj("$ref" -> s"#/components/schemas/BulkPatchBody")
+        }
+        case (true, v) =>
+          Json.obj(
+            "type" -> "array",
+            "items" -> Json.obj("$ref" -> s"#/components/schemas/${entity.get}")
+          )
+        case (_, v)                      => Json.obj("$ref" -> s"#/components/schemas/$v")
       }
       reqBody.some
     } else {
@@ -830,7 +842,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
                         resCode -> Json.obj(
                           "description" -> "Successful operation",
                           "content"     -> Json.obj(
-                            "application/json" -> Json.obj(
+                            (if (isBulk) "application/x-ndjson" else "application/json") -> Json.obj(
                               "schema" -> resBody
                             )
                           )
@@ -842,10 +854,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
                     ) { c =>
                       c ++ Json.obj(
                         "requestBody" -> Json.obj(
-                          "description" -> "request body",
+                          "description" -> (if (isBulk) "the request body in nd-json format (1 stringified entity per line)" else "the request body") ,
                           "required"    -> true,
                           "content"     -> Json.obj(
-                            "application/json" -> Json.obj(
+                            (if (isBulk) "application/x-ndjson" else "application/json") -> Json.obj(
                               "schema" -> reqBodyOpt.get
                             )
                           )
