@@ -190,7 +190,20 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
           request.headers.get("Referer").map(Uri.apply).map(uri => uri.copy(path = Path.Empty))
         )
         .map(u => u.authority.copy(port = 0).toString()) match {
-        case Some(origin) if origin == env.backOfficeHost                                        => callAction()
+        case Some(origin) if origin == env.backOfficeHost                                        => {
+          if (req.thePath.startsWith("/bo/api/") && env.datastores.globalConfigDataStore.latest().apiReadOnly && req.method != "GET") {
+            Errors.craftResponseResult(
+              s"You're not authorized",
+              Status(401),
+              request,
+              None,
+              Some("errors.not.authorized"),
+              attrs = TypedMap.empty
+            )
+          } else {
+            callAction()
+          }
+        }
         case Some(origin) if origin != env.backOfficeHost && request.method.toLowerCase != "get" =>
           Errors.craftResponseResult(
             s"Bad origin",
