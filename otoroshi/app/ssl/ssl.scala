@@ -380,7 +380,8 @@ case class Cert(
     } getOrElse false
   }
   lazy val cryptoKeyPair: KeyPair = {
-    val privkey           = DynamicSSLEngineProvider.readPrivateKeyUniversal(id, privateKey, None).right.get
+		val privkey = DynamicSSLEngineProvider.readPrivateKeyUniversal(domain, privateKey, password).right.get
+
     //val privkey: PrivateKey = DynamicSSLEngineProvider.readPrivateKey(privkeySpec) /*Try(KeyFactory.getInstance("RSA"))
     //  .orElse(Try(KeyFactory.getInstance("DSA")))
     //  .map(_.generatePrivate(privkeySpec))
