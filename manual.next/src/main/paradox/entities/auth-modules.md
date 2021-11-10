@@ -9,8 +9,8 @@ A `private app` is an Otoroshi service with an authentication module.
 The list of supported authentication are : 
 * `OAuth 2.0/2.1` : an authorization standard that allows a user to grant limited access to their resources on one site to another site, without having to expose their credentials
 * `OAuth 1.0a` : the original standard for access delegation
-* `In memory`
-* `LDAP : Lightweight Directory Access Protocol` 
+* `In memory` : create users directly in Otoroshi with rights and metadata
+* `LDAP : Lightweight Directory Access Protocol` : connect users using a set of LDAP servers
 * `SAML V2 - Security Assertion Markup Language` : an open-standard, XML-based data format that allows businesses to communicate user authentication and authorization information to partner companies and enterprise applications their employees may use.
 
 All authentication modules have a unique `id`, a `name` and a `description`.
@@ -113,7 +113,7 @@ If you want to secure an app or your Otoroshi UI with this provider, you can che
 * `Basic auth.`: if enabled, user and password will be extract from the `Authorization` header as a Basic authentication. It will skipped the login Otoroshi page 
 * `Login with WebAuthn` : enabled logging by WebAuthn
 * `Users`: list of users with *name*, *email* and *metadata*. The default password is *password*. The edit button is useful when you want to change the password of the user. The reset button reinitialize the password. 
-* `Users raw`: show the registered users with their profile and their rights 
+* `Users raw`: show the registered users with their profile and their rights. You can edit directly each field, especially the rights of the user.
 
 ## SAML v2 provider
 
