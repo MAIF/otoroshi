@@ -1017,11 +1017,11 @@ export class BasicModuleConfig extends Component {
         )}
         {this.state.showRaw && (
           <Suspense fallback={<div>loading ...</div>}>
-            <CodeInput
+            <JsonObjectAsCodeInput
               label=""
-              value={JSON.stringify(settings.users, null, 2)}
               help="..."
-              onChange={(v) => changeTheValue(path + '.users', JSON.parse(v))}
+              value={settings.users}
+              onChange={(v) => changeTheValue(path + '.users', v)}
             />
           </Suspense>
         )}
