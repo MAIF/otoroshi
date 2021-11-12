@@ -12,13 +12,25 @@
 TODO - schema
 @@@
 
-### Requisites
+### Download Otoroshi
 
-Let's start by start Otoroshi ([instructions are available here](./secure-with-apikey.md#download-otoroshi))
+Let's start by downloading the latest Otoroshi
+```sh
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
+```
+
+By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
+
+Run Otoroshi
+```sh
+java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
+```
+
+### Requisites
 
 Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
 
-Then create a simple service ([instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
+Then create a simple service (@ref:[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
 
 ### Running a keycloak instance with docker
 
@@ -98,7 +110,7 @@ To secure Otoroshi with your Keycloak configuration, we have to register an Auth
 
 Each user, wheter connected user to the Otoroshi UI or at a private Otoroshi app, has an own session. As an administrator of Otoroshi, you can visualize via Otoroshi the list of the connected users and their profile.
 
-Let's start by navigate to the `Admin users sessions` page (just [here](http://otoroshi.oto.tools:9999/bo/dashboard/sessions/admin) or when clicking on the cog, and on the `Admins sessions` button at the bottom of the list).
+Let's start by navigate to the `Admin users sessions` page (just @link:[here](http://otoroshi.oto.tools:9999/bo/dashboard/sessions/admin) or when clicking on the cog, and on the `Admins sessions` button at the bottom of the list).
 
 This page gives a complete view of the connected admins. For each admin, you have his connection date and his expiration date. You can also check the `Profile` and the `Rights` of the connected users.
 
@@ -133,7 +145,7 @@ and his default rights
 
 We haven't create any specific groups in Keycloak or specify rights in Otoroshi for him. In this case, the use received the default Otoroshi rights at his connection. We can see that he can navigate on the default Organization and Teams (which are two resources created by Otoroshi at the boot) and that he have the full access (`r`: Read, `w`: Write, `*`: read/write) on its.
 
-In the same way, you'll find all users connected to a private Otoroshi app when navigate on the [`Private App View`](http://otoroshi.oto.tools:9999/bo/dashboard/sessions/private) or using the cog at the top of the page. 
+In the same way, you'll find all users connected to a private Otoroshi app when navigate on the @link:[`Private App View`](http://otoroshi.oto.tools:9999/bo/dashboard/sessions/private) or using the cog at the top of the page. 
 
 ### Configure the Keycloak module to force logged in users to be an Otoroshi admin with full access
 

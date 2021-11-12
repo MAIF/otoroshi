@@ -24,31 +24,10 @@ curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5
 ```
 
 By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
-```sh
-sudo nano /etc/hosts
-
-# Add this line at the bottom of your file
-127.0.0.1	otoroshi.oto.tools privateapps.oto.tools otoroshi-api.oto.tools otoroshi-admin-internal-api.oto.tools localhost
-```
 
 Run Otoroshi
 ```sh
 java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
-```
-
-This should display
-
-```sh
-$ java -jar otoroshi.jar
-
-[info] otoroshi-env - Otoroshi version 1.5.0-beta.7
-[info] otoroshi-env - Admin API exposed on http://otoroshi-api.oto.tools:9999
-[info] otoroshi-env - Admin UI  exposed on http://otoroshi.oto.tools:9999
-...
-[info] p.c.s.AkkaHttpServer - Listening for HTTP on /0:0:0:0:0:0:0:0:9999
-[info] p.c.s.AkkaHttpServer - Listening for HTTPS on /0:0:0:0:0:0:0:0:9998
-[info] otoroshi-script-manager - Finding and starting plugins done in 4681 ms.
-...
 ```
 
 #### Running an simple OpenLDAP server 
@@ -245,7 +224,7 @@ For each LDAP groups, you can affect a list of rights :
 - and a level of rights : `Read`, `Write` or `Read/Write`
 
 
-Start by navigate to your authentication configuration (created in [previous](#create-an-authentication-configuration) step).
+Start by navigate to your authentication configuration (created in @ref:[previous](#create-an-authentication-configuration) step).
 
 Then, replace the values of the `Mapping group filter` field to match LDAP groups with Otoroshi rights.
 
@@ -260,7 +239,7 @@ With this configuration, Einstein is an administrator of Otoroshi with full righ
 
 Conversely, Johnny can't see any configuration pages (like the danger zone) because he has only the read rights on Otoroshi.
 
-You can easily test this behaviour by [testing](#testing-your-configuration) with both credentials.
+You can easily test this behaviour by @ref:[testing](#testing-your-configuration) with both credentials.
 
 
 #### Advanced usage of LDAP Authentication
