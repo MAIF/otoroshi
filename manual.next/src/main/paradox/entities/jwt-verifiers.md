@@ -125,9 +125,9 @@ When `Verify, re-sign and transform JWT token` is chosen, the `Re-sign settings`
 The `Re-sign settings` are used to sign the new token and has the same fields than the `Token validation` section.
 
 For the `Transformation settings` section, the fields are:
-* `Token location`:
-* `Header name`:
-* `Prepend value`:
-* `Rename token fields`:
-* `Set token fields`:
-* `Remove token fields`:
+* `Token location`: the location where to find/set the JWT token
+* `Header name`: the name of the header where JWT is located
+* `Prepend value`: remove a value inside the header value
+* `Rename token fields`: when the JWT token is transformed, it is possible to change a field name, just specify origin field name and target field name
+* `Set token fields`: when the JWT token is transformed, it is possible to add new field with static values, just specify field name and value
+* `Remove token fields`: when the JWT token is transformed, it is possible to remove fields
