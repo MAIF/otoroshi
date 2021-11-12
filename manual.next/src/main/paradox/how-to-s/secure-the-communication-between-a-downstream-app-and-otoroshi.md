@@ -26,7 +26,16 @@ If you enable secure communication for a given service with `V2 - signed JWT tok
 
 ### Pratical case
 
-Let's start by start Otoroshi ([instructions are available here](./secure-with-apikey.md#download-otoroshi))
+Let's start by downloading the latest Otoroshi
+```sh
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
+```
+
+By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
+
+Run Otoroshi
+```sh
+java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
 
 Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
 

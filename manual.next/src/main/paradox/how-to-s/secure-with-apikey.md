@@ -1,6 +1,7 @@
 # Secure an api with api keys
 
 ### Cover by this tutorial
+- [Before you start](#before-you-start)
 - [About the downstream example service](#about-the-downstream-example-service)
 - [Create a simple service](#create-a-simple-service)
 - [Secure routes with api key](#secure-an-api-with-apikey)
@@ -12,7 +13,19 @@
 TODO - schema
 @@@
 
-Let's start by run Otoroshi ([available here](./secure-with-apikey.md#download-otoroshi))
+### Before you start
+
+Let's start by downloading the latest Otoroshi
+```sh
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
+```
+
+By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
+
+Run Otoroshi
+```sh
+java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
+```
 
 Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
 
