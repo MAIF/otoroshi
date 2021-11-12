@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Secure the communication between a downstream app and Otoroshi · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/cc.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0-dev
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/input-tls.html" class="page">Input TLS</a></li>
+    <li><a href="../topics/output-tls.html" class="page">Ouput TLS</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="active page">Secure the communication between a downstream app and Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0-dev
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/input-tls.html" class="page">Input TLS</a></li>
+    <li><a href="../topics/output-tls.html" class="page">Ouput TLS</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="active page">Secure the communication between a downstream app and Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../how-to-s/index.html">How to&rsquo;s</a></li>
+  <li>Secure the communication between a downstream app and Otoroshi</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#secure-the-communication-between-a-downstream-app-and-otoroshi" name="secure-the-communication-between-a-downstream-app-and-otoroshi" class="anchor"><span class="anchor-link"></span></a>Secure the communication between a downstream app and Otoroshi</h1>
+<h3><a href="#cover-by-this-tutorial" name="cover-by-this-tutorial" class="anchor"><span class="anchor-link"></span></a>Cover by this tutorial</h3>
+<ul>
+  <li><a href="#otoroshi-exchange-protocol">Otoroshi exchange protocol</a></li>
+  <li><a href="#pratical-case">Pratical case</a></li>
+</ul>
+<h3><a href="#otoroshi-exchange-protocol" name="otoroshi-exchange-protocol" class="anchor"><span class="anchor-link"></span></a>Otoroshi exchange protocol</h3>
+<p>The exchange protocol secure the communication with an app. When it&rsquo;s enabled, Otoroshi will send for each request a value in pre-selected token header, and will check the same header in the return request.</p>
+<h4><a href="#v1-challenge" name="v1-challenge" class="anchor"><span class="anchor-link"></span></a>V1 challenge</h4>
+<p>If you enable secure communication for a given service with <code>V1 - simple values exchange</code> activated, you will have to add a filter on the target application that will take the <code>Otoroshi-State</code> header and return it in a header named <code>Otoroshi-State-Resp</code>. </p><div class="centered-img">
+<img src="../imgs/exchange.png" /></div>
+<h4><a href="#v2-challenge" name="v2-challenge" class="anchor"><span class="anchor-link"></span></a>V2 challenge</h4>
+<p>If you enable secure communication for a given service with <code>V2 - signed JWT token exhange</code> activated, you will have to add a filter on the target application that will take the <code>Otoroshi-State</code> header value containing a JWT token, verify it&rsquo;s content signature then extract a claim named <code>state</code> and return a new JWT token in a header named <code>Otoroshi-State-Resp</code> with the <code>state</code> value in a claim named <code>state-resp</code>. By default, the signature algorithm is HMAC+SHA512 but can you can choose your own. The sent and returned JWT tokens have short TTL to avoid being replayed. You must be validate the tokens TTL. The audience of the response token must be <code>Otoroshi</code> and you have to specify <code>iat</code>, <code>nbf</code> and <code>exp</code>.</p><div class="centered-img">
+<img src="../imgs/exchange-2.png" /></div>
+<h3><a href="#pratical-case" name="pratical-case" class="anchor"><span class="anchor-link"></span></a>Pratical case</h3>
+<p>Let&rsquo;s start by downloading the latest Otoroshi</p>
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
+</code></pre>
+<p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code></p>
+<p>Run Otoroshi</p>
+<pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
+
+Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
+
+1. Navigate to http://otoroshi.oto.tools:9999/bo/services and create a new service
+2. Jump to `Service exposition settings` and add *http://myservice.oto.tools* as `Exposed domain`
+3. Jump to `Service targets` and add *http://localhost:8080/* as `Target 1`
+4. Jump to the `URL Patterns` section
+5. Enable your service as `Public UI`
+
+We need of a simple service which handle the exchange protocol. For this tutorial, we&#39;ll use the following application, developed in NodeJS, which supports both versions of the exchange protocol.
+
+Clone this @link:[repository](https://github.com/MAIF/otoroshi/blob/master/demos/challenge)) and run the installation of the dependencies.
+
+</code></pre>
+<p>git clone <a href="https://github.com/MAIF/otoroshi/blob/master/demos/challenge">https://github.com/MAIF/otoroshi/blob/master/demos/challenge</a> cd challenge yarn install # or npm install node server.js</p>
+<pre><code><br/>The last command should return : 
+
+</code></pre>
+<p>challenge-verifier listening on <a href="http://0.0.0.0:8080">http://0.0.0.0:8080</a></p>
+<pre><code><br/>This project runs an express client with one middleware. The middleware handles each request, and check if the header `State token header` is present in headers. By default, the incoming expected header is `Otoroshi-State` by the application and `Otoroshi-State-Resp` header in the headers of the return request. 
+
+Try to call your service via *http://myservice.oto.tools:9999/*. This should return a successful response with all headers received by the downstream app. 
+
+Now try to disable the middleware in the nodejs file. 
+
+</code></pre>
+<p>// comment this line app.use(OtoroshiMiddleware());</p>
+<pre><code><br/>Try to call again your service. This time, Otoroshi breaks the return response from your downstream service, and returns.
+
+</code></pre>
+<p>Downstream microservice does not seems to be secured. Cancelling request ! ```</p>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../plugins/index.html">Otoroshi plugins</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html#secure-the-communication-between-a-downstream-app-and-otoroshi" class="header">Secure the communication between a downstream app and Otoroshi</a>
+  <ul>
+    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html#cover-by-this-tutorial" class="header">Cover by this tutorial</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html#otoroshi-exchange-protocol" class="header">Otoroshi exchange protocol</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html#pratical-case" class="header">Pratical case</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2021</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+

@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Secure an app and/or your Otoroshi UI with LDAP · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/cc.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0-dev
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/input-tls.html" class="page">Input TLS</a></li>
+    <li><a href="../topics/output-tls.html" class="page">Ouput TLS</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="active page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0-dev
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/input-tls.html" class="page">Input TLS</a></li>
+    <li><a href="../topics/output-tls.html" class="page">Ouput TLS</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="active page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../how-to-s/index.html">How to&rsquo;s</a></li>
+  <li>Secure an app and/or your Otoroshi UI with LDAP</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#secure-an-app-and-or-your-otoroshi-ui-with-ldap" name="secure-an-app-and-or-your-otoroshi-ui-with-ldap" class="anchor"><span class="anchor-link"></span></a>Secure an app and/or your Otoroshi UI with LDAP</h1>
+<h3><a href="#cover-by-this-tutorial" name="cover-by-this-tutorial" class="anchor"><span class="anchor-link"></span></a>Cover by this tutorial</h3>
+<ul>
+  <li><a href="#secure-an-app-andor-your-otoroshi-ui-with-ldap">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+  <li><a href="#cover-by-this-tutorial">Cover by this tutorial</a></li>
+  <li><a href="#download-otoroshi">Download Otoroshi</a></li>
+  <li><a href="#create-an-authentication-configuration">Create an Authentication configuration</a></li>
+  <li><a href="#connect-to-otoroshi-with-ldap-authentication">Connect to Otoroshi with LDAP authentication</a></li>
+  <li><a href="#testing-your-configuration">Testing your configuration</a></li>
+  <li><a href="#secure-an-app-with-ldap-authentication">Secure an app with LDAP authentication</a></li>
+  <li><a href="#manage-ldap-users-rights-on-otoroshi">Manage LDAP users rights on Otoroshi</a></li>
+  <li><a href="#advanced-usage-of-ldap-authentication">Advanced usage of LDAP Authentication</a></li>
+</ul><div class="callout warning "><div class="callout-title">Warning</div>
+<p>TODO - schema</p></div>
+<h3><a href="#download-otoroshi" name="download-otoroshi" class="anchor"><span class="anchor-link"></span></a>Download Otoroshi</h3>
+<p>Let&rsquo;s start by downloading the latest Otoroshi</p>
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
+</code></pre>
+<p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code></p>
+<p>Run Otoroshi</p>
+<pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
+</code></pre>
+<h4><a href="#running-an-simple-openldap-server" name="running-an-simple-openldap-server" class="anchor"><span class="anchor-link"></span></a>Running an simple OpenLDAP server</h4>
+<p>Run OpenLDAP docker image : </p>
+<pre class="prettyprint"><code class="language-sh">docker run \
+-p 389:389 \
+-p 636:636  \
+--env LDAP_ORGANISATION=&quot;Otoroshi company&quot; \
+--env LDAP_DOMAIN=&quot;otoroshi.tools&quot; \
+--env LDAP_ADMIN_PASSWORD=&quot;otoroshi&quot; \
+--env LDAP_READONLY_USER=&quot;false&quot; \
+--env LDAP_TLS&quot;false&quot; \
+--env LDAP_TLS_ENFORCE&quot;false&quot; \
+--name my-openldap-container \
+--detach osixia/openldap:1.5.0
+</code></pre>
+<p>Let&rsquo;s make the first search in our LDAP container :</p>
+<pre class="prettyprint"><code class="language-sh">docker exec my-openldap-container ldapsearch -x -H ldap://localhost -b dc=otoroshi,dc=tools -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -w otoroshi
+</code></pre>
+<p>This should output :</p>
+<pre class="prettyprint"><code class="language-sh"># extended LDIF
+ ...
+# otoroshi.tools
+dn: dc=otoroshi,dc=tools
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+o: Otoroshi company
+dc: otoroshi
+
+# search result
+search: 2
+result: 0 Success
+...
+</code></pre>
+<p>Now you can seed the open LDAP server with a few users. </p>
+<p>Join your LDAP container.</p>
+<pre class="prettyprint"><code class="language-sh">docker exec -it my-openldap-container &quot;/bin/bash&quot;
+</code></pre>
+<p>The command <code>ldapadd</code> needs of a file to run.</p>
+<p>Launch this command to create a <code>bootstrap.ldif</code> with one organization, one singers group with Johnny user and a last group with Einstein as scientist.</p>
+<pre class="prettyprint"><code class="language-sh">echo -e &quot;
+dn: ou=People,dc=otoroshi,dc=tools
+objectclass: top
+objectclass: organizationalUnit
+ou: People
+
+dn: ou=Role,dc=otoroshi,dc=tools
+objectclass: top
+objectclass: organizationalUnit
+ou: Role
+
+dn: uid=johnny,ou=People,dc=otoroshi,dc=tools
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+uid: johnny
+cn: Jhonny
+sn: Brown
+mail: johnny@otoroshi.tools
+postalCode: 88442
+userPassword: password
+
+dn: uid=einstein,ou=People,dc=otoroshi,dc=tools
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+uid: einstein
+cn: Einstein
+sn: Wilson
+mail: einstein@otoroshi.tools
+postalCode: 88443
+userPassword: password
+
+dn: cn=singers,ou=Role,dc=otoroshi,dc=tools
+objectclass: top
+objectclass: groupOfNames
+cn: singers
+member: uid=johnny,ou=People,dc=otoroshi,dc=tools
+
+dn: cn=scientists,ou=Role,dc=otoroshi,dc=tools
+objectclass: top
+objectclass: groupOfNames
+cn: scientists
+member: uid=einstein,ou=People,dc=otoroshi,dc=tools
+&quot; &gt; bootstrap.ldif
+
+ldapadd -x -w otoroshi -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -f bootstrap.ldif -v
+</code></pre>
+<h3><a href="#create-an-authentication-configuration" name="create-an-authentication-configuration" class="anchor"><span class="anchor-link"></span></a>Create an Authentication configuration</h3>
+<ol>
+  <li>Go ahead, and navigate to <a href="http://otoroshi.oto.tools:9999">http://otoroshi.oto.tools:9999</a></li>
+  <li>Click on the cog icon on the top right</li>
+  <li>Then <code>Authentication configs</code> button</li>
+  <li>And add a new configuration when clicking on the <code>Add item</code> button</li>
+  <li>Select the <code>Ldap auth. provider</code> in the type selector field</li>
+  <li>Set a basic name and description</li>
+  <li>Then set <code>ldap://localhost:389</code> as <code>LDAP Server URL</code>and <code>dc=otoroshi,dc=tools</code> as <code>Search Base</code></li>
+  <li>Create a group filter (in the next part, we&rsquo;ll change this filter to spread users in different groups with given rights) with</li>
+</ol>
+<p>objectClass=groupOfNames as <em>Group filter</em> \ All as <em>Tenant</em>\ All as <em>Team</em>\ Read/Write as <em>Rights</em></p>
+<ol>
+  <li>Set the search filter as (uid=${username})`</li>
+  <li>Set <code>cn=admin,dc=otoroshi,dc=tools</code> as <em>Admin username</em></li>
+  <li>Set <code>otoroshi</code> as <em>Admin password</em></li>
+  <li>At the bottom of the page, disable the <code>secure</code> button (because we&rsquo;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)</li>
+</ol>
+<p>At this point, your configuration should be similar to : <!-- oto-scenario
+ - goto /bo/dashboard/auth-configs/edit/auth_mod_09975547-a186-4a2d-a550-ca71a0a03c0c
+ - wait 1000
+ - screenshot-area generated-hows-to-ldap-auth-configs.png #app>div>div.container-fluid>div>div.col-sm-10.col-sm-offset-2.main
+--> <img src="../imgs/generated-hows-to-ldap-auth-configs.png" /></p>
+<blockquote>
+  <p>Dont&rsquo; forget to save on the bottom page your configuration before to quit the page.</p>
+</blockquote>
+<ol>
+  <li>Test the connection when clicking on <code>Test admin connection</code> button</li>
+</ol>
+<p>This should display a <code>It works!</code> message</p>
+<ol>
+  <li>Finally, test the user connection button and set <code>johnny/password</code> or <code>einstein/password</code> as credentials.</li>
+</ol>
+<p>This should display a <code>It works!</code> message</p>
+<blockquote>
+  <p>Dont&rsquo; forget to save on the bottom page your configuration before to quit the page.</p>
+</blockquote>
+<h3><a href="#connect-to-otoroshi-with-ldap-authentication" name="connect-to-otoroshi-with-ldap-authentication" class="anchor"><span class="anchor-link"></span></a>Connect to Otoroshi with LDAP authentication</h3>
+<p>To secure Otoroshi with your LDAP configuration, we have to register an Authentication configuration as a BackOffice Auth. configuration.</p>
+<ol>
+  <li>Navigate to the <em>danger zone</em> (when clicking on the cog on the top right and selecting Danger zone)</li>
+  <li>Scroll to the <em>BackOffice auth. settings</em></li>
+  <li>Select your last Authentication configuration (created in the previous section)</li>
+  <li>Save the global configuration with the button on the top right</li>
+</ol>
+<h3><a href="#testing-your-configuration" name="testing-your-configuration" class="anchor"><span class="anchor-link"></span></a>Testing your configuration</h3>
+<ol>
+  <li>Disconnect from your instance</li>
+  <li>Then click on the <em>Login using third-party</em> button (or navigate to *<a href="http://otoroshi.oto.tools:9999/backoffice/auth0/login*">http://otoroshi.oto.tools:9999/backoffice/auth0/login*</a>)
+</li>
+  <li>Set <code>johnny/password</code> or <code>einstein/password</code> as credentials</li>
+</ol>
+<blockquote>
+  <p>A fallback solution is always available, by going to *<a href="http://otoroshi.oto.tools:9999/bo/simple/login*">http://otoroshi.oto.tools:9999/bo/simple/login*</a>, for administrators in case your LDAP is not available</p>
+</blockquote>
+<h4><a href="#secure-an-app-with-ldap-authentication" name="secure-an-app-with-ldap-authentication" class="anchor"><span class="anchor-link"></span></a>Secure an app with LDAP authentication</h4>
+<p>Once the configuration is done, you can secure any of Otoroshi services with it. </p>
+<ol>
+  <li>Navigate to any created service</li>
+  <li>Jump to the <code>URL Patterns</code> section</li>
+  <li>Enable your service as <code>Public UI</code></li>
+  <li>Then scroll to <code>Authentication</code> section</li>
+  <li>Enable <code>Enforce user authentication</code></li>
+  <li>Select your Authentication config inside the list</li>
+  <li>Enable <code>Strict mode</code></li>
+  <li>Don&rsquo;t forget to save your configuration</li>
+</ol>
+<!-- oto-scenario
+ - goto /bo/dashboard/lines/prod/services/service_mirror_otoroshi_fr
+ - wait 2000
+ - click div[data-screenshot="ldap-tutorial-authentication"]>div:nth-child(2)>div
+ - screenshot-area generated-hows-to-secure-an-app-with-ldap.png div[data-screenshot="ldap-tutorial-authentication"]
+-->
+<img src="../imgs/generated-hows-to-secure-an-app-with-ldap.png">
+<p>Now you can try to call your defined service and see the login module appears.</p>
+<h4><a href="#manage-ldap-users-rights-on-otoroshi" name="manage-ldap-users-rights-on-otoroshi" class="anchor"><span class="anchor-link"></span></a>Manage LDAP users rights on Otoroshi</h4>
+<p>For each LDAP groups, you can affect a list of rights : </p>
+<ul>
+  <li>on an <code>Organization</code> : only resources of an organization</li>
+  <li>on a <code>Team</code> : only resources belonging to this team</li>
+  <li>and a level of rights : <code>Read</code>, <code>Write</code> or <code>Read/Write</code></li>
+</ul>
+<p>Start by navigate to your authentication configuration (created in <a href="secure-app-with-ldap.html#create-an-authentication-configuration">previous</a> step).</p>
+<p>Then, replace the values of the <code>Mapping group filter</code> field to match LDAP groups with Otoroshi rights.</p>
+<!-- oto-scenario
+ - goto /bo/dashboard/auth-configs/edit/auth_mod_91bb8b38-620e-4c18-9bbc-7c8d1efd63cc
+ - wait 1000
+ - screenshot-area generated-hows-to-ldap-manage-users.png #app>div>div.container-fluid>div>div.col-sm-10.col-sm-offset-2.main>div>div> div.row>div>div>div>form>div>div:nth-child(3)>div:nth-child(11)
+-->
+<img src="../imgs/generated-hows-to-ldap-manage-users.png" />
+<p>With this configuration, Einstein is an administrator of Otoroshi with full rights (read / write) on all organizations.</p>
+<p>Conversely, Johnny can&rsquo;t see any configuration pages (like the danger zone) because he has only the read rights on Otoroshi.</p>
+<p>You can easily test this behaviour by <a href="secure-app-with-ldap.html#testing-your-configuration">testing</a> with both credentials.</p>
+<h4><a href="#advanced-usage-of-ldap-authentication" name="advanced-usage-of-ldap-authentication" class="anchor"><span class="anchor-link"></span></a>Advanced usage of LDAP Authentication</h4>
+<p>In the previous section, we have set rights for each LDAP groups. But in some case, we want to have a finer granularity like set rights for a specific user.</p>
+<p>The last 4 fields of the authentication form cover this. </p>
+<p>Each field take the <code>Email field name</code> as keys, and a json value.</p>
+<p>Let&rsquo;s start by adding few properties for each connected users with <code>Extra metadata</code>.</p>
+<pre class="prettyprint"><code class="language-json">// Add this configuration in extra metadata part
+{
+  &quot;provider&quot;: &quot;OpenLDAP&quot;
+}
+</code></pre>
+<p>The next field <code>Data override</code> is merged with extra metadata when a user connects to a <code>private app</code> (Inside Otoroshi, private app is a service secure by any authentication module) or to the UI. The <code>Email field name</code> is configured to match with the <code>mail</code> field from LDAP user data.</p>
+<pre class="prettyprint"><code class="language-json ">{
+  &quot;johnny@otoroshi.tools&quot;: {
+    &quot;stage_name&quot;: &quot;Jean-Philippe Smet&quot;
+  }
+}
+</code></pre>
+<p>If you try to connect to an app with this configuration, the user result profile should be :</p>
+<pre class="prettyprint"><code class="language-json">{
+  ...,
+  &quot;metadata&quot;: {
+    &quot;lastname&quot;: &quot;Hallyday&quot;,
+    &quot;stage_name&quot;: &quot;Jean-Philippe Smet&quot;
+  }
+}
+</code></pre>
+<p>Let&rsquo;s try to increase the Johnny rights with the <code>Additional rights group</code>.</p>
+<p>This field supports the creation of virtual groups. A virtual group is composed of a list of users and a list of rights for each teams/organizations.</p>
+<pre class="prettyprint"><code class="language-json">// increase_johnny_rights is a virtual group which adds full access rights at johnny 
+{
+  &quot;increase_johnny_rights&quot;: {
+    &quot;rights&quot;: [
+      {
+        &quot;tenant&quot;: &quot;*:rw&quot;,
+        &quot;teams&quot;: [
+          &quot;*:rw&quot;
+        ]
+      }
+    ],
+    &quot;users&quot;: [
+      &quot;jhonny@otoroshi.tools&quot;
+    ]
+  }
+}
+</code></pre>
+<p>The last field <code>Rights override</code> is useful when you want erase the rights of an user with only specific rights.</p>
+<p>The rights override field is the last to be applied on the user rights. </p>
+<p>To resume, when Johnny connects to Otoroshi, he receives the rights to read only on the default Organization (from <code>Mapping group filter</code>), then he is promote to administrator role (from <code>Additional rights group</code>) and finally his rights are reset with the last field <code>Rights override</code> to the read rights.</p>
+<pre class="prettyprint"><code class="language-json ">{
+  &quot;jhonny@otoroshi.tools&quot;: [
+    {
+      &quot;tenant&quot;: &quot;*:r&quot;,
+      &quot;teams&quot;: [
+        &quot;*:r&quot;
+      ]
+    }
+  ]
+}
+</code></pre>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../how-to-s/secure-with-apikey.html">Secure an api with api keys</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../how-to-s/secure-app-with-ldap.html#secure-an-app-and-or-your-otoroshi-ui-with-ldap" class="header">Secure an app and/or your Otoroshi UI with LDAP</a>
+  <ul>
+    <li><a href="../how-to-s/secure-app-with-ldap.html#cover-by-this-tutorial" class="header">Cover by this tutorial</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html#download-otoroshi" class="header">Download Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html#create-an-authentication-configuration" class="header">Create an Authentication configuration</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html#connect-to-otoroshi-with-ldap-authentication" class="header">Connect to Otoroshi with LDAP authentication</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html#testing-your-configuration" class="header">Testing your configuration</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2021</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
