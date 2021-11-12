@@ -1,6 +1,7 @@
 # Secure an api with api keys
 
 ### Cover by this tutorial
+- [Before you start](#before-you-start)
 - [About the downstream example service](#about-the-downstream-example-service)
 - [Create a simple service](#create-a-simple-service)
 - [Secure routes with api key](#secure-an-api-with-apikey)
@@ -12,7 +13,7 @@
 TODO - schema
 @@@
 
-### Download Otoroshi
+### Before you start
 
 Let's start by downloading the latest Otoroshi
 ```sh

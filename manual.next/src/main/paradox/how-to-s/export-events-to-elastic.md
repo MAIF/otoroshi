@@ -15,11 +15,21 @@ TODO - schema
 
 ### Before you start
 
-Let's start by run Otoroshi (@ref:[instructions are available here](./secure-with-apikey.md#download-otoroshi))
+Let's start by downloading the latest Otoroshi
+```sh
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
+```
+
+By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
+
+Run Otoroshi
+```sh
+java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
+```
 
 Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
 
-Then create a simple service (@ref:[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
+Then create a simple service (@ref[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
 
 ### Deploy a Elasticsearch and kibana stack on Docker
 

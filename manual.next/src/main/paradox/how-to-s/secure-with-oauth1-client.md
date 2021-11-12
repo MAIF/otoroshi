@@ -24,13 +24,10 @@ By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
 Run Otoroshi
 ```sh
 java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
-```
-
-### Before you start
 
 Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
 
-Then create a simple service (@ref:[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
+Then create a simple service (@ref[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
 
 ### Running an simple OAuth 1 server
 

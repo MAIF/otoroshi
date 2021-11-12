@@ -1,7 +1,7 @@
 # Secure an app with Keycloak
 
 ### Cover by this tutorial
-- [Requisites](#requisites)
+- [Before you start](#before-you-start)
 - [Running a keycloak instance with docker](#running-a-keycloak-instance-with-docker)
 - [Create a Keycloak provider module](#create-a-keycloak-provider-module)
 - [Connect to Otoroshi with Keycloak authentication](#connect-to-otoroshi-with-keycloak-authentication)
@@ -12,6 +12,17 @@
 TODO - schema
 @@@
 
+<<<<<<< HEAD
+### Before you start
+
+Let's start by downloading the latest Otoroshi
+```sh
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
+```
+
+By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
+
+=======
 ### Download Otoroshi
 
 Let's start by downloading the latest Otoroshi
@@ -21,16 +32,24 @@ curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5
 
 By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
 
+>>>>>>> master
 Run Otoroshi
 ```sh
 java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
 ```
+<<<<<<< HEAD
+
+Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
+
+Then create a simple service (@ref[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
+=======
 
 ### Requisites
 
 Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
 
 Then create a simple service (@ref:[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
+>>>>>>> master
 
 ### Running a keycloak instance with docker
 

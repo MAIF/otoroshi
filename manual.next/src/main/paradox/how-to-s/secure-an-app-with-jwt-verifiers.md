@@ -26,11 +26,9 @@ Run Otoroshi
 java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
 ```
 
-### Before you start
-
 Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
 
-Then create a simple service (@ref:[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
+Then create a simple service (@ref[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
 
 ### Your first jwt verifier : a verifier of tokens
 
@@ -124,7 +122,11 @@ Let's start by extending the previous verifier (*http://otoroshi.oto.tools:9999/
 5. Set `Internal-Authorization` as `Header name`
 6. Set `key` on first field of `Rename token fields` and `from-otoroshi-verifier` on second field
 7. Set `generated-key` and `generated-value` as `Set token fields`
+<<<<<<< HEAD
+8. Add `generated_at` and `${date}` a second field in `Set token fields` (some Otoroshi inputs supports an @ref[expression language](../topics/expression-language.md))
+=======
 8. Add `generated_at` and `${date}` a second field in `Set token fields` (some Otoroshi inputs supports an @ref:[expression language](../topics/expression-language.md))
+>>>>>>> master
 9. Save your verifier and try to call your service again.
 
 This should output a json with `authorization` in headers field and our generate token in `Internal-Authorization`.
