@@ -24,6 +24,8 @@ object JWKSHelper {
         val ids          = apikeys.map(_.metadata.get("jwt-sign-keypair")).collect { case Some(value) => value } ++ certIds
         val exposedCerts = certs
           .filter(c => (c.exposed || ids.contains(c.id)) && c.notRevoked && c.notExpired)
+					.filterNot(_.chain.trim.isEmpty)
+					.filterNot(_.privateKey.trim.isEmpty)
           .map(c => (c.id, c.cryptoKeyPair.getPublic))
           .flatMap {
             case (id, pub: RSAPublicKey) => new RSAKey.Builder(pub).keyID(id).build().toJSONString.parseJson.some
