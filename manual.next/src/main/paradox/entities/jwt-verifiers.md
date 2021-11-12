@@ -5,6 +5,8 @@ Sometimes, it can be pretty useful to verify Jwt tokens coming from other provid
 * `Name`: name of the JWT verifier
 * `Description`: a simple description
 * `Strict`: if not strict, request without JWT token will be allowed to pass. This option is helpful when you want to force the presence of tokens in each request on a specific service 
+* `Tags`: list of tags associated to the module
+* `Metadata`: list of metadata associated to the module
 
 Each JWT verifier is configurable in three steps : the `location` where find the token in incoming requests, the `validation` step to check the signature and the presence of claims in tokens, and the last step, named `Strategy`.
 
@@ -77,3 +79,55 @@ According to the selected algorithm, the validation form will change.
 * `Trust all`: allows any server certificates even the self-signed ones
 * `Client certificates`: list of client certificates used to communicate with JWKS server
 * `Trusted certificates`: list of trusted certificates received from JWKS server
+
+*Proxy*
+
+* `Proxy host`: host of proxy behind the identify provider
+* `Proxy port`: port of proxy behind the identify provider
+* `Proxy principal`: user of proxy 
+* `Proxy password`: password of proxy
+
+## Strategy
+
+The first step is to select the verifier strategy. Otoroshi supports 4 types of JWT verifiers : 
+* `Default JWT token` will add a token if no present. 
+* `Verify JWT token` will only verifiy token signing and fields values if provided. 
+* `Verify and re-sign JWT token` will verify the token and will re-sign the JWT token with the provided algo. settings. 
+* `Verify, re-sign and transform JWT token` will verify the token, re-sign and will be able to transform the token.
+
+All verifiers has the following properties: 
+
+* `Verify token fields`: when the JWT token is checked, each field specified here will be verified with the provided value
+* `Verify token array value`: when the JWT token is checked, each field specified here will be verified if the provided value is contained in the array
+
+
+#### Default JWT token
+
+* `Strict`: if token is already present, the call will fail
+* `Default value`: list of claims of the generated token. These fields support raw values or language expressions. See the documentation on the expression language 
+@@@ warning
+TODO - set the link to the expression language documentation)
+@@@
+
+#### Verify JWT token
+
+No specific values needed. This kind of verifier needs only the two fields `Verify token fields` and `Verify token array value`.
+
+#### Verify and re-sign JWT token
+
+When `Verify and re-sign JWT token` is chosen, the `Re-sign settings` appear. All fields of `Re-sign settings` are the same of the `Token validation` section. The only difference is that the values are used to sign the new token and not to validate the token.
+
+
+#### Verify, re-sign and transform JWT token
+
+When `Verify, re-sign and transform JWT token` is chosen, the `Re-sign settings` and `Transformation settings` appear.
+
+The `Re-sign settings` are used to sign the new token and has the same fields than the `Token validation` section.
+
+For the `Transformation settings` section, the fields are:
+* `Token location`:
+* `Header name`:
+* `Prepend value`:
+* `Rename token fields`:
+* `Set token fields`:
+* `Remove token fields`:

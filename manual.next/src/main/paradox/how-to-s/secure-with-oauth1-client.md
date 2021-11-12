@@ -12,17 +12,29 @@
 TODO - schema
 @@@
 
-### Before you start
+### Download Otoroshi
 
-Let's start by run Otoroshi ([instructions are available here](./secure-with-apikey.md#download-otoroshi))
+Let's start by downloading the latest Otoroshi
+```sh
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
+```
+
+By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
+
+Run Otoroshi
+```sh
+java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
+```
+
+### Before you start
 
 Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
 
-Then create a simple service ([instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
+Then create a simple service (@ref:[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
 
 ### Running an simple OAuth 1 server
 
-In this tutorial, we'll instanciate a oauth 1 server with docker. If you alredy have the necessary, skip this section [to](#create-an-oauth-1-provider-module).
+In this tutorial, we'll instanciate a oauth 1 server with docker. If you alredy have the necessary, skip this section @ref:[to](#create-an-oauth-1-provider-module).
 
 Let's start by running the server
 ```sh

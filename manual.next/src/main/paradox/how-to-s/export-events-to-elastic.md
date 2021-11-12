@@ -15,11 +15,11 @@ TODO - schema
 
 ### Before you start
 
-Let's start by run Otoroshi ([instructions are available here](./secure-with-apikey.md#download-otoroshi))
+Let's start by run Otoroshi (@ref:[instructions are available here](./secure-with-apikey.md#download-otoroshi))
 
 Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
 
-Then create a simple service ([instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
+Then create a simple service (@ref:[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
 
 ### Deploy a Elasticsearch and kibana stack on Docker
 
