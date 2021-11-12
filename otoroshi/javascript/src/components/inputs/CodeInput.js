@@ -49,9 +49,10 @@ export default class CodeInput extends Component {
   };
 
   onChange = (e) => {
-    if (e && e.preventDefault) e.preventDefault();
+    // if (e && e.preventDefault) e.preventDefault();
+    let clean_source = e
     if (this.props.mode === 'json') {
-      const clean_source = e.replace('}{}', '}');
+      clean_source = e.replace('}{}', '}');
       try {
         const parsed = JSON.parse(clean_source);
         this.setState({ value: clean_source }, () => {
