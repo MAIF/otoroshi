@@ -12,7 +12,7 @@
 TODO - schema
 @@@
 
-### Before you start
+### Download Otoroshi
 
 Let's start by downloading the latest Otoroshi
 ```sh
@@ -31,7 +31,7 @@ Then create a simple service (@ref[instructions are available here](./secure-wit
 
 ### Running an simple OAuth 1 server
 
-In this tutorial, we'll instanciate a oauth 1 server with docker. If you alredy have the necessary, skip this section [to](#create-an-oauth-1-provider-module).
+In this tutorial, we'll instanciate a oauth 1 server with docker. If you alredy have the necessary, skip this section @ref:[to](#create-an-oauth-1-provider-module).
 
 Let's start by running the server
 ```sh

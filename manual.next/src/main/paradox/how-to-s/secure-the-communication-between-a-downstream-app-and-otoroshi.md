@@ -47,7 +47,7 @@ Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/passw
 
 We need of a simple service which handle the exchange protocol. For this tutorial, we'll use the following application, developed in NodeJS, which supports both versions of the exchange protocol.
 
-Clone this [repository](https://github.com/MAIF/otoroshi/blob/master/demos/challenge)) and run the installation of the dependencies.
+Clone this @link:[repository](https://github.com/MAIF/otoroshi/blob/master/demos/challenge)) and run the installation of the dependencies.
 
 ```sh
 git clone https://github.com/MAIF/otoroshi/blob/master/demos/challenge

@@ -12,7 +12,7 @@
 TODO - schema
 @@@
 
-### Before you start
+### Download Otoroshi
 
 Let's start by downloading the latest Otoroshi
 ```sh

@@ -12,7 +12,7 @@ A Jwt verifier is the guard which check the signature of tokens present in incom
 TODO - schema
 @@@
 
-### Before you start
+### Download Otoroshi
 
 Let's start by downloading the latest Otoroshi
 ```sh
@@ -122,7 +122,11 @@ Let's start by extending the previous verifier (*http://otoroshi.oto.tools:9999/
 5. Set `Internal-Authorization` as `Header name`
 6. Set `key` on first field of `Rename token fields` and `from-otoroshi-verifier` on second field
 7. Set `generated-key` and `generated-value` as `Set token fields`
+<<<<<<< HEAD
 8. Add `generated_at` and `${date}` a second field in `Set token fields` (some Otoroshi inputs supports an @ref[expression language](../topics/expression-language.md))
+=======
+8. Add `generated_at` and `${date}` a second field in `Set token fields` (some Otoroshi inputs supports an @ref:[expression language](../topics/expression-language.md))
+>>>>>>> master
 9. Save your verifier and try to call your service again.
 
 This should output a json with `authorization` in headers field and our generate token in `Internal-Authorization`.
