@@ -966,3 +966,11 @@ p {
   justify-content: center;
   align-items: center;
 }
+
+.hidden {
+  display: none !important;
+}
+
+.plugin-hidden {
+  display: none !important;
+}

@@ -111,16 +111,21 @@ class PluginDocumentationGenerator(docPath: String) {
   }
 
   def makePluginContent(plugin: NamedPlugin): String = {
+
+    val desc = {
+      val dc = plugin.description.getOrElse("").trim
+      if (dc.contains("```") && !dc.contains("//")) {
+        dc
+          .split("```")(0)
+          .replace("This plugin can accept the following configuration", "")
+          .replace("The plugin accepts the following configuration", "")
+          .trim
+      } else {
+        dc
+      }
+    }
     val description = plugin.description
       .map { dc =>
-        var desc = dc.trim
-        if (desc.contains("```") && !desc.contains("//")) {
-          desc = desc
-            .split("```")(0)
-            .replace("This plugin can accept the following configuration", "")
-            .replace("The plugin accepts the following configuration", "")
-            .trim
-        }
         s"""## Description
          |
          |${desc}
@@ -151,8 +156,38 @@ class PluginDocumentationGenerator(docPath: String) {
       }
       .getOrElse("")
 
+    val pluginClazz = "plugin-kind-" + (plugin.pluginType match {
+      case PluginType.AppType => PluginType.TransformerType.name
+      case _ => plugin.pluginType.name
+      // case PluginType.TransformerType => pl.pluginType.name
+      // case PluginType.AccessValidatorType => pl.pluginType.name
+      // case PluginType.PreRoutingType => pl.pluginType.name
+      // case PluginType.RequestSinkType => pl.pluginType.name
+      // case PluginType.EventListenerType => pl.pluginType.name
+      // case PluginType.JobType => pl.pluginType.name
+      // case PluginType.DataExporterType => pl.pluginType.name
+      // case PluginType.RequestHandlerType => pl.pluginType.name
+      // case PluginType.CompositeType => pl.pluginType.name
+    })
+    val pluginLogo = plugin.pluginType match {
+      case PluginType.AppType => ""
+      case PluginType.TransformerType => ""
+      case PluginType.AccessValidatorType => ""
+      case PluginType.PreRoutingType => ""
+      case PluginType.RequestSinkType => ""
+      case PluginType.EventListenerType => ""
+      case PluginType.JobType => ""
+      case PluginType.DataExporterType => ""
+      case PluginType.RequestHandlerType => ""
+      case PluginType.CompositeType => ""
+    }
+
     s"""
+         |@@@ div { .plugin .plugin-hidden .${pluginClazz} }
+         |
          |# ${plugin.name}
+         |
+         |<img class="plugin-logo plugin-hidden" src="${pluginLogo}"></img>
          |
          |## Infos
          |
@@ -164,6 +199,8 @@ class PluginDocumentationGenerator(docPath: String) {
          |$defaultConfig
          |
          |$documentation
+         |
+         |@@@
          |""".stripMargin
   }
 

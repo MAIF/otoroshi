@@ -3,7 +3,11 @@
 Otoroshi provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration
 
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+
 ## Access log (CLF)
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -52,8 +56,14 @@ The plugin accepts the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Access log (JSON)
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -98,8 +108,14 @@ The plugin accepts the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Kafka access log
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -146,8 +162,14 @@ The plugin accepts the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Basic Auth. caller
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -184,8 +206,14 @@ This plugin accepts the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## OAuth2 caller
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -243,8 +271,14 @@ This plugin accepts the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Response Cache
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -308,8 +342,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Client certificate header
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -376,8 +416,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Defer Responses
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -415,8 +461,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Self registration endpoints (service discovery)
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -447,8 +499,14 @@ This plugin accepts the following configuration:
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Envoy Control Plane (experimental)
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -477,8 +535,14 @@ Right now, all the features of otoroshi cannot be exposed as is through Envoy.
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Geolocation endpoint
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -497,8 +561,14 @@ This plugin will expose current geolocation informations on the following endpoi
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Geolocation header
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -535,8 +605,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## HMAC caller plugin
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -565,8 +641,14 @@ This plugin can be used to call a "protected" api by an HMAC signature. It will 
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Izanami Canary Campaign
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -627,8 +709,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Izanami APIs Proxy
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -685,8 +773,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Html Patcher
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -714,8 +808,14 @@ This plugin can inject elements in html pages (in the body or in the head) retur
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Body logger
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -785,8 +885,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Prometheus Service Metrics
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -823,8 +929,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Service Metrics
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -864,8 +976,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Mirroring plugin
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -906,8 +1024,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## OAuth1 caller
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -936,8 +1060,14 @@ This plugin can be used to call api that are authenticated using OAuth1.
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## OIDC headers
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -979,8 +1109,14 @@ This plugin injects headers containing tokens and profile from current OIDC prov
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Security Txt
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1027,8 +1163,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Static Response
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1060,8 +1202,14 @@ This plugin returns a static response for any request
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## User-Agent endpoint
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1080,8 +1228,14 @@ This plugin will expose current user-agent informations on the following endpoin
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## User-Agent header
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1118,8 +1272,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
 ## Workflow endpoint
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1146,8 +1306,14 @@ This plugin runs a workflow and return the response
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
 
 ## Biscuit token validator
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1184,8 +1350,14 @@ This plugin validates a Biscuit token.
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
 
 ## Client Certificate + Api Key only
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1203,8 +1375,14 @@ You can set the client cert. DN in an apikey metadata named `allowed-client-cert
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
 
 ## Client certificate matching (over http)
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1267,8 +1445,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
 
 ## Client certificate matching
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1313,8 +1497,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
 
 ## Client Certificate Only
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1331,8 +1521,14 @@ Check if a client certificate is present in the request
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
 
 ## External Http Validator
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1409,8 +1605,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
 
 ## HMAC access validator
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1474,8 +1676,14 @@ This plugin can be used to check if a HMAC signature is present and valid in Aut
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
 
 ## OIDC access_token validator
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1552,8 +1760,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
 
 ## Instance quotas
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1606,8 +1820,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
 
 ## Public quotas
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1640,8 +1860,14 @@ This plugin will enforce public quotas on the current service
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
 
 ## Allowed users only
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1690,8 +1916,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
 
 ## Apikey auth module
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1727,8 +1959,14 @@ This plugin adds basic auth on service where credentials are valid apikeys on th
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
 
 ## Client certificate as apikey
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1762,8 +2000,14 @@ This plugin uses client certificate as an apikey. The apikey will be stored for 
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
 
 ## Client Credential Flow ApiKey extractor
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1780,8 +2024,14 @@ This plugin can extract an apikey from an opaque access_token generate by the `C
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
 
 ## Apikey from Biscuit token extractor
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1819,8 +2069,14 @@ apikey client_id and an #authority fact 'client_sign' that is the HMAC256 signat
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
 
 ## Service discovery target selector (service discovery)
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1853,8 +2109,14 @@ This plugin accepts the following configuration:
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
 
 ## Geolocation details extractor (using IpStack api)
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1896,8 +2158,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
 
 ## Geolocation details extractor (using Maxmind db)
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1937,8 +2205,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
 
 ## Jwt user extractor
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -1969,8 +2243,14 @@ This plugin extract a user from a JWT token
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
 
 ## OIDC access_token as apikey
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -2046,8 +2326,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
 
 ## User-Agent details extractor
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -2085,8 +2371,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-sink }
 
 ## Client Credential Service
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -2127,8 +2419,14 @@ This plugin add an an oauth client credentials service (`https://unhandleddomain
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-sink }
 
 ## Global self registration endpoints (service discovery)
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -2159,8 +2457,14 @@ This plugin accepts the following configuration:
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-sink }
 
 ## Kubernetes admission validator webhook
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -2177,8 +2481,14 @@ This plugin exposes a webhook to kubernetes to handle manifests validation
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-sink }
 
 ## Kubernetes sidecar injector webhook
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -2195,8 +2505,14 @@ This plugin exposes a webhook to kubernetes to inject otoroshi-sidecar in pods
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-sink }
 
 ## Prometheus Endpoint
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -2238,8 +2554,14 @@ This plugin can accept the following configuration
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-job }
 
 ## Kubernetes Ingress Controller
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -2384,8 +2706,14 @@ This plugin enables Otoroshi as an Ingress Controller
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-job }
 
 ## Kubernetes Otoroshi CRDs Controller
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -2530,8 +2858,14 @@ This plugin enables Otoroshi CRDs Controller
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-job }
 
 ## Kubernetes to Otoroshi certs. synchronizer
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -2676,8 +3010,14 @@ This plugin syncs. TLS secrets from Kubernetes to Otoroshi
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-job }
 
 ## Otoroshi certs. to Kubernetes secrets synchronizer
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -2822,8 +3162,14 @@ This plugin syncs. Otoroshi certs to Kubernetes TLS secrets
 
 
 
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-job }
 
 ## Workflow job
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ### Infos
 
@@ -2885,6 +3231,8 @@ Periodically run a custom workflow
 
 
 
+
+@@@
 
 
 
