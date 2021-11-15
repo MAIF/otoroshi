@@ -44,7 +44,7 @@ env:
   domain: "oto.tools"
   clientId: "admin-api-apikey-id"
   clientSecret: "admin-api-apikey-secret"
-  secret: "secret"
+  secret: "verysecretvaluethatyoumustoverwrite"
   redisURL: "redis://otorosi-redis-master:6379"
 
 resources:
