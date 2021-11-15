@@ -2,6 +2,131 @@
 
 Otoroshi provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration
 
+<script type="text/javascript">
+  document.addEventListener("DOMContentLoaded", function(){
+    const pluginNames = [
+      "transformer",
+      "validator",
+      "preroute",
+      "sink",
+      "job",
+      "listener",
+      "exporter",
+      "request-handler",
+      "composite"
+    ];
+
+    const plugins = [...document.getElementsByClassName("plugin")]
+    plugins.forEach((plugin, i) => {
+        [...plugin.children].slice(4).forEach(child => child.classList.add("plugin-hidden"))
+
+        const title = [...plugin.children][0];
+        [...title.getElementsByTagName("a")]
+          .forEach(link => link.remove())
+
+        pluginNames.forEach(name => {
+          if(plugin.classList.contains(`plugin-kind-${name}`)) {
+            const badge = document.createElement("span")
+            badge.classList.add("plugin-badge");
+            badge.textContent = name;
+            plugin.appendChild(badge);
+          }
+        });
+
+        plugin.classList.remove("plugin-hidden");
+
+        plugin.addEventListener("click", e => {          
+          const children = e.target.children;
+
+          for(let j=0; j<plugins.length; j++) {
+            if(i !== j && !plugins[j].children[4].classList.contains("plugin-hidden")) {
+              [...plugins[j].children].slice(4, -1).forEach(child => child.classList.add("plugin-hidden"))
+              plugins[j].classList.remove("plugin-open")
+            }
+          }
+
+          if(children.length >= 4) {
+            if(e.target.children[4].classList.contains("plugin-hidden")) {
+              [...plugin.children].slice(4).forEach(child => child.classList.remove("plugin-hidden"))
+              plugin.classList.add("plugin-open")
+              plugin.scrollIntoView({ behavior: 'smooth'})
+            }
+            else {
+              [...plugin.children].slice(4, -1).forEach(child => child.classList.add("plugin-hidden"))
+              plugin.classList.remove("plugin-open")
+            }
+          }
+
+        });
+    });
+
+    [...document.getElementsByClassName("nav-next")].forEach(nav => {
+      nav.style.width = '100%'
+      nav.style.float = 'left'
+    })
+  });
+</script>
+
+<style>
+.plugin {
+    background-color: #fff !important;
+    box-shadow: 0 1px 3px rgb(25 25 25 / 30%);
+    padding: 24px;
+    border-radius: 4px;
+    max-width: calc(33% - 36px);
+    min-width: calc(33% - 36px);
+    margin: 0 24px 24px 0;
+    min-height: 360px;
+    max-height: 360px;
+    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+    float: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+.plugin:hover {
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(12,12,12,.5);
+}
+
+.plugin-badge {
+    background: #95a5a6;
+    padding: 4px 0 4px;
+    font-size: 10px;
+    border-radius: 4px;
+    color: #fff;
+    margin-top: auto;
+    margin-left: auto;
+    width: 88px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.plugin-open {
+  max-width: calc(100% - 72px);
+  min-width: calc(100% - 72px);
+  min-height: 100%;
+  max-height: 100%;
+  overflow: scroll;
+}
+
+.plugin pre {
+  /* padding: 1rem !important; */
+  border: 1px solid #dddddd !important;
+  /* margin: 0 0 1rem 0 !important; */
+  white-space: pre-wrap;
+  /* overflow: auto; */
+  line-height: 0.9em !important;
+}
+
+.plugin h2 {
+  font-size: 1.6em;
+}
+</style>
 
 @@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
