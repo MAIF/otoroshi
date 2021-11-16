@@ -4,6 +4,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: otoroshi-admission-webhook-validation
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/managed-by: "Helm"
     meta.helm.sh/release-namespace: {{ .Release.Namespace }}
@@ -42,6 +43,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   name: otoroshi-admission-webhook-injector
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/managed-by: "Helm"
     meta.helm.sh/release-namespace: {{ .Release.Namespace }}

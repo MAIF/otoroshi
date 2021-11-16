@@ -44,13 +44,13 @@ env:
   domain: "oto.tools"
   clientId: "admin-api-apikey-id"
   clientSecret: "admin-api-apikey-secret"
-  secret: "secret"
+  secret: "secret-secret-secret-secret-secret"
   redisURL: "redis://otorosi-redis-master:6379"
 
 resources:
   requests:
     cpu: "2"
-    memory: "1Gi"
+    memory: "2Gi"
   limits:
     cpu: "4"
     memory: "4Gi"
@@ -94,6 +94,10 @@ redis:
   cluster:
     enabled: false
   usePassword: false
+  sentinel:
+    usePassword: false
+  auth:
+    enabled: false
 
 webhooks:
   validation: true

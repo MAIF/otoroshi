@@ -4,6 +4,7 @@ apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
   name: {{ .Values.deployment.name }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ template "otoroshi.name" . }}
     helm.sh/chart: {{ template "otoroshi.chart" . }}
