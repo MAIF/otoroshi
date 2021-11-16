@@ -3,14 +3,14 @@ entries:
   otoroshi:
   - apiVersion: v3
     appVersion: 1.5.0-dev
-    created: "2021-11-16T14:27:06.09715+01:00"
+    created: "2021-11-16T14:49:39.617445+01:00"
     dependencies:
     - condition: global.prod
       name: redis
       repository: https://charts.bitnami.com/bitnami
       version: 15.0.0
     description: An Otoroshi based Kubernetes ingress controller
-    digest: 4a5029ee92ae88e4246af1801a6e51433f81a4996a8c4f6e05a47973844f4b95
+    digest: e3b2bfcb007ec6dbc84088084c805374f515a95082721d672afe66c2b60cbf2a
     icon: https://raw.githubusercontent.com/MAIF/otoroshi/master/resources/otoroshi-logo.png
     keywords:
     - otoroshi
@@ -26,4 +26,4 @@ entries:
     urls:
     - https://maif.github.io/otoroshi/helm/otoroshi-1.0.0.tgz
     version: 1.0.0
-generated: "2021-11-16T14:27:06.090918+01:00"
+generated: "2021-11-16T14:49:39.610225+01:00"
