@@ -1,0 +1,85 @@
+.plugin {
+    background-color: #fff !important;
+    box-shadow: 0 1px 3px rgb(25 25 25 / 30%);
+    padding: 24px;
+    border-radius: 4px;
+    max-width: calc(33% - 36px);
+    min-width: calc(33% - 36px);
+    margin: 0 24px 24px 0;
+    min-height: 360px;
+    max-height: 360px;
+    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+    float: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+.plugin:hover {
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(12,12,12,.5);
+}
+
+.plugin-badge {
+    background: #95a5a6;
+    padding: 4px 0 4px;
+    font-size: 10px;
+    border-radius: 4px;
+    color: #fff;
+    margin-top: auto;
+    margin-left: auto;
+    width: 88px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.plugin-open {
+  max-width: calc(100% - 72px);
+  min-width: calc(100% - 72px);
+  min-height: 100%;
+  max-height: 100%;
+  overflow: scroll;
+}
+
+.plugin pre {
+  /* padding: 1rem !important; */
+  border: 1px solid #dddddd !important;
+  /* margin: 0 0 1rem 0 !important; */
+  white-space: pre-wrap;
+  /* overflow: auto; */
+  line-height: 0.9em !important;
+}
+
+.plugin h2 {
+  font-size: 1.6em;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.filter {
+  padding: 8px;
+  background-color: #eee;
+  margin-right: 4px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  min-width: 100px;
+}
+
+.filter-selected {
+  background-color: #fb9000;
+  color: #fff;
+}
+
+
+.plugin-hidden,
+.filtered {
+  display: none;
+}

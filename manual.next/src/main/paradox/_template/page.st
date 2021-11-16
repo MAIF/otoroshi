@@ -11,9 +11,11 @@
 <script type="text/javascript" src="$page.base$js/page.js"></script>
 <script type="text/javascript" src="$page.base$js/cc.js"></script>
 <script type="text/javascript" src="$page.base$js/groups.js"></script>
+<script type="text/javascript" src="$page.base$js/plugins.js"></script>
 <link rel="stylesheet" type="text/css" href="$page.base$lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="$page.base$lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="$page.base$css/page.css"/>
+<link rel="stylesheet" type="text/css" href="$page.base$css/plugins.css"/>
 
 <!--
 <link rel="shortcut icon" href="$page.base$images/favicon.ico" />
