@@ -11,7 +11,7 @@ In this tutorial, we will admit that you already have a mailgun account with an 
 
 Let's create an exporter. The exporter will export by default all events generate by Otoroshi.
 
-1. Go ahead, and navigate to http://otoroshi.oto.tools:9999
+1. Go ahead, and navigate to http://otoroshi.oto.tools:8080
 2. Click on the cog icon on the top right
 3. Then `Exporters` button
 4. And add a new configuration when clicking on the `Add item` button

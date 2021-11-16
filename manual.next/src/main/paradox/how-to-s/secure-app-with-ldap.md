@@ -27,7 +27,7 @@ By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
 
 Run Otoroshi
 ```sh
-java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
+java -Dapp.adminPassword=password -jar otoroshi.jar 
 ```
 
 #### Running an simple OpenLDAP server 
@@ -134,7 +134,7 @@ ldapadd -x -w otoroshi -D "cn=admin,dc=otoroshi,dc=tools" -f bootstrap.ldif -v
 
 ### Create an Authentication configuration
 
-1. Go ahead, and navigate to http://otoroshi.oto.tools:9999
+1. Go ahead, and navigate to http://otoroshi.oto.tools:8080
 1. Click on the cog icon on the top right
 1. Then `Authentication configs` button
 1. And add a new configuration when clicking on the `Add item` button
@@ -186,10 +186,10 @@ To secure Otoroshi with your LDAP configuration, we have to register an Authenti
 ### Testing your configuration
 
 1. Disconnect from your instance
-1. Then click on the *Login using third-party* button (or navigate to *http://otoroshi.oto.tools:9999/backoffice/auth0/login*)
+1. Then click on the *Login using third-party* button (or navigate to *http://otoroshi.oto.tools:8080/backoffice/auth0/login*)
 1. Set `johnny/password` or `einstein/password` as credentials
 
-> A fallback solution is always available, by going to *http://otoroshi.oto.tools:9999/bo/simple/login*, for administrators in case your LDAP is not available
+> A fallback solution is always available, by going to *http://otoroshi.oto.tools:8080/bo/simple/login*, for administrators in case your LDAP is not available
 
 
 #### Secure an app with LDAP authentication

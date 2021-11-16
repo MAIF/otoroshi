@@ -151,7 +151,7 @@ The content of the initial datastore.
       },
       "targets": [
         {
-          "host": "127.0.0.1:9999",
+          "host": "127.0.0.1:8080",
           "scheme": "http",
           "weight": 1,
           "mtlsConfig": {
@@ -173,7 +173,7 @@ The content of the initial datastore.
       "root": "/",
       "matchingRoot": null,
       "stripPath": true,
-      "localHost": "127.0.0.1:9999",
+      "localHost": "127.0.0.1:8080",
       "localScheme": "http",
       "redirectToLocal": false,
       "enabled": true,
@@ -439,8 +439,6 @@ Run an Otoroshi with the previous file as parameter.
 ```sh
 java \
 -Dapp.adminPassword=password \
--Dhttp.port=9999 \
--Dhttps.port=9998 \
 -Dapp.importFrom=./initial-state.json \
 -jar otoroshi.jar 
 ```
@@ -452,8 +450,7 @@ This should display
 [info] otoroshi-env - Importing from: ./initial-state.json
 [info] otoroshi-env - Successful import !
 ...
-[info] p.c.s.AkkaHttpServer - Listening for HTTP on /0:0:0:0:0:0:0:0:9999
-[info] p.c.s.AkkaHttpServer - Listening for HTTPS on /0:0:0:0:0:0:0:0:9998
+[info] p.c.s.AkkaHttpServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
 ...
 ```
 
@@ -461,13 +458,13 @@ This should display
 
 ### Export the current datastore via the danger zone
 
-When Otoroshi is running, you can backup the global configuration store from the UI. Navigate to your instance (in our case *http://otoroshi.oto.tools:9999/bo/dashboard/dangerzone*) and scroll to the bottom page. 
+When Otoroshi is running, you can backup the global configuration store from the UI. Navigate to your instance (in our case *http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone*) and scroll to the bottom page. 
 
 Click on `Full export` button to download the full global configuration.
 
 ### Import a datastore from file via the danger zone
 
-When Otoroshi is running, you can recover a global configuration from the UI. Navigate to your instance (in our case *http://otoroshi.oto.tools:9999/bo/dashboard/dangerzone*) and scroll to the bottom page. 
+When Otoroshi is running, you can recover a global configuration from the UI. Navigate to your instance (in our case *http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone*) and scroll to the bottom page. 
 
 Click on `Recover from a full export file` button to apply all configurations from a file.
 
@@ -484,7 +481,7 @@ Run the next command with these values.
 ```sh
 curl \
 -H 'Content-Type: application/json' \
-http://otoroshi-api.oto.tools:9999/api/otoroshi.json \
+http://otoroshi-api.oto.tools:8080/api/otoroshi.json \
 -u admin-api-apikey-id:admin-api-apikey-secret 
 ```
 
@@ -731,7 +728,7 @@ curl \
       "type" : "RoundRobin"
     },
     "targets" : [ {
-      "host" : "127.0.0.1:9999",
+      "host" : "127.0.0.1:8080",
       "scheme" : "http",
       "weight" : 1,
       "mtlsConfig" : {
@@ -752,7 +749,7 @@ curl \
     "root" : "/",
     "matchingRoot" : null,
     "stripPath" : true,
-    "localHost" : "127.0.0.1:9999",
+    "localHost" : "127.0.0.1:8080",
     "localScheme" : "http",
     "redirectToLocal" : false,
     "enabled" : true,
@@ -997,7 +994,7 @@ curl \
     "tags" : [ ]
   } ]
 }' \
-http://otoroshi-api.oto.tools:9999/api/otoroshi.json \
+http://otoroshi-api.oto.tools:8080/api/otoroshi.json \
 -u admin-api-apikey-id:admin-api-apikey-secret 
 ```
 
@@ -1015,7 +1012,7 @@ The second way is to send the same configuration but from a file. You can pass t
 # the curl is run from a folder containing the initial-state.json file 
 curl -X POST \
 -H "X-Content-Type: application/json" \
--d @./initial-state.json http://otoroshi-api.oto.tools:9999/api/otoroshi.json \
+-d @./initial-state.json http://otoroshi-api.oto.tools:8080/api/otoroshi.json \
 -u admin-api-apikey-id:admin-api-apikey-secret
 ```
 

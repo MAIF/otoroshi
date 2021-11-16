@@ -4,7 +4,7 @@ Otoroshi makes it easy for your app to implement the Client Credentials Flow. Fo
 
 ## Deployed the Client Credential Service
 
-The Client Credential Service must be enabled as a global plugin on your instance. To achieve that, navigate to your otoroshi instance (in our case `http://otoroshi.oto.tools:9999`) on the danger zone (use the cog on the right top of the page).
+The Client Credential Service must be enabled as a global plugin on your instance. To achieve that, navigate to your otoroshi instance (in our case `http://otoroshi.oto.tools:8080`) on the danger zone (use the cog on the right top of the page).
 
 To enable a plugin in global on Otoroshi, you must add it in the `Global Plugins` section.
 
@@ -39,7 +39,7 @@ Now that the plugin is running, third routes are exposed on each matching domain
 Once the global configuration saved, we can deployed a simple service to test it.
 
 Let's navigate to the services page, and create a new service with : 
-1. `http://foo.oto.tools:9999` as `Exposed domain` in `Service exposition settings` section
+1. `http://foo.oto.tools:8080` as `Exposed domain` in `Service exposition settings` section
 2. `https://mirror.otoroshi.io` as `Target 1` in `Service targets` section
 3. `/.*` as `Private patterns` in `URL Patterns` section (and remove all public patterns)
 
@@ -48,7 +48,7 @@ In `Api Keys Constraints`, disabled `From basic auth.`, `Allow client id only us
 Let's make a first call, to check if the jwks are already exposed :
 
 ```sh
-curl http://foo.oto.tools:9999/.well-known/otoroshi/oauth/jwks.json
+curl http://foo.oto.tools:8080/.well-known/otoroshi/oauth/jwks.json
 ```
 
 This should output a list of public keys : 
@@ -69,7 +69,7 @@ This should output a list of public keys :
 Let's make a call on a route of this service. 
 
 ```sh
-curl http://foo.oto.tools:9999/
+curl http://foo.oto.tools:8080/
 ```
 
 This should output the expected error: 
@@ -86,7 +86,7 @@ The first step is to generate an api key. Navigate to the api keys page, and cre
 The next step is to ask a token by calling the exposed route `/.well-known/otoroshi/oauth/jwks.json`. The required fields are the grand type, the client and the client secret corresponding to our generated api key.
 
 ```sh
-curl -X POST http://foo.oto.tools:9999/.well-known/otoroshi/oauth/token \
+curl -X POST http://foo.oto.tools:8080/.well-known/otoroshi/oauth/token \
 -H "Content-Type: application/json" \
 -d '{"grant_type":"client_credentials", "client_id":"my-id", "client_secret":"my-secret"}'
 ```
@@ -104,7 +104,7 @@ The last command should output :
 
 Once generate, we can call our api again : 
 ```sh
-curl http://foo.oto.tools:9999/ \
+curl http://foo.oto.tools:8080/ \
 -H "Authorization: Bearer generated-token-xxxxx"
 ```
 

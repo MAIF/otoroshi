@@ -24,10 +24,10 @@ By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
 
 Run Otoroshi
 ```sh
-java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
+java -Dapp.adminPassword=password -jar otoroshi.jar 
 ```
 
-Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
+Log to Otoroshi at http://otoroshi.oto.tools:8080/ with `admin@otoroshi.io/password`
 
 Then create a simple service (@ref[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
 
@@ -54,7 +54,7 @@ To access Kibana, go to *http://localhost:5601*.
 
 Let's create an exporter. The exporter will export by default all events generate by Otoroshi.
 
-1. Go ahead, and navigate to http://otoroshi.oto.tools:9999
+1. Go ahead, and navigate to http://otoroshi.oto.tools:8080
 2. Click on the cog icon on the top right
 3. Then `Exporters` button
 4. And add a new configuration when clicking on the `Add item` button
@@ -84,7 +84,7 @@ Set the following values :
 | ------------- | ----------------------- |
 | `Cluster URI` | `http://localhost:9200` |
 
-Then click on the `Check connection`. This should ouput the same result as the previous part. Save the global configuration and navigate to *http://otoroshi.oto.tools:9999/bo/dashboard/stats*.
+Then click on the `Check connection`. This should ouput the same result as the previous part. Save the global configuration and navigate to *http://otoroshi.oto.tools:8080/bo/dashboard/stats*.
 
 This should output a list of graphs.
 
