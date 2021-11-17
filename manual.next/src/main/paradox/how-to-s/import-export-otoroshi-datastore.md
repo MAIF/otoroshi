@@ -15,12 +15,6 @@ curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5
 ```
 
 By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
-```sh
-sudo nano /etc/hosts
-
-# Add this line at the bottom of your file
-127.0.0.1	otoroshi.oto.tools privateapps.oto.tools otoroshi-api.oto.tools otoroshi-admin-internal-api.oto.tools localhost
-```
 
 Now you are almost ready to run Otoroshi for the first time, we want run it with an initial data.
 

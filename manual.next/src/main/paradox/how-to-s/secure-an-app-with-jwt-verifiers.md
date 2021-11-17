@@ -14,7 +14,7 @@ TODO - schema
 
 ### Download Otoroshi
 
-<!-- @@snip[init-otoroshi.md](../snippets/init-otoroshi.md)  -->
+@@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
 
 ### Your first jwt verifier : a verifier of tokens
 

@@ -15,20 +15,18 @@ To show and add the default configuration on this plugin, click on the `show con
 When you click on the `show config. panel`, you have the documentation of the plugin and its default configuration.
 
 The client credential plugin has by default 4 parameters : 
-| Field | Description | Default value |
-| ------------- | ----------------------- | --- |
-| `domain` | a regex used to exposed routes on each matching domain | * |
-| `expiration` | duration until the token expire (in ms) | 3600000 |
-| `defaultKeyPair` | a key pair used to sign the jwt token. By default, Otoroshi is deployed with an otoroshi-jwt-signing that you can visualize on the jwt verifiers certificates | otoroshi-jwt-signing |
-| `secure` | if enabled, Otoroshi will expose routes only in the https requests case  | true |
+
+* `domain`: a regex used to exposed routes on each matching domain (`default`: *)
+* `expiration`: duration until the token expire (in ms) (`default`: 3600000)
+* `defaultKeyPair`: a key pair used to sign the jwt token. By default, Otoroshi is deployed with an otoroshi-jwt-signing that you can visualize on the jwt verifiers certificates (`default`: "otoroshi-jwt-signing")
+* `secure`: if enabled, Otoroshi will expose routes only in the https requests case (`default`: true)
 
 In this tutorial, we will set the configuration as following : 
-| Field | Value | 
-| ------------- | ----------------------- |
-| `domain` | *.oto.tools |
-| `expiration` | 3600000 |
-| `defaultKeyPair` | otoroshi-jwt-signing |
-| `secure` | false |
+
+* `domain`: *.oto.tools
+* `expiration`: 3600000
+* `defaultKeyPair`:  otoroshi-jwt-signing
+* `secure`: false
 
 Now that the plugin is running, third routes are exposed on each matching domain of the regex.
 

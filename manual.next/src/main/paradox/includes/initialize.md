@@ -1,3 +1,4 @@
+<!--- #initialize-otoroshi --->
 Let's start by downloading the latest Otoroshi.
 ```sh
 curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar'
@@ -19,3 +20,4 @@ curl -X POST http://otoroshi-api.oto.tools:8080/api/services \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret
 ```
+<!--- #initialize-otoroshi --->

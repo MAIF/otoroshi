@@ -14,7 +14,7 @@ TODO - schema
 
 ### Before you start
 
-<!-- @@snip[init-otoroshi.md](../snippets/init-otoroshi.md)  -->
+@@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
 
 ### Running an simple OAuth 1 server
 

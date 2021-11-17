@@ -14,7 +14,7 @@ TODO - schema
 
 ### Download Otoroshi
 
-<!-- @@snip[init-otoroshi.md](../snippets/init-otoroshi.md)  -->
+@@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
 
 ### Configure an Auth0 client
 
