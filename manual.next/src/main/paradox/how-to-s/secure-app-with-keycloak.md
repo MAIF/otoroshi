@@ -49,17 +49,15 @@ The first step is to create a Keycloak client, an entity that can request Keyclo
 
 Fill the client form with the following values.
 
-| Fields            | Value                             |
-| ----------------- | --------------------------------- |
-| `Client ID`       | `keycloak-otoroshi-backoffice`    |
-| `Client Protocol` | `openid-connect`                  |
-| `Root URL`        | `http://otoroshi.oto.tools:8080/` |
+* `Client ID`: `keycloak-otoroshi-backoffice`
+* `Client Protocol`: `openid-connect`
+* `Root URL`: `http://otoroshi.oto.tools:8080/`
 
 End by create the client with the `Save` button.
 
 The next step is to change the `Access Type` used by default. Jump to the `Access Type` field and select `confidential`. The confidential configuration force the client application to send at Keycloak a client ID and a client Secret. Scroll to the bottom of the page and save the configuration.
 
-Now scroll to the top of your page. Just at the right of the `Settings` tab, a new tab appeared : the `Credentials` page. Click on this tab, and make sure that `Client Id and Secret` is selected as `Client Authenticator` and copy the generated `Secret` to the next part.
+Now scroll to the top of your page. Just at the right of the `Settings` tab, a new tab appeared : the `Credentials` page. Click on this tab, and make sure that `Client Id and Secret` is selected as `Client Authenticator` and copy the generated `Secret` to the next part.
 
 ### Create a Keycloak provider module
 
@@ -76,11 +74,9 @@ Click on the `Get from OIDC config` button and paste the previous link. Once it'
 
 The only fields to change are : 
 
-| Fields | Value |
-|---|---|
-| `Client ID` | `keycloak-otoroshi-backoffice` |
-| `Client Secret` | Paste the Secret from the Credentials Keycloak page. In my case, it's something like `90c9bf0b-2c0c-4eb0-aa02-72195beb9da7` |
-| `Callback URL`  | `http://otoroshi.oto.tools:8080/backoffice/auth0/callback`|
+* `Client ID`: `keycloak-otoroshi-backoffice`
+* `Client Secret`: Paste the Secret from the Credentials Keycloak page. In my case, it's something like `90c9bf0b-2c0c-4eb0-aa02-72195beb9da7`
+* `Callback URL`: `http://otoroshi.oto.tools:8080/backoffice/auth0/callback`
 
 At the bottom of the page, disable the `secure` button (because we're using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs). Nothing else to change, just save the configuration.
 
