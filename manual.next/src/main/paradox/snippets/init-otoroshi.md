@@ -11,7 +11,7 @@ java -Dapp.adminPassword=password -jar otoroshi.jar
 
 Log to Otoroshi at http://otoroshi.oto.tools:8080 with `admin@otoroshi.io/password`.
 
-Create a service, exposed on `http://myservice.oto.tools:8080` and which will forward all requests to the mirror `https://mirror.otoroshi.io`. Each call to this service will returned the body and the headers received by the mirror.
+Create a service, exposed on `http://myservice.oto.tools:8080`, which will forward all requests to the mirror `https://mirror.otoroshi.io`. Each call to this service will returned the body and the headers received by the mirror.
 
 ```sh
 curl -X POST http://otoroshi-api.oto.tools:8080/api/services \

@@ -15,7 +15,7 @@ TODO - schema
 
 ### Before you start
 
-@@include[init-otoroshi.md](../snippets/init-otoroshi.md) 
+<!-- @@snip[init-otoroshi.md](../snippets/init-otoroshi.md)  -->
 
 ### Deploy a Elasticsearch and kibana stack on Docker
 

@@ -2,7 +2,6 @@
 
 ### Cover by this tutorial
 - [Before you start](#before-you-start)
-- [About the downstream example service](#about-the-downstream-example-service)
 - [Create a simple service](#create-a-simple-service)
 - [Secure routes with api key](#secure-an-api-with-apikey)
 - [Generate an api key to request secure services](#generate-an-api-key-to-request-secure-services)
@@ -15,19 +14,7 @@ TODO - schema
 
 ### Before you start
 
-Let's start by downloading the latest Otoroshi and running it.
-```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
-java -Dapp.adminPassword=password -jar otoroshi.jar 
-```
-
-Log to Otoroshi at http://otoroshi.oto.tools:8080/ with `admin@otoroshi.io/password`
-
-### About the downstream example service
-
-In these tutorials, we will create a simple service which route to *https://mirror.otoroshi.io/*
-
-This downstream service is a very good entry point to test the functionality of Otoroshi services, as it will return the content of all requests received (included headers, body, etc.).
+<!-- @@snip[init-otoroshi.md](../snippets/init-otoroshi.md)  -->
 
 ### Create a simple service 
 
