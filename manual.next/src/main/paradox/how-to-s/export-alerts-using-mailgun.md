@@ -17,14 +17,11 @@ Let's create an exporter. The exporter will export by default all events generat
 4. And add a new configuration when clicking on the `Add item` button
 5. Select the `mailer` in the `type` selector field
 6. Jump to `Exporter config` and select the `Mailgun` option
-7. Set the following values
-
-| Field         | Value                   |
-| ------------- | ----------------------- |
-| `EU` | `false` or `true` depending on your mailgun configuratin |
-| `Mailgun api key` | your-mailgun-api-key |
-| `Mailgun domain` | your-mailgun-domain |
-| `Email addresses` | list of the recipient adresses |
+7. Set the following values:
+* `EU` : false/true depending on your mailgun configuratin
+* `Mailgun api key` : your-mailgun-api-key
+* `Mailgun domain` : your-mailgun-domain
+* `Email addresses` : list of the recipient adresses
 
 With this configuration, all Otoroshi events will be send to your listed addresses (we don't recommended to do that).
 

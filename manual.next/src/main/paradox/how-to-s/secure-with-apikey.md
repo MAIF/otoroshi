@@ -15,15 +15,9 @@ TODO - schema
 
 ### Before you start
 
-Let's start by downloading the latest Otoroshi
+Let's start by downloading the latest Otoroshi and running it.
 ```sh
 curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
-```
-
-By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
-
-Run Otoroshi
-```sh
 java -Dapp.adminPassword=password -jar otoroshi.jar 
 ```
 
@@ -37,7 +31,7 @@ This downstream service is a very good entry point to test the functionality of 
 
 ### Create a simple service 
 
-1. Navigate to http://otoroshi.oto.tools:8080/bo/dashboard/lines/prod/services/service_596bb0d1-9eb5-40fe-b521-9d138fe9ec85
+1. Navigate to http://otoroshi.oto.tools:8080/bo/dashboard/services and click on the `create new service` button
 2. Jump to `Service exposition settings` and add *http://myservice.oto.tools* as `Exposed domain`
 3. Jump to `Service targets` and add *https://mirror.otoroshi.io/* as `Target 1`
 4. Jump to the `URL Patterns` section
