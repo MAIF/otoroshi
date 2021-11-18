@@ -2,8 +2,6 @@
 
 ### Cover by this tutorial
 
-- [Secure an app and/or your Otoroshi UI with LDAP](#secure-an-app-andor-your-otoroshi-ui-with-ldap)
-- [Cover by this tutorial](#cover-by-this-tutorial)
 - [Download Otoroshi](#download-otoroshi)
 - [Create an Authentication configuration](#create-an-authentication-configuration)
 - [Connect to Otoroshi with LDAP authentication](#connect-to-otoroshi-with-ldap-authentication)

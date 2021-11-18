@@ -18,6 +18,11 @@
     align-items: flex-start;
 }
 
+.script:hover {
+  cursor: initial !important;
+  box-shadow: 0 1px 3px rgb(25 25 25 / 30%) !important;
+}
+
 .plugin:hover {
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(12,12,12,.5);
