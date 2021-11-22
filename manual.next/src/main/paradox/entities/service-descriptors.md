@@ -269,8 +269,8 @@ This part has been deprecated and moved to the plugin section.
 
 * `Plugins`:
   
-    * `Inject default config`: inject, if present, the default configuration of a selected plugin in the configuration object
+    * `Inject default config`: injects, if present, the default configuration of a selected plugin in the configuration object
     * `Documentation`: link to the documentation website of the plugin
-    * `show/hide config. panel`: show and hide the plugin panel which contains the plugin description and confiugration
+    * `show/hide config. panel`: shows and hides the plugin panel which contains the plugin description and configuration
 * `Excluded patterns`: by default, when plugins are enabled, everything pass in. But sometimes you need to exclude something, so just add regex to matching path you want to exlude.
 * `Configuration`: the configuration of each enabled plugin, split by names and grouped in the same configuration object.

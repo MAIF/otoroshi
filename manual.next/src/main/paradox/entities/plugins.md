@@ -6,7 +6,7 @@
 * `Compile`: button to compile the body of the plugin. This mode only works in production mode.
 * `Plugin code`: the code of the plugin
 * `Script tags`: tags attached to the plugin
-* `Script metadatas`: metadatas attached to the plugin 
+* `Script metadata`: metadata attached to the plugin 
 
 ## Available plugins
 

@@ -122,7 +122,7 @@ With this configuration, all others default services will accept the api keys wi
 
 By default, a secure service only accepts requests with api key. But all generated api keys are eligible to call our service and in some case, we want authorize only a couple of api keys.
 
-One feature of Otoroshi is to restrict the list of accepted api keys by giving a list of `metadatas` or/and `tags`. Each api key has a list of `tags` and `metadatas`, which can be used by Otoroshi to forward or not a call with an api key. All api key metadatas/tags can be forward to your service (see `Otoroshi exchange protocol` section of a service to get more information about *Send info. token*).
+One feature of Otoroshi is to restrict the list of accepted api keys by giving a list of `metadata` or/and `tags`. Each api key has a list of `tags` and `metadata`, which can be used by Otoroshi to forward or not a call with an api key. All api key metadata/tags can be forward to your service (see `Otoroshi exchange protocol` section of a service to get more information about *Send info. token*).
 
 Let's starting by accept only the api keys which come with the tag of `otoroshi` as value.
 
