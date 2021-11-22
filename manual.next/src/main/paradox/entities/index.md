@@ -14,6 +14,7 @@ in this section, we will pass through all the main Otoroshi entities
 * @ref:[JWT verifiers](./jwt-verifiers.md)
 * @ref:[Data exporters](./data-exporters.md)
 * @ref:[Scripts](./scripts.md)
+* @ref:[Plugins](./plugins.md)
 * @ref:[TCP services](./tcp-services.md)
 
 @@@ index
@@ -29,6 +30,7 @@ in this section, we will pass through all the main Otoroshi entities
 * [JWT verifiers](./jwt-verifiers.md)
 * [Data exporters](./data-exporters.md)
 * [Scripts](./scripts.md)
+* [Plugins](./plugins.md)
 * [TCP services](./tcp-services.md)
 
 @@@

@@ -18,6 +18,11 @@
     align-items: flex-start;
 }
 
+.script {
+  min-height: 275px;
+  max-height: 275px;
+}
+
 .script:hover {
   cursor: initial !important;
   box-shadow: 0 1px 3px rgb(25 25 25 / 30%) !important;
