@@ -1221,6 +1221,14 @@ object KubernetesCRDsJob {
     if (globalConfigs.size > 1) {
       Future.failed(new RuntimeException("There can only be one GlobalConfig entity !"))
     } else {
+      def certSave(cert: Cert): Future[Boolean] = {
+        if (cert.chain.trim.isEmpty) {
+          logger.info(s"certificate chain for '${cert.id}' is empty, will not import it !")
+          false.future
+        } else {
+          cert.save()
+        }
+      }
       val entities = (
         compareAndSave(globalConfigs)(otoglobalConfigs, _ => "global", _.save()) ++
           compareAndSave(simpleAdmins)(
@@ -1232,7 +1240,7 @@ object KubernetesCRDsJob {
           compareAndSave(tenants)(ototenants, _.id.value, _.save()) ++
           compareAndSave(teams)(ototeams, _.id.value, _.save()) ++
           compareAndSave(serviceGroups)(otoserviceGroups, _.id, _.save()) ++
-          compareAndSave(certificates)(otocertificates, _.id, _.save()) ++
+          compareAndSave(certificates)(otocertificates, _.id, certSave) ++
           compareAndSave(jwtVerifiers)(otojwtVerifiers, _.asGlobal.id, _.asGlobal.save()) ++
           compareAndSave(authModules)(otoauthModules, _.id, _.save()) ++
           compareAndSave(scripts)(otoscripts, _.id, _.save()) ++
