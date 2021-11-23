@@ -306,8 +306,12 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
         .getOrElse(-1L)
     )
 
-  override def ttl(key: String): Future[Long] =
-    pttl(key).map(t => Duration(t, TimeUnit.MILLISECONDS).toSeconds)
+  override def ttl(key: String): Future[Long] = {
+    pttl(key).map {
+      case -1L => -1L
+      case t => Duration(t, TimeUnit.MILLISECONDS).toSeconds
+    }
+  }
 
   override def expire(key: String, seconds: Int): Future[Boolean] = {
     expirations.put(key, System.currentTimeMillis() + (seconds * 1000L))
