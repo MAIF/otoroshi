@@ -4,15 +4,6 @@ Now it's time to deploy Otoroshi in production, in this chapter we will see what
 
 Otoroshi can run wherever you want, even on a raspberry pi (Cluster^^) ;)
 
-@@@div { .plugin .platform .dark-platform } 
-## Clustering
-
-Deploy Otoroshi as a cluster of leaders and workers.
-
-<img src="../imgs/clustering.png" />
-@ref:[Documentation](./clustering.md)
-@@@
-
 @@@div { .plugin .platform }
 ## Clever Cloud
 
@@ -21,15 +12,6 @@ Otoroshi provides an integration to create easily services based on application 
 <img src="../imgs/clever-cloud.png" />
 @ref:[Documentation](./clever-cloud.md)
 @@@
-
-@@@div { .plugin .platform .dark-platform } 
-## Scaling Otoroshi
-
-Otoroshi is designed to be reasonably easy to scale and be highly available.
-
-<img src="../imgs/scaling.png" />
-@ref:[Documentation](./scaling.md) 
-@@@ 
 
 @@@div { .plugin .platform } 
 ## Kubernetes
@@ -116,6 +98,29 @@ Download the latest Otoroshi distribution, unzip it, customize it and run it.
 @link:[Play Framework](https://www.playframework.com)
 @link:[Production Configuration](https://www.playframework.com/documentation/2.6.x/ProductionConfiguration)
 @ref:[Otoroshi distribution](../install/get-otoroshi.md#from-zip)
+@@@
+
+@@@div { .break }
+## Scaling and clustering in production
+@@@
+
+
+@@@div { .plugin .platform .dark-platform } 
+## Clustering
+
+Deploy Otoroshi as a cluster of leaders and workers.
+
+<img src="../imgs/clustering.png" />
+@ref:[Documentation](./clustering.md)
+@@@
+
+@@@div { .plugin .platform .dark-platform } 
+## Scaling Otoroshi
+
+Otoroshi is designed to be reasonably easy to scale and be highly available.
+
+<img src="../imgs/scaling.png" />
+@ref:[Documentation](./scaling.md) 
 @@@
 
 @@@ index

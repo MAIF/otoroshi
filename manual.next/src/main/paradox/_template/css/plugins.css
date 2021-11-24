@@ -182,3 +182,8 @@
 .dark-platform a {
   box-shadow: 0 1px 3px rgba(255,255,255,.5);
 }
+
+.break {
+  margin: 12px 0;
+  clear: both;
+}
