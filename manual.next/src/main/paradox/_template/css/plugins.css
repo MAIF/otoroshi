@@ -18,6 +18,7 @@
     align-items: flex-start;
 }
 
+
 @media screen and (max-width: 1440px) {
   .plugin {
     max-width: calc(50% - 36px);
@@ -130,6 +131,7 @@
   align-self: center;
 }
 
+.entities a,
 .platform a {
   padding: 8px;
   background-color: #4078c0;
@@ -186,4 +188,48 @@
 .break {
   margin: 12px 0;
   clear: both;
+}
+
+.entities h2,
+.entities p {
+  color: #fff;
+}
+
+.entities {
+  background-color: #2e3031 !important;
+  max-width: 75%;
+  min-width: 75%;
+  min-height: initial;
+  max-height: initial;
+  flex-direction: row;
+  padding: 0 24px;
+  align-items: center;
+  clear: both;
+  margin-bottom: 4px;
+}
+
+.entities img {
+  max-height: 36px;
+}
+
+.entities div:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  margin-left: 12px;
+}
+
+.entities span:first-child {
+  font-weight: bold;
+}
+
+.entities span {
+  color: #fff;
+  text-align: left;
+}
+
+.entities a {
+  flex: 0;
+  min-width: 60px;
 }
