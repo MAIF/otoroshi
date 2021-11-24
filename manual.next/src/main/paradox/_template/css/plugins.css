@@ -158,3 +158,16 @@
 .platform a:hover {
   cursor: pointer !important;
 }
+
+.dark-platform {
+  background-color: #2e3031 !important;
+}
+
+.dark-platform h2,
+.dark-platform p {
+  color: #fff;
+}
+
+.dark-platform a {
+  box-shadow: 0 1px 3px rgba(255,255,255,.5);
+}
