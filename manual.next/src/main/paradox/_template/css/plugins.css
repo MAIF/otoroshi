@@ -196,7 +196,7 @@
 }
 
 .entities {
-  background-color: #2e3031 !important;
+  background-color: #eee !important;
   max-width: 75%;
   min-width: 75%;
   min-height: initial;
@@ -205,11 +205,12 @@
   padding: 0 24px;
   align-items: center;
   clear: both;
-  margin-bottom: 4px;
+  margin-bottom: 12px;
 }
 
 .entities img {
   max-height: 36px;
+  filter: brightness(0);
 }
 
 .entities div:nth-child(2) {
@@ -225,7 +226,7 @@
 }
 
 .entities span {
-  color: #fff;
+  color: #000;
   text-align: left;
 }
 
