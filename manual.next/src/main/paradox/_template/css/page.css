@@ -1063,3 +1063,32 @@ p {
 .editor div:first-child code {
   margin-right: 4px;
 }
+
+.paste-button {
+  background: url(../imgs/paste.png) center center no-repeat;
+  background-size: contain;
+  height: 100%;
+  width: 100%;
+}
+
+.paste-button-container {
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  background-color: #eee;
+  border-radius: 6px;
+  position: absolute;
+  top: 8px;
+  right: 8px;  
+}
+
+.paste-text {
+  background-color: #ddd;
+  border-radius: 6px;
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  padding: 4px;
+  font-family: inherit;
+  font-size: .8em;
+}
