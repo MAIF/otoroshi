@@ -633,6 +633,7 @@ small {
   border-top: 0;
   padding-top: 0;
   padding-bottom: 0;
+  display: none;
 }
 
 .nav-toc ul > li > ul li a {
@@ -642,6 +643,10 @@ small {
   margin-top: 0;
   padding-left: 1.2rem;
 }
+
+/* .nav-toc ul > li a.active ul  {
+  min-height: 200px;
+} */
 
 .nav-toc ul > li > ul > li > ul li a {
   font-size: 0.8rem;
