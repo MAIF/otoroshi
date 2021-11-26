@@ -30,7 +30,7 @@ or using docker
 docker run -p "8080:8080" maif/otoroshi:1.5.0-dev
 ```
 
-now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blank">http://otoroshi.oto.tools:8080/</a>, **log in with the credential generated in the logs** and explore by yourself, if you want better instructions, just go to the [Quick Start](#) or directly to the [installation instructions](#)
+now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blank">http://otoroshi.oto.tools:8080/</a>, **log in with the credential generated in the logs** and explore by yourself, if you want better instructions, just go to the @ref:[Quick Start](./getting-started.md) or directly to the @ref:[installation instructions](./install/get-otoroshi.md)
 
 ## Documentation
 
