@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../js/cc.js"></script>
 <script type="text/javascript" src="../js/groups.js"></script>
 <script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
@@ -60,6 +61,7 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -91,6 +93,7 @@
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -105,7 +108,6 @@
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -169,6 +171,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -200,6 +203,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -214,7 +218,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -242,19 +245,81 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#deploy-to-production" name="deploy-to-production" class="anchor"><span class="anchor-link"></span></a>Deploy to production</h1>
 <p>Now it&rsquo;s time to deploy Otoroshi in production, in this chapter we will see what kind of things you can do.</p>
-<ul>
-  <li><a href="clustering.html">Clustering</a></li>
-  <li><a href="kubernetes.html">Kubernetes</a></li>
-  <li><a href="clever-cloud.html">Clever Cloud</a></li>
-  <li><a href="aws.html">AWS - Elastic Beanstalk</a></li>
-  <li><a href="other.html">others</a></li>
-  <li><a href="scaling.html">Scaling</a></li>
-</ul>
+<p>Otoroshi can run wherever you want, even on a raspberry pi (Cluster^^) ;)</p><div class="plugin platform">
+<h2><a href="#clever-cloud" name="clever-cloud" class="anchor"><span class="anchor-link"></span></a>Clever Cloud</h2>
+<p>Otoroshi provides an integration to create easily services based on application deployed on your Clever Cloud account.</p>
+<img src="../imgs/clever-cloud.png" />
+<p><a href="clever-cloud.html">Documentation</a></p></div><div class="plugin platform">
+<h2><a href="#kubernetes" name="kubernetes" class="anchor"><span class="anchor-link"></span></a>Kubernetes</h2>
+<p>Starting at version 1.5.0, Otoroshi provides a native Kubernetes support.</p>
+<img src="../imgs/kubernetes.png" />
+<p><a href="kubernetes.html">Documentation</a></p></div><div class="plugin platform">
+<h2><a href="#aws-elastic-beanstalk" name="aws-elastic-beanstalk" class="anchor"><span class="anchor-link"></span></a>AWS Elastic Beanstalk</h2>
+<p>Run Otoroshi on AWS Elastic Beanstalk</p>
+<img src="../imgs/elastic-beanstalk.png" />
+<p><a href="aws.html">Tutorial</a></p></div><div class="plugin platform">
+<h2><a href="#amazon-ecs" name="amazon-ecs" class="anchor"><span class="anchor-link"></span></a>Amazon ECS</h2>
+<p>Deploy the Otoroshi Docker image using Amazon Elastic Container Service</p>
+<img src="../imgs/amazon-ecs.png" />
+<p><a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html" title="Tutorial">Tutorial</a> <a href="../install/get-otoroshi.html#from-docker">Docker image</a></p></div><div class="plugin platform">
+<h2><a href="#gce" name="gce" class="anchor"><span class="anchor-link"></span></a>GCE</h2>
+<p>Deploy the Docker image using Google Compute Engine container integration</p>
+<img src="../imgs/google.jpeg" />
+<p><a href="https://cloud.google.com/compute/docs/containers/deploying-containers" title="Documentation">Documentation</a> <a href="../install/get-otoroshi.html#from-docker">Docker image</a></p></div><div class="plugin platform">
+<h2><a href="#azure" name="azure" class="anchor"><span class="anchor-link"></span></a>Azure</h2>
+<p>Deploy the Docker image using Azure Container Service</p>
+<img src="../imgs/azure-container-service.png" />
+<p><a href="https://azure.microsoft.com/en-us/services/container-service/" title="Documentation">Documentation</a> <a href="../install/get-otoroshi.html#from-docker">Docker image</a> </p></div><div class="plugin platform">
+<h2><a href="#heroku" name="heroku" class="anchor"><span class="anchor-link"></span></a>Heroku</h2>
+<p>Deploy the Docker image using Docker integration</p>
+<img src="../imgs/heroku.png" />
+<p><a href="https://devcenter.heroku.com/articles/container-registry-and-runtime" title="Documentation">Documentation</a> <a href="../install/get-otoroshi.html#from-docker">Docker image</a></p></div><div class="plugin platform">
+<h2><a href="#cloudfoundry" name="cloudfoundry" class="anchor"><span class="anchor-link"></span></a>CloudFoundry</h2>
+<p>Deploy the Docker image using -Docker integration</p>
+<img src="../imgs/cloudfoundry.png" />
+<p><a href="https://docs.cloudfoundry.org/adminguide/docker.html" title="Documentation">Documentation</a> <a href="../install/get-otoroshi.html#from-docker">Docker image</a></p></div><div class="plugin platform platform-actions-column">
+<h2><a href="#your-own-infrastructure" name="your-own-infrastructure" class="anchor"><span class="anchor-link"></span></a>Your own infrastructure</h2>
+<p>As Otoroshi is a Play Framework application, you can read the doc about putting a <code>Play</code> app in production.</p>
+<p>Download the latest Otoroshi distribution, unzip it, customize it and run it.</p>
+<p><a href="https://www.playframework.com" title="Play Framework">Play Framework</a> <a href="https://www.playframework.com/documentation/2.6.x/ProductionConfiguration" title="Production Configuration">Production Configuration</a> <a href="../install/get-otoroshi.html#from-zip">Otoroshi distribution</a></p></div><div class="break">
+<h2><a href="#scaling-and-clustering-in-production" name="scaling-and-clustering-in-production" class="anchor"><span class="anchor-link"></span></a>Scaling and clustering in production</h2></div><div class="plugin platform dark-platform">
+<h2><a href="#clustering" name="clustering" class="anchor"><span class="anchor-link"></span></a>Clustering</h2>
+<p>Deploy Otoroshi as a cluster of leaders and workers.</p>
+<img src="../imgs/clustering.png" />
+<p><a href="clustering.html">Documentation</a></p></div><div class="plugin platform dark-platform">
+<h2><a href="#scaling-otoroshi" name="scaling-otoroshi" class="anchor"><span class="anchor-link"></span></a>Scaling Otoroshi</h2>
+<p>Otoroshi is designed to be reasonably easy to scale and be highly available.</p>
+<img src="../imgs/scaling.png" />
+<p><a href="scaling.html">Documentation</a> </p></div>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../deploy/clustering.html">Otoroshi clustering</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../deploy/index.html#deploy-to-production" class="header">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/index.html#clever-cloud" class="header">Clever Cloud</a></li>
+    <li><a href="../deploy/index.html#kubernetes" class="header">Kubernetes</a></li>
+    <li><a href="../deploy/index.html#aws-elastic-beanstalk" class="header">AWS Elastic Beanstalk</a></li>
+    <li><a href="../deploy/index.html#amazon-ecs" class="header">Amazon ECS</a></li>
+    <li><a href="../deploy/index.html#gce" class="header">GCE</a></li>
+    <li><a href="../deploy/index.html#azure" class="header">Azure</a></li>
+    <li><a href="../deploy/index.html#heroku" class="header">Heroku</a></li>
+    <li><a href="../deploy/index.html#cloudfoundry" class="header">CloudFoundry</a></li>
+    <li><a href="../deploy/index.html#your-own-infrastructure" class="header">Your own infrastructure</a></li>
+    <li><a href="../deploy/index.html#scaling-and-clustering-in-production" class="header">Scaling and clustering in production</a></li>
+    <li><a href="../deploy/index.html#clustering" class="header">Clustering</a></li>
+    <li><a href="../deploy/index.html#scaling-otoroshi" class="header">Scaling Otoroshi</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 

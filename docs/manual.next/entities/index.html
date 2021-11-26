@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../js/cc.js"></script>
 <script type="text/javascript" src="../js/groups.js"></script>
 <script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
@@ -60,6 +61,7 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -91,6 +93,7 @@
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -105,7 +108,6 @@
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -169,6 +171,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -200,6 +203,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -214,7 +218,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -241,21 +244,85 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#main-entities" name="main-entities" class="anchor"><span class="anchor-link"></span></a>Main entities</h1>
-<p>in this section, we will pass through all the main Otoroshi entities</p>
-<ul>
-  <li><a href="organizations.html">Organizations</a></li>
-  <li><a href="teams.html">Teams</a></li>
-  <li><a href="global-config.html">Global Config</a></li>
-  <li><a href="apikeys.html">Apikeys</a></li>
-  <li><a href="service-groups.html">Service groups</a></li>
-  <li><a href="service-descriptors.html">Service descriptors</a></li>
-  <li><a href="auth-modules.html">Auth. modules</a></li>
-  <li><a href="certificates.html">Certificates</a></li>
-  <li><a href="jwt-verifiers.html">JWT verifiers</a></li>
-  <li><a href="data-exporters.html">Data exporters</a></li>
-  <li><a href="scripts.html">Scripts</a></li>
-  <li><a href="tcp-services.html">TCP services</a></li>
-</ul>
+<p>in this section, we will pass through all the main Otoroshi entities</p><div class="plugin entities">
+<img src="../imgs/entities-groups.png">
+<div>
+<span>Organizations</span>
+<span>This the most high level for grouping resources.</span>
+</div>
+<p><a href="organizations.html">View</a></p></div><div class="plugin entities">
+<img src="../imgs/entities-groups.png">
+<div>
+<span>Teams</span>
+<span>Organize your resources by teams</span>
+</div>
+<p><a href="teams.html">View</a></p></div><div class="plugin entities">
+<img src="../imgs/entities-groups.png">
+<div>
+<span>Service groups</span>
+<span>Group your services</span>
+</div>
+<p><a href="service-groups.html">View</a></p></div><div class="plugin entities">
+<img src="../imgs/entities-keys.png">
+<div>
+<span>JWT verifiers</span>
+<span>Verify and forge token by services.</span>
+</div>
+<p><a href="jwt-verifiers.html">View</a></p></div><div class="plugin entities">
+<img src="../imgs/entities-keys.png">
+<div>
+<span>Apikeys</span>
+<span>Add security to your services using apikeys</span>
+</div>
+<p><a href="apikeys.html">View</a></p></div><div class="plugin entities">
+<img src="../imgs/entities-danger-zone.png">
+<div>
+<span>Global Config</span>
+<span>The danger zone of Otoroshi</span>
+</div>
+<p><a href="global-config.html">View</a></p></div><div class="plugin entities">
+<img src="../imgs/entities-services.png">
+<div>
+<span>Service descriptors</span>
+<span>Proxy your applications with service descriptors</span>
+</div>
+<p><a href="service-descriptors.html">View</a></p></div><div class="plugin entities">
+<img src="../imgs/entities-services.png">
+<div>
+<span>TCP services</span>
+<span></span>
+</div>
+<p><a href="tcp-services.html">View</a></p></div><div class="plugin entities">
+<img src="../imgs/entities-security.png">
+<div>
+<span>Auth. modules</span>
+<span>Secure the Otoroshi UI and your web apps</span>
+</div>
+<p><a href="auth-modules.html">View</a></p></div><div class="plugin entities">
+<img src="../imgs/entities-certificates.png">
+<div>
+<span>Certificates</span>
+<span>Add secure communication between Otoroshi, clients and services</span>
+</div>
+<p><a href="certificates.html">View</a></p></div><div class="plugin entities">
+<img src="../imgs/entities-plugins.png">
+<div>
+<span>Data exporters</span>
+<span>Export alerts, events ands logs</span>
+</div>
+<p><a href="data-exporters.html">View</a></p></div><div class="plugin entities">
+<img src="../imgs/entities-groups.png">
+<div>
+<span>Scripts</span>
+<span></span>
+</div>
+<p><a href="scripts.html">View</a></p></div><div class="plugin entities">
+<img src="../imgs/entities-groups.png">
+<div>
+<span>Plugins</span>
+<span>Improve your services with plugins</span>
+</div>
+<p><a href="plugins.html">View</a></p></div>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../entities/organizations.html">Organizations</a></p>
 </div>

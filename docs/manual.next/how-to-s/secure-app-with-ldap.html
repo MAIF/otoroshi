@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../js/cc.js"></script>
 <script type="text/javascript" src="../js/groups.js"></script>
 <script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
@@ -60,6 +61,7 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -91,6 +93,7 @@
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -105,7 +108,6 @@
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -169,6 +171,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -200,6 +203,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -214,7 +218,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -244,8 +247,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h1><a href="#secure-an-app-and-or-your-otoroshi-ui-with-ldap" name="secure-an-app-and-or-your-otoroshi-ui-with-ldap" class="anchor"><span class="anchor-link"></span></a>Secure an app and/or your Otoroshi UI with LDAP</h1>
 <h3><a href="#cover-by-this-tutorial" name="cover-by-this-tutorial" class="anchor"><span class="anchor-link"></span></a>Cover by this tutorial</h3>
 <ul>
-  <li><a href="#secure-an-app-andor-your-otoroshi-ui-with-ldap">Secure an app and/or your Otoroshi UI with LDAP</a></li>
-  <li><a href="#cover-by-this-tutorial">Cover by this tutorial</a></li>
   <li><a href="#download-otoroshi">Download Otoroshi</a></li>
   <li><a href="#create-an-authentication-configuration">Create an Authentication configuration</a></li>
   <li><a href="#connect-to-otoroshi-with-ldap-authentication">Connect to Otoroshi with LDAP authentication</a></li>
@@ -261,7 +262,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code></p>
 <p>Run Otoroshi</p>
-<pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
+<pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -jar otoroshi.jar 
 </code></pre>
 <h4><a href="#running-an-simple-openldap-server" name="running-an-simple-openldap-server" class="anchor"><span class="anchor-link"></span></a>Running an simple OpenLDAP server</h4>
 <p>Run OpenLDAP docker image : </p>
@@ -354,7 +355,7 @@ ldapadd -x -w otoroshi -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -f bootstrap
 </code></pre>
 <h3><a href="#create-an-authentication-configuration" name="create-an-authentication-configuration" class="anchor"><span class="anchor-link"></span></a>Create an Authentication configuration</h3>
 <ol>
-  <li>Go ahead, and navigate to <a href="http://otoroshi.oto.tools:9999">http://otoroshi.oto.tools:9999</a></li>
+  <li>Go ahead, and navigate to <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a></li>
   <li>Click on the cog icon on the top right</li>
   <li>Then <code>Authentication configs</code> button</li>
   <li>And add a new configuration when clicking on the <code>Add item</code> button</li>
@@ -400,12 +401,12 @@ ldapadd -x -w otoroshi -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -f bootstrap
 <h3><a href="#testing-your-configuration" name="testing-your-configuration" class="anchor"><span class="anchor-link"></span></a>Testing your configuration</h3>
 <ol>
   <li>Disconnect from your instance</li>
-  <li>Then click on the <em>Login using third-party</em> button (or navigate to *<a href="http://otoroshi.oto.tools:9999/backoffice/auth0/login*">http://otoroshi.oto.tools:9999/backoffice/auth0/login*</a>)
+  <li>Then click on the <em>Login using third-party</em> button (or navigate to *<a href="http://otoroshi.oto.tools:8080/backoffice/auth0/login*">http://otoroshi.oto.tools:8080/backoffice/auth0/login*</a>)
 </li>
   <li>Set <code>johnny/password</code> or <code>einstein/password</code> as credentials</li>
 </ol>
 <blockquote>
-  <p>A fallback solution is always available, by going to *<a href="http://otoroshi.oto.tools:9999/bo/simple/login*">http://otoroshi.oto.tools:9999/bo/simple/login*</a>, for administrators in case your LDAP is not available</p>
+  <p>A fallback solution is always available, by going to *<a href="http://otoroshi.oto.tools:8080/bo/simple/login*">http://otoroshi.oto.tools:8080/bo/simple/login*</a>, for administrators in case your LDAP is not available</p>
 </blockquote>
 <h4><a href="#secure-an-app-with-ldap-authentication" name="secure-an-app-with-ldap-authentication" class="anchor"><span class="anchor-link"></span></a>Secure an app with LDAP authentication</h4>
 <p>Once the configuration is done, you can secure any of Otoroshi services with it. </p>

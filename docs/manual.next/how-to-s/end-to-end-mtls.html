@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../js/cc.js"></script>
 <script type="text/javascript" src="../js/groups.js"></script>
 <script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
@@ -60,6 +61,7 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -91,6 +93,7 @@
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -105,7 +108,6 @@
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -169,6 +171,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -200,6 +203,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -214,7 +218,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -241,13 +244,275 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#end-to-end-mtls" name="end-to-end-mtls" class="anchor"><span class="anchor-link"></span></a>End-to-end mTLS</h1><div class="callout warning "><div class="callout-title">Warning</div>
-<p>TODO</p></div>
+<h1><a href="#end-to-end-mtls" name="end-to-end-mtls" class="anchor"><span class="anchor-link"></span></a>End-to-end mTLS</h1>
+<p>If you want to use MTLS on otoroshi, you first need to enable it. It is not enabled by default as it will make TLS handshake way heavier. To enable it just change the following config :</p>
+<pre><code>play.server.https.wantClientAuth=true
+# or
+# play.server.https.wantClientNeed=true
+otoroshi.ssl.fromOutside.clientAuth=None|Want|Need
+</code></pre>
+<p>or using env. variables</p>
+<pre><code>HTTPS_WANT_CLIENT_AUTH=true 
+# HTTPS_NEED_CLIENT_AUTH=true 
+SSL_OUTSIDE_CLIENT_AUTH=None|Want|Need
+</code></pre>
+<p>You can use the <code>Want</code> setup if you cant to have both mtls on some services and no mtls on other services.</p>
+<p>You can also change the trusted CA list sent in the handshake certificate request from the <code>Danger Zone</code> in <code>Tls Settings</code>.</p>
+<p>Otoroshi support mutual TLS out of the box. mTLS from client to Otoroshi and from Otoroshi to targets are supported. In this article we will see how to configure Otoroshi to use end-to-end mTLS. All code and files used in this articles can be found on the <a href="https://github.com/MAIF/otoroshi/tree/master/demos/mtls">Otoroshi github</a></p>
+<h3><a href="#create-certificates" name="create-certificates" class="anchor"><span class="anchor-link"></span></a>Create certificates</h3>
+<p>But first we need to generate some certificates to make the demo work</p>
+<pre class="prettyprint"><code class="language-sh">mkdir mtls-demo
+cd mtls-demo
+mkdir ca
+mkdir server
+mkdir client
+
+# create a certificate authority key, use password as pass phrase
+openssl genrsa -out ./ca/ca-backend.key 4096
+# remove pass phrase
+openssl rsa -in ./ca/ca-backend.key -out ./ca/ca-backend.key
+# generate the certificate authority cert
+openssl req -new -x509 -sha256 -days 730 -key ./ca/ca-backend.key -out ./ca/ca-backend.cer -subj &quot;/CN=MTLSB&quot;
+
+
+# create a certificate authority key, use password as pass phrase
+openssl genrsa -out ./ca/ca-frontend.key 2048
+# remove pass phrase
+openssl rsa -in ./ca/ca-frontend.key -out ./ca/ca-frontend.key
+# generate the certificate authority cert
+openssl req -new -x509 -sha256 -days 730 -key ./ca/ca-frontend.key -out ./ca/ca-frontend.cer -subj &quot;/CN=MTLSF&quot;
+
+
+# now create the backend cert key, use password as pass phrase
+openssl genrsa -out ./server/_.backend.oto.tools.key 2048
+# remove pass phrase
+openssl rsa -in ./server/_.backend.oto.tools.key -out ./server/_.backend.oto.tools.key
+# generate the csr for the certificate
+openssl req -new -key ./server/_.backend.oto.tools.key -sha256 -out ./server/_.backend.oto.tools.csr -subj &quot;/CN=*.backend.oto.tools&quot;
+# generate the certificate
+openssl x509 -req -days 365 -sha256 -in ./server/_.backend.oto.tools.csr -CA ./ca/ca-backend.cer -CAkey ./ca/ca-backend.key -set_serial 1 -out ./server/_.backend.oto.tools.cer
+# verify the certificate, should output &#39;./server/_.backend.oto.tools.cer: OK&#39;
+openssl verify -CAfile ./ca/ca-backend.cer ./server/_.backend.oto.tools.cer
+
+
+# now create the frontend cert key, use password as pass phrase
+openssl genrsa -out ./server/_.frontend.oto.tools.key 2048
+# remove pass phrase
+openssl rsa -in ./server/_.frontend.oto.tools.key -out ./server/_.frontend.oto.tools.key
+# generate the csr for the certificate
+openssl req -new -key ./server/_.frontend.oto.tools.key -sha256 -out ./server/_.frontend.oto.tools.csr -subj &quot;/CN=*.frontend.oto.tools&quot;
+# generate the certificate
+openssl x509 -req -days 365 -sha256 -in ./server/_.frontend.oto.tools.csr -CA ./ca/ca-frontend.cer -CAkey ./ca/ca-frontend.key -set_serial 1 -out ./server/_.frontend.oto.tools.cer
+# verify the certificate, should output &#39;./server/_.frontend.oto.tools.cer: OK&#39;
+openssl verify -CAfile ./ca/ca-frontend.cer ./server/_.frontend.oto.tools.cer
+
+
+# now create the client cert key for backend, use password as pass phrase
+openssl genrsa -out ./client/_.backend.oto.tools.key 2048
+# remove pass phrase
+openssl rsa -in ./client/_.backend.oto.tools.key -out ./client/_.backend.oto.tools.key
+# generate the csr for the certificate
+openssl req -new -key ./client/_.backend.oto.tools.key -out ./client/_.backend.oto.tools.csr -subj &quot;/CN=*.backend.oto.tools&quot;
+# generate the certificate
+openssl x509 -req -days 365 -sha256 -in ./client/_.backend.oto.tools.csr -CA ./ca/ca-backend.cer -CAkey ./ca/ca-backend.key -set_serial 2 -out ./client/_.backend.oto.tools.cer
+# generate a pem version of the cert and key, use password as password
+openssl x509 -in client/_.backend.oto.tools.cer -out client/_.backend.oto.tools.pem -outform PEM
+
+
+# now create the client cert key for frontend, use password as pass phrase
+openssl genrsa -out ./client/_.frontend.oto.tools.key 2048
+# remove pass phrase
+openssl rsa -in ./client/_.frontend.oto.tools.key -out ./client/_.frontend.oto.tools.key
+# generate the csr for the certificate
+openssl req -new -key ./client/_.frontend.oto.tools.key -out ./client/_.frontend.oto.tools.csr -subj &quot;/CN=*.frontend.oto.tools&quot;
+# generate the certificate
+openssl x509 -req -days 365 -sha256 -in ./client/_.frontend.oto.tools.csr -CA ./ca/ca-frontend.cer -CAkey ./ca/ca-frontend.key -set_serial 2 -out ./client/_.frontend.oto.tools.cer
+# generate a pkcs12 version of the cert and key, use password as password
+# openssl pkcs12 -export -clcerts -in client/_.frontend.oto.tools.cer -inkey client/_.frontend.oto.tools.key -out client/_.frontend.oto.tools.p12
+openssl x509 -in client/_.frontend.oto.tools.cer -out client/_.frontend.oto.tools.pem -outform PEM
+</code></pre>
+<p>Once it&rsquo;s done, you should have something like</p>
+<pre class="prettyprint"><code class="language-sh">$ tree
+.
+├── backend.js
+├── ca
+│   ├── ca-backend.cer
+│   ├── ca-backend.key
+│   ├── ca-frontend.cer
+│   └── ca-frontend.key
+├── client
+│   ├── _.backend.oto.tools.cer
+│   ├── _.backend.oto.tools.csr
+│   ├── _.backend.oto.tools.key
+│   ├── _.backend.oto.tools.pem
+│   ├── _.frontend.oto.tools.cer
+│   ├── _.frontend.oto.tools.csr
+│   ├── _.frontend.oto.tools.key
+│   └── _.frontend.oto.tools.pem
+└── server
+    ├── _.backend.oto.tools.cer
+    ├── _.backend.oto.tools.csr
+    ├── _.backend.oto.tools.key
+    ├── _.frontend.oto.tools.cer
+    ├── _.frontend.oto.tools.csr
+    └── _.frontend.oto.tools.key
+
+3 directories, 18 files
+</code></pre>
+<h3><a href="#the-backend-service" name="the-backend-service" class="anchor"><span class="anchor-link"></span></a>The backend service</h3>
+<p>now, let&rsquo;s create a backend service using nodejs. Create a file named <code>backend.js</code></p>
+<pre class="prettyprint"><code class="language-sh">touch backend.js
+</code></pre>
+<p>and put the following content</p>
+<pre class="prettyprint"><code class="language-js">const fs = require(&#39;fs&#39;); 
+const https = require(&#39;https&#39;); 
+
+const options = { 
+  key: fs.readFileSync(&#39;./server/_.backend.oto.tools.key&#39;), 
+  cert: fs.readFileSync(&#39;./server/_.backend.oto.tools.cer&#39;), 
+  ca: fs.readFileSync(&#39;./ca/ca-backend.cer&#39;), 
+}; 
+
+const server = https.createServer(options, (req, res) =&gt; { 
+  res.writeHead(200, {
+    &#39;Content-Type&#39;: &#39;application/json&#39;
+  }); 
+  res.end(JSON.stringify({ message: &#39;Hello World!&#39; }) + &quot;\n&quot;); 
+}).listen(8444);
+
+console.log(&#39;Server listening:&#39;, `http://localhost:${server.address().port}`);
+</code></pre>
+<p>to run the server, just do </p>
+<pre class="prettyprint"><code class="language-sh">node ./backend.js
+</code></pre>
+<p>now you can try your server with</p>
+<pre class="prettyprint"><code class="language-sh">curl --cacert ./ca/ca-backend.cer https://api.backend.oto.tools:8444/
+</code></pre>
+<p>This should output :</p>
+<pre class="prettyprint"><code class="language-json">{ &quot;message&quot;: &quot;Hello World!&quot; }
+</code></pre>
+<p>now modify your backend server to ensure that the client provides a client certificate like:</p>
+<pre class="prettyprint"><code class="language-js">const fs = require(&#39;fs&#39;); 
+const https = require(&#39;https&#39;); 
+
+const options = { 
+  key: fs.readFileSync(&#39;./server/_.backend.oto.tools.key&#39;), 
+  cert: fs.readFileSync(&#39;./server/_.backend.oto.tools.cer&#39;), 
+  ca: fs.readFileSync(&#39;./ca/ca-backend.cer&#39;), 
+  requestCert: true, 
+  rejectUnauthorized: true
+}; 
+
+const server = https.createServer(options, (req, res) =&gt; { 
+  console.log(&#39;Client certificate CN: &#39;, req.socket.getPeerCertificate().subject.CN);
+  res.writeHead(200, {
+    &#39;Content-Type&#39;: &#39;application/json&#39;
+  }); 
+  res.end(JSON.stringify({ message: &#39;Hello World!&#39; }) + &quot;\n&quot;); 
+}).listen(8444);
+
+console.log(&#39;Server listening:&#39;, `http://localhost:${server.address().port}`);
+</code></pre>
+<p>you can test your new server with</p>
+<pre class="prettyprint"><code class="language-sh">curl \
+--cacert ./ca/ca-backend.cer \
+--cert ./client/_.backend.oto.tools.pem \
+--key ./client/_.backend.oto.tools.key https://api.backend.oto.tools:8444/
+</code></pre>
+<p>This should output :</p>
+<pre class="prettyprint"><code class="language-json">{ &quot;message&quot;: &quot;Hello World!&quot; }
+</code></pre>
+<h3><a href="#otoroshi-setup" name="otoroshi-setup" class="anchor"><span class="anchor-link"></span></a>Otoroshi setup</h3>
+<p>Download the latest version of the Otoroshi jar and run it like</p>
+<pre class="prettyprint"><code class="language-sh"> java \
+ -Dapp.adminPassword=password \
+ -Dplay.server.https.wantClientAuth=true \
+ -Dotoroshi.ssl.fromOutside.clientAuth=Want \
+ -jar -Dapp.storage=file otoroshi.jar
+
+[info] otoroshi-env - Admin API exposed on http://otoroshi-api.oto.tools:8080
+[info] otoroshi-env - Admin UI  exposed on http://otoroshi.oto.tools:8080
+[info] otoroshi-in-memory-datastores - Now using InMemory DataStores
+[info] otoroshi-env - The main datastore seems to be empty, registering some basic services
+[info] otoroshi-env - You can log into the Otoroshi admin console with the following credentials: admin@otoroshi.io / password
+[info] play.api.Play - Application started (Prod)
+[info] p.c.s.AkkaHttpServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
+[info] p.c.s.AkkaHttpServer - Listening for HTTPS on /0:0:0:0:0:0:0:0:8443
+[info] otoroshi-env - Generating a self signed SSL certificate for https://*.oto.tools ...
+</code></pre>
+<p>and log into otoroshi with the tuple <code>admin@otoroshi.io / password</code> displayed in the logs. </p>
+<p>Once logged in, navigate to the services pages and create a new item. * Jump to the <code>Service exposition settings</code> and add <code>http://api.frontend.oto.tools</code> as <code>Exposed domain</code>. * Navigate to the <code>Service targets</code> and add the following url <code>https://api.backend.oto.tools:8444/</code> to redirect our call to the previous created backend. * End this step by exposing the service as <code>Public UI</code> on the <code>URL Patterns</code> section.</p>
+<p>and test it</p>
+<pre class="prettyprint"><code class="language-sh">curl http://api.frontend.oto.tools:8080/
+</code></pre>
+<p>This should output :</p>
+<pre class="prettyprint"><code class="language-json">{&quot;Otoroshi-Error&quot;: &quot;Something went wrong, you should try later. Thanks for your understanding.&quot;}
+</code></pre>
+<p>you should get an error due to the fact that Otoroshi doesn&rsquo;t know about the server certificate or the client certificate expected by the server.</p>
+<p>We have to add the client certificate for <code>https://api.backend.oto.tools</code> to Otoroshi. Go to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates">http://otoroshi.oto.tools:8080/bo/dashboard/certificates</a> and create a new item. Copy and paste the content of <code>./client/_.backend.oto.tools.cer</code> and <code>./client/_.backend.oto.tools.key</code> respectively in <code>Certificate full chain</code> and <code>Certificate private key</code>.</p>
+<p>and retry the following curl command </p>
+<pre class="prettyprint"><code class="language-sh">curl http://api.frontend.oto.tools:8080/
+# the output should be: {&quot;message&quot;:&quot;Hello World!&quot;}
+</code></pre>
+<p>now we have to expose <code>https://api.frontend.oto.tools:8443</code> using otoroshi. Go to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates">http://otoroshi.oto.tools:8080/bo/dashboard/certificates</a> and create a new item. Copy and paste the content of <code>./server/_.frontend.oto.tools.cer</code> and <code>./server/_.frontend.oto.tools.key</code> respectively in <code>Certificate full chain</code> and <code>Certificate private key</code>.</p>
+<p>and try the following command</p>
+<pre class="prettyprint"><code class="language-sh">curl --cacert ./ca/ca-frontend.cer https://api.frontend.oto.tools:8443/
+# the output should be: {&quot;message&quot;:&quot;Hello World!&quot;}
+</code></pre>
+<p>now we have to enforce the fact that we want client certificate for <code>api.frontend.oto.tools</code>. To do that, we have to add a <code>Client Validator Only</code> plugin on the <code>api.frontend.oto.tools</code> service. Scroll to the last section called <code>Plugins</code> and select the <code>Client validator only</code> in the list.</p>
+<p>now if you retry </p>
+<pre class="prettyprint"><code class="language-sh">curl --cacert ./ca/ca-frontend.cer https://api.frontend.oto.tools:8443/
+# the output should be: {&quot;Otoroshi-Error&quot;:&quot;bad request&quot;}
+</code></pre>
+<p>you should get an error because no client cert. is passed with the request. But if you pass the <code>./client/_.frontend.oto.tools.csr</code> client cert and the key in your curl call</p>
+<pre class="prettyprint"><code class="language-sh">curl https://api.frontend.oto.tools:8443 --cacert ./ca/ca-frontend.cer --cert ./client/_.frontend.oto.tools.pem --key ./client/_.frontend.oto.tools.key
+# the output should be: {&quot;message&quot;:&quot;Hello World!&quot;}
+</code></pre>
+<h3><a href="#client-certificate-matching-plugin" name="client-certificate-matching-plugin" class="anchor"><span class="anchor-link"></span></a>Client certificate matching plugin</h3>
+<p>Otoroshi can restrict and check all incoming client certificates on a service.</p>
+<p>Scroll to the <code>Plugins</code> section and select the <code>Client certificate matching</code> plugin. Then, click on the <code>show config. panel</code> and inject the default configuration of the plugin (by clicking on <code>Inject default config.</code>).</p>
+<p>Save the service and retry your call again.</p>
+<pre class="prettyprint"><code class="language-sh">curl https://api.frontend.oto.tools:8443 --cacert ./ca/ca-frontend.cer --cert ./client/_.frontend.oto.tools.pem --key ./client/_.frontend.oto.tools.key
+# the output should be: {&quot;Otoroshi-Error&quot;:&quot;bad request&quot;}
+</code></pre>
+<p>Our client certificate is not matched by Otoroshi. We have to add the subject DN in the configuration of the <code>Client certificate matching</code> plugin to authorize it.</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;HasClientCertMatchingValidator&quot;: {
+    &quot;serialNumbers&quot;: [],
+    &quot;subjectDNs&quot;: [
+      &quot;CN=*.frontend.oto.tools&quot;
+    ],
+    &quot;issuerDNs&quot;: [],
+    &quot;regexSubjectDNs&quot;: [],
+    &quot;regexIssuerDNs&quot;: []
+  }
+}
+</code></pre>
+<p>Save the service and retry your call again.</p>
+<pre class="prettyprint"><code class="language-sh">curl https://api.frontend.oto.tools:8443 --cacert ./ca/ca-frontend.cer --cert ./client/_.frontend.oto.tools.pem --key ./client/_.frontend.oto.tools.key
+# the output should be: {&quot;message&quot;:&quot;Hello World!&quot;}
+</code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../how-to-s/export-alerts-using-mailgun.html">Send alerts using mailgun</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../how-to-s/end-to-end-mtls.html#end-to-end-mtls" class="header">End-to-end mTLS</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html#create-certificates" class="header">Create certificates</a></li>
+    <li><a href="../how-to-s/end-to-end-mtls.html#the-backend-service" class="header">The backend service</a></li>
+    <li><a href="../how-to-s/end-to-end-mtls.html#otoroshi-setup" class="header">Otoroshi setup</a></li>
+    <li><a href="../how-to-s/end-to-end-mtls.html#client-certificate-matching-plugin" class="header">Client certificate matching plugin</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 

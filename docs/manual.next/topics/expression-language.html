@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../js/cc.js"></script>
 <script type="text/javascript" src="../js/groups.js"></script>
 <script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
@@ -60,6 +61,7 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -91,6 +93,7 @@
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -105,7 +108,6 @@
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -169,6 +171,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -200,6 +203,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -214,7 +218,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -241,13 +244,147 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#expression-language" name="expression-language" class="anchor"><span class="anchor-link"></span></a>Expression language</h1><div class="callout warning "><div class="callout-title">Warning</div>
-<p>TODO</p></div>
+<h1><a href="#expression-language" name="expression-language" class="anchor"><span class="anchor-link"></span></a>Expression language</h1>
+<ul>
+  <li><a href="#documentation-and-examples">Documentation and examples</a></li>
+  <li><a href="#test-the-expression-language">Test the expression language</a></li>
+</ul>
+<p>The expression language provides an important mechanism for accessing and manipulating Otoroshi data on different inputs. For example, with this mechanism, you can mapping a claim of an inconming token directly in a claim of a generated token (using <a href="../entities/jwt-verifiers.html">JWT verifiers</a>). You can add information of the service descriptor traversed such as the domain of the service or the name of the service. This information can be useful on the downstream service.</p>
+<h2><a href="#documentation-and-examples" name="documentation-and-examples" class="anchor"><span class="anchor-link"></span></a>Documentation and examples</h2>
+<!-- Documentation is in expression-language.js and it build when page is rendered --><div id="expressions">
+<p>&nbsp;</p></div>
+<p>If an input contains a string starting by <code>${</code>, Otoroshi will try to evaluate the content. If the content doesn&rsquo;t match a known expression, the &lsquo;bad-expr&rsquo; value will be set.</p>
+<h2><a href="#test-the-expression-language" name="test-the-expression-language" class="anchor"><span class="anchor-link"></span></a>Test the expression language</h2>
+<p>You can test to get the same values than the right part by creating these following services. </p>
+<pre class="prettyprint"><code class="language-sh"># Let&#39;s start by downloading the latest Otoroshi.
+curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar&#39;
+
+# Once downloading, run Otoroshi.
+java -Dapp.adminPassword=password -jar otoroshi.jar 
+
+# Create a proxy of the mirror.otoroshi.io on http://myservice.oto.tools:8080
+curl -X POST http://otoroshi-api.oto.tools:8080/api/services \
+-H &quot;Otoroshi-Client-Id: admin-api-apikey-id&quot; \
+-H &quot;Otoroshi-Client-Secret: admin-api-apikey-secret&quot; \
+-H &#39;Content-Type: application/json; charset=utf-8&#39; \
+-d @- &lt;&lt;&#39;EOF&#39;
+{&quot;enforceSecureCommunication&quot;:false,&quot;forceHttps&quot;:false,&quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;id&quot;:&quot;expression-language-api-service&quot;,&quot;name&quot;:&quot;expression-language&quot;,&quot;description&quot;:&quot;expression-language&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;api&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[],&quot;privatePatterns&quot;:[&quot;/.*&quot;],&quot;kind&quot;:&quot;ServiceDescriptor&quot;,&quot;additionalHeaders&quot;:{&quot;my-expr-header.date&quot;:&quot;${date}&quot;,&quot;my-expr-header.date-with-format&quot;:&quot;${date.format(&#39;yyy-MM-dd&#39;)}&quot;,&quot;my-expr-header.request.full-url&quot;:&quot;${req.fullUrl}&quot;,&quot;my-expr-header.request.path&quot;:&quot;${req.path}&quot;,&quot;my-expr-header.request.uri&quot;:&quot;${req.uri}&quot;,&quot;my-expr-header.request.host&quot;:&quot;${req.host}&quot;,&quot;my-expr-header.request.domain&quot;:&quot;${req.domain}&quot;,&quot;my-expr-header.request.method&quot;:&quot;${req.method}&quot;,&quot;my-expr-header.request.protocol&quot;:&quot;${req.protocol}&quot;,&quot;my-expr-header.request.unknown-header&quot;:&quot;${req.headers.foob:&#39;&lt;default value&gt;&#39;}&quot;,&quot;my-expr-header.request.header&quot;:&quot;${req.headers.foo}&quot;,&quot;my-expr-header.request.unknown-query&quot;:&quot;${req.query.foob:&#39;&lt;default value&gt;}&quot;,&quot;my-expr-header.request.query&quot;:&quot;${req.query.foo}&quot;,&quot;my-expr-header.service-domain&quot;:&quot;${service.domain}&quot;,&quot;my-expr-header.service-subdomain&quot;:&quot;${service.subdomain}&quot;,&quot;my-expr-header.service-tld&quot;:&quot;${service.tld}&quot;,&quot;my-expr-header.service-env&quot;:&quot;${service.env}&quot;,&quot;my-expr-header.service-id&quot;:&quot;${service.id}&quot;,&quot;my-expr-header.service-name&quot;:&quot;${service.name}&quot;,&quot;my-expr-header.service-unknown-group&quot;:&quot;${service.groups[&#39;0&#39;:&#39;unkown group&#39;]}&quot;,&quot;my-expr-header.service-group&quot;:&quot;${service.groups[&#39;0&#39;]}&quot;,&quot;my-expr-header.service-unknown-metadata&quot;:&quot;${service.metadata.test:&#39;default-value&#39;}&quot;,&quot;my-expr-header.service-metadata&quot;:&quot;${service.metadata.foo}&quot;,&quot;my-expr-header.apikey.name&quot;:&quot;${apikey.name}&quot;,&quot;my-expr-header.apikey.id&quot;:&quot;${apikey.id}&quot;,&quot;my-expr-header.apikey.unknown-metadata&quot;:&quot;${apikey.metadata.myfield:&#39;default value&#39;}&quot;,&quot;my-expr-header.apikey.metadata&quot;:&quot;${apikey.metadata.foo}&quot;,&quot;my-expr-header.apikey.unknown-tag&quot;:&quot;${apikey.tags[&#39;0&#39;:&#39;no-found-tag&#39;]}&quot;,&quot;my-expr-header.apikey.tag&quot;:&quot;${apikey.tags[&#39;0&#39;]}&quot;,&quot;my-expr-header.token.replace-header-value&quot;:&quot;${token.foo.replace(&#39;o&#39;,&#39;a&#39;)}&quot;,&quot;my-expr-header.token.replace-header-all-value&quot;:&quot;${token.foo.replaceAll(&#39;o&#39;,&#39;a&#39;)}&quot;,&quot;my-expr-header.token.unknown-fields&quot;:&quot;${token.foob|token.foob2:&#39;not-found&#39;}&quot;,&quot;my-expr-header.token.foo-field&quot;:&quot;${token.foob|token.foo}&quot;,&quot;my-expr-header.token.unknown-foo-field&quot;:&quot;${token.foob:&#39;not-found-foob&#39;}&quot;,&quot;my-expr-header.token.unknown-foo&quot;:&quot;${token.foo}&quot;,&quot;my-expr-header.env.unknown-field&quot;:&quot;${env.java_h:&#39;not-found-java_h&#39;}&quot;,&quot;my-expr-header.env.path&quot;:&quot;${env.PATH}&quot;,&quot;my-expr-header.config.unknown-port-field&quot;:&quot;${config.http.ports:&#39;not-found&#39;}&quot;,&quot;my-expr-header.config.port&quot;:&quot;${config.http.port}&quot;,&quot;my-expr-header.ctx.replace-field-value&quot;:&quot;${ctx.foo.replace(&#39;o&#39;,&#39;a&#39;)}&quot;,&quot;my-expr-header.ctx.replace-field-all-value&quot;:&quot;${ctx.foo.replaceAll(&#39;o&#39;,&#39;a&#39;)}&quot;,&quot;my-expr-header.ctx.unknown-fields&quot;:&quot;${ctx.foob|ctx.foot:&#39;not-found&#39;}&quot;,&quot;my-expr-header.ctx.foo-field&quot;:&quot;${ctx.foob|ctx.foo}&quot;,&quot;my-expr-header.ctx.default-value&quot;:&quot;${ctx.foob:&#39;other&#39;}&quot;,&quot;my-expr-header.ctx.foo&quot;:&quot;${ctx.foo}&quot;,&quot;my-expr-header.ctx.useragent&quot;:&quot;${ctx.useragent.foo}&quot;,&quot;my-expr-header.ctx.geolocation&quot;:&quot;${ctx.geolocation.foo}&quot;}}
+EOF
+
+# Create an authentication module to protect the next service.
+curl -X POST http://otoroshi-api.oto.tools:8080/api/auths \
+-H &quot;Otoroshi-Client-Id: admin-api-apikey-id&quot; \
+-H &quot;Otoroshi-Client-Secret: admin-api-apikey-secret&quot; \
+-H &#39;Content-Type: application/json; charset=utf-8&#39; \
+-d @- &lt;&lt;&#39;EOF&#39;
+{&quot;type&quot;:&quot;basic&quot;,&quot;id&quot;:&quot;auth_mod_in_memory_auth&quot;,&quot;name&quot;:&quot;in-memory-auth&quot;,&quot;desc&quot;:&quot;in-memory-auth&quot;,&quot;users&quot;:[{&quot;name&quot;:&quot;User Otoroshi&quot;,&quot;password&quot;:&quot;$2a$10$oIf4JkaOsfiypk5ZK8DKOumiNbb2xHMZUkYkuJyuIqMDYnR/zXj9i&quot;,&quot;email&quot;:&quot;user@foo.bar&quot;,&quot;metadata&quot;:{&quot;username&quot;:&quot;roger&quot;},&quot;tags&quot;:[&quot;foo&quot;],&quot;webauthn&quot;:null,&quot;rights&quot;:[{&quot;tenant&quot;:&quot;*:r&quot;,&quot;teams&quot;:[&quot;*:r&quot;]}]}],&quot;sessionCookieValues&quot;:{&quot;httpOnly&quot;:true,&quot;secure&quot;:false}}
+EOF
+
+# Create the same proxy but protected by an authentication memory module (in order to retrieve the user&#39;s information after they have successfully logged in)
+curl -X POST http://otoroshi-api.oto.tools:8080/api/services \
+-H &quot;Otoroshi-Client-Id: admin-api-apikey-id&quot; \
+-H &quot;Otoroshi-Client-Secret: admin-api-apikey-secret&quot; \
+-H &#39;Content-Type: application/json; charset=utf-8&#39; \
+-d @- &lt;&lt;&#39;EOF&#39;
+{&quot;enforceSecureCommunication&quot;:false,&quot;forceHttps&quot;:false,&quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;id&quot;:&quot;expression-language-webapp&quot;,&quot;name&quot;:&quot;webapp&quot;,&quot;description&quot;:&quot;webapp&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;webapp&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;authConfigRef&quot;:&quot;auth_mod_in_memory_auth&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;/.*&quot;],&quot;privateApp&quot;:true,&quot;privatePatterns&quot;:[],&quot;kind&quot;:&quot;ServiceDescriptor&quot;,&quot;additionalHeaders&quot;:{&quot;my-expr-header.user&quot;:&quot;${user.name}&quot;,&quot;my-expr-header.user.email&quot;:&quot;${user.email}&quot;,&quot;my-expr-header.user.unknown-metadata&quot;:&quot;${user.metadata.foo:&#39;not-found&#39;}&quot;,&quot;my-expr-header.user.metadata&quot;:&quot;${user.metadata.username}&quot;,&quot;my-expr-header.user.unknown-profile-field&quot;:&quot;${user.profile.username:&#39;not-found&#39;}&quot;,&quot;my-expr-header.user.profile-field&quot;:&quot;${user.profile.name}&quot;}}
+EOF
+</code></pre>
+<p>Then try to call the first service.</p>
+<pre class="prettyprint"><code class="language-sh">curl http://api.oto.tools:9999/api/\?foo\=bar \
+-H &quot;Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJmb28iOiJiYXIifQ.lV130dFXR3bNtWBkwwf9dLmfsRVmnZhfYF9gvAaRzF8&quot; \
+-H &quot;Otoroshi-Client-Id: admin-api-apikey-id&quot; \
+-H &quot;Otoroshi-Client-Secret: admin-api-apikey-secret&quot; \
+-H &quot;foo: bar&quot; | jq
+</code></pre>
+<p>This will returns the list of the received headers by the mirror.</p>
+<pre class="prettyprint"><code class="language-json">{
+  ...
+  &quot;headers&quot;: {
+    ...
+    &quot;my-expr-header.date&quot;: &quot;2021-11-26T10:54:51.112+01:00&quot;,
+    &quot;my-expr-header.ctx.foo&quot;: &quot;no-ctx-foo&quot;,
+    &quot;my-expr-header.env.path&quot;: &quot;/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin&quot;,
+    &quot;my-expr-header.apikey.id&quot;: &quot;admin-api-apikey-id&quot;,
+    &quot;my-expr-header.apikey.tag&quot;: &quot;one-tag&quot;,
+    &quot;my-expr-header.service-id&quot;: &quot;expression-language-api-service&quot;,
+    &quot;my-expr-header.apikey.name&quot;: &quot;Otoroshi Backoffice ApiKey&quot;,
+    &quot;my-expr-header.config.port&quot;: &quot;8080&quot;,
+    &quot;my-expr-header.request.uri&quot;: &quot;/api/?foo=bar&quot;,
+    &quot;my-expr-header.service-env&quot;: &quot;prod&quot;,
+    &quot;my-expr-header.service-tld&quot;: &quot;oto.tools&quot;,
+    &quot;my-expr-header.request.host&quot;: &quot;api.oto.tools:9999&quot;,
+    &quot;my-expr-header.request.path&quot;: &quot;/api/&quot;,
+    &quot;my-expr-header.service-name&quot;: &quot;expression-language&quot;,
+    &quot;my-expr-header.ctx.foo-field&quot;: &quot;no-ctx-foob-foo&quot;,
+    &quot;my-expr-header.ctx.useragent&quot;: &quot;no-ctx-useragent.foo&quot;,
+    &quot;my-expr-header.request.query&quot;: &quot;bar&quot;,
+    &quot;my-expr-header.service-group&quot;: &quot;default&quot;,
+    &quot;my-expr-header.request.domain&quot;: &quot;api.oto.tools&quot;,
+    &quot;my-expr-header.request.header&quot;: &quot;bar&quot;,
+    &quot;my-expr-header.request.method&quot;: &quot;GET&quot;,
+    &quot;my-expr-header.service-domain&quot;: &quot;api.oto.tools&quot;,
+    &quot;my-expr-header.apikey.metadata&quot;: &quot;bar&quot;,
+    &quot;my-expr-header.ctx.geolocation&quot;: &quot;no-ctx-geolocation.foo&quot;,
+    &quot;my-expr-header.token.foo-field&quot;: &quot;no-token-foob-foo&quot;,
+    &quot;my-expr-header.date-with-format&quot;: &quot;2021-11-26&quot;,
+    &quot;my-expr-header.request.full-url&quot;: &quot;http://api.oto.tools:9999/api/?foo=bar&quot;,
+    &quot;my-expr-header.request.protocol&quot;: &quot;http&quot;,
+    &quot;my-expr-header.service-metadata&quot;: &quot;no-meta-foo&quot;,
+    &quot;my-expr-header.ctx.default-value&quot;: &quot;&#39;other&#39;&quot;,
+    &quot;my-expr-header.env.unknown-field&quot;: &quot;&#39;not-found-java_h&#39;&quot;,
+    &quot;my-expr-header.service-subdomain&quot;: &quot;api&quot;,
+    &quot;my-expr-header.token.unknown-foo&quot;: &quot;no-token-foo&quot;,
+    &quot;my-expr-header.apikey.unknown-tag&quot;: &quot;one-tag&quot;,
+    &quot;my-expr-header.ctx.unknown-fields&quot;: &quot;&#39;not-found&#39;&quot;,
+    &quot;my-expr-header.token.unknown-fields&quot;: &quot;&#39;not-found&#39;&quot;,
+    &quot;my-expr-header.request.unknown-query&quot;: &quot;&#39;&lt;default value&gt;&quot;,
+    &quot;my-expr-header.service-unknown-group&quot;: &quot;default&quot;,
+    &quot;my-expr-header.request.unknown-header&quot;: &quot;&#39;&lt;default value&gt;&#39;&quot;,
+    &quot;my-expr-header.apikey.unknown-metadata&quot;: &quot;&#39;default value&#39;&quot;,
+    &quot;my-expr-header.ctx.replace-field-value&quot;: &quot;no-ctx-foo&quot;,
+    &quot;my-expr-header.token.unknown-foo-field&quot;: &quot;&#39;not-found-foob&#39;&quot;,
+    &quot;my-expr-header.service-unknown-metadata&quot;: &quot;&#39;default-value&#39;&quot;,
+    &quot;my-expr-header.config.unknown-port-field&quot;: &quot;&#39;not-found&#39;&quot;,
+    &quot;my-expr-header.token.replace-header-value&quot;: &quot;no-token-foo&quot;,
+    &quot;my-expr-header.ctx.replace-field-all-value&quot;: &quot;no-ctx-foo&quot;,
+    &quot;my-expr-header.token.replace-header-all-value&quot;: &quot;no-token-foo&quot;,
+  }
+}
+</code></pre>
+<p>Then try the second call to the webapp. Navigate on your browser to <code>http://webapp.oto.tools:8080</code>. Continue with <code>user@foo.bar</code> as user and <code>password</code> as credential.</p>
+<p>This should output:</p>
+<pre class="prettyprint"><code class="language-json">{
+  ...
+  &quot;headers&quot;: {
+    ...
+    &quot;my-expr-header.user&quot;: &quot;User Otoroshi&quot;,
+    &quot;my-expr-header.user.email&quot;: &quot;user@foo.bar&quot;,
+    &quot;my-expr-header.user.metadata&quot;: &quot;roger&quot;,
+    &quot;my-expr-header.user.profile-field&quot;: &quot;User Otoroshi&quot;,
+    &quot;my-expr-header.user.unknown-metadata&quot;: &quot;&#39;not-found&#39;&quot;,
+    &quot;my-expr-header.user.unknown-profile-field&quot;: &quot;&#39;not-found&#39;&quot;,
+  }
+}
+</code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../how-to-s/index.html">How to&rsquo;s</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/expression-language.html#expression-language" class="header">Expression language</a>
+  <ul>
+    <li><a href="../topics/expression-language.html#documentation-and-examples" class="header">Documentation and examples</a></li>
+    <li><a href="../topics/expression-language.html#test-the-expression-language" class="header">Test the expression language</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 

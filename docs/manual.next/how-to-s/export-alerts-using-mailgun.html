@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../js/cc.js"></script>
 <script type="text/javascript" src="../js/groups.js"></script>
 <script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
@@ -60,6 +61,7 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -91,6 +93,7 @@
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -105,7 +108,6 @@
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -169,6 +171,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -200,6 +203,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -214,7 +218,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -248,40 +251,20 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h2><a href="#create-an-mailgun-exporter" name="create-an-mailgun-exporter" class="anchor"><span class="anchor-link"></span></a>Create an Mailgun exporter</h2>
 <p>Let&rsquo;s create an exporter. The exporter will export by default all events generate by Otoroshi.</p>
 <ol>
-  <li>Go ahead, and navigate to <a href="http://otoroshi.oto.tools:9999">http://otoroshi.oto.tools:9999</a></li>
+  <li>Go ahead, and navigate to <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a></li>
   <li>Click on the cog icon on the top right</li>
   <li>Then <code>Exporters</code> button</li>
   <li>And add a new configuration when clicking on the <code>Add item</code> button</li>
   <li>Select the <code>mailer</code> in the <code>type</code> selector field</li>
   <li>Jump to <code>Exporter config</code> and select the <code>Mailgun</code> option</li>
-  <li>Set the following values</li>
+  <li>Set the following values:</li>
 </ol>
-<table>
-  <thead>
-    <tr>
-      <th>Field </th>
-      <th>Value </th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>EU</code> </td>
-      <td><code>false</code> or <code>true</code> depending on your mailgun configuratin </td>
-    </tr>
-    <tr>
-      <td><code>Mailgun api key</code> </td>
-      <td>your-mailgun-api-key </td>
-    </tr>
-    <tr>
-      <td><code>Mailgun domain</code> </td>
-      <td>your-mailgun-domain </td>
-    </tr>
-    <tr>
-      <td><code>Email addresses</code> </td>
-      <td>list of the recipient adresses </td>
-    </tr>
-  </tbody>
-</table>
+<ul>
+  <li><code>EU</code> : false/true depending on your mailgun configuratin</li>
+  <li><code>Mailgun api key</code> : your-mailgun-api-key</li>
+  <li><code>Mailgun domain</code> : your-mailgun-domain</li>
+  <li><code>Email addresses</code> : list of the recipient adresses</li>
+</ul>
 <p>With this configuration, all Otoroshi events will be send to your listed addresses (we don&rsquo;t recommended to do that).</p>
 <p>To filter events on <code>Alerts</code> type, we need to add the following configuration inside the <code>Filtering and projection</code> section.</p>
 <pre class="prettyprint"><code class="language-json">{

@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../js/cc.js"></script>
 <script type="text/javascript" src="../js/groups.js"></script>
 <script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
@@ -60,6 +61,7 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -91,6 +93,7 @@
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -105,7 +108,6 @@
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -169,6 +171,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -200,6 +203,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -214,7 +218,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -252,123 +255,138 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="#secure-an-app-with-oauth-1-authentication">Secure an app with OAuth 1 authentication</a></li>
 </ul><div class="callout warning "><div class="callout-title">Warning</div>
 <p>TODO - schema</p></div>
-<h3><a href="#download-otoroshi" name="download-otoroshi" class="anchor"><span class="anchor-link"></span></a>Download Otoroshi</h3>
-<p>Let&rsquo;s start by downloading the latest Otoroshi</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
+<h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar&#39;
 </code></pre>
-<p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code></p>
-<p>Run Otoroshi</p>
-<pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
-
-Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
-
-Then create a simple service (@ref[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
-
-### Running an simple OAuth 1 server
-
-In this tutorial, we&#39;ll instanciate a oauth 1 server with docker. If you alredy have the necessary, skip this section @ref:[to](#create-an-oauth-1-provider-module).
-
-Let&#39;s start by running the server
+<p>Once downloading, run Otoroshi.</p>
+<pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -jar otoroshi.jar 
 </code></pre>
-<p>docker run -d &ndash;name oauth1-server &ndash;rm \  -p 5000:5000 \  -e OAUTH1_CLIENT_ID=2NVVBip7I5kfl0TwVmGzTphhC98kmXScpZaoz7ET \  -e OAUTH1_CLIENT_SECRET=wXzb8tGqXNbBQ5juA0ZKuFAmSW7RwOw8uSbdE3MvbrI8wjcbGp \  -e OAUTH1_REDIRECT_URI=http://otoroshi.oto.tools:9999/backoffice/auth0/callback \  ghcr.io/beryju/oauth1-test-server</p>
-<pre><code><br/>We created a oauth 1 server which accepts `http://otoroshi.oto.tools:9999/backoffice/auth0/callback` as `Redirect URI`. This URL is used by Otoroshi to retrieve a token and a profile at the end of an authentication process.
-
-After this command, the container logs should output :
+<p>Log to Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code>.</p>
+<p>Create a service, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8080/api/services \
+-d &#39;{&quot;enforceSecureCommunication&quot;: false, &quot;forceHttps&quot;: false, &quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;name&quot;:&quot;my-service&quot;,&quot;description&quot;:&quot;a service&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;myservice&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;\/.*&quot;],&quot;privatePatterns&quot;:[],&quot;kind&quot;:&quot;ServiceDescriptor&quot;}&#39; \
+-H &quot;Content-type: application/json&quot; \
+-u admin-api-apikey-id:admin-api-apikey-secret
 </code></pre>
-<p>127.0.0.1 - - [14/Oct/2021 12:10:49] &ldquo;HEAD /api/health HTTP/1.1&rdquo; 200 -</p>
-<pre><code><br/>### Create an OAuth 1 provider module
-
-1. Go ahead, and navigate to http://otoroshi.oto.tools:9999
-1. Click on the cog icon on the top right
-1. Then `Authentication configs` button
-1. And add a new configuration when clicking on the `Add item` button
-2. Select the `Oauth1 provider` in the type selector field
-3. Set a basic name and description like `oauth1-provider`
-4. Set `2NVVBip7I5kfl0TwVmGzTphhC98kmXScpZaoz7ET` as `Consumer key`
-5. Set `wXzb8tGqXNbBQ5juA0ZKuFAmSW7RwOw8uSbdE3MvbrI8wjcbGp` as `Consumer secret`
-6. Set `http://localhost:5000/oauth/request_token` as `Request Token URL`
-7. Set `http://localhost:5000/oauth/authorize` as `Authorize URL`
-8. Set `http://localhost:oauth/access_token` as `Access token URL`
-9. Set `http://localhost:5000/api/me` as `Profile URL`
-10. Set `http://otoroshi.oto.tools:9999/backoffice/auth0/callback` as `Callback URL`
-11. At the bottom of the page, disable the `secure` button (because we&#39;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)
-
- At this point, your configuration should be similar to :
-&lt;!-- oto-scenario
+<h3><a href="#running-an-simple-oauth-1-server" name="running-an-simple-oauth-1-server" class="anchor"><span class="anchor-link"></span></a>Running an simple OAuth 1 server</h3>
+<p>In this tutorial, we&rsquo;ll instanciate a oauth 1 server with docker. If you alredy have the necessary, skip this section <a href="secure-with-oauth1-client.html#create-an-oauth-1-provider-module">to</a>.</p>
+<p>Let&rsquo;s start by running the server</p>
+<pre class="prettyprint"><code class="language-sh">docker run -d --name oauth1-server --rm \
+    -p 5000:5000 \
+    -e OAUTH1_CLIENT_ID=2NVVBip7I5kfl0TwVmGzTphhC98kmXScpZaoz7ET \
+    -e OAUTH1_CLIENT_SECRET=wXzb8tGqXNbBQ5juA0ZKuFAmSW7RwOw8uSbdE3MvbrI8wjcbGp \
+    -e OAUTH1_REDIRECT_URI=http://otoroshi.oto.tools:8080/backoffice/auth0/callback \
+    ghcr.io/beryju/oauth1-test-server
+</code></pre>
+<p>We created a oauth 1 server which accepts <code>http://otoroshi.oto.tools:8080/backoffice/auth0/callback</code> as <code>Redirect URI</code>. This URL is used by Otoroshi to retrieve a token and a profile at the end of an authentication process.</p>
+<p>After this command, the container logs should output :</p>
+<pre class="prettyprint"><code class="language-sh ">127.0.0.1 - - [14/Oct/2021 12:10:49] &quot;HEAD /api/health HTTP/1.1&quot; 200 -
+</code></pre>
+<h3><a href="#create-an-oauth-1-provider-module" name="create-an-oauth-1-provider-module" class="anchor"><span class="anchor-link"></span></a>Create an OAuth 1 provider module</h3>
+<ol>
+  <li>Go ahead, and navigate to <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a></li>
+  <li>Click on the cog icon on the top right</li>
+  <li>Then <code>Authentication configs</code> button</li>
+  <li>And add a new configuration when clicking on the <code>Add item</code> button</li>
+  <li>Select the <code>Oauth1 provider</code> in the type selector field</li>
+  <li>Set a basic name and description like <code>oauth1-provider</code></li>
+  <li>Set <code>2NVVBip7I5kfl0TwVmGzTphhC98kmXScpZaoz7ET</code> as <code>Consumer key</code></li>
+  <li>Set <code>wXzb8tGqXNbBQ5juA0ZKuFAmSW7RwOw8uSbdE3MvbrI8wjcbGp</code> as <code>Consumer secret</code></li>
+  <li>Set <code>http://localhost:5000/oauth/request_token</code> as <code>Request Token URL</code></li>
+  <li>Set <code>http://localhost:5000/oauth/authorize</code> as <code>Authorize URL</code></li>
+  <li>Set <code>http://localhost:oauth/access_token</code> as <code>Access token URL</code></li>
+  <li>Set <code>http://localhost:5000/api/me</code> as <code>Profile URL</code></li>
+  <li>Set <code>http://otoroshi.oto.tools:8080/backoffice/auth0/callback</code> as <code>Callback URL</code></li>
+  <li>At the bottom of the page, disable the <code>secure</code> button (because we&rsquo;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)</li>
+</ol>
+<p>At this point, your configuration should be similar to : <!-- oto-scenario
  - goto /bo/dashboard/auth-configs/edit/auth_mod_oauth1.0_provider
  - wait 1000
  - screenshot generated-hows-to-secure-with-oauth1-provider.png
---&gt;
-&lt;img src=&quot;../imgs/generated-hows-to-secure-with-oauth1-provider.png&quot; /&gt;
-
-With this configuration, the connected user will receive default access on teams and organizations. If you want to change the access rights for a specific user, you can achieve it with the `Rights override` field and a configuration like :
+--> <img src="../imgs/generated-hows-to-secure-with-oauth1-provider.png" /></p>
+<p>With this configuration, the connected user will receive default access on teams and organizations. If you want to change the access rights for a specific user, you can achieve it with the <code>Rights override</code> field and a configuration like :</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;foo@example.com&quot;: [
+    {
+      &quot;tenant&quot;: &quot;*:rw&quot;,
+      &quot;teams&quot;: [
+        &quot;*:rw&quot;
+      ]
+    }
+  ]
+}
 </code></pre>
-<p>{  &quot;<a href="mailto:&#102;o&#111;&#x40;&#x65;&#x78;&#x61;&#109;&#x70;&#x6c;e&#46;&#x63;&#111;m&#34;">&#102;o&#111;&#x40;&#x65;&#x78;&#x61;&#109;&#x70;&#x6c;e&#46;&#x63;&#111;m&#34;</a>: [  {  &ldquo;tenant&rdquo;: &quot;*:rw&ldquo;,  &rdquo;teams&quot;: [  &quot;*:rw&quot;  ]  }  ] }</p>
-<pre><code><br/>Save your configuration at the bottom of the page, then navigate to the `danger zone` to use your module as a third-party connection to the Otoroshi UI.
-
-### Connect to Otoroshi with OAuth1 authentication
-
-To secure Otoroshi with your OAuth1 configuration, we have to register an Authentication configuration as a BackOffice Auth. configuration.
-
-1. Navigate to the *danger zone* (when clicking on the cog on the top right and selecting Danger zone)
-1. Scroll to the *BackOffice auth. settings*
-1. Select your last Authentication configuration (created in the previous section)
-1. Save the global configuration with the button on the top right
-
-### Testing your configuration
-
-1. Disconnect from your instance
-1. Then click on the *Login using third-party* button (or navigate to *http://otoroshi.oto.tools:9999*)
-2. Click on `Login using Third-party` button
-3. If all is configured, Otoroshi will redirect you to the oauth 1 server login page
-4. Set `example-user` as user and trust the user by clicking on `yes` button.
-5. Good work! You&#39;re connected to Otoroshi with an OAuth1 module.
-
-&gt; A fallback solution is always available, by going to *http://otoroshi.oto.tools:9999/bo/simple/login*, for administrators in case your Authentication module is not available
-
-### Secure an app with OAuth 1 authentication
-
-With the previous configuration, you can secure any of Otoroshi services with it. 
-
-The first step is to apply a little change on the previous configuration. 
-
-1. Navigate to *http://otoroshi.oto.tools:9999/bo/dashboard/auth-configs*.
-2. Create a new auth module configuration with the same values.
-3. Replace the `Callback URL` field to `http://privateapps.oto.tools:9999/privateapps/generic/callback` (we changed this value because the redirection of a logged user by a third-party server is cover by an other route by Otoroshi).
-4. Disable the `secure` button (because we&#39;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)
-
-&gt; Note : a Otoroshi service is call a private app when it is protected by an authentication module.
-
-Our example server supports only one redirect URI. We need to kill it, and to create a new container with `http://otoroshi.oto.tools:9999/privateapps/generic/callback` as `OAUTH1_REDIRECT_URI`
+<p>Save your configuration at the bottom of the page, then navigate to the <code>danger zone</code> to use your module as a third-party connection to the Otoroshi UI.</p>
+<h3><a href="#connect-to-otoroshi-with-oauth1-authentication" name="connect-to-otoroshi-with-oauth1-authentication" class="anchor"><span class="anchor-link"></span></a>Connect to Otoroshi with OAuth1 authentication</h3>
+<p>To secure Otoroshi with your OAuth1 configuration, we have to register an Authentication configuration as a BackOffice Auth. configuration.</p>
+<ol>
+  <li>Navigate to the <em>danger zone</em> (when clicking on the cog on the top right and selecting Danger zone)</li>
+  <li>Scroll to the <em>BackOffice auth. settings</em></li>
+  <li>Select your last Authentication configuration (created in the previous section)</li>
+  <li>Save the global configuration with the button on the top right</li>
+</ol>
+<h3><a href="#testing-your-configuration" name="testing-your-configuration" class="anchor"><span class="anchor-link"></span></a>Testing your configuration</h3>
+<ol>
+  <li>Disconnect from your instance</li>
+  <li>Then click on the <em>Login using third-party</em> button (or navigate to *<a href="http://otoroshi.oto.tools:8080*">http://otoroshi.oto.tools:8080*</a>)
+</li>
+  <li>Click on <code>Login using Third-party</code> button</li>
+  <li>If all is configured, Otoroshi will redirect you to the oauth 1 server login page</li>
+  <li>Set <code>example-user</code> as user and trust the user by clicking on <code>yes</code> button.</li>
+  <li>Good work! You&rsquo;re connected to Otoroshi with an OAuth1 module.</li>
+</ol>
+<blockquote>
+  <p>A fallback solution is always available, by going to *<a href="http://otoroshi.oto.tools:8080/bo/simple/login*">http://otoroshi.oto.tools:8080/bo/simple/login*</a>, for administrators in case your Authentication module is not available</p>
+</blockquote>
+<h3><a href="#secure-an-app-with-oauth-1-authentication" name="secure-an-app-with-oauth-1-authentication" class="anchor"><span class="anchor-link"></span></a>Secure an app with OAuth 1 authentication</h3>
+<p>With the previous configuration, you can secure any of Otoroshi services with it. </p>
+<p>The first step is to apply a little change on the previous configuration. </p>
+<ol>
+  <li>Navigate to *<a href="http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs*">http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs*</a>.
+</li>
+  <li>Create a new auth module configuration with the same values.</li>
+  <li>Replace the <code>Callback URL</code> field to <code>http://privateapps.oto.tools:8080/privateapps/generic/callback</code> (we changed this value because the redirection of a logged user by a third-party server is cover by an other route by Otoroshi).</li>
+  <li>Disable the <code>secure</code> button (because we&rsquo;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)</li>
+</ol>
+<blockquote>
+  <p>Note : a Otoroshi service is call a private app when it is protected by an authentication module.</p>
+</blockquote>
+<p>Our example server supports only one redirect URI. We need to kill it, and to create a new container with <code>http://otoroshi.oto.tools:8080/privateapps/generic/callback</code> as <code>OAUTH1_REDIRECT_URI</code></p>
+<pre class="prettyprint"><code class="language-sh">docker rm -f oauth1-server
+docker run -d --name oauth1-server --rm \
+    -p 5000:5000 \
+    -e OAUTH1_CLIENT_ID=2NVVBip7I5kfl0TwVmGzTphhC98kmXScpZaoz7ET \
+    -e OAUTH1_CLIENT_SECRET=wXzb8tGqXNbBQ5juA0ZKuFAmSW7RwOw8uSbdE3MvbrI8wjcbGp \
+    -e OAUTH1_REDIRECT_URI=http://privateapps.oto.tools:8080/privateapps/generic/callback \
+    ghcr.io/beryju/oauth1-test-server
 </code></pre>
-<p>docker rm -f oauth1-server docker run -d &ndash;name oauth1-server &ndash;rm \  -p 5000:5000 \  -e OAUTH1_CLIENT_ID=2NVVBip7I5kfl0TwVmGzTphhC98kmXScpZaoz7ET \  -e OAUTH1_CLIENT_SECRET=wXzb8tGqXNbBQ5juA0ZKuFAmSW7RwOw8uSbdE3MvbrI8wjcbGp \  -e OAUTH1_REDIRECT_URI=http://privateapps.oto.tools:9999/privateapps/generic/callback \  ghcr.io/beryju/oauth1-test-server</p>
-<pre><code><br/>Once the authentication module and the new container created, we can set the authentication module on the service.
-
-1. Navigate to any created service
-2. Scroll to `Authentication` section
-3. Enable `Enforce user authentication`
-4. Select your Authentication config inside the list
-5. Enable `Strict mode`
-6.  Don&#39;t forget to save your configuration.
-
-Now you can try to call your defined service and see the login module appears.
-
-&gt; &lt;img src=&quot;../imgs/hows-to-secure-app-with-oauth1-provider-input.png&quot;&gt;
-
-The allow access to the user.
-
-&gt; &lt;img src=&quot;../imgs/hows-to-secure-app-with-oauth1-provider-trust.png&quot;&gt;
-
-If you had any errors, make sure of :
-* check if you are on http or https, and if the *secure cookie option* is enabled or not on the authentication module
-* check if your oauth1 server has the REDIRECT_URI set on *privateapps/...*
-* Make sure your server supports POST or GET oauth1 flow set on authentication module
-
-Once the configuration is working, you can check, when connecting with an Otoroshi admin user, the `Private App session` created (use the cog at the right top of the page, and select `Priv. app sesssions`, or navigate to *http://otoroshi.oto.tools:9999/bo/dashboard/sessions/private*).
-
-One interesing feature is to check the profile of the connected user. In our case, when clicking on the `Profile` button of the right user, we should have : 
+<p>Once the authentication module and the new container created, we can set the authentication module on the service.</p>
+<ol>
+  <li>Navigate to any created service</li>
+  <li>Scroll to <code>Authentication</code> section</li>
+  <li>Enable <code>Enforce user authentication</code></li>
+  <li>Select your Authentication config inside the list</li>
+  <li>Enable <code>Strict mode</code></li>
+  <li>Don&rsquo;t forget to save your configuration.</li>
+</ol>
+<p>Now you can try to call your defined service and see the login module appears.</p>
+<blockquote>
+  <img src="../imgs/hows-to-secure-app-with-oauth1-provider-input.png">
+</blockquote>
+<p>The allow access to the user.</p>
+<blockquote>
+  <img src="../imgs/hows-to-secure-app-with-oauth1-provider-trust.png">
+</blockquote>
+<p>If you had any errors, make sure of : * check if you are on http or https, and if the <em>secure cookie option</em> is enabled or not on the authentication module * check if your oauth1 server has the REDIRECT_URI set on <em>privateapps/&hellip;</em> * Make sure your server supports POST or GET oauth1 flow set on authentication module</p>
+<p>Once the configuration is working, you can check, when connecting with an Otoroshi admin user, the <code>Private App session</code> created (use the cog at the right top of the page, and select <code>Priv. app sesssions</code>, or navigate to *<a href="http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private*)">http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private*)</a>.</p>
+<p>One interesing feature is to check the profile of the connected user. In our case, when clicking on the <code>Profile</code> button of the right user, we should have : </p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;email&quot;: &quot;foo@example.com&quot;,
+  &quot;id&quot;: 1,
+  &quot;name&quot;: &quot;test name&quot;,
+  &quot;screen_name&quot;: &quot;example-user&quot;
+}
 </code></pre>
-<p>{  &ldquo;email&rdquo;: &ldquo;<a href="mailto:&#102;&#111;o&#64;e&#x78;&#97;&#x6d;&#x70;&#108;&#101;.&#x63;&#x6f;m&#34;">&#102;&#111;o&#64;e&#x78;&#97;&#x6d;&#x70;&#108;&#101;.&#x63;&#x6f;m&#34;</a>,  &rdquo;id&ldquo;: 1,  &rdquo;name&ldquo;: &rdquo;test name&ldquo;,  &rdquo;screen_name&ldquo;: &rdquo;example-user&quot; } ```</p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../how-to-s/secure-with-oauth2-client-credentials.html">Secure an app with OAuth2 client_credential flow</a></p>
 </div>
@@ -382,7 +400,12 @@ One interesing feature is to check the profile of the connected user. In our cas
   <li><a href="../how-to-s/secure-with-oauth1-client.html#secure-an-app-with-oauth1-client-flow" class="header">Secure an app with OAuth1 client flow</a>
   <ul>
     <li><a href="../how-to-s/secure-with-oauth1-client.html#cover-by-this-tutorial" class="header">Cover by this tutorial</a></li>
-    <li><a href="../how-to-s/secure-with-oauth1-client.html#download-otoroshi" class="header">Download Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html#before-you-start" class="header">Before you start</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html#running-an-simple-oauth-1-server" class="header">Running an simple OAuth 1 server</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html#create-an-oauth-1-provider-module" class="header">Create an OAuth 1 provider module</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html#connect-to-otoroshi-with-oauth1-authentication" class="header">Connect to Otoroshi with OAuth1 authentication</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html#testing-your-configuration" class="header">Testing your configuration</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html#secure-an-app-with-oauth-1-authentication" class="header">Secure an app with OAuth 1 authentication</a></li>
   </ul></li>
 </ul>
 </div>

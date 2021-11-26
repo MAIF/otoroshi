@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../js/cc.js"></script>
 <script type="text/javascript" src="../js/groups.js"></script>
 <script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
@@ -60,6 +61,7 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -91,6 +93,7 @@
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -105,7 +108,6 @@
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -169,6 +171,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -200,6 +203,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -214,7 +218,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -242,11 +245,62 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#get-otoroshi" name="get-otoroshi" class="anchor"><span class="anchor-link"></span></a>Get Otoroshi</h1>
+<p>All release can be bound on the releases page of the repository (<a href="`https://github.com/MAIF/otoroshi/releases`">visit it</a>).</p>
 <h2><a href="#from-zip" name="from-zip" class="anchor"><span class="anchor-link"></span></a>From zip</h2>
+<pre class="prettyprint"><code class="language-sh"># Download the latest beta version
+wget https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi-1.5.0-beta.8.zip
+
+# or the latest stable version
+wget https://github.com/MAIF/otoroshi/releases/download/v1.4.22/otoroshi-1.4.22.zip
+</code></pre>
 <h2><a href="#from-jar-file" name="from-jar-file" class="anchor"><span class="anchor-link"></span></a>From jar file</h2>
+<pre class="prettyprint"><code class="language-sh"># Download the latest beta version
+wget https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar
+
+# or the latest stable version
+wget https://github.com/MAIF/otoroshi/releases/download/v1.4.22/otoroshi.jar
+</code></pre>
 <h2><a href="#from-docker" name="from-docker" class="anchor"><span class="anchor-link"></span></a>From Docker</h2>
-<h2><a href="#from-sources" name="from-sources" class="anchor"><span class="anchor-link"></span></a>From Sources</h2><div class="callout warning "><div class="callout-title">Warning</div>
-<p>TODO</p></div>
+<pre class="prettyprint"><code class="language-sh"># Download the latest beta version
+docker pull maif/otoroshi:1.5.0-beta.8-jdk11
+
+#or the latest stable version
+docker pull maif/otoroshi:1.4.22-jdk12
+</code></pre>
+<h2><a href="#from-sources" name="from-sources" class="anchor"><span class="anchor-link"></span></a>From Sources</h2>
+<p>To build Otoroshi from sources, you need the following tools :</p>
+<ul>
+  <li>git</li>
+  <li>JDK 8 or 11</li>
+  <li>SBT</li>
+  <li>node</li>
+  <li>yarn</li>
+</ul>
+<p>Once you&rsquo;ve installed all those tools, go to the <a href="https://github.com/MAIF/otoroshi">Otoroshi github page</a> and clone the sources :</p>
+<pre class="prettyprint"><code class="language-sh">git clone https://github.com/MAIF/otoroshi.git --depth=1
+</code></pre>
+<p>then you need to run the <code>build.sh</code> script to build the documentation, the React UI and the server :</p>
+<pre class="prettyprint"><code class="language-sh">sh ./scripts/build.sh
+</code></pre>
+<p>and that&rsquo;s all, you can grab your Otoroshi package at <code>otoroshi/target/scala-2.12/otoroshi</code> or <code>otoroshi/target/universal/</code>.</p>
+<p>For those who want to build only parts of Otoroshi, read the following.</p>
+<h2><a href="#build-the-documentation-only" name="build-the-documentation-only" class="anchor"><span class="anchor-link"></span></a>Build the documentation only</h2>
+<p>Go to the <code>documentation</code> folder and run :</p>
+<pre class="prettyprint"><code class="language-sh">sbt &#39;;clean;paradox&#39;
+</code></pre>
+<p>The documentation is located at <code>manual/target/paradox/site/main/</code></p>
+<h2><a href="#build-the-react-ui" name="build-the-react-ui" class="anchor"><span class="anchor-link"></span></a>Build the React UI</h2>
+<p>Go to the <code>otoroshi/javascript</code> folder and run :</p>
+<pre class="prettyprint"><code class="language-sh">yarn install
+yarn build
+</code></pre>
+<p>You will find the JS bundle at <code>otoroshi/public/javascripts/bundle/bundle.js</code>.</p>
+<h2><a href="#build-the-otoroshi-server" name="build-the-otoroshi-server" class="anchor"><span class="anchor-link"></span></a>Build the Otoroshi server</h2>
+<p>Go to the <code>otoroshi</code> folder and run :</p>
+<pre class="prettyprint"><code class="language-sh">export SBT_OPTS=&quot;-Xmx2G -Xss6M&quot;
+sbt &#39;;clean;compile;dist;assembly&#39;
+</code></pre>
+<p>You will find your Otoroshi package at <code>otoroshi/target/scala-2.12/otoroshi</code> or <code>otoroshi/target/universal/</code>.</p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../install/setup-otoroshi.html">Setup Otoroshi</a></p>
 </div>
@@ -263,6 +317,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../install/get-otoroshi.html#from-jar-file" class="header">From jar file</a></li>
     <li><a href="../install/get-otoroshi.html#from-docker" class="header">From Docker</a></li>
     <li><a href="../install/get-otoroshi.html#from-sources" class="header">From Sources</a></li>
+    <li><a href="../install/get-otoroshi.html#build-the-documentation-only" class="header">Build the documentation only</a></li>
+    <li><a href="../install/get-otoroshi.html#build-the-react-ui" class="header">Build the React UI</a></li>
+    <li><a href="../install/get-otoroshi.html#build-the-otoroshi-server" class="header">Build the Otoroshi server</a></li>
   </ul></li>
 </ul>
 </div>

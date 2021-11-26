@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../js/cc.js"></script>
 <script type="text/javascript" src="../js/groups.js"></script>
 <script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
@@ -60,6 +61,7 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -91,6 +93,7 @@
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -105,7 +108,6 @@
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -169,6 +171,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -200,6 +203,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -214,7 +218,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -252,56 +255,19 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="#secure-an-app-with-keycloak-authentication">Secure an app with Keycloak authentication</a></li>
 </ul><div class="callout warning "><div class="callout-title">Warning</div>
 <p>TODO - schema</p></div>
-<p>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</p>
-<h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3>
-<p>Let&rsquo;s start by downloading the latest Otoroshi</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
+<h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar&#39;
 </code></pre>
-<p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code></p>
-<p>=======</p>
-<h3><a href="#download-otoroshi" name="download-otoroshi" class="anchor"><span class="anchor-link"></span></a>Download Otoroshi</h3>
-<p>Let&rsquo;s start by downloading the latest Otoroshi</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
+<p>Once downloading, run Otoroshi.</p>
+<pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -jar otoroshi.jar 
 </code></pre>
-<p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code></p>
-<blockquote>
-  <blockquote>
-    <blockquote>
-      <blockquote>
-        <blockquote>
-          <blockquote>
-            <blockquote>
-              <p>master Run Otoroshi</p>
-              <pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
+<p>Log to Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code>.</p>
+<p>Create a service, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8080/api/services \
+-d &#39;{&quot;enforceSecureCommunication&quot;: false, &quot;forceHttps&quot;: false, &quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;name&quot;:&quot;my-service&quot;,&quot;description&quot;:&quot;a service&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;myservice&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;\/.*&quot;],&quot;privatePatterns&quot;:[],&quot;kind&quot;:&quot;ServiceDescriptor&quot;}&#39; \
+-H &quot;Content-type: application/json&quot; \
+-u admin-api-apikey-id:admin-api-apikey-secret
 </code></pre>
-              <p>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</p>
-            </blockquote>
-          </blockquote>
-        </blockquote>
-      </blockquote>
-    </blockquote>
-  </blockquote>
-</blockquote>
-<p>Log to Otoroshi at <a href="http://otoroshi.oto.tools:9999/">http://otoroshi.oto.tools:9999/</a> with <code>admin@otoroshi.io/password</code></p>
-<h1><a href="#then-create-a-simple-service-" name="then-create-a-simple-service-" class="anchor"><span class="anchor-link"></span></a>Then create a simple service (<a href="secure-with-apikey.html#about-the-downstream-example-service">instructions are available here</a>)</h1>
-<h3><a href="#requisites" name="requisites" class="anchor"><span class="anchor-link"></span></a>Requisites</h3>
-<p>Log to Otoroshi at <a href="http://otoroshi.oto.tools:9999/">http://otoroshi.oto.tools:9999/</a> with <code>admin@otoroshi.io/password</code></p>
-<p>Then create a simple service (<a href="secure-with-apikey.html#about-the-downstream-example-service">instructions are available here</a>)</p>
-<blockquote>
-  <blockquote>
-    <blockquote>
-      <blockquote>
-        <blockquote>
-          <blockquote>
-            <blockquote>
-              <p>master</p>
-            </blockquote>
-          </blockquote>
-        </blockquote>
-      </blockquote>
-    </blockquote>
-  </blockquote>
-</blockquote>
 <h3><a href="#running-a-keycloak-instance-with-docker" name="running-a-keycloak-instance-with-docker" class="anchor"><span class="anchor-link"></span></a>Running a keycloak instance with docker</h3>
 <pre class="prettyprint"><code class="language-sh">docker run \
 -p 8080:8080 \
@@ -314,34 +280,17 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>Once started, you can open a browser on <code>http://localhost:8080/</code> and click on <code>Administration Console</code>. Log to your instance with <code>admin/admin</code> as credentials.</p>
 <p>The first step is to create a Keycloak client, an entity that can request Keycloak to authenticate a user. Click on the <code>clients</code> button on the sidebar, and then on <code>Create</code> button at the right top of the view.</p>
 <p>Fill the client form with the following values.</p>
-<table>
-  <thead>
-    <tr>
-      <th>Fields </th>
-      <th>Value </th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>Client ID</code> </td>
-      <td><code>keycloak-otoroshi-backoffice</code> </td>
-    </tr>
-    <tr>
-      <td><code>Client Protocol</code> </td>
-      <td><code>openid-connect</code> </td>
-    </tr>
-    <tr>
-      <td><code>Root URL</code> </td>
-      <td><code>http://otoroshi.oto.tools:9999/</code> </td>
-    </tr>
-  </tbody>
-</table>
+<ul>
+  <li><code>Client ID</code>: <code>keycloak-otoroshi-backoffice</code></li>
+  <li><code>Client Protocol</code>: <code>openid-connect</code></li>
+  <li><code>Root URL</code>: <code>http://otoroshi.oto.tools:8080/</code></li>
+</ul>
 <p>End by create the client with the <code>Save</code> button.</p>
 <p>The next step is to change the <code>Access Type</code> used by default. Jump to the <code>Access Type</code> field and select <code>confidential</code>. The confidential configuration force the client application to send at Keycloak a client ID and a client Secret. Scroll to the bottom of the page and save the configuration.</p>
-<p>Now scroll to the top of your page. Just at the right of the <code>Settings</code> tab, a new tab appeared : the <code>Credentials</code> page. Click on this tab, and make sure that <code>Client Id and Secret</code> is selected as <code>Client Authenticator</code> and copy the generated <code>Secret</code> to the next part.</p>
+<p>Now scroll to the top of your page. Just at the right of the <code>Settings</code> tab, a new tab appeared : the <code>Credentials</code> page. Click on this tab, and make sure that <code>Client Id and Secret</code> is selected as <code>Client Authenticator</code> and copy the generated <code>Secret</code> to the next part.</p>
 <h3><a href="#create-a-keycloak-provider-module" name="create-a-keycloak-provider-module" class="anchor"><span class="anchor-link"></span></a>Create a Keycloak provider module</h3>
 <ol>
-  <li>Go ahead, and navigate to <a href="http://otoroshi.oto.tools:9999">http://otoroshi.oto.tools:9999</a></li>
+  <li>Go ahead, and navigate to <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a></li>
   <li>Click on the cog icon on the top right</li>
   <li>Then <code>Authentication configs</code> button</li>
   <li>And add a new configuration when clicking on the <code>Add item</code> button</li>
@@ -351,28 +300,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>A simple way to import a Keycloak client is to give the <code>URL of the OpenID Connect</code> Otoroshi. By default, keycloak used the next URL : <code>http://localhost:8080/auth/realms/master/.well-known/openid-configuration</code>. </p>
 <p>Click on the <code>Get from OIDC config</code> button and paste the previous link. Once it&rsquo;s done, scroll to the <code>URLs</code> section. All URLs has been fill with the values picked from the JSON object returns by the previous URL.</p>
 <p>The only fields to change are : </p>
-<table>
-  <thead>
-    <tr>
-      <th>Fields </th>
-      <th>Value </th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>Client ID</code> </td>
-      <td> <code>keycloak-otoroshi-backoffice</code> </td>
-    </tr>
-    <tr>
-      <td><code>Client Secret</code> </td>
-      <td>Paste the Secret from the Credentials Keycloak page. In my case, it&rsquo;s something like <code>90c9bf0b-2c0c-4eb0-aa02-72195beb9da7</code> </td>
-    </tr>
-    <tr>
-      <td><code>Callback URL</code> </td>
-      <td><code>http://otoroshi.oto.tools:9999/backoffice/auth0/callback</code></td>
-    </tr>
-  </tbody>
-</table>
+<ul>
+  <li><code>Client ID</code>: <code>keycloak-otoroshi-backoffice</code></li>
+  <li><code>Client Secret</code>: Paste the Secret from the Credentials Keycloak page. In my case, it&rsquo;s something like <code>90c9bf0b-2c0c-4eb0-aa02-72195beb9da7</code></li>
+  <li><code>Callback URL</code>: <code>http://otoroshi.oto.tools:8080/backoffice/auth0/callback</code></li>
+</ul>
 <p>At the bottom of the page, disable the <code>secure</code> button (because we&rsquo;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs). Nothing else to change, just save the configuration.</p>
 <h3><a href="#connect-to-otoroshi-with-keycloak-authentication" name="connect-to-otoroshi-with-keycloak-authentication" class="anchor"><span class="anchor-link"></span></a>Connect to Otoroshi with Keycloak authentication</h3>
 <p>To secure Otoroshi with your Keycloak configuration, we have to register an Authentication configuration as a BackOffice Auth. configuration.</p>
@@ -385,7 +317,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#testing-your-configuration" name="testing-your-configuration" class="anchor"><span class="anchor-link"></span></a>Testing your configuration</h3>
 <ol>
   <li>Disconnect from your instance</li>
-  <li>Then click on the <em>Login using third-party</em> button (or navigate to *<a href="http://otoroshi.oto.tools:9999*">http://otoroshi.oto.tools:9999*</a>)
+  <li>Then click on the <em>Login using third-party</em> button (or navigate to *<a href="http://otoroshi.oto.tools:8080*">http://otoroshi.oto.tools:8080*</a>)
 </li>
   <li>Click on <code>Login using Third-party</code> button</li>
   <li>If all is configured, Otoroshi will redirect you to the keycloak login page</li>
@@ -393,11 +325,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>Good work! You&rsquo;re connected to Otoroshi with an Keycloak module.</li>
 </ol>
 <blockquote>
-  <p>A fallback solution is always available, by going to *<a href="http://otoroshi.oto.tools:9999/bo/simple/login*">http://otoroshi.oto.tools:9999/bo/simple/login*</a>, for administrators in case your Authentication module is not well configured or not available</p>
+  <p>A fallback solution is always available, by going to *<a href="http://otoroshi.oto.tools:8080/bo/simple/login*">http://otoroshi.oto.tools:8080/bo/simple/login*</a>, for administrators in case your Authentication module is not well configured or not available</p>
 </blockquote>
 <h3><a href="#visualize-an-admin-user-session-or-a-private-user-session" name="visualize-an-admin-user-session-or-a-private-user-session" class="anchor"><span class="anchor-link"></span></a>Visualize an admin user session or a private user session</h3>
 <p>Each user, wheter connected user to the Otoroshi UI or at a private Otoroshi app, has an own session. As an administrator of Otoroshi, you can visualize via Otoroshi the list of the connected users and their profile.</p>
-<p>Let&rsquo;s start by navigate to the <code>Admin users sessions</code> page (just <a href="http://otoroshi.oto.tools:9999/bo/dashboard/sessions/admin" title="here">here</a> or when clicking on the cog, and on the <code>Admins sessions</code> button at the bottom of the list).</p>
+<p>Let&rsquo;s start by navigate to the <code>Admin users sessions</code> page (just <a href="http://otoroshi.oto.tools:8080/bo/dashboard/sessions/admin" title="here">here</a> or when clicking on the cog, and on the <code>Admins sessions</code> button at the bottom of the list).</p>
 <p>This page gives a complete view of the connected admins. For each admin, you have his connection date and his expiration date. You can also check the <code>Profile</code> and the <code>Rights</code> of the connected users.</p>
 <p>If we check the profile and the rights of the previously logged user (from Keycloak in the previous part) we can retrieve the following information :</p>
 <pre class="prettyprint"><code class="language-json">{
@@ -426,7 +358,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 ]
 </code></pre>
 <p>We haven&rsquo;t create any specific groups in Keycloak or specify rights in Otoroshi for him. In this case, the use received the default Otoroshi rights at his connection. We can see that he can navigate on the default Organization and Teams (which are two resources created by Otoroshi at the boot) and that he have the full access (<code>r</code>: Read, <code>w</code>: Write, <code>*</code>: read/write) on its.</p>
-<p>In the same way, you&rsquo;ll find all users connected to a private Otoroshi app when navigate on the <a href="http://otoroshi.oto.tools:9999/bo/dashboard/sessions/private" title="`Private App View`"><code>Private App View</code></a> or using the cog at the top of the page. </p>
+<p>In the same way, you&rsquo;ll find all users connected to a private Otoroshi app when navigate on the <a href="http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private" title="`Private App View`"><code>Private App View</code></a> or using the cog at the top of the page. </p>
 <h3><a href="#configure-the-keycloak-module-to-force-logged-in-users-to-be-an-otoroshi-admin-with-full-access" name="configure-the-keycloak-module-to-force-logged-in-users-to-be-an-otoroshi-admin-with-full-access" class="anchor"><span class="anchor-link"></span></a>Configure the Keycloak module to force logged in users to be an Otoroshi admin with full access</h3>
 <p>Go back to the Keycloak module in <code>Authentication configs</code> view. Turn on the <code>Supers admin only</code> button and save your configuration. Try again the connection to Otoroshi using Keycloak third-party server.</p>
 <p>Once connected, click on the cog button, and check that you have access to the full features of Otoroshi (like Admin user sessions). Now, your rights should be : </p>
@@ -458,7 +390,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;session_state&quot;: &quot;e44fe471-aa3b-477d-b792-4f7b4caea220&quot;,
     &quot;acr&quot;: &quot;1&quot;,
     &quot;allowed-origins&quot;: [
-        &quot;http://otoroshi.oto.tools:9999&quot;
+        &quot;http://otoroshi.oto.tools:8080&quot;
     ],
     &quot;realm_access&quot;: {
         &quot;roles&quot;: [
@@ -572,8 +504,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 ]
 </code></pre>
 <h3><a href="#secure-an-app-with-keycloak-authentication" name="secure-an-app-with-keycloak-authentication" class="anchor"><span class="anchor-link"></span></a>Secure an app with Keycloak authentication</h3>
-<p>The only change to apply on the previous authentication module, is on the callback URL. When you want secure a Otoroshi service, and transform it on <code>Private App</code>, you need to set the <code>Callback URL</code> at <code>http://privateapps.oto.tools:9999/privateapps/generic/callback</code></p>
-<p>1 Go back to the authentication module 1. Jump to the <code>Callback URL</code> field 2. Paste this value <code>http://privateapps.oto.tools:9999/privateapps/generic/callback</code> 3. Save your configuration 4. Navigate to <code>http://myservice.oto.tools:9999</code>. 5. You should redirect to the keycloak login page. 6. Once logged in, you can check the content of the private app session created. The rights should be : </p>
+<p>The only change to apply on the previous authentication module, is on the callback URL. When you want secure a Otoroshi service, and transform it on <code>Private App</code>, you need to set the <code>Callback URL</code> at <code>http://privateapps.oto.tools:8080/privateapps/generic/callback</code></p>
+<p>1 Go back to the authentication module 1. Jump to the <code>Callback URL</code> field 2. Paste this value <code>http://privateapps.oto.tools:8080/privateapps/generic/callback</code> 3. Save your configuration 4. Navigate to <code>http://myservice.oto.tools:8080</code>. 5. You should redirect to the keycloak login page. 6. Once logged in, you can check the content of the private app session created. The rights should be : </p>
 <pre class="prettyprint"><code class="language-json">[
   {
     &quot;tenant&quot;: &quot;*:rw&quot;,
@@ -598,8 +530,15 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../how-to-s/secure-app-with-keycloak.html#cover-by-this-tutorial" class="header">Cover by this tutorial</a></li>
     <li><a href="../how-to-s/secure-app-with-keycloak.html#before-you-start" class="header">Before you start</a></li>
-    <li><a href="../how-to-s/secure-app-with-keycloak.html#download-otoroshi" class="header">Download Otoroshi</a></li>
-    <li><a href="../how-to-s/secure-app-with-keycloak.html#then-create-a-simple-service-" class="header">Then create a simple service (<a href="secure-with-apikey.html#about-the-downstream-example-service">instructions are available here</a>)</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html#running-a-keycloak-instance-with-docker" class="header">Running a keycloak instance with docker</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html#create-a-keycloak-provider-module" class="header">Create a Keycloak provider module</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html#connect-to-otoroshi-with-keycloak-authentication" class="header">Connect to Otoroshi with Keycloak authentication</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html#testing-your-configuration" class="header">Testing your configuration</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html#visualize-an-admin-user-session-or-a-private-user-session" class="header">Visualize an admin user session or a private user session</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html#configure-the-keycloak-module-to-force-logged-in-users-to-be-an-otoroshi-admin-with-full-access" class="header">Configure the Keycloak module to force logged in users to be an Otoroshi admin with full access</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html#merge-id-token-content-on-user-profile" class="header">Merge Id token content on user profile</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html#manage-the-otoroshi-user-rights-from-keycloak" class="header">Manage the Otoroshi user rights from keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html#secure-an-app-with-keycloak-authentication" class="header">Secure an app with Keycloak authentication</a></li>
   </ul></li>
 </ul>
 </div>

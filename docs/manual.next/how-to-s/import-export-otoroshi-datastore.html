@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../js/cc.js"></script>
 <script type="text/javascript" src="../js/groups.js"></script>
 <script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
@@ -60,6 +61,7 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -91,6 +93,7 @@
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -105,7 +108,6 @@
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -169,6 +171,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -200,6 +203,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -214,7 +218,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -255,11 +258,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
 </code></pre>
 <p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code></p>
-<pre class="prettyprint"><code class="language-sh">sudo nano /etc/hosts
-
-# Add this line at the bottom of your file
-127.0.0.1	otoroshi.oto.tools privateapps.oto.tools otoroshi-api.oto.tools otoroshi-admin-internal-api.oto.tools localhost
-</code></pre>
 <p>Now you are almost ready to run Otoroshi for the first time, we want run it with an initial data.</p>
 <p>To do that, you need to add the app.importFrom setting to the Otoroshi configuration (of $APP_IMPORT_FROM env).</p>
 <p>It can be a file path or a URL.</p>
@@ -384,7 +382,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       },
       &quot;targets&quot;: [
         {
-          &quot;host&quot;: &quot;127.0.0.1:9999&quot;,
+          &quot;host&quot;: &quot;127.0.0.1:8080&quot;,
           &quot;scheme&quot;: &quot;http&quot;,
           &quot;weight&quot;: 1,
           &quot;mtlsConfig&quot;: {
@@ -406,7 +404,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       &quot;root&quot;: &quot;/&quot;,
       &quot;matchingRoot&quot;: null,
       &quot;stripPath&quot;: true,
-      &quot;localHost&quot;: &quot;127.0.0.1:9999&quot;,
+      &quot;localHost&quot;: &quot;127.0.0.1:8080&quot;,
       &quot;localScheme&quot;: &quot;http&quot;,
       &quot;redirectToLocal&quot;: false,
       &quot;enabled&quot;: true,
@@ -669,8 +667,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>Run an Otoroshi with the previous file as parameter.</p>
 <pre class="prettyprint"><code class="language-sh">java \
 -Dapp.adminPassword=password \
--Dhttp.port=9999 \
--Dhttps.port=9998 \
 -Dapp.importFrom=./initial-state.json \
 -jar otoroshi.jar 
 </code></pre>
@@ -679,18 +675,17 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 [info] otoroshi-env - Importing from: ./initial-state.json
 [info] otoroshi-env - Successful import !
 ...
-[info] p.c.s.AkkaHttpServer - Listening for HTTP on /0:0:0:0:0:0:0:0:9999
-[info] p.c.s.AkkaHttpServer - Listening for HTTPS on /0:0:0:0:0:0:0:0:9998
+[info] p.c.s.AkkaHttpServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
 ...
 </code></pre>
 <blockquote>
   <p>Warning : when you using Otoroshi with a datastore different from file or in-memory, Otoroshi doesn&rsquo;t will reload the initialization script. If you expected it, you need to clean manually your store.</p>
 </blockquote>
 <h3><a href="#export-the-current-datastore-via-the-danger-zone" name="export-the-current-datastore-via-the-danger-zone" class="anchor"><span class="anchor-link"></span></a>Export the current datastore via the danger zone</h3>
-<p>When Otoroshi is running, you can backup the global configuration store from the UI. Navigate to your instance (in our case *<a href="http://otoroshi.oto.tools:9999/bo/dashboard/dangerzone*">http://otoroshi.oto.tools:9999/bo/dashboard/dangerzone*</a>) and scroll to the bottom page. </p>
+<p>When Otoroshi is running, you can backup the global configuration store from the UI. Navigate to your instance (in our case *<a href="http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone*">http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone*</a>) and scroll to the bottom page. </p>
 <p>Click on <code>Full export</code> button to download the full global configuration.</p>
 <h3><a href="#import-a-datastore-from-file-via-the-danger-zone" name="import-a-datastore-from-file-via-the-danger-zone" class="anchor"><span class="anchor-link"></span></a>Import a datastore from file via the danger zone</h3>
-<p>When Otoroshi is running, you can recover a global configuration from the UI. Navigate to your instance (in our case *<a href="http://otoroshi.oto.tools:9999/bo/dashboard/dangerzone*">http://otoroshi.oto.tools:9999/bo/dashboard/dangerzone*</a>) and scroll to the bottom page. </p>
+<p>When Otoroshi is running, you can recover a global configuration from the UI. Navigate to your instance (in our case *<a href="http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone*">http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone*</a>) and scroll to the bottom page. </p>
 <p>Click on <code>Recover from a full export file</code> button to apply all configurations from a file.</p>
 <h3><a href="#export-the-current-datastore-with-the-admin-api" name="export-the-current-datastore-with-the-admin-api" class="anchor"><span class="anchor-link"></span></a>Export the current datastore with the Admin API</h3>
 <p>Otoroshi exposes his own Admin API to manage Otoroshi resources. To call this api, you need to an api key with the rights on <code>Otoroshi Admin Api group</code>. This group includes the <code>Otoroshi-admin-api</code> service that you can found on the services page. </p>
@@ -699,7 +694,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>Run the next command with these values.</p>
 <pre class="prettyprint"><code class="language-sh">curl \
 -H &#39;Content-Type: application/json&#39; \
-http://otoroshi-api.oto.tools:9999/api/otoroshi.json \
+http://otoroshi-api.oto.tools:8080/api/otoroshi.json \
 -u admin-api-apikey-id:admin-api-apikey-secret 
 </code></pre>
 <p>When calling the <code>/api/otoroshi.json</code>, the return should be the current datastore including the service descriptors, the api keys, all others resources like certificates and authentification modules, and the the global config (represented by the form of the danger zone).</p>
@@ -941,7 +936,7 @@ http://otoroshi-api.oto.tools:9999/api/otoroshi.json \
       &quot;type&quot; : &quot;RoundRobin&quot;
     },
     &quot;targets&quot; : [ {
-      &quot;host&quot; : &quot;127.0.0.1:9999&quot;,
+      &quot;host&quot; : &quot;127.0.0.1:8080&quot;,
       &quot;scheme&quot; : &quot;http&quot;,
       &quot;weight&quot; : 1,
       &quot;mtlsConfig&quot; : {
@@ -962,7 +957,7 @@ http://otoroshi-api.oto.tools:9999/api/otoroshi.json \
     &quot;root&quot; : &quot;/&quot;,
     &quot;matchingRoot&quot; : null,
     &quot;stripPath&quot; : true,
-    &quot;localHost&quot; : &quot;127.0.0.1:9999&quot;,
+    &quot;localHost&quot; : &quot;127.0.0.1:8080&quot;,
     &quot;localScheme&quot; : &quot;http&quot;,
     &quot;redirectToLocal&quot; : false,
     &quot;enabled&quot; : true,
@@ -1207,7 +1202,7 @@ http://otoroshi-api.oto.tools:9999/api/otoroshi.json \
     &quot;tags&quot; : [ ]
   } ]
 }&#39; \
-http://otoroshi-api.oto.tools:9999/api/otoroshi.json \
+http://otoroshi-api.oto.tools:8080/api/otoroshi.json \
 -u admin-api-apikey-id:admin-api-apikey-secret 
 </code></pre>
 <p>This should output :</p>
@@ -1220,7 +1215,7 @@ http://otoroshi-api.oto.tools:9999/api/otoroshi.json \
 <pre class="prettyprint"><code class="language-sh"># the curl is run from a folder containing the initial-state.json file 
 curl -X POST \
 -H &quot;X-Content-Type: application/json&quot; \
--d @./initial-state.json http://otoroshi-api.oto.tools:9999/api/otoroshi.json \
+-d @./initial-state.json http://otoroshi-api.oto.tools:8080/api/otoroshi.json \
 -u admin-api-apikey-id:admin-api-apikey-secret
 </code></pre>
 <p>This should output :</p>

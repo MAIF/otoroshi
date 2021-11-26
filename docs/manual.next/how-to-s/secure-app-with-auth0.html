@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../js/cc.js"></script>
 <script type="text/javascript" src="../js/groups.js"></script>
 <script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
@@ -60,6 +61,7 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -91,6 +93,7 @@
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -105,7 +108,6 @@
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -169,6 +171,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -200,6 +203,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -214,7 +218,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -252,16 +255,19 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="#secure-an-app-with-keycloak-authentication">Secure an app with Auth0 authentication</a></li>
 </ul><div class="callout warning "><div class="callout-title">Warning</div>
 <p>TODO - schema</p></div>
-<h3><a href="#download-otoroshi" name="download-otoroshi" class="anchor"><span class="anchor-link"></span></a>Download Otoroshi</h3>
-<p>Let&rsquo;s start by downloading the latest Otoroshi</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
+<h3><a href="#download-otoroshi" name="download-otoroshi" class="anchor"><span class="anchor-link"></span></a>Download Otoroshi</h3><p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar&#39;
 </code></pre>
-<p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code></p>
-<p>Run Otoroshi</p>
-<pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
+<p>Once downloading, run Otoroshi.</p>
+<pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -jar otoroshi.jar 
 </code></pre>
-<p>Log to Otoroshi at <a href="http://otoroshi.oto.tools:9999/">http://otoroshi.oto.tools:9999/</a> with <code>admin@otoroshi.io/password</code></p>
-<p>Then create a simple service (<a href="secure-with-apikey.html#about-the-downstream-example-service">instructions are available here</a>)</p>
+<p>Log to Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code>.</p>
+<p>Create a service, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8080/api/services \
+-d &#39;{&quot;enforceSecureCommunication&quot;: false, &quot;forceHttps&quot;: false, &quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;name&quot;:&quot;my-service&quot;,&quot;description&quot;:&quot;a service&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;myservice&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;\/.*&quot;],&quot;privatePatterns&quot;:[],&quot;kind&quot;:&quot;ServiceDescriptor&quot;}&#39; \
+-H &quot;Content-type: application/json&quot; \
+-u admin-api-apikey-id:admin-api-apikey-secret
+</code></pre>
 <h3><a href="#configure-an-auth0-client" name="configure-an-auth0-client" class="anchor"><span class="anchor-link"></span></a>Configure an Auth0 client</h3>
 <p>The first step of this tutorial is to setup an Auth0 application with the information of the instance of our Otoroshi.</p>
 <p>Navigate to *<a href="https://manage.auth0.com/*">https://manage.auth0.com/*</a> (create an account if it&rsquo;s not already done). </p>
@@ -270,23 +276,23 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>Choose <code>Regular Web Applications</code> as <code>Application type</code></li>
   <li>Then set for example <code>otoroshi-client</code> as <code>Name</code>, and confirm the creation</li>
   <li>Jump to the <code>Settings</code> tab</li>
-  <li>Scroll to the <code>Application URLs</code> section and add the following url as <code>Allowed Callback URLs</code> : <code>http://otoroshi.oto.tools:9999/backoffice/auth0/callback</code></li>
-  <li>Set <code>https://otoroshi.oto.tools:9999/</code> as <code>Allowed Logout URLs</code></li>
-  <li>Set <code>https://otoroshi.oto.tools:9999</code> as <code>Allowed Web Origins</code></li>
+  <li>Scroll to the <code>Application URLs</code> section and add the following url as <code>Allowed Callback URLs</code> : <code>http://otoroshi.oto.tools:8080/backoffice/auth0/callback</code></li>
+  <li>Set <code>https://otoroshi.oto.tools:8080/</code> as <code>Allowed Logout URLs</code></li>
+  <li>Set <code>https://otoroshi.oto.tools:8080</code> as <code>Allowed Web Origins</code></li>
   <li>Save changes at the bottom of the page.</li>
 </ol>
 <p>Once done, we have a full setup, with a client ID and secret at the top of the page, which authorize our Otoroshi and redirect the user to the callback url when it will connect to Auth0.</p>
 <h3><a href="#create-an-auth0-provider-module" name="create-an-auth0-provider-module" class="anchor"><span class="anchor-link"></span></a>Create an Auth0 provider module</h3>
 <p>Let&rsquo;s back to Otoroshi to create an authentication module with <code>OAuth2 / OIDC provider</code> as <code>type</code>.</p>
 <ol>
-  <li>Go ahead, and navigate to <a href="http://otoroshi.oto.tools:9999">http://otoroshi.oto.tools:9999</a></li>
+  <li>Go ahead, and navigate to <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a></li>
   <li>Click on the cog icon on the top right</li>
   <li>Then <code>Authentication configs</code> button</li>
   <li>And add a new configuration when clicking on the <code>Add item</code> button</li>
   <li>Select the <code>OAuth provider</code> in the type selector field</li>
   <li>Then click on <code>Get from OIDC config</code> and paste <em>https://<tenant-name>.<region>.auth0.com/.well-known/openid-configuration</em>. Replace the tenant name by the name of your tenant (displayed on the left top of auth0 page), and the region of the tenant (<code>eu</code> in my case).</li>
 </ol>
-<p>Once done, set the <code>Client ID</code> and the <code>Client secret</code> from your auth0 application. End the configuration with <code>http://otoroshi.oto.tools:9999/backoffice/auth0/callback</code> as <code>Callback URL</code>.</p>
+<p>Once done, set the <code>Client ID</code> and the <code>Client secret</code> from your auth0 application. End the configuration with <code>http://otoroshi.oto.tools:8080/backoffice/auth0/callback</code> as <code>Callback URL</code>.</p>
 <p>At the bottom of the page, disable the <code>secure</code> button (because we&rsquo;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs).</p>
 <h3><a href="#connect-to-otoroshi-with-auth0-authentication" name="connect-to-otoroshi-with-auth0-authentication" class="anchor"><span class="anchor-link"></span></a>Connect to Otoroshi with Auth0 authentication</h3>
 <p>To secure Otoroshi with your Auth0 configuration, we have to register an Authentication configuration as a BackOffice Auth. configuration.</p>
@@ -299,7 +305,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h4><a href="#testing-your-configuration" name="testing-your-configuration" class="anchor"><span class="anchor-link"></span></a>Testing your configuration</h4>
 <ol>
   <li>Disconnect from your instance</li>
-  <li>Then click on the <em>Login using third-party</em> button (or navigate to *<a href="http://otoroshi.oto.tools:9999*">http://otoroshi.oto.tools:9999*</a>)
+  <li>Then click on the <em>Login using third-party</em> button (or navigate to *<a href="http://otoroshi.oto.tools:8080*">http://otoroshi.oto.tools:8080*</a>)
 </li>
   <li>Click on <code>Login using Third-party</code> button</li>
   <li>If all is configured, Otoroshi will redirect you to the auth0 server login page</li>
@@ -310,10 +316,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>With the previous configuration, you can secure any of Otoroshi services with it. </p>
 <p>The first step is to apply a little change on the previous configuration. </p>
 <ol>
-  <li>Navigate to *<a href="http://otoroshi.oto.tools:9999/bo/dashboard/auth-configs*">http://otoroshi.oto.tools:9999/bo/dashboard/auth-configs*</a>.
+  <li>Navigate to *<a href="http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs*">http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs*</a>.
 </li>
   <li>Create a new auth module configuration with the same values.</li>
-  <li>Replace the <code>Callback URL</code> field to <code>http://privateapps.oto.tools:9999/privateapps/generic/callback</code> (we changed this value because the redirection of a logged user by a third-party server is cover by an other route by Otoroshi).</li>
+  <li>Replace the <code>Callback URL</code> field to <code>http://privateapps.oto.tools:8080/privateapps/generic/callback</code> (we changed this value because the redirection of a logged user by a third-party server is cover by an other route by Otoroshi).</li>
   <li>Disable the <code>secure</code> button (because we&rsquo;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)</li>
 </ol>
 <blockquote>

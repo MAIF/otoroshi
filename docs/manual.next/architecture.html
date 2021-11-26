@@ -12,6 +12,7 @@
 <script type="text/javascript" src="js/cc.js"></script>
 <script type="text/javascript" src="js/groups.js"></script>
 <script type="text/javascript" src="js/plugins.js"></script>
+<script type="text/javascript" src="js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="css/page.css"/>
@@ -60,6 +61,7 @@
     <li><a href="entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="topics/index.html" class="page">Detailed topics</a>
@@ -91,6 +93,7 @@
     <li><a href="how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -105,7 +108,6 @@
     <li><a href="deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="deploy/other.html" class="page">Others</a></li>
     <li><a href="deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="dev.html" class="page">Developing Otoroshi</a></li>
@@ -169,6 +171,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="topics/index.html" class="page">Detailed topics</a>
@@ -200,6 +203,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -214,7 +218,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="deploy/other.html" class="page">Others</a></li>
     <li><a href="deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="dev.html" class="page">Developing Otoroshi</a></li>
@@ -244,9 +247,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>When we started the development of Otoroshi, we had several classical patterns in mind like <code>Service gateway</code>, <code>Service locator</code>, <code>Circuit breakers</code>, etc &hellip;</p>
 <p>At start we thought about providing a bunch of librairies that would be included in each microservice or app to perform these tasks. But the more we were thinking about it, the more it was feeling weird, unagile, etc, it also prevented us to use any technical stack we wanted to use. So we decided to change our approach to something more universal.</p>
 <p>We chose to make Otoroshi the central part of our microservices system, something between a reverse-proxy, a service gateway and a service locator where each call to a microservice (even from another microservice) must pass through Otoroshi. There are multiple benefits to do that, each call can be logged, audited, monitored, integrated with a circuit breaker, etc without imposing libraries and technical stack. Any service is exposed through its own domain and we rely only on DNS to handle the service location part. Any access to a service is secured by default with an api key and is supervised by a circuit breaker to avoid cascading failures.</p><div class="centered-img">
-<img src="./img/architecture-1-bis.png" /></div>
+<img src="./imgs/architecture-1-bis.png" /></div>
 <p>Otoroshi tries to embrace our <a href="about.html#philosophy">global philosophy</a> by providing a full featured REST admin api, a gorgeous admin dashboard written in <a href="https://reactjs.org/">React</a> that uses the api, by generating traffic events, alerts events, audit events that can be consumed by several channels. Otoroshi also supports a bunch of datastores to better match with different use cases.</p><div class="centered-img">
-<img src="./img/architecture-2-bis.png" /></div>
+<img src="./imgs/architecture-2-bis.png" /></div>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="features.html">Features</a></p>
 </div>

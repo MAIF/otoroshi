@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../js/cc.js"></script>
 <script type="text/javascript" src="../js/groups.js"></script>
 <script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
@@ -60,6 +61,7 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -91,6 +93,7 @@
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -105,7 +108,6 @@
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -169,6 +171,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -200,6 +203,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -214,7 +218,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -241,13 +244,71 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#certificates" name="certificates" class="anchor"><span class="anchor-link"></span></a>Certificates</h1><div class="callout warning "><div class="callout-title">Warning</div>
-<p>TODO</p></div>
+<h1><a href="#certificates" name="certificates" class="anchor"><span class="anchor-link"></span></a>Certificates</h1>
+<p>All generated and imported certificates are listed in the <strong>bo/dashboard/certificates</strong> page.</p>
+<p>The list of available actions are:</p>
+<ul>
+  <li><code>Add item</code>: redirects the user on the certificate creation page. It&rsquo;s useful when you already had a certificate (like a pem file) and that you want to load it in Otoroshi.</li>
+  <li><code>Let&#39;s Encrypt certificate</code>: asks a certificate matching a given host to Let&rsquo;s encrypt</li>
+  <li><code>Create certificate</code>: issues a certificate with an existing Otoroshi certificate as CA.</li>
+  <li><code>Import .p12 file</code>: loads a p12 file as certificate</li>
+</ul>
+<h2><a href="#add-item" name="add-item" class="anchor"><span class="anchor-link"></span></a>Add item</h2>
+<ul>
+  <li><code>Id</code>: the generated unique id of the certificate</li>
+  <li><code>Name</code>: the name of the certificate</li>
+  <li><code>Description</code>: the description of the certificate</li>
+  <li><code>Auto renew cert.</code>: certificate will be issued when it will be expired. Only works with a CA from Otoroshi and a known private key</li>
+  <li><code>Client cert.</code>: the certificate generated will be used to identicate a client to a server</li>
+  <li><code>Keypair</code>: the certificate entity will be a pair of public key and private key.</li>
+  <li><code>Public key exposed</code>: if true, the public key will be exposed on <code>http://otoroshi-api.your-domain/.well-known/jwks.json</code></li>
+  <li><code>Certificate status</code>: the current status of the certificate. It can be valid if the certificate is not revoked and not expired, or equal to the reason of the revocation</li>
+  <li><code>Certificate full chain</code>: list of certificates used to authenticate a client or a server</li>
+  <li><code>Certificate private key</code>: the private key of the certificate or nothing if wanted. You can omit it if you want just add a certificte full chain to trust them.</li>
+  <li><code>Private key password</code>: the password to protect the private key</li>
+  <li><code>Certificate tags</code>: the tags attached to the certificate</li>
+  <li><code>Certaificate metadata</code>: the metadata attached to the certificate</li>
+</ul>
+<h2><a href="#lets-encrypt-certificate" name="lets-encrypt-certificate" class="anchor"><span class="anchor-link"></span></a>Let&rsquo;s Encrypt certificate</h2>
+<ul>
+  <li><code>Let&#39;s encrypt</code>: if enabled, the certificate will be generated by Let&rsquo;s Encrypt. If disabled, the user will be redirect to the <code>Create certificate</code> page</li>
+  <li><code>Host</code>: the host send to Let&rsquo;s encrypt to issue the certificate</li>
+</ul>
+<h2><a href="#create-certificate-view" name="create-certificate-view" class="anchor"><span class="anchor-link"></span></a>Create certificate view</h2>
+<ul>
+  <li><code>Issuer</code>: the CA used to sign your certificate</li>
+  <li><code>CA certificate</code>: if enabled, the certificate will be used as an authority certificate. Once generated, it will be use as CA to sign the new certificates</li>
+  <li><code>Let&#39;s Encrypt</code>: redirects to the Let&rsquo;s Encrypt page to request a certificate</li>
+  <li><code>Client certificate</code>: the certificate generated will be used to identicate a client to a server</li>
+  <li><code>Include A.I.A</code>: include authority information access urls in the certificate</li>
+  <li><code>Key Type</code>: the type of the private key</li>
+  <li><code>Key Size</code>: the size of the private key</li>
+  <li><code>Signature Algorithm</code>: the signature algorithm used to sign the certificate</li>
+  <li><code>Digest Algorithm</code>: the digest algorithm used</li>
+  <li><code>Validity</code>: how much time your certificate will be valid</li>
+  <li><code>Subject DN</code>: the subject DN of your certificate</li>
+  <li><code>Hosts</code>: the hosts of your certificate</li>
+</ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../entities/jwt-verifiers.html">JWT verifiers</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../entities/certificates.html#certificates" class="header">Certificates</a>
+  <ul>
+    <li><a href="../entities/certificates.html#add-item" class="header">Add item</a></li>
+    <li><a href="../entities/certificates.html#lets-encrypt-certificate" class="header">Let&rsquo;s Encrypt certificate</a></li>
+    <li><a href="../entities/certificates.html#create-certificate-view" class="header">Create certificate view</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 

@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../js/cc.js"></script>
 <script type="text/javascript" src="../js/groups.js"></script>
 <script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
@@ -60,6 +61,7 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -91,6 +93,7 @@
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="active page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -105,7 +108,6 @@
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -169,6 +171,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -200,6 +203,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="active page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -214,7 +218,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -250,23 +253,26 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="#verify-and-generate-a-new-token">Verify ang generate a new token</a></li>
 </ul><div class="callout warning "><div class="callout-title">Warning</div>
 <p>TODO - schema</p></div>
-<h3><a href="#download-otoroshi" name="download-otoroshi" class="anchor"><span class="anchor-link"></span></a>Download Otoroshi</h3>
-<p>Let&rsquo;s start by downloading the latest Otoroshi</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
+<h3><a href="#download-otoroshi" name="download-otoroshi" class="anchor"><span class="anchor-link"></span></a>Download Otoroshi</h3><p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar&#39;
 </code></pre>
-<p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code></p>
-<p>Run Otoroshi</p>
-<pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
+<p>Once downloading, run Otoroshi.</p>
+<pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -jar otoroshi.jar 
 </code></pre>
-<p>Log to Otoroshi at <a href="http://otoroshi.oto.tools:9999/">http://otoroshi.oto.tools:9999/</a> with <code>admin@otoroshi.io/password</code></p>
-<p>Then create a simple service (<a href="secure-with-apikey.html#about-the-downstream-example-service">instructions are available here</a>)</p>
+<p>Log to Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code>.</p>
+<p>Create a service, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8080/api/services \
+-d &#39;{&quot;enforceSecureCommunication&quot;: false, &quot;forceHttps&quot;: false, &quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;name&quot;:&quot;my-service&quot;,&quot;description&quot;:&quot;a service&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;myservice&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;\/.*&quot;],&quot;privatePatterns&quot;:[],&quot;kind&quot;:&quot;ServiceDescriptor&quot;}&#39; \
+-H &quot;Content-type: application/json&quot; \
+-u admin-api-apikey-id:admin-api-apikey-secret
+</code></pre>
 <h3><a href="#your-first-jwt-verifier-a-verifier-of-tokens" name="your-first-jwt-verifier-a-verifier-of-tokens" class="anchor"><span class="anchor-link"></span></a>Your first jwt verifier : a verifier of tokens</h3>
-<p>Let&rsquo;s start by navigate the page of verifier creation (*<a href="http://otoroshi.oto.tools:9999/bo/dashboard/jwt-verifiers/add*)">http://otoroshi.oto.tools:9999/bo/dashboard/jwt-verifiers/add*)</a>. By default, the type of jwt verifier is a <em>Verify JWT token</em>.</p>
+<p>Let&rsquo;s start by navigate the page of verifier creation (*<a href="http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers/add*)">http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers/add*)</a>. By default, the type of jwt verifier is a <em>Verify JWT token</em>.</p>
 <p>Create the following verifier : * Set <code>simple-jwt-verifier</code> as <code>Name</code> * Set <code>My simple jwt verifier</code> as <code>Description</code> * We expect in entry a token in a specific header. Set <code>Authorization</code> as <code>Header name</code> * Select <code>Hmac + SHA</code> as <code>Algo</code> (for this example, we expect tokens with a symetric signature) * Set <code>otoroshi</code> as <code>Hmac secret</code> * Remove the default field in <code>Verify token fields</code> array * Create your verifier when clicking on <code>Create and stay on this Jwt verifier</code> button.</p>
 <p>Once created, navigate to the simple service (created in [Before you start](#Before you start) section) and jump to the <code>JWT tokens verification</code> section.</p>
 <p>In the verifiers list, choose the <code>simple-jwt-verifier</code> and <code>enabled</code> the section.</p>
 <p>Save your service and try to call the service.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X GET http://myservice.oto.tools:9999/ --include
+<pre class="prettyprint"><code class="language-sh">curl -X GET http://myservice.oto.tools:8080/ --include
 </code></pre>
 <p>This should output : </p>
 <pre class="prettyprint"><code class="language-json">{
@@ -277,7 +283,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <pre class="prettyprint"><code class="language-sh"># replace xxxx by the generated token
 curl -X GET \
 -H &quot;Authorization: xxxx&quot; \
-http://myservice.oto.tools:9999
+http://myservice.oto.tools:8080
 </code></pre>
 <p>This should output a json with <code>authorization</code> in headers field. His value is exactly the same as the passed token.</p>
 <pre class="prettyprint"><code class="language-json">{
@@ -292,7 +298,7 @@ http://myservice.oto.tools:9999
 </code></pre>
 <h3><a href="#verify-and-generate-a-new-token" name="verify-and-generate-a-new-token" class="anchor"><span class="anchor-link"></span></a>Verify and generate a new token</h3>
 <p>An other feature is to verify the entry token and generate a new token, with a different signature and news claims. </p>
-<p>Let&rsquo;s start by extending the previous verifier (*<a href="http://otoroshi.oto.tools:9999/bo/dashboard/jwt-verifiers*)">http://otoroshi.oto.tools:9999/bo/dashboard/jwt-verifiers*)</a>.</p>
+<p>Let&rsquo;s start by extending the previous verifier (*<a href="http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers*)">http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers*)</a>.</p>
 <ol>
   <li>
   <p>Jump to the <code>Verif Strategy</code> field and select <code>Verify and re-sign JWT token</code>.</p></li>
@@ -308,13 +314,13 @@ http://myservice.oto.tools:9999
 <pre class="prettyprint"><code class="language-sh"># replace xxxx by the generated token
 curl -X GET \
 -H &quot;Authorization: xxxx&quot; \
-http://myservice.oto.tools:9999
+http://myservice.oto.tools:8080
 </code></pre>
 <p>This should output a json with <code>authorization</code> in headers field. This time, the value are different and you can check his signature on <em>jwt.io</em> (the expected secret of the generated token is <em>otoroshi-internal-secret</em>)</p>
 <img src="../imgs/secure-an-app-with-jwt-verifiers-jwtio.png" height="300px">
 <h3><a href="#verify-transform-and-generate-a-new-token" name="verify-transform-and-generate-a-new-token" class="anchor"><span class="anchor-link"></span></a>Verify, transform and generate a new token</h3>
 <p>The most advanced verifier is able to do the same as the previous ones, with the ability to configure the toke generation (claims, output header name).</p>
-<p>Let&rsquo;s start by extending the previous verifier (*<a href="http://otoroshi.oto.tools:9999/bo/dashboard/jwt-verifiers*)">http://otoroshi.oto.tools:9999/bo/dashboard/jwt-verifiers*)</a>.</p>
+<p>Let&rsquo;s start by extending the previous verifier (*<a href="http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers*)">http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers*)</a>.</p>
 <ol>
   <li>
   <p>Jump to the <code>Verif Strategy</code> field and select <code>Verify, transform and re-sign JWT token</code>.</p></li>

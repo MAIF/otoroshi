@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../js/cc.js"></script>
 <script type="text/javascript" src="../js/groups.js"></script>
 <script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
 <link rel="stylesheet" type="text/css" href="../css/page.css"/>
@@ -60,6 +61,7 @@
     <li><a href="../entities/jwt-verifiers.html" class="active page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -91,6 +93,7 @@
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -105,7 +108,6 @@
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -169,6 +171,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="active page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -200,6 +203,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -214,7 +218,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
     <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
     <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
-    <li><a href="../deploy/other.html" class="page">Others</a></li>
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
@@ -331,7 +334,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>Proxy password</code>: password of proxy</li>
 </ul>
 <h2><a href="#strategy" name="strategy" class="anchor"><span class="anchor-link"></span></a>Strategy</h2>
-<p>The first step is to select the verifier strategy. Otoroshi supports 4 types of JWT verifiers : * <code>Default JWT token</code> will add a token if no present. * <code>Verify JWT token</code> will only verifiy token signing and fields values if provided. * <code>Verify and re-sign JWT token</code> will verify the token and will re-sign the JWT token with the provided algo. settings. * <code>Verify, re-sign and transform JWT token</code> will verify the token, re-sign and will be able to transform the token.</p>
+<p>The first step is to select the verifier strategy. Otoroshi supports 4 types of JWT verifiers:</p>
+<ul>
+  <li><code>Default JWT token</code> will add a token if no present.</li>
+  <li><code>Verify JWT token</code> will only verifiy token signing and fields values if provided.</li>
+  <li><code>Verify and re-sign JWT token</code> will verify the token and will re-sign the JWT token with the provided algo. settings.</li>
+  <li><code>Verify, re-sign and transform JWT token</code> will verify the token, re-sign and will be able to transform the token.</li>
+</ul>
 <p>All verifiers has the following properties: </p>
 <ul>
   <li><code>Verify token fields</code>: when the JWT token is checked, each field specified here will be verified with the provided value</li>
@@ -349,7 +358,15 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h4><a href="#verify-re-sign-and-transform-jwt-token" name="verify-re-sign-and-transform-jwt-token" class="anchor"><span class="anchor-link"></span></a>Verify, re-sign and transform JWT token</h4>
 <p>When <code>Verify, re-sign and transform JWT token</code> is chosen, the <code>Re-sign settings</code> and <code>Transformation settings</code> appear.</p>
 <p>The <code>Re-sign settings</code> are used to sign the new token and has the same fields than the <code>Token validation</code> section.</p>
-<p>For the <code>Transformation settings</code> section, the fields are: * <code>Token location</code>: the location where to find/set the JWT token * <code>Header name</code>: the name of the header where JWT is located * <code>Prepend value</code>: remove a value inside the header value * <code>Rename token fields</code>: when the JWT token is transformed, it is possible to change a field name, just specify origin field name and target field name * <code>Set token fields</code>: when the JWT token is transformed, it is possible to add new field with static values, just specify field name and value * <code>Remove token fields</code>: when the JWT token is transformed, it is possible to remove fields</p>
+<p>For the <code>Transformation settings</code> section, the fields are:</p>
+<ul>
+  <li><code>Token location</code>: the location where to find/set the JWT token</li>
+  <li><code>Header name</code>: the name of the header where JWT is located</li>
+  <li><code>Prepend value</code>: remove a value inside the header value</li>
+  <li><code>Rename token fields</code>: when the JWT token is transformed, it is possible to change a field name, just specify origin field name and target field name</li>
+  <li><code>Set token fields</code>: when the JWT token is transformed, it is possible to add new field with static values, just specify field name and value</li>
+  <li><code>Remove token fields</code>: when the JWT token is transformed, it is possible to remove fields</li>
+</ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../entities/data-exporters.html">Data exporters</a></p>
 </div>
