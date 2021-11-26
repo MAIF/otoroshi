@@ -2,7 +2,7 @@
 
 The resources of Otoroshi are grouped by `Organization`. This the most high level for grouping resources.
 
-An organization have a unique `id`, a `name` and a `description`. As all Otoroshi resources, an Organization have a list of tags and metadatas associated.
+An organization have a unique `id`, a `name` and a `description`. As all Otoroshi resources, an Organization have a list of tags and metadata associated.
 
 For example, you can use the organizations as a mean of :
 * to seperate resources by `entity` of you enterprise

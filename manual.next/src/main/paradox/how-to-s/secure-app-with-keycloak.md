@@ -12,44 +12,9 @@
 TODO - schema
 @@@
 
-<<<<<<< HEAD
 ### Before you start
 
-Let's start by downloading the latest Otoroshi
-```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
-```
-
-By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
-
-=======
-### Download Otoroshi
-
-Let's start by downloading the latest Otoroshi
-```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
-```
-
-By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
-
->>>>>>> master
-Run Otoroshi
-```sh
-java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
-```
-<<<<<<< HEAD
-
-Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
-
-Then create a simple service (@ref[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
-=======
-
-### Requisites
-
-Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
-
-Then create a simple service (@ref:[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
->>>>>>> master
+@@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
 
 ### Running a keycloak instance with docker
 
@@ -70,21 +35,19 @@ The first step is to create a Keycloak client, an entity that can request Keyclo
 
 Fill the client form with the following values.
 
-| Fields            | Value                             |
-| ----------------- | --------------------------------- |
-| `Client ID`       | `keycloak-otoroshi-backoffice`    |
-| `Client Protocol` | `openid-connect`                  |
-| `Root URL`        | `http://otoroshi.oto.tools:9999/` |
+* `Client ID`: `keycloak-otoroshi-backoffice`
+* `Client Protocol`: `openid-connect`
+* `Root URL`: `http://otoroshi.oto.tools:8080/`
 
 End by create the client with the `Save` button.
 
 The next step is to change the `Access Type` used by default. Jump to the `Access Type` field and select `confidential`. The confidential configuration force the client application to send at Keycloak a client ID and a client Secret. Scroll to the bottom of the page and save the configuration.
 
-Now scroll to the top of your page. Just at the right of the `Settings` tab, a new tab appeared : the `Credentials` page. Click on this tab, and make sure that `Client Id and Secret` is selected as `Client Authenticator` and copy the generated `Secret` to the next part.
+Now scroll to the top of your page. Just at the right of the `Settings` tab, a new tab appeared : the `Credentials` page. Click on this tab, and make sure that `Client Id and Secret` is selected as `Client Authenticator` and copy the generated `Secret` to the next part.
 
 ### Create a Keycloak provider module
 
-1. Go ahead, and navigate to http://otoroshi.oto.tools:9999
+1. Go ahead, and navigate to http://otoroshi.oto.tools:8080
 1. Click on the cog icon on the top right
 1. Then `Authentication configs` button
 1. And add a new configuration when clicking on the `Add item` button
@@ -97,11 +60,9 @@ Click on the `Get from OIDC config` button and paste the previous link. Once it'
 
 The only fields to change are : 
 
-| Fields | Value |
-|---|---|
-| `Client ID` | `keycloak-otoroshi-backoffice` |
-| `Client Secret` | Paste the Secret from the Credentials Keycloak page. In my case, it's something like `90c9bf0b-2c0c-4eb0-aa02-72195beb9da7` |
-| `Callback URL`  | `http://otoroshi.oto.tools:9999/backoffice/auth0/callback`|
+* `Client ID`: `keycloak-otoroshi-backoffice`
+* `Client Secret`: Paste the Secret from the Credentials Keycloak page. In my case, it's something like `90c9bf0b-2c0c-4eb0-aa02-72195beb9da7`
+* `Callback URL`: `http://otoroshi.oto.tools:8080/backoffice/auth0/callback`
 
 At the bottom of the page, disable the `secure` button (because we're using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs). Nothing else to change, just save the configuration.
 
@@ -117,19 +78,19 @@ To secure Otoroshi with your Keycloak configuration, we have to register an Auth
 ### Testing your configuration
 
 1. Disconnect from your instance
-1. Then click on the *Login using third-party* button (or navigate to *http://otoroshi.oto.tools:9999*)
+1. Then click on the *Login using third-party* button (or navigate to *http://otoroshi.oto.tools:8080*)
 2. Click on `Login using Third-party` button
 3. If all is configured, Otoroshi will redirect you to the keycloak login page
 4. Set `admin/admin` as user and trust the user by clicking on `yes` button.
 5. Good work! You're connected to Otoroshi with an Keycloak module.
 
-> A fallback solution is always available, by going to *http://otoroshi.oto.tools:9999/bo/simple/login*, for administrators in case your Authentication module is not well configured or not available
+> A fallback solution is always available, by going to *http://otoroshi.oto.tools:8080/bo/simple/login*, for administrators in case your Authentication module is not well configured or not available
 
 ### Visualize an admin user session or a private user session
 
 Each user, wheter connected user to the Otoroshi UI or at a private Otoroshi app, has an own session. As an administrator of Otoroshi, you can visualize via Otoroshi the list of the connected users and their profile.
 
-Let's start by navigate to the `Admin users sessions` page (just @link:[here](http://otoroshi.oto.tools:9999/bo/dashboard/sessions/admin) or when clicking on the cog, and on the `Admins sessions` button at the bottom of the list).
+Let's start by navigate to the `Admin users sessions` page (just @link:[here](http://otoroshi.oto.tools:8080/bo/dashboard/sessions/admin) or when clicking on the cog, and on the `Admins sessions` button at the bottom of the list).
 
 This page gives a complete view of the connected admins. For each admin, you have his connection date and his expiration date. You can also check the `Profile` and the `Rights` of the connected users.
 
@@ -164,7 +125,7 @@ and his default rights
 
 We haven't create any specific groups in Keycloak or specify rights in Otoroshi for him. In this case, the use received the default Otoroshi rights at his connection. We can see that he can navigate on the default Organization and Teams (which are two resources created by Otoroshi at the boot) and that he have the full access (`r`: Read, `w`: Write, `*`: read/write) on its.
 
-In the same way, you'll find all users connected to a private Otoroshi app when navigate on the @link:[`Private App View`](http://otoroshi.oto.tools:9999/bo/dashboard/sessions/private) or using the cog at the top of the page. 
+In the same way, you'll find all users connected to a private Otoroshi app when navigate on the @link:[`Private App View`](http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private) or using the cog at the top of the page. 
 
 ### Configure the Keycloak module to force logged in users to be an Otoroshi admin with full access
 
@@ -204,7 +165,7 @@ Once connected, your profile should be contains all Keycloak id token :
     "session_state": "e44fe471-aa3b-477d-b792-4f7b4caea220",
     "acr": "1",
     "allowed-origins": [
-        "http://otoroshi.oto.tools:9999"
+        "http://otoroshi.oto.tools:8080"
     ],
     "realm_access": {
         "roles": [
@@ -309,13 +270,13 @@ Now, your rights should be :
 
 ### Secure an app with Keycloak authentication
 
-The only change to apply on the previous authentication module, is on the callback URL. When you want secure a Otoroshi service, and transform it on `Private App`, you need to set the `Callback URL` at `http://privateapps.oto.tools:9999/privateapps/generic/callback`
+The only change to apply on the previous authentication module, is on the callback URL. When you want secure a Otoroshi service, and transform it on `Private App`, you need to set the `Callback URL` at `http://privateapps.oto.tools:8080/privateapps/generic/callback`
 
 1 Go back to the authentication module
 1. Jump to the `Callback URL` field
-2. Paste this value `http://privateapps.oto.tools:9999/privateapps/generic/callback`
+2. Paste this value `http://privateapps.oto.tools:8080/privateapps/generic/callback`
 3. Save your configuration
-4. Navigate to `http://myservice.oto.tools:9999`.
+4. Navigate to `http://myservice.oto.tools:8080`.
 5. You should redirect to the keycloak login page.
 6. Once logged in, you can check the content of the private app session created.
 The rights should be : 

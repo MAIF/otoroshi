@@ -42,9 +42,9 @@ object GlobalExpressionLanguage {
             case "service.subdomain" if service.isDefined                         => service.get.subdomain
             case "service.tld" if service.isDefined                               => service.get.domain
             case "service.env" if service.isDefined                               => service.get.env
-            case r"service.groups\\[$field@(.*):$dv@(.*)\\]" if service.isDefined =>
+            case r"service.groups\['$field@(.*)':'$dv@(.*)'\]" if service.isDefined =>
               Option(service.get.groups(field.toInt)).getOrElse(dv)
-            case r"service.groups\\[$field@(.*)\\]" if service.isDefined          =>
+            case r"service.groups\['$field@(.*)'\]" if service.isDefined          =>
               Option(service.get.groups(field.toInt)).getOrElse(s"no-group-$field")
             case "service.id" if service.isDefined                                => service.get.id
             case "service.name" if service.isDefined                              => service.get.name
@@ -76,9 +76,9 @@ object GlobalExpressionLanguage {
               apiKey.get.metadata.get(field).getOrElse(dv)
             case r"apikey.metadata.$field@(.*)" if apiKey.isDefined           =>
               apiKey.get.metadata.get(field).getOrElse(s"no-meta-$field")
-            case r"apikey.tags\\[$field@(.*):$dv@(.*)\\]" if apiKey.isDefined =>
+            case r"apikey.tags\['$field@(.*)':'$dv@(.*)'\]" if apiKey.isDefined =>
               Option(apiKey.get.tags.apply(field.toInt)).getOrElse(dv)
-            case r"apikey.tags\\[$field@(.*)\\]" if apiKey.isDefined          =>
+            case r"apikey.tags\['$field@(.*)'\]" if apiKey.isDefined =>
               Option(apiKey.get.tags.apply(field.toInt)).getOrElse(s"no-tag-$field")
 
             // for jwt comptab only

@@ -14,25 +14,11 @@ TODO - schema
 
 ### Download Otoroshi
 
-Let's start by downloading the latest Otoroshi
-```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
-```
-
-By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
-
-Run Otoroshi
-```sh
-java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
-```
-
-Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
-
-Then create a simple service (@ref[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
+@@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
 
 ### Your first jwt verifier : a verifier of tokens
 
-Let's start by navigate the page of verifier creation (*http://otoroshi.oto.tools:9999/bo/dashboard/jwt-verifiers/add*). By default, the type of jwt verifier is a *Verify JWT token*.
+Let's start by navigate the page of verifier creation (*http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers/add*). By default, the type of jwt verifier is a *Verify JWT token*.
 
 Create the following verifier : 
 * Set `simple-jwt-verifier` as `Name`
@@ -49,7 +35,7 @@ In the verifiers list, choose the `simple-jwt-verifier` and `enabled` the sectio
 
 Save your service and try to call the service.
 ```sh
-curl -X GET http://myservice.oto.tools:9999/ --include
+curl -X GET http://myservice.oto.tools:8080/ --include
 ```
 
 This should output : 
@@ -65,7 +51,7 @@ A simple way to generate a token is to use *http://jwt.io*. Set `HS512` as `alg`
 # replace xxxx by the generated token
 curl -X GET \
 -H "Authorization: xxxx" \
-http://myservice.oto.tools:9999
+http://myservice.oto.tools:8080
 ```
 
 This should output a json with `authorization` in headers field. His value is exactly the same as the passed token.
@@ -86,7 +72,7 @@ This should output a json with `authorization` in headers field. His value is ex
 
 An other feature is to verify the entry token and generate a new token, with a different signature and news claims. 
 
-Let's start by extending the previous verifier (*http://otoroshi.oto.tools:9999/bo/dashboard/jwt-verifiers*).
+Let's start by extending the previous verifier (*http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers*).
 
 1. Jump to the `Verif Strategy` field and select `Verify and re-sign JWT token`. 
 
@@ -101,7 +87,7 @@ Let's start by extending the previous verifier (*http://otoroshi.oto.tools:9999/
 # replace xxxx by the generated token
 curl -X GET \
 -H "Authorization: xxxx" \
-http://myservice.oto.tools:9999
+http://myservice.oto.tools:8080
 ```
 
 This should output a json with `authorization` in headers field. This time, the value are different and you can check his signature on *jwt.io* (the expected secret of the generated token is *otoroshi-internal-secret*)
@@ -112,7 +98,7 @@ This should output a json with `authorization` in headers field. This time, the 
 
 The most advanced verifier is able to do the same as the previous ones, with the ability to configure the toke generation (claims, output header name).
 
-Let's start by extending the previous verifier (*http://otoroshi.oto.tools:9999/bo/dashboard/jwt-verifiers*).
+Let's start by extending the previous verifier (*http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers*).
 
 1. Jump to the `Verif Strategy` field and select `Verify, transform and re-sign JWT token`. 
 

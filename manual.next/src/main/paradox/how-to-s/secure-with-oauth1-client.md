@@ -12,22 +12,9 @@
 TODO - schema
 @@@
 
-### Download Otoroshi
+### Before you start
 
-Let's start by downloading the latest Otoroshi
-```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
-```
-
-By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
-
-Run Otoroshi
-```sh
-java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
-
-Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
-
-Then create a simple service (@ref[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
+@@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
 
 ### Running an simple OAuth 1 server
 
@@ -39,11 +26,11 @@ docker run -d --name oauth1-server --rm \
     -p 5000:5000 \
     -e OAUTH1_CLIENT_ID=2NVVBip7I5kfl0TwVmGzTphhC98kmXScpZaoz7ET \
     -e OAUTH1_CLIENT_SECRET=wXzb8tGqXNbBQ5juA0ZKuFAmSW7RwOw8uSbdE3MvbrI8wjcbGp \
-    -e OAUTH1_REDIRECT_URI=http://otoroshi.oto.tools:9999/backoffice/auth0/callback \
+    -e OAUTH1_REDIRECT_URI=http://otoroshi.oto.tools:8080/backoffice/auth0/callback \
     ghcr.io/beryju/oauth1-test-server
 ```
 
-We created a oauth 1 server which accepts `http://otoroshi.oto.tools:9999/backoffice/auth0/callback` as `Redirect URI`. This URL is used by Otoroshi to retrieve a token and a profile at the end of an authentication process.
+We created a oauth 1 server which accepts `http://otoroshi.oto.tools:8080/backoffice/auth0/callback` as `Redirect URI`. This URL is used by Otoroshi to retrieve a token and a profile at the end of an authentication process.
 
 After this command, the container logs should output :
 ```sh 
@@ -52,7 +39,7 @@ After this command, the container logs should output :
 
 ### Create an OAuth 1 provider module
 
-1. Go ahead, and navigate to http://otoroshi.oto.tools:9999
+1. Go ahead, and navigate to http://otoroshi.oto.tools:8080
 1. Click on the cog icon on the top right
 1. Then `Authentication configs` button
 1. And add a new configuration when clicking on the `Add item` button
@@ -64,7 +51,7 @@ After this command, the container logs should output :
 7. Set `http://localhost:5000/oauth/authorize` as `Authorize URL`
 8. Set `http://localhost:oauth/access_token` as `Access token URL`
 9. Set `http://localhost:5000/api/me` as `Profile URL`
-10. Set `http://otoroshi.oto.tools:9999/backoffice/auth0/callback` as `Callback URL`
+10. Set `http://otoroshi.oto.tools:8080/backoffice/auth0/callback` as `Callback URL`
 11. At the bottom of the page, disable the `secure` button (because we're using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)
 
  At this point, your configuration should be similar to :
@@ -103,13 +90,13 @@ To secure Otoroshi with your OAuth1 configuration, we have to register an Authen
 ### Testing your configuration
 
 1. Disconnect from your instance
-1. Then click on the *Login using third-party* button (or navigate to *http://otoroshi.oto.tools:9999*)
+1. Then click on the *Login using third-party* button (or navigate to *http://otoroshi.oto.tools:8080*)
 2. Click on `Login using Third-party` button
 3. If all is configured, Otoroshi will redirect you to the oauth 1 server login page
 4. Set `example-user` as user and trust the user by clicking on `yes` button.
 5. Good work! You're connected to Otoroshi with an OAuth1 module.
 
-> A fallback solution is always available, by going to *http://otoroshi.oto.tools:9999/bo/simple/login*, for administrators in case your Authentication module is not available
+> A fallback solution is always available, by going to *http://otoroshi.oto.tools:8080/bo/simple/login*, for administrators in case your Authentication module is not available
 
 ### Secure an app with OAuth 1 authentication
 
@@ -117,21 +104,21 @@ With the previous configuration, you can secure any of Otoroshi services with it
 
 The first step is to apply a little change on the previous configuration. 
 
-1. Navigate to *http://otoroshi.oto.tools:9999/bo/dashboard/auth-configs*.
+1. Navigate to *http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs*.
 2. Create a new auth module configuration with the same values.
-3. Replace the `Callback URL` field to `http://privateapps.oto.tools:9999/privateapps/generic/callback` (we changed this value because the redirection of a logged user by a third-party server is cover by an other route by Otoroshi).
+3. Replace the `Callback URL` field to `http://privateapps.oto.tools:8080/privateapps/generic/callback` (we changed this value because the redirection of a logged user by a third-party server is cover by an other route by Otoroshi).
 4. Disable the `secure` button (because we're using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)
 
 > Note : a Otoroshi service is call a private app when it is protected by an authentication module.
 
-Our example server supports only one redirect URI. We need to kill it, and to create a new container with `http://otoroshi.oto.tools:9999/privateapps/generic/callback` as `OAUTH1_REDIRECT_URI`
+Our example server supports only one redirect URI. We need to kill it, and to create a new container with `http://otoroshi.oto.tools:8080/privateapps/generic/callback` as `OAUTH1_REDIRECT_URI`
 ```sh
 docker rm -f oauth1-server
 docker run -d --name oauth1-server --rm \
     -p 5000:5000 \
     -e OAUTH1_CLIENT_ID=2NVVBip7I5kfl0TwVmGzTphhC98kmXScpZaoz7ET \
     -e OAUTH1_CLIENT_SECRET=wXzb8tGqXNbBQ5juA0ZKuFAmSW7RwOw8uSbdE3MvbrI8wjcbGp \
-    -e OAUTH1_REDIRECT_URI=http://privateapps.oto.tools:9999/privateapps/generic/callback \
+    -e OAUTH1_REDIRECT_URI=http://privateapps.oto.tools:8080/privateapps/generic/callback \
     ghcr.io/beryju/oauth1-test-server
 ```
 
@@ -157,7 +144,7 @@ If you had any errors, make sure of :
 * check if your oauth1 server has the REDIRECT_URI set on *privateapps/...*
 * Make sure your server supports POST or GET oauth1 flow set on authentication module
 
-Once the configuration is working, you can check, when connecting with an Otoroshi admin user, the `Private App session` created (use the cog at the right top of the page, and select `Priv. app sesssions`, or navigate to *http://otoroshi.oto.tools:9999/bo/dashboard/sessions/private*).
+Once the configuration is working, you can check, when connecting with an Otoroshi admin user, the `Private App session` created (use the cog at the right top of the page, and select `Priv. app sesssions`, or navigate to *http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private*).
 
 One interesing feature is to check the profile of the connected user. In our case, when clicking on the `Profile` button of the right user, we should have : 
 ```json

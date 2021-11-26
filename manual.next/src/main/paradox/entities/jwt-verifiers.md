@@ -89,7 +89,8 @@ According to the selected algorithm, the validation form will change.
 
 ## Strategy
 
-The first step is to select the verifier strategy. Otoroshi supports 4 types of JWT verifiers : 
+The first step is to select the verifier strategy. Otoroshi supports 4 types of JWT verifiers:
+
 * `Default JWT token` will add a token if no present. 
 * `Verify JWT token` will only verifiy token signing and fields values if provided. 
 * `Verify and re-sign JWT token` will verify the token and will re-sign the JWT token with the provided algo. settings. 
@@ -125,6 +126,7 @@ When `Verify, re-sign and transform JWT token` is chosen, the `Re-sign settings`
 The `Re-sign settings` are used to sign the new token and has the same fields than the `Token validation` section.
 
 For the `Transformation settings` section, the fields are:
+
 * `Token location`: the location where to find/set the JWT token
 * `Header name`: the name of the header where JWT is located
 * `Prepend value`: remove a value inside the header value

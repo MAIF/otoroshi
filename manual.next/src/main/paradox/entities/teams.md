@@ -2,7 +2,7 @@
 
 In Otoroshi, all resources are attached to an `Organization` and a `Team`. 
 
-A team is composed of an unique `id`, a `name`, a `description` and an `Organization`. As all Otoroshi resources, a Team have a list of tags and metadatas associated.
+A team is composed of an unique `id`, a `name`, a `description` and an `Organization`. As all Otoroshi resources, a Team have a list of tags and metadata associated.
 
 A team have an unique organization and can be use on multiples resources (services, api keys, etc ...).
 

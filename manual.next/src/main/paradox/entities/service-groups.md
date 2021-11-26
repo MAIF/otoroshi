@@ -1,6 +1,6 @@
 # Service groups
 
-A service group is composed of an unique `id`, a `Group name`, a `Group description`, an `Organization` and a `Team`. As all Otoroshi resources, a service group have a list of tags and metadatas associated.
+A service group is composed of an unique `id`, a `Group name`, a `Group description`, an `Organization` and a `Team`. As all Otoroshi resources, a service group have a list of tags and metadata associated.
 
 The first instinctive usage of service group is to group a list of services. 
 

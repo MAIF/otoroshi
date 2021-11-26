@@ -2,7 +2,6 @@
 
 ### Cover by this tutorial
 - [Before you start](#before-you-start)
-- [About the downstream example service](#about-the-downstream-example-service)
 - [Create a simple service](#create-a-simple-service)
 - [Secure routes with api key](#secure-an-api-with-apikey)
 - [Generate an api key to request secure services](#generate-an-api-key-to-request-secure-services)
@@ -15,34 +14,16 @@ TODO - schema
 
 ### Before you start
 
-Let's start by downloading the latest Otoroshi
-```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
-```
-
-By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
-
-Run Otoroshi
-```sh
-java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
-```
-
-Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
-
-### About the downstream example service
-
-In these tutorials, we will create a simple service which route to *https://mirror.otoroshi.io/*
-
-This downstream service is a very good entry point to test the functionality of Otoroshi services, as it will return the content of all requests received (included headers, body, etc.).
+@@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
 
 ### Create a simple service 
 
-1. Navigate to http://otoroshi.oto.tools:9999/bo/dashboard/lines/prod/services/service_596bb0d1-9eb5-40fe-b521-9d138fe9ec85
+1. Navigate to http://otoroshi.oto.tools:8080/bo/dashboard/services and click on the `create new service` button
 2. Jump to `Service exposition settings` and add *http://myservice.oto.tools* as `Exposed domain`
 3. Jump to `Service targets` and add *https://mirror.otoroshi.io/* as `Target 1`
 4. Jump to the `URL Patterns` section
 5. Enable your service as `Public UI`
-6. Open a new tab and navigate to *http://myservice.oto.tools:9999/*
+6. Open a new tab and navigate to *http://myservice.oto.tools:8080/*
 
 With this configuration, all routes are public, wihtout any authentication needed.
 
@@ -54,13 +35,13 @@ In our case, we want to secure all routes prefix with `/api`.
 
 Let's return to the `URL Patterns` section. Click on `Make service a private api`. This button automatically add `/api` as default in `Private patterns` array. (Note that the field supports regex like. In our case, `/api.*` covers all routes starting by */api*).
 
-Save your app and navigate to *http://myservice.oto.tools:9999/api/test* again. If the service is configured, you should have a `Service Not found error`, and a success call, in the case you navigate to any other routes which are not starting by `/api/*` like *http://myservice.oto.tools:9999/test/bar*
+Save your app and navigate to *http://myservice.oto.tools:8080/api/test* again. If the service is configured, you should have a `Service Not found error`, and a success call, in the case you navigate to any other routes which are not starting by `/api/*` like *http://myservice.oto.tools:8080/test/bar*
 
 This expected error on the `/api/test`, throws by the URL Patterns, indicate to the client that an api key is required to access to the downstream service.
 
 ### Generate an api key to request secure services
 
-Navigate to *http://otoroshi.oto.tools:9999/bo/dashboard/apikeys/add* or when clicking on the `Add apikey` button on the sidebar.
+Navigate to *http://otoroshi.oto.tools:8080/bo/dashboard/apikeys/add* or when clicking on the `Add apikey` button on the sidebar.
 
 The only required fields of an Otoroshi api key are : 
 * `ApiKey id`
@@ -87,14 +68,14 @@ Let's ahead and call our service :
 curl -X GET \
 -H 'Otoroshi-Client-Id: my-first-api-key-id' \
 -H 'Otoroshi-Client-Secret: my-first-api-key-secret' \
-http://myservice.oto.tools:9999/api/test --include
+http://myservice.oto.tools:8080/api/test --include
 ```
 And with the second method :
 
 ```sh
 curl -X GET \
 -H 'Authorization: Basic bXktZmlyc3QtYXBpLWtleS1pZDpteS1maXJzdC1hcGkta2V5LXNlY3JldA==' \
-http://myservice.oto.tools:9999/api/test --include
+http://myservice.oto.tools:8080/api/test --include
 ```
 
 > Tips : To easily fill your headers, you can jump to the `Call examples` section in each api key view. In this section the header names are the default values and the service url is not set. You have to adapt these lines to your case. 
@@ -115,7 +96,7 @@ Save the service, and call the service again.
 curl -X GET \
 -H 'Otoroshi-Client-Id: my-first-api-key-id' \
 -H 'Otoroshi-Client-Secret: my-first-api-key-secret' \
-http://myservice.oto.tools:9999/api/test --include
+http://myservice.oto.tools:8080/api/test --include
 ```
 
 This should output an error because Otoroshi are expecting the api keys in other headers.
@@ -132,7 +113,7 @@ Call one again the service but with the changed headers names.
 curl -X GET \
 -H 'api-key-header-id: my-first-api-key-id' \
 -H 'api-key-header-secret: my-first-api-key-secret' \
-http://myservice.oto.tools:9999/api/test --include
+http://myservice.oto.tools:8080/api/test --include
 ```
 
 With this configuration, all others default services will accept the api keys with the `Otoroshi-Client-Id` and `Otoroshi-Client-Secret` headers, while our service, will accept the `api-key-header-id` and `api-key-header-secret` headers.
@@ -141,7 +122,7 @@ With this configuration, all others default services will accept the api keys wi
 
 By default, a secure service only accepts requests with api key. But all generated api keys are eligible to call our service and in some case, we want authorize only a couple of api keys.
 
-One feature of Otoroshi is to restrict the list of accepted api keys by giving a list of `metadatas` or/and `tags`. Each api key has a list of `tags` and `metadatas`, which can be used by Otoroshi to forward or not a call with an api key. All api key metadatas/tags can be forward to your service (see `Otoroshi exchange protocol` section of a service to get more information about *Send info. token*).
+One feature of Otoroshi is to restrict the list of accepted api keys by giving a list of `metadata` or/and `tags`. Each api key has a list of `tags` and `metadata`, which can be used by Otoroshi to forward or not a call with an api key. All api key metadata/tags can be forward to your service (see `Otoroshi exchange protocol` section of a service to get more information about *Send info. token*).
 
 Let's starting by accept only the api keys which come with the tag of `otoroshi` as value.
 
@@ -153,7 +134,7 @@ Then call our service with :
 curl -X GET \
 -H 'Otoroshi-Client-Id: my-first-api-key-id' \
 -H 'Otoroshi-Client-Secret: my-first-api-key-secret' \
-http://myservice.oto.tools:9999/api/test --include
+http://myservice.oto.tools:8080/api/test --include
 ```
 
 This should output :

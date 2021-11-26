@@ -9,4 +9,9 @@ lazy val docs = (project in file("."))
     name := "Otoroshi",
     paradoxTheme := Some(builtinParadoxTheme("generic")),
     paradoxRoots := List("index.html"),
+    (Compile / paradoxMarkdownToHtml / excludeFilter) :=
+      (Compile / paradoxMarkdownToHtml / excludeFilter).value ||
+        ParadoxPlugin.InDirectoryFilter(
+          (Compile / paradox / sourceDirectory).value / "includes"
+        )
   )

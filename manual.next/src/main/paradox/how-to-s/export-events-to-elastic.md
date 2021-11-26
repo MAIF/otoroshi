@@ -7,7 +7,6 @@
 - [Testing your configuration](#testing-your-configuration)
 - [Advanced usage](#advanced-usage)
 - [Debug your configuration](#debug-your-configuration)
-- 
 
 @@@ warning
 TODO - schema
@@ -15,21 +14,7 @@ TODO - schema
 
 ### Before you start
 
-Let's start by downloading the latest Otoroshi
-```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
-```
-
-By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
-
-Run Otoroshi
-```sh
-java -Dapp.adminPassword=password -Dhttp.port=9999 -Dhttps.port=9998 -jar otoroshi.jar 
-```
-
-Log to Otoroshi at http://otoroshi.oto.tools:9999/ with `admin@otoroshi.io/password`
-
-Then create a simple service (@ref[instructions are available here](./secure-with-apikey.md#about-the-downstream-example-service))
+@@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
 
 ### Deploy a Elasticsearch and kibana stack on Docker
 
@@ -54,17 +39,13 @@ To access Kibana, go to *http://localhost:5601*.
 
 Let's create an exporter. The exporter will export by default all events generate by Otoroshi.
 
-1. Go ahead, and navigate to http://otoroshi.oto.tools:9999
+1. Go ahead, and navigate to http://otoroshi.oto.tools:8080
 2. Click on the cog icon on the top right
 3. Then `Exporters` button
 4. And add a new configuration when clicking on the `Add item` button
 5. Select the `elastic` in the `type` selector field
 6. Jump to `Exporter config`
-7. Set the following values
-
-| Field         | Value                   |
-| ------------- | ----------------------- |
-| `Cluster URI` | `http://localhost:9200` |
+7. Set the following values: `Cluster URI` -> `http://localhost:9200`
 
 Then test your configuration with `Check connection` button. This should output a modal with Elasticsearch version and the number of loaded docs.
 
@@ -78,13 +59,9 @@ Navigate to the danger zone (click on the cog on the right top and scroll to `da
 
 Jump to the `Analytics: Elastic dashboard datasource (read)` section.
 
-Set the following values : 
+Set the following values : `Cluster URI` -> `http://localhost:9200`
 
-| Field         | Value                   |
-| ------------- | ----------------------- |
-| `Cluster URI` | `http://localhost:9200` |
-
-Then click on the `Check connection`. This should ouput the same result as the previous part. Save the global configuration and navigate to *http://otoroshi.oto.tools:9999/bo/dashboard/stats*.
+Then click on the `Check connection`. This should ouput the same result as the previous part. Save the global configuration and navigate to *http://otoroshi.oto.tools:8080/bo/dashboard/stats*.
 
 This should output a list of graphs.
 

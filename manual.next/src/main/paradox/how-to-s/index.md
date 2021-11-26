@@ -17,6 +17,7 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * @ref:[TLS termination using Let's Encrypt](./tls-using-lets-encrypt.md)
 * @ref:[Secure an app with jwt verifiers](./secure-an-app-with-jwt-verifiers.md)
 * @ref:[Secure the communication between a downstream app and Otoroshi](./secure-the-communication-between-a-downstream-app-and-otoroshi.md)
+* @ref:[TLS termination using own certificates](./tls-termination-using-own-certificates.md)
 
 @@@ index
 
@@ -34,5 +35,6 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * [TLS termination using Let's Encrypt](./tls-using-lets-encrypt.md)
 * [Secure an app with jwt verifiers](./secure-an-app-with-jwt-verifiers.md)
 * [Secure the communication between a downstream app and Otoroshi](./secure-the-communication-between-a-downstream-app-and-otoroshi.md)
+* [TLS termination using own certificates](./tls-termination-using-own-certificates.md)
 
 @@@
