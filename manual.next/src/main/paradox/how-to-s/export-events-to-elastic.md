@@ -7,7 +7,6 @@
 - [Testing your configuration](#testing-your-configuration)
 - [Advanced usage](#advanced-usage)
 - [Debug your configuration](#debug-your-configuration)
-- 
 
 @@@ warning
 TODO - schema

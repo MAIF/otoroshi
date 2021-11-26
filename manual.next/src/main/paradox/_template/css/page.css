@@ -970,3 +970,91 @@ p {
 .hidden {
   display: none !important;
 }
+
+.editor {
+  display: flex;
+  margin-bottom: 12px;
+}
+
+.editor-quotes {
+  line-height: 1.45em !important;
+  font-family: Consolas, "Liberation Mono", Courier, monospace;
+  font-size: 0.85em !important;
+  font-weight: normal !important;
+  background-color: #e6e6e6;
+}
+
+.editor>div:first-child {
+  min-width: 60%;
+  max-width: 60%;
+  padding: 12px !important;
+}
+
+.editor p {
+  margin: 12px 0 !important;
+}
+
+.editor div:first-child,
+.editor div:last-child {
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+}
+
+.editor div:last-child {
+  min-width: 40%;
+  max-width: 40%;
+  border-radius: 2px;
+  position: relative;
+  padding-left: 18px;
+}
+
+.editor-value {
+  color: #fff;
+  font-size: .9em;
+  font-weight: bold;
+}
+
+.editor-title {
+  font-size: .75em;
+  text-transform: uppercase;
+  display: inline-block;
+  border-radius: 1em;
+  padding: .25em 1em !important;
+  background: #45505e;
+  box-shadow: inset 1px 1px 1px rgb(0 0 0 / 25%);
+  color: #fff;
+  margin-bottom: 1.25rem;
+  margin-left: -0.5rem;
+  pointer-events: none;
+  position: absolute;
+  right: 12px;
+  top: -24px;
+}
+
+.editor>div:first-child p,
+.editor div:last-child p {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.editor>div:first-child p span {
+  font-size: .95em;
+  text-transform: capitalize;
+  color: #333333;
+  line-height: 1.45em;
+  font-family: inherit;
+}
+
+.editor code {
+  width: fit-content;
+  border-radius: 4px;
+  /* white-space: nowrap; */
+  background-color: #ddd;
+}
+
+.editor div:first-child code {
+  margin-right: 4px;
+}
