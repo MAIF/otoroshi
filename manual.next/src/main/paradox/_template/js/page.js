@@ -57,25 +57,61 @@ $(function () {
 
   setupSearch();
 
-  let list = document.getElementsByClassName("active")[1]
-    .parentElement
-    .getElementsByTagName("ul")[0]
-
-  if (!list) {
-    list = document.getElementsByClassName("active")[1]
-      .parentElement
-      .parentElement
-      .parentElement
-      .children[0]
+  function improveSidebar() {
+    let list = document.getElementsByClassName("active")[1]
       .parentElement
       .getElementsByTagName("ul")[0]
+
+    if (!list) {
+      list = document.getElementsByClassName("active")[1]
+        .parentElement
+        .parentElement
+        .parentElement
+        .children[0]
+        .parentElement
+        .getElementsByTagName("ul")[0]
+    }
+
+    if (list && list.children)
+      for (let i = 0; i < list.children.length; i++) {
+        let r = list.children[i]
+        r.style.display = "block"
+      }
   }
 
-  console.log(list)
+  improveSidebar();
 
-  if (list && list.children)
-    for (let i = 0; i < list.children.length; i++) {
-      let r = list.children[i]
-      r.style.display = "block"
+  function improveCodeBlock() {
+    const codes = document.getElementsByClassName("prettyprint");
+
+    function pasteButton(codeContainer) {
+      const paste = document.createElement("button");
+      paste.classList.add("paste-button-container");
+
+      const pasteText = document.createElement("span");
+      pasteText.textContent = "Copied!";
+      pasteText.classList.add("paste-text")
+
+      const div = document.createElement("div");
+      div.classList.add("paste-button");
+
+      paste.addEventListener('click', function (event) {
+        codeContainer.focus();
+        navigator.clipboard.writeText(codeContainer.textContent)
+
+        codeContainer.appendChild(pasteText);
+        setTimeout(() => codeContainer.removeChild(pasteText), 2000)
+      })
+
+      paste.appendChild(div);
+      codeContainer.appendChild(paste);
     }
+
+    for (let i = 0; i < codes.length; i++) {
+      codes[i].style.position = 'relative';
+      pasteButton(codes[i])
+    }
+  }
+
+  improveCodeBlock();
 });

@@ -31,7 +31,7 @@ curl -X POST http://otoroshi-api.oto.tools:8080/api/services \
 -H "Otoroshi-Client-Secret: admin-api-apikey-secret" \
 -H 'Content-Type: application/json; charset=utf-8' \
 -d @- <<'EOF'
-{"enforceSecureCommunication":false,"forceHttps":false,"_loc":{"tenant":"default","teams":["default"]},"groupId":"default","groups":["default"],"id":"expression-language-api-service","name":"expression-language","description":"expression-language","env":"prod","domain":"oto.tools","subdomain":"api","targetsLoadBalancing":{"type":"RoundRobin"},"targets":[{"host":"mirror.otoroshi.io","scheme":"https","weight":1,"mtlsConfig":{"certs":[],"trustedCerts":[],"mtls":false,"loose":false,"trustAll":false},"tags":[],"metadata":{},"protocol":"HTTP\/1.1","predicate":{"type":"AlwaysMatch"},"ipAddress":null}],"root":"\/","matchingRoot":null,"stripPath":true,"enabled":true,"secComHeaders":{"claimRequestName":null,"stateRequestName":null,"stateResponseName":null},"publicPatterns":[],"privatePatterns":["/.*"],"kind":"ServiceDescriptor","additionalHeaders":{"my-expr-header.date":"${date}","my-expr-header.date-with-format":"${date.format('yyy-MM-dd')}","my-expr-header.request.full-url":"${req.fullUrl}","my-expr-header.request.path":"${req.path}","my-expr-header.request.uri":"${req.uri}","my-expr-header.request.host":"${req.host}","my-expr-header.request.domain":"${req.domain}","my-expr-header.request.method":"${req.method}","my-expr-header.request.protocol":"${req.protocol}","my-expr-header.request.unknown-header":"${req.headers.foob:'<default value>'}","my-expr-header.request.header":"${req.headers.foo}","my-expr-header.request.unknown-query":"${req.query.foob:'<default value>}","my-expr-header.request.query":"${req.query.foo}","my-expr-header.service-domain":"${service.domain}","my-expr-header.service-subdomain":"${service.subdomain}","my-expr-header.service-tld":"${service.tld}","my-expr-header.service-env":"${service.env}","my-expr-header.service-id":"${service.id}","my-expr-header.service-name":"${service.name}","my-expr-header.service-unknown-group":"${service.groups['0':'unkown group']}","my-expr-header.service-group":"${service.groups['0']}","my-expr-header.service-unknown-metadata":"${service.metadata.test:'default-value'}","my-expr-header.service-metadata":"${service.metadata.foo}","my-expr-header.apikey.name":"${apikey.name}","my-expr-header.apikey.id":"${apikey.id}","my-expr-header.apikey.unknown-metadata":"${apikey.metadata.myfield:'default value'}","my-expr-header.apikey.metadata":"${apikey.metadata.foo}","my-expr-header.apikey.unknown-tag":"${apikey.tags['0':'no-found-tag']}","my-expr-header.apikey.tag":"${apikey.tags['0']}","my-expr-header.token.replace-header-value":"${token.foo.replace('o','a')}","my-expr-header.token.replace-header-all-value":"${token.foo.replaceAll('o','a')}","my-expr-header.token.unknown-fields":"${token.foob|token.foob2:'not-found'}","my-expr-header.token.foo-field":"${token.foob|token.foo}","my-expr-header.token.unknown-foo-field":"${token.foob:'not-found-foob'}","my-expr-header.token.unknown-foo":"${token.foo}","my-expr-header.env.unknown-field":"${env.java_h:'not-found-java_h'}","my-expr-header.env.path":"${env.PATH}","my-expr-header.config.unknown-port-field":"${config.http.ports:'not-found'}","my-expr-header.config.port":"${config.http.port}","my-expr-header.ctx.replace-field-value":"${ctx.foo.replace('o','a')}","my-expr-header.ctx.replace-field-all-value":"${ctx.foo.replaceAll('o','a')}","my-expr-header.ctx.unknown-fields":"${ctx.foob|ctx.foot:'not-found'}","my-expr-header.ctx.foo-field":"${ctx.foob|ctx.foo}","my-expr-header.ctx.default-value":"${ctx.foob:'other'}","my-expr-header.ctx.foo":"${ctx.foo}","my-expr-header.ctx.useragent":"${ctx.useragent.foo}","my-expr-header.ctx.geolocation":"${ctx.geolocation.foo}"}}
+{"enforceSecureCommunication":false,"forceHttps":false,"_loc":{"tenant":"default","teams":["default"]},"groupId":"default","groups":["default"],"id":"expression-language-api-service","name":"expression-language","description":"expression-language","env":"prod","domain":"oto.tools","subdomain":"api","targetsLoadBalancing":{"type":"RoundRobin"},"targets":[{"host":"mirror.otoroshi.io","scheme":"https","weight":1,"mtlsConfig":{"certs":[],"trustedCerts":[],"mtls":false,"loose":false,"trustAll":false},"tags":[],"metadata":{},"protocol":"HTTP\/1.1","predicate":{"type":"AlwaysMatch"},"ipAddress":null}],"root":"\/","matchingRoot":null,"stripPath":true,"enabled":true,"secComHeaders":{"claimRequestName":null,"stateRequestName":null,"stateResponseName":null},"publicPatterns":[],"privatePatterns":["/.*"],"kind":"ServiceDescriptor","additionalHeaders":{"my-expr-header.date":"${date}","my-expr-header.date-with-format":"${date.format('yyy-MM-dd')}","my-expr-header.request.full-url":"${req.fullUrl}","my-expr-header.request.path":"${req.path}","my-expr-header.request.uri":"${req.uri}","my-expr-header.request.host":"${req.host}","my-expr-header.request.domain":"${req.domain}","my-expr-header.request.method":"${req.method}","my-expr-header.request.protocol":"${req.protocol}","my-expr-header.request.unknown-header":"${req.headers.foob:default value}","my-expr-header.request.header":"${req.headers.foo}","my-expr-header.request.unknown-query":"${req.query.foob:default value}","my-expr-header.request.query":"${req.query.foo}","my-expr-header.service-domain":"${service.domain}","my-expr-header.service-subdomain":"${service.subdomain}","my-expr-header.service-tld":"${service.tld}","my-expr-header.service-env":"${service.env}","my-expr-header.service-id":"${service.id}","my-expr-header.service-name":"${service.name}","my-expr-header.service-unknown-group":"${service.groups['0':'unkown group']}","my-expr-header.service-group":"${service.groups['0']}","my-expr-header.service-unknown-metadata":"${service.metadata.test:default-value}","my-expr-header.service-metadata":"${service.metadata.foo}","my-expr-header.apikey.name":"${apikey.name}","my-expr-header.apikey.id":"${apikey.id}","my-expr-header.apikey.unknown-metadata":"${apikey.metadata.myfield:default value}","my-expr-header.apikey.metadata":"${apikey.metadata.foo}","my-expr-header.apikey.unknown-tag":"${apikey.tags['0':'no-found-tag']}","my-expr-header.apikey.tag":"${apikey.tags['0']}","my-expr-header.token.replace-header-value":"${token.foo.replace('o','a')}","my-expr-header.token.replace-header-all-value":"${token.foo.replaceAll('o','a')}","my-expr-header.token.unknown-fields":"${token.foob|token.foob2:not-found}","my-expr-header.token.foo-field":"${token.foob|token.foo}","my-expr-header.token.unknown-foo-field":"${token.foob:not-found-foob}","my-expr-header.token.unknown-foo":"${token.foo}","my-expr-header.env.unknown-field":"${env.java_h:not-found-java_h}","my-expr-header.env.path":"${env.PATH}","my-expr-header.config.unknown-port-field":"${config.http.ports:not-found}","my-expr-header.config.port":"${config.http.port}","my-expr-header.ctx.replace-field-value":"${ctx.foo.replace('o','a')}","my-expr-header.ctx.replace-field-all-value":"${ctx.foo.replaceAll('o','a')}","my-expr-header.ctx.unknown-fields":"${ctx.foob|ctx.foot:not-found}","my-expr-header.ctx.foo-field":"${ctx.foob|ctx.foo}","my-expr-header.ctx.default-value":"${ctx.foob:other}","my-expr-header.ctx.foo":"${ctx.foo}","my-expr-header.ctx.useragent":"${ctx.useragent.foo}","my-expr-header.ctx.geolocation":"${ctx.geolocation.foo}"}}
 EOF
 
 # Create an authentication module to protect the next service.
@@ -56,7 +56,7 @@ EOF
 Then try to call the first service.
 
 ```sh
-curl http://api.oto.tools:9999/api/\?foo\=bar \
+curl http://api.oto.tools:8080/api/\?foo\=bar \
 -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJmb28iOiJiYXIifQ.lV130dFXR3bNtWBkwwf9dLmfsRVmnZhfYF9gvAaRzF8" \
 -H "Otoroshi-Client-Id: admin-api-apikey-id" \
 -H "Otoroshi-Client-Secret: admin-api-apikey-secret" \
@@ -81,7 +81,7 @@ This will returns the list of the received headers by the mirror.
     "my-expr-header.request.uri": "/api/?foo=bar",
     "my-expr-header.service-env": "prod",
     "my-expr-header.service-tld": "oto.tools",
-    "my-expr-header.request.host": "api.oto.tools:9999",
+    "my-expr-header.request.host": "api.oto.tools:8080",
     "my-expr-header.request.path": "/api/",
     "my-expr-header.service-name": "expression-language",
     "my-expr-header.ctx.foo-field": "no-ctx-foob-foo",
@@ -96,24 +96,24 @@ This will returns the list of the received headers by the mirror.
     "my-expr-header.ctx.geolocation": "no-ctx-geolocation.foo",
     "my-expr-header.token.foo-field": "no-token-foob-foo",
     "my-expr-header.date-with-format": "2021-11-26",
-    "my-expr-header.request.full-url": "http://api.oto.tools:9999/api/?foo=bar",
+    "my-expr-header.request.full-url": "http://api.oto.tools:8080/api/?foo=bar",
     "my-expr-header.request.protocol": "http",
     "my-expr-header.service-metadata": "no-meta-foo",
-    "my-expr-header.ctx.default-value": "'other'",
-    "my-expr-header.env.unknown-field": "'not-found-java_h'",
+    "my-expr-header.ctx.default-value": "other",
+    "my-expr-header.env.unknown-field": "not-found-java_h",
     "my-expr-header.service-subdomain": "api",
     "my-expr-header.token.unknown-foo": "no-token-foo",
     "my-expr-header.apikey.unknown-tag": "one-tag",
-    "my-expr-header.ctx.unknown-fields": "'not-found'",
-    "my-expr-header.token.unknown-fields": "'not-found'",
-    "my-expr-header.request.unknown-query": "'<default value>",
+    "my-expr-header.ctx.unknown-fields": "not-found",
+    "my-expr-header.token.unknown-fields": "not-found",
+    "my-expr-header.request.unknown-query": "default value",
     "my-expr-header.service-unknown-group": "default",
-    "my-expr-header.request.unknown-header": "'<default value>'",
-    "my-expr-header.apikey.unknown-metadata": "'default value'",
+    "my-expr-header.request.unknown-header": "default value",
+    "my-expr-header.apikey.unknown-metadata": "default value",
     "my-expr-header.ctx.replace-field-value": "no-ctx-foo",
-    "my-expr-header.token.unknown-foo-field": "'not-found-foob'",
-    "my-expr-header.service-unknown-metadata": "'default-value'",
-    "my-expr-header.config.unknown-port-field": "'not-found'",
+    "my-expr-header.token.unknown-foo-field": "not-found-foob",
+    "my-expr-header.service-unknown-metadata": "default-value",
+    "my-expr-header.config.unknown-port-field": "not-found",
     "my-expr-header.token.replace-header-value": "no-token-foo",
     "my-expr-header.ctx.replace-field-all-value": "no-ctx-foo",
     "my-expr-header.token.replace-header-all-value": "no-token-foo",
@@ -134,8 +134,8 @@ This should output:
     "my-expr-header.user.email": "user@foo.bar",
     "my-expr-header.user.metadata": "roger",
     "my-expr-header.user.profile-field": "User Otoroshi",
-    "my-expr-header.user.unknown-metadata": "'not-found'",
-    "my-expr-header.user.unknown-profile-field": "'not-found'",
+    "my-expr-header.user.unknown-metadata": "not-found",
+    "my-expr-header.user.unknown-profile-field": "not-found",
   }
 }
 ```
