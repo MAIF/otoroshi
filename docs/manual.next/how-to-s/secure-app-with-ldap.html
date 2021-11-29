@@ -371,11 +371,13 @@ ldapadd -x -w otoroshi -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -f bootstrap
   <li>Set <code>otoroshi</code> as <em>Admin password</em></li>
   <li>At the bottom of the page, disable the <code>secure</code> button (because we&rsquo;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)</li>
 </ol>
-<p>At this point, your configuration should be similar to : <!-- oto-scenario
+<p>At this point, your configuration should be similar to :</p>
+<!-- oto-scenario
  - goto /bo/dashboard/auth-configs/edit/auth_mod_09975547-a186-4a2d-a550-ca71a0a03c0c
  - wait 1000
  - screenshot-area generated-hows-to-ldap-auth-configs.png #app>div>div.container-fluid>div>div.col-sm-10.col-sm-offset-2.main
---> <img src="../imgs/generated-hows-to-ldap-auth-configs.png" /></p>
+-->
+<img src="../imgs/generated-hows-to-ldap-auth-configs.png" />
 <blockquote>
   <p>Dont&rsquo; forget to save on the bottom page your configuration before to quit the page.</p>
 </blockquote>

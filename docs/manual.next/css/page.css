@@ -538,7 +538,7 @@ small {
 .page-content {
   background: #ffffff;
   min-height: 600px;
-  padding: 2.5rem 0;
+  padding: 1.25rem 0 2.5rem 0;
 }
 
 /* sidebar */
@@ -657,9 +657,14 @@ small {
 /* site navigation */
 
 .site-nav {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-  border: solid 1px #cccccc;
+  padding: 1rem;
+  /* border: solid 1px #cccccc; */
+  background-color: #eee;
+  border-right: 2px solid #4078c0;
+}
+
+.show-for-medium {
+  padding-left: 0;
 }
 
 /* off-canvas navigation colours */
@@ -1062,4 +1067,33 @@ p {
 
 .editor div:first-child code {
   margin-right: 4px;
+}
+
+.paste-button {
+  background: url(../imgs/paste.png) center center no-repeat;
+  background-size: contain;
+  height: 100%;
+  width: 100%;
+}
+
+.paste-button-container {
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  background-color: #eee;
+  border-radius: 6px;
+  position: absolute;
+  top: 8px;
+  right: 8px;  
+}
+
+.paste-text {
+  background-color: #ddd;
+  border-radius: 6px;
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  padding: 4px;
+  font-family: inherit;
+  font-size: .8em;
 }
