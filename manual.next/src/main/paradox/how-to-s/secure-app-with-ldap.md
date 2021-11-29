@@ -153,6 +153,7 @@ Read/Write as *Rights*
 
 
  At this point, your configuration should be similar to :
+ 
 <!-- oto-scenario
  - goto /bo/dashboard/auth-configs/edit/auth_mod_09975547-a186-4a2d-a550-ca71a0a03c0c
  - wait 1000
