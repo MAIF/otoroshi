@@ -633,6 +633,9 @@ small {
   border-top: 0;
   padding-top: 0;
   padding-bottom: 0;
+}
+
+.site-nav ul > li > ul li {
   display: none;
 }
 
