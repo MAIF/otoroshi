@@ -1,5 +1,7 @@
 # Getting Started
 
+## Restrict access to your api with the Otoroshi api key management
+
 ```sh
 curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar'
 ```
