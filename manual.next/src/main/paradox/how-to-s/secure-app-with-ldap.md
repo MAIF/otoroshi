@@ -10,9 +10,6 @@
 - [Manage LDAP users rights on Otoroshi](#manage-ldap-users-rights-on-otoroshi)
 - [Advanced usage of LDAP Authentication](#advanced-usage-of-ldap-authentication)
 
-@@@ warning
-TODO - schema
-@@@
 
 ### Download Otoroshi
 

@@ -8,10 +8,6 @@
 - [Testing your configuration](#testing-your-configuration)
 - [Secure an app with OAuth 1 authentication](#secure-an-app-with-oauth-1-authentication)
 
-@@@ warning
-TODO - schema
-@@@
-
 ### Before you start
 
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }

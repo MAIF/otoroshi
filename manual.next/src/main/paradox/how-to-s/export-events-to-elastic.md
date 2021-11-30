@@ -8,10 +8,6 @@
 - [Advanced usage](#advanced-usage)
 - [Debug your configuration](#debug-your-configuration)
 
-@@@ warning
-TODO - schema
-@@@
-
 ### Before you start
 
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }

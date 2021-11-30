@@ -8,10 +8,6 @@
 - [Override defaults headers names for a service](#override-defaults-headers-names-for-a-service)
 - [Accept only api keys with expected values](#accept-only-api-keys-with-expected-values)
 
-@@@ warning
-TODO - schema
-@@@
-
 ### Before you start
 
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
@@ -151,14 +147,19 @@ In this section, add `otoroshi` in `Tags` array, then save the api key. Call onc
 In this example, we have restricted our service to be callable only with keys that have `otoroshi` as a tag.
 
 But Otoroshi provides others behaviours. For each behaviour, *Api key used should*:
+
 * `All Tags in` : have all of the following tags
 * `No Tags in` : not have one of the following tags
 * `One Tag in` : have at least one of the following tags
+
 ---
+
 * `All Meta. in` : have all of the following metadata entries
 * `No Meta. in` : not have one of the following metadata entries
 * `One Meta. in` : have at least one of the following metadata entries
+  
 ----
+
 * `One Meta key in` : have at least one of the following key in metadata
 * `All Meta key in` : have all of the following keys in metadata
 * `No Meta key in` : not have one of the following keys in metadata

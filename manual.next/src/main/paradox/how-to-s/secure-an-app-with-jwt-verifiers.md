@@ -8,10 +8,6 @@ A Jwt verifier is the guard which check the signature of tokens present in incom
 - [Your first jwt verifier : a verifier of tokens](#your-first-jwt-verifier--a-verifier-of-tokens)
 - [Verify ang generate a new token](#verify-and-generate-a-new-token)
 
-@@@ warning
-TODO - schema
-@@@
-
 ### Download Otoroshi
 
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
@@ -21,6 +17,7 @@ TODO - schema
 Let's start by navigate the page of verifier creation (*http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers/add*). By default, the type of jwt verifier is a *Verify JWT token*.
 
 Create the following verifier : 
+
 * Set `simple-jwt-verifier` as `Name`
 * Set `My simple jwt verifier` as `Description`
 * We expect in entry a token in a specific header. Set `Authorization` as `Header name`
@@ -75,7 +72,6 @@ An other feature is to verify the entry token and generate a new token, with a d
 Let's start by extending the previous verifier (*http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers*).
 
 1. Jump to the `Verif Strategy` field and select `Verify and re-sign JWT token`. 
-
 2. Edit the name with `jwt-verify-and-resign`
 3. Remove the default field in `Verify token fields` array
 4. Change the second `Hmac secret` in `Re-sign settings` section with `otoroshi-internal-secret`
@@ -108,11 +104,7 @@ Let's start by extending the previous verifier (*http://otoroshi.oto.tools:8080/
 5. Set `Internal-Authorization` as `Header name`
 6. Set `key` on first field of `Rename token fields` and `from-otoroshi-verifier` on second field
 7. Set `generated-key` and `generated-value` as `Set token fields`
-<<<<<<< HEAD
-8. Add `generated_at` and `${date}` a second field in `Set token fields` (some Otoroshi inputs supports an @ref[expression language](../topics/expression-language.md))
-=======
 8. Add `generated_at` and `${date}` a second field in `Set token fields` (some Otoroshi inputs supports an @ref:[expression language](../topics/expression-language.md))
->>>>>>> master
 9. Save your verifier and try to call your service again.
 
 This should output a json with `authorization` in headers field and our generate token in `Internal-Authorization`.

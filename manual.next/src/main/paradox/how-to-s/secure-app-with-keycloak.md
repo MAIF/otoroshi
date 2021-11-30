@@ -8,10 +8,6 @@
 - [Testing your configuration](#testing-your-configuration)
 - [Secure an app with Keycloak authentication](#secure-an-app-with-keycloak-authentication)
 
-@@@ warning
-TODO - schema
-@@@
-
 ### Before you start
 
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
@@ -242,15 +238,13 @@ The next step is to add a mapper in the Keycloak client. By default, Keycloak do
 
 Navigate to the `Keycloak-otoroshi-backoffice` client, and jump to `Mappers` tab. Create a new mapper with the following values: 
 
-| Fields | Value |
-|---|---|
-| `Name`                        |`otoroshi_rights`|
-| `Mapper Type`                 |`User Attribute`|
-| `User Attribute`              |`otoroshi_rights`|
-| `Token Claim Name`            |`otoroshi_rights`|
-| `Claim JSON Type`             |`JSON`|
-| `Multivalued`                 |`√`|
-| `Aggregate attribute values`  |`√`|
+* Name: `otoroshi_rights`
+* Mapper Type: `User Attribute`
+* User Attribute: `otoroshi_rights`
+* Token Claim Name: `otoroshi_rights`
+* Claim JSON Type: `JSON`
+* Multivalued: `√`
+* Aggregate attribute values: `√`
 
 Go back to the Authentication Keycloak module inside Otoroshi UI, and turn off `Super admins only`. Save the configuration.
 

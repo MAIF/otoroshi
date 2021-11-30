@@ -8,10 +8,6 @@
 - [Testing your configuration](#testing-your-configuration)
 - [Secure an app with Auth0 authentication](#secure-an-app-with-keycloak-authentication)
 
-@@@ warning
-TODO - schema
-@@@
-
 ### Download Otoroshi
 
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
