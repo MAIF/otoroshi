@@ -251,8 +251,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="#before-you-start">Before you start</a></li>
   <li><a href="#your-first-jwt-verifier--a-verifier-of-tokens">Your first jwt verifier : a verifier of tokens</a></li>
   <li><a href="#verify-and-generate-a-new-token">Verify ang generate a new token</a></li>
-</ul><div class="callout warning "><div class="callout-title">Warning</div>
-<p>TODO - schema</p></div>
+</ul>
 <h3><a href="#download-otoroshi" name="download-otoroshi" class="anchor"><span class="anchor-link"></span></a>Download Otoroshi</h3><p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar&#39;
 </code></pre>
@@ -268,7 +267,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <h3><a href="#your-first-jwt-verifier-a-verifier-of-tokens" name="your-first-jwt-verifier-a-verifier-of-tokens" class="anchor"><span class="anchor-link"></span></a>Your first jwt verifier : a verifier of tokens</h3>
 <p>Let&rsquo;s start by navigate the page of verifier creation (*<a href="http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers/add*)">http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers/add*)</a>. By default, the type of jwt verifier is a <em>Verify JWT token</em>.</p>
-<p>Create the following verifier : * Set <code>simple-jwt-verifier</code> as <code>Name</code> * Set <code>My simple jwt verifier</code> as <code>Description</code> * We expect in entry a token in a specific header. Set <code>Authorization</code> as <code>Header name</code> * Select <code>Hmac + SHA</code> as <code>Algo</code> (for this example, we expect tokens with a symetric signature) * Set <code>otoroshi</code> as <code>Hmac secret</code> * Remove the default field in <code>Verify token fields</code> array * Create your verifier when clicking on <code>Create and stay on this Jwt verifier</code> button.</p>
+<p>Create the following verifier : </p>
+<ul>
+  <li>Set <code>simple-jwt-verifier</code> as <code>Name</code></li>
+  <li>Set <code>My simple jwt verifier</code> as <code>Description</code></li>
+  <li>We expect in entry a token in a specific header. Set <code>Authorization</code> as <code>Header name</code></li>
+  <li>Select <code>Hmac + SHA</code> as <code>Algo</code> (for this example, we expect tokens with a symetric signature)</li>
+  <li>Set <code>otoroshi</code> as <code>Hmac secret</code></li>
+  <li>Remove the default field in <code>Verify token fields</code> array</li>
+  <li>Create your verifier when clicking on <code>Create and stay on this Jwt verifier</code> button.</li>
+</ul>
 <p>Once created, navigate to the simple service (created in [Before you start](#Before you start) section) and jump to the <code>JWT tokens verification</code> section.</p>
 <p>In the verifiers list, choose the <code>simple-jwt-verifier</code> and <code>enabled</code> the section.</p>
 <p>Save your service and try to call the service.</p>
@@ -300,10 +308,8 @@ http://myservice.oto.tools:8080
 <p>An other feature is to verify the entry token and generate a new token, with a different signature and news claims. </p>
 <p>Let&rsquo;s start by extending the previous verifier (*<a href="http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers*)">http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers*)</a>.</p>
 <ol>
-  <li>
-  <p>Jump to the <code>Verif Strategy</code> field and select <code>Verify and re-sign JWT token</code>.</p></li>
-  <li>
-  <p>Edit the name with <code>jwt-verify-and-resign</code></p></li>
+  <li>Jump to the <code>Verif Strategy</code> field and select <code>Verify and re-sign JWT token</code>.</li>
+  <li>Edit the name with <code>jwt-verify-and-resign</code></li>
   <li>Remove the default field in <code>Verify token fields</code> array</li>
   <li>Change the second <code>Hmac secret</code> in <code>Re-sign settings</code> section with <code>otoroshi-internal-secret</code></li>
   <li>Save your verifier.</li>
@@ -330,26 +336,8 @@ http://myservice.oto.tools:8080
   <li>Change the second <code>Hmac secret</code> in <code>Re-sign settings</code> section with <code>otoroshi-internal-secret</code></li>
   <li>Set <code>Internal-Authorization</code> as <code>Header name</code></li>
   <li>Set <code>key</code> on first field of <code>Rename token fields</code> and <code>from-otoroshi-verifier</code> on second field</li>
-  <li>Set <code>generated-key</code> and <code>generated-value</code> as <code>Set token fields</code> &lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</li>
-  <li>
-  <h1><a href="#add-generated-at-and-date-a-second-field-in-set-token-fields-some-otoroshi-inputs-supports-an-" name="add-generated-at-and-date-a-second-field-in-set-token-fields-some-otoroshi-inputs-supports-an-" class="anchor"><span class="anchor-link"></span></a>Add <code>generated_at</code> and <code>${date}</code> a second field in <code>Set token fields</code> (some Otoroshi inputs supports an <a href="../topics/expression-language.html">expression language</a>)</h1></li>
-  <li>
-  <p>Add <code>generated_at</code> and <code>${date}</code> a second field in <code>Set token fields</code> (some Otoroshi inputs supports an <a href="../topics/expression-language.html">expression language</a>)</p>
-  <blockquote>
-    <blockquote>
-      <blockquote>
-        <blockquote>
-          <blockquote>
-            <blockquote>
-              <blockquote>
-                <p>master</p>
-              </blockquote>
-            </blockquote>
-          </blockquote>
-        </blockquote>
-      </blockquote>
-    </blockquote>
-  </blockquote></li>
+  <li>Set <code>generated-key</code> and <code>generated-value</code> as <code>Set token fields</code></li>
+  <li>Add <code>generated_at</code> and <code>${date}</code> a second field in <code>Set token fields</code> (some Otoroshi inputs supports an <a href="../topics/expression-language.html">expression language</a>)</li>
   <li>Save your verifier and try to call your service again.</li>
 </ol>
 <p>This should output a json with <code>authorization</code> in headers field and our generate token in <code>Internal-Authorization</code>. Once paste in jwt.io, you should have :</p>

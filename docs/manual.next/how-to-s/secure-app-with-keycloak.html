@@ -253,8 +253,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="#connect-to-otoroshi-with-keycloak-authentication">Connect to Otoroshi with Keycloak authentication</a></li>
   <li><a href="#testing-your-configuration">Testing your configuration</a></li>
   <li><a href="#secure-an-app-with-keycloak-authentication">Secure an app with Keycloak authentication</a></li>
-</ul><div class="callout warning "><div class="callout-title">Warning</div>
-<p>TODO - schema</p></div>
+</ul>
 <h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar&#39;
 </code></pre>
@@ -453,44 +452,15 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>Click on the <code>Add</code> button and save the group. The last step is to assign our user to this group. Jump to <code>Users</code> view using the sidebar, click on <code>View all users</code>, edit the user and his group membership using the <code>Groups</code> tab (use <code>join</code> button the assign user in <code>my-group</code>).</p>
 <p>The next step is to add a mapper in the Keycloak client. By default, Keycloak doesn&rsquo;t expose any users information (like group membership or users attribute). We need to ask to Keycloak to expose the user attribute <code>otoroshi_rights</code> set previously on group.</p>
 <p>Navigate to the <code>Keycloak-otoroshi-backoffice</code> client, and jump to <code>Mappers</code> tab. Create a new mapper with the following values: </p>
-<table>
-  <thead>
-    <tr>
-      <th>Fields </th>
-      <th>Value </th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>Name</code> </td>
-      <td><code>otoroshi_rights</code></td>
-    </tr>
-    <tr>
-      <td><code>Mapper Type</code> </td>
-      <td><code>User Attribute</code></td>
-    </tr>
-    <tr>
-      <td><code>User Attribute</code> </td>
-      <td><code>otoroshi_rights</code></td>
-    </tr>
-    <tr>
-      <td><code>Token Claim Name</code> </td>
-      <td><code>otoroshi_rights</code></td>
-    </tr>
-    <tr>
-      <td><code>Claim JSON Type</code> </td>
-      <td><code>JSON</code></td>
-    </tr>
-    <tr>
-      <td> <code>Multivalued</code> </td>
-      <td><code>√</code></td>
-    </tr>
-    <tr>
-      <td><code>Aggregate attribute values</code> </td>
-      <td><code>√</code></td>
-    </tr>
-  </tbody>
-</table>
+<ul>
+  <li>Name: <code>otoroshi_rights</code></li>
+  <li>Mapper Type: <code>User Attribute</code></li>
+  <li>User Attribute: <code>otoroshi_rights</code></li>
+  <li>Token Claim Name: <code>otoroshi_rights</code></li>
+  <li>Claim JSON Type: <code>JSON</code></li>
+  <li>Multivalued: <code>√</code></li>
+  <li>Aggregate attribute values: <code>√</code></li>
+</ul>
 <p>Go back to the Authentication Keycloak module inside Otoroshi UI, and turn off <code>Super admins only</code>. Save the configuration.</p>
 <p>Once done, try again the connection to Otoroshi using Keycloak third-party server. Now, your rights should be : </p>
 <pre class="prettyprint"><code class="language-json">[

@@ -253,8 +253,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="#generate-an-api-key-to-request-secure-services">Generate an api key to request secure services</a></li>
   <li><a href="#override-defaults-headers-names-for-a-service">Override defaults headers names for a service</a></li>
   <li><a href="#accept-only-api-keys-with-expected-values">Accept only api keys with expected values</a></li>
-</ul><div class="callout warning "><div class="callout-title">Warning</div>
-<p>TODO - schema</p></div>
+</ul>
 <h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar&#39;
 </code></pre>
@@ -350,13 +349,20 @@ http://myservice.oto.tools:8080/api/test --include
 </code></pre>
 <p>Navigate to the edit page of our api key, and jump to the <code>Metadata and tags</code> section. In this section, add <code>otoroshi</code> in <code>Tags</code> array, then save the api key. Call once again your call and you will normally get a successful response of our downstream service.</p>
 <p>In this example, we have restricted our service to be callable only with keys that have <code>otoroshi</code> as a tag.</p>
-<p>But Otoroshi provides others behaviours. For each behaviour, <em>Api key used should</em>: * <code>All Tags in</code> : have all of the following tags * <code>No Tags in</code> : not have one of the following tags</p>
-<h2><a href="#one-tag-in-have-at-least-one-of-the-following-tags" name="one-tag-in-have-at-least-one-of-the-following-tags" class="anchor"><span class="anchor-link"></span></a>* <code>One Tag in</code> : have at least one of the following tags</h2>
+<p>But Otoroshi provides others behaviours. For each behaviour, <em>Api key used should</em>:</p>
+<ul>
+  <li><code>All Tags in</code> : have all of the following tags</li>
+  <li><code>No Tags in</code> : not have one of the following tags</li>
+  <li><code>One Tag in</code> : have at least one of the following tags</li>
+</ul>
+<hr/>
 <ul>
   <li><code>All Meta. in</code> : have all of the following metadata entries</li>
   <li><code>No Meta. in</code> : not have one of the following metadata entries</li>
-  <li>
-  <h2><a href="#one-meta-in-have-at-least-one-of-the-following-metadata-entries" name="one-meta-in-have-at-least-one-of-the-following-metadata-entries" class="anchor"><span class="anchor-link"></span></a><code>One Meta. in</code> : have at least one of the following metadata entries</h2></li>
+  <li><code>One Meta. in</code> : have at least one of the following metadata entries</li>
+</ul>
+<hr/>
+<ul>
   <li><code>One Meta key in</code> : have at least one of the following key in metadata</li>
   <li><code>All Meta key in</code> : have all of the following keys in metadata</li>
   <li><code>No Meta key in</code> : not have one of the following keys in metadata</li>
@@ -380,7 +386,6 @@ http://myservice.oto.tools:8080/api/test --include
     <li><a href="../how-to-s/secure-with-apikey.html#generate-an-api-key-to-request-secure-services" class="header">Generate an api key to request secure services</a></li>
     <li><a href="../how-to-s/secure-with-apikey.html#override-defaults-headers-names-for-a-service" class="header">Override defaults headers names for a service</a></li>
     <li><a href="../how-to-s/secure-with-apikey.html#accept-only-api-keys-with-expected-values" class="header">Accept only api keys with expected values</a></li>
-    <li><a href="../how-to-s/secure-with-apikey.html#one-tag-in-have-at-least-one-of-the-following-tags" class="header">* <code>One Tag in</code> : have at least one of the following tags</a></li>
   </ul></li>
 </ul>
 </div>
