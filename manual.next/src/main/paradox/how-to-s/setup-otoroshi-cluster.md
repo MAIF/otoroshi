@@ -83,6 +83,34 @@ http {
 * `(1)`and `(2)`: the list of our workers with their ports
 * `(3)`: the list of domains and subdomains use by Otoroshi to expose the UI and your services
 
+
+@@@
+
+alternative
+
+docker run -p 8080:8080 -v /home/mathieuancelin/tools/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro haproxy
+
+with haproxy.cfg file
+
+```
+frontend front_nodes_http
+    bind *:8080
+    mode tcp
+    default_backend back_http_nodes
+    timeout client          1m
+
+backend back_http_nodes
+    mode tcp
+    balance roundrobin
+    server node1 host.docker.internal:8081
+    server node2 host.docker.internal:8082
+    timeout connect        10s
+    timeout server          1m
+
+```
+
+@@@
+
 The last step is to create a service, add a rule to add, in the headers, a specific value to identify the worker used.
 
 Create this service, exposed on `http://myapi.oto.tools:8080`, which will forward all requests to the mirror `https://mirror.otoroshi.io`.
