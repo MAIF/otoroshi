@@ -639,6 +639,10 @@ small {
   display: none;
 }
 
+.snippet-button {
+  display: none;
+}
+
 .nav-toc ul > li > ul li a {
   font-size: 0.9rem;
   font-weight: normal;
