@@ -6,7 +6,8 @@ An authentication module can be as well use on guard to access to the Otoroshi U
 
 A `private app` is an Otoroshi service with an authentication module.
 
-The list of supported authentication are : 
+The list of supported authentication are :
+
 * `OAuth 2.0/2.1` : an authorization standard that allows a user to grant limited access to their resources on one site to another site, without having to expose their credentials
 * `OAuth 1.0a` : the original standard for access delegation
 * `In memory` : create users directly in Otoroshi with rights and metadata
@@ -16,6 +17,7 @@ The list of supported authentication are :
 All authentication modules have a unique `id`, a `name` and a `description`.
 
 Each module has also the following fields : 
+
 * `Tags`: list of tags associated to the module
 * `Metadata`: list of metadata associated to the module
 * `HttpOnly`: if enabled, the cookie cannot be accessed through client side script, prevent cross-site scripting (XSS) by not revealing the cookie to a third party
