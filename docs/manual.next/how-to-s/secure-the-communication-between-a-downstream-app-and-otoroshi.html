@@ -66,7 +66,7 @@
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
-    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
     <li><a href="../topics/input-tls.html" class="page">Input TLS</a></li>
     <li><a href="../topics/output-tls.html" class="page">Ouput TLS</a></li>
@@ -176,7 +176,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
-    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
     <li><a href="../topics/input-tls.html" class="page">Input TLS</a></li>
     <li><a href="../topics/output-tls.html" class="page">Ouput TLS</a></li>
@@ -244,36 +244,40 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#secure-the-communication-between-a-downstream-app-and-otoroshi" name="secure-the-communication-between-a-downstream-app-and-otoroshi" class="anchor"><span class="anchor-link"></span></a>Secure the communication between a downstream app and Otoroshi</h1>
-<p>Let&rsquo;s start by downloading the latest Otoroshi</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
+<h1><a href="#secure-the-communication-between-a-downstream-app-and-otoroshi" name="secure-the-communication-between-a-downstream-app-and-otoroshi" class="anchor"><span class="anchor-link"></span></a>Secure the communication between a downstream app and Otoroshi</h1><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p>
+<p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar&#39;
 </code></pre>
-<p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code></p>
-<p>Run Otoroshi</p>
+<p>then you can run start Otoroshi :</p>
 <pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -jar otoroshi.jar 
 </code></pre>
-<p>Log to Otoroshi at <a href="http://otoroshi.oto.tools:8080/">http://otoroshi.oto.tools:8080/</a> with <code>admin@otoroshi.io/password</code></p>
+<p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
+<p>Create a service, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/services&#39; \
+-d &#39;{&quot;enforceSecureCommunication&quot;: false, &quot;forceHttps&quot;: false, &quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;name&quot;:&quot;my-service&quot;,&quot;description&quot;:&quot;a service&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;myservice&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;\/.*&quot;],&quot;privatePatterns&quot;:[],&quot;kind&quot;:&quot;ServiceDescriptor&quot;}&#39; \
+-H &quot;Content-type: application/json&quot; \
+-u admin-api-apikey-id:admin-api-apikey-secret
+</code></pre>
 <ol>
   <li>Navigate to <a href="http://otoroshi.oto.tools:8080/bo/services">http://otoroshi.oto.tools:8080/bo/services</a> and create a new service</li>
-  <li>Jump to <code>Service exposition settings</code> and add *<a href="http://myservice.oto.tools*">http://myservice.oto.tools*</a> as <code>Exposed domain</code>
-</li>
-  <li>Jump to <code>Service targets</code> and add *<a href="http://localhost:8080/*">http://localhost:8080/*</a> as <code>Target 1</code>
-</li>
+  <li>Jump to <code>Service exposition settings</code> and add <a href="http://myservice.oto.tools">http://myservice.oto.tools</a> as <code>Exposed domain</code></li>
+  <li>Jump to <code>Service targets</code> and add <a href="http://localhost:8081/">http://localhost:8081/</a> as <code>Target 1</code></li>
   <li>Jump to the <code>URL Patterns</code> section</li>
   <li>Enable your service as <code>Public UI</code></li>
+  <li>Don&rsquo;t forget to save your service</li>
 </ol>
 <p>We need of a simple service which handle the exchange protocol. For this tutorial, we&rsquo;ll use the following application, developed in NodeJS, which supports both versions of the exchange protocol.</p>
-<p>Clone this <a href="https://github.com/MAIF/otoroshi/blob/master/demos/challenge" title="repository">repository</a>) and run the installation of the dependencies.</p>
-<pre class="prettyprint"><code class="language-sh">git clone https://github.com/MAIF/otoroshi/blob/master/demos/challenge
-cd challenge
-yarn install # or npm install
-node server.js
+<p>Clone this <a href="https://github.com/MAIF/otoroshi/blob/master/demos/challenge" title="repository">repository</a> and run the installation of the dependencies.</p>
+<pre class="prettyprint"><code class="language-sh">git clone &#39;git@github.com:MAIF/otoroshi.git&#39; --depth=1
+cd ./otoroshi/demos/challenge
+npm install
+PORT=8081 node server.js
 </code></pre>
 <p>The last command should return : </p>
-<pre class="prettyprint"><code class="language-sh">challenge-verifier listening on http://0.0.0.0:8080
+<pre class="prettyprint"><code class="language-sh">challenge-verifier listening on http://0.0.0.0:8081
 </code></pre>
 <p>This project runs an express client with one middleware. The middleware handles each request, and check if the header <code>State token header</code> is present in headers. By default, the incoming expected header is <code>Otoroshi-State</code> by the application and <code>Otoroshi-State-Resp</code> header in the headers of the return request. </p>
-<p>Try to call your service via *<a href="http://myservice.oto.tools:8080/*">http://myservice.oto.tools:8080/*</a>. This should return a successful response with all headers received by the downstream app. </p>
+<p>Try to call your service via <a href="http://myservice.oto.tools:8080/">http://myservice.oto.tools:8080/</a>. This should return a successful response with all headers received by the downstream app. </p>
 <p>Now try to disable the middleware in the nodejs file by commenting the following line. </p>
 <pre class="prettyprint"><code class="language-js">// app.use(OtoroshiMiddleware());
 </code></pre>

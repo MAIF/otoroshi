@@ -66,7 +66,7 @@
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
-    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
     <li><a href="../topics/input-tls.html" class="page">Input TLS</a></li>
     <li><a href="../topics/output-tls.html" class="page">Ouput TLS</a></li>
@@ -176,7 +176,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
-    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
     <li><a href="../topics/input-tls.html" class="page">Input TLS</a></li>
     <li><a href="../topics/output-tls.html" class="page">Ouput TLS</a></li>
@@ -245,16 +245,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#secure-an-app-with-keycloak" name="secure-an-app-with-keycloak" class="anchor"><span class="anchor-link"></span></a>Secure an app with Keycloak</h1>
-<h3><a href="#cover-by-this-tutorial" name="cover-by-this-tutorial" class="anchor"><span class="anchor-link"></span></a>Cover by this tutorial</h3>
-<ul>
-  <li><a href="#before-you-start">Before you start</a></li>
-  <li><a href="#running-a-keycloak-instance-with-docker">Running a keycloak instance with docker</a></li>
-  <li><a href="#create-a-keycloak-provider-module">Create a Keycloak provider module</a></li>
-  <li><a href="#connect-to-otoroshi-with-keycloak-authentication">Connect to Otoroshi with Keycloak authentication</a></li>
-  <li><a href="#testing-your-configuration">Testing your configuration</a></li>
-  <li><a href="#secure-an-app-with-keycloak-authentication">Secure an app with Keycloak authentication</a></li>
-</ul>
-<h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
+<h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p>
+<p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar&#39;
 </code></pre>
 <p>then you can run start Otoroshi :</p>
@@ -269,11 +261,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <h3><a href="#running-a-keycloak-instance-with-docker" name="running-a-keycloak-instance-with-docker" class="anchor"><span class="anchor-link"></span></a>Running a keycloak instance with docker</h3>
 <pre class="prettyprint"><code class="language-sh">docker run \
--p 8080:8080 \
--e KEYCLOAK_USER=admin \
--e KEYCLOAK_PASSWORD=admin \
---name keycloak-server \
---detach jboss/keycloak:15.0.1
+  -p 8080:8080 \
+  -e KEYCLOAK_USER=admin \
+  -e KEYCLOAK_PASSWORD=admin \
+  --name keycloak-server \
+  --detach jboss/keycloak:15.0.1
 </code></pre>
 <p>This should download the image of keycloak (if you haven&rsquo;t already it) and display the digest of the created container. This command mapped TCP port 8080 in the container to port 8080 of your laptop and created a server with <code>admin/admin</code> as admin credentials.</p>
 <p>Once started, you can open a browser on <code>http://localhost:8080/</code> and click on <code>Administration Console</code>. Log to your instance with <code>admin/admin</code> as credentials.</p>
@@ -316,15 +308,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#testing-your-configuration" name="testing-your-configuration" class="anchor"><span class="anchor-link"></span></a>Testing your configuration</h3>
 <ol>
   <li>Disconnect from your instance</li>
-  <li>Then click on the <em>Login using third-party</em> button (or navigate to *<a href="http://otoroshi.oto.tools:8080*">http://otoroshi.oto.tools:8080*</a>)
-</li>
+  <li>Then click on the <em>Login using third-party</em> button (or navigate to <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a>)</li>
   <li>Click on <code>Login using Third-party</code> button</li>
   <li>If all is configured, Otoroshi will redirect you to the keycloak login page</li>
   <li>Set <code>admin/admin</code> as user and trust the user by clicking on <code>yes</code> button.</li>
   <li>Good work! You&rsquo;re connected to Otoroshi with an Keycloak module.</li>
 </ol>
 <blockquote>
-  <p>A fallback solution is always available, by going to *<a href="http://otoroshi.oto.tools:8080/bo/simple/login*">http://otoroshi.oto.tools:8080/bo/simple/login*</a>, for administrators in case your Authentication module is not well configured or not available</p>
+  <p>A fallback solution is always available, by going to <a href="http://otoroshi.oto.tools:8080/bo/simple/login">http://otoroshi.oto.tools:8080/bo/simple/login</a>, for administrators in case your Authentication module is not well configured or not available</p>
 </blockquote>
 <h3><a href="#visualize-an-admin-user-session-or-a-private-user-session" name="visualize-an-admin-user-session-or-a-private-user-session" class="anchor"><span class="anchor-link"></span></a>Visualize an admin user session or a private user session</h3>
 <p>Each user, wheter connected user to the Otoroshi UI or at a private Otoroshi app, has an own session. As an administrator of Otoroshi, you can visualize via Otoroshi the list of the connected users and their profile.</p>
@@ -475,7 +466,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <h3><a href="#secure-an-app-with-keycloak-authentication" name="secure-an-app-with-keycloak-authentication" class="anchor"><span class="anchor-link"></span></a>Secure an app with Keycloak authentication</h3>
 <p>The only change to apply on the previous authentication module, is on the callback URL. When you want secure a Otoroshi service, and transform it on <code>Private App</code>, you need to set the <code>Callback URL</code> at <code>http://privateapps.oto.tools:8080/privateapps/generic/callback</code></p>
-<p>1 Go back to the authentication module 1. Jump to the <code>Callback URL</code> field 2. Paste this value <code>http://privateapps.oto.tools:8080/privateapps/generic/callback</code> 3. Save your configuration 4. Navigate to <code>http://myservice.oto.tools:8080</code>. 5. You should redirect to the keycloak login page. 6. Once logged in, you can check the content of the private app session created. The rights should be : </p>
+<ol>
+  <li>Go back to the authentication module</li>
+  <li>Jump to the <code>Callback URL</code> field</li>
+  <li>Paste this value <code>http://privateapps.oto.tools:8080/privateapps/generic/callback</code></li>
+  <li>Save your configuration</li>
+  <li>Navigate to <code>http://myservice.oto.tools:8080</code>.</li>
+  <li>You should redirect to the keycloak login page.</li>
+  <li>Once logged in, you can check the content of the private app session created.</li>
+</ol>
+<p>The rights should be : </p>
 <pre class="prettyprint"><code class="language-json">[
   {
     &quot;tenant&quot;: &quot;*:rw&quot;,
@@ -498,7 +498,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../how-to-s/secure-app-with-keycloak.html#secure-an-app-with-keycloak" class="header">Secure an app with Keycloak</a>
   <ul>
-    <li><a href="../how-to-s/secure-app-with-keycloak.html#cover-by-this-tutorial" class="header">Cover by this tutorial</a></li>
     <li><a href="../how-to-s/secure-app-with-keycloak.html#before-you-start" class="header">Before you start</a></li>
     <li><a href="../how-to-s/secure-app-with-keycloak.html#running-a-keycloak-instance-with-docker" class="header">Running a keycloak instance with docker</a></li>
     <li><a href="../how-to-s/secure-app-with-keycloak.html#create-a-keycloak-provider-module" class="header">Create a Keycloak provider module</a></li>

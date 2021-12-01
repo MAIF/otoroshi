@@ -66,7 +66,7 @@
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
-    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
     <li><a href="../topics/input-tls.html" class="page">Input TLS</a></li>
     <li><a href="../topics/output-tls.html" class="page">Ouput TLS</a></li>
@@ -176,7 +176,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
-    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
     <li><a href="../topics/input-tls.html" class="page">Input TLS</a></li>
     <li><a href="../topics/output-tls.html" class="page">Ouput TLS</a></li>
@@ -245,16 +245,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#secure-an-app-with-oauth1-client-flow" name="secure-an-app-with-oauth1-client-flow" class="anchor"><span class="anchor-link"></span></a>Secure an app with OAuth1 client flow</h1>
-<h3><a href="#cover-by-this-tutorial" name="cover-by-this-tutorial" class="anchor"><span class="anchor-link"></span></a>Cover by this tutorial</h3>
-<ul>
-  <li><a href="#before-you-start">Before you start</a></li>
-  <li><a href="#running-an-simple-oauth-1-server">Running an simple OAuth 1 server</a></li>
-  <li><a href="#create-an-oauth-1-provider-module">Create an OAuth 1 provider module</a></li>
-  <li><a href="#connect-to-otoroshi-with-oauth1-authentication">Connect to Otoroshi with OAuth1 authentication</a></li>
-  <li><a href="#testing-your-configuration">Testing your configuration</a></li>
-  <li><a href="#secure-an-app-with-oauth-1-authentication">Secure an app with OAuth 1 authentication</a></li>
-</ul>
-<h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
+<h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p>
+<p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar&#39;
 </code></pre>
 <p>then you can run start Otoroshi :</p>
@@ -298,11 +290,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>Set <code>http://otoroshi.oto.tools:8080/backoffice/auth0/callback</code> as <code>Callback URL</code></li>
   <li>At the bottom of the page, disable the <code>secure</code> button (because we&rsquo;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)</li>
 </ol>
-<p>At this point, your configuration should be similar to : <!-- oto-scenario
+<p>At this point, your configuration should be similar to :</p>
+<!-- oto-scenario
  - goto /bo/dashboard/auth-configs/edit/auth_mod_oauth1.0_provider
  - wait 1000
  - screenshot generated-hows-to-secure-with-oauth1-provider.png
---> <img src="../imgs/generated-hows-to-secure-with-oauth1-provider.png" /></p>
+-->
+<img src="../imgs/generated-hows-to-secure-with-oauth1-provider.png" />
 <p>With this configuration, the connected user will receive default access on teams and organizations. If you want to change the access rights for a specific user, you can achieve it with the <code>Rights override</code> field and a configuration like :</p>
 <pre class="prettyprint"><code class="language-json">{
   &quot;foo@example.com&quot;: [
@@ -327,15 +321,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#testing-your-configuration" name="testing-your-configuration" class="anchor"><span class="anchor-link"></span></a>Testing your configuration</h3>
 <ol>
   <li>Disconnect from your instance</li>
-  <li>Then click on the <em>Login using third-party</em> button (or navigate to *<a href="http://otoroshi.oto.tools:8080*">http://otoroshi.oto.tools:8080*</a>)
-</li>
+  <li>Then click on the <em>Login using third-party</em> button (or navigate to <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a>)</li>
   <li>Click on <code>Login using Third-party</code> button</li>
   <li>If all is configured, Otoroshi will redirect you to the oauth 1 server login page</li>
   <li>Set <code>example-user</code> as user and trust the user by clicking on <code>yes</code> button.</li>
   <li>Good work! You&rsquo;re connected to Otoroshi with an OAuth1 module.</li>
 </ol>
 <blockquote>
-  <p>A fallback solution is always available, by going to *<a href="http://otoroshi.oto.tools:8080/bo/simple/login*">http://otoroshi.oto.tools:8080/bo/simple/login*</a>, for administrators in case your Authentication module is not available</p>
+  <p>A fallback solution is always available, by going to <a href="http://otoroshi.oto.tools:8080/bo/simple/login">http://otoroshi.oto.tools:8080/bo/simple/login</a>, for administrators in case your Authentication module is not available</p>
 </blockquote>
 <h3><a href="#secure-an-app-with-oauth-1-authentication" name="secure-an-app-with-oauth-1-authentication" class="anchor"><span class="anchor-link"></span></a>Secure an app with OAuth 1 authentication</h3>
 <p>With the previous configuration, you can secure any of Otoroshi services with it. </p>
@@ -376,8 +369,13 @@ docker run -d --name oauth1-server --rm \
 <blockquote>
   <img src="../imgs/hows-to-secure-app-with-oauth1-provider-trust.png">
 </blockquote>
-<p>If you had any errors, make sure of : * check if you are on http or https, and if the <em>secure cookie option</em> is enabled or not on the authentication module * check if your oauth1 server has the REDIRECT_URI set on <em>privateapps/&hellip;</em> * Make sure your server supports POST or GET oauth1 flow set on authentication module</p>
-<p>Once the configuration is working, you can check, when connecting with an Otoroshi admin user, the <code>Private App session</code> created (use the cog at the right top of the page, and select <code>Priv. app sesssions</code>, or navigate to *<a href="http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private*)">http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private*)</a>.</p>
+<p>If you had any errors, make sure of :</p>
+<ul>
+  <li>check if you are on http or https, and if the <em>secure cookie option</em> is enabled or not on the authentication module</li>
+  <li>check if your oauth1 server has the REDIRECT_URI set on <em>privateapps/&hellip;</em></li>
+  <li>Make sure your server supports POST or GET oauth1 flow set on authentication module</li>
+</ul>
+<p>Once the configuration is working, you can check, when connecting with an Otoroshi admin user, the <code>Private App session</code> created (use the cog at the right top of the page, and select <code>Priv. app sesssions</code>, or navigate to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private)">http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private)</a>.</p>
 <p>One interesing feature is to check the profile of the connected user. In our case, when clicking on the <code>Profile</code> button of the right user, we should have : </p>
 <pre class="prettyprint"><code class="language-json">{
   &quot;email&quot;: &quot;foo@example.com&quot;,
@@ -398,7 +396,6 @@ docker run -d --name oauth1-server --rm \
 <ul>
   <li><a href="../how-to-s/secure-with-oauth1-client.html#secure-an-app-with-oauth1-client-flow" class="header">Secure an app with OAuth1 client flow</a>
   <ul>
-    <li><a href="../how-to-s/secure-with-oauth1-client.html#cover-by-this-tutorial" class="header">Cover by this tutorial</a></li>
     <li><a href="../how-to-s/secure-with-oauth1-client.html#before-you-start" class="header">Before you start</a></li>
     <li><a href="../how-to-s/secure-with-oauth1-client.html#running-an-simple-oauth-1-server" class="header">Running an simple OAuth 1 server</a></li>
     <li><a href="../how-to-s/secure-with-oauth1-client.html#create-an-oauth-1-provider-module" class="header">Create an OAuth 1 provider module</a></li>

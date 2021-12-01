@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Chaos engineering · Otoroshi</title>
+<title>Chaos engineering with the Snow Monkey · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -66,7 +66,7 @@
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
-    <li><a href="../topics/chaos-engineering.html" class="active page">Chaos engineering</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="active page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
     <li><a href="../topics/input-tls.html" class="page">Input TLS</a></li>
     <li><a href="../topics/output-tls.html" class="page">Ouput TLS</a></li>
@@ -176,7 +176,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
-    <li><a href="../topics/chaos-engineering.html" class="active page">Chaos engineering</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="active page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
     <li><a href="../topics/input-tls.html" class="page">Input TLS</a></li>
     <li><a href="../topics/output-tls.html" class="page">Ouput TLS</a></li>
@@ -236,7 +236,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../topics/index.html">Detailed topics</a></li>
-  <li>Chaos engineering</li>
+  <li>Chaos engineering with the Snow Monkey</li>
 </ul>
 </div>
 </div>
@@ -244,13 +244,60 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#chaos-engineering" name="chaos-engineering" class="anchor"><span class="anchor-link"></span></a>Chaos engineering</h1><div class="callout warning "><div class="callout-title">Warning</div>
-<p>TODO</p></div>
+<h1><a href="#chaos-engineering-with-the-snow-monkey" name="chaos-engineering-with-the-snow-monkey" class="anchor"><span class="anchor-link"></span></a>Chaos engineering with the Snow Monkey</h1>
+<p>Nihonzaru (the Snow Monkey) is the chaos engineering tool provided by Otoroshi. You can access it at <code>Settings (cog icon) / Snow Monkey</code>.</p><div class="centered-img">
+<img src="https://github.com/MAIF/otoroshi/raw/master/resources/nihonzaru-logo.png" /></div>
+<h2><a href="#chaos-engineering" name="chaos-engineering" class="anchor"><span class="anchor-link"></span></a>Chaos engineering</h2>
+<p>Otoroshi offers some tools to introduce <a href="https://principlesofchaos.org/">chaos engineering</a> in your everyday life. With chaos engineering, you will improve the resilience of your architecture by creating faults in production on running systems. With <a href="https://en.wikipedia.org/wiki/Japanese_macaque">Nihonzaru (the snow monkey)</a> Otoroshi helps you to create faults on http request/response handled by Otoroshi. </p><div class="centered-img">
+<img src="../imgs/snow-monkey.png" /></div>
+<h2><a href="#settings" name="settings" class="anchor"><span class="anchor-link"></span></a>Settings</h2><div class="centered-img">
+<img src="../imgs/snow-monkey-settings.png" /></div>
+<p>The snow monkey let you define a few settings to work properly :</p>
+<ul>
+  <li><strong>Include user facing apps.</strong>: you want to create fault in production, but maybe you don&rsquo;t want your users to enjoy some nice snow monkey generated error pages. Using this switch let you include of not user facing apps (ui apps). Each service descriptor has a <code>User facing app switch</code> that will be used by the snow monkey.</li>
+  <li><strong>Dry run</strong>: when dry run is enabled, outages will be registered and will generate events and alerts (in the otoroshi eventing system) but requests won&rsquo;t be actualy impacted. It&rsquo;s a good way to prepare applications to the snow monkey habits</li>
+  <li><strong>Outage strategy</strong>: Either <code>AllServicesPerGroup</code> or <code>OneServicePerGroup</code>. It means that only one service per group or all services per groups will have <code>n</code> outages (see next bullet point) during the snow monkey working period</li>
+  <li><strong>Outages per day</strong>: during snow monkey working period, each service per group or one service per group will have only <code>n</code> outages registered</li>
+  <li><strong>Working period</strong>: the snow monkey only works during a working period. Here you can defined when it starts and when it stops</li>
+  <li><strong>Outage duration</strong>: here you can defined the bounds for the random outage duration when an outage is created on a service</li>
+  <li><strong>Impacted groups</strong>: here you can define a list of service groups impacted by the snow monkey. If none is specified, then all service groups will be impacted</li>
+</ul>
+<h2><a href="#faults" name="faults" class="anchor"><span class="anchor-link"></span></a>Faults</h2>
+<p>With the snow monkey, you can generate four types of faults</p>
+<ul>
+  <li><strong>Large request fault</strong>: Add trailing bytes at the end of the request body (if one)</li>
+  <li><strong>Large response fault</strong>: Add trailing bytes at the end of the response body</li>
+  <li><strong>Latency injection fault</strong>: Add random response latency between two bounds</li>
+  <li><strong>Bad response injection fault</strong>: Create predefined responses with custom headers, body and status code</li>
+</ul>
+<p>Each fault let you define a ratio for impacted requests. If you specify a ratio of <code>0.2</code>, then 20% of the requests for the impacte service will be impacted by this fault</p><div class="centered-img">
+<img src="../imgs/snow-monkey-faults.png" /></div>
+<p>Then you juste have to start the snow monkey and enjoy the show ;)</p><div class="centered-img">
+<img src="../imgs/snow-monkey-start.png" /></div>
+<h2><a href="#current-outages" name="current-outages" class="anchor"><span class="anchor-link"></span></a>Current outages</h2>
+<p>In the last section of the snow monkey page, you can see current outages (per service), when they started, their duration, etc &hellip;</p><div class="centered-img">
+<img src="../imgs/snow-monkey-outages.png" /></div>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../topics/pki.html">Otoroshi&rsquo;s PKI</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/chaos-engineering.html#chaos-engineering-with-the-snow-monkey" class="header">Chaos engineering with the Snow Monkey</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html#chaos-engineering" class="header">Chaos engineering</a></li>
+    <li><a href="../topics/chaos-engineering.html#settings" class="header">Settings</a></li>
+    <li><a href="../topics/chaos-engineering.html#faults" class="header">Faults</a></li>
+    <li><a href="../topics/chaos-engineering.html#current-outages" class="header">Current outages</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 

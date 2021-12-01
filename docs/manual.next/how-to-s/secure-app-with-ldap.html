@@ -66,7 +66,7 @@
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
-    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
     <li><a href="../topics/input-tls.html" class="page">Input TLS</a></li>
     <li><a href="../topics/output-tls.html" class="page">Ouput TLS</a></li>
@@ -176,7 +176,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
-    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
     <li><a href="../topics/input-tls.html" class="page">Input TLS</a></li>
     <li><a href="../topics/output-tls.html" class="page">Ouput TLS</a></li>
@@ -245,37 +245,27 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#secure-an-app-and-or-your-otoroshi-ui-with-ldap" name="secure-an-app-and-or-your-otoroshi-ui-with-ldap" class="anchor"><span class="anchor-link"></span></a>Secure an app and/or your Otoroshi UI with LDAP</h1>
-<h3><a href="#cover-by-this-tutorial" name="cover-by-this-tutorial" class="anchor"><span class="anchor-link"></span></a>Cover by this tutorial</h3>
-<ul>
-  <li><a href="#download-otoroshi">Download Otoroshi</a></li>
-  <li><a href="#create-an-authentication-configuration">Create an Authentication configuration</a></li>
-  <li><a href="#connect-to-otoroshi-with-ldap-authentication">Connect to Otoroshi with LDAP authentication</a></li>
-  <li><a href="#testing-your-configuration">Testing your configuration</a></li>
-  <li><a href="#secure-an-app-with-ldap-authentication">Secure an app with LDAP authentication</a></li>
-  <li><a href="#manage-ldap-users-rights-on-otoroshi">Manage LDAP users rights on Otoroshi</a></li>
-  <li><a href="#advanced-usage-of-ldap-authentication">Advanced usage of LDAP Authentication</a></li>
-</ul>
-<h3><a href="#download-otoroshi" name="download-otoroshi" class="anchor"><span class="anchor-link"></span></a>Download Otoroshi</h3>
-<p>Let&rsquo;s start by downloading the latest Otoroshi</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
+<h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p>
+<p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar&#39;
 </code></pre>
-<p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code></p>
-<p>Run Otoroshi</p>
+<p>then you can run start Otoroshi :</p>
 <pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -jar otoroshi.jar 
 </code></pre>
+<p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
 <h4><a href="#running-an-simple-openldap-server" name="running-an-simple-openldap-server" class="anchor"><span class="anchor-link"></span></a>Running an simple OpenLDAP server</h4>
 <p>Run OpenLDAP docker image : </p>
 <pre class="prettyprint"><code class="language-sh">docker run \
--p 389:389 \
--p 636:636  \
---env LDAP_ORGANISATION=&quot;Otoroshi company&quot; \
---env LDAP_DOMAIN=&quot;otoroshi.tools&quot; \
---env LDAP_ADMIN_PASSWORD=&quot;otoroshi&quot; \
---env LDAP_READONLY_USER=&quot;false&quot; \
---env LDAP_TLS&quot;false&quot; \
---env LDAP_TLS_ENFORCE&quot;false&quot; \
---name my-openldap-container \
---detach osixia/openldap:1.5.0
+  -p 389:389 \
+  -p 636:636  \
+  --env LDAP_ORGANISATION=&quot;Otoroshi company&quot; \
+  --env LDAP_DOMAIN=&quot;otoroshi.tools&quot; \
+  --env LDAP_ADMIN_PASSWORD=&quot;otoroshi&quot; \
+  --env LDAP_READONLY_USER=&quot;false&quot; \
+  --env LDAP_TLS&quot;false&quot; \
+  --env LDAP_TLS_ENFORCE&quot;false&quot; \
+  --name my-openldap-container \
+  --detach osixia/openldap:1.5.0
 </code></pre>
 <p>Let&rsquo;s make the first search in our LDAP container :</p>
 <pre class="prettyprint"><code class="language-sh">docker exec my-openldap-container ldapsearch -x -H ldap://localhost -b dc=otoroshi,dc=tools -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -w otoroshi
@@ -319,7 +309,7 @@ objectclass: person
 objectclass: organizationalPerson
 objectclass: inetOrgPerson
 uid: johnny
-cn: Jhonny
+cn: Johnny
 sn: Brown
 mail: johnny@otoroshi.tools
 postalCode: 88442
@@ -353,7 +343,7 @@ member: uid=einstein,ou=People,dc=otoroshi,dc=tools
 ldapadd -x -w otoroshi -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -f bootstrap.ldif -v
 </code></pre>
 <h3><a href="#create-an-authentication-configuration" name="create-an-authentication-configuration" class="anchor"><span class="anchor-link"></span></a>Create an Authentication configuration</h3>
-<ol>
+<ul>
   <li>Go ahead, and navigate to <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a></li>
   <li>Click on the cog icon on the top right</li>
   <li>Then <code>Authentication configs</code> button</li>
@@ -361,15 +351,19 @@ ldapadd -x -w otoroshi -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -f bootstrap
   <li>Select the <code>Ldap auth. provider</code> in the type selector field</li>
   <li>Set a basic name and description</li>
   <li>Then set <code>ldap://localhost:389</code> as <code>LDAP Server URL</code>and <code>dc=otoroshi,dc=tools</code> as <code>Search Base</code></li>
-  <li>Create a group filter (in the next part, we&rsquo;ll change this filter to spread users in different groups with given rights) with</li>
-</ol>
-<p>objectClass=groupOfNames as <em>Group filter</em> \ All as <em>Tenant</em>\ All as <em>Team</em>\ Read/Write as <em>Rights</em></p>
-<ol>
+  <li>Create a group filter (in the next part, we&rsquo;ll change this filter to spread users in different groups with given rights) with
+    <ul>
+      <li>objectClass=groupOfNames as <code>Group filter</code></li>
+      <li>All as <code>Tenant</code></li>
+      <li>All as <code>Team</code></li>
+      <li>Read/Write as <code>Rights</code></li>
+    </ul>
+  </li>
   <li>Set the search filter as (uid=${username})`</li>
-  <li>Set <code>cn=admin,dc=otoroshi,dc=tools</code> as <em>Admin username</em></li>
-  <li>Set <code>otoroshi</code> as <em>Admin password</em></li>
+  <li>Set <code>cn=admin,dc=otoroshi,dc=tools</code> as <code>Admin username</code></li>
+  <li>Set <code>otoroshi</code> as <code>Admin password</code></li>
   <li>At the bottom of the page, disable the <code>secure</code> button (because we&rsquo;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)</li>
-</ol>
+</ul>
 <p>At this point, your configuration should be similar to :</p>
 <!-- oto-scenario
  - goto /bo/dashboard/auth-configs/edit/auth_mod_09975547-a186-4a2d-a550-ca71a0a03c0c
@@ -380,38 +374,37 @@ ldapadd -x -w otoroshi -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -f bootstrap
 <blockquote>
   <p>Dont&rsquo; forget to save on the bottom page your configuration before to quit the page.</p>
 </blockquote>
-<ol>
+<ul>
   <li>Test the connection when clicking on <code>Test admin connection</code> button</li>
-</ol>
+</ul>
 <p>This should display a <code>It works!</code> message</p>
-<ol>
+<ul>
   <li>Finally, test the user connection button and set <code>johnny/password</code> or <code>einstein/password</code> as credentials.</li>
-</ol>
+</ul>
 <p>This should display a <code>It works!</code> message</p>
 <blockquote>
   <p>Dont&rsquo; forget to save on the bottom page your configuration before to quit the page.</p>
 </blockquote>
 <h3><a href="#connect-to-otoroshi-with-ldap-authentication" name="connect-to-otoroshi-with-ldap-authentication" class="anchor"><span class="anchor-link"></span></a>Connect to Otoroshi with LDAP authentication</h3>
 <p>To secure Otoroshi with your LDAP configuration, we have to register an Authentication configuration as a BackOffice Auth. configuration.</p>
-<ol>
+<ul>
   <li>Navigate to the <em>danger zone</em> (when clicking on the cog on the top right and selecting Danger zone)</li>
   <li>Scroll to the <em>BackOffice auth. settings</em></li>
   <li>Select your last Authentication configuration (created in the previous section)</li>
   <li>Save the global configuration with the button on the top right</li>
-</ol>
+</ul>
 <h3><a href="#testing-your-configuration" name="testing-your-configuration" class="anchor"><span class="anchor-link"></span></a>Testing your configuration</h3>
-<ol>
+<ul>
   <li>Disconnect from your instance</li>
-  <li>Then click on the <em>Login using third-party</em> button (or navigate to *<a href="http://otoroshi.oto.tools:8080/backoffice/auth0/login*">http://otoroshi.oto.tools:8080/backoffice/auth0/login*</a>)
-</li>
+  <li>Then click on the <em>Login using third-party</em> button (or navigate to <a href="http://otoroshi.oto.tools:8080/backoffice/auth0/login">http://otoroshi.oto.tools:8080/backoffice/auth0/login</a>)</li>
   <li>Set <code>johnny/password</code> or <code>einstein/password</code> as credentials</li>
-</ol>
+</ul>
 <blockquote>
-  <p>A fallback solution is always available, by going to *<a href="http://otoroshi.oto.tools:8080/bo/simple/login*">http://otoroshi.oto.tools:8080/bo/simple/login*</a>, for administrators in case your LDAP is not available</p>
+  <p>A fallback solution is always available, by going to <a href="http://otoroshi.oto.tools:8080/bo/simple/login">http://otoroshi.oto.tools:8080/bo/simple/login</a>, for administrators in case your LDAP is not available</p>
 </blockquote>
 <h4><a href="#secure-an-app-with-ldap-authentication" name="secure-an-app-with-ldap-authentication" class="anchor"><span class="anchor-link"></span></a>Secure an app with LDAP authentication</h4>
 <p>Once the configuration is done, you can secure any of Otoroshi services with it. </p>
-<ol>
+<ul>
   <li>Navigate to any created service</li>
   <li>Jump to the <code>URL Patterns</code> section</li>
   <li>Enable your service as <code>Public UI</code></li>
@@ -420,7 +413,7 @@ ldapadd -x -w otoroshi -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -f bootstrap
   <li>Select your Authentication config inside the list</li>
   <li>Enable <code>Strict mode</code></li>
   <li>Don&rsquo;t forget to save your configuration</li>
-</ol>
+</ul>
 <!-- oto-scenario
  - goto /bo/dashboard/lines/prod/services/service_mirror_otoroshi_fr
  - wait 2000
@@ -487,7 +480,7 @@ ldapadd -x -w otoroshi -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -f bootstrap
       }
     ],
     &quot;users&quot;: [
-      &quot;jhonny@otoroshi.tools&quot;
+      &quot;johnny@otoroshi.tools&quot;
     ]
   }
 }
@@ -496,7 +489,7 @@ ldapadd -x -w otoroshi -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -f bootstrap
 <p>The rights override field is the last to be applied on the user rights. </p>
 <p>To resume, when Johnny connects to Otoroshi, he receives the rights to read only on the default Organization (from <code>Mapping group filter</code>), then he is promote to administrator role (from <code>Additional rights group</code>) and finally his rights are reset with the last field <code>Rights override</code> to the read rights.</p>
 <pre class="prettyprint"><code class="language-json ">{
-  &quot;jhonny@otoroshi.tools&quot;: [
+  &quot;johnny@otoroshi.tools&quot;: [
     {
       &quot;tenant&quot;: &quot;*:r&quot;,
       &quot;teams&quot;: [
@@ -518,8 +511,7 @@ ldapadd -x -w otoroshi -D &quot;cn=admin,dc=otoroshi,dc=tools&quot; -f bootstrap
 <ul>
   <li><a href="../how-to-s/secure-app-with-ldap.html#secure-an-app-and-or-your-otoroshi-ui-with-ldap" class="header">Secure an app and/or your Otoroshi UI with LDAP</a>
   <ul>
-    <li><a href="../how-to-s/secure-app-with-ldap.html#cover-by-this-tutorial" class="header">Cover by this tutorial</a></li>
-    <li><a href="../how-to-s/secure-app-with-ldap.html#download-otoroshi" class="header">Download Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html#before-you-start" class="header">Before you start</a></li>
     <li><a href="../how-to-s/secure-app-with-ldap.html#create-an-authentication-configuration" class="header">Create an Authentication configuration</a></li>
     <li><a href="../how-to-s/secure-app-with-ldap.html#connect-to-otoroshi-with-ldap-authentication" class="header">Connect to Otoroshi with LDAP authentication</a></li>
     <li><a href="../how-to-s/secure-app-with-ldap.html#testing-your-configuration" class="header">Testing your configuration</a></li>
