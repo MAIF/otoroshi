@@ -316,7 +316,7 @@ openssl req -new -x509 -sha256 -days 730 -key myservice.key -out myservice.cer -
                 Modulus:
 ...
 </code></pre>
-<p>Once generated, go back to Otoroshi and navigate to the certificates management page (<code>cogs icon / SSL/TLS certificates</code> or at <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates" title="`/bo/dashboard/certificates`"><code>/bo/dashboard/certificates</code></a>) and click on <code>Add item</code>.</p>
+<p>Once generated, go back to Otoroshi and navigate to the certificates management page (<code>top right cog icon / SSL/TLS certificates</code> or at <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates" title="`/bo/dashboard/certificates`"><code>/bo/dashboard/certificates</code></a>) and click on <code>Add item</code>.</p>
 <p>Set <code>myservice-certificate</code> as <code>name</code> and <code>description</code>.</p>
 <p>Drop the <code>myservice.cer</code> file or copy the content to the <code>Certificate full chain</code> field.</p>
 <p>Do the same action for the <code>myservice.key</code> file in the <code>Certificate private key</code> field.</p>
