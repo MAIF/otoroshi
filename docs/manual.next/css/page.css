@@ -1104,3 +1104,9 @@ p {
   font-family: inherit;
   font-size: .8em;
 }
+
+.nav-toc ul > li > ul li a.page::before {
+  content: ' - ';
+  font-weight: bolder;
+  color: #0d0058;
+}
