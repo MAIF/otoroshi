@@ -83,7 +83,7 @@ Certificate:
 ...
 ```
 
-Once generated, go back to Otoroshi and navigate to the certificates management page (`cogs icon / SSL/TLS certificates` or at @link:[`/bo/dashboard/certificates`](http://otoroshi.oto.tools:8080/bo/dashboard/certificates)) and click on `Add item`.
+Once generated, go back to Otoroshi and navigate to the certificates management page (`top right cog icon / SSL/TLS certificates` or at @link:[`/bo/dashboard/certificates`](http://otoroshi.oto.tools:8080/bo/dashboard/certificates)) and click on `Add item`.
 
 Set `myservice-certificate` as `name` and `description`.
 
