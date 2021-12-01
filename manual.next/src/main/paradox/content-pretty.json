@@ -340,7 +340,7 @@
     "id": "/plugins/create-plugins.md",
     "url": "/plugins/create-plugins.html",
     "title": "Create plugins",
-    "content": "# Create plugins\n\n@@@ warning\nTODO\n@@@"
+    "content": "# Create plugins\n\nTo understand the content of a @ref:[plugin entity](../entities/plugins.md)\n\nOtoroshi provides a list of predefined plugins, grouped by category. \nIn some case, these plugins will not matched your needs.\nThe right way is to create your own plugin.\n\n### Visualize the list of created plugins\n\nNavigate to `<your-otoroshi-domain>/bo/dashboard/plugins`\n\n### Create a plugin\n\nNavigate to `<your-otoroshi-domain>/bo/dashboard/plugins` and click on the `Add item` button.\n\n### Plugins assignement \n\nThe supplied Otoroshi plugins and your custom plugins can be placed on any Otoroshi service and assigned to all services from the global zone.\nEach plugin intervenes at a precise moment in the processing of a request.\n\n### Compile a new plugin\n\nThe compilation from the UI of a custom plugin is only available in production mode. \n\n"
   },
   {
     "name": "index.md",
