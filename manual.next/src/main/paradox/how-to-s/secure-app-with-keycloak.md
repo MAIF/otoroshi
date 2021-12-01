@@ -1,13 +1,5 @@
 # Secure an app with Keycloak
 
-### Cover by this tutorial
-- [Before you start](#before-you-start)
-- [Running a keycloak instance with docker](#running-a-keycloak-instance-with-docker)
-- [Create a Keycloak provider module](#create-a-keycloak-provider-module)
-- [Connect to Otoroshi with Keycloak authentication](#connect-to-otoroshi-with-keycloak-authentication)
-- [Testing your configuration](#testing-your-configuration)
-- [Secure an app with Keycloak authentication](#secure-an-app-with-keycloak-authentication)
-
 ### Before you start
 
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
@@ -16,11 +8,11 @@
 
 ```sh
 docker run \
--p 8080:8080 \
--e KEYCLOAK_USER=admin \
--e KEYCLOAK_PASSWORD=admin \
---name keycloak-server \
---detach jboss/keycloak:15.0.1
+  -p 8080:8080 \
+  -e KEYCLOAK_USER=admin \
+  -e KEYCLOAK_PASSWORD=admin \
+  --name keycloak-server \
+  --detach jboss/keycloak:15.0.1
 ```
 
 This should download the image of keycloak (if you haven't already it) and display the digest of the created container. This command mapped TCP port 8080 in the container to port 8080 of your laptop and created a server with `admin/admin` as admin credentials.
@@ -74,13 +66,13 @@ To secure Otoroshi with your Keycloak configuration, we have to register an Auth
 ### Testing your configuration
 
 1. Disconnect from your instance
-1. Then click on the *Login using third-party* button (or navigate to *http://otoroshi.oto.tools:8080*)
+1. Then click on the *Login using third-party* button (or navigate to http://otoroshi.oto.tools:8080)
 2. Click on `Login using Third-party` button
 3. If all is configured, Otoroshi will redirect you to the keycloak login page
 4. Set `admin/admin` as user and trust the user by clicking on `yes` button.
 5. Good work! You're connected to Otoroshi with an Keycloak module.
 
-> A fallback solution is always available, by going to *http://otoroshi.oto.tools:8080/bo/simple/login*, for administrators in case your Authentication module is not well configured or not available
+> A fallback solution is always available, by going to http://otoroshi.oto.tools:8080/bo/simple/login, for administrators in case your Authentication module is not well configured or not available
 
 ### Visualize an admin user session or a private user session
 
@@ -91,6 +83,7 @@ Let's start by navigate to the `Admin users sessions` page (just @link:[here](ht
 This page gives a complete view of the connected admins. For each admin, you have his connection date and his expiration date. You can also check the `Profile` and the `Rights` of the connected users.
 
 If we check the profile and the rights of the previously logged user (from Keycloak in the previous part) we can retrieve the following information :
+
 ```json
 {
   "sub": "4c8cd101-ca28-4611-80b9-efa504ac51fd",
@@ -107,7 +100,9 @@ If we check the profile and the rights of the previously logged user (from Keycl
   "preferred_username": "admin"
 }
 ```
+
 and his default rights 
+
 ```sh
 [
   {
@@ -266,14 +261,16 @@ Now, your rights should be :
 
 The only change to apply on the previous authentication module, is on the callback URL. When you want secure a Otoroshi service, and transform it on `Private App`, you need to set the `Callback URL` at `http://privateapps.oto.tools:8080/privateapps/generic/callback`
 
-1 Go back to the authentication module
+1. Go back to the authentication module
 1. Jump to the `Callback URL` field
 2. Paste this value `http://privateapps.oto.tools:8080/privateapps/generic/callback`
 3. Save your configuration
 4. Navigate to `http://myservice.oto.tools:8080`.
 5. You should redirect to the keycloak login page.
 6. Once logged in, you can check the content of the private app session created.
+
 The rights should be : 
+
 ```json
 [
   {
