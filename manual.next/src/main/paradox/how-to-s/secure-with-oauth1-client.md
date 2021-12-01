@@ -1,13 +1,5 @@
 # Secure an app with OAuth1 client flow
 
-### Cover by this tutorial
-- [Before you start](#before-you-start)
-- [Running an simple OAuth 1 server](#running-an-simple-oauth-1-server)
-- [Create an OAuth 1 provider module](#create-an-oauth-1-provider-module)
-- [Connect to Otoroshi with OAuth1 authentication](#connect-to-otoroshi-with-oauth1-authentication)
-- [Testing your configuration](#testing-your-configuration)
-- [Secure an app with OAuth 1 authentication](#secure-an-app-with-oauth-1-authentication)
-
 ### Before you start
 
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
@@ -17,6 +9,7 @@
 In this tutorial, we'll instanciate a oauth 1 server with docker. If you alredy have the necessary, skip this section @ref:[to](#create-an-oauth-1-provider-module).
 
 Let's start by running the server
+
 ```sh
 docker run -d --name oauth1-server --rm \
     -p 5000:5000 \
@@ -51,6 +44,7 @@ After this command, the container logs should output :
 11. At the bottom of the page, disable the `secure` button (because we're using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)
 
  At this point, your configuration should be similar to :
+
 <!-- oto-scenario
  - goto /bo/dashboard/auth-configs/edit/auth_mod_oauth1.0_provider
  - wait 1000
@@ -59,6 +53,7 @@ After this command, the container logs should output :
 <img src="../imgs/generated-hows-to-secure-with-oauth1-provider.png" />
 
 With this configuration, the connected user will receive default access on teams and organizations. If you want to change the access rights for a specific user, you can achieve it with the `Rights override` field and a configuration like :
+
 ```json
 {
   "foo@example.com": [
@@ -86,13 +81,13 @@ To secure Otoroshi with your OAuth1 configuration, we have to register an Authen
 ### Testing your configuration
 
 1. Disconnect from your instance
-1. Then click on the *Login using third-party* button (or navigate to *http://otoroshi.oto.tools:8080*)
+1. Then click on the *Login using third-party* button (or navigate to http://otoroshi.oto.tools:8080)
 2. Click on `Login using Third-party` button
 3. If all is configured, Otoroshi will redirect you to the oauth 1 server login page
 4. Set `example-user` as user and trust the user by clicking on `yes` button.
 5. Good work! You're connected to Otoroshi with an OAuth1 module.
 
-> A fallback solution is always available, by going to *http://otoroshi.oto.tools:8080/bo/simple/login*, for administrators in case your Authentication module is not available
+> A fallback solution is always available, by going to http://otoroshi.oto.tools:8080/bo/simple/login, for administrators in case your Authentication module is not available
 
 ### Secure an app with OAuth 1 authentication
 
@@ -108,6 +103,7 @@ The first step is to apply a little change on the previous configuration.
 > Note : a Otoroshi service is call a private app when it is protected by an authentication module.
 
 Our example server supports only one redirect URI. We need to kill it, and to create a new container with `http://otoroshi.oto.tools:8080/privateapps/generic/callback` as `OAUTH1_REDIRECT_URI`
+
 ```sh
 docker rm -f oauth1-server
 docker run -d --name oauth1-server --rm \
@@ -136,13 +132,15 @@ The allow access to the user.
 > <img src="../imgs/hows-to-secure-app-with-oauth1-provider-trust.png">
 
 If you had any errors, make sure of :
+
 * check if you are on http or https, and if the *secure cookie option* is enabled or not on the authentication module
 * check if your oauth1 server has the REDIRECT_URI set on *privateapps/...*
 * Make sure your server supports POST or GET oauth1 flow set on authentication module
 
-Once the configuration is working, you can check, when connecting with an Otoroshi admin user, the `Private App session` created (use the cog at the right top of the page, and select `Priv. app sesssions`, or navigate to *http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private*).
+Once the configuration is working, you can check, when connecting with an Otoroshi admin user, the `Private App session` created (use the cog at the right top of the page, and select `Priv. app sesssions`, or navigate to http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private).
 
 One interesing feature is to check the profile of the connected user. In our case, when clicking on the `Profile` button of the right user, we should have : 
+
 ```json
 {
   "email": "foo@example.com",
