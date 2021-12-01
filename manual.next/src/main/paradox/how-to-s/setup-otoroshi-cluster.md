@@ -63,16 +63,16 @@ backend back_http_nodes
 and run haproxy with this config file
 
 no docker
-:   @@snip [run.sh](../snippets/cluster.source) { #no_docker }
+:   @@snip [run.sh](../snippets/cluster-run-ha.sh) { #no_docker }
 
 docker (on linux)
-:   @@snip [run.sh](../snippets/cluster.source) { #docker_linux }
+:   @@snip [run.sh](../snippets/cluster-run-ha.sh) { #docker_linux }
 
 docker (on macos)
-:   @@snip [run.sh](../snippets/cluster.source) { #docker_mac }
+:   @@snip [run.sh](../snippets/cluster-run-ha.sh) { #docker_mac }
 
 docker (on windows)
-:   @@snip [run.sh](../snippets/cluster.source) { #docker_windows }
+:   @@snip [run.sh](../snippets/cluster-run-ha.sh) { #docker_windows }
 
 The last step is to create a service, add a rule to add, in the headers, a specific value to identify the worker used.
 

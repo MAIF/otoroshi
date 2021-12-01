@@ -1,4 +1,3 @@
-
 // #no_docker
 haproxy -c -f ./haproxy.cfg
 // #no_docker
