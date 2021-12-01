@@ -7,7 +7,7 @@ The goal of this tutorial is to expose a service via https using a certificate g
 Try to call the service.
 
 ```sh
-curl http://myservice.oto.tools:8080
+curl 'http://myservice.oto.tools:8080'
 ```
 
 This should output something like
@@ -34,7 +34,7 @@ This should output something like
 Let's try to call the service in https.
 
 ```sh
-curl https://myservice.oto.tools:8443
+curl 'https://myservice.oto.tools:8443'
 ```
 
 This should output
@@ -43,9 +43,9 @@ This should output
 curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to myservice.oto.tools:8443
 ```
 
-To fix it, we have to generate a certificate in Otoroshi to match the domain `myservice.oto.tools`.
+To fix it, we have to generate a certificate and import it in Otoroshi to match the domain `myservice.oto.tools`.
 
-> If you already had a certificate you can skip the next commands and directly import your certificate in Otoroshi
+> If you already had a certificate you can skip the next set of commands and directly import your certificate in Otoroshi
 
 We will use openssl to generate a private key and a self-signed certificate.
 
@@ -83,7 +83,7 @@ Certificate:
 ...
 ```
 
-Once generated, go back to Otoroshi and navigate to the */bo/dashboard/certificates* and click on `Add item`.
+Once generated, go back to Otoroshi and navigate to the certificates management page (`cogs icon / SSL/TLS certificates` or at @link:[`/bo/dashboard/certificates`](http://otoroshi.oto.tools:8080/bo/dashboard/certificates)) and click on `Add item`.
 
 Set `myservice-certificate` as `name` and `description`.
 
@@ -96,10 +96,10 @@ Set your passphrase password in the `private key password` field if you added on
 Let's try the same call to the service.
 
 ```sh
-curl https://myservice.oto.tools:8443
+curl 'https://myservice.oto.tools:8443'
 ```
 
-An error should occurs due to the untrsuted receive certificate server
+An error should occurs due to the untrsuted received certificate server
 
 ```sh
 curl: (60) SSL certificate problem: self signed certificate
@@ -113,9 +113,8 @@ how to fix it, please visit the web page mentioned above.
 End this tutorial by trusting the certificate server 
 
 ```sh
-curl https://myservice.oto.tools:8443 --cacert myservice.cer
+curl 'https://myservice.oto.tools:8443' --cacert myservice.cer
 ```
-
 
 This should finally output
 
