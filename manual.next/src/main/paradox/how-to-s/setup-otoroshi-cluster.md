@@ -18,81 +18,33 @@ Once created, we have to create the two workers. For both workers, we have to se
 
 The first worker will listen on the `:8082/:8092` ports
 ```sh
-java 
--Dotoroshi.cluster.worker.name=worker-1 \
--Dhttp.port=8092 \
--Dhttps.port=9092 \
--Dotoroshi.cluster.mode=worker \
--Dotoroshi.cluster.leader.urls.0=http://127.0.0.1:8091 -jar otoroshi.jar
+java \
+  -Dotoroshi.cluster.worker.name=worker-1 \
+  -Dhttp.port=8092 \
+  -Dhttps.port=9092 \
+  -Dotoroshi.cluster.mode=worker \
+  -Dotoroshi.cluster.leader.urls.0=http://127.0.0.1:8091 -jar otoroshi.jar
 ```
 
 The second worker will listen on the `:8083/:8093` ports
 ```sh
-java 
--Dotoroshi.cluster.worker.name=worker-2 \
--Dhttp.port=8093 \
--Dhttps.port=9093 \
--Dotoroshi.cluster.mode=worker \
--Dotoroshi.cluster.leader.urls.0=http://127.0.0.1:8091 -jar otoroshi.jar
+java \
+  -Dotoroshi.cluster.worker.name=worker-2 \
+  -Dhttp.port=8093 \
+  -Dhttps.port=9093 \
+  -Dotoroshi.cluster.mode=worker \
+  -Dotoroshi.cluster.leader.urls.0=http://127.0.0.1:8091 -jar otoroshi.jar
 ```
 
 Once launched, you can navigate to the @link:[cluster view](http://otoroshi.oto.tools:8091/bo/dashboard/cluster) { open=new }. If all is configured, you will see the leader, the 2 workers and a bunch of informations about each instance.
 
+To complete our installation, we want to spread the incoming requests accross otoroshi worker instances. 
 
-To complete our installation, we want to spread the incoming requests between our two instances of workers. 
+In this tutorial, we will use haproxy has a TCP loadbalancer. If you don't have haproxy installed, you can use docker to run an haproxy instance as explained below.
 
-In this tutorial, we will use NGINX to loadbalance the traffic but you can use anythig else to do it.
-
-Create a new file, named `nginx.conf`, with the following content
+But first, we need an haproxy configuration file named `haproxy.cfg` with the following content :
 
 ```sh
-events {}
-http {
-  upstream otoroshi {
-    server host.docker.internal:8092 max_fails=1; # (1)
-    server host.docker.internal:8093 max_fails=1; # (2)
-  }
-
-  server {
-    listen 80;
-    # http://nginx.org/en/docs/http/server_names.html
-    server_name otoroshi.oto.tools otoroshi-api.oto.tools otoroshi-admin-internal-api.oto.tools privateapps.oto.tools; # (3)
-    location / {
-      # SSE config
-      proxy_buffering off;
-      proxy_cache off;
-      proxy_set_header Connection '';
-      proxy_http_version 1.1;
-      chunked_transfer_encoding off;
-    
-      # websockets config
-      proxy_set_header Upgrade $http_upgrade;
-      proxy_set_header Connection "upgrade";
-    
-      # other config
-      proxy_set_header Host $http_host;
-      proxy_set_header X-Real-IP $remote_addr;
-      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      proxy_set_header X-Forwarded-Proto $scheme;
-      proxy_pass http://otoroshi;
-    }
-  }
-}
-```
-
-* `(1)`and `(2)`: the list of our workers with their ports
-* `(3)`: the list of domains and subdomains use by Otoroshi to expose the UI and your services
-
-
-@@@
-
-alternative
-
-docker run -p 8080:8080 -v /home/mathieuancelin/tools/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro haproxy
-
-with haproxy.cfg file
-
-```
 frontend front_nodes_http
     bind *:8080
     mode tcp
@@ -102,18 +54,29 @@ frontend front_nodes_http
 backend back_http_nodes
     mode tcp
     balance roundrobin
-    server node1 host.docker.internal:8081
-    server node2 host.docker.internal:8082
+    server node1 host.docker.internal:8092 # (1)
+    server node2 host.docker.internal:8093 # (1)
     timeout connect        10s
     timeout server          1m
-
 ```
 
-@@@
+and run haproxy with this config file
+
+no docker
+:   @@snip [run.sh](../snippets/cluster.source) { #no_docker }
+
+docker (on linux)
+:   @@snip [run.sh](../snippets/cluster.source) { #docker_linux }
+
+docker (on macos)
+:   @@snip [run.sh](../snippets/cluster.source) { #docker_mac }
+
+docker (on windows)
+:   @@snip [run.sh](../snippets/cluster.source) { #docker_windows }
 
 The last step is to create a service, add a rule to add, in the headers, a specific value to identify the worker used.
 
-Create this service, exposed on `http://myapi.oto.tools:8080`, which will forward all requests to the mirror `https://mirror.otoroshi.io`.
+Create this service, exposed on `http://myapi.oto.tools:xxxx`, which will forward all requests to the mirror `https://mirror.otoroshi.io`.
 
 ```sh
 curl -X POST http://otoroshi-api.oto.tools:8091/api/services \
@@ -172,7 +135,7 @@ curl -X POST http://otoroshi-api.oto.tools:8091/api/services \
     ],
     "kind": "ServiceDescriptor",
     "additionalHeaders": {
-        "worker": "${config.otoroshi.cluster.worker.name}"
+        "worker-name": "${config.otoroshi.cluster.worker.name}"
     }
 }
 EOF
@@ -181,7 +144,7 @@ EOF
 Once created, call two times the service. If all is working, the header received by the downstream service will have `worker-1` and `worker-2` as value.
 
 ```sh
-curl http://api.oto.tools 
+curl http://api.oto.tools:8080
 
 ## Response headers
 {
