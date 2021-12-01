@@ -248,9 +248,23 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>The authentication modules are the resources to manage the the access to Otoroshi UI and to protect a service.</p>
 <p>An authentication module can be as well use on guard to access to the Otoroshi UI as to protect an app.</p>
 <p>A <code>private app</code> is an Otoroshi service with an authentication module.</p>
-<p>The list of supported authentication are : * <code>OAuth 2.0/2.1</code> : an authorization standard that allows a user to grant limited access to their resources on one site to another site, without having to expose their credentials * <code>OAuth 1.0a</code> : the original standard for access delegation * <code>In memory</code> : create users directly in Otoroshi with rights and metadata * <code>LDAP : Lightweight Directory Access Protocol</code> : connect users using a set of LDAP servers * <code>SAML V2 - Security Assertion Markup Language</code> : an open-standard, XML-based data format that allows businesses to communicate user authentication and authorization information to partner companies and enterprise applications their employees may use.</p>
+<p>The list of supported authentication are :</p>
+<ul>
+  <li><code>OAuth 2.0/2.1</code> : an authorization standard that allows a user to grant limited access to their resources on one site to another site, without having to expose their credentials</li>
+  <li><code>OAuth 1.0a</code> : the original standard for access delegation</li>
+  <li><code>In memory</code> : create users directly in Otoroshi with rights and metadata</li>
+  <li><code>LDAP : Lightweight Directory Access Protocol</code> : connect users using a set of LDAP servers</li>
+  <li><code>SAML V2 - Security Assertion Markup Language</code> : an open-standard, XML-based data format that allows businesses to communicate user authentication and authorization information to partner companies and enterprise applications their employees may use.</li>
+</ul>
 <p>All authentication modules have a unique <code>id</code>, a <code>name</code> and a <code>description</code>.</p>
-<p>Each module has also the following fields : * <code>Tags</code>: list of tags associated to the module * <code>Metadata</code>: list of metadata associated to the module * <code>HttpOnly</code>: if enabled, the cookie cannot be accessed through client side script, prevent cross-site scripting (XSS) by not revealing the cookie to a third party * <code>Secure</code>: if enabled, avoid to include cookie in an HTTP Request without secure channel, typically HTTPs. * <code>Session max. age</code>: duration until the session expired</p>
+<p>Each module has also the following fields : </p>
+<ul>
+  <li><code>Tags</code>: list of tags associated to the module</li>
+  <li><code>Metadata</code>: list of metadata associated to the module</li>
+  <li><code>HttpOnly</code>: if enabled, the cookie cannot be accessed through client side script, prevent cross-site scripting (XSS) by not revealing the cookie to a third party</li>
+  <li><code>Secure</code>: if enabled, avoid to include cookie in an HTTP Request without secure channel, typically HTTPs.</li>
+  <li><code>Session max. age</code>: duration until the session expired</li>
+</ul>
 <h2><a href="#oauth-2-0-oidc-provider" name="oauth-2-0-oidc-provider" class="anchor"><span class="anchor-link"></span></a>OAuth 2.0 / OIDC provider</h2>
 <p>If you want to secure an app or your Otoroshi UI with this provider, you can check these tutorials : <a href="../how-to-s/secure-app-with-keycloak.html">Secure an app with keycloak</a> or <a href="../how-to-s/secure-app-with-auth0.html">Secure an app with auth0</a></p>
 <ul>

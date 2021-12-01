@@ -1,4 +1,6 @@
 <!--- #initialize-otoroshi --->
+If you already have an up and running otoroshi instance, you can skip the following instructions
+
 Let's start by downloading the latest Otoroshi.
 
 ```sh

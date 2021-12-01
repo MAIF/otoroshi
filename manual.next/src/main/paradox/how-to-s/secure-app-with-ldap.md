@@ -1,48 +1,28 @@
 # Secure an app and/or your Otoroshi UI with LDAP
 
-### Cover by this tutorial
+### Before you start
 
-- [Download Otoroshi](#download-otoroshi)
-- [Create an Authentication configuration](#create-an-authentication-configuration)
-- [Connect to Otoroshi with LDAP authentication](#connect-to-otoroshi-with-ldap-authentication)
-- [Testing your configuration](#testing-your-configuration)
-- [Secure an app with LDAP authentication](#secure-an-app-with-ldap-authentication)
-- [Manage LDAP users rights on Otoroshi](#manage-ldap-users-rights-on-otoroshi)
-- [Advanced usage of LDAP Authentication](#advanced-usage-of-ldap-authentication)
-
-
-### Download Otoroshi
-
-Let's start by downloading the latest Otoroshi
-```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
-```
-
-By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
-
-Run Otoroshi
-```sh
-java -Dapp.adminPassword=password -jar otoroshi.jar 
-```
+@@include[fetch-and-start.md](../includes/fetch-and-start.md) { #init }
 
 #### Running an simple OpenLDAP server 
 
 Run OpenLDAP docker image : 
 ```sh
 docker run \
--p 389:389 \
--p 636:636  \
---env LDAP_ORGANISATION="Otoroshi company" \
---env LDAP_DOMAIN="otoroshi.tools" \
---env LDAP_ADMIN_PASSWORD="otoroshi" \
---env LDAP_READONLY_USER="false" \
---env LDAP_TLS"false" \
---env LDAP_TLS_ENFORCE"false" \
---name my-openldap-container \
---detach osixia/openldap:1.5.0
+  -p 389:389 \
+  -p 636:636  \
+  --env LDAP_ORGANISATION="Otoroshi company" \
+  --env LDAP_DOMAIN="otoroshi.tools" \
+  --env LDAP_ADMIN_PASSWORD="otoroshi" \
+  --env LDAP_READONLY_USER="false" \
+  --env LDAP_TLS"false" \
+  --env LDAP_TLS_ENFORCE"false" \
+  --name my-openldap-container \
+  --detach osixia/openldap:1.5.0
 ```
 
 Let's make the first search in our LDAP container :
+
 ```sh
 docker exec my-openldap-container ldapsearch -x -H ldap://localhost -b dc=otoroshi,dc=tools -D "cn=admin,dc=otoroshi,dc=tools" -w otoroshi
 ```
@@ -68,6 +48,7 @@ result: 0 Success
 Now you can seed the open LDAP server with a few users. 
 
 Join your LDAP container.
+
 ```sh
 docker exec -it my-openldap-container "/bin/bash"
 ```
@@ -75,6 +56,7 @@ docker exec -it my-openldap-container "/bin/bash"
 The command `ldapadd` needs of a file to run.
 
 Launch this command to create a `bootstrap.ldif` with one organization, one singers group with Johnny user and a last group with Einstein as scientist.
+
 ```sh
 echo -e "
 dn: ou=People,dc=otoroshi,dc=tools
@@ -93,7 +75,7 @@ objectclass: person
 objectclass: organizationalPerson
 objectclass: inetOrgPerson
 uid: johnny
-cn: Jhonny
+cn: Johnny
 sn: Brown
 mail: johnny@otoroshi.tools
 postalCode: 88442
@@ -129,24 +111,22 @@ ldapadd -x -w otoroshi -D "cn=admin,dc=otoroshi,dc=tools" -f bootstrap.ldif -v
 
 ### Create an Authentication configuration
 
-1. Go ahead, and navigate to http://otoroshi.oto.tools:8080
-1. Click on the cog icon on the top right
-1. Then `Authentication configs` button
-1. And add a new configuration when clicking on the `Add item` button
-1. Select the `Ldap auth. provider` in the type selector field
-1. Set a basic name and description
-1. Then set `ldap://localhost:389` as `LDAP Server URL`and `dc=otoroshi,dc=tools` as `Search Base`
-1. Create a group filter (in the next part, we'll change this filter to spread users in different groups with given rights) with 
-
-objectClass=groupOfNames as *Group filter* \
-All as *Tenant*\
-All as *Team*\
-Read/Write as *Rights*
-
-9. Set the search filter as (uid=${username})`
-1. Set `cn=admin,dc=otoroshi,dc=tools` as *Admin username*
-1. Set `otoroshi` as *Admin password*
-2. At the bottom of the page, disable the `secure` button (because we're using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)
+- Go ahead, and navigate to http://otoroshi.oto.tools:8080
+- Click on the cog icon on the top right
+- Then `Authentication configs` button
+- And add a new configuration when clicking on the `Add item` button
+- Select the `Ldap auth. provider` in the type selector field
+- Set a basic name and description
+- Then set `ldap://localhost:389` as `LDAP Server URL`and `dc=otoroshi,dc=tools` as `Search Base`
+- Create a group filter (in the next part, we'll change this filter to spread users in different groups with given rights) with 
+    - objectClass=groupOfNames as `Group filter` 
+    - All as `Tenant`
+    - All as `Team`
+    - Read/Write as `Rights`
+- Set the search filter as (uid=${username})`
+- Set `cn=admin,dc=otoroshi,dc=tools` as `Admin username`
+- Set `otoroshi` as `Admin password`
+- At the bottom of the page, disable the `secure` button (because we're using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)
 
 
  At this point, your configuration should be similar to :
@@ -160,11 +140,11 @@ Read/Write as *Rights*
 
 > Dont' forget to save on the bottom page your configuration before to quit the page.
 
-12. Test the connection when clicking on `Test admin connection` button
+- Test the connection when clicking on `Test admin connection` button
 
 This should display a `It works!` message
 
-13. Finally, test the user connection button and set `johnny/password` or `einstein/password` as credentials.
+- Finally, test the user connection button and set `johnny/password` or `einstein/password` as credentials.
 
 This should display a `It works!` message
 
@@ -174,32 +154,32 @@ This should display a `It works!` message
 
 To secure Otoroshi with your LDAP configuration, we have to register an Authentication configuration as a BackOffice Auth. configuration.
 
-1. Navigate to the *danger zone* (when clicking on the cog on the top right and selecting Danger zone)
-1. Scroll to the *BackOffice auth. settings*
-1. Select your last Authentication configuration (created in the previous section)
-1. Save the global configuration with the button on the top right
+- Navigate to the *danger zone* (when clicking on the cog on the top right and selecting Danger zone)
+- Scroll to the *BackOffice auth. settings*
+- Select your last Authentication configuration (created in the previous section)
+- Save the global configuration with the button on the top right
 
 ### Testing your configuration
 
-1. Disconnect from your instance
-1. Then click on the *Login using third-party* button (or navigate to *http://otoroshi.oto.tools:8080/backoffice/auth0/login*)
-1. Set `johnny/password` or `einstein/password` as credentials
+- Disconnect from your instance
+- Then click on the *Login using third-party* button (or navigate to http://otoroshi.oto.tools:8080/backoffice/auth0/login)
+- Set `johnny/password` or `einstein/password` as credentials
 
-> A fallback solution is always available, by going to *http://otoroshi.oto.tools:8080/bo/simple/login*, for administrators in case your LDAP is not available
+> A fallback solution is always available, by going to http://otoroshi.oto.tools:8080/bo/simple/login, for administrators in case your LDAP is not available
 
 
 #### Secure an app with LDAP authentication
 
 Once the configuration is done, you can secure any of Otoroshi services with it. 
 
-1. Navigate to any created service
-2. Jump to the `URL Patterns` section
-3. Enable your service as `Public UI`
-4. Then scroll to `Authentication` section
-5. Enable `Enforce user authentication`
-6. Select your Authentication config inside the list
-7. Enable `Strict mode`
-6. Don't forget to save your configuration
+- Navigate to any created service
+- Jump to the `URL Patterns` section
+- Enable your service as `Public UI`
+- Then scroll to `Authentication` section
+- Enable `Enforce user authentication`
+- Select your Authentication config inside the list
+- Enable `Strict mode`
+- Don't forget to save your configuration
 
 <!-- oto-scenario
  - goto /bo/dashboard/lines/prod/services/service_mirror_otoroshi_fr
@@ -266,6 +246,7 @@ The next field `Data override` is merged with extra metadata when a user connect
 ```
 
 If you try to connect to an app with this configuration, the user result profile should be :
+
 ```json
 {
   ...,
@@ -293,7 +274,7 @@ This field supports the creation of virtual groups. A virtual group is composed 
       }
     ],
     "users": [
-      "jhonny@otoroshi.tools"
+      "johnny@otoroshi.tools"
     ]
   }
 }
@@ -307,7 +288,7 @@ To resume, when Johnny connects to Otoroshi, he receives the rights to read only
 
 ```json 
 {
-  "jhonny@otoroshi.tools": [
+  "johnny@otoroshi.tools": [
     {
       "tenant": "*:r",
       "teams": [
