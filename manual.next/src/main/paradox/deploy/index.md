@@ -18,6 +18,7 @@ Otoroshi provides an integration to create easily services based on application 
 Starting at version 1.5.0, Otoroshi provides a native Kubernetes support.
 
 <img src="../imgs/kubernetes.png" />
+
 @ref:[Documentation](./kubernetes.md)
 @@@
 
