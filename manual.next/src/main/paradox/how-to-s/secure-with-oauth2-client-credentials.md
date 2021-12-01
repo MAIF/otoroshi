@@ -1,14 +1,14 @@
 # Secure an app with OAuth2 client_credential flow
 
-Otoroshi makes it easy for your app to implement the Client Credentials Flow. Following successful authentication, the calling application will have access to an Access Token, which can be used to call your protected APIs.
+Otoroshi makes it easy for your app to implement the [OAuth2 Client Credentials Flow](https://auth0.com/docs/authorization/flows/client-credentials-flow). Following successful authentication, the calling application will have access to an Access Token, which can be used to call your protected APIs.
 
 ## Deployed the Client Credential Service
 
-The Client Credential Service must be enabled as a global plugin on your instance. To achieve that, navigate to your otoroshi instance (in our case `http://otoroshi.oto.tools:8080`) on the danger zone (use the cog on the right top of the page).
+The Client Credential Service must be enabled as a global plugin on your Otoroshi instance. To achieve that, navigate to your otoroshi instance (in our case http://otoroshi.oto.tools:8080) on the danger zone (`top right cog icon / Danger zone` or at [/bo/dashboard/dangerzone](http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone)).
 
 To enable a plugin in global on Otoroshi, you must add it in the `Global Plugins` section.
 
-Open the `Global Plugin` section, `enabled` it (if it not already done), and search the plugin named `Client Credential Service` of type `Sink`.
+Open the `Global Plugin` section, click on `enabled` (if not already done), and search the plugin named `Client Credential Service` of type `Sink`.
 
 To show and add the default configuration on this plugin, click on the `show config. panel` an on the `Inject default config.` button. This button is available on each plugin and it's useful when you want to inject the default configuration.
 
@@ -37,6 +37,7 @@ Now that the plugin is running, third routes are exposed on each matching domain
 Once the global configuration saved, we can deployed a simple service to test it.
 
 Let's navigate to the services page, and create a new service with : 
+
 1. `http://foo.oto.tools:8080` as `Exposed domain` in `Service exposition settings` section
 2. `https://mirror.otoroshi.io` as `Target 1` in `Service targets` section
 3. `/.*` as `Private patterns` in `URL Patterns` section (and remove all public patterns)
@@ -46,7 +47,7 @@ In `Api Keys Constraints`, disabled `From basic auth.`, `Allow client id only us
 Let's make a first call, to check if the jwks are already exposed :
 
 ```sh
-curl http://foo.oto.tools:8080/.well-known/otoroshi/oauth/jwks.json
+curl 'http://foo.oto.tools:8080/.well-known/otoroshi/oauth/jwks.json'
 ```
 
 This should output a list of public keys : 
@@ -67,7 +68,7 @@ This should output a list of public keys :
 Let's make a call on a route of this service. 
 
 ```sh
-curl http://foo.oto.tools:8080/
+curl 'http://foo.oto.tools:8080/'
 ```
 
 This should output the expected error: 
@@ -78,20 +79,22 @@ This should output the expected error:
 ```
 
 The first step is to generate an api key. Navigate to the api keys page, and create an item with the following values (it will be more easy to use them in the next step) :
+
 * `my-id` as `ApiKey Id`
 * `my-secret` as `ApiKey Secret`
 
 The next step is to ask a token by calling the exposed route `/.well-known/otoroshi/oauth/jwks.json`. The required fields are the grand type, the client and the client secret corresponding to our generated api key.
 
 ```sh
-curl -X POST http://foo.oto.tools:8080/.well-known/otoroshi/oauth/token \
--H "Content-Type: application/json" \
--d '{"grant_type":"client_credentials", "client_id":"my-id", "client_secret":"my-secret"}'
+curl -X POST 'http://foo.oto.tools:8080/.well-known/otoroshi/oauth/token' \
+  -H "Content-Type: application/json" \
+  -d '{"grant_type":"client_credentials", "client_id":"my-id", "client_secret":"my-secret"}'
 ```
 
 We have omit a parameter of the body which is named `scope`. This field can be used to set a bunch of scope on the generated access token.
 
 The last command should output : 
+
 ```sh
 {
   "access_token": "generated-token-xxxxx",
@@ -102,8 +105,8 @@ The last command should output :
 
 Once generate, we can call our api again : 
 ```sh
-curl http://foo.oto.tools:8080/ \
--H "Authorization: Bearer generated-token-xxxxx"
+curl 'http://foo.oto.tools:8080/' \
+  -H "Authorization: Bearer generated-token-xxxxx"
 ```
 
 This should output a list of headers with a field named `Authorization` containing the previous access token.
