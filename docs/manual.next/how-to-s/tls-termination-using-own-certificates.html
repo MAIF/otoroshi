@@ -259,7 +259,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 -u admin-api-apikey-id:admin-api-apikey-secret
 </code></pre>
 <p>Try to call the service.</p>
-<pre class="prettyprint"><code class="language-sh">curl http://myservice.oto.tools:8080
+<pre class="prettyprint"><code class="language-sh">curl &#39;http://myservice.oto.tools:8080&#39;
 </code></pre>
 <p>This should output something like</p>
 <pre class="prettyprint"><code class="language-json">{
@@ -280,14 +280,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 }
 </code></pre>
 <p>Let&rsquo;s try to call the service in https.</p>
-<pre class="prettyprint"><code class="language-sh">curl https://myservice.oto.tools:8443
+<pre class="prettyprint"><code class="language-sh">curl &#39;https://myservice.oto.tools:8443&#39;
 </code></pre>
 <p>This should output</p>
 <pre class="prettyprint"><code class="language-sh">curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to myservice.oto.tools:8443
 </code></pre>
-<p>To fix it, we have to generate a certificate in Otoroshi to match the domain <code>myservice.oto.tools</code>.</p>
+<p>To fix it, we have to generate a certificate and import it in Otoroshi to match the domain <code>myservice.oto.tools</code>.</p>
 <blockquote>
-  <p>If you already had a certificate you can skip the next commands and directly import your certificate in Otoroshi</p>
+  <p>If you already had a certificate you can skip the next set of commands and directly import your certificate in Otoroshi</p>
 </blockquote>
 <p>We will use openssl to generate a private key and a self-signed certificate.</p>
 <pre class="prettyprint"><code class="language-sh">openssl genrsa -out myservice.key 4096
@@ -316,15 +316,15 @@ openssl req -new -x509 -sha256 -days 730 -key myservice.key -out myservice.cer -
                 Modulus:
 ...
 </code></pre>
-<p>Once generated, go back to Otoroshi and navigate to the <em>/bo/dashboard/certificates</em> and click on <code>Add item</code>.</p>
+<p>Once generated, go back to Otoroshi and navigate to the certificates management page (<code>cogs icon / SSL/TLS certificates</code> or at <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates" title="`/bo/dashboard/certificates`"><code>/bo/dashboard/certificates</code></a>) and click on <code>Add item</code>.</p>
 <p>Set <code>myservice-certificate</code> as <code>name</code> and <code>description</code>.</p>
 <p>Drop the <code>myservice.cer</code> file or copy the content to the <code>Certificate full chain</code> field.</p>
 <p>Do the same action for the <code>myservice.key</code> file in the <code>Certificate private key</code> field.</p>
 <p>Set your passphrase password in the <code>private key password</code> field if you added one.</p>
 <p>Let&rsquo;s try the same call to the service.</p>
-<pre class="prettyprint"><code class="language-sh">curl https://myservice.oto.tools:8443
+<pre class="prettyprint"><code class="language-sh">curl &#39;https://myservice.oto.tools:8443&#39;
 </code></pre>
-<p>An error should occurs due to the untrsuted receive certificate server</p>
+<p>An error should occurs due to the untrsuted received certificate server</p>
 <pre class="prettyprint"><code class="language-sh">curl: (60) SSL certificate problem: self signed certificate
 More details here: https://curl.haxx.se/docs/sslcerts.html
 
@@ -333,7 +333,7 @@ establish a secure connection to it. To learn more about this situation and
 how to fix it, please visit the web page mentioned above.
 </code></pre>
 <p>End this tutorial by trusting the certificate server </p>
-<pre class="prettyprint"><code class="language-sh">curl https://myservice.oto.tools:8443 --cacert myservice.cer
+<pre class="prettyprint"><code class="language-sh">curl &#39;https://myservice.oto.tools:8443&#39; --cacert myservice.cer
 </code></pre>
 <p>This should finally output</p>
 <pre class="prettyprint"><code class="language-json">{

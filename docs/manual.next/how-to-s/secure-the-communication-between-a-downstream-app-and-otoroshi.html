@@ -245,77 +245,46 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#secure-the-communication-between-a-downstream-app-and-otoroshi" name="secure-the-communication-between-a-downstream-app-and-otoroshi" class="anchor"><span class="anchor-link"></span></a>Secure the communication between a downstream app and Otoroshi</h1>
-<h3><a href="#cover-by-this-tutorial" name="cover-by-this-tutorial" class="anchor"><span class="anchor-link"></span></a>Cover by this tutorial</h3>
-<ul>
-  <li><a href="#otoroshi-exchange-protocol">Otoroshi exchange protocol</a></li>
-  <li><a href="#pratical-case">Pratical case</a></li>
-</ul>
-<h3><a href="#otoroshi-exchange-protocol" name="otoroshi-exchange-protocol" class="anchor"><span class="anchor-link"></span></a>Otoroshi exchange protocol</h3>
-<p>The exchange protocol secure the communication with an app. When it&rsquo;s enabled, Otoroshi will send for each request a value in pre-selected token header, and will check the same header in the return request.</p>
-<h4><a href="#v1-challenge" name="v1-challenge" class="anchor"><span class="anchor-link"></span></a>V1 challenge</h4>
-<p>If you enable secure communication for a given service with <code>V1 - simple values exchange</code> activated, you will have to add a filter on the target application that will take the <code>Otoroshi-State</code> header and return it in a header named <code>Otoroshi-State-Resp</code>. </p><div class="centered-img">
-<img src="../imgs/exchange.png" /></div>
-<h4><a href="#v2-challenge" name="v2-challenge" class="anchor"><span class="anchor-link"></span></a>V2 challenge</h4>
-<p>If you enable secure communication for a given service with <code>V2 - signed JWT token exhange</code> activated, you will have to add a filter on the target application that will take the <code>Otoroshi-State</code> header value containing a JWT token, verify it&rsquo;s content signature then extract a claim named <code>state</code> and return a new JWT token in a header named <code>Otoroshi-State-Resp</code> with the <code>state</code> value in a claim named <code>state-resp</code>. By default, the signature algorithm is HMAC+SHA512 but can you can choose your own. The sent and returned JWT tokens have short TTL to avoid being replayed. You must be validate the tokens TTL. The audience of the response token must be <code>Otoroshi</code> and you have to specify <code>iat</code>, <code>nbf</code> and <code>exp</code>.</p><div class="centered-img">
-<img src="../imgs/exchange-2.png" /></div>
-<h3><a href="#pratical-case" name="pratical-case" class="anchor"><span class="anchor-link"></span></a>Pratical case</h3>
 <p>Let&rsquo;s start by downloading the latest Otoroshi</p>
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
 </code></pre>
 <p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code></p>
 <p>Run Otoroshi</p>
 <pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -jar otoroshi.jar 
-
-Log to Otoroshi at http://otoroshi.oto.tools:8080/ with `admin@otoroshi.io/password`
-
-1. Navigate to http://otoroshi.oto.tools:8080/bo/services and create a new service
-2. Jump to `Service exposition settings` and add *http://myservice.oto.tools* as `Exposed domain`
-3. Jump to `Service targets` and add *http://localhost:8080/* as `Target 1`
-4. Jump to the `URL Patterns` section
-5. Enable your service as `Public UI`
-
-We need of a simple service which handle the exchange protocol. For this tutorial, we&#39;ll use the following application, developed in NodeJS, which supports both versions of the exchange protocol.
-
-Clone this @link:[repository](https://github.com/MAIF/otoroshi/blob/master/demos/challenge)) and run the installation of the dependencies.
-
 </code></pre>
-<p>git clone <a href="https://github.com/MAIF/otoroshi/blob/master/demos/challenge">https://github.com/MAIF/otoroshi/blob/master/demos/challenge</a> cd challenge yarn install # or npm install node server.js</p>
-<pre><code><br/>The last command should return : 
-
+<p>Log to Otoroshi at <a href="http://otoroshi.oto.tools:8080/">http://otoroshi.oto.tools:8080/</a> with <code>admin@otoroshi.io/password</code></p>
+<ol>
+  <li>Navigate to <a href="http://otoroshi.oto.tools:8080/bo/services">http://otoroshi.oto.tools:8080/bo/services</a> and create a new service</li>
+  <li>Jump to <code>Service exposition settings</code> and add *<a href="http://myservice.oto.tools*">http://myservice.oto.tools*</a> as <code>Exposed domain</code>
+</li>
+  <li>Jump to <code>Service targets</code> and add *<a href="http://localhost:8080/*">http://localhost:8080/*</a> as <code>Target 1</code>
+</li>
+  <li>Jump to the <code>URL Patterns</code> section</li>
+  <li>Enable your service as <code>Public UI</code></li>
+</ol>
+<p>We need of a simple service which handle the exchange protocol. For this tutorial, we&rsquo;ll use the following application, developed in NodeJS, which supports both versions of the exchange protocol.</p>
+<p>Clone this <a href="https://github.com/MAIF/otoroshi/blob/master/demos/challenge" title="repository">repository</a>) and run the installation of the dependencies.</p>
+<pre class="prettyprint"><code class="language-sh">git clone https://github.com/MAIF/otoroshi/blob/master/demos/challenge
+cd challenge
+yarn install # or npm install
+node server.js
 </code></pre>
-<p>challenge-verifier listening on <a href="http://0.0.0.0:8080">http://0.0.0.0:8080</a></p>
-<pre><code><br/>This project runs an express client with one middleware. The middleware handles each request, and check if the header `State token header` is present in headers. By default, the incoming expected header is `Otoroshi-State` by the application and `Otoroshi-State-Resp` header in the headers of the return request. 
-
-Try to call your service via *http://myservice.oto.tools:8080/*. This should return a successful response with all headers received by the downstream app. 
-
-Now try to disable the middleware in the nodejs file. 
-
+<p>The last command should return : </p>
+<pre class="prettyprint"><code class="language-sh">challenge-verifier listening on http://0.0.0.0:8080
 </code></pre>
-<p>// comment this line app.use(OtoroshiMiddleware());</p>
-<pre><code><br/>Try to call again your service. This time, Otoroshi breaks the return response from your downstream service, and returns.
-
+<p>This project runs an express client with one middleware. The middleware handles each request, and check if the header <code>State token header</code> is present in headers. By default, the incoming expected header is <code>Otoroshi-State</code> by the application and <code>Otoroshi-State-Resp</code> header in the headers of the return request. </p>
+<p>Try to call your service via *<a href="http://myservice.oto.tools:8080/*">http://myservice.oto.tools:8080/*</a>. This should return a successful response with all headers received by the downstream app. </p>
+<p>Now try to disable the middleware in the nodejs file by commenting the following line. </p>
+<pre class="prettyprint"><code class="language-js">// app.use(OtoroshiMiddleware());
 </code></pre>
-<p>Downstream microservice does not seems to be secured. Cancelling request ! ```</p>
+<p>Try to call again your service. This time, Otoroshi breaks the return response from your downstream service, and returns.</p>
+<pre class="prettyprint"><code class="language-sh">Downstream microservice does not seems to be secured. Cancelling request !
+</code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../how-to-s/tls-termination-using-own-certificates.html">TLS termination using own certificates</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
-<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
-<div class="page-nav">
-<div class="nav-title">On this page:</div>
-<div class="nav-toc">
-<ul>
-  <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html#secure-the-communication-between-a-downstream-app-and-otoroshi" class="header">Secure the communication between a downstream app and Otoroshi</a>
-  <ul>
-    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html#cover-by-this-tutorial" class="header">Cover by this tutorial</a></li>
-    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html#otoroshi-exchange-protocol" class="header">Otoroshi exchange protocol</a></li>
-    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html#pratical-case" class="header">Pratical case</a></li>
-  </ul></li>
-</ul>
-</div>
-</div>
-</nav>
 </div>
 </div>
 
