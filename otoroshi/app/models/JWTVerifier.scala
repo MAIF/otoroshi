@@ -13,8 +13,9 @@ import com.auth0.jwt.impl.PublicClaims
 import com.auth0.jwt.interfaces.{DecodedJWT, Verification}
 import com.nimbusds.jose.jwk.{ECKey, JWK, KeyType, RSAKey}
 import otoroshi.env.Env
-import otoroshi.gateway.Errors
+import otoroshi.gateway.{Errors, Retry}
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import org.opensaml.security.credential.criteria.impl.EvaluableX509CertSelectorCredentialCriterion
 import otoroshi.el.{GlobalExpressionLanguage, JwtExpressionLanguage}
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
@@ -26,6 +27,7 @@ import otoroshi.ssl.{DynamicSSLEngineProvider, PemUtils}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils
+import otoroshi.utils.http.Implicits.logger
 import otoroshi.utils.http.MtlsConfig
 
 import scala.collection.concurrent.TrieMap
@@ -393,8 +395,8 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
 }
 object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
 
-  val cache: TrieMap[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK])] =
-    new TrieMap[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK])]()
+  val cache: TrieMap[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK], Boolean)] =
+    new TrieMap[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK], Boolean)]()
 
   override def fromJson(json: JsValue): Either[Throwable, JWKSAlgoSettings] = {
     Try {
@@ -452,6 +454,47 @@ case class JWKSAlgoSettings(
     }
   }
 
+  def fetchJWKS(alg: String, kid: String, oldStop: Long, oldKeys: Map[String, com.nimbusds.jose.jwk.JWK])(implicit ec: ExecutionContext, env: Env): Future[Option[Algorithm]] = {
+    import otoroshi.utils.http.Implicits._
+    implicit val s = env.otoroshiScheduler
+    // val protocol = url.split("://").toSeq.headOption.getOrElse("http")
+    JWKSAlgoSettings.cache.put(url, (oldStop, oldKeys, true))
+    Retry.retry(10, delay = 20, ctx = s"try to fetch JWKS at '$url''") { _ =>
+      env.MtlsWs
+        .url(url, mtlsConfig)
+        .withRequestTimeout(timeout)
+        .withHttpHeaders(headers.toSeq: _*)
+        .withMaybeProxyServer(
+          proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.jwk))
+        )
+        .get()
+        .map { resp =>
+          JWKSAlgoSettings.cache.put(url, (oldStop, oldKeys, false))
+          val stop = System.currentTimeMillis() + ttl.toMillis
+          val obj = Json.parse(resp.body).as[JsObject]
+          (obj \ "keys").asOpt[JsArray] match {
+            case Some(values) => {
+              val keys = values.value.map { k =>
+                val jwk = JWK.parse(Json.stringify(k))
+                (jwk.getKeyID, jwk)
+              }.toMap
+              JWKSAlgoSettings.cache.put(url, (stop, keys, false))
+              keys.get(kid) match {
+                case Some(jwk) => algoFromJwk(alg, jwk)
+                case None => None
+              }
+            }
+            case None => None
+          }
+        }
+    }
+    .recover { case e =>
+      JWKSAlgoSettings.cache.put(url, (oldStop, oldKeys, false))
+      logger.error(s"Error while reading JWKS $url", e)
+      None
+    }
+  }
+
   override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
     Await.result(asAlgorithmF(mode)(env, env.otoroshiExecutionContext), timeout)
   }
@@ -463,48 +506,23 @@ case class JWKSAlgoSettings(
     mode match {
       case InputMode(alg, Some(kid)) => {
         JWKSAlgoSettings.cache.get(url) match {
-          case Some((stop, keys)) if stop > System.currentTimeMillis() => {
+          case Some((stop, keys, false)) if stop > System.currentTimeMillis() => {
             keys.get(kid) match {
               case Some(jwk) => FastFuture.successful(algoFromJwk(alg, jwk))
               case None      => FastFuture.successful(None)
             }
           }
-          case _                                                       => {
-            // val protocol = url.split("://").toSeq.headOption.getOrElse("http")
-            env.MtlsWs
-              .url(url, mtlsConfig)
-              .withRequestTimeout(timeout)
-              .withHttpHeaders(headers.toSeq: _*)
-              .withMaybeProxyServer(
-                proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.jwk))
-              )
-              .get()
-              .map { resp =>
-                val stop = System.currentTimeMillis() + ttl.toMillis
-                val obj  = Json.parse(resp.body).as[JsObject]
-                (obj \ "keys").asOpt[JsArray] match {
-                  case Some(values) => {
-                    val keys = values.value.map { k =>
-                      val jwk = JWK.parse(Json.stringify(k))
-                      (jwk.getKeyID, jwk)
-                    }.toMap
-                    JWKSAlgoSettings.cache.put(url, (stop, keys))
-                    keys.get(kid) match {
-                      case Some(jwk) => algoFromJwk(alg, jwk)
-                      case None      => None
-                    }
-                  }
-                  case None         => None
-                }
-              }
-              .recover { case e =>
-                logger.error(s"Error while reading JWKS $url", e)
-                None
-              }
+          case Some((stop, keys, false)) if stop <= System.currentTimeMillis() => fetchJWKS(alg, kid, stop, keys)
+          case Some((_, keys, true)) => {
+            keys.get(kid) match {
+              case Some(jwk) => FastFuture.successful(algoFromJwk(alg, jwk))
+              case None      => FastFuture.successful(None)
+            }
           }
+          case None => fetchJWKS(alg, kid, System.currentTimeMillis() + ttl.toMillis, Map.empty)
         }
       }
-      case _                         => FastFuture.successful(None)
+      case _ => FastFuture.successful(None)
     }
   }
 
