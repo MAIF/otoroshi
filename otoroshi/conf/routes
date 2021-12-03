@@ -1,5 +1,6 @@
 
 GET     /                                                     otoroshi.controllers.BackOfficeController.index
+GET     /robots.txt                                           otoroshi.controllers.BackOfficeController.robotTxt
 GET     /robot.txt                                            otoroshi.controllers.BackOfficeController.robotTxt
 GET     /error                                                otoroshi.controllers.BackOfficeController.error(message: Option[String])
 GET     /auth0error                                           otoroshi.controllers.AuthController.auth0error(error: Option[String], error_description: Option[String])
