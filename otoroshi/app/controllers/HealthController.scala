@@ -6,10 +6,11 @@ import otoroshi.cluster.{ClusterMode, MemberView}
 import otoroshi.env.Env
 import otoroshi.storage.{Healthy, Unhealthy, Unreachable}
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsString, JsValue, Json}
+import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Result}
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.syntax.implicits._
+
 import scala.concurrent.Future
 
 class HealthController(cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
@@ -142,31 +143,34 @@ class HealthController(cc: ControllerComponents)(implicit env: Env) extends Abst
 
       def transformToArray(input: String): JsValue = {
         val metrics = Json.parse(input)
-        metrics.as[JsObject].value.toSeq.foldLeft(Json.arr()) {
-          case (arr, (key, JsObject(value))) =>
-            arr ++ value.toSeq.foldLeft(Json.arr()) {
-              case (arr2, (key2, value2 @ JsObject(_))) =>
-                arr2 ++ Json.arr(value2 ++ Json.obj("name" -> key2, "type" -> key))
-              case (arr2, (key2, value2))               =>
-                arr2
-            }
-          case (arr, (key, value))           => arr
+        metrics match {
+          case JsObject(value) => value.toSeq.foldLeft(Json.arr()) {
+            case (arr, (key, JsObject(value))) =>
+              arr ++ value.toSeq.foldLeft(Json.arr()) {
+                case (arr2, (key2, value2@JsObject(_))) =>
+                  arr2 ++ Json.arr(value2 ++ Json.obj("name" -> key2.applyOnWithPredicate(_.endsWith(" {}"))(_.replace(" {}", "")), "type" -> key))
+                case (arr2, (key2, value2)) => arr2
+              }
+            case (arr, (key, value)) => arr
+          }
+          case a@JsArray(value) => a
         }
       }
 
       def fetchMetrics(): Result = {
+        val filter = req.getQueryString("filter")
         if (format.contains("old_json") || format.contains("old")) {
-          Ok(env.metrics.jsonExport(None)).as("application/json")
+          Ok(env.metrics.jsonExport(filter)).as("application/json")
         } else if (format.contains("json")) {
-          Ok(transformToArray(env.metrics.jsonExport(None))).as("application/json")
+          Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")
         } else if (format.contains("prometheus") || format.contains("prom")) {
-          Ok(env.metrics.prometheusExport(None)).as("text/plain")
+          Ok(env.metrics.prometheusExport(filter)).as("text/plain")
         } else if (req.accepts("application/json")) {
-          Ok(transformToArray(env.metrics.jsonExport(None))).as("application/json")
+          Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")
         } else if (req.accepts("application/prometheus")) {
-          Ok(env.metrics.prometheusExport(None)).as("text/plain")
+          Ok(env.metrics.prometheusExport(filter)).as("text/plain")
         } else {
-          Ok(transformToArray(env.metrics.jsonExport(None))).as("application/json")
+          Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")
         }
       }
 
