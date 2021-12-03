@@ -68,9 +68,9 @@ object JwtVerifierHelper {
         case "RS256" => Algorithm.RSA256(pkey.asInstanceOf[RSAPublicKey], null)
         case "RS384" => Algorithm.RSA384(pkey.asInstanceOf[RSAPublicKey], null)
         case "RS512" => Algorithm.RSA512(pkey.asInstanceOf[RSAPublicKey], null)
-        case "EC256" => Algorithm.ECDSA256(pkey.asInstanceOf[ECPublicKey], null)
-        case "EC384" => Algorithm.ECDSA384(pkey.asInstanceOf[ECPublicKey], null)
-        case "EC512" => Algorithm.ECDSA512(pkey.asInstanceOf[ECPublicKey], null)
+        case "ES256" => Algorithm.ECDSA256(pkey.asInstanceOf[ECPublicKey], null)
+        case "ES384" => Algorithm.ECDSA384(pkey.asInstanceOf[ECPublicKey], null)
+        case "ES512" => Algorithm.ECDSA512(pkey.asInstanceOf[ECPublicKey], null)
       }
     } else {
       algo match {
@@ -95,19 +95,19 @@ object JwtVerifierHelper {
             .generatePublic(new X509EncodedKeySpec(fromBase64(base64key)))
             .asInstanceOf[RSAPublicKey]
           Algorithm.RSA512(key, null)
-        case "EC256" =>
+        case "ES256" =>
           val key = KeyFactory
             .getInstance("EC")
             .generatePublic(new X509EncodedKeySpec(fromBase64(base64key)))
             .asInstanceOf[ECPublicKey]
           Algorithm.ECDSA256(key, null)
-        case "EC384" =>
+        case "ES384" =>
           val key = KeyFactory
             .getInstance("EC")
             .generatePublic(new X509EncodedKeySpec(fromBase64(base64key)))
             .asInstanceOf[ECPublicKey]
           Algorithm.ECDSA384(key, null)
-        case "EC512" =>
+        case "ES512" =>
           val key = KeyFactory
             .getInstance("EC")
             .generatePublic(new X509EncodedKeySpec(fromBase64(base64key)))

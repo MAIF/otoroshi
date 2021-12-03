@@ -446,9 +446,9 @@ case class JWKSAlgoSettings(
         }
       case ecKey: ECKey   =>
         alg match {
-          case "EC256" => Some(Algorithm.ECDSA256(ecKey.toECPublicKey, null))
-          case "EC384" => Some(Algorithm.ECDSA384(ecKey.toECPublicKey, null))
-          case "EC512" => Some(Algorithm.ECDSA512(ecKey.toECPublicKey, null))
+          case "ES256" => Some(Algorithm.ECDSA256(ecKey.toECPublicKey, null))
+          case "ES384" => Some(Algorithm.ECDSA384(ecKey.toECPublicKey, null))
+          case "ES512" => Some(Algorithm.ECDSA512(ecKey.toECPublicKey, null))
         }
       case _              => None
     }
@@ -470,21 +470,26 @@ case class JWKSAlgoSettings(
         .get()
         .map { resp =>
           JWKSAlgoSettings.cache.put(url, (oldStop, oldKeys, false))
-          val stop = System.currentTimeMillis() + ttl.toMillis
-          val obj = Json.parse(resp.body).as[JsObject]
-          (obj \ "keys").asOpt[JsArray] match {
-            case Some(values) => {
-              val keys = values.value.map { k =>
-                val jwk = JWK.parse(Json.stringify(k))
-                (jwk.getKeyID, jwk)
-              }.toMap
-              JWKSAlgoSettings.cache.put(url, (stop, keys, false))
-              keys.get(kid) match {
-                case Some(jwk) => algoFromJwk(alg, jwk)
-                case None => None
+          if (resp.status != 200) {
+            logger.error(s"Error while reading JWKS at '$url' - ${resp.status} - ${resp.body}")
+            None
+          } else {
+            val stop = System.currentTimeMillis() + ttl.toMillis
+            val obj = Json.parse(resp.body).as[JsObject]
+            (obj \ "keys").asOpt[JsArray] match {
+              case Some(values) => {
+                val keys = values.value.map { k =>
+                  val jwk = JWK.parse(Json.stringify(k))
+                  (jwk.getKeyID, jwk)
+                }.toMap
+                JWKSAlgoSettings.cache.put(url, (stop, keys, false))
+                keys.get(kid) match {
+                  case Some(jwk) => algoFromJwk(alg, jwk)
+                  case None => None
+                }
               }
+              case None => None
             }
-            case None => None
           }
         }
     }
