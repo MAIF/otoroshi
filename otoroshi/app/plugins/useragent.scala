@@ -23,7 +23,7 @@ object UserAgentHelper {
 
   private val logger = Logger("otoroshi-plugins-user-agent-helper")
 
-  private val ec                       = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
+  private val ec                       = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
   private val parserInitializing       = new AtomicBoolean(false)
   private val parserInitializationDone = new AtomicBoolean(false)
   private val parserRef                = new AtomicReference[UserAgentParser]()
