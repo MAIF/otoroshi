@@ -2331,7 +2331,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   def cleanupFastLookups()(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[Long]
 
   @inline
-  def matchAllHeaders(sr: ServiceDescriptor, query: ServiceDescriptorQuery): Boolean = {
+  def matchAllHeaders(sr: ServiceDescriptor, query: ServiceDescriptorQuery)(implicit env: Env): Boolean = env.metrics.withTimer("otoroshi.core.proxy.services.match-headers") {
     val headersSeq: Map[String, String] = query.matchingHeaders.filterNot(_._1.trim.isEmpty)
     val allHeadersMatched: Boolean      =
       sr.matchingHeaders.filterNot(_._1.trim.isEmpty).forall { case (key, value) =>
@@ -2350,7 +2350,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   )(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Seq[ServiceDescriptor]] = {
+  ): Future[Seq[ServiceDescriptor]] = env.metrics.withTimerAsync("otoroshi.core.proxy.services.sort") {
 
     /*services.exists(_.hasNoRoutingConstraints) match {
       case true => {
@@ -2471,7 +2471,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   def matchApiKeyRouting(sr: ServiceDescriptor, requestHeader: RequestHeader, attrs: TypedMap)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Boolean] = {
+  ): Future[Boolean] = env.metrics.withTimerAsync("otoroshi.core.proxy.services.match-apikey-routing") {
 
     lazy val shouldSearchForAndApiKey =
       if (sr.isPrivate && sr.authConfigRef.isDefined && !sr.isExcludedFromSecurity(requestHeader.path)) {
@@ -2504,7 +2504,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   def rawFind(query: ServiceDescriptorQuery, requestHeader: RequestHeader, attrs: TypedMap)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Seq[ServiceDescriptor]] = {
+  ): Future[Seq[ServiceDescriptor]] = env.metrics.withTimerAsync("otoroshi.core.proxy.services.raw-find")  {
     ServiceDescriptorDataStore.logger.debug("Full scan of services, should not pass here anymore ...")
     // val redisCli = this.asInstanceOf[KvServiceDescriptorDataStore].redisLike
     // val all = if (redisCli.optimized) {
@@ -2535,7 +2535,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   def find(query: ServiceDescriptorQuery, requestHeader: RequestHeader, attrs: TypedMap)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Option[ServiceDescriptor]] = {
+  ): Future[Option[ServiceDescriptor]] = env.metrics.withTimerAsync("otoroshi.core.proxy.services.find") {
     val start = System.currentTimeMillis()
     query.exists().flatMap {
       case true  => {
