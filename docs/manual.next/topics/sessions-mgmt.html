@@ -245,11 +245,57 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#sessions-management" name="sessions-management" class="anchor"><span class="anchor-link"></span></a>Sessions management</h1>
+<h2><a href="#admins" name="admins" class="anchor"><span class="anchor-link"></span></a>Admins</h2>
+<p>All logged users to an Otoroshi instance are administrators. An user session is created for each sucessfull connection to the UI. </p>
+<p>These sessions are listed in the <code>Admin users sessions</code> (available at this location of your instance <em>/bo/dashboard/sessions/admin</em>).</p>
+<p>An admin user session is composed of: </p>
+<ul>
+  <li><code>name</code>: the name of the connected user</li>
+  <li><code>email</code>: the unique email</li>
+  <li><code>Created at</code>: the creation date of the user session</li>
+  <li><code>Expires at</code>: date until the user session is drop</li>
+  <li><code>Profile</code>: user profile, at JSON format, containing name, email and others linked metadatas</li>
+  <li><code>Rights</code>: list of rules to authorize the connected user on each tenant and teams.</li>
+  <li><code>Discard session</code>: action to kill a session. On click, a modal will appear with the session ID</li>
+</ul>
+<p>In the <code>Admin users sessions</code> page, you have two more actions:</p>
+<ul>
+  <li><code>Discard all sessions</code>: kills all current sessions (including the session of the owner of this action)</li>
+  <li><code>Discard old sessions</code>: kill all outdated sessions</li>
+</ul>
+<h2><a href="#private-apps" name="private-apps" class="anchor"><span class="anchor-link"></span></a>Private apps</h2>
+<p>All logged users to a protected application has an private user session.</p>
+<p>These sessions are listed in the <code>Private apps users sessions</code> (available at this location of your instance <em>/bo/dashboard/sessions/private</em>).</p>
+<p>An private user session is composed of: </p>
+<ul>
+  <li><code>name</code>: the name of the connected user</li>
+  <li><code>email</code>: the unique email</li>
+  <li><code>Created at</code>: the creation date of the user session</li>
+  <li><code>Expires at</code>: date until the user session is drop</li>
+  <li><code>Profile</code>: user profile, at JSON format, containing name, email and others linked metadatas</li>
+  <li><code>Meta.</code>: list of metadatas added by the authentication module.</li>
+  <li><code>Tokens</code>: list of tokens received from the identity provider used. In the case of a memory authentication, this part will keep empty.</li>
+  <li><code>Discard session</code>: action to kill a session. On click, a modal will appear with the session ID</li>
+</ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../topics/otoroshi-protocol.html">The Otoroshi communication protocol</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/sessions-mgmt.html#sessions-management" class="header">Sessions management</a>
+  <ul>
+    <li><a href="../topics/sessions-mgmt.html#admins" class="header">Admins</a></li>
+    <li><a href="../topics/sessions-mgmt.html#private-apps" class="header">Private apps</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 
