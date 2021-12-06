@@ -369,8 +369,7 @@ backend back_http_nodes
 EOF
 </code></pre>
 <p>Once created, call two times the service. If all is working, the header received by the downstream service will have <code>worker-1</code> and <code>worker-2</code> as value.</p>
-<pre class="prettyprint"><code class="language-sh">curl http://api.oto.tools:8080
-
+<pre class="prettyprint"><code class="language-sh">curl &#39;http://api.oto.tools:8080&#39;
 ## Response headers
 {
     ...
