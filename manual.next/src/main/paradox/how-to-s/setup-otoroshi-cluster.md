@@ -144,8 +144,7 @@ EOF
 Once created, call two times the service. If all is working, the header received by the downstream service will have `worker-1` and `worker-2` as value.
 
 ```sh
-curl http://api.oto.tools:8080
-
+curl 'http://api.oto.tools:8080'
 ## Response headers
 {
     ...

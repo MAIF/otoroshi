@@ -459,7 +459,7 @@ case class JWKSAlgoSettings(
     implicit val s = env.otoroshiScheduler
     // val protocol = url.split("://").toSeq.headOption.getOrElse("http")
     JWKSAlgoSettings.cache.put(url, (oldStop, oldKeys, true))
-    Retry.retry(10, delay = 20, ctx = s"try to fetch JWKS at '$url''") { _ =>
+    Retry.retry(10, delay = 20, ctx = s"try to fetch JWKS at '$url'") { _ =>
       env.MtlsWs
         .url(url, mtlsConfig)
         .withRequestTimeout(timeout)
