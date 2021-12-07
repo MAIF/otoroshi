@@ -1,4 +1,3 @@
-
 # How to's
 
 in this section, we will explain some mainstream Otoroshi usage scenario's 
@@ -18,6 +17,7 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * @ref:[Secure an app with jwt verifiers](./secure-an-app-with-jwt-verifiers.md)
 * @ref:[Secure the communication between a downstream app and Otoroshi](./secure-the-communication-between-a-downstream-app-and-otoroshi.md)
 * @ref:[TLS termination using own certificates](./tls-termination-using-own-certificates.md)
+* @ref:[Use the resources loader](./resources-loader.md)
 
 @@@ index
 
@@ -36,5 +36,6 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * [Secure an app with jwt verifiers](./secure-an-app-with-jwt-verifiers.md)
 * [Secure the communication between a downstream app and Otoroshi](./secure-the-communication-between-a-downstream-app-and-otoroshi.md)
 * [TLS termination using own certificates](./tls-termination-using-own-certificates.md)
+* [Use the resources loader](./resources-loader.md)
 
 @@@
