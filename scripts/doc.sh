@@ -123,6 +123,7 @@ buildReferenceConf () {
   echo "\n\n" >> $LOCATION/manual.next/src/main/paradox/snippets/reference.conf
   cat $LOCATION/otoroshi/conf/base.conf >> $LOCATION/manual.next/src/main/paradox/snippets/reference.conf
   node config.js
+  node indexer.js
 }
 
 case "${1}" in

@@ -124,3 +124,7 @@ for worker
 java -Dhttp.port=8092 -Dhttps.port=9092 -Dotoroshi.cluster.mode=worker \
   -Dotoroshi.cluster.leader.urls.0=http://127.0.0.1:8091 -jar otoroshi.jar
 ```
+
+## Setup a cluster by example
+
+if you want to see how to setup an otoroshi cluster, just check @ref:[the clustering tutorial](../how-to-s/setup-otoroshi-cluster.md)

@@ -23,7 +23,7 @@ java \
   -Dhttp.port=8092 \
   -Dhttps.port=9092 \
   -Dotoroshi.cluster.mode=worker \
-  -Dotoroshi.cluster.leader.urls.0=http://127.0.0.1:8091 -jar otoroshi.jar
+  -Dotoroshi.cluster.leader.urls.0='http://127.0.0.1:8091' -jar otoroshi.jar
 ```
 
 The second worker will listen on the `:8083/:8093` ports
@@ -33,7 +33,7 @@ java \
   -Dhttp.port=8093 \
   -Dhttps.port=9093 \
   -Dotoroshi.cluster.mode=worker \
-  -Dotoroshi.cluster.leader.urls.0=http://127.0.0.1:8091 -jar otoroshi.jar
+  -Dotoroshi.cluster.leader.urls.0='http://127.0.0.1:8091' -jar otoroshi.jar
 ```
 
 Once launched, you can navigate to the @link:[cluster view](http://otoroshi.oto.tools:8091/bo/dashboard/cluster) { open=new }. If all is configured, you will see the leader, the 2 workers and a bunch of informations about each instance.

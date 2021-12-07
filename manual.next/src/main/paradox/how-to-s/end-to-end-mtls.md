@@ -3,7 +3,7 @@
 If you want to use MTLS on otoroshi, you first need to enable it. It is not enabled by default as it will make TLS handshake way heavier. 
 To enable it just change the following config :
 
-```
+```sh
 play.server.https.wantClientAuth=true
 # or
 # play.server.https.wantClientNeed=true
@@ -12,7 +12,7 @@ otoroshi.ssl.fromOutside.clientAuth=None|Want|Need
 
 or using env. variables
 
-```
+```sh
 HTTPS_WANT_CLIENT_AUTH=true 
 # HTTPS_NEED_CLIENT_AUTH=true 
 SSL_OUTSIDE_CLIENT_AUTH=None|Want|Need
@@ -170,7 +170,7 @@ node ./backend.js
 now you can try your server with
 
 ```sh
-curl --cacert ./ca/ca-backend.cer https://api.backend.oto.tools:8444/
+curl --cacert ./ca/ca-backend.cer 'https://api.backend.oto.tools:8444/'
 ```
 
 This should output :
@@ -207,12 +207,13 @@ you can test your new server with
 
 ```sh
 curl \
---cacert ./ca/ca-backend.cer \
---cert ./client/_.backend.oto.tools.pem \
---key ./client/_.backend.oto.tools.key https://api.backend.oto.tools:8444/
+  --cacert ./ca/ca-backend.cer \
+  --cert ./client/_.backend.oto.tools.pem \
+  --key ./client/_.backend.oto.tools.key 'https://api.backend.oto.tools:8444/'
 ```
 
-This should output :
+the output should be :
+
 ```json
 { "message": "Hello World!" }
 ```
@@ -223,10 +224,10 @@ Download the latest version of the Otoroshi jar and run it like
 
 ```sh
  java \
- -Dapp.adminPassword=password \
- -Dplay.server.https.wantClientAuth=true \
- -Dotoroshi.ssl.fromOutside.clientAuth=Want \
- -jar -Dapp.storage=file otoroshi.jar
+  -Dapp.adminPassword=password \
+  -Dplay.server.https.wantClientAuth=true \
+  -Dotoroshi.ssl.fromOutside.clientAuth=Want \
+  -jar -Dapp.storage=file otoroshi.jar
 
 [info] otoroshi-env - Admin API exposed on http://otoroshi-api.oto.tools:8080
 [info] otoroshi-env - Admin UI  exposed on http://otoroshi.oto.tools:8080
@@ -249,7 +250,7 @@ Once logged in, navigate to the services pages and create a new item.
 and test it
 
 ```sh
-curl http://api.frontend.oto.tools:8080/
+curl 'http://api.frontend.oto.tools:8080/'
 ```
 
 This should output :
@@ -264,8 +265,12 @@ We have to add the client certificate for `https://api.backend.oto.tools` to Oto
 and retry the following curl command 
 
 ```sh
-curl http://api.frontend.oto.tools:8080/
-# the output should be: {"message":"Hello World!"}
+curl 'http://api.frontend.oto.tools:8080/'
+```
+the output should be
+
+```json
+{"message":"Hello World!"}
 ```
 
 now we have to expose `https://api.frontend.oto.tools:8443` using otoroshi. Go to http://otoroshi.oto.tools:8080/bo/dashboard/certificates and create a new item. Copy and paste the content of `./server/_.frontend.oto.tools.cer` and `./server/_.frontend.oto.tools.key` respectively in `Certificate full chain` and `Certificate private key`.
@@ -273,8 +278,12 @@ now we have to expose `https://api.frontend.oto.tools:8443` using otoroshi. Go t
 and try the following command
 
 ```sh
-curl --cacert ./ca/ca-frontend.cer https://api.frontend.oto.tools:8443/
-# the output should be: {"message":"Hello World!"}
+curl --cacert ./ca/ca-frontend.cer 'https://api.frontend.oto.tools:8443/'
+```
+the output should be
+
+```json
+{"message":"Hello World!"}
 ```
 
 now we have to enforce the fact that we want client certificate for `api.frontend.oto.tools`. To do that, we have to add a `Client Validator Only` plugin on the `api.frontend.oto.tools` service. Scroll to the last section called `Plugins` and select the `Client validator only` in the list.
@@ -282,15 +291,26 @@ now we have to enforce the fact that we want client certificate for `api.fronten
 now if you retry 
 
 ```sh
-curl --cacert ./ca/ca-frontend.cer https://api.frontend.oto.tools:8443/
-# the output should be: {"Otoroshi-Error":"bad request"}
+curl --cacert ./ca/ca-frontend.cer 'https://api.frontend.oto.tools:8443/'
+```
+the output should be
+
+```json
+{"Otoroshi-Error":"bad request"}
 ```
 
 you should get an error because no client cert. is passed with the request. But if you pass the `./client/_.frontend.oto.tools.csr` client cert and the key in your curl call
 
 ```sh
-curl https://api.frontend.oto.tools:8443 --cacert ./ca/ca-frontend.cer --cert ./client/_.frontend.oto.tools.pem --key ./client/_.frontend.oto.tools.key
-# the output should be: {"message":"Hello World!"}
+curl 'https://api.frontend.oto.tools:8443' \
+  --cacert ./ca/ca-frontend.cer \
+  --cert ./client/_.frontend.oto.tools.pem \
+  --key ./client/_.frontend.oto.tools.key
+```
+the output should be
+
+```json
+{"message":"Hello World!"}
 ```
 
 ### Client certificate matching plugin
@@ -302,8 +322,15 @@ Scroll to the `Plugins` section and select the `Client certificate matching` plu
 Save the service and retry your call again.
 
 ```sh
-curl https://api.frontend.oto.tools:8443 --cacert ./ca/ca-frontend.cer --cert ./client/_.frontend.oto.tools.pem --key ./client/_.frontend.oto.tools.key
-# the output should be: {"Otoroshi-Error":"bad request"}
+curl 'https://api.frontend.oto.tools:8443' \
+  --cacert ./ca/ca-frontend.cer \
+  --cert ./client/_.frontend.oto.tools.pem \
+  --key ./client/_.frontend.oto.tools.key
+```
+the output should be
+
+```json
+{"Otoroshi-Error":"bad request"}
 ```
 
 Our client certificate is not matched by Otoroshi. We have to add the subject DN in the configuration of the `Client certificate matching` plugin to authorize it.
@@ -325,8 +352,15 @@ Our client certificate is not matched by Otoroshi. We have to add the subject DN
 Save the service and retry your call again.
 
 ```sh
-curl https://api.frontend.oto.tools:8443 --cacert ./ca/ca-frontend.cer --cert ./client/_.frontend.oto.tools.pem --key ./client/_.frontend.oto.tools.key
-# the output should be: {"message":"Hello World!"}
+curl 'https://api.frontend.oto.tools:8443' \
+  --cacert ./ca/ca-frontend.cer \
+  --cert ./client/_.frontend.oto.tools.pem \
+  --key ./client/_.frontend.oto.tools.key
+```
+the output should be
+
+```json
+{"message":"Hello World!"}
 ```
 
 
