@@ -96,6 +96,8 @@ from the root of your repository run
 sh ./scripts/doc.sh all
 ```
 
+The documentation is located at `manual/target/paradox/site/main/`
+
 ## Format the sources
 
 from the root of your repository run

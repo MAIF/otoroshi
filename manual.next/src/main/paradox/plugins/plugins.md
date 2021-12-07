@@ -1,7 +1,7 @@
 # Otoroshi plugins system
 
-@@@ warning
-TODO
+@@@ note
+TODO: This section is being written, thanks for your patience :)
 @@@
 
 ## Available plugins

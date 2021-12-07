@@ -105,10 +105,7 @@ All verifiers has the following properties:
 #### Default JWT token
 
 * `Strict`: if token is already present, the call will fail
-* `Default value`: list of claims of the generated token. These fields support raw values or language expressions. See the documentation on the expression language 
-@@@ warning
-TODO - set the link to the expression language documentation)
-@@@
+* `Default value`: list of claims of the generated token. These fields support raw values or language expressions. See the documentation about @ref:[the expression language](../topics/expression-language.md)
 
 #### Verify JWT token
 
