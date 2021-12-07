@@ -243,7 +243,28 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#setup-otoroshi" name="setup-otoroshi" class="anchor"><span class="anchor-link"></span></a>Setup Otoroshi</h1>
-<h2><a href="#environnement-variables" name="environnement-variables" class="anchor"><span class="anchor-link"></span></a>Environnement variables</h2><div class="callout note "><div class="callout-title">Note</div>
+<h2><a href="#choose-your-datastore" name="choose-your-datastore" class="anchor"><span class="anchor-link"></span></a>Choose your datastore</h2>
+<p>Right now, Otoroshi supports multiple datastore. You can choose one datastore over another depending on your use case.</p><div class="plugin platform">
+<h2><a href="#in-memory" name="in-memory" class="anchor"><span class="anchor-link"></span></a>In memory</h2>
+<p>The <strong>in-memory</strong> datastore is kind of interesting. It can be used for testing purposes, but it is also a good candidate for production because of its fastness.</p>
+<img src="../imgs/inmemory.png" />
+<p><a href="../getting-started.html">Start with</a></p></div><div class="plugin platform">
+<h2><a href="#redis" name="redis" class="anchor"><span class="anchor-link"></span></a>Redis</h2>
+<p>The <strong>redis</strong> datastore is quite nice when you want to easily deploy several Otoroshi instances. If you need a datastore more scalable than redis, then you can use the <strong>postgresql</strong> or <strong>cassandra</strong> datastore.</p>
+<img src="../imgs/redis.png" />
+<p><a href="https://redis.io/topics/quickstart" title="Documentation">Documentation</a></p></div><div class="plugin platform">
+<h2><a href="#cassandra" name="cassandra" class="anchor"><span class="anchor-link"></span></a>Cassandra</h2>
+<p>Experimental support, should be used in cluster mode for leaders</p>
+<img src="../imgs/cassandra.png" />
+<p><a href="https://cassandra.apache.org/doc/latest/cassandra/getting_started/installing.html" title="Documentation">Documentation</a></p></div><div class="plugin platform">
+<h2><a href="#postgresql" name="postgresql" class="anchor"><span class="anchor-link"></span></a>Postgresql</h2>
+<p>Or any postgresql compatible databse like cockroachdb for instance (experimental support, should be used in cluster mode for leaders)</p>
+<img src="../imgs/postgres.png" />
+<p><a href="https://www.postgresql.org/docs/10/tutorial-install.html" title="Documentation">Documentation</a></p></div><div class="plugin platform">
+<h2><a href="#filedb" name="filedb" class="anchor"><span class="anchor-link"></span></a>FileDB</h2>
+<p>The <strong>filedb</strong> datastore is pretty handy for testing purposes, but is not supposed to be used in production mode. Not suitable for production usage.</p>
+<img src="../imgs/filedb.png" /></div><div class="break">
+<h2><a href="#environnement-variables" name="environnement-variables" class="anchor"><span class="anchor-link"></span></a>Environnement variables</h2></div><div class="callout note "><div class="callout-title">Note</div>
 <p>TODO: This section is being written, thanks for your patience :)</p></div>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../entities/index.html">Main entities</a></p>
@@ -257,6 +278,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../install/setup-otoroshi.html#setup-otoroshi" class="header">Setup Otoroshi</a>
   <ul>
+    <li><a href="../install/setup-otoroshi.html#choose-your-datastore" class="header">Choose your datastore</a></li>
+    <li><a href="../install/setup-otoroshi.html#in-memory" class="header">In memory</a></li>
+    <li><a href="../install/setup-otoroshi.html#redis" class="header">Redis</a></li>
+    <li><a href="../install/setup-otoroshi.html#cassandra" class="header">Cassandra</a></li>
+    <li><a href="../install/setup-otoroshi.html#postgresql" class="header">Postgresql</a></li>
+    <li><a href="../install/setup-otoroshi.html#filedb" class="header">FileDB</a></li>
     <li><a href="../install/setup-otoroshi.html#environnement-variables" class="header">Environnement variables</a></li>
   </ul></li>
 </ul>
