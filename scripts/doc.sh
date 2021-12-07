@@ -107,10 +107,22 @@ buildNext () {
   rm -rf $LOCATION/docs/manual.next
   cp -r $LOCATION/manual.next/target/paradox/site/main $LOCATION/docs
   mv $LOCATION/docs/main $LOCATION/docs/manual.next
+  # rm $LOCATION/manual.next/src/main/paradox/snippets/reference.conf
+  # rm $LOCATION/manual.next/src/main/paradox/snippets/reference-env.conf
+  # touch $LOCATION/manual.next/src/main/paradox/snippets/reference.conf
+  # touch $LOCATION/manual.next/src/main/paradox/snippets/reference-env.conf
+}
+
+buildReferenceConf () {
+  cd $LOCATION/manual.next
   rm $LOCATION/manual.next/src/main/paradox/snippets/reference.conf
   rm $LOCATION/manual.next/src/main/paradox/snippets/reference-env.conf
   touch $LOCATION/manual.next/src/main/paradox/snippets/reference.conf
   touch $LOCATION/manual.next/src/main/paradox/snippets/reference-env.conf
+  cat $LOCATION/otoroshi/conf/application.conf >> $LOCATION/manual.next/src/main/paradox/snippets/reference.conf
+  echo "\n\n" >> $LOCATION/manual.next/src/main/paradox/snippets/reference.conf
+  cat $LOCATION/otoroshi/conf/base.conf >> $LOCATION/manual.next/src/main/paradox/snippets/reference.conf
+  node config.js
 }
 
 case "${1}" in
@@ -137,6 +149,9 @@ case "${1}" in
   cleanbuild)
     clean
     build
+    ;;
+  ref) 
+    buildReferenceConf
     ;;
   *)
     build_schemas

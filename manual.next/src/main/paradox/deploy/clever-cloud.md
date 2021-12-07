@@ -4,7 +4,7 @@ Now you want to use Otoroshi on Clever Cloud. Otoroshi has been designed and cre
 
 ## Create an Otoroshi instance on CleverCloud
 
-If you want to customize the configuration @ref:[use env. variables](../install/setup-otoroshi.md#environnement-variables), you can use [the example provided below](#example-of-clevercloud-env-variables)
+If you want to customize the configuration @ref:[use env. variables](../install/setup-otoroshi.md#configuration-with-env-variables), you can use [the example provided below](#example-of-clevercloud-env-variables)
 
 Create a new CleverCloud app based on a clevercloud git repo (not empty) or a github project of your own (not empty).
 

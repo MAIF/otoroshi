@@ -16,3 +16,7 @@ To visualize and edit the list of organizations, you can navigate to your instan
 Once on the page, you can create a new item, edit an existing organization or delete an existing one.
 
 > When an organization is deleted, the resources associated are not deleted. On the other hand, the organization and the team of associated resources are let empty.
+
+@@@ warning
+TODO: explain entities hierarchy with organizations and teams
+@@@
