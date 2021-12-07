@@ -16,10 +16,13 @@ You can found a concrete example @ref:[here](../how-to-s/secure-with-apikey.md)
 * `Authorized on`: the groups/services linked to this api key
 
 ### Metadata and tags
+
 * `Tags`: tags attached to the api key
 * `Metadata`: metadata attached to the api key
 
 ### Automatic secret rotation
+
+API can handle automatic secret rotation by themselves. When enabled, the rotation changes the secret every `Rotation every` duration. During the `Grace period` both secret will be usable.
  
 * `Enabled`: enabled automatic apikey secret rotation
 * `Rotation every`: rotate secrets every
@@ -50,7 +53,7 @@ You can found a concrete example @ref:[here](../how-to-s/secure-with-apikey.md)
 
 Daily and monthly quotas are based on the following rules :
 
-* daily quota is computed between 00h00:00.000 and 23h59:59.999
+* daily quota is computed between 00h00:00.000 and 23h59:59.999 of the current day
 * monthly qutoas is computed between the first day of the month at 00h00:00.000 and the last day of the month at 23h59:59.999
 @@@
 

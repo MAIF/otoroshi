@@ -12,7 +12,7 @@ At some point, we tried to write a small prototype to explore what could be our 
 
 ## Philosophy 
 
-Every OSS product build at <a href="https://www.maif.fr/" target="_blank">MAIF</a> like <a href="https://maif.github.io/izanami/" target="_blank">Izanami</a> follow a common philosophy. 
+Every OSS product build at <a href="https://www.maif.fr/" target="_blank">MAIF</a> like <a href="https://maif.github.io/daikoku/" target="_blank">Daikoku</a> or <a href="https://maif.github.io/izanami/" target="_blank">Izanami</a> follow a common philosophy. 
 
 * the services or API provided should be technology agnostic.
 * http first: http is the right answer to the previous quote   

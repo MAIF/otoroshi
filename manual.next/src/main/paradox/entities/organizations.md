@@ -5,7 +5,8 @@ The resources of Otoroshi are grouped by `Organization`. This the most high leve
 An organization have a unique `id`, a `name` and a `description`. As all Otoroshi resources, an Organization have a list of tags and metadata associated.
 
 For example, you can use the organizations as a mean of :
-* to seperate resources by `entity` of you enterprise
+
+* to seperate resources by services or entities in your enterprise
 * to split internal and external usage of the resources (it's useful when you have a list of service deployed in your compagny and another deployed by yours partners)
 
 ## Access to the list of organizations

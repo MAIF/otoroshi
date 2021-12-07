@@ -61,7 +61,6 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="active page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
-    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -171,7 +170,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="active page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
-    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -267,7 +265,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>Group duration</code>: waiting time before sending the group of events. If the group size is reached before the group duration, the events will be instantly sent</li>
 </ul>
 <p>For the last part, the <code>Exporter configuration</code> will be detail individually.</p>
+<h2><a href="#matching-and-projections" name="matching-and-projections" class="anchor"><span class="anchor-link"></span></a>Matching and projections</h2><div class="callout warning "><div class="callout-title">Warning</div>
+<p>TODO: this section needs to be written</p></div>
 <h2><a href="#elastic" name="elastic" class="anchor"><span class="anchor-link"></span></a>Elastic</h2>
+<p>With this kind of exporter, every matching event will be sent to an elastic cluster (in batch). It is quite useful and can be used in combination with <a href="./global-config.html#analytics-elastic-dashboard-datasource-read-">elastic read in global config</a></p>
 <ul>
   <li><code>Cluster URI</code>: Elastic cluster URI</li>
   <li><code>Index</code>: Elastic index</li>
@@ -382,6 +383,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../entities/data-exporters.html#data-exporters" class="header">Data exporters</a>
   <ul>
     <li><a href="../entities/data-exporters.html#common-fields" class="header">Common fields</a></li>
+    <li><a href="../entities/data-exporters.html#matching-and-projections" class="header">Matching and projections</a></li>
     <li><a href="../entities/data-exporters.html#elastic" class="header">Elastic</a></li>
     <li><a href="../entities/data-exporters.html#webhook" class="header">Webhook</a></li>
     <li><a href="../entities/data-exporters.html#pulsar" class="header">Pulsar</a></li>

@@ -61,7 +61,6 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
-    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -171,7 +170,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
-    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -244,7 +242,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#main-entities" name="main-entities" class="anchor"><span class="anchor-link"></span></a>Main entities</h1>
-<p>in this section, we will pass through all the main Otoroshi entities</p><div class="plugin entities">
+<p>in this section, we will pass through all the main Otoroshi entities. Otoroshi entities are the main items stored in otoroshi datastore that will be used to configure routing, authentiction, etc.</p>
+<p>Any entity has the following properties</p>
+<ul>
+  <li><code>location</code> or <code>_loc</code>: the location of the entity (organization and team)</li>
+  <li><code>id</code>: the id of the entity (except for apikeys)</li>
+  <li><code>name</code>: the name of the entity</li>
+  <li><code>description</code>: the description of the entity (optional)</li>
+  <li><code>tags</code>: free tags that you can put on any entity to help you manage it, automate it, etc.</li>
+  <li><code>metadata</code>: free key/value tuples that you can put on any entity to help you manage it, automate it, etc.</li>
+</ul><div class="plugin entities">
 <img src="../imgs/entities-groups.png">
 <div>
 <span>Organizations</span>
@@ -316,13 +323,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span>Scripts</span>
 <span></span>
 </div>
-<p><a href="scripts.html">View</a></p></div><div class="plugin entities">
-<img src="../imgs/entities-groups.png">
-<div>
-<span>Plugins</span>
-<span>Improve your services with plugins</span>
-</div>
-<p><a href="plugins.html">View</a></p></div>
+<p><a href="scripts.html">View</a></p></div>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../entities/organizations.html">Organizations</a></p>
 </div>

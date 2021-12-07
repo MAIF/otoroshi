@@ -16,3 +16,6 @@ Once on the page, you can create a new item, edit an existing team or delete an 
 
 > When a team is deleted, the resources associated are not deleted. On the other hand, the team of associated resources is let empty.
 
+@@@ warning
+TODO: explain entities hierarchy with organizations and teams
+@@@

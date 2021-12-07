@@ -1,7 +1,16 @@
 
 # Main entities
 
-in this section, we will pass through all the main Otoroshi entities
+in this section, we will pass through all the main Otoroshi entities. Otoroshi entities are the main items stored in otoroshi datastore that will be used to configure routing, authentiction, etc.
+
+Any entity has the following properties
+
+* `location` or `_loc`: the location of the entity (organization and team)
+* `id`: the id of the entity (except for apikeys)
+* `name`: the name of the entity
+* `description`: the description of the entity (optional)
+* `tags`: free tags that you can put on any entity to help you manage it, automate it, etc.
+* `metadata`: free key/value tuples that you can put on any entity to help you manage it, automate it, etc.
 
 @@@div { .plugin .entities }
 <img src="../imgs/entities-groups.png">
@@ -111,15 +120,6 @@ in this section, we will pass through all the main Otoroshi entities
 @ref:[View](./scripts.md)
 @@@
 
-@@@div { .plugin .entities }
-<img src="../imgs/entities-groups.png">
-<div>
-<span>Plugins</span>
-<span>Improve your services with plugins</span>
-</div>
-@ref:[View](./plugins.md)
-@@@
-
 @@@ index
 
 * [Organizations](./organizations.md)
@@ -133,7 +133,6 @@ in this section, we will pass through all the main Otoroshi entities
 * [JWT verifiers](./jwt-verifiers.md)
 * [Data exporters](./data-exporters.md)
 * [Scripts](./scripts.md)
-* [Plugins](./plugins.md)
 * [TCP services](./tcp-services.md)
 
 @@@

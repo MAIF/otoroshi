@@ -60,7 +60,15 @@ The last possiblity is to retrieve a sub-object of an event. Let's say we want t
   
 For the last part, the `Exporter configuration` will be detail individually.
 
+## Matching and projections
+
+@@@ warning
+TODO: this section needs to be written
+@@@
+
 ## Elastic
+
+With this kind of exporter, every matching event will be sent to an elastic cluster (in batch). It is quite useful and can be used in combination with [elastic read in global config](./global-config.html#analytics-elastic-dashboard-datasource-read-)
 
 * `Cluster URI`: Elastic cluster URI
 * `Index`: Elastic index 

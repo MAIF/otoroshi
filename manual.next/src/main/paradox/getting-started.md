@@ -62,16 +62,13 @@ curl http://myapi.oto.tools:8080 -u my-first-apikey-id:my-first-apikey-secret
   "method": "GET",
   "path": "/",
   "headers": {
-    "host": "mirror.opunmaif.io",
+    "host": "mirror.otoroshi.io",
     "accept": "*/*",
     "user-agent": "curl/7.64.1",
     "authorization": "Basic bXktZmlyc3QtYXBpLWtleS1pZDpteS1maXJzdC1hcGkta2V5LXNlY3JldA==",
-    "opun-proxied-host": "mirror.otoroshi.io",
     "otoroshi-request-id": "1465298507974836306",
     "otoroshi-proxied-host": "myapi.oto.tools:8080",
-    "opun-gateway-request-id": "1465298508335550350",
     "otoroshi-request-timestamp": "2021-11-29T13:36:02.888+01:00",
-    "opun-gateway-request-timestamp": "2021-11-29T12:36:02.977+00:00"
   },
   "body": ""
 }
