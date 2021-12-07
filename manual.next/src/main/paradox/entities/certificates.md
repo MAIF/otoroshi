@@ -1,6 +1,6 @@
 # Certificates
 
-All generated and imported certificates are listed in the **bo/dashboard/certificates** page.
+All generated and imported certificates are listed in the @link:[/bo/dashboard/certificates](http://otoroshi.oto.tools:8080/bo/dashboard/certificates) page. All those certificates can be used to serve traffic with TLS, perform mTLS calls, sign and verify JWT tokens.
 
 The list of available actions are:
 
