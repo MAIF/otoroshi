@@ -1,8 +1,6 @@
 # Otoroshi plugins system
 
-@@@ note
-TODO: This section is being written, thanks for your patience :)
-@@@
+Otoroshi includes several extension points that allows you to create your own plugins and support stuff not supported by default
 
 ## Available plugins
 
