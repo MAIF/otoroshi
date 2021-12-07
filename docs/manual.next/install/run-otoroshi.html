@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Otoroshi plugins · Otoroshi</title>
+<title>Run Otoroshi · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -47,7 +47,7 @@
   <ul>
     <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
     <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
-    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="active page">Run Otoroshi</a></li>
   </ul></li>
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
@@ -95,7 +95,7 @@
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
-  <li><a href="../plugins/index.html" class="active page">Otoroshi plugins</a>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
     <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
     <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
@@ -157,7 +157,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
     <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
-    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="active page">Run Otoroshi</a></li>
   </ul></li>
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
@@ -205,7 +205,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
   </ul></li>
-  <li><a href="../plugins/index.html" class="active page">Otoroshi plugins</a>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
     <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
     <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
@@ -235,7 +235,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-breadcrumbs">
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
-  <li>Otoroshi plugins</li>
+  <li><a href="../install/index.html">Install</a></li>
+  <li>Run Otoroshi</li>
 </ul>
 </div>
 </div>
@@ -243,18 +244,83 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#otoroshi-plugins" name="otoroshi-plugins" class="anchor"><span class="anchor-link"></span></a>Otoroshi plugins</h1>
-<p>In this sections, you will find informations about Otoroshi plugins system</p>
-<ul>
-  <li><a href="plugins.html">Plugins system</a></li>
-  <li><a href="create-plugins.html">Create plugins</a></li>
-  <li><a href="built-in-plugins.html">Built in plugins</a></li>
-</ul>
+<h1><a href="#run-otoroshi" name="run-otoroshi" class="anchor"><span class="anchor-link"></span></a>Run Otoroshi</h1>
+<p>Now you are ready to run Otoroshi. You can run the following command with some tweaks depending on the way you want to configure Otoroshi. If you want to pass a custom configuration file, use the <code>-Dconfig.file=/path/to/file.conf</code> flag in the following commands.</p>
+<h2><a href="#from-zip-file" name="from-zip-file" class="anchor"><span class="anchor-link"></span></a>From .zip file</h2>
+<pre class="prettyprint"><code class="language-sh">cd otoroshi-vx.x.x
+./bin/otoroshi
+</code></pre>
+<h2><a href="#from-jar-file" name="from-jar-file" class="anchor"><span class="anchor-link"></span></a>From .jar file</h2>
+<p>For Java 11</p>
+<pre class="prettyprint"><code class="language-sh">java -jar otoroshi.jar
+</code></pre>
+<h2><a href="#from-docker" name="from-docker" class="anchor"><span class="anchor-link"></span></a>From docker</h2>
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; maif/otoroshi
+</code></pre>
+<p>You can also pass useful args like :</p>
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; maif/otoroshi -Dconfig.file=/usr/app/otoroshi/conf/otoroshi.conf -Dlogger.file=/usr/app/otoroshi/conf/otoroshi.xml
+</code></pre>
+<p>If you want to provide your own config file, you can read <a href="setup-otoroshi.html">the documentation about config files</a>.</p>
+<p>You can also provide some ENV variable using the <code>--env</code> flag to customize your Otoroshi instance.</p>
+<p>The list of possible env variables is available <a href="setup-otoroshi.html">here</a>.</p>
+<p>You can use a volume to provide configuration like :</p>
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;$(pwd):/usr/app/otoroshi/conf&quot; maif/otoroshi
+</code></pre>
+<p>You can also use a volume if you choose to use <code>filedb</code> datastore like :</p>
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;$(pwd)/filedb:/usr/app/otoroshi/filedb&quot; maif/otoroshi -Dapp.storage=file
+</code></pre>
+<p>You can also use a volume if you choose to use exports files :</p>
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;$(pwd):/usr/app/otoroshi/imports&quot; maif/otoroshi -Dapp.importFrom=/usr/app/otoroshi/imports/export.json
+</code></pre>
+<h2><a href="#run-examples" name="run-examples" class="anchor"><span class="anchor-link"></span></a>Run examples</h2>
+<pre class="prettyprint"><code class="language-sh">$ java \
+  -Xms2G \
+  -Xmx8G \
+  -Dhttp.port=8080 \
+  -Dapp.importFrom=/home/user/otoroshi.json \
+  -Dconfig.file=/home/user/otoroshi.conf \
+  -jar ./otoroshi.jar
+
+[warn] otoroshi-in-memory-datastores - Now using InMemory DataStores
+[warn] otoroshi-env - The main datastore seems to be empty, registering some basic services
+[warn] otoroshi-env - Importing from: /home/user/otoroshi.json
+[info] play.api.Play - Application started (Prod)
+[info] p.c.s.AkkaHttpServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
+</code></pre>
+<p>If you choose to start Otoroshi without importing existing data, Otoroshi will create a new admin user and print the login details in the log. When you will log into the admin dashboard, Otoroshi will ask you to create another account to avoid security issues.</p>
+<pre class="prettyprint"><code class="language-sh">$ java \
+  -Xms2G \
+  -Xmx8G \
+  -Dhttp.port=8080 \
+  -jar otoroshi.jar
+
+[warn] otoroshi-in-memory-datastores - Now using InMemory DataStores
+[warn] otoroshi-env - The main datastore seems to be empty, registering some basic services
+[warn] otoroshi-env - You can log into the Otoroshi admin console with the following credentials: admin@otoroshi.io / HHUsiF2UC3OPdmg0lGngEv3RrbIwWV5W
+[info] play.api.Play - Application started (Prod)
+[info] p.c.s.AkkaHttpServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
+</code></pre>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../plugins/plugins.html">Otoroshi plugins system</a></p>
+<p><strong>Next:</strong> <a href="../entities/index.html">Main entities</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../install/run-otoroshi.html#run-otoroshi" class="header">Run Otoroshi</a>
+  <ul>
+    <li><a href="../install/run-otoroshi.html#from-zip-file" class="header">From .zip file</a></li>
+    <li><a href="../install/run-otoroshi.html#from-jar-file" class="header">From .jar file</a></li>
+    <li><a href="../install/run-otoroshi.html#from-docker" class="header">From docker</a></li>
+    <li><a href="../install/run-otoroshi.html#run-examples" class="header">Run examples</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 
