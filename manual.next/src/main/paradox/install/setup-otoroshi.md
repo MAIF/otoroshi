@@ -8,7 +8,7 @@ TODO: This section is being written, thanks for your patience :)
 Right now, Otoroshi supports multiple datastore. You can choose one datastore over another depending on your use case.
 
 @@@div { .plugin .platform } 
-## In memory
+<div style="font-size: 22px; font-weight: bold;">In memory</div>
 
 The **in-memory** datastore is kind of interesting. It can be used for testing purposes, but it is also a good candidate for production because of its fastness.
 
@@ -18,7 +18,7 @@ The **in-memory** datastore is kind of interesting. It can be used for testing p
 @@@
 
 @@@div { .plugin .platform } 
-## Redis
+<div style="font-size: 22px; font-weight: bold;">Redis</div>
 
 The **redis** datastore is quite nice when you want to easily deploy several Otoroshi instances.
 
@@ -28,7 +28,7 @@ The **redis** datastore is quite nice when you want to easily deploy several Oto
 @@@
 
 @@@div { .plugin .platform } 
-## Cassandra
+<div style="font-size: 22px; font-weight: bold;">Cassandra</div>
 
 Experimental support, should be used in cluster mode for leaders
 
@@ -38,7 +38,7 @@ Experimental support, should be used in cluster mode for leaders
 @@@
 
 @@@div { .plugin .platform } 
-## Postgresql
+<div style="font-size: 22px; font-weight: bold;">Postgresql</div>
 
 Or any postgresql compatible databse like cockroachdb for instance (experimental support, should be used in cluster mode for leaders)
 
@@ -48,7 +48,8 @@ Or any postgresql compatible databse like cockroachdb for instance (experimental
 @@@
 
 @@@div { .plugin .platform } 
-## FileDB
+
+<div style="font-size: 22px; font-weight: bold;">FileDB</div>
 
 The **filedb** datastore is pretty handy for testing purposes, but is not supposed to be used in production mode. 
 Not suitable for production usage.
@@ -57,9 +58,6 @@ Not suitable for production usage.
 
 @@@
 
-@@@ div { .break }
-
-@@@
 
 @@@ div { .centered-img }
 <img src="../imgs/datastores.png" />
