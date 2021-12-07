@@ -1152,26 +1152,26 @@ otoroshi {
     genWildcardCert = ${?OTOROSHI_SSL_GEN_WILDCARD_CERT}
   }
   cluster {
-    mode = &quot;off&quot;
-    mode = ${?CLUSTER_MODE}
-    compression = -1
-    compression = ${?CLUSTER_COMPRESSION}
-    retryDelay = 300
-    retryDelay = ${?CLUSTER_RETRY_DELAY}
-    retryFactor = 2
-    retryFactor = ${?CLUSTER_RETRY_FACTOR}
-    selfAddress = ${?CLUSTER_SELF_ADDRESS}
-    autoUpdateState = true
-    autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE}
+    mode = &quot;off&quot; # can be &quot;off&quot;, &quot;leader&quot;, &quot;worker&quot;
+    mode = ${?CLUSTER_MODE} # can be &quot;off&quot;, &quot;leader&quot;, &quot;worker&quot;
+    compression = -1 # compression of the data sent between leader cluster and worker cluster. From -1 (disabled) to 9
+    compression = ${?CLUSTER_COMPRESSION} # compression of the data sent between leader cluster and worker cluster. From -1 (disabled) to 9
+    retryDelay = 300 # the delay before retrying a request to leader
+    retryDelay = ${?CLUSTER_RETRY_DELAY} # the delay before retrying a request to leader
+    retryFactor = 2 # the retry factor to avoid high load on failing nodes
+    retryFactor = ${?CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
+    selfAddress = ${?CLUSTER_SELF_ADDRESS} # the cluster slefAddress
+    autoUpdateState = true # auto update cluster state with a job (mor efficient)
+    autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (mor efficient
     mtls {
       # certs = []
       # trustedCerts = []
-      enabled = false
-      enabled = ${?CLUSTER_MTLS_ENABLED}
-      loose = false
-      loose = ${?CLUSTER_MTLS_LOOSE}
-      trustAll = false
-      trustAll = ${?CLUSTER_MTLS_TRUST_ALL}
+      enabled = false # enable mtls
+      enabled = ${?CLUSTER_MTLS_ENABLED}  # enable mtls
+      loose = false # loose verification
+      loose = ${?CLUSTER_MTLS_LOOSE}  # loose verification
+      trustAll = false # trust any CA
+      trustAll = ${?CLUSTER_MTLS_TRUST_ALL} # trust any CA
     }
     leader {
       name = ${?CLUSTER_LEADER_NAME}
@@ -1952,16 +1952,16 @@ otoroshi {
     genWildcardCert = ${?OTOROSHI_SSL_GEN_WILDCARD_CERT}
   }
   cluster {
-    mode = ${?CLUSTER_MODE}
-    compression = ${?CLUSTER_COMPRESSION}
-    retryDelay = ${?CLUSTER_RETRY_DELAY}
-    retryFactor = ${?CLUSTER_RETRY_FACTOR}
-    selfAddress = ${?CLUSTER_SELF_ADDRESS}
-    autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE}
+    mode = ${?CLUSTER_MODE} # can be &quot;off&quot;, &quot;leader&quot;, &quot;worker&quot;
+    compression = ${?CLUSTER_COMPRESSION} # compression of the data sent between leader cluster and worker cluster. From -1 (disabled) to 9
+    retryDelay = ${?CLUSTER_RETRY_DELAY} # the delay before retrying a request to leader
+    retryFactor = ${?CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
+    selfAddress = ${?CLUSTER_SELF_ADDRESS} # the cluster slefAddress
+    autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (mor efficient
     mtls {
-      enabled = ${?CLUSTER_MTLS_ENABLED}
-      loose = ${?CLUSTER_MTLS_LOOSE}
-      trustAll = ${?CLUSTER_MTLS_TRUST_ALL}
+      enabled = ${?CLUSTER_MTLS_ENABLED}  # enable mtls
+      loose = ${?CLUSTER_MTLS_LOOSE}  # loose verification
+      trustAll = ${?CLUSTER_MTLS_TRUST_ALL} # trust any CA
     }
     leader {
       name = ${?CLUSTER_LEADER_NAME}

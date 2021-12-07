@@ -246,13 +246,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#end-to-end-mtls" name="end-to-end-mtls" class="anchor"><span class="anchor-link"></span></a>End-to-end mTLS</h1>
 <p>If you want to use MTLS on otoroshi, you first need to enable it. It is not enabled by default as it will make TLS handshake way heavier. To enable it just change the following config :</p>
-<pre><code>play.server.https.wantClientAuth=true
+<pre class="prettyprint"><code class="language-sh">play.server.https.wantClientAuth=true
 # or
 # play.server.https.wantClientNeed=true
 otoroshi.ssl.fromOutside.clientAuth=None|Want|Need
 </code></pre>
 <p>or using env. variables</p>
-<pre><code>HTTPS_WANT_CLIENT_AUTH=true 
+<pre class="prettyprint"><code class="language-sh">HTTPS_WANT_CLIENT_AUTH=true 
 # HTTPS_NEED_CLIENT_AUTH=true 
 SSL_OUTSIDE_CLIENT_AUTH=None|Want|Need
 </code></pre>
@@ -386,7 +386,7 @@ console.log(&#39;Server listening:&#39;, `http://localhost:${server.address().po
 <pre class="prettyprint"><code class="language-sh">node ./backend.js
 </code></pre>
 <p>now you can try your server with</p>
-<pre class="prettyprint"><code class="language-sh">curl --cacert ./ca/ca-backend.cer https://api.backend.oto.tools:8444/
+<pre class="prettyprint"><code class="language-sh">curl --cacert ./ca/ca-backend.cer &#39;https://api.backend.oto.tools:8444/&#39;
 </code></pre>
 <p>This should output :</p>
 <pre class="prettyprint"><code class="language-json">{ &quot;message&quot;: &quot;Hello World!&quot; }
@@ -415,20 +415,20 @@ console.log(&#39;Server listening:&#39;, `http://localhost:${server.address().po
 </code></pre>
 <p>you can test your new server with</p>
 <pre class="prettyprint"><code class="language-sh">curl \
---cacert ./ca/ca-backend.cer \
---cert ./client/_.backend.oto.tools.pem \
---key ./client/_.backend.oto.tools.key https://api.backend.oto.tools:8444/
+  --cacert ./ca/ca-backend.cer \
+  --cert ./client/_.backend.oto.tools.pem \
+  --key ./client/_.backend.oto.tools.key &#39;https://api.backend.oto.tools:8444/&#39;
 </code></pre>
-<p>This should output :</p>
+<p>the output should be :</p>
 <pre class="prettyprint"><code class="language-json">{ &quot;message&quot;: &quot;Hello World!&quot; }
 </code></pre>
 <h3><a href="#otoroshi-setup" name="otoroshi-setup" class="anchor"><span class="anchor-link"></span></a>Otoroshi setup</h3>
 <p>Download the latest version of the Otoroshi jar and run it like</p>
 <pre class="prettyprint"><code class="language-sh"> java \
- -Dapp.adminPassword=password \
- -Dplay.server.https.wantClientAuth=true \
- -Dotoroshi.ssl.fromOutside.clientAuth=Want \
- -jar -Dapp.storage=file otoroshi.jar
+  -Dapp.adminPassword=password \
+  -Dplay.server.https.wantClientAuth=true \
+  -Dotoroshi.ssl.fromOutside.clientAuth=Want \
+  -jar -Dapp.storage=file otoroshi.jar
 
 [info] otoroshi-env - Admin API exposed on http://otoroshi-api.oto.tools:8080
 [info] otoroshi-env - Admin UI  exposed on http://otoroshi.oto.tools:8080
@@ -443,7 +443,7 @@ console.log(&#39;Server listening:&#39;, `http://localhost:${server.address().po
 <p>and log into otoroshi with the tuple <code>admin@otoroshi.io / password</code> displayed in the logs. </p>
 <p>Once logged in, navigate to the services pages and create a new item. * Jump to the <code>Service exposition settings</code> and add <code>http://api.frontend.oto.tools</code> as <code>Exposed domain</code>. * Navigate to the <code>Service targets</code> and add the following url <code>https://api.backend.oto.tools:8444/</code> to redirect our call to the previous created backend. * End this step by exposing the service as <code>Public UI</code> on the <code>URL Patterns</code> section.</p>
 <p>and test it</p>
-<pre class="prettyprint"><code class="language-sh">curl http://api.frontend.oto.tools:8080/
+<pre class="prettyprint"><code class="language-sh">curl &#39;http://api.frontend.oto.tools:8080/&#39;
 </code></pre>
 <p>This should output :</p>
 <pre class="prettyprint"><code class="language-json">{&quot;Otoroshi-Error&quot;: &quot;Something went wrong, you should try later. Thanks for your understanding.&quot;}
@@ -451,29 +451,45 @@ console.log(&#39;Server listening:&#39;, `http://localhost:${server.address().po
 <p>you should get an error due to the fact that Otoroshi doesn&rsquo;t know about the server certificate or the client certificate expected by the server.</p>
 <p>We have to add the client certificate for <code>https://api.backend.oto.tools</code> to Otoroshi. Go to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates">http://otoroshi.oto.tools:8080/bo/dashboard/certificates</a> and create a new item. Copy and paste the content of <code>./client/_.backend.oto.tools.cer</code> and <code>./client/_.backend.oto.tools.key</code> respectively in <code>Certificate full chain</code> and <code>Certificate private key</code>.</p>
 <p>and retry the following curl command </p>
-<pre class="prettyprint"><code class="language-sh">curl http://api.frontend.oto.tools:8080/
-# the output should be: {&quot;message&quot;:&quot;Hello World!&quot;}
+<pre class="prettyprint"><code class="language-sh">curl &#39;http://api.frontend.oto.tools:8080/&#39;
+</code></pre>
+<p>the output should be</p>
+<pre class="prettyprint"><code class="language-json">{&quot;message&quot;:&quot;Hello World!&quot;}
 </code></pre>
 <p>now we have to expose <code>https://api.frontend.oto.tools:8443</code> using otoroshi. Go to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates">http://otoroshi.oto.tools:8080/bo/dashboard/certificates</a> and create a new item. Copy and paste the content of <code>./server/_.frontend.oto.tools.cer</code> and <code>./server/_.frontend.oto.tools.key</code> respectively in <code>Certificate full chain</code> and <code>Certificate private key</code>.</p>
 <p>and try the following command</p>
-<pre class="prettyprint"><code class="language-sh">curl --cacert ./ca/ca-frontend.cer https://api.frontend.oto.tools:8443/
-# the output should be: {&quot;message&quot;:&quot;Hello World!&quot;}
+<pre class="prettyprint"><code class="language-sh">curl --cacert ./ca/ca-frontend.cer &#39;https://api.frontend.oto.tools:8443/&#39;
+</code></pre>
+<p>the output should be</p>
+<pre class="prettyprint"><code class="language-json">{&quot;message&quot;:&quot;Hello World!&quot;}
 </code></pre>
 <p>now we have to enforce the fact that we want client certificate for <code>api.frontend.oto.tools</code>. To do that, we have to add a <code>Client Validator Only</code> plugin on the <code>api.frontend.oto.tools</code> service. Scroll to the last section called <code>Plugins</code> and select the <code>Client validator only</code> in the list.</p>
 <p>now if you retry </p>
-<pre class="prettyprint"><code class="language-sh">curl --cacert ./ca/ca-frontend.cer https://api.frontend.oto.tools:8443/
-# the output should be: {&quot;Otoroshi-Error&quot;:&quot;bad request&quot;}
+<pre class="prettyprint"><code class="language-sh">curl --cacert ./ca/ca-frontend.cer &#39;https://api.frontend.oto.tools:8443/&#39;
+</code></pre>
+<p>the output should be</p>
+<pre class="prettyprint"><code class="language-json">{&quot;Otoroshi-Error&quot;:&quot;bad request&quot;}
 </code></pre>
 <p>you should get an error because no client cert. is passed with the request. But if you pass the <code>./client/_.frontend.oto.tools.csr</code> client cert and the key in your curl call</p>
-<pre class="prettyprint"><code class="language-sh">curl https://api.frontend.oto.tools:8443 --cacert ./ca/ca-frontend.cer --cert ./client/_.frontend.oto.tools.pem --key ./client/_.frontend.oto.tools.key
-# the output should be: {&quot;message&quot;:&quot;Hello World!&quot;}
+<pre class="prettyprint"><code class="language-sh">curl &#39;https://api.frontend.oto.tools:8443&#39; \
+  --cacert ./ca/ca-frontend.cer \
+  --cert ./client/_.frontend.oto.tools.pem \
+  --key ./client/_.frontend.oto.tools.key
+</code></pre>
+<p>the output should be</p>
+<pre class="prettyprint"><code class="language-json">{&quot;message&quot;:&quot;Hello World!&quot;}
 </code></pre>
 <h3><a href="#client-certificate-matching-plugin" name="client-certificate-matching-plugin" class="anchor"><span class="anchor-link"></span></a>Client certificate matching plugin</h3>
 <p>Otoroshi can restrict and check all incoming client certificates on a service.</p>
 <p>Scroll to the <code>Plugins</code> section and select the <code>Client certificate matching</code> plugin. Then, click on the <code>show config. panel</code> and inject the default configuration of the plugin (by clicking on <code>Inject default config.</code>).</p>
 <p>Save the service and retry your call again.</p>
-<pre class="prettyprint"><code class="language-sh">curl https://api.frontend.oto.tools:8443 --cacert ./ca/ca-frontend.cer --cert ./client/_.frontend.oto.tools.pem --key ./client/_.frontend.oto.tools.key
-# the output should be: {&quot;Otoroshi-Error&quot;:&quot;bad request&quot;}
+<pre class="prettyprint"><code class="language-sh">curl &#39;https://api.frontend.oto.tools:8443&#39; \
+  --cacert ./ca/ca-frontend.cer \
+  --cert ./client/_.frontend.oto.tools.pem \
+  --key ./client/_.frontend.oto.tools.key
+</code></pre>
+<p>the output should be</p>
+<pre class="prettyprint"><code class="language-json">{&quot;Otoroshi-Error&quot;:&quot;bad request&quot;}
 </code></pre>
 <p>Our client certificate is not matched by Otoroshi. We have to add the subject DN in the configuration of the <code>Client certificate matching</code> plugin to authorize it.</p>
 <pre class="prettyprint"><code class="language-json">{
@@ -489,8 +505,13 @@ console.log(&#39;Server listening:&#39;, `http://localhost:${server.address().po
 }
 </code></pre>
 <p>Save the service and retry your call again.</p>
-<pre class="prettyprint"><code class="language-sh">curl https://api.frontend.oto.tools:8443 --cacert ./ca/ca-frontend.cer --cert ./client/_.frontend.oto.tools.pem --key ./client/_.frontend.oto.tools.key
-# the output should be: {&quot;message&quot;:&quot;Hello World!&quot;}
+<pre class="prettyprint"><code class="language-sh">curl &#39;https://api.frontend.oto.tools:8443&#39; \
+  --cacert ./ca/ca-frontend.cer \
+  --cert ./client/_.frontend.oto.tools.pem \
+  --key ./client/_.frontend.oto.tools.key
+</code></pre>
+<p>the output should be</p>
+<pre class="prettyprint"><code class="language-json">{&quot;message&quot;:&quot;Hello World!&quot;}
 </code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../how-to-s/export-alerts-using-mailgun.html">Send alerts using mailgun</a></p>

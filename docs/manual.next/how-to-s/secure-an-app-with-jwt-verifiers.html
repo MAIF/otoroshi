@@ -246,13 +246,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#secure-an-api-with-jwt-verifiers" name="secure-an-api-with-jwt-verifiers" class="anchor"><span class="anchor-link"></span></a>Secure an api with jwt verifiers</h1>
 <p>A Jwt verifier is the guard which check the signature of tokens present in incoming requests on a service. It can be a simple verifier, a tokens generator, or extend to be a verifier and a tokens generator.</p>
-<h3><a href="#cover-by-this-tutorial" name="cover-by-this-tutorial" class="anchor"><span class="anchor-link"></span></a>Cover by this tutorial</h3>
-<ul>
-  <li><a href="#before-you-start">Before you start</a></li>
-  <li><a href="#your-first-jwt-verifier--a-verifier-of-tokens">Your first jwt verifier : a verifier of tokens</a></li>
-  <li><a href="#verify-and-generate-a-new-token">Verify ang generate a new token</a></li>
-</ul>
-<h3><a href="#download-otoroshi" name="download-otoroshi" class="anchor"><span class="anchor-link"></span></a>Download Otoroshi</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p>
+<h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p>
 <p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar&#39;
 </code></pre>
@@ -267,7 +261,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   -u admin-api-apikey-id:admin-api-apikey-secret
 </code></pre>
 <h3><a href="#your-first-jwt-verifier-a-verifier-of-tokens" name="your-first-jwt-verifier-a-verifier-of-tokens" class="anchor"><span class="anchor-link"></span></a>Your first jwt verifier : a verifier of tokens</h3>
-<p>Let&rsquo;s start by navigate the page of verifier creation (*<a href="http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers/add*)">http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers/add*)</a>. By default, the type of jwt verifier is a <em>Verify JWT token</em>.</p>
+<p>Let&rsquo;s start by navigate the page of verifier creation (<a href="http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers/add)">http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers/add)</a>. By default, the type of jwt verifier is a <em>Verify JWT token</em>.</p>
 <p>Create the following verifier : </p>
 <ul>
   <li>Set <code>simple-jwt-verifier</code> as <code>Name</code></li>
@@ -281,7 +275,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>Once created, navigate to the simple service (created in [Before you start](#Before you start) section) and jump to the <code>JWT tokens verification</code> section.</p>
 <p>In the verifiers list, choose the <code>simple-jwt-verifier</code> and <code>enabled</code> the section.</p>
 <p>Save your service and try to call the service.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X GET http://myservice.oto.tools:8080/ --include
+<pre class="prettyprint"><code class="language-sh">curl -X GET &#39;http://myservice.oto.tools:8080/&#39; --include
 </code></pre>
 <p>This should output : </p>
 <pre class="prettyprint"><code class="language-json">{
@@ -291,8 +285,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>A simple way to generate a token is to use *<a href="http://jwt.io*">http://jwt.io*</a>. Set <code>HS512</code> as <code>alg</code> in header section, and insert <code>otoroshi</code> as verify signature secret. Once created, paste the token on the Authorization header and call our service.</p>
 <pre class="prettyprint"><code class="language-sh"># replace xxxx by the generated token
 curl -X GET \
--H &quot;Authorization: xxxx&quot; \
-http://myservice.oto.tools:8080
+  -H &quot;Authorization: xxxx&quot; \
+  &#39;http://myservice.oto.tools:8080&#39;
 </code></pre>
 <p>This should output a json with <code>authorization</code> in headers field. His value is exactly the same as the passed token.</p>
 <pre class="prettyprint"><code class="language-json">{
@@ -307,7 +301,7 @@ http://myservice.oto.tools:8080
 </code></pre>
 <h3><a href="#verify-and-generate-a-new-token" name="verify-and-generate-a-new-token" class="anchor"><span class="anchor-link"></span></a>Verify and generate a new token</h3>
 <p>An other feature is to verify the entry token and generate a new token, with a different signature and news claims. </p>
-<p>Let&rsquo;s start by extending the previous verifier (*<a href="http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers*)">http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers*)</a>.</p>
+<p>Let&rsquo;s start by extending the previous verifier (<a href="http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers)">http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers)</a>.</p>
 <ol>
   <li>Jump to the <code>Verif Strategy</code> field and select <code>Verify and re-sign JWT token</code>.</li>
   <li>Edit the name with <code>jwt-verify-and-resign</code></li>
@@ -320,14 +314,14 @@ http://myservice.oto.tools:8080
 </blockquote>
 <pre class="prettyprint"><code class="language-sh"># replace xxxx by the generated token
 curl -X GET \
--H &quot;Authorization: xxxx&quot; \
-http://myservice.oto.tools:8080
+  -H &quot;Authorization: xxxx&quot; \
+  &#39;http://myservice.oto.tools:8080&#39;
 </code></pre>
 <p>This should output a json with <code>authorization</code> in headers field. This time, the value are different and you can check his signature on <em>jwt.io</em> (the expected secret of the generated token is <em>otoroshi-internal-secret</em>)</p>
 <img src="../imgs/secure-an-app-with-jwt-verifiers-jwtio.png" height="300px">
 <h3><a href="#verify-transform-and-generate-a-new-token" name="verify-transform-and-generate-a-new-token" class="anchor"><span class="anchor-link"></span></a>Verify, transform and generate a new token</h3>
 <p>The most advanced verifier is able to do the same as the previous ones, with the ability to configure the toke generation (claims, output header name).</p>
-<p>Let&rsquo;s start by extending the previous verifier (*<a href="http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers*)">http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers*)</a>.</p>
+<p>Let&rsquo;s start by extending the previous verifier (<a href="http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers)">http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers)</a>.</p>
 <ol>
   <li>
   <p>Jump to the <code>Verif Strategy</code> field and select <code>Verify, transform and re-sign JWT token</code>.</p></li>
@@ -355,8 +349,7 @@ http://myservice.oto.tools:8080
 <ul>
   <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html#secure-an-api-with-jwt-verifiers" class="header">Secure an api with jwt verifiers</a>
   <ul>
-    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html#cover-by-this-tutorial" class="header">Cover by this tutorial</a></li>
-    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html#download-otoroshi" class="header">Download Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html#before-you-start" class="header">Before you start</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html#your-first-jwt-verifier-a-verifier-of-tokens" class="header">Your first jwt verifier : a verifier of tokens</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html#verify-and-generate-a-new-token" class="header">Verify and generate a new token</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html#verify-transform-and-generate-a-new-token" class="header">Verify, transform and generate a new token</a></li>

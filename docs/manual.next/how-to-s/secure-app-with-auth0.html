@@ -245,15 +245,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#secure-an-app-with-auth0" name="secure-an-app-with-auth0" class="anchor"><span class="anchor-link"></span></a>Secure an app with Auth0</h1>
-<h3><a href="#cover-by-this-tutorial" name="cover-by-this-tutorial" class="anchor"><span class="anchor-link"></span></a>Cover by this tutorial</h3>
-<ul>
-  <li><a href="#before-you-start">Before you start</a></li>
-  <li><a href="#configure-an-auth0-client">Configure an Auth0 client</a></li>
-  <li><a href="#create-an-auth0-provider-module">Create an Auth0 provider module</a></li>
-  <li><a href="#connect-to-otoroshi-with-keycloak-authentication">Connect to Otoroshi with Auth0 authentication</a></li>
-  <li><a href="#testing-your-configuration">Testing your configuration</a></li>
-  <li><a href="#secure-an-app-with-keycloak-authentication">Secure an app with Auth0 authentication</a></li>
-</ul>
 <h3><a href="#download-otoroshi" name="download-otoroshi" class="anchor"><span class="anchor-link"></span></a>Download Otoroshi</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p>
 <p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar&#39;
@@ -270,7 +261,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <h3><a href="#configure-an-auth0-client" name="configure-an-auth0-client" class="anchor"><span class="anchor-link"></span></a>Configure an Auth0 client</h3>
 <p>The first step of this tutorial is to setup an Auth0 application with the information of the instance of our Otoroshi.</p>
-<p>Navigate to *<a href="https://manage.auth0.com/*">https://manage.auth0.com/*</a> (create an account if it&rsquo;s not already done). </p>
+<p>Navigate to <a href="https://manage.auth0.com/">https://manage.auth0.com/</a> (create an account if it&rsquo;s not already done). </p>
 <p>Let&rsquo;s create an application when clicking on the <code>Applications</code> button on the sidebar. Then click on the <code>Create application</code> button on the right top.</p>
 <ol>
   <li>Choose <code>Regular Web Applications</code> as <code>Application type</code></li>
@@ -290,7 +281,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>Then <code>Authentication configs</code> button</li>
   <li>And add a new configuration when clicking on the <code>Add item</code> button</li>
   <li>Select the <code>OAuth provider</code> in the type selector field</li>
-  <li>Then click on <code>Get from OIDC config</code> and paste <em>https://<tenant-name>.<region>.auth0.com/.well-known/openid-configuration</em>. Replace the tenant name by the name of your tenant (displayed on the left top of auth0 page), and the region of the tenant (<code>eu</code> in my case).</li>
+  <li>Then click on <code>Get from OIDC config</code> and paste <code>https://&lt;tenant-name&gt;.&lt;region&gt;.auth0.com/.well-known/openid-configuration</code>. Replace the tenant name by the name of your tenant (displayed on the left top of auth0 page), and the region of the tenant (<code>eu</code> in my case).</li>
 </ol>
 <p>Once done, set the <code>Client ID</code> and the <code>Client secret</code> from your auth0 application. End the configuration with <code>http://otoroshi.oto.tools:8080/backoffice/auth0/callback</code> as <code>Callback URL</code>.</p>
 <p>At the bottom of the page, disable the <code>secure</code> button (because we&rsquo;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs).</p>
@@ -305,8 +296,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h4><a href="#testing-your-configuration" name="testing-your-configuration" class="anchor"><span class="anchor-link"></span></a>Testing your configuration</h4>
 <ol>
   <li>Disconnect from your instance</li>
-  <li>Then click on the <em>Login using third-party</em> button (or navigate to *<a href="http://otoroshi.oto.tools:8080*">http://otoroshi.oto.tools:8080*</a>)
-</li>
+  <li>Then click on the <em>Login using third-party</em> button (or navigate to <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a>)</li>
   <li>Click on <code>Login using Third-party</code> button</li>
   <li>If all is configured, Otoroshi will redirect you to the auth0 server login page</li>
   <li>Set your account credentials</li>
@@ -316,8 +306,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>With the previous configuration, you can secure any of Otoroshi services with it. </p>
 <p>The first step is to apply a little change on the previous configuration. </p>
 <ol>
-  <li>Navigate to *<a href="http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs*">http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs*</a>.
-</li>
+  <li>Navigate to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs">http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs</a>.</li>
   <li>Create a new auth module configuration with the same values.</li>
   <li>Replace the <code>Callback URL</code> field to <code>http://privateapps.oto.tools:8080/privateapps/generic/callback</code> (we changed this value because the redirection of a logged user by a third-party server is cover by an other route by Otoroshi).</li>
   <li>Disable the <code>secure</code> button (because we&rsquo;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)</li>
@@ -347,7 +336,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../how-to-s/secure-app-with-auth0.html#secure-an-app-with-auth0" class="header">Secure an app with Auth0</a>
   <ul>
-    <li><a href="../how-to-s/secure-app-with-auth0.html#cover-by-this-tutorial" class="header">Cover by this tutorial</a></li>
     <li><a href="../how-to-s/secure-app-with-auth0.html#download-otoroshi" class="header">Download Otoroshi</a></li>
     <li><a href="../how-to-s/secure-app-with-auth0.html#configure-an-auth0-client" class="header">Configure an Auth0 client</a></li>
     <li><a href="../how-to-s/secure-app-with-auth0.html#create-an-auth0-provider-module" class="header">Create an Auth0 provider module</a></li>
