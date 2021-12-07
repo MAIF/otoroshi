@@ -28,7 +28,7 @@ Or you download the @ref:[otoroshi.jar](../install/get-otoroshi.md#from-jar-file
 For the second option your DockerFile would look like this :
 
 ```dockerfile
-FROM openjdk:8
+FROM openjdk:11
 VOLUME /tmp
 EXPOSE 8080
 ADD otoroshi.jar otoroshi.jar

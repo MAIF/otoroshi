@@ -16,6 +16,41 @@ To try them, you can folllow @ref[this tutorial](../how-to-s/export-alerts-using
 All exporters are split in three parts. The first and second parts are common and the last are specific by exporter.
 
 * `Filtering and projection` : section to filter the list of sent events and alerts. The projection field allows you to export only certain event fields and reduce the size of exported data. It's composed of `Filtering` and `Projection` fields.
+
+
+**Filtering** is used to **include** or **exclude** some kind of events and alerts. For each include and exclude field, you can add a list of key-value. 
+
+Let's say we only want to keep Otoroshi alerts
+```json
+{ "include": [{ "@type": "AlertEvent" }] }
+```
+
+**Projection** is a list of fields to export. In the case of an empty list, all the fields of an event will be exported. In other case, **only** the listed fields will be exported.
+
+Let's say we only want to keep Otoroshi alerts and only type, timestamp and id of each exported events
+```json
+{
+ "@type": true,
+ "@timestamp": true,
+ "@id": true
+}
+```
+
+An other possibility is to **rename** the exported field. This value will be the same but the exported field will have a different name.
+
+Let's say we want to rename all `@id` field with `unique-id` as key
+
+```json
+{ "@id": "unique-id" }
+```
+
+The last possiblity is to retrieve a sub-object of an event. Let's say we want to get the name of each exported user of events.
+
+```json
+{ "user": { "name": true } }
+```
+
+
 * `Queue details`: set of fields to adjust the workers of the exporter. 
   * `Buffer size`: if elements are pushed onto the queue faster than the source is consumed the overflow will be handled with a strategy specified by the user. Keep in memory the number of events.
   * `JSON conversion workers`: number of workers used to transform events to JSON format in paralell
