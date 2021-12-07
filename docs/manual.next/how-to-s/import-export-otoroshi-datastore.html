@@ -245,21 +245,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#import-and-export-otoroshi-datastore" name="import-and-export-otoroshi-datastore" class="anchor"><span class="anchor-link"></span></a>Import and export Otoroshi datastore</h1>
-<h3><a href="#cover-by-this-tutorial" name="cover-by-this-tutorial" class="anchor"><span class="anchor-link"></span></a>Cover by this tutorial</h3>
-<ul>
-  <li><a href="#start-otoroshi-with-an-initial-state">Start Otoroshi with an initial datastore</a></li>
-  <li><a href="#export-the-current-datastore-via-the-danger-zone">Export the current datastore via the danger zone</a></li>
-  <li><a href="#import-a-datastore-from-file-via-the-danger-zone">Import a datastore from file via the danger zone</a></li>
-  <li><a href="#export-the-current-datastore-via-the-danger-zone">Export the current datastore with Admin API</a></li>
-  <li><a href="#import-a-datastore-from-file-via-the-danger-zone">Import the current datastore with Admin API</a></li>
-</ul>
 <h3><a href="#start-otoroshi-with-an-initial-datastore" name="start-otoroshi-with-an-initial-datastore" class="anchor"><span class="anchor-link"></span></a>Start Otoroshi with an initial datastore</h3>
 <p>Let&rsquo;s start by downloading the latest Otoroshi</p>
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
 </code></pre>
 <p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code></p>
 <p>Now you are almost ready to run Otoroshi for the first time, we want run it with an initial data.</p>
-<p>To do that, you need to add the app.importFrom setting to the Otoroshi configuration (of $APP_IMPORT_FROM env).</p>
+<p>To do that, you need to add the app.importFrom setting to the Otoroshi configuration (of <code>$APP_IMPORT_FROM</code> env).</p>
 <p>It can be a file path or a URL.</p>
 <p>The content of the initial datastore.</p>
 <pre class="prettyprint"><code class="language-json">{
@@ -666,9 +658,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <p>Run an Otoroshi with the previous file as parameter.</p>
 <pre class="prettyprint"><code class="language-sh">java \
--Dapp.adminPassword=password \
--Dapp.importFrom=./initial-state.json \
--jar otoroshi.jar 
+  -Dapp.adminPassword=password \
+  -Dapp.importFrom=./initial-state.json \
+  -jar otoroshi.jar 
 </code></pre>
 <p>This should display</p>
 <pre class="prettyprint"><code class="language-sh">...
@@ -682,10 +674,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <p>Warning : when you using Otoroshi with a datastore different from file or in-memory, Otoroshi doesn&rsquo;t will reload the initialization script. If you expected it, you need to clean manually your store.</p>
 </blockquote>
 <h3><a href="#export-the-current-datastore-via-the-danger-zone" name="export-the-current-datastore-via-the-danger-zone" class="anchor"><span class="anchor-link"></span></a>Export the current datastore via the danger zone</h3>
-<p>When Otoroshi is running, you can backup the global configuration store from the UI. Navigate to your instance (in our case *<a href="http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone*">http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone*</a>) and scroll to the bottom page. </p>
+<p>When Otoroshi is running, you can backup the global configuration store from the UI. Navigate to your instance (in our case <a href="http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone">http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone</a>) and scroll to the bottom page. </p>
 <p>Click on <code>Full export</code> button to download the full global configuration.</p>
 <h3><a href="#import-a-datastore-from-file-via-the-danger-zone" name="import-a-datastore-from-file-via-the-danger-zone" class="anchor"><span class="anchor-link"></span></a>Import a datastore from file via the danger zone</h3>
-<p>When Otoroshi is running, you can recover a global configuration from the UI. Navigate to your instance (in our case *<a href="http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone*">http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone*</a>) and scroll to the bottom page. </p>
+<p>When Otoroshi is running, you can recover a global configuration from the UI. Navigate to your instance (in our case <a href="http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone">http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone</a>) and scroll to the bottom page. </p>
 <p>Click on <code>Recover from a full export file</code> button to apply all configurations from a file.</p>
 <h3><a href="#export-the-current-datastore-with-the-admin-api" name="export-the-current-datastore-with-the-admin-api" class="anchor"><span class="anchor-link"></span></a>Export the current datastore with the Admin API</h3>
 <p>Otoroshi exposes his own Admin API to manage Otoroshi resources. To call this api, you need to an api key with the rights on <code>Otoroshi Admin Api group</code>. This group includes the <code>Otoroshi-admin-api</code> service that you can found on the services page. </p>
@@ -693,517 +685,517 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>The default api key id and secret are <code>admin-api-apikey-id</code> and <code>admin-api-apikey-secret</code>.</p>
 <p>Run the next command with these values.</p>
 <pre class="prettyprint"><code class="language-sh">curl \
--H &#39;Content-Type: application/json&#39; \
-http://otoroshi-api.oto.tools:8080/api/otoroshi.json \
--u admin-api-apikey-id:admin-api-apikey-secret 
+  -H &#39;Content-Type: application/json&#39; \
+  -u admin-api-apikey-id:admin-api-apikey-secret \
+  &#39;http://otoroshi-api.oto.tools:8080/api/otoroshi.json&#39;
 </code></pre>
 <p>When calling the <code>/api/otoroshi.json</code>, the return should be the current datastore including the service descriptors, the api keys, all others resources like certificates and authentification modules, and the the global config (represented by the form of the danger zone).</p>
 <h3><a href="#import-the-current-datastore-with-the-admin-api" name="import-the-current-datastore-with-the-admin-api" class="anchor"><span class="anchor-link"></span></a>Import the current datastore with the Admin API</h3>
 <p>As the same way of previous section, you can erase the current datastore with a POST request. The route is the same : <code>/api/otoroshi.json</code>.</p>
 <pre class="prettyprint"><code class="language-sh">curl \
--X POST \
--H &#39;Content-Type: application/json&#39; \
--d &#39;{
-  &quot;label&quot; : &quot;Otoroshi export&quot;,
-  &quot;dateRaw&quot; : 1634714811217,
-  &quot;date&quot; : &quot;2021-10-20 09:26:51&quot;,
-  &quot;stats&quot; : {
-    &quot;calls&quot; : 4,
-    &quot;dataIn&quot; : 0,
-    &quot;dataOut&quot; : 97991
-  },
-  &quot;config&quot; : {
-    &quot;tags&quot; : [ ],
-    &quot;letsEncryptSettings&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;server&quot; : &quot;acme://letsencrypt.org/staging&quot;,
-      &quot;emails&quot; : [ ],
-      &quot;contacts&quot; : [ ],
-      &quot;publicKey&quot; : &quot;&quot;,
-      &quot;privateKey&quot; : &quot;&quot;
+  -X POST \
+  -H &#39;Content-Type: application/json&#39; \
+  -d &#39;{
+    &quot;label&quot; : &quot;Otoroshi export&quot;,
+    &quot;dateRaw&quot; : 1634714811217,
+    &quot;date&quot; : &quot;2021-10-20 09:26:51&quot;,
+    &quot;stats&quot; : {
+      &quot;calls&quot; : 4,
+      &quot;dataIn&quot; : 0,
+      &quot;dataOut&quot; : 97991
     },
-    &quot;lines&quot; : [ &quot;prod&quot; ],
-    &quot;maintenanceMode&quot; : false,
-    &quot;enableEmbeddedMetrics&quot; : true,
-    &quot;streamEntityOnly&quot; : true,
-    &quot;autoLinkToDefaultGroup&quot; : true,
-    &quot;limitConcurrentRequests&quot; : false,
-    &quot;maxConcurrentRequests&quot; : 1000,
-    &quot;maxHttp10ResponseSize&quot; : 4194304,
-    &quot;useCircuitBreakers&quot; : true,
-    &quot;apiReadOnly&quot; : false,
-    &quot;u2fLoginOnly&quot; : false,
-    &quot;trustXForwarded&quot; : true,
-    &quot;ipFiltering&quot; : {
-      &quot;whitelist&quot; : [ ],
-      &quot;blacklist&quot; : [ ]
+    &quot;config&quot; : {
+      &quot;tags&quot; : [ ],
+      &quot;letsEncryptSettings&quot; : {
+        &quot;enabled&quot; : false,
+        &quot;server&quot; : &quot;acme://letsencrypt.org/staging&quot;,
+        &quot;emails&quot; : [ ],
+        &quot;contacts&quot; : [ ],
+        &quot;publicKey&quot; : &quot;&quot;,
+        &quot;privateKey&quot; : &quot;&quot;
+      },
+      &quot;lines&quot; : [ &quot;prod&quot; ],
+      &quot;maintenanceMode&quot; : false,
+      &quot;enableEmbeddedMetrics&quot; : true,
+      &quot;streamEntityOnly&quot; : true,
+      &quot;autoLinkToDefaultGroup&quot; : true,
+      &quot;limitConcurrentRequests&quot; : false,
+      &quot;maxConcurrentRequests&quot; : 1000,
+      &quot;maxHttp10ResponseSize&quot; : 4194304,
+      &quot;useCircuitBreakers&quot; : true,
+      &quot;apiReadOnly&quot; : false,
+      &quot;u2fLoginOnly&quot; : false,
+      &quot;trustXForwarded&quot; : true,
+      &quot;ipFiltering&quot; : {
+        &quot;whitelist&quot; : [ ],
+        &quot;blacklist&quot; : [ ]
+      },
+      &quot;throttlingQuota&quot; : 10000000,
+      &quot;perIpThrottlingQuota&quot; : 10000000,
+      &quot;analyticsWebhooks&quot; : [ ],
+      &quot;alertsWebhooks&quot; : [ ],
+      &quot;elasticWritesConfigs&quot; : [ ],
+      &quot;elasticReadsConfig&quot; : null,
+      &quot;alertsEmails&quot; : [ ],
+      &quot;logAnalyticsOnServer&quot; : false,
+      &quot;useAkkaHttpClient&quot; : false,
+      &quot;endlessIpAddresses&quot; : [ ],
+      &quot;statsdConfig&quot; : null,
+      &quot;kafkaConfig&quot; : {
+        &quot;servers&quot; : [ ],
+        &quot;keyPass&quot; : null,
+        &quot;keystore&quot; : null,
+        &quot;truststore&quot; : null,
+        &quot;topic&quot; : &quot;otoroshi-events&quot;,
+        &quot;mtlsConfig&quot; : {
+          &quot;certs&quot; : [ ],
+          &quot;trustedCerts&quot; : [ ],
+          &quot;mtls&quot; : false,
+          &quot;loose&quot; : false,
+          &quot;trustAll&quot; : false
+        }
+      },
+      &quot;backOfficeAuthRef&quot; : null,
+      &quot;mailerSettings&quot; : {
+        &quot;type&quot; : &quot;none&quot;
+      },
+      &quot;cleverSettings&quot; : null,
+      &quot;maxWebhookSize&quot; : 100,
+      &quot;middleFingers&quot; : false,
+      &quot;maxLogsSize&quot; : 10000,
+      &quot;otoroshiId&quot; : &quot;83539cbca-76ee-4abc-ad31-a4794e873848&quot;,
+      &quot;snowMonkeyConfig&quot; : {
+        &quot;enabled&quot; : false,
+        &quot;outageStrategy&quot; : &quot;OneServicePerGroup&quot;,
+        &quot;includeUserFacingDescriptors&quot; : false,
+        &quot;dryRun&quot; : false,
+        &quot;timesPerDay&quot; : 1,
+        &quot;startTime&quot; : &quot;09:00:00.000&quot;,
+        &quot;stopTime&quot; : &quot;23:59:59.000&quot;,
+        &quot;outageDurationFrom&quot; : 600000,
+        &quot;outageDurationTo&quot; : 3600000,
+        &quot;targetGroups&quot; : [ ],
+        &quot;chaosConfig&quot; : {
+          &quot;enabled&quot; : true,
+          &quot;largeRequestFaultConfig&quot; : null,
+          &quot;largeResponseFaultConfig&quot; : null,
+          &quot;latencyInjectionFaultConfig&quot; : {
+            &quot;ratio&quot; : 0.2,
+            &quot;from&quot; : 500,
+            &quot;to&quot; : 5000
+          },
+          &quot;badResponsesFaultConfig&quot; : {
+            &quot;ratio&quot; : 0.2,
+            &quot;responses&quot; : [ {
+              &quot;status&quot; : 502,
+              &quot;body&quot; : &quot;{\&quot;error\&quot;:\&quot;Nihonzaru everywhere ...\&quot;}&quot;,
+              &quot;headers&quot; : {
+                &quot;Content-Type&quot; : &quot;application/json&quot;
+              }
+            } ]
+          }
+        }
+      },
+      &quot;scripts&quot; : {
+        &quot;enabled&quot; : false,
+        &quot;transformersRefs&quot; : [ ],
+        &quot;transformersConfig&quot; : { },
+        &quot;validatorRefs&quot; : [ ],
+        &quot;validatorConfig&quot; : { },
+        &quot;preRouteRefs&quot; : [ ],
+        &quot;preRouteConfig&quot; : { },
+        &quot;sinkRefs&quot; : [ ],
+        &quot;sinkConfig&quot; : { },
+        &quot;jobRefs&quot; : [ ],
+        &quot;jobConfig&quot; : { }
+      },
+      &quot;geolocationSettings&quot; : {
+        &quot;type&quot; : &quot;none&quot;
+      },
+      &quot;userAgentSettings&quot; : {
+        &quot;enabled&quot; : false
+      },
+      &quot;autoCert&quot; : {
+        &quot;enabled&quot; : false,
+        &quot;replyNicely&quot; : false,
+        &quot;caRef&quot; : null,
+        &quot;allowed&quot; : [ ],
+        &quot;notAllowed&quot; : [ ]
+      },
+      &quot;tlsSettings&quot; : {
+        &quot;defaultDomain&quot; : null,
+        &quot;randomIfNotFound&quot; : false,
+        &quot;includeJdkCaServer&quot; : true,
+        &quot;includeJdkCaClient&quot; : true,
+        &quot;trustedCAsServer&quot; : [ ]
+      },
+      &quot;plugins&quot; : {
+        &quot;enabled&quot; : false,
+        &quot;refs&quot; : [ ],
+        &quot;config&quot; : { },
+        &quot;excluded&quot; : [ ]
+      },
+      &quot;metadata&quot; : { }
     },
-    &quot;throttlingQuota&quot; : 10000000,
-    &quot;perIpThrottlingQuota&quot; : 10000000,
-    &quot;analyticsWebhooks&quot; : [ ],
-    &quot;alertsWebhooks&quot; : [ ],
-    &quot;elasticWritesConfigs&quot; : [ ],
-    &quot;elasticReadsConfig&quot; : null,
-    &quot;alertsEmails&quot; : [ ],
-    &quot;logAnalyticsOnServer&quot; : false,
-    &quot;useAkkaHttpClient&quot; : false,
-    &quot;endlessIpAddresses&quot; : [ ],
-    &quot;statsdConfig&quot; : null,
-    &quot;kafkaConfig&quot; : {
-      &quot;servers&quot; : [ ],
-      &quot;keyPass&quot; : null,
-      &quot;keystore&quot; : null,
-      &quot;truststore&quot; : null,
-      &quot;topic&quot; : &quot;otoroshi-events&quot;,
-      &quot;mtlsConfig&quot; : {
-        &quot;certs&quot; : [ ],
-        &quot;trustedCerts&quot; : [ ],
-        &quot;mtls&quot; : false,
-        &quot;loose&quot; : false,
-        &quot;trustAll&quot; : false
-      }
-    },
-    &quot;backOfficeAuthRef&quot; : null,
-    &quot;mailerSettings&quot; : {
-      &quot;type&quot; : &quot;none&quot;
-    },
-    &quot;cleverSettings&quot; : null,
-    &quot;maxWebhookSize&quot; : 100,
-    &quot;middleFingers&quot; : false,
-    &quot;maxLogsSize&quot; : 10000,
-    &quot;otoroshiId&quot; : &quot;83539cbca-76ee-4abc-ad31-a4794e873848&quot;,
-    &quot;snowMonkeyConfig&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;outageStrategy&quot; : &quot;OneServicePerGroup&quot;,
-      &quot;includeUserFacingDescriptors&quot; : false,
-      &quot;dryRun&quot; : false,
-      &quot;timesPerDay&quot; : 1,
-      &quot;startTime&quot; : &quot;09:00:00.000&quot;,
-      &quot;stopTime&quot; : &quot;23:59:59.000&quot;,
-      &quot;outageDurationFrom&quot; : 600000,
-      &quot;outageDurationTo&quot; : 3600000,
-      &quot;targetGroups&quot; : [ ],
+    &quot;admins&quot; : [ ],
+    &quot;simpleAdmins&quot; : [ {
+      &quot;_loc&quot; : {
+        &quot;tenant&quot; : &quot;default&quot;,
+        &quot;teams&quot; : [ &quot;default&quot; ]
+      },
+      &quot;username&quot; : &quot;admin@otoroshi.io&quot;,
+      &quot;password&quot; : &quot;$2a$10$iQRkqjKTW.5XH8ugQrnMDeUstx4KqmIeQ58dHHdW2Dv1FkyyAs4C.&quot;,
+      &quot;label&quot; : &quot;Otoroshi Admin&quot;,
+      &quot;createdAt&quot; : 1634651307724,
+      &quot;type&quot; : &quot;SIMPLE&quot;,
+      &quot;metadata&quot; : { },
+      &quot;tags&quot; : [ ],
+      &quot;rights&quot; : [ {
+        &quot;tenant&quot; : &quot;*:rw&quot;,
+        &quot;teams&quot; : [ &quot;*:rw&quot; ]
+      } ]
+    } ],
+    &quot;serviceGroups&quot; : [ {
+      &quot;_loc&quot; : {
+        &quot;tenant&quot; : &quot;default&quot;,
+        &quot;teams&quot; : [ &quot;default&quot; ]
+      },
+      &quot;id&quot; : &quot;admin-api-group&quot;,
+      &quot;name&quot; : &quot;Otoroshi Admin Api group&quot;,
+      &quot;description&quot; : &quot;No description&quot;,
+      &quot;tags&quot; : [ ],
+      &quot;metadata&quot; : { }
+    }, {
+      &quot;_loc&quot; : {
+        &quot;tenant&quot; : &quot;default&quot;,
+        &quot;teams&quot; : [ &quot;default&quot; ]
+      },
+      &quot;id&quot; : &quot;default&quot;,
+      &quot;name&quot; : &quot;default-group&quot;,
+      &quot;description&quot; : &quot;The default service group&quot;,
+      &quot;tags&quot; : [ ],
+      &quot;metadata&quot; : { }
+    } ],
+    &quot;apiKeys&quot; : [ {
+      &quot;_loc&quot; : {
+        &quot;tenant&quot; : &quot;default&quot;,
+        &quot;teams&quot; : [ &quot;default&quot; ]
+      },
+      &quot;clientId&quot; : &quot;admin-api-apikey-id&quot;,
+      &quot;clientSecret&quot; : &quot;admin-api-apikey-secret&quot;,
+      &quot;clientName&quot; : &quot;Otoroshi Backoffice ApiKey&quot;,
+      &quot;description&quot; : &quot;The apikey use by the Otoroshi UI&quot;,
+      &quot;authorizedGroup&quot; : &quot;admin-api-group&quot;,
+      &quot;authorizedEntities&quot; : [ &quot;group_admin-api-group&quot; ],
+      &quot;enabled&quot; : true,
+      &quot;readOnly&quot; : false,
+      &quot;allowClientIdOnly&quot; : false,
+      &quot;throttlingQuota&quot; : 10000,
+      &quot;dailyQuota&quot; : 10000000,
+      &quot;monthlyQuota&quot; : 10000000,
+      &quot;constrainedServicesOnly&quot; : false,
+      &quot;restrictions&quot; : {
+        &quot;enabled&quot; : false,
+        &quot;allowLast&quot; : true,
+        &quot;allowed&quot; : [ ],
+        &quot;forbidden&quot; : [ ],
+        &quot;notFound&quot; : [ ]
+      },
+      &quot;rotation&quot; : {
+        &quot;enabled&quot; : false,
+        &quot;rotationEvery&quot; : 744,
+        &quot;gracePeriod&quot; : 168,
+        &quot;nextSecret&quot; : null
+      },
+      &quot;validUntil&quot; : null,
+      &quot;tags&quot; : [ ],
+      &quot;metadata&quot; : { }
+    } ],
+    &quot;serviceDescriptors&quot; : [ {
+      &quot;_loc&quot; : {
+        &quot;tenant&quot; : &quot;default&quot;,
+        &quot;teams&quot; : [ &quot;default&quot; ]
+      },
+      &quot;id&quot; : &quot;admin-api-service&quot;,
+      &quot;groupId&quot; : &quot;admin-api-group&quot;,
+      &quot;groups&quot; : [ &quot;admin-api-group&quot; ],
+      &quot;name&quot; : &quot;otoroshi-admin-api&quot;,
+      &quot;description&quot; : &quot;&quot;,
+      &quot;env&quot; : &quot;prod&quot;,
+      &quot;domain&quot; : &quot;oto.tools&quot;,
+      &quot;subdomain&quot; : &quot;otoroshi-api&quot;,
+      &quot;targetsLoadBalancing&quot; : {
+        &quot;type&quot; : &quot;RoundRobin&quot;
+      },
+      &quot;targets&quot; : [ {
+        &quot;host&quot; : &quot;127.0.0.1:8080&quot;,
+        &quot;scheme&quot; : &quot;http&quot;,
+        &quot;weight&quot; : 1,
+        &quot;mtlsConfig&quot; : {
+          &quot;certs&quot; : [ ],
+          &quot;trustedCerts&quot; : [ ],
+          &quot;mtls&quot; : false,
+          &quot;loose&quot; : false,
+          &quot;trustAll&quot; : false
+        },
+        &quot;tags&quot; : [ ],
+        &quot;metadata&quot; : { },
+        &quot;protocol&quot; : &quot;HTTP/1.1&quot;,
+        &quot;predicate&quot; : {
+          &quot;type&quot; : &quot;AlwaysMatch&quot;
+        },
+        &quot;ipAddress&quot; : null
+      } ],
+      &quot;root&quot; : &quot;/&quot;,
+      &quot;matchingRoot&quot; : null,
+      &quot;stripPath&quot; : true,
+      &quot;localHost&quot; : &quot;127.0.0.1:8080&quot;,
+      &quot;localScheme&quot; : &quot;http&quot;,
+      &quot;redirectToLocal&quot; : false,
+      &quot;enabled&quot; : true,
+      &quot;userFacing&quot; : false,
+      &quot;privateApp&quot; : false,
+      &quot;forceHttps&quot; : false,
+      &quot;logAnalyticsOnServer&quot; : false,
+      &quot;useAkkaHttpClient&quot; : true,
+      &quot;useNewWSClient&quot; : false,
+      &quot;tcpUdpTunneling&quot; : false,
+      &quot;detectApiKeySooner&quot; : false,
+      &quot;maintenanceMode&quot; : false,
+      &quot;buildMode&quot; : false,
+      &quot;strictlyPrivate&quot; : false,
+      &quot;enforceSecureCommunication&quot; : true,
+      &quot;sendInfoToken&quot; : true,
+      &quot;sendStateChallenge&quot; : true,
+      &quot;sendOtoroshiHeadersBack&quot; : true,
+      &quot;readOnly&quot; : false,
+      &quot;xForwardedHeaders&quot; : false,
+      &quot;overrideHost&quot; : true,
+      &quot;allowHttp10&quot; : true,
+      &quot;letsEncrypt&quot; : false,
+      &quot;secComHeaders&quot; : {
+        &quot;claimRequestName&quot; : null,
+        &quot;stateRequestName&quot; : null,
+        &quot;stateResponseName&quot; : null
+      },
+      &quot;secComTtl&quot; : 30000,
+      &quot;secComVersion&quot; : 1,
+      &quot;secComInfoTokenVersion&quot; : &quot;Legacy&quot;,
+      &quot;secComExcludedPatterns&quot; : [ ],
+      &quot;securityExcludedPatterns&quot; : [ ],
+      &quot;publicPatterns&quot; : [ &quot;/health&quot;, &quot;/metrics&quot; ],
+      &quot;privatePatterns&quot; : [ ],
+      &quot;additionalHeaders&quot; : {
+        &quot;Host&quot; : &quot;otoroshi-admin-internal-api.oto.tools&quot;
+      },
+      &quot;additionalHeadersOut&quot; : { },
+      &quot;missingOnlyHeadersIn&quot; : { },
+      &quot;missingOnlyHeadersOut&quot; : { },
+      &quot;removeHeadersIn&quot; : [ ],
+      &quot;removeHeadersOut&quot; : [ ],
+      &quot;headersVerification&quot; : { },
+      &quot;matchingHeaders&quot; : { },
+      &quot;ipFiltering&quot; : {
+        &quot;whitelist&quot; : [ ],
+        &quot;blacklist&quot; : [ ]
+      },
+      &quot;api&quot; : {
+        &quot;exposeApi&quot; : false
+      },
+      &quot;healthCheck&quot; : {
+        &quot;enabled&quot; : false,
+        &quot;url&quot; : &quot;/&quot;
+      },
+      &quot;clientConfig&quot; : {
+        &quot;useCircuitBreaker&quot; : true,
+        &quot;retries&quot; : 1,
+        &quot;maxErrors&quot; : 20,
+        &quot;retryInitialDelay&quot; : 50,
+        &quot;backoffFactor&quot; : 2,
+        &quot;callTimeout&quot; : 30000,
+        &quot;callAndStreamTimeout&quot; : 120000,
+        &quot;connectionTimeout&quot; : 10000,
+        &quot;idleTimeout&quot; : 60000,
+        &quot;globalTimeout&quot; : 30000,
+        &quot;sampleInterval&quot; : 2000,
+        &quot;proxy&quot; : { },
+        &quot;customTimeouts&quot; : [ ],
+        &quot;cacheConnectionSettings&quot; : {
+          &quot;enabled&quot; : false,
+          &quot;queueSize&quot; : 2048
+        }
+      },
+      &quot;canary&quot; : {
+        &quot;enabled&quot; : false,
+        &quot;traffic&quot; : 0.2,
+        &quot;targets&quot; : [ ],
+        &quot;root&quot; : &quot;/&quot;
+      },
+      &quot;gzip&quot; : {
+        &quot;enabled&quot; : false,
+        &quot;excludedPatterns&quot; : [ ],
+        &quot;whiteList&quot; : [ &quot;text/*&quot;, &quot;application/javascript&quot;, &quot;application/json&quot; ],
+        &quot;blackList&quot; : [ ],
+        &quot;bufferSize&quot; : 8192,
+        &quot;chunkedThreshold&quot; : 102400,
+        &quot;compressionLevel&quot; : 5
+      },
+      &quot;metadata&quot; : { },
+      &quot;tags&quot; : [ ],
       &quot;chaosConfig&quot; : {
-        &quot;enabled&quot; : true,
+        &quot;enabled&quot; : false,
         &quot;largeRequestFaultConfig&quot; : null,
         &quot;largeResponseFaultConfig&quot; : null,
-        &quot;latencyInjectionFaultConfig&quot; : {
-          &quot;ratio&quot; : 0.2,
-          &quot;from&quot; : 500,
-          &quot;to&quot; : 5000
-        },
-        &quot;badResponsesFaultConfig&quot; : {
-          &quot;ratio&quot; : 0.2,
-          &quot;responses&quot; : [ {
-            &quot;status&quot; : 502,
-            &quot;body&quot; : &quot;{\&quot;error\&quot;:\&quot;Nihonzaru everywhere ...\&quot;}&quot;,
-            &quot;headers&quot; : {
-              &quot;Content-Type&quot; : &quot;application/json&quot;
-            }
-          } ]
-        }
-      }
-    },
-    &quot;scripts&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;transformersRefs&quot; : [ ],
-      &quot;transformersConfig&quot; : { },
-      &quot;validatorRefs&quot; : [ ],
-      &quot;validatorConfig&quot; : { },
-      &quot;preRouteRefs&quot; : [ ],
-      &quot;preRouteConfig&quot; : { },
-      &quot;sinkRefs&quot; : [ ],
-      &quot;sinkConfig&quot; : { },
-      &quot;jobRefs&quot; : [ ],
-      &quot;jobConfig&quot; : { }
-    },
-    &quot;geolocationSettings&quot; : {
-      &quot;type&quot; : &quot;none&quot;
-    },
-    &quot;userAgentSettings&quot; : {
-      &quot;enabled&quot; : false
-    },
-    &quot;autoCert&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;replyNicely&quot; : false,
-      &quot;caRef&quot; : null,
-      &quot;allowed&quot; : [ ],
-      &quot;notAllowed&quot; : [ ]
-    },
-    &quot;tlsSettings&quot; : {
-      &quot;defaultDomain&quot; : null,
-      &quot;randomIfNotFound&quot; : false,
-      &quot;includeJdkCaServer&quot; : true,
-      &quot;includeJdkCaClient&quot; : true,
-      &quot;trustedCAsServer&quot; : [ ]
-    },
-    &quot;plugins&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;refs&quot; : [ ],
-      &quot;config&quot; : { },
-      &quot;excluded&quot; : [ ]
-    },
-    &quot;metadata&quot; : { }
-  },
-  &quot;admins&quot; : [ ],
-  &quot;simpleAdmins&quot; : [ {
-    &quot;_loc&quot; : {
-      &quot;tenant&quot; : &quot;default&quot;,
-      &quot;teams&quot; : [ &quot;default&quot; ]
-    },
-    &quot;username&quot; : &quot;admin@otoroshi.io&quot;,
-    &quot;password&quot; : &quot;$2a$10$iQRkqjKTW.5XH8ugQrnMDeUstx4KqmIeQ58dHHdW2Dv1FkyyAs4C.&quot;,
-    &quot;label&quot; : &quot;Otoroshi Admin&quot;,
-    &quot;createdAt&quot; : 1634651307724,
-    &quot;type&quot; : &quot;SIMPLE&quot;,
-    &quot;metadata&quot; : { },
-    &quot;tags&quot; : [ ],
-    &quot;rights&quot; : [ {
-      &quot;tenant&quot; : &quot;*:rw&quot;,
-      &quot;teams&quot; : [ &quot;*:rw&quot; ]
-    } ]
-  } ],
-  &quot;serviceGroups&quot; : [ {
-    &quot;_loc&quot; : {
-      &quot;tenant&quot; : &quot;default&quot;,
-      &quot;teams&quot; : [ &quot;default&quot; ]
-    },
-    &quot;id&quot; : &quot;admin-api-group&quot;,
-    &quot;name&quot; : &quot;Otoroshi Admin Api group&quot;,
-    &quot;description&quot; : &quot;No description&quot;,
-    &quot;tags&quot; : [ ],
-    &quot;metadata&quot; : { }
-  }, {
-    &quot;_loc&quot; : {
-      &quot;tenant&quot; : &quot;default&quot;,
-      &quot;teams&quot; : [ &quot;default&quot; ]
-    },
-    &quot;id&quot; : &quot;default&quot;,
-    &quot;name&quot; : &quot;default-group&quot;,
-    &quot;description&quot; : &quot;The default service group&quot;,
-    &quot;tags&quot; : [ ],
-    &quot;metadata&quot; : { }
-  } ],
-  &quot;apiKeys&quot; : [ {
-    &quot;_loc&quot; : {
-      &quot;tenant&quot; : &quot;default&quot;,
-      &quot;teams&quot; : [ &quot;default&quot; ]
-    },
-    &quot;clientId&quot; : &quot;admin-api-apikey-id&quot;,
-    &quot;clientSecret&quot; : &quot;admin-api-apikey-secret&quot;,
-    &quot;clientName&quot; : &quot;Otoroshi Backoffice ApiKey&quot;,
-    &quot;description&quot; : &quot;The apikey use by the Otoroshi UI&quot;,
-    &quot;authorizedGroup&quot; : &quot;admin-api-group&quot;,
-    &quot;authorizedEntities&quot; : [ &quot;group_admin-api-group&quot; ],
-    &quot;enabled&quot; : true,
-    &quot;readOnly&quot; : false,
-    &quot;allowClientIdOnly&quot; : false,
-    &quot;throttlingQuota&quot; : 10000,
-    &quot;dailyQuota&quot; : 10000000,
-    &quot;monthlyQuota&quot; : 10000000,
-    &quot;constrainedServicesOnly&quot; : false,
-    &quot;restrictions&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;allowLast&quot; : true,
-      &quot;allowed&quot; : [ ],
-      &quot;forbidden&quot; : [ ],
-      &quot;notFound&quot; : [ ]
-    },
-    &quot;rotation&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;rotationEvery&quot; : 744,
-      &quot;gracePeriod&quot; : 168,
-      &quot;nextSecret&quot; : null
-    },
-    &quot;validUntil&quot; : null,
-    &quot;tags&quot; : [ ],
-    &quot;metadata&quot; : { }
-  } ],
-  &quot;serviceDescriptors&quot; : [ {
-    &quot;_loc&quot; : {
-      &quot;tenant&quot; : &quot;default&quot;,
-      &quot;teams&quot; : [ &quot;default&quot; ]
-    },
-    &quot;id&quot; : &quot;admin-api-service&quot;,
-    &quot;groupId&quot; : &quot;admin-api-group&quot;,
-    &quot;groups&quot; : [ &quot;admin-api-group&quot; ],
-    &quot;name&quot; : &quot;otoroshi-admin-api&quot;,
-    &quot;description&quot; : &quot;&quot;,
-    &quot;env&quot; : &quot;prod&quot;,
-    &quot;domain&quot; : &quot;oto.tools&quot;,
-    &quot;subdomain&quot; : &quot;otoroshi-api&quot;,
-    &quot;targetsLoadBalancing&quot; : {
-      &quot;type&quot; : &quot;RoundRobin&quot;
-    },
-    &quot;targets&quot; : [ {
-      &quot;host&quot; : &quot;127.0.0.1:8080&quot;,
-      &quot;scheme&quot; : &quot;http&quot;,
-      &quot;weight&quot; : 1,
-      &quot;mtlsConfig&quot; : {
-        &quot;certs&quot; : [ ],
-        &quot;trustedCerts&quot; : [ ],
-        &quot;mtls&quot; : false,
-        &quot;loose&quot; : false,
-        &quot;trustAll&quot; : false
+        &quot;latencyInjectionFaultConfig&quot; : null,
+        &quot;badResponsesFaultConfig&quot; : null
       },
-      &quot;tags&quot; : [ ],
-      &quot;metadata&quot; : { },
-      &quot;protocol&quot; : &quot;HTTP/1.1&quot;,
-      &quot;predicate&quot; : {
-        &quot;type&quot; : &quot;AlwaysMatch&quot;
-      },
-      &quot;ipAddress&quot; : null
-    } ],
-    &quot;root&quot; : &quot;/&quot;,
-    &quot;matchingRoot&quot; : null,
-    &quot;stripPath&quot; : true,
-    &quot;localHost&quot; : &quot;127.0.0.1:8080&quot;,
-    &quot;localScheme&quot; : &quot;http&quot;,
-    &quot;redirectToLocal&quot; : false,
-    &quot;enabled&quot; : true,
-    &quot;userFacing&quot; : false,
-    &quot;privateApp&quot; : false,
-    &quot;forceHttps&quot; : false,
-    &quot;logAnalyticsOnServer&quot; : false,
-    &quot;useAkkaHttpClient&quot; : true,
-    &quot;useNewWSClient&quot; : false,
-    &quot;tcpUdpTunneling&quot; : false,
-    &quot;detectApiKeySooner&quot; : false,
-    &quot;maintenanceMode&quot; : false,
-    &quot;buildMode&quot; : false,
-    &quot;strictlyPrivate&quot; : false,
-    &quot;enforceSecureCommunication&quot; : true,
-    &quot;sendInfoToken&quot; : true,
-    &quot;sendStateChallenge&quot; : true,
-    &quot;sendOtoroshiHeadersBack&quot; : true,
-    &quot;readOnly&quot; : false,
-    &quot;xForwardedHeaders&quot; : false,
-    &quot;overrideHost&quot; : true,
-    &quot;allowHttp10&quot; : true,
-    &quot;letsEncrypt&quot; : false,
-    &quot;secComHeaders&quot; : {
-      &quot;claimRequestName&quot; : null,
-      &quot;stateRequestName&quot; : null,
-      &quot;stateResponseName&quot; : null
-    },
-    &quot;secComTtl&quot; : 30000,
-    &quot;secComVersion&quot; : 1,
-    &quot;secComInfoTokenVersion&quot; : &quot;Legacy&quot;,
-    &quot;secComExcludedPatterns&quot; : [ ],
-    &quot;securityExcludedPatterns&quot; : [ ],
-    &quot;publicPatterns&quot; : [ &quot;/health&quot;, &quot;/metrics&quot; ],
-    &quot;privatePatterns&quot; : [ ],
-    &quot;additionalHeaders&quot; : {
-      &quot;Host&quot; : &quot;otoroshi-admin-internal-api.oto.tools&quot;
-    },
-    &quot;additionalHeadersOut&quot; : { },
-    &quot;missingOnlyHeadersIn&quot; : { },
-    &quot;missingOnlyHeadersOut&quot; : { },
-    &quot;removeHeadersIn&quot; : [ ],
-    &quot;removeHeadersOut&quot; : [ ],
-    &quot;headersVerification&quot; : { },
-    &quot;matchingHeaders&quot; : { },
-    &quot;ipFiltering&quot; : {
-      &quot;whitelist&quot; : [ ],
-      &quot;blacklist&quot; : [ ]
-    },
-    &quot;api&quot; : {
-      &quot;exposeApi&quot; : false
-    },
-    &quot;healthCheck&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;url&quot; : &quot;/&quot;
-    },
-    &quot;clientConfig&quot; : {
-      &quot;useCircuitBreaker&quot; : true,
-      &quot;retries&quot; : 1,
-      &quot;maxErrors&quot; : 20,
-      &quot;retryInitialDelay&quot; : 50,
-      &quot;backoffFactor&quot; : 2,
-      &quot;callTimeout&quot; : 30000,
-      &quot;callAndStreamTimeout&quot; : 120000,
-      &quot;connectionTimeout&quot; : 10000,
-      &quot;idleTimeout&quot; : 60000,
-      &quot;globalTimeout&quot; : 30000,
-      &quot;sampleInterval&quot; : 2000,
-      &quot;proxy&quot; : { },
-      &quot;customTimeouts&quot; : [ ],
-      &quot;cacheConnectionSettings&quot; : {
+      &quot;jwtVerifier&quot; : {
+        &quot;type&quot; : &quot;ref&quot;,
+        &quot;ids&quot; : [ ],
+        &quot;id&quot; : null,
         &quot;enabled&quot; : false,
-        &quot;queueSize&quot; : 2048
-      }
-    },
-    &quot;canary&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;traffic&quot; : 0.2,
-      &quot;targets&quot; : [ ],
-      &quot;root&quot; : &quot;/&quot;
-    },
-    &quot;gzip&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;excludedPatterns&quot; : [ ],
-      &quot;whiteList&quot; : [ &quot;text/*&quot;, &quot;application/javascript&quot;, &quot;application/json&quot; ],
-      &quot;blackList&quot; : [ ],
-      &quot;bufferSize&quot; : 8192,
-      &quot;chunkedThreshold&quot; : 102400,
-      &quot;compressionLevel&quot; : 5
-    },
-    &quot;metadata&quot; : { },
-    &quot;tags&quot; : [ ],
-    &quot;chaosConfig&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;largeRequestFaultConfig&quot; : null,
-      &quot;largeResponseFaultConfig&quot; : null,
-      &quot;latencyInjectionFaultConfig&quot; : null,
-      &quot;badResponsesFaultConfig&quot; : null
-    },
-    &quot;jwtVerifier&quot; : {
-      &quot;type&quot; : &quot;ref&quot;,
-      &quot;ids&quot; : [ ],
-      &quot;id&quot; : null,
-      &quot;enabled&quot; : false,
-      &quot;excludedPatterns&quot; : [ ]
-    },
-    &quot;secComSettings&quot; : {
-      &quot;type&quot; : &quot;HSAlgoSettings&quot;,
-      &quot;size&quot; : 512,
-      &quot;secret&quot; : &quot;${config.app.claim.sharedKey}&quot;,
-      &quot;base64&quot; : false
-    },
-    &quot;secComUseSameAlgo&quot; : true,
-    &quot;secComAlgoChallengeOtoToBack&quot; : {
-      &quot;type&quot; : &quot;HSAlgoSettings&quot;,
-      &quot;size&quot; : 512,
-      &quot;secret&quot; : &quot;secret&quot;,
-      &quot;base64&quot; : false
-    },
-    &quot;secComAlgoChallengeBackToOto&quot; : {
-      &quot;type&quot; : &quot;HSAlgoSettings&quot;,
-      &quot;size&quot; : 512,
-      &quot;secret&quot; : &quot;secret&quot;,
-      &quot;base64&quot; : false
-    },
-    &quot;secComAlgoInfoToken&quot; : {
-      &quot;type&quot; : &quot;HSAlgoSettings&quot;,
-      &quot;size&quot; : 512,
-      &quot;secret&quot; : &quot;secret&quot;,
-      &quot;base64&quot; : false
-    },
-    &quot;cors&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;allowOrigin&quot; : &quot;*&quot;,
-      &quot;exposeHeaders&quot; : [ ],
-      &quot;allowHeaders&quot; : [ ],
-      &quot;allowMethods&quot; : [ ],
-      &quot;excludedPatterns&quot; : [ ],
-      &quot;maxAge&quot; : null,
-      &quot;allowCredentials&quot; : true
-    },
-    &quot;redirection&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;code&quot; : 303,
-      &quot;to&quot; : &quot;https://www.otoroshi.io&quot;
-    },
-    &quot;authConfigRef&quot; : null,
-    &quot;clientValidatorRef&quot; : null,
-    &quot;transformerRef&quot; : null,
-    &quot;transformerRefs&quot; : [ ],
-    &quot;transformerConfig&quot; : { },
-    &quot;apiKeyConstraints&quot; : {
-      &quot;basicAuth&quot; : {
-        &quot;enabled&quot; : true,
-        &quot;headerName&quot; : null,
-        &quot;queryName&quot; : null
+        &quot;excludedPatterns&quot; : [ ]
       },
-      &quot;customHeadersAuth&quot; : {
-        &quot;enabled&quot; : true,
-        &quot;clientIdHeaderName&quot; : null,
-        &quot;clientSecretHeaderName&quot; : null
+      &quot;secComSettings&quot; : {
+        &quot;type&quot; : &quot;HSAlgoSettings&quot;,
+        &quot;size&quot; : 512,
+        &quot;secret&quot; : &quot;${config.app.claim.sharedKey}&quot;,
+        &quot;base64&quot; : false
       },
-      &quot;clientIdAuth&quot; : {
-        &quot;enabled&quot; : true,
-        &quot;headerName&quot; : null,
-        &quot;queryName&quot; : null
+      &quot;secComUseSameAlgo&quot; : true,
+      &quot;secComAlgoChallengeOtoToBack&quot; : {
+        &quot;type&quot; : &quot;HSAlgoSettings&quot;,
+        &quot;size&quot; : 512,
+        &quot;secret&quot; : &quot;secret&quot;,
+        &quot;base64&quot; : false
       },
-      &quot;jwtAuth&quot; : {
-        &quot;enabled&quot; : true,
-        &quot;secretSigned&quot; : true,
-        &quot;keyPairSigned&quot; : true,
-        &quot;includeRequestAttributes&quot; : false,
-        &quot;maxJwtLifespanSecs&quot; : null,
-        &quot;headerName&quot; : null,
-        &quot;queryName&quot; : null,
-        &quot;cookieName&quot; : null
+      &quot;secComAlgoChallengeBackToOto&quot; : {
+        &quot;type&quot; : &quot;HSAlgoSettings&quot;,
+        &quot;size&quot; : 512,
+        &quot;secret&quot; : &quot;secret&quot;,
+        &quot;base64&quot; : false
       },
-      &quot;routing&quot; : {
-        &quot;noneTagIn&quot; : [ ],
-        &quot;oneTagIn&quot; : [ ],
-        &quot;allTagsIn&quot; : [ ],
-        &quot;noneMetaIn&quot; : { },
-        &quot;oneMetaIn&quot; : { },
-        &quot;allMetaIn&quot; : { },
-        &quot;noneMetaKeysIn&quot; : [ ],
-        &quot;oneMetaKeyIn&quot; : [ ],
-        &quot;allMetaKeysIn&quot; : [ ]
-      }
-    },
-    &quot;restrictions&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;allowLast&quot; : true,
-      &quot;allowed&quot; : [ ],
-      &quot;forbidden&quot; : [ ],
-      &quot;notFound&quot; : [ ]
-    },
-    &quot;accessValidator&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;refs&quot; : [ ],
-      &quot;config&quot; : { },
-      &quot;excludedPatterns&quot; : [ ]
-    },
-    &quot;preRouting&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;refs&quot; : [ ],
-      &quot;config&quot; : { },
-      &quot;excludedPatterns&quot; : [ ]
-    },
-    &quot;plugins&quot; : {
-      &quot;enabled&quot; : false,
-      &quot;refs&quot; : [ ],
-      &quot;config&quot; : { },
-      &quot;excluded&quot; : [ ]
-    },
-    &quot;hosts&quot; : [ &quot;otoroshi-api.oto.tools&quot; ],
-    &quot;paths&quot; : [ ],
-    &quot;handleLegacyDomain&quot; : true,
-    &quot;issueCert&quot; : false,
-    &quot;issueCertCA&quot; : null
-  } ],
-  &quot;errorTemplates&quot; : [ ],
-  &quot;jwtVerifiers&quot; : [ ],
-  &quot;authConfigs&quot; : [ ],
-  &quot;certificates&quot; : [],
-  &quot;clientValidators&quot; : [ ],
-  &quot;scripts&quot; : [ ],
-  &quot;tcpServices&quot; : [ ],
-  &quot;dataExporters&quot; : [ ],
-  &quot;tenants&quot; : [ {
-    &quot;id&quot; : &quot;default&quot;,
-    &quot;name&quot; : &quot;Default organization&quot;,
-    &quot;description&quot; : &quot;The default organization&quot;,
-    &quot;metadata&quot; : { },
-    &quot;tags&quot; : [ ]
-  } ],
-  &quot;teams&quot; : [ {
-    &quot;id&quot; : &quot;default&quot;,
-    &quot;tenant&quot; : &quot;default&quot;,
-    &quot;name&quot; : &quot;Default Team&quot;,
-    &quot;description&quot; : &quot;The default Team of the default organization&quot;,
-    &quot;metadata&quot; : { },
-    &quot;tags&quot; : [ ]
-  } ]
-}&#39; \
-http://otoroshi-api.oto.tools:8080/api/otoroshi.json \
--u admin-api-apikey-id:admin-api-apikey-secret 
+      &quot;secComAlgoInfoToken&quot; : {
+        &quot;type&quot; : &quot;HSAlgoSettings&quot;,
+        &quot;size&quot; : 512,
+        &quot;secret&quot; : &quot;secret&quot;,
+        &quot;base64&quot; : false
+      },
+      &quot;cors&quot; : {
+        &quot;enabled&quot; : false,
+        &quot;allowOrigin&quot; : &quot;*&quot;,
+        &quot;exposeHeaders&quot; : [ ],
+        &quot;allowHeaders&quot; : [ ],
+        &quot;allowMethods&quot; : [ ],
+        &quot;excludedPatterns&quot; : [ ],
+        &quot;maxAge&quot; : null,
+        &quot;allowCredentials&quot; : true
+      },
+      &quot;redirection&quot; : {
+        &quot;enabled&quot; : false,
+        &quot;code&quot; : 303,
+        &quot;to&quot; : &quot;https://www.otoroshi.io&quot;
+      },
+      &quot;authConfigRef&quot; : null,
+      &quot;clientValidatorRef&quot; : null,
+      &quot;transformerRef&quot; : null,
+      &quot;transformerRefs&quot; : [ ],
+      &quot;transformerConfig&quot; : { },
+      &quot;apiKeyConstraints&quot; : {
+        &quot;basicAuth&quot; : {
+          &quot;enabled&quot; : true,
+          &quot;headerName&quot; : null,
+          &quot;queryName&quot; : null
+        },
+        &quot;customHeadersAuth&quot; : {
+          &quot;enabled&quot; : true,
+          &quot;clientIdHeaderName&quot; : null,
+          &quot;clientSecretHeaderName&quot; : null
+        },
+        &quot;clientIdAuth&quot; : {
+          &quot;enabled&quot; : true,
+          &quot;headerName&quot; : null,
+          &quot;queryName&quot; : null
+        },
+        &quot;jwtAuth&quot; : {
+          &quot;enabled&quot; : true,
+          &quot;secretSigned&quot; : true,
+          &quot;keyPairSigned&quot; : true,
+          &quot;includeRequestAttributes&quot; : false,
+          &quot;maxJwtLifespanSecs&quot; : null,
+          &quot;headerName&quot; : null,
+          &quot;queryName&quot; : null,
+          &quot;cookieName&quot; : null
+        },
+        &quot;routing&quot; : {
+          &quot;noneTagIn&quot; : [ ],
+          &quot;oneTagIn&quot; : [ ],
+          &quot;allTagsIn&quot; : [ ],
+          &quot;noneMetaIn&quot; : { },
+          &quot;oneMetaIn&quot; : { },
+          &quot;allMetaIn&quot; : { },
+          &quot;noneMetaKeysIn&quot; : [ ],
+          &quot;oneMetaKeyIn&quot; : [ ],
+          &quot;allMetaKeysIn&quot; : [ ]
+        }
+      },
+      &quot;restrictions&quot; : {
+        &quot;enabled&quot; : false,
+        &quot;allowLast&quot; : true,
+        &quot;allowed&quot; : [ ],
+        &quot;forbidden&quot; : [ ],
+        &quot;notFound&quot; : [ ]
+      },
+      &quot;accessValidator&quot; : {
+        &quot;enabled&quot; : false,
+        &quot;refs&quot; : [ ],
+        &quot;config&quot; : { },
+        &quot;excludedPatterns&quot; : [ ]
+      },
+      &quot;preRouting&quot; : {
+        &quot;enabled&quot; : false,
+        &quot;refs&quot; : [ ],
+        &quot;config&quot; : { },
+        &quot;excludedPatterns&quot; : [ ]
+      },
+      &quot;plugins&quot; : {
+        &quot;enabled&quot; : false,
+        &quot;refs&quot; : [ ],
+        &quot;config&quot; : { },
+        &quot;excluded&quot; : [ ]
+      },
+      &quot;hosts&quot; : [ &quot;otoroshi-api.oto.tools&quot; ],
+      &quot;paths&quot; : [ ],
+      &quot;handleLegacyDomain&quot; : true,
+      &quot;issueCert&quot; : false,
+      &quot;issueCertCA&quot; : null
+    } ],
+    &quot;errorTemplates&quot; : [ ],
+    &quot;jwtVerifiers&quot; : [ ],
+    &quot;authConfigs&quot; : [ ],
+    &quot;certificates&quot; : [],
+    &quot;clientValidators&quot; : [ ],
+    &quot;scripts&quot; : [ ],
+    &quot;tcpServices&quot; : [ ],
+    &quot;dataExporters&quot; : [ ],
+    &quot;tenants&quot; : [ {
+      &quot;id&quot; : &quot;default&quot;,
+      &quot;name&quot; : &quot;Default organization&quot;,
+      &quot;description&quot; : &quot;The default organization&quot;,
+      &quot;metadata&quot; : { },
+      &quot;tags&quot; : [ ]
+    } ],
+    &quot;teams&quot; : [ {
+      &quot;id&quot; : &quot;default&quot;,
+      &quot;tenant&quot; : &quot;default&quot;,
+      &quot;name&quot; : &quot;Default Team&quot;,
+      &quot;description&quot; : &quot;The default Team of the default organization&quot;,
+      &quot;metadata&quot; : { },
+      &quot;tags&quot; : [ ]
+    } ]
+  }&#39; \
+  &#39;http://otoroshi-api.oto.tools:8080/api/otoroshi.json&#39; \
+  -u admin-api-apikey-id:admin-api-apikey-secret 
 </code></pre>
 <p>This should output :</p>
 <pre class="prettyprint"><code class="language-json">{ &quot;done&quot;:true }
@@ -1214,15 +1206,16 @@ http://otoroshi-api.oto.tools:8080/api/otoroshi.json \
 <p>The second way is to send the same configuration but from a file. You can pass two kind of file : a <code>json</code> file or a <code>ndjson</code> file. Both files are available as export methods on the danger zone.</p>
 <pre class="prettyprint"><code class="language-sh"># the curl is run from a folder containing the initial-state.json file 
 curl -X POST \
--H &quot;X-Content-Type: application/json&quot; \
--d @./initial-state.json http://otoroshi-api.oto.tools:8080/api/otoroshi.json \
--u admin-api-apikey-id:admin-api-apikey-secret
+  -H &quot;Content-Type: application/json&quot; \
+  -d @./initial-state.json \
+  &#39;http://otoroshi-api.oto.tools:8080/api/otoroshi.json&#39; \
+  -u admin-api-apikey-id:admin-api-apikey-secret
 </code></pre>
 <p>This should output :</p>
 <pre class="prettyprint"><code class="language-json">{ &quot;done&quot;:true }
 </code></pre>
 <blockquote>
-  <p>Note: To send a ndjson file, you have to set the X-Content-Type header at <code>application/x-ndjson</code></p>
+  <p>Note: To send a ndjson file, you have to set the Content-Type header at <code>application/x-ndjson</code></p>
 </blockquote>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../how-to-s/secure-app-with-auth0.html">Secure an app with Auth0</a></p>
@@ -1236,7 +1229,6 @@ curl -X POST \
 <ul>
   <li><a href="../how-to-s/import-export-otoroshi-datastore.html#import-and-export-otoroshi-datastore" class="header">Import and export Otoroshi datastore</a>
   <ul>
-    <li><a href="../how-to-s/import-export-otoroshi-datastore.html#cover-by-this-tutorial" class="header">Cover by this tutorial</a></li>
     <li><a href="../how-to-s/import-export-otoroshi-datastore.html#start-otoroshi-with-an-initial-datastore" class="header">Start Otoroshi with an initial datastore</a></li>
     <li><a href="../how-to-s/import-export-otoroshi-datastore.html#export-the-current-datastore-via-the-danger-zone" class="header">Export the current datastore via the danger zone</a></li>
     <li><a href="../how-to-s/import-export-otoroshi-datastore.html#import-a-datastore-from-file-via-the-danger-zone" class="header">Import a datastore from file via the danger zone</a></li>

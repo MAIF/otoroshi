@@ -245,15 +245,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#export-events-to-elasticsearch" name="export-events-to-elasticsearch" class="anchor"><span class="anchor-link"></span></a>Export events to Elasticsearch</h1>
-<h3><a href="#cover-by-this-tutorial" name="cover-by-this-tutorial" class="anchor"><span class="anchor-link"></span></a>Cover by this tutorial</h3>
-<ul>
-  <li><a href="#before-you-start">Before you start</a></li>
-  <li><a href="#deploy-a-elasticsearch-and-kibana-stack-on-docker">Deploy a Elasticsearch and kibana stack on Docker</a></li>
-  <li><a href="#create-an-elasticsearch-exporter">Create an Elasticsearch exporter</a></li>
-  <li><a href="#testing-your-configuration">Testing your configuration</a></li>
-  <li><a href="#advanced-usage">Advanced usage</a></li>
-  <li><a href="#debug-your-configuration">Debug your configuration</a></li>
-</ul>
 <h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p>
 <p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar&#39;
@@ -264,9 +255,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
 <p>Create a service, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/services&#39; \
--d &#39;{&quot;enforceSecureCommunication&quot;: false, &quot;forceHttps&quot;: false, &quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;name&quot;:&quot;my-service&quot;,&quot;description&quot;:&quot;a service&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;myservice&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;\/.*&quot;],&quot;privatePatterns&quot;:[],&quot;kind&quot;:&quot;ServiceDescriptor&quot;}&#39; \
--H &quot;Content-type: application/json&quot; \
--u admin-api-apikey-id:admin-api-apikey-secret
+  -d &#39;{&quot;enforceSecureCommunication&quot;: false, &quot;forceHttps&quot;: false, &quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;name&quot;:&quot;my-service&quot;,&quot;description&quot;:&quot;a service&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;myservice&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;\/.*&quot;],&quot;privatePatterns&quot;:[],&quot;kind&quot;:&quot;ServiceDescriptor&quot;}&#39; \
+  -H &quot;Content-type: application/json&quot; \
+  -u admin-api-apikey-id:admin-api-apikey-secret
 </code></pre>
 <h3><a href="#deploy-a-elasticsearch-and-kibana-stack-on-docker" name="deploy-a-elasticsearch-and-kibana-stack-on-docker" class="anchor"><span class="anchor-link"></span></a>Deploy a Elasticsearch and kibana stack on Docker</h3>
 <p>Let&rsquo;s start by create an Elasticsearch and Kibana stack on our machine (if it&rsquo;s already done for you, you can skip this section).</p>
@@ -297,7 +288,7 @@ docker run --name kib01-test --net elastic -p 5601:5601 -e &quot;ELASTICSEARCH_H
 <p>Navigate to the danger zone (click on the cog on the right top and scroll to <code>danger zone</code>).</p>
 <p>Jump to the <code>Analytics: Elastic dashboard datasource (read)</code> section.</p>
 <p>Set the following values : <code>Cluster URI</code> -&gt; <code>http://localhost:9200</code></p>
-<p>Then click on the <code>Check connection</code>. This should ouput the same result as the previous part. Save the global configuration and navigate to *<a href="http://otoroshi.oto.tools:8080/bo/dashboard/stats*">http://otoroshi.oto.tools:8080/bo/dashboard/stats*</a>.</p>
+<p>Then click on the <code>Check connection</code>. This should ouput the same result as the previous part. Save the global configuration and navigate to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/stats">http://otoroshi.oto.tools:8080/bo/dashboard/stats</a>.</p>
 <p>This should output a list of graphs.</p>
 <h3><a href="#advanced-usage" name="advanced-usage" class="anchor"><span class="anchor-link"></span></a>Advanced usage</h3>
 <p>By default, an exporter handle all events from Otoroshi. In some case, you need to filter the events to send to elasticsearch.</p>
@@ -348,7 +339,6 @@ docker run --name kib01-test --net elastic -p 5601:5601 -e &quot;ELASTICSEARCH_H
 <ul>
   <li><a href="../how-to-s/export-events-to-elastic.html#export-events-to-elasticsearch" class="header">Export events to Elasticsearch</a>
   <ul>
-    <li><a href="../how-to-s/export-events-to-elastic.html#cover-by-this-tutorial" class="header">Cover by this tutorial</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html#before-you-start" class="header">Before you start</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html#deploy-a-elasticsearch-and-kibana-stack-on-docker" class="header">Deploy a Elasticsearch and kibana stack on Docker</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html#create-an-elasticsearch-exporter" class="header">Create an Elasticsearch exporter</a></li>
