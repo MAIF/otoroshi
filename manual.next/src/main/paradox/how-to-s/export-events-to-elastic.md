@@ -1,13 +1,5 @@
 # Export events to Elasticsearch
 
-### Cover by this tutorial
-- [Before you start](#before-you-start)
-- [Deploy a Elasticsearch and kibana stack on Docker](#deploy-a-elasticsearch-and-kibana-stack-on-docker)
-- [Create an Elasticsearch exporter](#create-an-elasticsearch-exporter)
-- [Testing your configuration](#testing-your-configuration)
-- [Advanced usage](#advanced-usage)
-- [Debug your configuration](#debug-your-configuration)
-
 ### Before you start
 
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
@@ -57,7 +49,7 @@ Jump to the `Analytics: Elastic dashboard datasource (read)` section.
 
 Set the following values : `Cluster URI` -> `http://localhost:9200`
 
-Then click on the `Check connection`. This should ouput the same result as the previous part. Save the global configuration and navigate to *http://otoroshi.oto.tools:8080/bo/dashboard/stats*.
+Then click on the `Check connection`. This should ouput the same result as the previous part. Save the global configuration and navigate to http://otoroshi.oto.tools:8080/bo/dashboard/stats.
 
 This should output a list of graphs.
 
@@ -95,6 +87,7 @@ The next field is the `Projection`. This field is a json when you can list the f
  "@id": true
 }
 ```
+
 With this example, only `@type`, `@timestamp` and `@id` will be send to ES.
 
 ### Debug your configuration
