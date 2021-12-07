@@ -15,8 +15,17 @@ To try them, you can folllow @ref[this tutorial](../how-to-s/export-alerts-using
 
 All exporters are split in three parts. The first and second parts are common and the last are specific by exporter.
 
-* `Filtering and projection` : section to filter the list of sent events and alerts. The projection field allows you to export only certain event fields and reduce the size of exported data. It's composed of `Filtering` and `Projection` fields.
+* `Filtering and projection` : section to filter the list of sent events and alerts. The projection field allows you to export only certain event fields and reduce the size of exported data. It's composed of `Filtering` and `Projection` fields. To get a full usage of this elements, read @ref:[this section](#matching-and-projections)
+* `Queue details`: set of fields to adjust the workers of the exporter. 
+  * `Buffer size`: if elements are pushed onto the queue faster than the source is consumed the overflow will be handled with a strategy specified by the user. Keep in memory the number of events.
+  * `JSON conversion workers`: number of workers used to transform events to JSON format in paralell
+  * `Send workers`: number of workers used to send transformed events
+  * `Group size`: chunk up this stream into groups of elements received within a time window (the time window is the next field)
+  * `Group duration`: waiting time before sending the group of events. If the group size is reached before the group duration, the events will be instantly sent
+  
+For the last part, the `Exporter configuration` will be detail individually.
 
+## Matching and projections
 
 **Filtering** is used to **include** or **exclude** some kind of events and alerts. For each include and exclude field, you can add a list of key-value. 
 
@@ -24,6 +33,30 @@ Let's say we only want to keep Otoroshi alerts
 ```json
 { "include": [{ "@type": "AlertEvent" }] }
 ```
+
+Otoroshi provides a list of rules to keep only events with specific values. We will use the following event to illustrate.
+
+```json
+{
+ "foo": "bar",
+ "type": "AlertEvent",
+ "alert": "big-alert",
+ "status": 200,
+ "codes": ["a", "b"],
+ "inner": {
+   "foo": "bar",
+   "bar": "foo"
+ }
+}
+```
+
+The rules apply with the previous example as event.
+
+@@@div { #filtering }
+&nbsp;
+@@@
+
+
 
 **Projection** is a list of fields to export. In the case of an empty list, all the fields of an event will be exported. In other case, **only** the listed fields will be exported.
 
@@ -49,22 +82,6 @@ The last possiblity is to retrieve a sub-object of an event. Let's say we want t
 ```json
 { "user": { "name": true } }
 ```
-
-
-* `Queue details`: set of fields to adjust the workers of the exporter. 
-  * `Buffer size`: if elements are pushed onto the queue faster than the source is consumed the overflow will be handled with a strategy specified by the user. Keep in memory the number of events.
-  * `JSON conversion workers`: number of workers used to transform events to JSON format in paralell
-  * `Send workers`: number of workers used to send transformed events
-  * `Group size`: chunk up this stream into groups of elements received within a time window (the time window is the next field)
-  * `Group duration`: waiting time before sending the group of events. If the group size is reached before the group duration, the events will be instantly sent
-  
-For the last part, the `Exporter configuration` will be detail individually.
-
-## Matching and projections
-
-@@@ warning
-TODO: this section needs to be written
-@@@
 
 ## Elastic
 
