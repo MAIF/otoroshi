@@ -61,7 +61,6 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
-    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -171,7 +170,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
-    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -265,6 +263,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>Metadata</code>: metadata attached to the api key</li>
 </ul>
 <h3><a href="#automatic-secret-rotation" name="automatic-secret-rotation" class="anchor"><span class="anchor-link"></span></a>Automatic secret rotation</h3>
+<p>API can handle automatic secret rotation by themselves. When enabled, the rotation changes the secret every <code>Rotation every</code> duration. During the <code>Grace period</code> both secret will be usable.</p>
 <ul>
   <li><code>Enabled</code>: enabled automatic apikey secret rotation</li>
   <li><code>Rotation every</code>: rotate secrets every</li>
@@ -293,7 +292,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </ul><div class="callout warning "><div class="callout-title">Warning</div>
 <p>Daily and monthly quotas are based on the following rules :</p>
 <ul>
-  <li>daily quota is computed between 00h00:00.000 and 23h59:59.999</li>
+  <li>daily quota is computed between 00h00:00.000 and 23h59:59.999 of the current day</li>
   <li>monthly qutoas is computed between the first day of the month at 00h00:00.000 and the last day of the month at 23h59:59.999</li>
 </ul></div>
 <h3><a href="#quotas-consumption" name="quotas-consumption" class="anchor"><span class="anchor-link"></span></a>Quotas consumption</h3>

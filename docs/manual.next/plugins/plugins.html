@@ -61,7 +61,6 @@
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
-    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -171,7 +170,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
-    <li><a href="../entities/plugins.html" class="page">Plugins</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
@@ -246,11 +244,61 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#otoroshi-plugins-system" name="otoroshi-plugins-system" class="anchor"><span class="anchor-link"></span></a>Otoroshi plugins system</h1><div class="callout warning "><div class="callout-title">Warning</div>
 <p>TODO</p></div>
+<h2><a href="#available-plugins" name="available-plugins" class="anchor"><span class="anchor-link"></span></a>Available plugins</h2><div class="plugin script">
+<h2><a href="#request-sink" name="request-sink" class="anchor"><span class="anchor-link"></span></a>Request Sink</h2>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Used when no services are matched in Otoroshi. Can reply with any content.</p></div><div class="plugin script">
+<h2><a href="#pre-routing" name="pre-routing" class="anchor"><span class="anchor-link"></span></a>Pre routing</h2>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Used to extract values (like custom apikeys) and provide them to other plugins or Otoroshi engine</p></div><div class="plugin script">
+<h2><a href="#access-validator" name="access-validator" class="anchor"><span class="anchor-link"></span></a>Access Validator</h2>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Used to validate if a request can pass or not based on whatever you want</p></div><div class="plugin script">
+<h2><a href="#request-transformer" name="request-transformer" class="anchor"><span class="anchor-link"></span></a>Request Transformer</h2>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Used to transform request, responses and their body. Can be used to return arbitrary content</p></div><div class="plugin script">
+<h2><a href="#event-listener" name="event-listener" class="anchor"><span class="anchor-link"></span></a>Event listener</h2>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Any plugin type can listen to Otoroshi internal events and react to thems</p></div><div class="plugin script">
+<h2><a href="#job" name="job" class="anchor"><span class="anchor-link"></span></a>Job</h2>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Tasks that can run automatically once, on be scheduled with a cron expression or every defined interval</p></div><div class="plugin script">
+<h2><a href="#exporter" name="exporter" class="anchor"><span class="anchor-link"></span></a>Exporter</h2>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Used to export events and Otoroshi alerts to an external source</p></div><div class="plugin script">
+<h2><a href="#request-handler" name="request-handler" class="anchor"><span class="anchor-link"></span></a>Request handler</h2>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Used to handle traffic without passing through Otoroshi routing and apply own rules</p></div><div class="plugin script">
+<h2><a href="#nano-app" name="nano-app" class="anchor"><span class="anchor-link"></span></a>Nano app</h2>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>Used to write an api directly in Otoroshi in Scala language</p></div>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../plugins/create-plugins.html">Create plugins</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../plugins/plugins.html#otoroshi-plugins-system" class="header">Otoroshi plugins system</a>
+  <ul>
+    <li><a href="../plugins/plugins.html#available-plugins" class="header">Available plugins</a></li>
+    <li><a href="../plugins/plugins.html#request-sink" class="header">Request Sink</a></li>
+    <li><a href="../plugins/plugins.html#pre-routing" class="header">Pre routing</a></li>
+    <li><a href="../plugins/plugins.html#access-validator" class="header">Access Validator</a></li>
+    <li><a href="../plugins/plugins.html#request-transformer" class="header">Request Transformer</a></li>
+    <li><a href="../plugins/plugins.html#event-listener" class="header">Event listener</a></li>
+    <li><a href="../plugins/plugins.html#job" class="header">Job</a></li>
+    <li><a href="../plugins/plugins.html#exporter" class="header">Exporter</a></li>
+    <li><a href="../plugins/plugins.html#request-handler" class="header">Request handler</a></li>
+    <li><a href="../plugins/plugins.html#nano-app" class="header">Nano app</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 
