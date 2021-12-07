@@ -94,6 +94,7 @@
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">Use the resources loader</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -204,6 +205,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">Use the resources loader</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -244,13 +246,172 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#create-plugins" name="create-plugins" class="anchor"><span class="anchor-link"></span></a>Create plugins</h1><div class="callout note "><div class="callout-title">Note</div>
-<p>TODO: This section is being written, thanks for your patience :)</p></div>
+<h1><a href="#create-plugins" name="create-plugins" class="anchor"><span class="anchor-link"></span></a>Create plugins</h1><div class="callout warning "><div class="callout-title">Warning</div>
+<p>This section is under rewrite. The following content is deprecated</p></div>
+<p>When everything has failed and you absolutely need a feature in Otoroshi to make your use case work, there is a solution. Plugins is the feature in Otoroshi that allow you to code how Otoroshi should behave when receiving, validating and routing an http request. With request plugin, you can change request / response headers and request / response body the way you want, provide your own apikey, etc.</p>
+<h2><a href="#plugin-types" name="plugin-types" class="anchor"><span class="anchor-link"></span></a>Plugin types</h2>
+<p>there are many plugin types</p>
+<ul>
+  <li><code>request sinks</code> plugins: used when no services are matched in otoroshi. Can reply with any content</li>
+  <li><code>pre-routes</code> plugins: used to extract values (like custom apikeys) and provide them to other plugins or otoroshi engine</li>
+  <li><code>access validation</code> plugins: used to validate if a request can pass or not based on whatever you want</li>
+  <li><code>request transformer</code> plugins: used to transform request, responses and their body. Can be used to return arbitrary content</li>
+  <li><code>event listener</code> plugins: any plugin type can listen to otoroshi internal events and react to thems</li>
+  <li><code>job</code> plugins: tasks taht can run automatically once, on be scheduled with a cron expression or every defined interval</li>
+</ul>
+<h2><a href="#code-and-signatures" name="code-and-signatures" class="anchor"><span class="anchor-link"></span></a>Code and signatures</h2>
+<ul>
+  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/requestsink.scala#L14-L19">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/requestsink.scala#L14-L19</a></li>
+  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/routing.scala#L75-L78">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/routing.scala#L75-L78</a></li>
+  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/accessvalidator.scala#L65-L85">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/accessvalidator.scala#L65-L85</a></li>
+  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/script.scala#269-L540">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/script.scala#269-L540</a></li>
+  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/eventlistener.scala#L27-L48">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/eventlistener.scala#L27-L48</a></li>
+  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/job.scala#L69-L164">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/job.scala#L69-L164</a></li>
+  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/job.scala#L108-L110">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/job.scala#L108-L110</a></li>
+</ul>
+<p>for more information about APIs you can use</p>
+<ul>
+  <li><a href="https://www.playframework.com/documentation/2.6.x/api/scala/index.html#package">https://www.playframework.com/documentation/2.6.x/api/scala/index.html#package</a></li>
+  <li><a href="https://www.playframework.com/documentation/2.6.x/api/scala/index.html#play.api.mvc.Results">https://www.playframework.com/documentation/2.6.x/api/scala/index.html#play.api.mvc.Results</a></li>
+  <li><a href="https://github.com/MAIF/otoroshi">https://github.com/MAIF/otoroshi</a></li>
+  <li><a href="https://doc.akka.io/docs/akka/2.5/stream/index.html">https://doc.akka.io/docs/akka/2.5/stream/index.html</a></li>
+  <li><a href="https://doc.akka.io/api/akka/current/akka/stream/index.html">https://doc.akka.io/api/akka/current/akka/stream/index.html</a></li>
+  <li><a href="https://doc.akka.io/api/akka/current/akka/stream/scaladsl/Source.html">https://doc.akka.io/api/akka/current/akka/stream/scaladsl/Source.html</a></li>
+</ul>
+<h2><a href="#plugin-examples" name="plugin-examples" class="anchor"><span class="anchor-link"></span></a>Plugin examples</h2>
+<p>A lot of plugins comes with otoroshi, you can find it on <a href="https://github.com/MAIF/otoroshi/tree/master/otoroshi/app/plugins">github</a></p>
+<h2><a href="#writing-a-plugin-from-otoroshi-ui" name="writing-a-plugin-from-otoroshi-ui" class="anchor"><span class="anchor-link"></span></a>Writing a plugin from Otoroshi UI</h2>
+<p>Log into Otoroshi and go to <code>Settings (cog icon) / Plugins</code>. Here you can create multiple request transformer scripts and associate it with service descriptor later.</p><div class="centered-img">
+<img src="../img/scripts-1.png" /></div>
+<p>when you write for instance a transformer in the Otoroshi UI, do the following</p>
+<pre class="prettyprint"><code class="language-scala">import akka.stream.Materializer
+import env.Env
+import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.script._
+import play.api.Logger
+import play.api.mvc.{Result, Results}
+import scala.util._
+import scala.concurrent.{ExecutionContext, Future}
+
+class MyTransformer extends RequestTransformer {
+
+  val logger = Logger(&quot;my-transformer&quot;)
+
+  // implements the methods you want
+}
+
+// WARN: do not forget this line to provide a working instance of your transformer to Otoroshi
+new MyTransformer()
+</code></pre>
+<p>You can use the compile button to check if the script compiles, or code the transformer in your IDE (see next point).</p>
+<p>Then go to a service descriptor, scroll to the bottom of the page, and select your transformer in the list</p><div class="centered-img">
+<img src="../img/scripts-2.png" /></div>
+<h2><a href="#providing-a-transformer-from-java-classpath" name="providing-a-transformer-from-java-classpath" class="anchor"><span class="anchor-link"></span></a>Providing a transformer from Java classpath</h2>
+<p>You can write your own transformer using your favorite IDE. Just create an SBT project with the following dependencies. It can be quite handy to manage the source code like any other piece of code, and it avoid the compilation time for the script at Otoroshi startup.</p>
+<pre class="prettyprint"><code class="language-scala">lazy val root = (project in file(&quot;.&quot;)).
+  settings(
+    inThisBuild(List(
+      organization := &quot;com.example&quot;,
+      scalaVersion := &quot;2.12.7&quot;,
+      version      := &quot;0.1.0-SNAPSHOT&quot;
+    )),
+    name := &quot;request-transformer-example&quot;,
+    libraryDependencies += &quot;fr.maif&quot; %% &quot;otoroshi&quot; % &quot;1.x.x&quot;
+  )
+</code></pre><div class="callout warning "><div class="callout-title">Warning</div>
+<p>you MUST provide plugins that lies in the <code>otoroshi_plugins</code> package or in a sub-package of <code>otoroshi_plugins</code>. If you do not, your plugin will not be found by otoroshi. for example</p>
+<pre class="prettyprint"><code class="language-scala">package otoroshi_plugins.com.my.company.myplugin
+</code></pre>
+<p>also you don&rsquo;t have to instanciate your plugin at the end of the file like in the Otoroshi UI</p></div>
+<p>When your code is ready, create a jar file </p>
+<pre><code>sbt package
+</code></pre>
+<p>and add the jar file to the Otoroshi classpath</p>
+<pre class="prettyprint"><code class="language-sh">java -cp &quot;/path/to/transformer.jar:$/path/to/otoroshi.jar&quot; play.core.server.ProdServerStart
+</code></pre>
+<p>then, in your service descriptor, you can chose your transformer in the list. If you want to do it from the API, you have to defined the transformerRef using <code>cp:</code> prefix like </p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;transformerRef&quot;: &quot;cp:otoroshi_plugins.my.class.package.MyTransformer&quot;
+}
+</code></pre>
+<h2><a href="#getting-custom-configuration-from-the-otoroshi-config-file" name="getting-custom-configuration-from-the-otoroshi-config-file" class="anchor"><span class="anchor-link"></span></a>Getting custom configuration from the Otoroshi config. file</h2>
+<p>Let say you need to provide custom configuration values for a script, then you can customize a configuration file of Otoroshi</p>
+<pre class="prettyprint"><code class="language-hocon">include &quot;application.conf&quot;
+
+otoroshi {
+  scripts {
+    enabled = true
+  }
+}
+
+my-transformer {
+  env = &quot;prod&quot;
+  maxRequestBodySize = 2048
+  maxResponseBodySize = 2048
+}
+</code></pre>
+<p>then start Otoroshi like</p>
+<pre class="prettyprint"><code class="language-sh">java -Dconfig.file=/path/to/custom.conf -jar otoroshi.jar
+</code></pre>
+<p>then, in your transformer, you can write something like </p>
+<pre class="prettyprint"><code class="language-scala">package otoroshi_plugins.com.example.otoroshi
+
+import akka.stream.Materializer
+import akka.stream.scaladsl._
+import akka.util.ByteString
+import env.Env
+import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.script._
+import play.api.Logger
+import play.api.mvc.{Result, Results}
+import scala.util._
+import scala.concurrent.{ExecutionContext, Future}
+
+class BodyLengthLimiter extends RequestTransformer {
+
+  override def def transformResponseWithCtx(ctx: TransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+    val max = env.configuration.getOptional[Long](&quot;my-transformer.maxResponseBodySize&quot;).getOrElse(Long.MaxValue)
+    ctx.body.limitWeighted(max)(_.size)
+  }
+
+  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+    val max = env.configuration.getOptional[Long](&quot;my-transformer.maxRequestBodySize&quot;).getOrElse(Long.MaxValue)
+    ctx.body.limitWeighted(max)(_.size)
+  }
+}
+</code></pre>
+<h2><a href="#using-a-library-that-is-not-embedded-in-otoroshi" name="using-a-library-that-is-not-embedded-in-otoroshi" class="anchor"><span class="anchor-link"></span></a>Using a library that is not embedded in Otoroshi</h2>
+<p>Just use the <code>classpath</code> option when running Otoroshi</p>
+<pre class="prettyprint"><code class="language-sh">java -cp &quot;/path/to/library.jar:$/path/to/otoroshi.jar&quot; play.core.server.ProdServerStart
+</code></pre>
+<p>Be carefull as your library can conflict with other libraries used by Otoroshi and affect its stability</p>
+<h2><a href="#enabling-plugins" name="enabling-plugins" class="anchor"><span class="anchor-link"></span></a>Enabling plugins</h2>
+<p>plugins can be enabled per service from the service settings page or globally from the danger zone in the plugins section.</p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../plugins/built-in-plugins.html">Otoroshi built-in plugins</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../plugins/create-plugins.html#create-plugins" class="header">Create plugins</a>
+  <ul>
+    <li><a href="../plugins/create-plugins.html#plugin-types" class="header">Plugin types</a></li>
+    <li><a href="../plugins/create-plugins.html#code-and-signatures" class="header">Code and signatures</a></li>
+    <li><a href="../plugins/create-plugins.html#plugin-examples" class="header">Plugin examples</a></li>
+    <li><a href="../plugins/create-plugins.html#writing-a-plugin-from-otoroshi-ui" class="header">Writing a plugin from Otoroshi UI</a></li>
+    <li><a href="../plugins/create-plugins.html#providing-a-transformer-from-java-classpath" class="header">Providing a transformer from Java classpath</a></li>
+    <li><a href="../plugins/create-plugins.html#getting-custom-configuration-from-the-otoroshi-config-file" class="header">Getting custom configuration from the Otoroshi config. file</a></li>
+    <li><a href="../plugins/create-plugins.html#using-a-library-that-is-not-embedded-in-otoroshi" class="header">Using a library that is not embedded in Otoroshi</a></li>
+    <li><a href="../plugins/create-plugins.html#enabling-plugins" class="header">Enabling plugins</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 

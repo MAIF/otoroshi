@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Export events to Elasticsearch · Otoroshi</title>
+<title>Use the resources loader · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -81,7 +81,7 @@
   <ul>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
-    <li><a href="../how-to-s/export-events-to-elastic.html" class="active page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
     <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
     <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
     <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
@@ -94,7 +94,7 @@
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
-    <li><a href="../how-to-s/resources-loader.html" class="page">Use the resources loader</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="active page">Use the resources loader</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -192,7 +192,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
-    <li><a href="../how-to-s/export-events-to-elastic.html" class="active page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
     <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
     <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
     <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
@@ -205,7 +205,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
-    <li><a href="../how-to-s/resources-loader.html" class="page">Use the resources loader</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="active page">Use the resources loader</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -238,7 +238,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../how-to-s/index.html">How to&rsquo;s</a></li>
-  <li>Export events to Elasticsearch</li>
+  <li>Use the resources loader</li>
 </ul>
 </div>
 </div>
@@ -246,112 +246,20 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#export-events-to-elasticsearch" name="export-events-to-elasticsearch" class="anchor"><span class="anchor-link"></span></a>Export events to Elasticsearch</h1>
-<h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p>
-<p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar&#39;
-</code></pre>
-<p>then you can run start Otoroshi :</p>
-<pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -jar otoroshi.jar 
-</code></pre>
-<p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
-<p>Create a service, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/services&#39; \
-  -d &#39;{&quot;enforceSecureCommunication&quot;: false, &quot;forceHttps&quot;: false, &quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;name&quot;:&quot;my-service&quot;,&quot;description&quot;:&quot;a service&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;myservice&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;\/.*&quot;],&quot;privatePatterns&quot;:[],&quot;kind&quot;:&quot;ServiceDescriptor&quot;}&#39; \
-  -H &quot;Content-type: application/json&quot; \
-  -u admin-api-apikey-id:admin-api-apikey-secret
-</code></pre>
-<h3><a href="#deploy-a-elasticsearch-and-kibana-stack-on-docker" name="deploy-a-elasticsearch-and-kibana-stack-on-docker" class="anchor"><span class="anchor-link"></span></a>Deploy a Elasticsearch and kibana stack on Docker</h3>
-<p>Let&rsquo;s start by create an Elasticsearch and Kibana stack on our machine (if it&rsquo;s already done for you, you can skip this section).</p>
-<p>To start an Elasticsearch container for development or testing, run:</p>
-<pre class="prettyprint"><code class="language-sh">docker network create elastic
-docker pull docker.elastic.co/elasticsearch/elasticsearch:7.15.1
-docker run --name es01-test --net elastic -p 9200:9200 -p 9300:9300 -e &quot;discovery.type=single-node&quot; docker.elastic.co/elasticsearch/elasticsearch:7.15.1
-</code></pre>
-<pre class="prettyprint"><code class="language-sh">docker pull docker.elastic.co/kibana/kibana:7.15.1
-docker run --name kib01-test --net elastic -p 5601:5601 -e &quot;ELASTICSEARCH_HOSTS=http://es01-test:9200&quot; docker.elastic.co/kibana/kibana:7.15.1
-</code></pre>
-<p>To access Kibana, go to *<a href="http://localhost:5601*">http://localhost:5601*</a>.</p>
-<h3><a href="#create-an-elasticsearch-exporter" name="create-an-elasticsearch-exporter" class="anchor"><span class="anchor-link"></span></a>Create an Elasticsearch exporter</h3>
-<p>Let&rsquo;s create an exporter. The exporter will export by default all events generate by Otoroshi.</p>
-<ol>
-  <li>Go ahead, and navigate to <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a></li>
-  <li>Click on the cog icon on the top right</li>
-  <li>Then <code>Exporters</code> button</li>
-  <li>And add a new configuration when clicking on the <code>Add item</code> button</li>
-  <li>Select the <code>elastic</code> in the <code>type</code> selector field</li>
-  <li>Jump to <code>Exporter config</code></li>
-  <li>Set the following values: <code>Cluster URI</code> -&gt; <code>http://localhost:9200</code></li>
-</ol>
-<p>Then test your configuration with <code>Check connection</code> button. This should output a modal with Elasticsearch version and the number of loaded docs.</p>
-<p>Save at the bottom page and enable the exporter (on the top of the page or in list).</p>
-<h3><a href="#testing-your-configuration" name="testing-your-configuration" class="anchor"><span class="anchor-link"></span></a>Testing your configuration</h3>
-<p>One simple way to test is to setup the reading of the elasticsearch by Otoroshi.</p>
-<p>Navigate to the danger zone (click on the cog on the right top and scroll to <code>danger zone</code>).</p>
-<p>Jump to the <code>Analytics: Elastic dashboard datasource (read)</code> section.</p>
-<p>Set the following values : <code>Cluster URI</code> -&gt; <code>http://localhost:9200</code></p>
-<p>Then click on the <code>Check connection</code>. This should ouput the same result as the previous part. Save the global configuration and navigate to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/stats">http://otoroshi.oto.tools:8080/bo/dashboard/stats</a>.</p>
-<p>This should output a list of graphs.</p>
-<h3><a href="#advanced-usage" name="advanced-usage" class="anchor"><span class="anchor-link"></span></a>Advanced usage</h3>
-<p>By default, an exporter handle all events from Otoroshi. In some case, you need to filter the events to send to elasticsearch.</p>
-<p>To filter the events, jump to the <code>Filtering and projection</code> field in exporter view. Otoroshi supports to include a kind of events or to exclude a list of events. </p>
-<p>An example which include only events with a field <code>@type</code> of value <code>AlertEvent</code> :</p>
-<pre class="prettyprint"><code class="language-json">{
-    &quot;include&quot;: [
-        { &quot;@type&quot;: &quot;AlertEvent&quot; }
-    ],
-    &quot;exclude&quot;: []
-}
-</code></pre>
-<p>An example which exclude only events with a field <code>@type</code> of value <code>GatewayEvent</code> :</p>
-<pre class="prettyprint"><code class="language-json">{
-    &quot;exclude&quot;: [
-        { &quot;@type&quot;: &quot;GatewayEvent&quot; }
-    ],
-    &quot;include&quot;: []
-}
-</code></pre>
-<p>The next field is the <code>Projection</code>. This field is a json when you can list the fields to keep for each events.</p>
-<pre class="prettyprint"><code class="language-json">{
- &quot;@type&quot;: true,
- &quot;@timestamp&quot;: true,
- &quot;@id&quot;: true
-}
-</code></pre>
-<p>With this example, only <code>@type</code>, <code>@timestamp</code> and <code>@id</code> will be send to ES.</p>
-<h3><a href="#debug-your-configuration" name="debug-your-configuration" class="anchor"><span class="anchor-link"></span></a>Debug your configuration</h3>
-<h4><a href="#missing-user-rights-on-elasticsearch" name="missing-user-rights-on-elasticsearch" class="anchor"><span class="anchor-link"></span></a>Missing user rights on Elasticsearch</h4>
-<p>When creating an exporter, Otoroshi try to join the index route of the elasticsearch instance. If you have a specific management access rights on Elasticsearch, you have two possiblities :</p>
-<ul>
-  <li>set a full access to the user used in Otoroshi for write in Elasticsearch</li>
-  <li>set the version of Elasticsearch inside the <code>Version</code> field of your exporter.</li>
-</ul>
-<h4><a href="#none-events-appear-in-your-elasticsearch" name="none-events-appear-in-your-elasticsearch" class="anchor"><span class="anchor-link"></span></a>None events appear in your Elasticsearch</h4>
-<p>When creating an exporter, Otoroshi try to push the index template on Elasticsearch. If the post failed, Otoroshi will fail for each push of events and your database will keep empty. </p>
-<p>To fix this problem, you can try to send the index template with the <code>Manually apply index template</code> button in your exporter.</p>
+<h1><a href="#use-the-resources-loader" name="use-the-resources-loader" class="anchor"><span class="anchor-link"></span></a>Use the resources loader</h1>
+<p>The resources loader is a tool to create an Otoroshi resource from a raw content. This content can be found on each Otoroshi resources pages (services descriptors, apikeys, certificates, etc &hellip;). To get the content of a resource as file, you can use the two following buttons. One to export as JSON format and the other as YAML format.</p>
+<p>Once exported, the content of the resource can be import with the resource loader. You can import single or multiples resources on one time, as JSON and YAML format.</p>
+<p>The resource loader is available on this route <code>bo/dashboard/resources-loader</code>.</p>
+<p>On this page, you can paste the content of your resources and click on <strong>Load resources</strong>.</p>
+<p>For each detected resource, the loader will display : * a resource name corresponding to the field <code>name</code> * a resource type corresponding to the type of created resource (ServiceDescriptor, ApiKey, Certificate, etc) * a toggle to choose if you want to include the element for the creation step * the updated status by the creation process</p>
+<p>Once you have selected the resources to create, you can <strong>Import selected resources</strong>.</p>
+<p>Once generated, all status will be updated. If all is working, the status will be equals to done.</p>
+<p>If you want to get back to the initial page, you can use the <strong>restart</strong> button.</p>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../how-to-s/import-export-otoroshi-datastore.html">Import and export Otoroshi datastore</a></p>
+<p><strong>Next:</strong> <a href="../plugins/index.html">Otoroshi plugins</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
-<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
-<div class="page-nav">
-<div class="nav-title">On this page:</div>
-<div class="nav-toc">
-<ul>
-  <li><a href="../how-to-s/export-events-to-elastic.html#export-events-to-elasticsearch" class="header">Export events to Elasticsearch</a>
-  <ul>
-    <li><a href="../how-to-s/export-events-to-elastic.html#before-you-start" class="header">Before you start</a></li>
-    <li><a href="../how-to-s/export-events-to-elastic.html#deploy-a-elasticsearch-and-kibana-stack-on-docker" class="header">Deploy a Elasticsearch and kibana stack on Docker</a></li>
-    <li><a href="../how-to-s/export-events-to-elastic.html#create-an-elasticsearch-exporter" class="header">Create an Elasticsearch exporter</a></li>
-    <li><a href="../how-to-s/export-events-to-elastic.html#testing-your-configuration" class="header">Testing your configuration</a></li>
-    <li><a href="../how-to-s/export-events-to-elastic.html#advanced-usage" class="header">Advanced usage</a></li>
-    <li><a href="../how-to-s/export-events-to-elastic.html#debug-your-configuration" class="header">Debug your configuration</a></li>
-  </ul></li>
-</ul>
-</div>
-</div>
-</nav>
 </div>
 </div>
 
