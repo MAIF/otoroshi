@@ -257,6 +257,27 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>All exporters are split in three parts. The first and second parts are common and the last are specific by exporter.</p>
 <ul>
   <li><code>Filtering and projection</code> : section to filter the list of sent events and alerts. The projection field allows you to export only certain event fields and reduce the size of exported data. It&rsquo;s composed of <code>Filtering</code> and <code>Projection</code> fields.</li>
+</ul>
+<p><strong>Filtering</strong> is used to <strong>include</strong> or <strong>exclude</strong> some kind of events and alerts. For each include and exclude field, you can add a list of key-value. </p>
+<p>Let&rsquo;s say we only want to keep Otoroshi alerts</p>
+<pre class="prettyprint"><code class="language-json">{ &quot;include&quot;: [{ &quot;@type&quot;: &quot;AlertEvent&quot; }] }
+</code></pre>
+<p><strong>Projection</strong> is a list of fields to export. In the case of an empty list, all the fields of an event will be exported. In other case, <strong>only</strong> the listed fields will be exported.</p>
+<p>Let&rsquo;s say we only want to keep Otoroshi alerts and only type, timestamp and id of each exported events</p>
+<pre class="prettyprint"><code class="language-json">{
+ &quot;@type&quot;: true,
+ &quot;@timestamp&quot;: true,
+ &quot;@id&quot;: true
+}
+</code></pre>
+<p>An other possibility is to <strong>rename</strong> the exported field. This value will be the same but the exported field will have a different name.</p>
+<p>Let&rsquo;s say we want to rename all <code>@id</code> field with <code>unique-id</code> as key</p>
+<pre class="prettyprint"><code class="language-json">{ &quot;@id&quot;: &quot;unique-id&quot; }
+</code></pre>
+<p>The last possiblity is to retrieve a sub-object of an event. Let&rsquo;s say we want to get the name of each exported user of events.</p>
+<pre class="prettyprint"><code class="language-json">{ &quot;user&quot;: { &quot;name&quot;: true } }
+</code></pre>
+<ul>
   <li><code>Queue details</code>: set of fields to adjust the workers of the exporter.</li>
   <li><code>Buffer size</code>: if elements are pushed onto the queue faster than the source is consumed the overflow will be handled with a strategy specified by the user. Keep in memory the number of events.</li>
   <li><code>JSON conversion workers</code>: number of workers used to transform events to JSON format in paralell</li>

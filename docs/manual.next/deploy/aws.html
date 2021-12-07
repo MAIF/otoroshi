@@ -259,7 +259,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>Either you create a DockerFile from this <a href="../install/get-otoroshi.html#from-docker">Docker image</a>, build a zip, and do all the Otoroshi custom configuration using ENVs.</p>
 <p>Or you download the <a href="../install/get-otoroshi.html#from-jar-file">otoroshi.jar</a>, do all the Otoroshi custom configuration using your own otoroshi.conf, and create a DockerFile that runs the jar using your otoroshi.conf. </p>
 <p>For the second option your DockerFile would look like this :</p>
-<pre class="prettyprint"><code class="language-dockerfile">FROM openjdk:8
+<pre class="prettyprint"><code class="language-dockerfile">FROM openjdk:11
 VOLUME /tmp
 EXPOSE 8080
 ADD otoroshi.jar otoroshi.jar
