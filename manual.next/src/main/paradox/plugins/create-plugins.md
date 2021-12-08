@@ -30,8 +30,8 @@ there are many plugin types
 
 for more information about APIs you can use
 
-* https://www.playframework.com/documentation/2.6.x/api/scala/index.html#package
-* https://www.playframework.com/documentation/2.6.x/api/scala/index.html#play.api.mvc.Results
+* https://www.playframework.com/documentation/2.8.x/api/scala/index.html#package
+* https://www.playframework.com/documentation/2.8.x/api/scala/index.html#play.api.mvc.Results
 * https://github.com/MAIF/otoroshi
 * https://doc.akka.io/docs/akka/2.5/stream/index.html
 * https://doc.akka.io/api/akka/current/akka/stream/index.html
@@ -39,14 +39,14 @@ for more information about APIs you can use
 
 ## Plugin examples
 
-A lot of plugins comes with otoroshi, you can find it on [github](https://github.com/MAIF/otoroshi/tree/master/otoroshi/app/plugins)
+@ref:[A lot of plugins](./built-in-plugins.md) comes with otoroshi, you can find them on [github](https://github.com/MAIF/otoroshi/tree/master/otoroshi/app/plugins)
 
 ## Writing a plugin from Otoroshi UI
 
 Log into Otoroshi and go to `Settings (cog icon) / Plugins`. Here you can create multiple request transformer scripts and associate it with service descriptor later.
 
 @@@ div { .centered-img }
-<img src="../img/scripts-1.png" />
+<img src="../imgs/scripts-1.png" />
 @@@
 
 when you write for instance a transformer in the Otoroshi UI, do the following
@@ -77,7 +77,7 @@ You can use the compile button to check if the script compiles, or code the tran
 Then go to a service descriptor, scroll to the bottom of the page, and select your transformer in the list
 
 @@@ div { .centered-img }
-<img src="../img/scripts-2.png" />
+<img src="../imgs/scripts-2.png" />
 @@@
 
 ## Providing a transformer from Java classpath
@@ -196,3 +196,7 @@ Be carefull as your library can conflict with other libraries used by Otoroshi a
 ## Enabling plugins
 
 plugins can be enabled per service from the service settings page or globally from the danger zone in the plugins section.
+
+## Full example
+
+a full external plugin example can be found @link:[here](https://github.com/mathieuancelin/otoroshi-wasmer-plugin)
