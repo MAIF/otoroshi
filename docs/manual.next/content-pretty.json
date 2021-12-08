@@ -165,7 +165,7 @@
     "id": "/features.md",
     "url": "/features.html",
     "title": "Features",
-    "content": "# Features\n\n@@@ note\nTODO: This section is being written, thanks for your patience :)\n@@@"
+    "content": "# Features\n\nTraffic Management:\n\n* Proxy of services HTTP(s) (apis, web apps)\n* Proxy of TCP/UDP Proxy (app, database)\n* Mirroring\n\nServices customization\n\n* Plugins (circuit breakers, automatic retries, buffering, response compression, headers) \n* Custom plugins\n* Private and public visibility\n\nServices Monitoring\n\n* Active health checks\n* Calls tracing\n* Export alerts and events to external database\n* Real-time traffic metrics\n* Alert mailers\n\nServices security\n\n* Manage access with apikeys\n* HTTPS and TLS\n* Mutual TLS client/server\n* Routing constraints\n* Verification and manufacture of tokens\n\nAdministration UI\n\n* Manage and organize all resources\n* Secured users access with Authentication module\n* Traced users actions\n* Configuration without rebooting\n\nServices and UI security\n\n* OAuth2.0/2.1 authentication\n* OpenID Connect (OIDC)\n* Internal users management\n* JWT authentication\n* OAuth 1.0a\n* SAML V2\n\nCertificates management\n\n* Internal PKI\n* ACME / Let's Encrypt support\n\nPerformance and testing\n\n* Chaos engineering\n* Clustering \n* Scalability\n\nKubernetes ingress controller\n\n* Manage Otoroshi resources from Kubernetes\n* Live reading of multiples Kubernetes namespaces\n* Validation of resources with webhook\n"
   },
   {
     "name": "getting-started.md",
