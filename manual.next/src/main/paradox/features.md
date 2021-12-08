@@ -7,14 +7,14 @@ All the features supported by **Otoroshi** are listed below
 * Can proxy any HTTP(s) service (apis, webapps, websocket, etc)
 * Can proxy any TCP service (app, database, etc)
 * Traffic mirroring
-* Canary deployemnts
-* Stickyness
+* Canary deployments
+* Multiple load-balancing otpions: RoundRobin, Random, Sticky, Ip Hash, Best Response Time
 * Distributed in-flight request limiting	
 * Distributed rate limiting 
 
 **Services customization**
 
-* Dozens of built-in plugins (circuit breakers, automatic retries, buffering, response compression, headers manipulation) 
+* Dozens of built-in plugins (circuit breakers, automatic retries, buffering, response compression, headers manipulation, cors, gzip) 
 * Custom plugins
 * Private and public visibility
 
@@ -34,6 +34,7 @@ All the features supported by **Otoroshi** are listed below
 * HTTPS and TLS
 * Mutual TLS in/out
 * Routing constraints
+* Routing restrictions
 * JWT tokens validation and manipulation
 
 **Administration UI**
