@@ -107,6 +107,8 @@ With this kind of exporter, every matching event will be sent to an elastic clus
 
 ## Webhook 
 
+With this kind of exporter, every matching event will be sent to a URL (in batch) using a POST method and an JSON array body.
+
 * `Alerts hook URL`: url used to post events
 * `Hook Headers`: headers add to the post request
 * `Custom TLS Settings`: Enable the TLS configuration for the communication with Elasticsearch
@@ -117,6 +119,9 @@ With this kind of exporter, every matching event will be sent to an elastic clus
 
 
 ## Pulsar 
+
+With this kind of exporter, every matching event will be sent to an [Apache Pulsar topic](https://pulsar.apache.org/)
+
 
 * `Pulsar URI`: URI of the pulsar server
 * `Custom TLS Settings`: Enable the TLS configuration for the communication with Elasticsearch
@@ -130,6 +135,8 @@ With this kind of exporter, every matching event will be sent to an elastic clus
 
 ## Kafka 
 
+With this kind of exporter, every matching event will be sent to an [Apache Kafka topic](https://kafka.apache.org/)
+
 * `Kafka Servers`: the list of servers to contact to connect the Kafka client with the Kafka cluster
 * `Kafka keypass`: the keystore password if you use a keystore/truststore to connect to Kafka cluster
 * `Kafka keystore path`: the keystore path on the server if you use a keystore/truststore to connect to Kafka cluster
@@ -142,6 +149,8 @@ With this kind of exporter, every matching event will be sent to an elastic clus
 * `Kafka topic`: the topic on which Otoroshi alerts will be sent
 
 ## Mailer 
+
+With this kind of exporter, every matching event will be sent in batch as an email (using one of the following email provider)
 
 Otoroshi supports 5 exporters of email type.
 

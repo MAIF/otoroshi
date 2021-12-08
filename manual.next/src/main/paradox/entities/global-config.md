@@ -15,7 +15,7 @@ The global config, named `Danger zone` in Otoroshi, is the place to configure Ot
 * `Use circuit breakers` : Use circuit breaker on all services
 * `Use new http client as the default Http client` : All http calls will use the new http client client by default
 * `Enable live metrics` : Enable live metrics in the Otoroshi cluster. Performs a lot of writes in the datastore
-* `Digitus medius` : Use middle finger emoji (🖕) as a response character for endless HTTP responses.
+* `Digitus medius` : Use middle finger emoji as a response character for endless HTTP responses.
 * `Limit conc. req.` : Limit the number of concurrent request processed by Otoroshi to a certain amount. Highly recommended for resilience
 * `Use X-Forwarded-* headers for routing` : When evaluating routing of a request X-Forwarded-* headers will be used if presents
 * `Max conc. req.` : Maximum number of concurrent request processed by otoroshi.

@@ -76,6 +76,7 @@
     <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
     <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
     <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -94,7 +95,10 @@
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
-    <li><a href="../how-to-s/resources-loader.html" class="page">Use the resources loader</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/tcp-udp-tunneling.html" class="page">TCP/UDP tunneling</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -187,6 +191,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
     <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
     <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -205,7 +210,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
-    <li><a href="../how-to-s/resources-loader.html" class="page">Use the resources loader</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/tcp-udp-tunneling.html" class="page">TCP/UDP tunneling</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -252,15 +260,35 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>For example, you can use the organizations as a mean of :</p>
 <ul>
   <li>to seperate resources by services or entities in your enterprise</li>
-  <li>to split internal and external usage of the resources (it&rsquo;s useful when you have a list of service deployed in your compagny and another deployed by yours partners)</li>
-</ul>
+  <li>to split internal and external usage of the resources (it&rsquo;s useful when you have a list of service deployed in your company and another one deployed by your partners)</li>
+</ul><div class="centered-img">
+<img src="../imgs/organizations-and-teams.png" /></div>
 <h2><a href="#access-to-the-list-of-organizations" name="access-to-the-list-of-organizations" class="anchor"><span class="anchor-link"></span></a>Access to the list of organizations</h2>
 <p>To visualize and edit the list of organizations, you can navigate to your instance on the <code>/bo/dashboard/organizations</code> route or click on the cog icon and select the organizations button.</p>
 <p>Once on the page, you can create a new item, edit an existing organization or delete an existing one.</p>
 <blockquote>
   <p>When an organization is deleted, the resources associated are not deleted. On the other hand, the organization and the team of associated resources are let empty.</p>
-</blockquote><div class="callout warning "><div class="callout-title">Warning</div>
-<p>TODO: explain entities hierarchy with organizations and teams</p></div>
+</blockquote>
+<h2><a href="#entities-location" name="entities-location" class="anchor"><span class="anchor-link"></span></a>Entities location</h2>
+<p>any otoroshi entity has a location property (<code>_loc</code> when serialized to json) explaining where and by whom the entity can be seen. </p>
+<p>An entity can be part of one organization (<code>tenant</code> in the json document)</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;_loc&quot;: {
+    &quot;tenant&quot;: &quot;tenant-1&quot;,
+    &quot;teams&quot;: ...
+  }
+  ...
+}
+</code></pre>
+<p>or all organizations</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;_loc&quot;: {
+    &quot;tenant&quot;: &quot;*&quot;,
+    &quot;teams&quot;: ...
+  }
+  ...
+}
+</code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../entities/teams.html">Teams</a></p>
 </div>
@@ -274,6 +302,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../entities/organizations.html#organizations" class="header">Organizations</a>
   <ul>
     <li><a href="../entities/organizations.html#access-to-the-list-of-organizations" class="header">Access to the list of organizations</a></li>
+    <li><a href="../entities/organizations.html#entities-location" class="header">Entities location</a></li>
   </ul></li>
 </ul>
 </div>
