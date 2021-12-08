@@ -67,9 +67,8 @@
   <li><a href="topics/index.html" class="page">Detailed topics</a>
   <ul>
     <li><a href="topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="topics/tls.html" class="page">TLS</a></li>
     <li><a href="topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
-    <li><a href="topics/input-tls.html" class="page">Input TLS</a></li>
-    <li><a href="topics/output-tls.html" class="page">Ouput TLS</a></li>
     <li><a href="topics/monitoring.html" class="page">Monitoring</a></li>
     <li><a href="topics/events-and-analytics.html" class="page">Events and analytics</a></li>
     <li><a href="topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
@@ -181,9 +180,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="topics/index.html" class="page">Detailed topics</a>
   <ul>
     <li><a href="topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="topics/tls.html" class="page">TLS</a></li>
     <li><a href="topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
-    <li><a href="topics/input-tls.html" class="page">Input TLS</a></li>
-    <li><a href="topics/output-tls.html" class="page">Ouput TLS</a></li>
     <li><a href="topics/monitoring.html" class="page">Monitoring</a></li>
     <li><a href="topics/events-and-analytics.html" class="page">Events and analytics</a></li>
     <li><a href="topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
@@ -252,66 +250,86 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#features" name="features" class="anchor"><span class="anchor-link"></span></a>Features</h1>
-<p>Traffic Management:</p>
+<p>All the features supported by <strong>Otoroshi</strong> are listed below</p>
+<p><strong>Traffic Management</strong></p>
 <ul>
-  <li>Proxy of services HTTP(s) (apis, web apps)</li>
-  <li>Proxy of TCP/UDP Proxy (app, database)</li>
-  <li>Mirroring</li>
+  <li>Can proxy any HTTP(s) service (apis, webapps, websocket, etc)</li>
+  <li>Can proxy any TCP service (app, database, etc)</li>
+  <li>Traffic mirroring</li>
+  <li>Canary deployemnts</li>
+  <li>Stickyness</li>
+  <li>Distributed in-flight request limiting</li>
+  <li>Distributed rate limiting</li>
 </ul>
-<p>Services customization</p>
+<p><strong>Services customization</strong></p>
 <ul>
-  <li>Plugins (circuit breakers, automatic retries, buffering, response compression, headers)</li>
+  <li>Dozens of built-in plugins (circuit breakers, automatic retries, buffering, response compression, headers manipulation)</li>
   <li>Custom plugins</li>
   <li>Private and public visibility</li>
 </ul>
-<p>Services Monitoring</p>
+<p><strong>Services Monitoring</strong></p>
 <ul>
   <li>Active health checks</li>
   <li>Calls tracing</li>
   <li>Export alerts and events to external database</li>
   <li>Real-time traffic metrics</li>
   <li>Alert mailers</li>
+  <li>Real-time traffic metrics (Datadog, Prometheus, StatsD)</li>
 </ul>
-<p>Services security</p>
+<p><strong>API security</strong></p>
 <ul>
-  <li>Manage access with apikeys</li>
+  <li>Access management with apikeys and quotas</li>
+  <li>Automatic apikeys secrets rotation</li>
   <li>HTTPS and TLS</li>
-  <li>Mutual TLS client/server</li>
+  <li>Mutual TLS in/out</li>
   <li>Routing constraints</li>
-  <li>Verification and manufacture of tokens</li>
+  <li>JWT tokens validation and manipulation</li>
 </ul>
-<p>Administration UI</p>
+<p><strong>Administration UI</strong></p>
 <ul>
   <li>Manage and organize all resources</li>
   <li>Secured users access with Authentication module</li>
   <li>Traced users actions</li>
-  <li>Configuration without rebooting</li>
+  <li>Dynamic changes at runtime without full reload</li>
 </ul>
-<p>Services and UI security</p>
+<p><strong>Webapp authentication and security</strong></p>
 <ul>
   <li>OAuth2.0/2.1 authentication</li>
-  <li>OpenID Connect (OIDC)</li>
+  <li>OpenID Connect (OIDC) authentication</li>
   <li>Internal users management</li>
+  <li>LDAP authentication</li>
   <li>JWT authentication</li>
-  <li>OAuth 1.0a</li>
-  <li>SAML V2</li>
+  <li>OAuth 1.0a authentication</li>
+  <li>SAML V2 authentication</li>
 </ul>
-<p>Certificates management</p>
+<p><strong>Certificates management</strong></p>
 <ul>
+  <li>Dynamic TLS certificates store</li>
+  <li>Dynamic TLS termination</li>
   <li>Internal PKI</li>
   <li>ACME / Let&rsquo;s Encrypt support</li>
+  <li>On-the-fly certificate generation based on a CA certificate without request loss</li>
 </ul>
-<p>Performance and testing</p>
+<p><strong>Performances and testing</strong></p>
 <ul>
   <li>Chaos engineering</li>
-  <li>Clustering</li>
+  <li>Clustering with encrypted communication</li>
   <li>Scalability</li>
 </ul>
-<p>Kubernetes ingress controller</p>
+<p><strong>Kubernetes integration</strong></p>
 <ul>
-  <li>Manage Otoroshi resources from Kubernetes</li>
-  <li>Live reading of multiples Kubernetes namespaces</li>
-  <li>Validation of resources with webhook</li>
+  <li>Standard Ingress controller</li>
+  <li>Custom Ingress controller
+    <ul>
+      <li>Manage Otoroshi resources from Kubernetes</li>
+    </ul>
+  </li>
+  <li>Validation of resources via webhook</li>
+  <li>Service Mesh: service-to-service communication</li>
+</ul>
+<p><strong>Developpers portal</strong></p>
+<ul>
+  <li>Using <a href="https://maif.github.io/daikoku/manual/index.html">Daikoku</a></li>
 </ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="getting-started.html">Getting Started</a></p>
