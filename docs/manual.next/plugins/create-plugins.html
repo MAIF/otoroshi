@@ -279,18 +279,18 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </ul>
 <p>for more information about APIs you can use</p>
 <ul>
-  <li><a href="https://www.playframework.com/documentation/2.6.x/api/scala/index.html#package">https://www.playframework.com/documentation/2.6.x/api/scala/index.html#package</a></li>
-  <li><a href="https://www.playframework.com/documentation/2.6.x/api/scala/index.html#play.api.mvc.Results">https://www.playframework.com/documentation/2.6.x/api/scala/index.html#play.api.mvc.Results</a></li>
+  <li><a href="https://www.playframework.com/documentation/2.8.x/api/scala/index.html#package">https://www.playframework.com/documentation/2.8.x/api/scala/index.html#package</a></li>
+  <li><a href="https://www.playframework.com/documentation/2.8.x/api/scala/index.html#play.api.mvc.Results">https://www.playframework.com/documentation/2.8.x/api/scala/index.html#play.api.mvc.Results</a></li>
   <li><a href="https://github.com/MAIF/otoroshi">https://github.com/MAIF/otoroshi</a></li>
   <li><a href="https://doc.akka.io/docs/akka/2.5/stream/index.html">https://doc.akka.io/docs/akka/2.5/stream/index.html</a></li>
   <li><a href="https://doc.akka.io/api/akka/current/akka/stream/index.html">https://doc.akka.io/api/akka/current/akka/stream/index.html</a></li>
   <li><a href="https://doc.akka.io/api/akka/current/akka/stream/scaladsl/Source.html">https://doc.akka.io/api/akka/current/akka/stream/scaladsl/Source.html</a></li>
 </ul>
 <h2><a href="#plugin-examples" name="plugin-examples" class="anchor"><span class="anchor-link"></span></a>Plugin examples</h2>
-<p>A lot of plugins comes with otoroshi, you can find it on <a href="https://github.com/MAIF/otoroshi/tree/master/otoroshi/app/plugins">github</a></p>
+<p><a href="built-in-plugins.html">A lot of plugins</a> comes with otoroshi, you can find them on <a href="https://github.com/MAIF/otoroshi/tree/master/otoroshi/app/plugins">github</a></p>
 <h2><a href="#writing-a-plugin-from-otoroshi-ui" name="writing-a-plugin-from-otoroshi-ui" class="anchor"><span class="anchor-link"></span></a>Writing a plugin from Otoroshi UI</h2>
 <p>Log into Otoroshi and go to <code>Settings (cog icon) / Plugins</code>. Here you can create multiple request transformer scripts and associate it with service descriptor later.</p><div class="centered-img">
-<img src="../img/scripts-1.png" /></div>
+<img src="../imgs/scripts-1.png" /></div>
 <p>when you write for instance a transformer in the Otoroshi UI, do the following</p>
 <pre class="prettyprint"><code class="language-scala">import akka.stream.Materializer
 import env.Env
@@ -313,7 +313,7 @@ new MyTransformer()
 </code></pre>
 <p>You can use the compile button to check if the script compiles, or code the transformer in your IDE (see next point).</p>
 <p>Then go to a service descriptor, scroll to the bottom of the page, and select your transformer in the list</p><div class="centered-img">
-<img src="../img/scripts-2.png" /></div>
+<img src="../imgs/scripts-2.png" /></div>
 <h2><a href="#providing-a-transformer-from-java-classpath" name="providing-a-transformer-from-java-classpath" class="anchor"><span class="anchor-link"></span></a>Providing a transformer from Java classpath</h2>
 <p>You can write your own transformer using your favorite IDE. Just create an SBT project with the following dependencies. It can be quite handy to manage the source code like any other piece of code, and it avoid the compilation time for the script at Otoroshi startup.</p>
 <pre class="prettyprint"><code class="language-scala">lazy val root = (project in file(&quot;.&quot;)).
@@ -395,6 +395,8 @@ class BodyLengthLimiter extends RequestTransformer {
 <p>Be carefull as your library can conflict with other libraries used by Otoroshi and affect its stability</p>
 <h2><a href="#enabling-plugins" name="enabling-plugins" class="anchor"><span class="anchor-link"></span></a>Enabling plugins</h2>
 <p>plugins can be enabled per service from the service settings page or globally from the danger zone in the plugins section.</p>
+<h2><a href="#full-example" name="full-example" class="anchor"><span class="anchor-link"></span></a>Full example</h2>
+<p>a full external plugin example can be found <a href="https://github.com/mathieuancelin/otoroshi-wasmer-plugin" title="here">here</a></p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../plugins/built-in-plugins.html">Otoroshi built-in plugins</a></p>
 </div>
@@ -415,6 +417,7 @@ class BodyLengthLimiter extends RequestTransformer {
     <li><a href="../plugins/create-plugins.html#getting-custom-configuration-from-the-otoroshi-config-file" class="header">Getting custom configuration from the Otoroshi config. file</a></li>
     <li><a href="../plugins/create-plugins.html#using-a-library-that-is-not-embedded-in-otoroshi" class="header">Using a library that is not embedded in Otoroshi</a></li>
     <li><a href="../plugins/create-plugins.html#enabling-plugins" class="header">Enabling plugins</a></li>
+    <li><a href="../plugins/create-plugins.html#full-example" class="header">Full example</a></li>
   </ul></li>
 </ul>
 </div>

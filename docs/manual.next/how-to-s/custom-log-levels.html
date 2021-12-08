@@ -254,13 +254,217 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#log-levels-customization" name="log-levels-customization" class="anchor"><span class="anchor-link"></span></a>Log levels customization</h1><div class="callout note "><div class="callout-title">Note</div>
-<p>TODO: This section is being written, thanks for your patience :)</p></div>
+<h1><a href="#log-levels-customization" name="log-levels-customization" class="anchor"><span class="anchor-link"></span></a>Log levels customization</h1>
+<p>If you want to customize the log level of your otoroshi instances, it&rsquo;s pretty easy to do it using environment variables or configuration file.</p>
+<h2><a href="#customize-log-level-for-one-logger-with-configuration-file" name="customize-log-level-for-one-logger-with-configuration-file" class="anchor"><span class="anchor-link"></span></a>Customize log level for one logger with configuration file</h2>
+<p>Let say you want to see <code>DEBUG</code> messages from the logger <code>otoroshi-http-handler</code>.</p>
+<p>Then you just have to declare in your otoroshi configuration file</p>
+<pre><code>otoroshi.loggers {
+  ...
+  otoroshi-http-handler = &quot;DEBUG&quot;
+  ...
+}
+</code></pre>
+<p>possible levels are <code>TRACE</code>, <code>DEBUG</code>, <code>INFO</code>, <code>WARN</code>, <code>ERROR</code>. Default one is <code>WARN</code>.</p>
+<h2><a href="#customize-log-level-for-one-logger-with-environment-variable" name="customize-log-level-for-one-logger-with-environment-variable" class="anchor"><span class="anchor-link"></span></a>Customize log level for one logger with environment variable</h2>
+<p>Let say you want to see <code>DEBUG</code> messages from the logger <code>otoroshi-http-handler</code>.</p>
+<p>Then you just have to declare an environment variable named <code>OTOROSHI_LOGGERS_OTOROSHI_HTTP_HANDLER</code> with value <code>DEBUG</code>. The rule is </p>
+<pre class="prettyprint"><code class="language-scala">&quot;OTOROSHI_LOGGERS_&quot; + loggerName.toUpperCase().replace(&quot;-&quot;, &quot;_&quot;)
+</code></pre>
+<p>possible levels are <code>TRACE</code>, <code>DEBUG</code>, <code>INFO</code>, <code>WARN</code>, <code>ERROR</code>. Default one is <code>WARN</code>.</p>
+<h2><a href="#list-of-loggers" name="list-of-loggers" class="anchor"><span class="anchor-link"></span></a>List of loggers</h2>
+<ul>
+  <li><code>otoroshi-error-handler</code></li>
+  <li><code>otoroshi-http-handler</code></li>
+  <li><code>otoroshi-http-handler-debug</code></li>
+  <li><code>otoroshi-websocket-handler</code></li>
+  <li><code>otoroshi-websocket</code></li>
+  <li><code>otoroshi-websocket-handler-actor</code></li>
+  <li><code>otoroshi-snowmonkey</code></li>
+  <li><code>otoroshi-circuit-breaker</code></li>
+  <li><code>otoroshi-circuit-breaker</code></li>
+  <li><code>otoroshi-worker</code></li>
+  <li><code>otoroshi-http-handler</code></li>
+  <li><code>otoroshi-auth-controller</code></li>
+  <li><code>otoroshi-swagger-controller</code></li>
+  <li><code>otoroshi-u2f-controller</code></li>
+  <li><code>otoroshi-backoffice-api</code></li>
+  <li><code>otoroshi-health-api</code></li>
+  <li><code>otoroshi-stats-api</code></li>
+  <li><code>otoroshi-admin-api</code></li>
+  <li><code>otoroshi-auth-modules-api</code></li>
+  <li><code>otoroshi-certificates-api</code></li>
+  <li><code>otoroshi-pki</code></li>
+  <li><code>otoroshi-scripts-api</code></li>
+  <li><code>otoroshi-analytics-api</code></li>
+  <li><code>otoroshi-import-export-api</code></li>
+  <li><code>otoroshi-templates-api</code></li>
+  <li><code>otoroshi-teams-api</code></li>
+  <li><code>otoroshi-events-api</code></li>
+  <li><code>otoroshi-canary-api</code></li>
+  <li><code>otoroshi-data-exporter-api</code></li>
+  <li><code>otoroshi-services-api</code></li>
+  <li><code>otoroshi-tcp-service-api</code></li>
+  <li><code>otoroshi-tenants-api</code></li>
+  <li><code>otoroshi-global-config-api</code></li>
+  <li><code>otoroshi-apikeys-fs-api</code></li>
+  <li><code>otoroshi-apikeys-fg-api</code></li>
+  <li><code>otoroshi-apikeys-api</code></li>
+  <li><code>otoroshi-statsd-actor</code></li>
+  <li><code>otoroshi-snow-monkey-api</code></li>
+  <li><code>otoroshi-jobs-eventstore-checker</code></li>
+  <li><code>otoroshi-initials-certs-job</code></li>
+  <li><code>otoroshi-alert-actor</code></li>
+  <li><code>otoroshi-alert-actor-supervizer</code></li>
+  <li><code>otoroshi-alerts</code></li>
+  <li><code>otoroshi-apikeys-secrets-rotation-job</code></li>
+  <li><code>otoroshi-loader</code></li>
+  <li><code>otoroshi-api-action</code></li>
+  <li><code>otoroshi-api-action</code></li>
+  <li><code>otoroshi-analytics-writes-elastic</code></li>
+  <li><code>otoroshi-analytics-reads-elastic</code></li>
+  <li><code>otoroshi-events-actor-supervizer</code></li>
+  <li><code>otoroshi-data-exporter</code></li>
+  <li><code>otoroshi-data-exporter-update-job</code></li>
+  <li><code>otoroshi-kafka-wrapper</code></li>
+  <li><code>otoroshi-kafka-connector</code></li>
+  <li><code>otoroshi-analytics-webhook</code></li>
+  <li><code>otoroshi-jobs-software-updates</code></li>
+  <li><code>otoroshi-analytics-actor</code></li>
+  <li><code>otoroshi-analytics-actor-supervizer</code></li>
+  <li><code>otoroshi-analytics-event</code></li>
+  <li><code>otoroshi-env</code></li>
+  <li><code>otoroshi-script-compiler</code></li>
+  <li><code>otoroshi-script-manager</code></li>
+  <li><code>otoroshi-script</code></li>
+  <li><code>otoroshi-tcp-proxy</code></li>
+  <li><code>otoroshi-tcp-proxy</code></li>
+  <li><code>otoroshi-tcp-proxy</code></li>
+  <li><code>otoroshi-custom-timeouts</code></li>
+  <li><code>otoroshi-client-config</code></li>
+  <li><code>otoroshi-canary</code></li>
+  <li><code>otoroshi-redirection-settings</code></li>
+  <li><code>otoroshi-service-descriptor</code></li>
+  <li><code>otoroshi-service-descriptor-datastore</code></li>
+  <li><code>otoroshi-console-mailer</code></li>
+  <li><code>otoroshi-mailgun-mailer</code></li>
+  <li><code>otoroshi-mailjet-mailer</code></li>
+  <li><code>otoroshi-sendgrid-mailer</code></li>
+  <li><code>otoroshi-generic-mailer</code></li>
+  <li><code>otoroshi-clevercloud-client</code></li>
+  <li><code>otoroshi-metrics</code></li>
+  <li><code>otoroshi-gzip-config</code></li>
+  <li><code>otoroshi-regex-pool</code></li>
+  <li><code>otoroshi-ws-client-chooser</code></li>
+  <li><code>otoroshi-akka-ws-client</code></li>
+  <li><code>otoroshi-http-implicits</code></li>
+  <li><code>otoroshi-service-group</code></li>
+  <li><code>otoroshi-data-exporter-config</code></li>
+  <li><code>otoroshi-data-exporter-config-migration-job</code></li>
+  <li><code>otoroshi-lets-encrypt-helper</code></li>
+  <li><code>otoroshi-apkikey</code></li>
+  <li><code>otoroshi-error-template</code></li>
+  <li><code>otoroshi-job-manager</code></li>
+  <li><code>otoroshi-plugins-internal-eventlistener-actor</code></li>
+  <li><code>otoroshi-global-config</code></li>
+  <li><code>otoroshi-jwks</code></li>
+  <li><code>otoroshi-jwt-verifier</code></li>
+  <li><code>otoroshi-global-jwt-verifier</code></li>
+  <li><code>otoroshi-snowmonkey-config</code></li>
+  <li><code>otoroshi-webauthn-admin-datastore</code></li>
+  <li><code>otoroshi-webauthn-admin-datastore</code></li>
+  <li><code>otoroshi-leveldb-datastores</code></li>
+  <li><code>otoroshi-service-datatstore</code></li>
+  <li><code>otoroshi-cassandra-datastores</code></li>
+  <li><code>otoroshi-redis-like-store.error(s&quot;Try to deserialize ${Json.prettyPrint(value)}</code></li>
+  <li><code>otoroshi-globalconfig-datastore</code></li>
+  <li><code>otoroshi-mongo-redis</code></li>
+  <li><code>otoroshi-mongo-datastores</code></li>
+  <li><code>otoroshi-reactive-pg-datastores</code></li>
+  <li><code>otoroshi-reactive-pg-kv</code></li>
+  <li><code>otoroshi-cassandra-datastores</code></li>
+  <li><code>otoroshi-apikey-datastore</code></li>
+  <li><code>otoroshi-datastore</code></li>
+  <li><code>otoroshi-certificate-datastore</code></li>
+  <li><code>otoroshi-simple-admin-datastore</code></li>
+  <li><code>otoroshi-atomic-in-memory-datastore</code></li>
+  <li><code>otoroshi-lettuce-redis</code></li>
+  <li><code>otoroshi-lettuce-redis-cluster</code></li>
+  <li><code>otoroshi-redis-lettuce-datastores</code></li>
+  <li><code>otoroshi-datastores</code></li>
+  <li><code>otoroshi-file-db-datastores</code></li>
+  <li><code>otoroshi-http-db-datastores</code></li>
+  <li><code>otoroshi-s3-datastores</code></li>
+  <li><code>PluginDocumentationGenerator</code></li>
+  <li><code>otoroshi-health-checker</code></li>
+  <li><code>otoroshi-healthcheck-job</code></li>
+  <li><code>otoroshi-healthcheck-local-cache-job</code></li>
+  <li><code>otoroshi-plugins-response-cache</code></li>
+  <li><code>otoroshi-oidc-apikey-config</code></li>
+  <li><code>otoroshi-plugins-maxmind-geolocation-info</code></li>
+  <li><code>otoroshi-plugins-ipstack-geolocation-info</code></li>
+  <li><code>otoroshi-plugins-maxmind-geolocation-helper</code></li>
+  <li><code>otoroshi-plugins-user-agent-helper</code></li>
+  <li><code>otoroshi-plugins-user-agent-extractor</code></li>
+  <li><code>otoroshi-global-el</code></li>
+  <li><code>otoroshi-plugins-oauth1-caller-plugin</code></li>
+  <li><code>otoroshi-dynamic-sslcontext</code></li>
+  <li><code>otoroshi-plugins-access-log-clf</code></li>
+  <li><code>otoroshi-plugins-access-log-json</code></li>
+  <li><code>otoroshi-plugins-kafka-access-log</code></li>
+  <li><code>otoroshi-plugins-kubernetes-client</code></li>
+  <li><code>otoroshi-plugins-kubernetes-ingress-controller-job</code></li>
+  <li><code>otoroshi-plugins-kubernetes-ingress-sync</code></li>
+  <li><code>otoroshi-plugins-kubernetes-crds-controller-job</code></li>
+  <li><code>otoroshi-plugins-kubernetes-crds-sync</code></li>
+  <li><code>otoroshi-cluster</code></li>
+  <li><code>otoroshi-crd-validator</code></li>
+  <li><code>otoroshi-sidecar-injector</code></li>
+  <li><code>otoroshi-plugins-kubernetes-cert-sync</code></li>
+  <li><code>otoroshi-plugins-kubernetes-to-otoroshi-certs-job</code></li>
+  <li><code>otoroshi-plugins-otoroshi-certs-to-kubernetes-secrets-job</code></li>
+  <li><code>otoroshi-apikeys-workflow-job</code></li>
+  <li><code>otoroshi-cert-helper</code></li>
+  <li><code>otoroshi-certificates-ocsp</code></li>
+  <li><code>otoroshi-claim</code></li>
+  <li><code>otoroshi-cert</code></li>
+  <li><code>otoroshi-ssl-provider</code></li>
+  <li><code>otoroshi-cert-data</code></li>
+  <li><code>otoroshi-client-cert-validator</code></li>
+  <li><code>otoroshi-ssl-implicits</code></li>
+  <li><code>otoroshi-saml-validator-utils</code></li>
+  <li><code>otoroshi-global-saml-config</code></li>
+  <li><code>otoroshi-plugins-hmac-caller-plugin</code></li>
+  <li><code>otoroshi-plugins-hmac-access-validator-plugin</code></li>
+  <li><code>otoroshi-plugins-hasallowedusersvalidator</code></li>
+  <li><code>otoroshi-auth-module-config</code></li>
+  <li><code>otoroshi-basic-auth-config</code></li>
+  <li><code>otoroshi-ldap-auth-config</code></li>
+  <li><code>otoroshi-plugins-jsonpath-helper</code></li>
+  <li><code>otoroshi-global-oauth2-config</code></li>
+  <li><code>otoroshi-global-oauth2-module</code></li>
+  <li><code>otoroshi-ldap-auth-config</code></li>
+</ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../how-to-s/custom-initial-state.html">Initial state customization</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../how-to-s/custom-log-levels.html#log-levels-customization" class="header">Log levels customization</a>
+  <ul>
+    <li><a href="../how-to-s/custom-log-levels.html#customize-log-level-for-one-logger-with-configuration-file" class="header">Customize log level for one logger with configuration file</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html#customize-log-level-for-one-logger-with-environment-variable" class="header">Customize log level for one logger with environment variable</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html#list-of-loggers" class="header">List of loggers</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 
