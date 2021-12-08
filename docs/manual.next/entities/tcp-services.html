@@ -253,6 +253,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#tcp-services" name="tcp-services" class="anchor"><span class="anchor-link"></span></a>TCP services</h1>
+<p>TCP service are special kind of otoroshi services meant to proxy pure TCP connections (ssh, database, http, etc)</p>
 <h2><a href="#global-information" name="global-information" class="anchor"><span class="anchor-link"></span></a>Global information</h2>
 <ul>
   <li><code>Id</code>: generated unique identifier</li>
@@ -264,26 +265,41 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>Metadata</code>: list of metadata associated to the service</li>
 </ul>
 <h2><a href="#tls" name="tls" class="anchor"><span class="anchor-link"></span></a>TLS</h2>
+<p>this section controls the TLS exposition of the service</p>
 <ul>
-  <li><code>TLS mode</code>: disabled / PassThrough / Enabled</li>
-  <li><code>Client Auth.</code>: None / Want / Need</li>
+  <li><code>TLS mode</code>
+    <ul>
+      <li><code>Disabled</code>: no TLS</li>
+      <li><code>PassThrough</code>: as the target exposes TLS, the call will pass through otoroshi and use target TLS</li>
+      <li><code>Enabled</code>: the service will be exposed using TLS and will chose certificate based on SNI</li>
+    </ul>
+  </li>
+  <li><code>Client Auth.</code>
+    <ul>
+      <li><code>None</code> no mTLS needed to pass</li>
+      <li><code>Want</code> pass with or without mTLS</li>
+      <li><code>Need</code> need mTLS to pass</li>
+    </ul>
+  </li>
 </ul>
 <h2><a href="#server-name-indication-sni-" name="server-name-indication-sni-" class="anchor"><span class="anchor-link"></span></a>Server Name Indication (SNI)</h2>
+<p>this section control how SNI should be treated</p>
 <ul>
   <li><code>SNI routing enabled</code>: if enabled, the server will use the SNI hostname to determine which certificate to present to the client</li>
   <li><code>Forward to target if no SNI match</code>: if enabled, a call without any SNI match will be forward to the target</li>
-  <li><code>Target host</code>: host of the target</li>
-  <li><code>Target ip address</code>: ip of the target</li>
-  <li><code>Target port</code>: port of the target</li>
+  <li><code>Target host</code>: host of the target called if no SNI</li>
+  <li><code>Target ip address</code>: ip of the target called if no SNI</li>
+  <li><code>Target port</code>: port of the target called if no SNI</li>
   <li><code>TLS call</code>: encrypt the communication with TLS</li>
 </ul>
 <h2><a href="#rules" name="rules" class="anchor"><span class="anchor-link"></span></a>Rules</h2>
+<p>for any listening TCP proxy, it is possible to route to multiple targets based on SNI or extracted http host (if proxying http)</p>
 <ul>
   <li><code>Matching domain name</code>: regex used to filter the list of domains where the rule will be applied</li>
   <li><code>Target host</code>: host of the target</li>
   <li><code>Target ip address</code>: ip of the target</li>
   <li><code>Target port</code>: port of the target</li>
-  <li><code>TLS call</code>: encrypt the communication with TLS</li>
+  <li><code>TLS call</code>: enable this flag if the target is exposed using TLS</li>
 </ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../topics/index.html">Detailed topics</a></p>
