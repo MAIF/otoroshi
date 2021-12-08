@@ -46,7 +46,7 @@ $(function () {
         var search = index.search(searched, { expand: true });
         var foundDocs = search.map(f => {
           return data.filter(d => d.url === f.ref)[0];
-        }).filter(d => d.id !== '/entities/index.md' && d.id !== '/includes/initialize.md');
+        }).filter(d => d.id !== '/entities/index.md' && d.id !== '/includes/initialize.md' && d.id !== '/includes/fetch-and-start.md');
         const rect = e.target.getBoundingClientRect();
         $('#search-results').css('left', rect.left).css('top', rect.top + rect.height).css('width', rect.width);
         // console.log('\n\n----------------------------------------------------')
