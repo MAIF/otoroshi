@@ -2,6 +2,10 @@
 
 An API key is linked to one or more service group and service descriptor to allow you to access any service descriptor linked or contained in one of the linked service group. You can, of course, create multiple API key for given service groups/service descriptors.
 
+@@@ div { .centered-img }
+<img src="../imgs/models-apikey.png" />
+@@@
+
 You can found a concrete example @ref:[here](../how-to-s/secure-with-apikey.md)
 
 * `ApiKey Id`: the id is a unique random key that will represent this API key

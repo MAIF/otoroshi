@@ -2,6 +2,10 @@
 
 A service group is composed of an unique `id`, a `Group name`, a `Group description`, an `Organization` and a `Team`. As all Otoroshi resources, a service group have a list of tags and metadata associated.
 
+@@@ div { .centered-img }
+<img src="../imgs/models-group.png" />
+@@@
+
 The first instinctive usage of service group is to group a list of services. 
 
 When it's done, you can authorize an api key on a specific group. Instead of authorize an api key for each service, you can regroup a list of services together, and give authorization on the group (read the page on the api keys and the usage of the `Authorized on.` field).
