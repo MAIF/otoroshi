@@ -20,6 +20,7 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * @ref:[The resources loader](./resources-loader.md)
 * @ref:[TCP/UDP tunneling](./tcp-udp-tunneling.md)
 * @ref:[Log levels customization](./custom-log-levels.md)
+* @ref:[Initial state customization](./custom-initial-state.md)
 
 @@@ index
 
@@ -41,5 +42,6 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * [The resources loader](./resources-loader.md)
 * [TCP/UDP tunneling](./tcp-udp-tunneling.md)
 * [Log levels customization](./custom-log-levels.md)
+* [Initial state customization](./custom-initial-state.md)
 
 @@@
