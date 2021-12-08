@@ -334,6 +334,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>Trusted certificates</code>: list of trusted certificates received from elasticsearch</li>
 </ul>
 <h2><a href="#webhook" name="webhook" class="anchor"><span class="anchor-link"></span></a>Webhook</h2>
+<p>With this kind of exporter, every matching event will be sent to a URL (in batch) using a POST method and an JSON array body.</p>
 <ul>
   <li><code>Alerts hook URL</code>: url used to post events</li>
   <li><code>Hook Headers</code>: headers add to the post request</li>
@@ -344,6 +345,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>Trusted certificates</code>: list of trusted certificates received from elasticsearch</li>
 </ul>
 <h2><a href="#pulsar" name="pulsar" class="anchor"><span class="anchor-link"></span></a>Pulsar</h2>
+<p>With this kind of exporter, every matching event will be sent to an <a href="https://pulsar.apache.org/">Apache Pulsar topic</a></p>
 <ul>
   <li><code>Pulsar URI</code>: URI of the pulsar server</li>
   <li><code>Custom TLS Settings</code>: Enable the TLS configuration for the communication with Elasticsearch</li>
@@ -356,6 +358,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>Pulsar topic</code>: topic on the pulsar server</li>
 </ul>
 <h2><a href="#kafka" name="kafka" class="anchor"><span class="anchor-link"></span></a>Kafka</h2>
+<p>With this kind of exporter, every matching event will be sent to an <a href="https://kafka.apache.org/">Apache Kafka topic</a></p>
 <ul>
   <li><code>Kafka Servers</code>: the list of servers to contact to connect the Kafka client with the Kafka cluster</li>
   <li><code>Kafka keypass</code>: the keystore password if you use a keystore/truststore to connect to Kafka cluster</li>
@@ -369,6 +372,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>Kafka topic</code>: the topic on which Otoroshi alerts will be sent</li>
 </ul>
 <h2><a href="#mailer" name="mailer" class="anchor"><span class="anchor-link"></span></a>Mailer</h2>
+<p>With this kind of exporter, every matching event will be sent in batch as an email (using one of the following email provider)</p>
 <p>Otoroshi supports 5 exporters of email type.</p>
 <h3><a href="#console" name="console" class="anchor"><span class="anchor-link"></span></a>Console</h3>
 <p>Nothing to add. The events will be write on the standard output.</p>
