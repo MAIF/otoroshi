@@ -254,21 +254,165 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#events-and-analytics" name="events-and-analytics" class="anchor"><span class="anchor-link"></span></a>Events and analytics</h1><div class="callout note "><div class="callout-title">Note</div>
-<p>TODO: This section is being written, thanks for your patience :)</p></div>
+<h1><a href="#events-and-analytics" name="events-and-analytics" class="anchor"><span class="anchor-link"></span></a>Events and analytics</h1>
+<p>Otoroshi is a solution fully traced : calls to services, access to UI, creation of resources, etc.</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>You have to use <a href="https://www.elastic.co">Elastic</a> to enable analytics features in Otoroshi</p></div>
+<h2><a href="#events" name="events" class="anchor"><span class="anchor-link"></span></a>Events</h2>
 <ul>
-  <li>[ ] kind of events</li>
-  <li>[ ] event log</li>
-  <li>[ ] alerts</li>
-  <li>[ ] audit</li>
-  <li>[ ] global metrics</li>
-  <li>[ ] monitoring services</li>
+  <li>Analytics event</li>
+  <li>Gateway event</li>
+  <li>TCP event</li>
+  <li>Healthcheck event</li>
 </ul>
+<h2><a href="#event-log" name="event-log" class="anchor"><span class="anchor-link"></span></a>Event log</h2>
+<p>Otoroshi can read his own exported events from an Elasticsearch instance, set up in the danger zone. Theses events are available from the UI, at the following route: <code>https://xxxxx/bo/dashboard/events</code>.</p>
+<p>The <code>Global events</code> page display all events of <strong>GatewayEvent</strong> type. This page is a way to quickly read an interval of events and can be used in addition of a Kibana instance.</p>
+<p>For each event, a list of information will be displayed and an additional button <code>content</code> to watch the full content of the event, at the JSON format. </p>
+<h2><a href="#alerts" name="alerts" class="anchor"><span class="anchor-link"></span></a>Alerts</h2>
+<ul>
+  <li><code>MaxConcurrentRequestReachedAlert</code>: happening when the handled requests number are greater than the limit of concurrent requests indicated in the global configuration of Otoroshi</li>
+  <li><code>CircuitBreakerOpenedAlert</code>: happening when the circuit breaker pass from closed to opened</li>
+  <li><code>CircuitBreakerClosedAlert</code>: happening when the circuit breaker pass from opened to closed</li>
+  <li><code>SessionDiscardedAlert</code>: send when an admin discarded an admin sessions</li>
+  <li><code>SessionsDiscardedAlert</code>: send when an admin discarded all admin sessions</li>
+  <li><code>PanicModeAlert</code>: send when panic mode is enabled</li>
+  <li><code>OtoroshiExportAlert</code>: send when otoroshi global configuration is exported</li>
+  <li><code>U2FAdminDeletedAlert</code>: send when an admin has deleted an other admin user</li>
+  <li><code>BlackListedBackOfficeUserAlert</code>: send when a blacklisted user has tried to acccess to the UI</li>
+  <li><code>AdminLoggedInAlert</code>: send when an user admin has logged to the UI</li>
+  <li><code>AdminFirstLogin</code>: send when an user admin has successfully logged to the UI for the first time</li>
+  <li><code>AdminLoggedOutAlert</code>: send when an user admin has logged out from Otoroshi</li>
+  <li><code>GlobalConfigModification</code>: send when an user amdin has changed the global configuration of Otoroshi</li>
+  <li><code>RevokedApiKeyUsageAlert</code>: send when an user admin has revoked an apikey</li>
+  <li><code>ServiceGroupCreatedAlert</code>: send when an user admin has created a service group</li>
+  <li><code>ServiceGroupUpdatedAlert</code>: send when an user admin has updated a service group</li>
+  <li><code>ServiceGroupDeletedAlert</code>: send when an user admin has deleted a service group</li>
+  <li><code>ServiceCreatedAlert</code>: send when an user admin has created a tcp service</li>
+  <li><code>ServiceUpdatedAlert</code>: send when an user admin has updated a tcp service</li>
+  <li><code>ServiceDeletedAlert</code>: send when an user admin has deleted a tcp service</li>
+  <li><code>ApiKeyCreatedAlert</code>: send when an user admin has crated a new apikey</li>
+  <li><code>ApiKeyUpdatedAlert</code>: send when an user admin has updated a new apikey</li>
+  <li><code>ApiKeyDeletedAlert</code>: send when an user admin has deleted a new apikey</li>
+</ul>
+<h2><a href="#audit" name="audit" class="anchor"><span class="anchor-link"></span></a>Audit</h2>
+<p>With Otoroshi, any admin action and any sucpicious/alert action is recorded. These records are stored in Otoroshi’s datastore (only the last n records, defined by the app.events.maxSize config key). All the records can be send through the analytics mechanism (WebHook, Kafka, Elastic) for external and/or further usage. We recommand sending away those records for security reasons.</p>
+<p>Otoroshi keep the following list of information for each executed action:</p>
+<ul>
+  <li><code>Date</code>: moment of the action</li>
+  <li><code>User</code>: name of the owner</li>
+  <li><code>From</code>: IP of the concerned user</li>
+  <li><code>Action</code>: action performed by the person. The possible actions are:
+    <ul>
+      <li><code>ACCESS_APIKEY</code>: User accessed a apikey</li>
+      <li><code>ACCESS_ALL_APIKEYS</code>: User accessed all apikeys</li>
+      <li><code>CREATE_APIKEY</code>: User created a apikey</li>
+      <li><code>UPDATE_APIKEY</code>: User updated a apikey</li>
+      <li><code>DELETE_APIKEY</code>: User deleted a apikey</li>
+      <li><code>ACCESS_AUTH_MODULE</code>: User accessed an Auth. module</li>
+      <li><code>ACCESS_ALL_AUTH_MODULES</code>: User accessed all Auth. modules</li>
+      <li><code>CREATE_AUTH_MODULE</code>: User created an Auth. module</li>
+      <li><code>UPDATE_AUTH_MODULE</code>: User updated an Auth. module</li>
+      <li><code>DELETE_AUTH_MODULE</code>: User deleted an Auth. module</li>
+      <li><code>ACCESS_CERTIFICATE</code>: User accessed a certificate</li>
+      <li><code>ACCESS_ALL_CERTIFICATES</code>: User accessed all certificates</li>
+      <li><code>CREATE_CERTIFICATE</code>: User created a certificate</li>
+      <li><code>UPDATE_CERTIFICATE</code>: User updated a certificate</li>
+      <li><code>DELETE_CERTIFICATE</code>: User deleted a certificate</li>
+      <li><code>ACCESS_CLIENT_CERT_VALIDATOR</code>: User accessed a client cert. validator</li>
+      <li><code>ACCESS_ALL_CLIENT_CERT_VALIDATORS</code>: User accessed all client cert. validators</li>
+      <li><code>CREATE_CLIENT_CERT_VALIDATOR</code>: User created a client cert. validator</li>
+      <li><code>UPDATE_CLIENT_CERT_VALIDATOR</code>: User updated a client cert. validator</li>
+      <li><code>DELETE_CLIENT_CERT_VALIDATOR</code>: User deleted a client cert. validator</li>
+      <li><code>ACCESS_DATA_EXPORTER_CONFIG</code>: User accessed a data exporter config</li>
+      <li><code>ACCESS_ALL_DATA_EXPORTER_CONFIG</code>: User accessed all data exporter config</li>
+      <li><code>CREATE_DATA_EXPORTER_CONFIG</code>: User created a data exporter config</li>
+      <li><code>UPDATE_DATA_EXPORTER_CONFIG</code>: User updated a data exporter config</li>
+      <li><code>DELETE_DATA_EXPORTER_CONFIG</code>: User deleted a data exporter config</li>
+      <li><code>ACCESS_GLOBAL_JWT_VERIFIER</code>: User accessed a global jwt verifier</li>
+      <li><code>ACCESS_ALL_GLOBAL_JWT_VERIFIERS</code>: User accessed all global jwt verifiers</li>
+      <li><code>CREATE_GLOBAL_JWT_VERIFIER</code>: User created a global jwt verifier</li>
+      <li><code>UPDATE_GLOBAL_JWT_VERIFIER</code>: User updated a global jwt verifier</li>
+      <li><code>DELETE_GLOBAL_JWT_VERIFIER</code>: User deleted a global jwt verifier</li>
+      <li><code>ACCESS_SCRIPT</code>: User accessed a script</li>
+      <li><code>ACCESS_ALL_SCRIPTS</code>: User accessed all scripts</li>
+      <li><code>CREATE_SCRIPT</code>: User created a script</li>
+      <li><code>UPDATE_SCRIPT</code>: User updated a script</li>
+      <li><code>DELETE_SCRIPT</code>: User deleted a Script</li>
+      <li><code>ACCESS_SERVICES_GROUP</code>: User accessed a service group</li>
+      <li><code>ACCESS_ALL_SERVICES_GROUPS</code>: User accessed all services groups</li>
+      <li><code>CREATE_SERVICE_GROUP</code>: User created a service group</li>
+      <li><code>UPDATE_SERVICE_GROUP</code>: User updated a service group</li>
+      <li><code>DELETE_SERVICE_GROUP</code>: User deleted a service group</li>
+      <li><code>ACCESS_SERVICES_FROM_SERVICES_GROUP</code>: User accessed all services from a services group</li>
+      <li><code>ACCESS_TCP_SERVICE</code>: User accessed a tcp service</li>
+      <li><code>ACCESS_ALL_TCP_SERVICES</code>: User accessed all tcp services</li>
+      <li><code>CREATE_TCP_SERVICE</code>: User created a tcp service</li>
+      <li><code>UPDATE_TCP_SERVICE</code>: User updated a tcp service</li>
+      <li><code>DELETE_TCP_SERVICE</code>: User deleted a tcp service</li>
+      <li><code>ACCESS_TEAM</code>: User accessed a Team</li>
+      <li><code>ACCESS_ALL_TEAMS</code>: User accessed all teams</li>
+      <li><code>CREATE_TEAM</code>: User created a team</li>
+      <li><code>UPDATE_TEAM</code>: User updated a team</li>
+      <li><code>DELETE_TEAM</code>: User deleted a team</li>
+      <li><code>ACCESS_TENANT</code>: User accessed a Tenant</li>
+      <li><code>ACCESS_ALL_TENANTS</code>: User accessed all tenants</li>
+      <li><code>CREATE_TENANT</code>: User created a tenant</li>
+      <li><code>UPDATE_TENANT</code>: User updated a tenant</li>
+      <li><code>DELETE_TENANT</code>: User deleted a tenant</li>
+      <li><code>SERVICESEARCH</code>: User searched for a service</li>
+      <li><code>ACTIVATE_PANIC_MODE</code>: Admin activated panic mode</li>
+    </ul>
+  </li>
+  <li>
+  <p><code>Message</code>: explicit message about the action (example: the <code>SERVICESEARCH</code> action happened when an <code>user searched for a service</code>)</p></li>
+  <li><code>Content</code>: all information at JSON format</li>
+</ul>
+<h2><a href="#global-metrics" name="global-metrics" class="anchor"><span class="anchor-link"></span></a>Global metrics</h2>
+<p>The global metrics are displayed on the index page of the Otoroshi UI. Otoroshi provides information about :</p>
+<ul>
+  <li>the number of requests served</li>
+  <li>the amount of data received and sended</li>
+  <li>the number of concurrent requests</li>
+  <li>the number of requests per second</li>
+  <li>the current overhead</li>
+</ul>
+<p>More metrics can be found on the <strong>Global analytics</strong> page (available at <a href="https://xxxxxx/bo/dashboard/stats)">https://xxxxxx/bo/dashboard/stats)</a>.</p>
+<h2><a href="#monitoring-services" name="monitoring-services" class="anchor"><span class="anchor-link"></span></a>Monitoring services</h2>
+<p>Once you have declared services, you can monitor them with Otoroshi. </p>
+<p>Let&rsquo;s starting by setup Otoroshi to push events to an elastic cluster via a data exporter. Then you will can setup Otoroshi events read from an elastic cluster. Go to <code>settings (cog icon) / Danger Zone</code> and expand the <code>Analytics: Elastic cluster (read)</code> section.</p><div class="centered-img">
+<img src="../imgs/push-to-elastic.png" /></div>
+<h3><a href="#service-healthcheck" name="service-healthcheck" class="anchor"><span class="anchor-link"></span></a>Service healthcheck</h3>
+<p>If you have defined an health check URL in the service descriptor, you can access the health check page from the sidebar of the service page.</p><div class="centered-img">
+<img src="../imgs/service-healthcheck.png" /></div>
+<h3><a href="#service-live-stats" name="service-live-stats" class="anchor"><span class="anchor-link"></span></a>Service live stats</h3>
+<p>You can also monitor live stats like total of served request, average response time, average overhead, etc. The live stats page can be accessed from the sidebar of the service page.</p><div class="centered-img">
+<img src="../imgs/service-live-stats.png" /></div>
+<h3><a href="#service-analytics" name="service-analytics" class="anchor"><span class="anchor-link"></span></a>Service analytics</h3>
+<p>You can also get some aggregated metrics. The analytics page can be accessed from the sidebar of the service page.</p><div class="centered-img">
+<img src="../imgs/service-analytics.png" /></div>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../topics/dev-portal.html">Developer portal with Daikoku</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/events-and-analytics.html#events-and-analytics" class="header">Events and analytics</a>
+  <ul>
+    <li><a href="../topics/events-and-analytics.html#events" class="header">Events</a></li>
+    <li><a href="../topics/events-and-analytics.html#event-log" class="header">Event log</a></li>
+    <li><a href="../topics/events-and-analytics.html#alerts" class="header">Alerts</a></li>
+    <li><a href="../topics/events-and-analytics.html#audit" class="header">Audit</a></li>
+    <li><a href="../topics/events-and-analytics.html#global-metrics" class="header">Global metrics</a></li>
+    <li><a href="../topics/events-and-analytics.html#monitoring-services" class="header">Monitoring services</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 
