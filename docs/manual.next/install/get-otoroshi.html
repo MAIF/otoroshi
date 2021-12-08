@@ -76,6 +76,7 @@
     <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
     <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
     <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -94,7 +95,10 @@
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
-    <li><a href="../how-to-s/resources-loader.html" class="page">Use the resources loader</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/tcp-udp-tunneling.html" class="page">TCP/UDP tunneling</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -187,6 +191,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
     <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
     <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -205,7 +210,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
-    <li><a href="../how-to-s/resources-loader.html" class="page">Use the resources loader</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/tcp-udp-tunneling.html" class="page">TCP/UDP tunneling</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -250,17 +258,17 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>All release can be bound on the releases page of the repository (<a href="`https://github.com/MAIF/otoroshi/releases`">visit it</a>).</p>
 <h2><a href="#from-zip" name="from-zip" class="anchor"><span class="anchor-link"></span></a>From zip</h2>
 <pre class="prettyprint"><code class="language-sh"># Download the latest version
-wget https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi-1.5.0-beta.8.zip
-unzip ./otoroshi-1.5.0-beta.8.zip
-cd otoroshi-1.5.0-beta.8
+wget https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi-1.5.0-dev.zip
+unzip ./otoroshi-1.5.0-dev.zip
+cd otoroshi-1.5.0-dev
 </code></pre>
 <h2><a href="#from-jar-file" name="from-jar-file" class="anchor"><span class="anchor-link"></span></a>From jar file</h2>
 <pre class="prettyprint"><code class="language-sh"># Download the latest version
-wget https://github.com/MAIF/otoroshi/releases/download/v1.5.0-beta.8/otoroshi.jar
+wget https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar
 </code></pre>
 <h2><a href="#from-docker" name="from-docker" class="anchor"><span class="anchor-link"></span></a>From Docker</h2>
 <pre class="prettyprint"><code class="language-sh"># Download the latest version
-docker pull maif/otoroshi:1.5.0-beta.8-jdk11
+docker pull maif/otoroshi:1.5.0-dev-jdk11
 </code></pre>
 <h2><a href="#from-sources" name="from-sources" class="anchor"><span class="anchor-link"></span></a>From Sources</h2>
 <p>To build Otoroshi from sources, just go to the <a href="../dev.html">dev documentation</a></p>
