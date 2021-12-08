@@ -1,62 +1,80 @@
 # Features
 
-Traffic Management:
+All the features supported by **Otoroshi** are listed below
 
-* Proxy of services HTTP(s) (apis, web apps)
-* Proxy of TCP/UDP Proxy (app, database)
-* Mirroring
+**Traffic Management**
 
-Services customization
+* Can proxy any HTTP(s) service (apis, webapps, websocket, etc)
+* Can proxy any TCP service (app, database, etc)
+* Traffic mirroring
+* Canary deployemnts
+* Stickyness
+* Distributed in-flight request limiting	
+* Distributed rate limiting 
 
-* Plugins (circuit breakers, automatic retries, buffering, response compression, headers) 
+**Services customization**
+
+* Dozens of built-in plugins (circuit breakers, automatic retries, buffering, response compression, headers manipulation) 
 * Custom plugins
 * Private and public visibility
 
-Services Monitoring
+**Services Monitoring**
 
 * Active health checks
 * Calls tracing
 * Export alerts and events to external database
 * Real-time traffic metrics
 * Alert mailers
+* Real-time traffic metrics (Datadog, Prometheus, StatsD)
 
-Services security
+**API security**
 
-* Manage access with apikeys
+* Access management with apikeys and quotas
+* Automatic apikeys secrets rotation
 * HTTPS and TLS
-* Mutual TLS client/server
+* Mutual TLS in/out
 * Routing constraints
-* Verification and manufacture of tokens
+* JWT tokens validation and manipulation
 
-Administration UI
+**Administration UI**
 
 * Manage and organize all resources
 * Secured users access with Authentication module
 * Traced users actions
-* Configuration without rebooting
+* Dynamic changes at runtime without full reload
 
-Services and UI security
+**Webapp authentication and security**
 
 * OAuth2.0/2.1 authentication
-* OpenID Connect (OIDC)
+* OpenID Connect (OIDC) authentication
 * Internal users management
+* LDAP authentication
 * JWT authentication
-* OAuth 1.0a
-* SAML V2
+* OAuth 1.0a authentication
+* SAML V2 authentication
 
-Certificates management
+**Certificates management**
 
+* Dynamic TLS certificates store 
+* Dynamic TLS termination
 * Internal PKI
 * ACME / Let's Encrypt support
+* On-the-fly certificate generation based on a CA certificate without request loss
 
-Performance and testing
+**Performances and testing**
 
 * Chaos engineering
-* Clustering 
+* Clustering with encrypted communication
 * Scalability
 
-Kubernetes ingress controller
+**Kubernetes integration**
 
-* Manage Otoroshi resources from Kubernetes
-* Live reading of multiples Kubernetes namespaces
-* Validation of resources with webhook
+* Standard Ingress controller
+* Custom Ingress controller
+    * Manage Otoroshi resources from Kubernetes
+* Validation of resources via webhook
+* Service Mesh: service-to-service communication
+
+**Developpers portal**
+
+* Using [Daikoku](https://maif.github.io/daikoku/manual/index.html)
