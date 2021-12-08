@@ -94,6 +94,7 @@
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">Use the resources loader</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -204,6 +205,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">Use the resources loader</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -258,12 +260,35 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </ul>
 <p>All exporters are split in three parts. The first and second parts are common and the last are specific by exporter.</p>
 <ul>
-  <li><code>Filtering and projection</code> : section to filter the list of sent events and alerts. The projection field allows you to export only certain event fields and reduce the size of exported data. It&rsquo;s composed of <code>Filtering</code> and <code>Projection</code> fields.</li>
+  <li><code>Filtering and projection</code> : section to filter the list of sent events and alerts. The projection field allows you to export only certain event fields and reduce the size of exported data. It&rsquo;s composed of <code>Filtering</code> and <code>Projection</code> fields. To get a full usage of this elements, read <a href="data-exporters.html#matching-and-projections">this section</a></li>
+  <li><code>Queue details</code>: set of fields to adjust the workers of the exporter.</li>
+  <li><code>Buffer size</code>: if elements are pushed onto the queue faster than the source is consumed the overflow will be handled with a strategy specified by the user. Keep in memory the number of events.</li>
+  <li><code>JSON conversion workers</code>: number of workers used to transform events to JSON format in paralell</li>
+  <li><code>Send workers</code>: number of workers used to send transformed events</li>
+  <li><code>Group size</code>: chunk up this stream into groups of elements received within a time window (the time window is the next field)</li>
+  <li><code>Group duration</code>: waiting time before sending the group of events. If the group size is reached before the group duration, the events will be instantly sent</li>
 </ul>
+<p>For the last part, the <code>Exporter configuration</code> will be detail individually.</p>
+<h2><a href="#matching-and-projections" name="matching-and-projections" class="anchor"><span class="anchor-link"></span></a>Matching and projections</h2>
 <p><strong>Filtering</strong> is used to <strong>include</strong> or <strong>exclude</strong> some kind of events and alerts. For each include and exclude field, you can add a list of key-value. </p>
 <p>Let&rsquo;s say we only want to keep Otoroshi alerts</p>
 <pre class="prettyprint"><code class="language-json">{ &quot;include&quot;: [{ &quot;@type&quot;: &quot;AlertEvent&quot; }] }
 </code></pre>
+<p>Otoroshi provides a list of rules to keep only events with specific values. We will use the following event to illustrate.</p>
+<pre class="prettyprint"><code class="language-json">{
+ &quot;foo&quot;: &quot;bar&quot;,
+ &quot;type&quot;: &quot;AlertEvent&quot;,
+ &quot;alert&quot;: &quot;big-alert&quot;,
+ &quot;status&quot;: 200,
+ &quot;codes&quot;: [&quot;a&quot;, &quot;b&quot;],
+ &quot;inner&quot;: {
+   &quot;foo&quot;: &quot;bar&quot;,
+   &quot;bar&quot;: &quot;foo&quot;
+ }
+}
+</code></pre>
+<p>The rules apply with the previous example as event.</p><div id="filtering">
+<p>&nbsp;</p></div>
 <p><strong>Projection</strong> is a list of fields to export. In the case of an empty list, all the fields of an event will be exported. In other case, <strong>only</strong> the listed fields will be exported.</p>
 <p>Let&rsquo;s say we only want to keep Otoroshi alerts and only type, timestamp and id of each exported events</p>
 <pre class="prettyprint"><code class="language-json">{
@@ -279,17 +304,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>The last possiblity is to retrieve a sub-object of an event. Let&rsquo;s say we want to get the name of each exported user of events.</p>
 <pre class="prettyprint"><code class="language-json">{ &quot;user&quot;: { &quot;name&quot;: true } }
 </code></pre>
-<ul>
-  <li><code>Queue details</code>: set of fields to adjust the workers of the exporter.</li>
-  <li><code>Buffer size</code>: if elements are pushed onto the queue faster than the source is consumed the overflow will be handled with a strategy specified by the user. Keep in memory the number of events.</li>
-  <li><code>JSON conversion workers</code>: number of workers used to transform events to JSON format in paralell</li>
-  <li><code>Send workers</code>: number of workers used to send transformed events</li>
-  <li><code>Group size</code>: chunk up this stream into groups of elements received within a time window (the time window is the next field)</li>
-  <li><code>Group duration</code>: waiting time before sending the group of events. If the group size is reached before the group duration, the events will be instantly sent</li>
-</ul>
-<p>For the last part, the <code>Exporter configuration</code> will be detail individually.</p>
-<h2><a href="#matching-and-projections" name="matching-and-projections" class="anchor"><span class="anchor-link"></span></a>Matching and projections</h2><div class="callout warning "><div class="callout-title">Warning</div>
-<p>TODO: this section needs to be written</p></div>
 <h2><a href="#elastic" name="elastic" class="anchor"><span class="anchor-link"></span></a>Elastic</h2>
 <p>With this kind of exporter, every matching event will be sent to an elastic cluster (in batch). It is quite useful and can be used in combination with <a href="./global-config.html#analytics-elastic-dashboard-datasource-read-">elastic read in global config</a></p>
 <ul>

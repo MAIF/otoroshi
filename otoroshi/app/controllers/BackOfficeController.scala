@@ -1110,6 +1110,7 @@ class BackOfficeController(
           ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
         val paginationPosition      = (paginationPage - 1) * paginationPageSize
         env.datastores.auditDataStore.findAllRaw().map { elems =>
+					println(elems)
           val filtered = elems.drop(paginationPosition).take(paginationPageSize)
           Ok.chunked(
             Source

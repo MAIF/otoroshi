@@ -235,7 +235,7 @@ document.addEventListener("DOMContentLoaded", function () {
       editor.appendChild(editorContent);
       editor.appendChild(valuesContent);
 
-      
+
       container.appendChild(editor);
       return container
     }
@@ -256,6 +256,130 @@ document.addEventListener("DOMContentLoaded", function () {
     })
 
     document.getElementById("expressions").appendChild(container);
+
+    container.style.background = "linear-gradient(to right, #eee 60%, #303740 40%)"
+    container.style.padding = "12px"
+  }
+
+  else if (document.getElementById("data-exporters")) {
+    const filtering = [
+      {
+        name: "Keep events with",
+        editor: [
+          { expression: '{ "<key>": "<value>" }', description: "a field key with value" },
+          { expression: '{ "<key>": { "$wildcard": "<value>*" } }', description: "a field starting with value" },
+          { expression: '{ "<key>": { "<key2>": "<value>" } }', description: "a sub-field with value" },
+          { expression: '{ "<key>": <number> }', description: "a field with the specific value as number" },
+          { expression: '{ "<key>": { "$gt": <number> } }', description: "a field with number value greater than number" },
+          { expression: '{ "<key>": { "$gte": <number> } }', description: "a field with number value greater or equal to number" },
+          { expression: '{ "<key>": { "$lt": <number> } }', description: "a field with number value lower than number" },
+          { expression: '{ "<key>": { "$lte": <number> } }', description: "a field with number value lower or equal to number" },
+          { expression: '{ "<key>": { "$between": { "min": <number>, "max": <number> } } }', description: "a field with value between two values" },
+          { expression: '{ "<key>": { "$and": [ { "<key2>": "<value>" }, { "<key3>" : "<value>" }] } }', description: "an object with two fields with values" },
+          { expression: '{ "<key>": { "$or": [ { "<key2>": "<value>" }, { "<key3>" : "<value>" }] } }', description: "an object with one subfield matching an element of the list" },
+          { expression: '{ "<key>": ["<value>", "<value2>"] }', description: "an array field with values" },
+          { expression: '{ "<key>": { "contains": "<value>" } }', description: "an array field containing a specific value" },
+          { expression: '{ "<key>": { "$all": ["<value>", "<value>"] } }', description: "and array field containing all specific values" }
+        ],
+        values: [
+          { expression: '{ "foo": "bar" }', description: "Keep events with foo as key and bar as value" },
+          { expression: '{ "type": { "$wildcard": "Alert*" } }', description: "Keep events with type field starting with Alert" },
+          { expression: '{ "inner": { "foo": "bar" } }', description: "Keep events with sub field foo at value bar" },
+          { expression: '{ "status": 200 }', description: "Keep events with status code at 200 (as number check)" },
+          { expression: '{ "status": { "$gt": 100 } }', description: "Keep events with status code greater than 100" },
+          { expression: '{ "status": { "$gte": 100 } }', description: "Keep events with status code greater or equal to 100" },
+          { expression: '{ "status": { "$lt": 100 } }', description: "Keep events with status code lower than 100" },
+          { expression: '{ "status": { "$lte": 100 } }', description: "Keep events with status code lower or equal to 100" },
+          { expression: '{ "status": { "$between": { "min": 100, "max": 200 } } }', description: "Keep events with status code between 100 and 200" },
+          { expression: '{ "inner": { "$and": [ { "foo": "bar" }, { "bar" : "foo" }] } }', description: "Keep events matching the list of key-value" },
+          { expression: '{ "inner": { "$or": [ { "foo": "bar" }, { "bar" : "foo" }] } }', description: "Keep events matching one condition of the list of key-value" },
+          { expression: '{ "codes": ["a", "b"] }', description: "Keep events with an array codes which strictly containing values a and b" },
+          { expression: '{ "codes": { "contains": "a" } }', description: "Keep events with an array codes containing an a value" },
+          { expression: '{ "codes": { "$all": ["a", "b"] } }', description: "Keep events with an array codes containing at minima a and b values" }
+        ]
+      }
+    ]
+
+    const container = document.createElement("div");
+
+    function createBloc(item, i) {
+      const container = document.createElement("div");
+
+      const h2 = document.createElement("h2");
+      h2.textContent = item.name;
+      container.appendChild(h2);
+
+      if (item.context) {
+        const span = document.createElement("span");
+        span.textContent = item.context;
+        span.style.fontStyle = "italic";
+        container.appendChild(span);
+      }
+
+      const editor = document.createElement("div");
+      editor.classList.add("editor");
+
+      const editorContent = document.createElement("div");
+
+      item.editor.forEach(({ expression, description }) => {
+        const p = document.createElement("p");
+
+        const code = document.createElement("code");
+        code.textContent = expression;
+
+        const span = document.createElement("span");
+        span.textContent = description;
+
+        p.appendChild(code);
+        p.appendChild(span);
+
+        editorContent.appendChild(p);
+      })
+
+      const valuesContent = document.createElement("div");
+
+      valuesContent.appendChild(Example(item.name));
+
+      item.values.forEach(({ expression, description }) => {
+        const p = document.createElement("p");
+
+        const code = document.createElement("code");
+        code.textContent = expression;
+
+        const span = document.createElement("span");
+        span.classList.add("editor-value")
+        span.textContent = description;
+
+        p.appendChild(code);
+        p.appendChild(span);
+
+        valuesContent.appendChild(p);
+      });
+
+      editor.appendChild(editorContent);
+      editor.appendChild(valuesContent);
+
+
+      container.appendChild(editor);
+      return container
+    }
+
+    function Example(name) {
+      const div = document.createElement("div");
+      div.classList.add("editor-title");
+
+      const span = document.createElement("span");
+      span.textContent = name;
+
+      div.appendChild(span);
+      return div;
+    }
+
+    filtering.forEach(item => {
+      container.appendChild(createBloc(item));
+    })
+
+    document.getElementById("filtering").appendChild(container);
 
     container.style.background = "linear-gradient(to right, #eee 60%, #303740 40%)"
     container.style.padding = "12px"
