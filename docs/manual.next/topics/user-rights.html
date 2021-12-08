@@ -96,7 +96,6 @@
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
-    <li><a href="../how-to-s/tcp-udp-tunneling.html" class="page">TCP/UDP tunneling</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
   </ul></li>
@@ -211,7 +210,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
-    <li><a href="../how-to-s/tcp-udp-tunneling.html" class="page">TCP/UDP tunneling</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
   </ul></li>
@@ -255,10 +253,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#otoroshi-user-rights" name="otoroshi-user-rights" class="anchor"><span class="anchor-link"></span></a>Otoroshi user rights</h1>
-<p>In Otoroshi, all users are considered <strong>Administrators</strong>. This choice is reinforced by the fact that Otoroshi is designed to be an administrative user interface and not an interface for users who simply want to view information. For this type of use, we encourage to use the admin API rather than giving access to the user interface.</p>
-<p>The Otoroshi rights are split by a list of authorizations on <strong>tenants</strong> and <strong>teams</strong>. </p>
-<p>Let&rsquo;s taking an example where we want to authorize an administrator user on all tenants and teams.</p>
-<p>The list of rights will be:</p>
+<p>In Otoroshi, all users are considered <strong>Administrators</strong>. This choice is reinforced by the fact that Otoroshi is designed to be an administrator user interface and not an interface for users who simply want to view information. For this type of use, we encourage to use the admin API rather than giving access to the user interface.</p>
+<p>The Otoroshi rights are split by a list of authorizations on <strong>organizations</strong> and <strong>teams</strong>. </p>
+<p>Let&rsquo;s taking an example where we want to authorize an administrator user on all organizations and teams.</p>
+<p>The list of rights will be :</p>
 <pre class="prettyprint"><code class="language-json">[
   {
     &quot;tenant&quot;: &quot;*:rw&quot;, # (1)
@@ -270,7 +268,45 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>(1): this field, separated by a colon, indicates the name of the tenant and the associated rights. In our case, we set <code>*</code> to apply the rights to all tenants, and the <code>rw</code> to get the read and write access on them.</li>
   <li>(2): the <code>teams</code> array field, represents the list of rights, applied by team. The behaviour is the same as the tenant field, we define the team or the wildcard, followed by the rights</li>
 </ul>
-<p>The list of possible rights is:</p>
+<p>if you want to have an user that is administrator only for one organization, the rights will be :</p>
+<pre class="prettyprint"><code class="language-json">[
+  {
+    &quot;tenant&quot;: &quot;orga-1:rw&quot;,
+    &quot;teams&quot;: [&quot;*:rw&quot;]
+  }
+]
+</code></pre>
+<p>if you want to have an user that is administrator only for two organization, the rights will be :</p>
+<pre class="prettyprint"><code class="language-json">[
+  {
+    &quot;tenant&quot;: &quot;orga-1:rw&quot;,
+    &quot;teams&quot;: [&quot;*:rw&quot;]
+  },
+  {
+    &quot;tenant&quot;: &quot;orga-2:rw&quot;,
+    &quot;teams&quot;: [&quot;*:rw&quot;]
+  }
+]
+</code></pre>
+<p>if you want to have an user that can only see 3 teams of one organization and one team in the other, the rights will be :</p>
+<pre class="prettyprint"><code class="language-json">[
+  {
+    &quot;tenant&quot;: &quot;orga-1:rw&quot;,
+    &quot;teams&quot;: [
+      &quot;team-1:rw&quot;,
+      &quot;team-2:rw&quot;,
+      &quot;team-3:rw&quot;,
+    ]
+  },
+  {
+    &quot;tenant&quot;: &quot;orga-2:rw&quot;,
+    &quot;teams&quot;: [
+      &quot;team-4:rw&quot;
+    ]
+  }
+]
+</code></pre>
+<p>The list of possible rights for an organization or a team is:</p>
 <ul>
   <li><strong>r</strong>: read access</li>
   <li><strong>w</strong>: write access</li>

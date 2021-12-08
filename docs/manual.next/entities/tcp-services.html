@@ -96,7 +96,6 @@
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
-    <li><a href="../how-to-s/tcp-udp-tunneling.html" class="page">TCP/UDP tunneling</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
   </ul></li>
@@ -211,7 +210,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
-    <li><a href="../how-to-s/tcp-udp-tunneling.html" class="page">TCP/UDP tunneling</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
   </ul></li>
@@ -254,13 +252,60 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#tcp-services" name="tcp-services" class="anchor"><span class="anchor-link"></span></a>TCP services</h1><div class="callout note "><div class="callout-title">Note</div>
-<p>This section is being written, thanks for your patience :)</p></div>
+<h1><a href="#tcp-services" name="tcp-services" class="anchor"><span class="anchor-link"></span></a>TCP services</h1>
+<h2><a href="#global-information" name="global-information" class="anchor"><span class="anchor-link"></span></a>Global information</h2>
+<ul>
+  <li><code>Id</code>: generated unique identifier</li>
+  <li><code>TCP service name</code>: the name of your TCP service</li>
+  <li><code>Enabled</code>: enable and disable the service</li>
+  <li><code>TCP service port</code>: the listening port</li>
+  <li><code>TCP service interface</code>: network interface listen by the service</li>
+  <li><code>Tags</code>: list of tags associated to the service</li>
+  <li><code>Metadata</code>: list of metadata associated to the service</li>
+</ul>
+<h2><a href="#tls" name="tls" class="anchor"><span class="anchor-link"></span></a>TLS</h2>
+<ul>
+  <li><code>TLS mode</code>: disabled / PassThrough / Enabled</li>
+  <li><code>Client Auth.</code>: None / Want / Need</li>
+</ul>
+<h2><a href="#server-name-indication-sni-" name="server-name-indication-sni-" class="anchor"><span class="anchor-link"></span></a>Server Name Indication (SNI)</h2>
+<ul>
+  <li><code>SNI routing enabled</code>: if enabled, the server will use the SNI hostname to determine which certificate to present to the client</li>
+  <li><code>Forward to target if no SNI match</code>: if enabled, a call without any SNI match will be forward to the target</li>
+  <li><code>Target host</code>: host of the target</li>
+  <li><code>Target ip address</code>: ip of the target</li>
+  <li><code>Target port</code>: port of the target</li>
+  <li><code>TLS call</code>: encrypt the communication with TLS</li>
+</ul>
+<h2><a href="#rules" name="rules" class="anchor"><span class="anchor-link"></span></a>Rules</h2>
+<ul>
+  <li><code>Matching domain name</code>: regex used to filter the list of domains where the rule will be applied</li>
+  <li><code>Target host</code>: host of the target</li>
+  <li><code>Target ip address</code>: ip of the target</li>
+  <li><code>Target port</code>: port of the target</li>
+  <li><code>TLS call</code>: encrypt the communication with TLS</li>
+</ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../topics/index.html">Detailed topics</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../entities/tcp-services.html#tcp-services" class="header">TCP services</a>
+  <ul>
+    <li><a href="../entities/tcp-services.html#global-information" class="header">Global information</a></li>
+    <li><a href="../entities/tcp-services.html#tls" class="header">TLS</a></li>
+    <li><a href="../entities/tcp-services.html#server-name-indication-sni-" class="header">Server Name Indication (SNI)</a></li>
+    <li><a href="../entities/tcp-services.html#rules" class="header">Rules</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 
