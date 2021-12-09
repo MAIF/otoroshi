@@ -51,14 +51,14 @@ otoroshi {
       all = false
       all = ${?OTOROSHI_SSL_TRUST_ALL}
     }
-    # some initial cacert access, useful to include non standard CA when starting
+    # some initial cacert access, useful to include non standard CA when starting (file paths)
     initialCacert = ${?CLUSTER_WORKER_INITIAL_CACERT}
     initialCacert = ${?INITIAL_CACERT}
     initialCert = ${?CLUSTER_WORKER_INITIAL_CERT}
     initialCert = ${?INITIAL_CERT}
     initialCertKey = ${?CLUSTER_WORKER_INITIAL_CERT_KEY}
     initialCertKey = ${?INITIAL_CERT_KEY}
-    # initialCerts = []
+    # initialCerts = [] 
   }
 }
 ```
