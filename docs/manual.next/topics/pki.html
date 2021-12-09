@@ -250,13 +250,58 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#otoroshis-pki" name="otoroshis-pki" class="anchor"><span class="anchor-link"></span></a>Otoroshi&rsquo;s PKI</h1><div class="callout note "><div class="callout-title">Note</div>
-<p>TODO: This section is being written, thanks for your patience :)</p></div>
+<h1><a href="#otoroshis-pki" name="otoroshis-pki" class="anchor"><span class="anchor-link"></span></a>Otoroshi&rsquo;s PKI</h1>
+<p>With Otoroshi, you can add your own certificates, your own CA and even create self signed certificates or certificates from CAs. You can enable auto renewal of thoses self signed certificates or certificates generated. Certificates have to be created with the certificate chain and the private key in PEM format.</p>
+<p>An Otoroshi instance always starts with 5 auto-generated certificates. </p>
+<p>The highest certificate is the <strong>Otoroshi Default Root CA Certificate</strong>. This certificate is used by Otoroshi to sign the intermediate CA.</p>
+<p><strong>Otoroshi Default Intermediate CA Certificate</strong>: first intermediate CA that must be used to issue new certificates in Otoroshi. Creating certificates directly from the CA root certificate increases the risk of root certificate compromise, and if the CA root certificate is compromised, the entire trust infrastructure built by the SSL provider will fail</p>
+<p>This intermediate CA signed three certificates :</p>
+<ul>
+  <li><strong>Otoroshi Default Client certificate</strong>:</li>
+  <li><strong>Otoroshi Default Jwt Signing Keypair</strong>: default keypair (composed of a public and private key), exposed on <code>https://xxxxxx/.well-known/jwks.json</code>, that can be used to sign and verify JWT verifier</li>
+  <li><strong>Otoroshi Default Wildcard Certificate</strong>: this certificate has <code>*.oto.tools</code> as common name. It can be very useful to the development phase</li>
+</ul>
+<h2><a href="#ocsp-responder" name="ocsp-responder" class="anchor"><span class="anchor-link"></span></a>OCSP Responder</h2>
+<p>Otoroshi is able to revocate a certificate, directly from the UI, and to add a revocation status to specifiy the reason. The revocation reason can be :</p>
+<ul>
+  <li><code>VALID</code>: The certificate is not revoked</li>
+  <li><code>UNSPECIFIED</code>: Can be used to revoke certificates for reasons other than the specific codes.</li>
+  <li><code>KEY_COMPROMISE</code>: It is known or suspected that the subject&rsquo;s private key or other aspects have been compromised.</li>
+  <li><code>CA_COMPROMISE</code>: It is known or suspected that the subject&rsquo;s private key or other aspects have been compromised.</li>
+  <li><code>AFFILIATION_CHANGED</code>: The subject&rsquo;s name or other information in the certificate has been modified but there is no cause to suspect that the private key has been compromised.</li>
+  <li><code>SUPERSEDED</code>: The certificate has been superseded but there is no cause to suspect that the private key has been compromised</li>
+  <li><code>CESSATION_OF_OPERATION</code>: The certificate is no longer needed for the purpose for which it was issued but there is no cause to suspect that the private key has been compromised</li>
+  <li><code>CERTIFICATE_HOLD</code>: The certificate is temporarily revoked but there is no cause to suspect that the private kye has been compromised</li>
+  <li><code>REMOVE_FROM_CRL</code>: The certificate has been unrevoked</li>
+  <li><code>PRIVILEGE_WITH_DRAWN</code>: The certificate was revoked because a privilege contained within that certificate has been withdrawn</li>
+  <li><code>AA_COMPROMISE</code>: It is known or suspected that aspects of the AA validated in the attribute certificate, have been compromised</li>
+</ul>
+<p>Otoroshi supports the Online Certificate Status Protocol for obtaining the revocation status of its certificates. The OCSP endpoint is also add to any generated certificate. This endpoint is available at <code>https://otoroshi-api.xxxxxx/.well-known/otoroshi/ocsp</code></p>
+<h2><a href="#a-i-a-authority-information-access" name="a-i-a-authority-information-access" class="anchor"><span class="anchor-link"></span></a>A.I.A : Authority Information Access</h2>
+<p>Otoroshi provides a way to add the A.I.A in the certificate. This certificate extension contains :</p>
+<ul>
+  <li>Information about how to get the issuer of this certificate (CA issuer access method)</li>
+  <li>Address of the OCSP responder from where revocation of this certificate can be checked (OCSP access method)</li>
+</ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../topics/monitoring.html">Monitoring</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/pki.html#otoroshis-pki" class="header">Otoroshi&rsquo;s PKI</a>
+  <ul>
+    <li><a href="../topics/pki.html#ocsp-responder" class="header">OCSP Responder</a></li>
+    <li><a href="../topics/pki.html#a-i-a-authority-information-access" class="header">A.I.A : Authority Information Access</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 
