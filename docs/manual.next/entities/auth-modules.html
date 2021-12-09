@@ -384,6 +384,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>Validate Assertions Signature</code>: should SAML Assertions to be decrypted ?</li>
   <li><code>Validating Certificates</code>: the certificate in PEM format that must be used to check for signatures.</li>
 </ul>
+<h2><a href="#special-routes" name="special-routes" class="anchor"><span class="anchor-link"></span></a>Special routes</h2>
+<p>when using private apps with auth. modules, you can access special routes that can help you </p>
+<pre class="prettyprint"><code class="language-sh ">GET &#39;http://xxxxxxxx.xxxx.xx/.well-known/otoroshi/logout&#39; # trigger logout for the current auth. module
+GET &#39;http://xxxxxxxx.xxxx.xx/.well-known/otoroshi/me&#39;     # get the current logged user profile (do not forget to pass cookies)
+</code></pre>
 <h2><a href="#related-pages" name="related-pages" class="anchor"><span class="anchor-link"></span></a>Related pages</h2>
 <ul>
   <li><a href="../how-to-s/secure-app-with-auth0.html">Secure an app with auth0</a></li>
@@ -408,6 +413,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/auth-modules.html#ldap-authentication-provider" class="header">LDAP Authentication provider</a></li>
     <li><a href="../entities/auth-modules.html#in-memory-provider" class="header">In memory provider</a></li>
     <li><a href="../entities/auth-modules.html#saml-v2-provider" class="header">SAML v2 provider</a></li>
+    <li><a href="../entities/auth-modules.html#special-routes" class="header">Special routes</a></li>
     <li><a href="../entities/auth-modules.html#related-pages" class="header">Related pages</a></li>
   </ul></li>
 </ul>

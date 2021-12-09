@@ -251,13 +251,21 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#monitoring" name="monitoring" class="anchor"><span class="anchor-link"></span></a>Monitoring</h1>
-<p>The Otoroshi API exposes two endpoints for </p>
+<p>The Otoroshi API exposes two endpoints to know more about instance health. All the following endpoint are exposed on the instance host through it&rsquo;s ip address. It is also exposed on the otoroshi api hostname and the otoroshi backoffice hostname</p>
 <ul>
   <li><code>/health</code>: the health of the Otoroshi instance</li>
   <li><code>/metrics</code>: the metrics of the Otoroshi instance, either in JSON or Prometheus format using the <code>Accept</code> header (with <code>application/json</code> / <code>application/prometheus</code> values) or the <code>format</code> query param (with <code>json</code> or <code>prometheus</code> values)</li>
   <li><code>/live</code>: returns an http 200 response <code>{&quot;live&quot;: true}</code> when the service is alive</li>
   <li><code>/ready</code>: return an http 200 response <code>{&quot;ready&quot;: true}</code> when the instance is ready to accept traffic (certs synced, plugins compiled, etc). if not, returns http 503 <code>{&quot;ready&quot;: false}</code></li>
   <li><code>/startup</code>: return an http 200 response <code>{&quot;started&quot;: true}</code> when the instance is ready to accept traffic (certs synced, plugins compiled, etc). if not, returns http 503 <code>{&quot;started&quot;: false}</code></li>
+</ul>
+<p>those routes are also available on any hostname leading to otoroshi with a twist in the URL</p>
+<ul>
+  <li><a href="http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/health">http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/health</a></li>
+  <li><a href="http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/metrics">http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/metrics</a></li>
+  <li><a href="http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/live">http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/live</a></li>
+  <li><a href="http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/ready">http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/ready</a></li>
+  <li><a href="http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/startup">http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/startup</a></li>
 </ul>
 <h2><a href="#endpoints-security" name="endpoints-security" class="anchor"><span class="anchor-link"></span></a>Endpoints security</h2>
 <p>The two endpoints are exposed publicly on the Otoroshi admin api. But you can remove the corresponding public pattern and query the endpoints using standard apikeys. If you don&rsquo;t want to use apikeys but don&rsquo;t want to expose the endpoints publicly, you can defined two config. variables (<code>app.health.accessKey</code> or <code>HEALTH_ACCESS_KEY</code> and <code>otoroshi.metrics.accessKey</code> or <code>OTOROSHI_METRICS_ACCESS_KEY</code>) that will hold an access key for the endpoints. Then you can call the endpoints with an <code>access_key</code> query param with the value defined in the config. If you don&rsquo;t defined <code>otoroshi.metrics.accessKey</code> but define <code>app.health.accessKey</code>, <code>otoroshi.metrics.accessKey</code> will have the value of <code>app.health.accessKey</code>.</p>
