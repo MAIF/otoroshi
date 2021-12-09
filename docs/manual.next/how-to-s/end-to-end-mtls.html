@@ -252,15 +252,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#end-to-end-mtls" name="end-to-end-mtls" class="anchor"><span class="anchor-link"></span></a>End-to-end mTLS</h1>
 <p>If you want to use MTLS on otoroshi, you first need to enable it. It is not enabled by default as it will make TLS handshake way heavier. To enable it just change the following config :</p>
-<pre class="prettyprint"><code class="language-sh">play.server.https.wantClientAuth=true
-# or
-# play.server.https.wantClientNeed=true
-otoroshi.ssl.fromOutside.clientAuth=None|Want|Need
+<pre class="prettyprint"><code class="language-sh">otoroshi.ssl.fromOutside.clientAuth=None|Want|Need
 </code></pre>
 <p>or using env. variables</p>
-<pre class="prettyprint"><code class="language-sh">HTTPS_WANT_CLIENT_AUTH=true 
-# HTTPS_NEED_CLIENT_AUTH=true 
-SSL_OUTSIDE_CLIENT_AUTH=None|Want|Need
+<pre class="prettyprint"><code class="language-sh">SSL_OUTSIDE_CLIENT_AUTH=None|Want|Need
 </code></pre>
 <p>You can use the <code>Want</code> setup if you cant to have both mtls on some services and no mtls on other services.</p>
 <p>You can also change the trusted CA list sent in the handshake certificate request from the <code>Danger Zone</code> in <code>Tls Settings</code>.</p>
@@ -432,7 +427,6 @@ console.log(&#39;Server listening:&#39;, `http://localhost:${server.address().po
 <p>Download the latest version of the Otoroshi jar and run it like</p>
 <pre class="prettyprint"><code class="language-sh"> java \
   -Dapp.adminPassword=password \
-  -Dplay.server.https.wantClientAuth=true \
   -Dotoroshi.ssl.fromOutside.clientAuth=Want \
   -jar -Dapp.storage=file otoroshi.jar
 

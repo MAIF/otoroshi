@@ -254,15 +254,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>as you might have understand, otoroshi can store TLS certificates and use them dynamically. It means that once a certificate is imported or created in otoroshi, you can immediately use it to serve http request over TLS, to call https backends that requires mTLS or that do not have certicates signed by a globally knowned authority.</p>
 <h2><a href="#tls-termination" name="tls-termination" class="anchor"><span class="anchor-link"></span></a>TLS termination</h2>
 <p>any certficate added to otoroshi with a valid <code>CN</code> and <code>SANs</code> can be used in the following seconds to serve https requests. If you do not provide a private key with a certificate chain, the certificate will only be trusted like a CA. If you want to perform mTLS calls on you otoroshi instance, do not forget to enabled it (it is disabled by default for performance reasons as the TLS handshake is bigger with mTLS enabled)</p>
-<pre class="prettyprint"><code class="language-sh">play.server.https.wantClientAuth=true
-# or
-# play.server.https.wantClientNeed=true
-otoroshi.ssl.fromOutside.clientAuth=None|Want|Need
+<pre class="prettyprint"><code class="language-sh">otoroshi.ssl.fromOutside.clientAuth=None|Want|Need
 </code></pre>
 <p>or using env. variables</p>
-<pre class="prettyprint"><code class="language-sh">HTTPS_WANT_CLIENT_AUTH=true 
-# HTTPS_NEED_CLIENT_AUTH=true 
-SSL_OUTSIDE_CLIENT_AUTH=None|Want|Need
+<pre class="prettyprint"><code class="language-sh">SSL_OUTSIDE_CLIENT_AUTH=None|Want|Need
 </code></pre>
 <h3><a href="#tls-termination-configuration" name="tls-termination-configuration" class="anchor"><span class="anchor-link"></span></a>TLS termination configuration</h3>
 <p>You can configure TLS termination statically using config. file or env. variables. Everything is available at <code>otoroshi.tls</code></p>
