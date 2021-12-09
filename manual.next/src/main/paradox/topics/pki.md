@@ -18,6 +18,8 @@ This intermediate CA signed three certificates :
 
 The Otoroshi's PKI can be managed using the admin api of otoroshi (by default admin api is exposed on https://otoroshi-api.xxxxx)
 
+Link to the complete swagger section about PKI : https://maif.github.io/otoroshi/swagger-ui/index.html#/pki
+
 * `POST`    [/api/pki/certs/_letencrypt](https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genLetsEncryptCert): generates a certificate using Let's Encrypt or any ACME compatible system
 * `POST`    [/api/pki/certs/_p12](https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.importCertFromP12): import a .p12 file as client certificates
 * `POST`    [/api/pki/certs/_valid](https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.certificateIsValid): check if a certificate is valid (based on its own data)

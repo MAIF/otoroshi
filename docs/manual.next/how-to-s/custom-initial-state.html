@@ -250,13 +250,57 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#initial-state-customization" name="initial-state-customization" class="anchor"><span class="anchor-link"></span></a>Initial state customization</h1><div class="callout note "><div class="callout-title">Note</div>
-<p>TODO: This section is being written, thanks for your patience :)</p></div>
+<h1><a href="#initial-state-customization" name="initial-state-customization" class="anchor"><span class="anchor-link"></span></a>Initial state customization</h1>
+<p>when you start otoroshi for the first time, some basic entities will be created and stored in the datastore in order to make your instance work properly. However it might not be enough for your use case but you do want to bother with restoring a complete otoroshi export.</p>
+<p>In order to make state customization easy, otoroshi provides the config. key <code>app.initialCustomization</code>, overriden by the env. variable <code>OTOROSHI_INITIAL_CUSTOMIZATION</code></p>
+<p>The expected structure is the following :</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;config&quot;: { ... },
+  &quot;admins&quot;: [],
+  &quot;simpleAdmins&quot;: [],
+  &quot;serviceGroups&quot;: [],
+  &quot;apiKeys&quot;: [],
+  &quot;serviceDescriptors&quot;: [],
+  &quot;errorTemplates&quot;: [],
+  &quot;jwtVerifiers&quot;: [],
+  &quot;authConfigs&quot;: [],
+  &quot;certificates&quot;: [],
+  &quot;clientValidators&quot;: [],
+  &quot;scripts&quot;: [],
+  &quot;tcpServices&quot;: [],
+  &quot;dataExporters&quot;: [],
+  &quot;tenants&quot;: [],
+  &quot;teams&quot;: []
+}
+</code></pre>
+<p>in this structure, everything is optional. For every array property, items will be added to the datastore. For the global config. object, you can just add the parts that you need, and they will be merged with the existing config. object of the datastore.</p>
+<h2><a href="#customize-the-global-config-" name="customize-the-global-config-" class="anchor"><span class="anchor-link"></span></a>Customize the global config.</h2>
+<p>for instance, if you want to customize the behavior of the TLS termination, you can use the following :</p>
+<pre class="prettyprint"><code class="language-sh">export OTOROSHI_INITIAL_CUSTOMIZATION=&#39;{&quot;config&quot;:{&quot;tlsSettings&quot;:{&quot;defaultDomain&quot;:&quot;www.foo.bar&quot;,&quot;randomIfNotFound&quot;:false}}&#39;
+</code></pre>
+<h2><a href="#customize-entities" name="customize-entities" class="anchor"><span class="anchor-link"></span></a>Customize entities</h2>
+<p>if you want to add apikeys at first boot </p>
+<pre class="prettyprint"><code class="language-sh">export OTOROSHI_INITIAL_CUSTOMIZATION=&#39;{&quot;apikeys&quot;:[{&quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;clientId&quot;:&quot;ksVlQ2KlZm0CnDfP&quot;,&quot;clientSecret&quot;:&quot;usZYbE1iwSsbpKY45W8kdbZySj1M5CWvFXe0sPbZ0glw6JalMsgorDvSBdr2ZVBk&quot;,&quot;clientName&quot;:&quot;awesome-apikey&quot;,&quot;description&quot;:&quot;the awesome apikey&quot;,&quot;authorizedGroup&quot;:&quot;default&quot;,&quot;authorizedEntities&quot;:[&quot;group_default&quot;],&quot;enabled&quot;:true,&quot;readOnly&quot;:false,&quot;allowClientIdOnly&quot;:false,&quot;throttlingQuota&quot;:10000000,&quot;dailyQuota&quot;:10000000,&quot;monthlyQuota&quot;:10000000,&quot;constrainedServicesOnly&quot;:false,&quot;restrictions&quot;:{&quot;enabled&quot;:false,&quot;allowLast&quot;:true,&quot;allowed&quot;:[],&quot;forbidden&quot;:[],&quot;notFound&quot;:[]},&quot;rotation&quot;:{&quot;enabled&quot;:false,&quot;rotationEvery&quot;:744,&quot;gracePeriod&quot;:168,&quot;nextSecret&quot;:null},&quot;validUntil&quot;:null,&quot;tags&quot;:[],&quot;metadata&quot;:{}}]}&#39;
+</code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../plugins/index.html">Otoroshi plugins</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../how-to-s/custom-initial-state.html#initial-state-customization" class="header">Initial state customization</a>
+  <ul>
+    <li><a href="../how-to-s/custom-initial-state.html#customize-the-global-config-" class="header">Customize the global config.</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html#customize-entities" class="header">Customize entities</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 

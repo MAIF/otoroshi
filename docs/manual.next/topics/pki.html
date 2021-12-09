@@ -261,6 +261,26 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><strong>Otoroshi Default Jwt Signing Keypair</strong>: default keypair (composed of a public and private key), exposed on <code>https://xxxxxx/.well-known/jwks.json</code>, that can be used to sign and verify JWT verifier</li>
   <li><strong>Otoroshi Default Wildcard Certificate</strong>: this certificate has <code>*.oto.tools</code> as common name. It can be very useful to the development phase</li>
 </ul>
+<h2><a href="#the-pki-api" name="the-pki-api" class="anchor"><span class="anchor-link"></span></a>The PKI API</h2>
+<p>link to swagger section: <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki">https://maif.github.io/otoroshi/swagger-ui/index.html#/pki</a></p>
+<pre><code>POST    /api/pki/certs/_letencrypt  
+POST    /api/pki/certs/_p12         
+POST    /api/pki/certs/_valid       
+POST    /api/pki/certs/_data        
+POST    /api/pki/certs              
+POST    /api/pki/csrs               
+POST    /api/pki/keys               
+POST    /api/pki/cas                
+POST    /api/pki/cas/:ca/certs/_sign
+POST    /api/pki/cas/:ca/certs      
+POST    /api/pki/cas/:ca/cas  
+</code></pre><div class="callout warning "><div class="callout-title">Warning</div>
+<p>TODO: This section is being written, thanks for your patience :)</p></div>
+<h2><a href="#the-pki-ui" name="the-pki-ui" class="anchor"><span class="anchor-link"></span></a>The PKI UI</h2><div class="callout warning "><div class="callout-title">Warning</div>
+<p>TODO: This section is being written, thanks for your patience :)</p></div>
+<h2><a href="#exposed-public-keys" name="exposed-public-keys" class="anchor"><span class="anchor-link"></span></a>Exposed public keys</h2>
+<p><a href="https://xxxxxxxxx.xxxxxxx.xx/.well-known/otoroshi/security/jwks.json">https://xxxxxxxxx.xxxxxxx.xx/.well-known/otoroshi/security/jwks.json</a> <a href="https://otoroshi-api.xxxxxxx.xx/.well-known/jwks.json">https://otoroshi-api.xxxxxxx.xx/.well-known/jwks.json</a></p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>TODO: This section is being written, thanks for your patience :)</p></div>
 <h2><a href="#ocsp-responder" name="ocsp-responder" class="anchor"><span class="anchor-link"></span></a>OCSP Responder</h2>
 <p>Otoroshi is able to revocate a certificate, directly from the UI, and to add a revocation status to specifiy the reason. The revocation reason can be :</p>
 <ul>
@@ -276,13 +296,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>PRIVILEGE_WITH_DRAWN</code>: The certificate was revoked because a privilege contained within that certificate has been withdrawn</li>
   <li><code>AA_COMPROMISE</code>: It is known or suspected that aspects of the AA validated in the attribute certificate, have been compromised</li>
 </ul>
-<p>Otoroshi supports the Online Certificate Status Protocol for obtaining the revocation status of its certificates. The OCSP endpoint is also add to any generated certificate. This endpoint is available at <code>https://otoroshi-api.xxxxxx/.well-known/otoroshi/ocsp</code></p>
+<p>Otoroshi supports the Online Certificate Status Protocol for obtaining the revocation status of its certificates. The OCSP endpoint is also add to any generated certificate. This endpoint is available at <code>https://otoroshi-api.xxxxxx/.well-known/otoroshi/security/ocsp</code></p>
 <h2><a href="#a-i-a-authority-information-access" name="a-i-a-authority-information-access" class="anchor"><span class="anchor-link"></span></a>A.I.A : Authority Information Access</h2>
 <p>Otoroshi provides a way to add the A.I.A in the certificate. This certificate extension contains :</p>
 <ul>
   <li>Information about how to get the issuer of this certificate (CA issuer access method)</li>
   <li>Address of the OCSP responder from where revocation of this certificate can be checked (OCSP access method)</li>
 </ul>
+<p><code>https://xxxxxxxxxx/.well-known/otoroshi/security/certificates/:cert-id</code></p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../topics/monitoring.html">Monitoring</a></p>
 </div>
@@ -295,6 +316,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../topics/pki.html#otoroshis-pki" class="header">Otoroshi&rsquo;s PKI</a>
   <ul>
+    <li><a href="../topics/pki.html#the-pki-api" class="header">The PKI API</a></li>
+    <li><a href="../topics/pki.html#the-pki-ui" class="header">The PKI UI</a></li>
+    <li><a href="../topics/pki.html#exposed-public-keys" class="header">Exposed public keys</a></li>
     <li><a href="../topics/pki.html#ocsp-responder" class="header">OCSP Responder</a></li>
     <li><a href="../topics/pki.html#a-i-a-authority-information-access" class="header">A.I.A : Authority Information Access</a></li>
   </ul></li>
