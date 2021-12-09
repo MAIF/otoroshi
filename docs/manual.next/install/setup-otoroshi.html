@@ -434,38 +434,37 @@ play.http {
     https = ${?OTOROSHI_EXPOSED_PORTS_HTTPS} # the exposed https port for otoroshi (when in a container or behind a proxy
   }
   backoffice {
-    exposed = true
-    exposed = ${?APP_BACKOFFICE_EXPOSED}
-    subdomain = &quot;otoroshi&quot;
-    subdomain = ${?APP_BACKOFFICE_SUBDOMAIN}
-    domains = []
-    domainsStr = ${?APP_BACKOFFICE_DOMAINS}
-    domainsStr = ${?OTOROSHI_BACKOFFICE_DOMAINS}
+    exposed = true # expose the backoffice ui
+    exposed = ${?APP_BACKOFFICE_EXPOSED} # expose the backoffice ui
+    subdomain = &quot;otoroshi&quot; # the backoffice subdomain
+    subdomain = ${?APP_BACKOFFICE_SUBDOMAIN} # the backoffice subdomain
+    domains = []  # the backoffice domains
+    domainsStr = ${?APP_BACKOFFICE_DOMAINS} # the backoffice domains
+    domainsStr = ${?OTOROSHI_BACKOFFICE_DOMAINS} # the backoffice domains
     session {
-      exp = 86400000
-      exp = ${?APP_BACKOFFICE_SESSION_EXP}
+      exp = 86400000 # the backoffice cookie expiration
+      exp = ${?APP_BACKOFFICE_SESSION_EXP} # the backoffice cookie expiration
     }
   }
   privateapps {
-    subdomain = &quot;privateapps&quot;
-    subdomain = ${?APP_PRIVATEAPPS_SUBDOMAIN}
-    # port = ${?APP_PRIVATEAPPS_PORT}
+    subdomain = &quot;privateapps&quot; # privateapps (proxy sso) domain
+    subdomain = ${?APP_PRIVATEAPPS_SUBDOMAIN} # privateapps (proxy sso) domain
     domains = []
     domainsStr = ${?APP_PRIVATEAPPS_DOMAINS}
     domainsStr = ${?OTOROSHI_PRIVATEAPPS_DOMAINS}
     session {
-      exp = 86400000
-      exp = ${?APP_PRIVATEAPPS_SESSION_EXP}
+      exp = 86400000 # the privateapps cookie expiration
+      exp = ${?APP_PRIVATEAPPS_SESSION_EXP} # the privateapps cookie expiration
     }
   }
   adminapi {
-    exposed = true
-    exposed = ${?ADMIN_API_EXPOSED}
-    targetSubdomain = &quot;otoroshi-admin-internal-api&quot;
-    targetSubdomain = ${?ADMIN_API_TARGET_SUBDOMAIN}
-    exposedSubdomain = &quot;otoroshi-api&quot;
-    exposedSubdomain = ${?ADMIN_API_EXPOSED_SUBDOMAIN}
-    additionalExposedDomain = ${?ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN}
+    exposed = true # expose the admin api
+    exposed = ${?ADMIN_API_EXPOSED} # expose the admin api
+    targetSubdomain = &quot;otoroshi-admin-internal-api&quot; # admin api target subdomain as targeted by otoroshi service
+    targetSubdomain = ${?ADMIN_API_TARGET_SUBDOMAIN} # admin api target subdomain as targeted by otoroshi service
+    exposedSubdomain = &quot;otoroshi-api&quot; # admin api exposed subdomain as exposed by otoroshi service
+    exposedSubdomain = ${?ADMIN_API_EXPOSED_SUBDOMAIN} # admin api exposed subdomain as exposed by otoroshi service
+    additionalExposedDomain = ${?ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN} # admin api additional exposed subdomain as exposed by otoroshi service
     domains = []
     domainsStr = ${?ADMIN_API_DOMAINS}
     domainsStr = ${?OTOROSHI_ADMIN_API_DOMAINS}
@@ -473,32 +472,30 @@ play.http {
     exposedDomainsStr = ${?ADMIN_API_EXPOSED_DOMAINS}
     exposedDomainsStr = ${?OTOROSHI_ADMIN_API_EXPOSED_DOMAINS}
     defaultValues {
-      backOfficeGroupId = &quot;admin-api-group&quot;
-      backOfficeGroupId = ${?ADMIN_API_GROUP}
-      backOfficeApiKeyClientId = &quot;admin-api-apikey-id&quot;
-      backOfficeApiKeyClientId = ${?ADMIN_API_CLIENT_ID}
-      backOfficeApiKeyClientSecret = &quot;admin-api-apikey-secret&quot;
-      backOfficeApiKeyClientSecret = ${?otoroshi.admin-api-secret}
-      backOfficeApiKeyClientSecret = ${?ADMIN_API_CLIENT_SECRET}
-      backOfficeServiceId = &quot;admin-api-service&quot;
-      backOfficeServiceId = ${?ADMIN_API_SERVICE_ID}
+      backOfficeGroupId = &quot;admin-api-group&quot; # default value for admin api service group
+      backOfficeGroupId = ${?ADMIN_API_GROUP} # default value for admin api service group
+      backOfficeApiKeyClientId = &quot;admin-api-apikey-id&quot; # default value for admin api apikey id
+      backOfficeApiKeyClientId = ${?ADMIN_API_CLIENT_ID}  # default value for admin api apikey id
+      backOfficeApiKeyClientSecret = &quot;admin-api-apikey-secret&quot; # default value for admin api apikey secret
+      backOfficeApiKeyClientSecret = ${?otoroshi.admin-api-secret} # default value for admin api apikey secret
+      backOfficeApiKeyClientSecret = ${?ADMIN_API_CLIENT_SECRET} # default value for admin api apikey secret
+      backOfficeServiceId = &quot;admin-api-service&quot; # default value for admin api service id
+      backOfficeServiceId = ${?ADMIN_API_SERVICE_ID} # default value for admin api service id
     }
     proxy {
-      https = false
-      https = ${?ADMIN_API_HTTPS}
-      local = true
-      local = ${?ADMIN_API_LOCAL}
+      https = false # backoffice proxy admin api over https
+      https = ${?ADMIN_API_HTTPS} # backoffice proxy admin api over https
+      local = true # backoffice proxy admin api on localhost
+      local = ${?ADMIN_API_LOCAL} # backoffice proxy admin api on localhost
     }
   }
   claim {
-    sharedKey = &quot;secret&quot;
-    sharedKey = ${?CLAIM_SHAREDKEY}
+    sharedKey = &quot;secret&quot; # the default secret used to sign otoroshi exchange protocol tokens
+    sharedKey = ${?CLAIM_SHAREDKEY} # the default secret used to sign otoroshi exchange protocol tokens
   }
   webhooks {
-    size = 100
-    size = ${?WEBHOOK_SIZE}
   }
-  redis {
+  redis { # configuration to fetch/store otoroshi state from a redis datastore using rediscala
     host = &quot;localhost&quot;
     host = ${?REDIS_HOST}
     port = 6379
@@ -553,7 +550,7 @@ play.http {
       membersStr = ${?REDIS_CLUSTER_MEMBERS}
     }
 
-    lettuce {
+    lettuce { # configuration to fetch/store otoroshi state from a redis datastore using the lettuce driver (the next default one)
       connection = &quot;default&quot;
       connection = ${?REDIS_LETTUCE_CONNECTION}
       uri =  ${?REDIS_LETTUCE_URI}
@@ -568,7 +565,7 @@ play.http {
       verifyPeers = ${?REDIS_LETTUCE_VERIFY_PEERS}
     }
   }
-  inmemory {
+  inmemory { # configuration to fetch/store otoroshi state in memory
     windowSize = 99
     windowSize = ${?INMEMORY_WINDOW_SIZE}
     experimental = false
@@ -576,19 +573,19 @@ play.http {
     optimized = false
     optimized = ${?INMEMORY_OPTIMIZED}
   }
-  filedb {
+  filedb { # configuration to fetch/store otoroshi state from a file
     windowSize = 99
     windowSize = ${?FILEDB_WINDOW_SIZE}
     path = &quot;./filedb/state.ndjson&quot;
     path = ${?FILEDB_PATH}
   }
-  httpdb {
+  httpdb { # configuration to fetch/store otoroshi state from an http endpoint
     url = &quot;http://127.0.0.1:8888/worker-0/state.json&quot;
     headers = {}
     timeout = 10000
     pollEvery = 10000
   }
-  s3db {
+  s3db { # configuration to fetch/store otoroshi state from a S3 bucket
     bucket = &quot;otoroshi-states&quot;
     bucket = ${?OTOROSHI_DB_S3_BUCKET}
     endpoint = &quot;https://otoroshi-states.foo.bar&quot;
@@ -605,12 +602,12 @@ play.http {
     chunkSize = ${?OTOROSHI_DB_S3_CHUNK_SIZE}
     v4auth = true
     v4auth = ${?OTOROSHI_DB_S3_V4_AUTH}
-    writeEvery = 60000
-    writeEvery = ${?OTOROSHI_DB_S3_WRITE_EVERY}
+    writeEvery = 60000 # write interval
+    writeEvery = ${?OTOROSHI_DB_S3_WRITE_EVERY} # write interval
     acl = &quot;Private&quot;
     acl = ${?OTOROSHI_DB_S3_ACL}
   }
-  pg {
+  pg { # postrgesql settings. everything possible with the client
     uri = ${?PG_URI}
     uri = ${?POSTGRESQL_ADDON_URI}
     poolSize = 20
@@ -650,7 +647,7 @@ play.http {
       trust-all = ${?PG_SSL_TRUST_ALL}
     }
   }
-  cassandra {
+  cassandra { # cassandra settings. everything possible with the client
     windowSize = 99
     windowSize = ${?CASSANDRA_WINDOW_SIZE}
     host = &quot;127.0.0.1&quot;
@@ -984,7 +981,7 @@ play.http {
   }
   actorsystems {
     otoroshi {
-      akka {
+      akka { # otoroshi actorsystem configuration
         log-dead-letters-during-shutdown = false
         jvm-exit-on-fatal-error = false
         default-dispatcher {
@@ -1038,12 +1035,12 @@ play.http {
 }
 
 otoroshi {
-  instance = ${app.instance}
-  maintenanceMode = false
-  maintenanceMode = ${?OTOROSHI_MAINTENANCE_MODE_ENABLED}
-  secret = &quot;verysecretvaluethatyoumustoverwrite&quot;
-  secret = ${?OTOROSHI_SECRET}
-  admin-api-secret = ${?OTOROSHI_ADMIN_API_SECRET}
+  instance = ${app.instance} # instance name
+  maintenanceMode = false # enable global maintenance mode
+  maintenanceMode = ${?OTOROSHI_MAINTENANCE_MODE_ENABLED} # enable global maintenance mode
+  secret = &quot;verysecretvaluethatyoumustoverwrite&quot; # the secret used to sign sessions
+  secret = ${?OTOROSHI_SECRET}  # the secret used to sign sessions
+  admin-api-secret = ${?OTOROSHI_ADMIN_API_SECRET}  # the secret for admin api
   options {
     bypassUserRightsCheck = false
     bypassUserRightsCheck = ${?OTOROSHI_OPTIONS_BYPASSUSERRIGHTSCHECK}
@@ -1101,9 +1098,9 @@ otoroshi {
     print = ${?OTOROSHI_PLUGINS_PRINT}
   }
   scripts {
-    enabled = true
-    enabled = ${?OTOROSHI_SCRIPTS_ENABLED}
-    static {
+    enabled = true # enable scripts
+    enabled = ${?OTOROSHI_SCRIPTS_ENABLED} # enable scripts
+    static { # settings for statically enabled script/plugins
       enabled = false
       enabled = ${?OTOROSHI_SCRIPTS_STATIC_ENABLED}
       transformersRefs = []
@@ -1128,25 +1125,32 @@ otoroshi {
       jobsConfigStr = ${?OTOROSHI_SCRIPTS_STATIC_JOBS_CONFIG}
     }
   }
+  tls = ${otoroshi.ssl}
   ssl {
+    # the cipher suites used by otoroshi TLS termination
     cipherSuitesJDK11 = [&quot;TLS_AES_128_GCM_SHA256&quot;, &quot;TLS_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_EMPTY_RENEGOTIATION_INFO_SCSV&quot;]
     cipherSuitesJDK8 = [&quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;SSL_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_EMPTY_RENEGOTIATION_INFO_SCSV&quot;]
     cipherSuites = []
+    # the protocols used by otoroshi TLS termination
     protocolsJDK11 = [&quot;TLSv1.3&quot;, &quot;TLSv1.2&quot;, &quot;TLSv1.1&quot;, &quot;TLSv1&quot;]
     protocolsJDK8 = [&quot;SSLv2Hello&quot;, &quot;TLSv1&quot;, &quot;TLSv1.1&quot;, &quot;TLSv1.2&quot;]
     protocols = []
+    # the JDK cacert access
     cacert {
       path = &quot;$JAVA_HOME/lib/security/cacerts&quot;
       password = &quot;changeit&quot;
     }
+    # the mtls mode
     fromOutside {
       clientAuth = &quot;None&quot;
       clientAuth = ${?SSL_OUTSIDE_CLIENT_AUTH}
     }
+    # the default trust mode
     trust {
       all = false
       all = ${?OTOROSHI_SSL_TRUST_ALL}
     }
+    # some initial cacert access, useful to include non standard CA when starting
     initialCacert = ${?CLUSTER_WORKER_INITIAL_CACERT}
     initialCacert = ${?INITIAL_CACERT}
     initialCert = ${?CLUSTER_WORKER_INITIAL_CERT}
@@ -1154,8 +1158,6 @@ otoroshi {
     initialCertKey = ${?CLUSTER_WORKER_INITIAL_CERT_KEY}
     initialCertKey = ${?INITIAL_CERT_KEY}
     # initialCerts = []
-    genWildcardCert = true
-    genWildcardCert = ${?OTOROSHI_SSL_GEN_WILDCARD_CERT}
   }
   cluster {
     mode = &quot;off&quot; # can be &quot;off&quot;, &quot;leader&quot;, &quot;worker&quot;
@@ -1180,54 +1182,54 @@ otoroshi {
       trustAll = ${?CLUSTER_MTLS_TRUST_ALL} # trust any CA
     }
     leader {
-      name = ${?CLUSTER_LEADER_NAME}
-      urls = [&quot;http://127.0.0.1:8080&quot;]
-      url = ${?CLUSTER_LEADER_URL}
-      host = &quot;otoroshi-api.oto.tools&quot;
-      host = ${?CLUSTER_LEADER_HOST}
-      clientId = &quot;admin-api-apikey-id&quot;
-      clientId = ${?CLUSTER_LEADER_CLIENT_ID}
-      clientSecret = &quot;admin-api-apikey-secret&quot;
-      clientSecret = ${?CLUSTER_LEADER_CLIENT_SECRET}
-      groupingBy = 50
-      groupingBy = ${?CLUSTER_LEADER_GROUP_BY}
-      cacheStateFor = 4000
-      cacheStateFor = ${?CLUSTER_LEADER_CACHE_STATE_FOR}
-      stateDumpPath = ${?CLUSTER_LEADER_DUMP_PATH}
+      name = ${?CLUSTER_LEADER_NAME} # the leader name
+      urls = [&quot;http://127.0.0.1:8080&quot;] # the leader urls
+      url = ${?CLUSTER_LEADER_URL} # the leader url
+      host = &quot;otoroshi-api.oto.tools&quot; # the leaders api hostname
+      host = ${?CLUSTER_LEADER_HOST} # the leaders api hostname
+      clientId = &quot;admin-api-apikey-id&quot; # the leaders apikey id to access otoroshi admin api
+      clientId = ${?CLUSTER_LEADER_CLIENT_ID} # the leaders apikey id to access otoroshi admin api
+      clientSecret = &quot;admin-api-apikey-secret&quot; # the leaders apikey secret to access otoroshi admin api
+      clientSecret = ${?CLUSTER_LEADER_CLIENT_SECRET} # the leaders apikey secret to access otoroshi admin api
+      groupingBy = 50 # items grouping when streaming state
+      groupingBy = ${?CLUSTER_LEADER_GROUP_BY} # items grouping when streaming state
+      cacheStateFor = 4000 # the ttl for local state cache
+      cacheStateFor = ${?CLUSTER_LEADER_CACHE_STATE_FOR} # the ttl for local state cache
+      stateDumpPath = ${?CLUSTER_LEADER_DUMP_PATH} # eventually a dump state path for debugging purpose
     }
     worker {
-      name = ${?CLUSTER_WORKER_NAME}
-      retries = 3
-      retries = ${?CLUSTER_WORKER_RETRIES}
-      timeout = 2000
-      timeout = ${?CLUSTER_WORKER_TIMEOUT}
-      tenants = []
-      tenantsStr = ${?CLUSTER_WORKER_TENANTS}
-      dbpath = ${?CLUSTER_WORKER_DB_PATH}
-      dataStaleAfter = 600000
-      dataStaleAfter = ${?CLUSTER_WORKER_DATA_STALE_AFTER}
-      swapStrategy = &quot;Merge&quot; # can be Replace or Merge
-      swapStrategy = ${?CLUSTER_WORKER_SWAP_STRATEGY}
+      name = ${?CLUSTER_WORKER_NAME} # the workers name
+      retries = 3 # the number of retries when pushing quotas/pulling state
+      retries = ${?CLUSTER_WORKER_RETRIES} # the number of retries when pushing quotas/pulling state
+      timeout = 2000 # the workers timeout when interacting with leaders
+      timeout = ${?CLUSTER_WORKER_TIMEOUT} # the workers timeout when interacting with leaders
+      tenants = [] # the list of organization served by this worker. If none, it&#39;s all
+      tenantsStr = ${?CLUSTER_WORKER_TENANTS} # the list (coma separated) of organization served by this worker. If none, it&#39;s all
+      dbpath = ${?CLUSTER_WORKER_DB_PATH} # state dump path for debugging purpose
+      dataStaleAfter = 600000 # the amount of time needed to consider state is stale
+      dataStaleAfter = ${?CLUSTER_WORKER_DATA_STALE_AFTER} # the amount of time needed to consider state is stale
+      swapStrategy = &quot;Merge&quot; # the internal memory store strategy, can be Replace or Merge
+      swapStrategy = ${?CLUSTER_WORKER_SWAP_STRATEGY} # the internal memory store strategy, can be Replace or Merge
       state {
-        retries = ${otoroshi.cluster.worker.retries}
-        retries = ${?CLUSTER_WORKER_STATE_RETRIES}
-        pollEvery = 10000
-        pollEvery = ${?CLUSTER_WORKER_POLL_EVERY}
-        timeout = ${otoroshi.cluster.worker.timeout}
-        timeout = ${?CLUSTER_WORKER_POLL_TIMEOUT}
+        retries = ${otoroshi.cluster.worker.retries} # the number of retries when pulling state
+        retries = ${?CLUSTER_WORKER_STATE_RETRIES} # the number of retries when pulling state
+        pollEvery = 10000 # polling interval
+        pollEvery = ${?CLUSTER_WORKER_POLL_EVERY} # polling interval
+        timeout = ${otoroshi.cluster.worker.timeout} # the workers timeout when polling state
+        timeout = ${?CLUSTER_WORKER_POLL_TIMEOUT} # the workers timeout when polling state
       }
       quotas {
-        retries = ${otoroshi.cluster.worker.retries}
-        retries = ${?CLUSTER_WORKER_QUOTAS_RETRIES}
-        pushEvery = 2000
-        pushEvery = ${?CLUSTER_WORKER_PUSH_EVERY}
-        timeout = ${otoroshi.cluster.worker.timeout}
-        timeout = ${?CLUSTER_WORKER_PUSH_TIMEOUT}
+        retries = ${otoroshi.cluster.worker.retries} # the number of retries when pushing quotas
+        retries = ${?CLUSTER_WORKER_QUOTAS_RETRIES} # the number of retries when pushing quotas
+        pushEvery = 2000 # pushing interval
+        pushEvery = ${?CLUSTER_WORKER_PUSH_EVERY} # pushing interval
+        timeout = ${otoroshi.cluster.worker.timeout} # the workers timeout when pushing quotas
+        timeout = ${?CLUSTER_WORKER_PUSH_TIMEOUT} # the workers timeout when pushing quotas
       }
     }
-    analytics {
+    analytics { # settings for the analytics actor system which is separated from otoroshi default one for performance reasons
       pressure {
-        enabled = false
+        enabled = true
         enabled = ${?OTOROSHI_ANALYTICS_PRESSURE_ENABLED}
       }
       actorsystem {
@@ -1266,7 +1268,7 @@ otoroshi {
       }
     }
   }
-  headers {
+  headers { # the default headers value for specific otoroshi headers
     trace.label = &quot;Otoroshi-Viz-From-Label&quot;
     trace.from = &quot;Otoroshi-Viz-From&quot;
     trace.parent = &quot;Otoroshi-Parent-Request&quot;
@@ -1544,51 +1546,49 @@ akka { # akka specific configuration
     https = ${?OTOROSHI_EXPOSED_PORTS_HTTPS} # the exposed https port for otoroshi (when in a container or behind a proxy
   }
   backoffice {
-    exposed = ${?APP_BACKOFFICE_EXPOSED}
-    subdomain = ${?APP_BACKOFFICE_SUBDOMAIN}
-    domainsStr = ${?APP_BACKOFFICE_DOMAINS}
-    domainsStr = ${?OTOROSHI_BACKOFFICE_DOMAINS}
+    exposed = ${?APP_BACKOFFICE_EXPOSED} # expose the backoffice ui
+    subdomain = ${?APP_BACKOFFICE_SUBDOMAIN} # the backoffice subdomain
+    domainsStr = ${?APP_BACKOFFICE_DOMAINS} # the backoffice domains
+    domainsStr = ${?OTOROSHI_BACKOFFICE_DOMAINS} # the backoffice domains
     session {
-      exp = ${?APP_BACKOFFICE_SESSION_EXP}
+      exp = ${?APP_BACKOFFICE_SESSION_EXP} # the backoffice cookie expiration
     }
   }
   privateapps {
-    subdomain = ${?APP_PRIVATEAPPS_SUBDOMAIN}
-    # port = ${?APP_PRIVATEAPPS_PORT}
+    subdomain = ${?APP_PRIVATEAPPS_SUBDOMAIN} # privateapps (proxy sso) domain
     domainsStr = ${?APP_PRIVATEAPPS_DOMAINS}
     domainsStr = ${?OTOROSHI_PRIVATEAPPS_DOMAINS}
     session {
-      exp = ${?APP_PRIVATEAPPS_SESSION_EXP}
+      exp = ${?APP_PRIVATEAPPS_SESSION_EXP} # the privateapps cookie expiration
     }
   }
   adminapi {
-    exposed = ${?ADMIN_API_EXPOSED}
-    targetSubdomain = ${?ADMIN_API_TARGET_SUBDOMAIN}
-    exposedSubdomain = ${?ADMIN_API_EXPOSED_SUBDOMAIN}
-    additionalExposedDomain = ${?ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN}
+    exposed = ${?ADMIN_API_EXPOSED} # expose the admin api
+    targetSubdomain = ${?ADMIN_API_TARGET_SUBDOMAIN} # admin api target subdomain as targeted by otoroshi service
+    exposedSubdomain = ${?ADMIN_API_EXPOSED_SUBDOMAIN} # admin api exposed subdomain as exposed by otoroshi service
+    additionalExposedDomain = ${?ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN} # admin api additional exposed subdomain as exposed by otoroshi service
     domainsStr = ${?ADMIN_API_DOMAINS}
     domainsStr = ${?OTOROSHI_ADMIN_API_DOMAINS}
     exposedDomainsStr = ${?ADMIN_API_EXPOSED_DOMAINS}
     exposedDomainsStr = ${?OTOROSHI_ADMIN_API_EXPOSED_DOMAINS}
     defaultValues {
-      backOfficeGroupId = ${?ADMIN_API_GROUP}
-      backOfficeApiKeyClientId = ${?ADMIN_API_CLIENT_ID}
-      backOfficeApiKeyClientSecret = ${?otoroshi.admin-api-secret}
-      backOfficeApiKeyClientSecret = ${?ADMIN_API_CLIENT_SECRET}
-      backOfficeServiceId = ${?ADMIN_API_SERVICE_ID}
+      backOfficeGroupId = ${?ADMIN_API_GROUP} # default value for admin api service group
+      backOfficeApiKeyClientId = ${?ADMIN_API_CLIENT_ID}  # default value for admin api apikey id
+      backOfficeApiKeyClientSecret = ${?otoroshi.admin-api-secret} # default value for admin api apikey secret
+      backOfficeApiKeyClientSecret = ${?ADMIN_API_CLIENT_SECRET} # default value for admin api apikey secret
+      backOfficeServiceId = ${?ADMIN_API_SERVICE_ID} # default value for admin api service id
     }
     proxy {
-      https = ${?ADMIN_API_HTTPS}
-      local = ${?ADMIN_API_LOCAL}
+      https = ${?ADMIN_API_HTTPS} # backoffice proxy admin api over https
+      local = ${?ADMIN_API_LOCAL} # backoffice proxy admin api on localhost
     }
   }
   claim {
-    sharedKey = ${?CLAIM_SHAREDKEY}
+    sharedKey = ${?CLAIM_SHAREDKEY} # the default secret used to sign otoroshi exchange protocol tokens
   }
   webhooks {
-    size = ${?WEBHOOK_SIZE}
   }
-  redis {
+  redis { # configuration to fetch/store otoroshi state from a redis datastore using rediscala
     host = ${?REDIS_HOST}
     port = ${?REDIS_PORT}
     password = ${?REDIS_PASSWORD}
@@ -1625,7 +1625,7 @@ akka { # akka specific configuration
     cluster {
       membersStr = ${?REDIS_CLUSTER_MEMBERS}
     }
-    lettuce {
+    lettuce { # configuration to fetch/store otoroshi state from a redis datastore using the lettuce driver (the next default one)
       connection = ${?REDIS_LETTUCE_CONNECTION}
       uri =  ${?REDIS_LETTUCE_URI}
       uri =  ${?REDIS_URL}
@@ -1635,19 +1635,19 @@ akka { # akka specific configuration
       verifyPeers = ${?REDIS_LETTUCE_VERIFY_PEERS}
     }
   }
-  inmemory {
+  inmemory { # configuration to fetch/store otoroshi state in memory
     windowSize = ${?INMEMORY_WINDOW_SIZE}
     experimental = ${?INMEMORY_EXPERIMENTAL_STORE}
     optimized = ${?INMEMORY_OPTIMIZED}
   }
-  filedb {
+  filedb { # configuration to fetch/store otoroshi state from a file
     windowSize = ${?FILEDB_WINDOW_SIZE}
     path = ${?FILEDB_PATH}
   }
-  httpdb {
+  httpdb { # configuration to fetch/store otoroshi state from an http endpoint
     headers = {}
   }
-  s3db {
+  s3db { # configuration to fetch/store otoroshi state from a S3 bucket
     bucket = ${?OTOROSHI_DB_S3_BUCKET}
     endpoint = ${?OTOROSHI_DB_S3_ENDPOINT}
     region = ${?OTOROSHI_DB_S3_REGION}
@@ -1656,10 +1656,10 @@ akka { # akka specific configuration
     key = ${?OTOROSHI_DB_S3_KEY}
     chunkSize = ${?OTOROSHI_DB_S3_CHUNK_SIZE}
     v4auth = ${?OTOROSHI_DB_S3_V4_AUTH}
-    writeEvery = ${?OTOROSHI_DB_S3_WRITE_EVERY}
+    writeEvery = ${?OTOROSHI_DB_S3_WRITE_EVERY} # write interval
     acl = ${?OTOROSHI_DB_S3_ACL}
   }
-  pg {
+  pg { # postrgesql settings. everything possible with the client
     uri = ${?PG_URI}
     uri = ${?POSTGRESQL_ADDON_URI}
     poolSize = ${?PG_POOL_SIZE}
@@ -1685,7 +1685,7 @@ akka { # akka specific configuration
       trust-all = ${?PG_SSL_TRUST_ALL}
     }
   }
-  cassandra {
+  cassandra { # cassandra settings. everything possible with the client
     windowSize = ${?CASSANDRA_WINDOW_SIZE}
     host = ${?CASSANDRA_HOST}
     port = ${?CASSANDRA_PORT}
@@ -1833,7 +1833,7 @@ akka { # akka specific configuration
   }
   actorsystems {
     otoroshi {
-      akka {
+      akka { # otoroshi actorsystem configuration
         default-dispatcher {
           fork-join-executor {
           }
@@ -1858,10 +1858,10 @@ akka { # akka specific configuration
   }
 }
 otoroshi {
-  instance = ${app.instance}
-  maintenanceMode = ${?OTOROSHI_MAINTENANCE_MODE_ENABLED}
-  secret = ${?OTOROSHI_SECRET}
-  admin-api-secret = ${?OTOROSHI_ADMIN_API_SECRET}
+  instance = ${app.instance} # instance name
+  maintenanceMode = ${?OTOROSHI_MAINTENANCE_MODE_ENABLED} # enable global maintenance mode
+  secret = ${?OTOROSHI_SECRET}  # the secret used to sign sessions
+  admin-api-secret = ${?OTOROSHI_ADMIN_API_SECRET}  # the secret for admin api
   options {
     bypassUserRightsCheck = ${?OTOROSHI_OPTIONS_BYPASSUSERRIGHTSCHECK}
     emptyContentLengthIsChunked = ${?OTOROSHI_OPTIONS_EMPTYCONTENTLENGTHISCHUNKED}
@@ -1901,8 +1901,8 @@ otoroshi {
     print = ${?OTOROSHI_PLUGINS_PRINT}
   }
   scripts {
-    enabled = ${?OTOROSHI_SCRIPTS_ENABLED}
-    static {
+    enabled = ${?OTOROSHI_SCRIPTS_ENABLED} # enable scripts
+    static { # settings for statically enabled script/plugins
       enabled = ${?OTOROSHI_SCRIPTS_STATIC_ENABLED}
       transformersRefsStr = ${?OTOROSHI_SCRIPTS_STATIC_TRANSFORMER_REFS}
       transformersConfig = {}
@@ -1921,6 +1921,7 @@ otoroshi {
       jobsConfigStr = ${?OTOROSHI_SCRIPTS_STATIC_JOBS_CONFIG}
     }
   }
+  tls = ${otoroshi.ssl}
   ssl {
     cacert {
     }
@@ -1936,7 +1937,6 @@ otoroshi {
     initialCert = ${?INITIAL_CERT}
     initialCertKey = ${?CLUSTER_WORKER_INITIAL_CERT_KEY}
     initialCertKey = ${?INITIAL_CERT_KEY}
-    genWildcardCert = ${?OTOROSHI_SSL_GEN_WILDCARD_CERT}
   }
   cluster {
     mode = ${?CLUSTER_MODE} # can be &quot;off&quot;, &quot;leader&quot;, &quot;worker&quot;
@@ -1951,39 +1951,39 @@ otoroshi {
       trustAll = ${?CLUSTER_MTLS_TRUST_ALL} # trust any CA
     }
     leader {
-      name = ${?CLUSTER_LEADER_NAME}
-      url = ${?CLUSTER_LEADER_URL}
-      host = ${?CLUSTER_LEADER_HOST}
-      clientId = ${?CLUSTER_LEADER_CLIENT_ID}
-      clientSecret = ${?CLUSTER_LEADER_CLIENT_SECRET}
-      groupingBy = ${?CLUSTER_LEADER_GROUP_BY}
-      cacheStateFor = ${?CLUSTER_LEADER_CACHE_STATE_FOR}
-      stateDumpPath = ${?CLUSTER_LEADER_DUMP_PATH}
+      name = ${?CLUSTER_LEADER_NAME} # the leader name
+      url = ${?CLUSTER_LEADER_URL} # the leader url
+      host = ${?CLUSTER_LEADER_HOST} # the leaders api hostname
+      clientId = ${?CLUSTER_LEADER_CLIENT_ID} # the leaders apikey id to access otoroshi admin api
+      clientSecret = ${?CLUSTER_LEADER_CLIENT_SECRET} # the leaders apikey secret to access otoroshi admin api
+      groupingBy = ${?CLUSTER_LEADER_GROUP_BY} # items grouping when streaming state
+      cacheStateFor = ${?CLUSTER_LEADER_CACHE_STATE_FOR} # the ttl for local state cache
+      stateDumpPath = ${?CLUSTER_LEADER_DUMP_PATH} # eventually a dump state path for debugging purpose
     }
     worker {
-      name = ${?CLUSTER_WORKER_NAME}
-      retries = ${?CLUSTER_WORKER_RETRIES}
-      timeout = ${?CLUSTER_WORKER_TIMEOUT}
-      tenantsStr = ${?CLUSTER_WORKER_TENANTS}
-      dbpath = ${?CLUSTER_WORKER_DB_PATH}
-      dataStaleAfter = ${?CLUSTER_WORKER_DATA_STALE_AFTER}
-      swapStrategy = ${?CLUSTER_WORKER_SWAP_STRATEGY}
+      name = ${?CLUSTER_WORKER_NAME} # the workers name
+      retries = ${?CLUSTER_WORKER_RETRIES} # the number of retries when pushing quotas/pulling state
+      timeout = ${?CLUSTER_WORKER_TIMEOUT} # the workers timeout when interacting with leaders
+      tenantsStr = ${?CLUSTER_WORKER_TENANTS} # the list (coma separated) of organization served by this worker. If none, it&#39;s all
+      dbpath = ${?CLUSTER_WORKER_DB_PATH} # state dump path for debugging purpose
+      dataStaleAfter = ${?CLUSTER_WORKER_DATA_STALE_AFTER} # the amount of time needed to consider state is stale
+      swapStrategy = ${?CLUSTER_WORKER_SWAP_STRATEGY} # the internal memory store strategy, can be Replace or Merge
       state {
-        retries = ${otoroshi.cluster.worker.retries}
-        retries = ${?CLUSTER_WORKER_STATE_RETRIES}
-        pollEvery = ${?CLUSTER_WORKER_POLL_EVERY}
-        timeout = ${otoroshi.cluster.worker.timeout}
-        timeout = ${?CLUSTER_WORKER_POLL_TIMEOUT}
+        retries = ${otoroshi.cluster.worker.retries} # the number of retries when pulling state
+        retries = ${?CLUSTER_WORKER_STATE_RETRIES} # the number of retries when pulling state
+        pollEvery = ${?CLUSTER_WORKER_POLL_EVERY} # polling interval
+        timeout = ${otoroshi.cluster.worker.timeout} # the workers timeout when polling state
+        timeout = ${?CLUSTER_WORKER_POLL_TIMEOUT} # the workers timeout when polling state
       }
       quotas {
-        retries = ${otoroshi.cluster.worker.retries}
-        retries = ${?CLUSTER_WORKER_QUOTAS_RETRIES}
-        pushEvery = ${?CLUSTER_WORKER_PUSH_EVERY}
-        timeout = ${otoroshi.cluster.worker.timeout}
-        timeout = ${?CLUSTER_WORKER_PUSH_TIMEOUT}
+        retries = ${otoroshi.cluster.worker.retries} # the number of retries when pushing quotas
+        retries = ${?CLUSTER_WORKER_QUOTAS_RETRIES} # the number of retries when pushing quotas
+        pushEvery = ${?CLUSTER_WORKER_PUSH_EVERY} # pushing interval
+        timeout = ${otoroshi.cluster.worker.timeout} # the workers timeout when pushing quotas
+        timeout = ${?CLUSTER_WORKER_PUSH_TIMEOUT} # the workers timeout when pushing quotas
       }
     }
-    analytics {
+    analytics { # settings for the analytics actor system which is separated from otoroshi default one for performance reasons
       pressure {
         enabled = ${?OTOROSHI_ANALYTICS_PRESSURE_ENABLED}
       }
@@ -2004,7 +2004,7 @@ otoroshi {
       }
     }
   }
-  headers {
+  headers { # the default headers value for specific otoroshi headers
   }
   requests {
     validate = ${?OTOROSHI_REQUESTS_VALIDATE}

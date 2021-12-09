@@ -250,13 +250,89 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#tls" name="tls" class="anchor"><span class="anchor-link"></span></a>TLS</h1><div class="callout note "><div class="callout-title">Note</div>
-<p>TODO: This section is being written, thanks for your patience :)</p></div>
+<h1><a href="#tls" name="tls" class="anchor"><span class="anchor-link"></span></a>TLS</h1>
+<p>as you might have understand, otoroshi can store TLS certificates and use them dynamically. It means that once a certificate is imported or created in otoroshi, you can immediately use it to serve http request over TLS, to call https backends that requires mTLS or that do not have certicates signed by a globally knowned authority.</p>
+<h2><a href="#tls-termination" name="tls-termination" class="anchor"><span class="anchor-link"></span></a>TLS termination</h2>
+<p>any certficate added to otoroshi with a valid <code>CN</code> and <code>SANs</code> can be used in the following seconds to serve https requests. If you do not provide a private key with a certificate chain, the certificate will only be trusted like a CA. If you want to perform mTLS calls on you otoroshi instance, do not forget to enabled it (it is disabled by default for performance reasons as the TLS handshake is bigger with mTLS enabled)</p>
+<pre class="prettyprint"><code class="language-sh">play.server.https.wantClientAuth=true
+# or
+# play.server.https.wantClientNeed=true
+otoroshi.ssl.fromOutside.clientAuth=None|Want|Need
+</code></pre>
+<p>or using env. variables</p>
+<pre class="prettyprint"><code class="language-sh">HTTPS_WANT_CLIENT_AUTH=true 
+# HTTPS_NEED_CLIENT_AUTH=true 
+SSL_OUTSIDE_CLIENT_AUTH=None|Want|Need
+</code></pre>
+<h3><a href="#tls-termination-configuration" name="tls-termination-configuration" class="anchor"><span class="anchor-link"></span></a>TLS termination configuration</h3>
+<p>You can configure TLS termination statically using config. file or env. variables. Everything is available at <code>otoroshi.tls</code></p>
+<pre class="prettyprint"><code class="language-conf">otoroshi {
+  tls {
+    # the cipher suites used by otoroshi TLS termination
+    cipherSuitesJDK11 = [&quot;TLS_AES_128_GCM_SHA256&quot;, &quot;TLS_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_EMPTY_RENEGOTIATION_INFO_SCSV&quot;]
+    cipherSuitesJDK8 = [&quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;SSL_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_EMPTY_RENEGOTIATION_INFO_SCSV&quot;]
+    cipherSuites = []
+    # the protocols used by otoroshi TLS termination
+    protocolsJDK11 = [&quot;TLSv1.3&quot;, &quot;TLSv1.2&quot;, &quot;TLSv1.1&quot;, &quot;TLSv1&quot;]
+    protocolsJDK8 = [&quot;SSLv2Hello&quot;, &quot;TLSv1&quot;, &quot;TLSv1.1&quot;, &quot;TLSv1.2&quot;]
+    protocols = []
+    # the JDK cacert access
+    cacert {
+      path = &quot;$JAVA_HOME/lib/security/cacerts&quot;
+      password = &quot;changeit&quot;
+    }
+    # the mtls mode
+    fromOutside {
+      clientAuth = &quot;None&quot;
+      clientAuth = ${?SSL_OUTSIDE_CLIENT_AUTH}
+    }
+    # the default trust mode
+    trust {
+      all = false
+      all = ${?OTOROSHI_SSL_TRUST_ALL}
+    }
+    # some initial cacert access, useful to include non standard CA when starting (file paths)
+    initialCacert = ${?CLUSTER_WORKER_INITIAL_CACERT}
+    initialCacert = ${?INITIAL_CACERT}
+    initialCert = ${?CLUSTER_WORKER_INITIAL_CERT}
+    initialCert = ${?INITIAL_CERT}
+    initialCertKey = ${?CLUSTER_WORKER_INITIAL_CERT_KEY}
+    initialCertKey = ${?INITIAL_CERT_KEY}
+    # initialCerts = [] 
+  }
+}
+</code></pre>
+<h3><a href="#tls-termination-settings" name="tls-termination-settings" class="anchor"><span class="anchor-link"></span></a>TLS termination settings</h3>
+<p>It is possible to adjust the behavior of the TLS termination from the <code>danger zone</code> at the <code>Tls Settings</code> section. Here you can either define that a non-matching SNI call will use a random TLS certtificate to reply or will use a default domain (the TLS certificate associated to this domain) to reply. Here you can also choose if you want to trust all the CAs trusted by your JDK when performing TLS calls <code>Trust JDK CAs (client)</code> or when receiving mTLS calls <code>Trust JDK CAs (server)</code>. If you disable the later, it is possible to select the list of CAs presented to the client during mTLS handshake.</p>
+<h3><a href="#certificates-auto-generation" name="certificates-auto-generation" class="anchor"><span class="anchor-link"></span></a>Certificates auto generation</h3>
+<p>it is also possible to generate non-existing certificate on the fly without losing the request. If you are interested by this feature, you can enable it in the <code>danger zone</code> at the <code>Auto Generate Certificates</code> section. Here you&rsquo;ll have to enable it and select the CA that will generate the certificate. Of course, the client will have to trust the selected CA. You can also add filters to choose which domain are allowed to generate certificates or not. The <code>Reply Nicely</code> flag is used to reply a nice error message (ie. human readable) telling that it&rsquo;s not possible to have an auto certficate for the current domain. </p>
+<h2><a href="#backends-tls-and-mtls-calls" name="backends-tls-and-mtls-calls" class="anchor"><span class="anchor-link"></span></a>Backends TLS and mTLS calls</h2>
+<p>For any call to a backend, it is possible to customize the TLS behavior </p><div class="centered-img">
+<img src="../imgs/tls-call-settings.png" /></div>
+<p>here you can define your level of trust (trust all, loose verification) or even select on or more CAs you will trust for the following backend calls. You can also select the client certificate that will be used for the following backend calls</p>
+<h2><a href="#keypair-for-signing-and-verification" name="keypair-for-signing-and-verification" class="anchor"><span class="anchor-link"></span></a>Keypair for signing and verification</h2>
+<p>It is also possible to use the keypair contained in a certificate to sign and verificate JWT token signature. You can mark an existing certificate in otoroshi as a keypair using the <code>keypair</code> on the certificate page.</p><div class="centered-img">
+<img src="../imgs/jwt-token-keypair-validation.png" /></div>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../topics/pki.html">Otoroshi&rsquo;s PKI</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/tls.html#tls" class="header">TLS</a>
+  <ul>
+    <li><a href="../topics/tls.html#tls-termination" class="header">TLS termination</a></li>
+    <li><a href="../topics/tls.html#backends-tls-and-mtls-calls" class="header">Backends TLS and mTLS calls</a></li>
+    <li><a href="../topics/tls.html#keypair-for-signing-and-verification" class="header">Keypair for signing and verification</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 

@@ -272,7 +272,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genSelfSignedCert">/api/pki/certs</a>: generates a self signed certificates</li>
   <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genCsr">/api/pki/csrs</a> : generates a CSR</li>
   <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genKeyPair">/api/pki/keys</a> : generates a keypair</li>
-  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genSelfSignedCA">/api/pki/cas</a> : generates a self signed CA@</li>
+  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genSelfSignedCA">/api/pki/cas</a> : generates a self signed CA</li>
   <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.signCert">/api/pki/cas/:ca/certs/_sign</a>: sign a certificate based on CSR</li>
   <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genCert">/api/pki/cas/:ca/certs</a>: generates a certificate</li>
   <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genSubCA">/api/pki/cas/:ca/cas</a> : generates a sub-CA</li>
@@ -302,12 +302,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>https://xxxxxxxxx.xxxxxxx.xx/.well-known/otoroshi/security/jwks.json</code></li>
   <li><code>https://otoroshi-api.xxxxxxx.xx/.well-known/jwks.json</code></li>
 </ul>
-<p>On these routes, you will find the list of public keys with the following information:</p>
-<ul>
-  <li><code>kid</code>: key ID parameter is used to match a specific key <a href="https://datatracker.ietf.org/doc/html/rfc7517#section-4.5" title="section 4 - RFC5717">section 4 - RFC5717</a></li>
-  <li><code>kty</code>: key type parameter identifies the cryptographic algorithm  family used with the key, such as &ldquo;RSA&rdquo; or &ldquo;EC&rdquo; <a href="https://datatracker.ietf.org/doc/html/rfc7517#page-6" title="section 6 - RFC5717">section 6 - RFC5717</a></li>
-  <li><code>n</code> and <code>e</code>: RSA key values <a href="https://datatracker.ietf.org/doc/html/rfc7517#section-9.3" title="section 9.3 - RFC5717">section 9.3 - RFC5717</a></li>
-</ul>
+<p>On these routes, you will find the list of public keys exposed using <a href="https://datatracker.ietf.org/doc/html/rfc7517">the JWK standard</a></p>
 <h2><a href="#ocsp-responder" name="ocsp-responder" class="anchor"><span class="anchor-link"></span></a>OCSP Responder</h2>
 <p>Otoroshi is able to revocate a certificate, directly from the UI, and to add a revocation status to specifiy the reason. The revocation reason can be :</p>
 <ul>
