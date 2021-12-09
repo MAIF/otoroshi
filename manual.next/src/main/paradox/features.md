@@ -74,7 +74,7 @@ All the features supported by **Otoroshi** are listed below
 * Custom Ingress controller
     * Manage Otoroshi resources from Kubernetes
 * Validation of resources via webhook
-* Service Mesh: service-to-service communication
+* Service Mesh for easy service-to-service communication
 
 **Developpers portal**
 
