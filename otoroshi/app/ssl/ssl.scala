@@ -1681,6 +1681,8 @@ object DynamicSSLEngineProvider {
     cipherSuites.orElse(Some(rawEnabledCipherSuites)).foreach(s => sslParameters.setCipherSuites(s.toArray))
     protocols.orElse(Some(rawEnabledProtocols)).foreach(p => sslParameters.setProtocols(p.toArray))
     engine.setSSLParameters(sslParameters)
+    cipherSuites.foreach(s => engine.setEnabledCipherSuites(s.toArray))
+    protocols.foreach(p => engine.setEnabledProtocols(p.toArray))
     engine
   }
 }
