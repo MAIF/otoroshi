@@ -16,7 +16,7 @@ This intermediate CA signed three certificates :
 
 ## The PKI API
 
-link to swagger section
+link to swagger section: https://maif.github.io/otoroshi/swagger-ui/index.html#/pki
 
 ```
 POST    /api/pki/certs/_letencrypt  
