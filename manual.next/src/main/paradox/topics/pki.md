@@ -27,7 +27,7 @@ Link to the complete swagger section about PKI : https://maif.github.io/otoroshi
 * `POST`    [/api/pki/certs](https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genSelfSignedCert): generates a self signed certificates
 * `POST`    [/api/pki/csrs](https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genCsr) : generates a CSR
 * `POST`    [/api/pki/keys](https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genKeyPair) : generates a keypair
-* `POST`    [/api/pki/cas](https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genSelfSignedCA)  : generates a self signed CA@
+* `POST`    [/api/pki/cas](https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genSelfSignedCA)  : generates a self signed CA
 * `POST`    [/api/pki/cas/:ca/certs/_sign](https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.signCert): sign a certificate based on CSR
 * `POST`    [/api/pki/cas/:ca/certs](https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genCert): generates a certificate
 * `POST`    [/api/pki/cas/:ca/cas](https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genSubCA) : generates a sub-CA
@@ -61,12 +61,7 @@ Otoroshi exposes each keypair with the flag enabled, on the following routes:
 * `https://xxxxxxxxx.xxxxxxx.xx/.well-known/otoroshi/security/jwks.json`
 * `https://otoroshi-api.xxxxxxx.xx/.well-known/jwks.json`
 
-On these routes, you will find the list of public keys with the following information:
-
-* `kid`: key ID parameter is used to match a specific key @link:[section 4 - RFC5717](https://datatracker.ietf.org/doc/html/rfc7517#section-4.5)
-* `kty`: key type parameter identifies the cryptographic algorithm
-   family used with the key, such as "RSA" or "EC" @link:[section 6 - RFC5717](https://datatracker.ietf.org/doc/html/rfc7517#page-6)
-* `n` and `e`: RSA key values @link:[section 9.3 - RFC5717](https://datatracker.ietf.org/doc/html/rfc7517#section-9.3)
+On these routes, you will find the list of public keys exposed using [the JWK standard](https://datatracker.ietf.org/doc/html/rfc7517)
 
 
 ## OCSP Responder

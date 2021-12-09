@@ -939,7 +939,7 @@ export class DangerZonePage extends Component {
     'tlsSettings.includeJdkCaClient': {
       type: 'bool',
       props: {
-        label: 'Trust JDK CAs (trust)',
+        label: 'Trust JDK CAs (client)',
         placeholder: '--',
         help:
           'Trust JDK CAs. The CAs from the JDK CA bundle will be used as trusted CAs when calling HTTPS resources',
