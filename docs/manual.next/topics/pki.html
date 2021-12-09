@@ -262,25 +262,52 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><strong>Otoroshi Default Wildcard Certificate</strong>: this certificate has <code>*.oto.tools</code> as common name. It can be very useful to the development phase</li>
 </ul>
 <h2><a href="#the-pki-api" name="the-pki-api" class="anchor"><span class="anchor-link"></span></a>The PKI API</h2>
-<p>link to swagger section: <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki">https://maif.github.io/otoroshi/swagger-ui/index.html#/pki</a></p>
-<pre><code>POST    /api/pki/certs/_letencrypt  
-POST    /api/pki/certs/_p12         
-POST    /api/pki/certs/_valid       
-POST    /api/pki/certs/_data        
-POST    /api/pki/certs              
-POST    /api/pki/csrs               
-POST    /api/pki/keys               
-POST    /api/pki/cas                
-POST    /api/pki/cas/:ca/certs/_sign
-POST    /api/pki/cas/:ca/certs      
-POST    /api/pki/cas/:ca/cas  
-</code></pre><div class="callout warning "><div class="callout-title">Warning</div>
-<p>TODO: This section is being written, thanks for your patience :)</p></div>
-<h2><a href="#the-pki-ui" name="the-pki-ui" class="anchor"><span class="anchor-link"></span></a>The PKI UI</h2><div class="callout warning "><div class="callout-title">Warning</div>
-<p>TODO: This section is being written, thanks for your patience :)</p></div>
+<p>The Otoroshi&rsquo;s PKI can be managed using the admin api of otoroshi (by default admin api is exposed on <a href="https://otoroshi-api.xxxxx">https://otoroshi-api.xxxxx</a>)</p>
+<p>Link to the complete swagger section about PKI : <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki">https://maif.github.io/otoroshi/swagger-ui/index.html#/pki</a></p>
+<ul>
+  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genLetsEncryptCert">/api/pki/certs/_letencrypt</a>: generates a certificate using Let&rsquo;s Encrypt or any ACME compatible system</li>
+  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.importCertFromP12">/api/pki/certs/_p12</a>: import a .p12 file as client certificates</li>
+  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.certificateIsValid">/api/pki/certs/_valid</a>: check if a certificate is valid (based on its own data)</li>
+  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.certificateData">/api/pki/certs/_data</a>: extract data from a certificate</li>
+  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genSelfSignedCert">/api/pki/certs</a>: generates a self signed certificates</li>
+  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genCsr">/api/pki/csrs</a> : generates a CSR</li>
+  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genKeyPair">/api/pki/keys</a> : generates a keypair</li>
+  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genSelfSignedCA">/api/pki/cas</a> : generates a self signed CA@</li>
+  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.signCert">/api/pki/cas/:ca/certs/_sign</a>: sign a certificate based on CSR</li>
+  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genCert">/api/pki/cas/:ca/certs</a>: generates a certificate</li>
+  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genSubCA">/api/pki/cas/:ca/cas</a> : generates a sub-CA</li>
+</ul>
+<h2><a href="#the-pki-ui" name="the-pki-ui" class="anchor"><span class="anchor-link"></span></a>The PKI UI</h2>
+<p>All generated certificates are listed in the <code>https://xxxxxx/bo/dashboard/certificates</code> page. All those certificates can be used to serve traffic with TLS, perform mTLS calls, sign and verify JWT tokens.</p>
+<p>The PKI UI are composed of these following actions:</p>
+<ul>
+  <li><strong>Add item</strong>: redirects the user on the certificate creation page. It’s useful when you already had a certificate (like a pem file) and that you want to load it in Otoroshi.</li>
+  <li><strong>Let&rsquo;s Encrypt certificate</strong>: asks a certificate matching a given host to Let’s encrypt</li>
+  <li><strong>Create certificate</strong>: issues a certificate with an existing Otoroshi certificate as CA. You can create a client certificate, a server certificate or a keypair certiciate that will be used to verify and sign JWT tokens.</li>
+  <li><strong>Import .p12 file</strong>: loads a p12 file as certificate</li>
+</ul>
+<p>Under these buttons, you have the list of current certificates, imported or generated, revoked or not. For each certificate, you will find: </p>
+<ul>
+  <li>a <strong>name</strong></li>
+  <li>a <strong>description</strong></li>
+  <li>the <strong>subject</strong></li>
+  <li>the <strong>type</strong> of certificate (CA / client / keypair / certificate)</li>
+  <li>the <strong>revoked reason</strong> (empty if not)</li>
+  <li>the <strong>creation date</strong> following by its <strong>expiration date</strong>.</li>
+</ul>
 <h2><a href="#exposed-public-keys" name="exposed-public-keys" class="anchor"><span class="anchor-link"></span></a>Exposed public keys</h2>
-<p><a href="https://xxxxxxxxx.xxxxxxx.xx/.well-known/otoroshi/security/jwks.json">https://xxxxxxxxx.xxxxxxx.xx/.well-known/otoroshi/security/jwks.json</a> <a href="https://otoroshi-api.xxxxxxx.xx/.well-known/jwks.json">https://otoroshi-api.xxxxxxx.xx/.well-known/jwks.json</a></p><div class="callout warning "><div class="callout-title">Warning</div>
-<p>TODO: This section is being written, thanks for your patience :)</p></div>
+<p>The Otoroshi certificate can be turned and used as keypair (simple action that can be executed by editing a certificate or during its creation, or using the admin api). A Otoroski keypair can be used to sign and verify JWT tokens with asymetric signature. Once a jwt token is signed with a keypair, it can be necessary to provide a way to the services to verify the tokens received by Otoroshi. This usage is cover by Otoroshi by the flag <code>Public key exposed</code>, available on each certificate.</p>
+<p>Otoroshi exposes each keypair with the flag enabled, on the following routes:</p>
+<ul>
+  <li><code>https://xxxxxxxxx.xxxxxxx.xx/.well-known/otoroshi/security/jwks.json</code></li>
+  <li><code>https://otoroshi-api.xxxxxxx.xx/.well-known/jwks.json</code></li>
+</ul>
+<p>On these routes, you will find the list of public keys with the following information:</p>
+<ul>
+  <li><code>kid</code>: key ID parameter is used to match a specific key <a href="https://datatracker.ietf.org/doc/html/rfc7517#section-4.5" title="section 4 - RFC5717">section 4 - RFC5717</a></li>
+  <li><code>kty</code>: key type parameter identifies the cryptographic algorithm  family used with the key, such as &ldquo;RSA&rdquo; or &ldquo;EC&rdquo; <a href="https://datatracker.ietf.org/doc/html/rfc7517#page-6" title="section 6 - RFC5717">section 6 - RFC5717</a></li>
+  <li><code>n</code> and <code>e</code>: RSA key values <a href="https://datatracker.ietf.org/doc/html/rfc7517#section-9.3" title="section 9.3 - RFC5717">section 9.3 - RFC5717</a></li>
+</ul>
 <h2><a href="#ocsp-responder" name="ocsp-responder" class="anchor"><span class="anchor-link"></span></a>OCSP Responder</h2>
 <p>Otoroshi is able to revocate a certificate, directly from the UI, and to add a revocation status to specifiy the reason. The revocation reason can be :</p>
 <ul>
