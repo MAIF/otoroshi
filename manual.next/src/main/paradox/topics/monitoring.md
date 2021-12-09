@@ -1,12 +1,20 @@
 # Monitoring
 
-The Otoroshi API exposes two endpoints for 
+The Otoroshi API exposes two endpoints to know more about instance health. All the following endpoint are exposed on the instance host through it's ip address. It is also exposed on the otoroshi api hostname and the otoroshi backoffice hostname
 
 * `/health`: the health of the Otoroshi instance
 * `/metrics`: the metrics of the Otoroshi instance, either in JSON or Prometheus format using the `Accept` header (with `application/json` / `application/prometheus` values) or the `format` query param (with `json` or `prometheus` values)
 * `/live`: returns an http 200 response `{"live": true}` when the service is alive
 * `/ready`: return an http 200 response `{"ready": true}` when the instance is ready to accept traffic (certs synced, plugins compiled, etc). if not, returns http 503 `{"ready": false}`
 * `/startup`: return an http 200 response `{"started": true}` when the instance is ready to accept traffic (certs synced, plugins compiled, etc). if not, returns http 503 `{"started": false}`
+
+those routes are also available on any hostname leading to otoroshi with a twist in the URL
+
+* http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/health
+* http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/metrics
+* http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/live
+* http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/ready
+* http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/startup
 
 ## Endpoints security
 

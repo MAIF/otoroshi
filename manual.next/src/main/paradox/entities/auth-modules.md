@@ -140,6 +140,15 @@ If you want to secure an app or your Otoroshi UI with this provider, you can che
 * `Validate Assertions Signature`: should SAML Assertions to be decrypted ?
 * `Validating Certificates`: the certificate in PEM format that must be used to check for signatures.
 
+## Special routes
+
+when using private apps with auth. modules, you can access special routes that can help you 
+
+```sh 
+GET 'http://xxxxxxxx.xxxx.xx/.well-known/otoroshi/logout' # trigger logout for the current auth. module
+GET 'http://xxxxxxxx.xxxx.xx/.well-known/otoroshi/me'     # get the current logged user profile (do not forget to pass cookies)
+```
+
 ## Related pages
 * @ref[Secure an app with auth0](../how-to-s/secure-app-with-auth0.md)
 * @ref[Secure an app with keycloak](../how-to-s/secure-app-with-keycloak.md)

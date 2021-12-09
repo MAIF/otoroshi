@@ -14,6 +14,43 @@ This intermediate CA signed three certificates :
 *  **Otoroshi Default Jwt Signing Keypair**: default keypair (composed of a public and private key), exposed on `https://xxxxxx/.well-known/jwks.json`, that can be used to sign and verify JWT verifier
 *  **Otoroshi Default Wildcard Certificate**: this certificate has `*.oto.tools` as common name. It can be very useful to the development phase
 
+## The PKI API
+
+link to swagger section
+
+```
+POST    /api/pki/certs/_letencrypt  
+POST    /api/pki/certs/_p12         
+POST    /api/pki/certs/_valid       
+POST    /api/pki/certs/_data        
+POST    /api/pki/certs              
+POST    /api/pki/csrs               
+POST    /api/pki/keys               
+POST    /api/pki/cas                
+POST    /api/pki/cas/:ca/certs/_sign
+POST    /api/pki/cas/:ca/certs      
+POST    /api/pki/cas/:ca/cas  
+```      
+
+@@@ warning
+TODO: This section is being written, thanks for your patience :)
+@@@
+
+## The PKI UI
+
+@@@ warning
+TODO: This section is being written, thanks for your patience :)
+@@@
+
+## Exposed public keys
+
+https://xxxxxxxxx.xxxxxxx.xx/.well-known/otoroshi/security/jwks.json
+https://otoroshi-api.xxxxxxx.xx/.well-known/jwks.json
+
+@@@ warning
+TODO: This section is being written, thanks for your patience :)
+@@@
+
 ## OCSP Responder
 
 Otoroshi is able to revocate a certificate, directly from the UI, and to add a revocation status to specifiy the reason. The revocation reason can be :
@@ -30,7 +67,7 @@ Otoroshi is able to revocate a certificate, directly from the UI, and to add a r
 * `PRIVILEGE_WITH_DRAWN`: The certificate was revoked because a privilege contained within that certificate has been withdrawn
 * `AA_COMPROMISE`: It is known or suspected that aspects of the AA validated in the attribute certificate, have been compromised
 
-Otoroshi supports the Online Certificate Status Protocol for obtaining the revocation status of its certificates. The OCSP endpoint is also add to any generated certificate. This endpoint is available at `https://otoroshi-api.xxxxxx/.well-known/otoroshi/ocsp`
+Otoroshi supports the Online Certificate Status Protocol for obtaining the revocation status of its certificates. The OCSP endpoint is also add to any generated certificate. This endpoint is available at `https://otoroshi-api.xxxxxx/.well-known/otoroshi/security/ocsp`
 
 ## A.I.A : Authority Information Access
 
@@ -38,3 +75,5 @@ Otoroshi provides a way to add the A.I.A in the certificate. This certificate ex
 
 * Information about how to get the issuer of this certificate (CA issuer access method)
 * Address of the OCSP responder from where revocation of this certificate can be checked (OCSP access method)
+
+`https://xxxxxxxxxx/.well-known/otoroshi/security/certificates/:cert-id`
