@@ -219,5 +219,5 @@ packagedArtifacts in publish := {
 
 // should fix issues with https targets on jdk8u161 and beyond
 // if production fails wihtout reason with weird TLS issues on JDK8, just update the following dependency to latest version ... trust me
-libraryDependencies += "org.mortbay.jetty.alpn" % "jetty-alpn-agent" % "2.0.10"
-javaAgents += "org.mortbay.jetty.alpn"          % "jetty-alpn-agent" % "2.0.10" % "runtime"
+//libraryDependencies += "org.mortbay.jetty.alpn" % "jetty-alpn-agent" % "2.0.10"
+//javaAgents += "org.mortbay.jetty.alpn"          % "jetty-alpn-agent" % "2.0.10" % "runtime"

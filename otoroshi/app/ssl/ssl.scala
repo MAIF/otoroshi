@@ -1681,9 +1681,7 @@ object DynamicSSLEngineProvider {
     cipherSuites.orElse(Some(rawEnabledCipherSuites)).foreach(s => sslParameters.setCipherSuites(s.toArray))
     protocols.orElse(Some(rawEnabledProtocols)).foreach(p => sslParameters.setProtocols(p.toArray))
     engine.setSSLParameters(sslParameters)
-    cipherSuites.foreach(s => engine.setEnabledCipherSuites(s.toArray))
-    protocols.foreach(p => engine.setEnabledProtocols(p.toArray))
-    engine
+    engine.locked()
   }
 }
 
@@ -2064,6 +2062,13 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
   // sun.security.ssl.X509TrustManagerImpl
   // javax.net.ssl.X509ExtendedTrustManager
   private val hostnameHolder = new AtomicReference[String]()
+  private var lock = false
+
+  def locked(): CustomSSLEngine = {
+    // it's fine as the set only appears in the same thread/function as object creation
+    lock = true
+    this
+  }
 
   // TODO: add try to avoid future issue ?
   private lazy val field: Field = {
@@ -2104,13 +2109,21 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
 
   override def getEnabledCipherSuites: Array[String] = delegate.getEnabledCipherSuites
 
-  override def setEnabledCipherSuites(strings: Array[String]): Unit = delegate.setEnabledCipherSuites(strings)
+  override def setEnabledCipherSuites(strings: Array[String]): Unit = {
+    if (!lock) {
+      delegate.setEnabledCipherSuites(strings)
+    }
+  }
 
   override def getSupportedProtocols: Array[String] = delegate.getSupportedProtocols
 
   override def getEnabledProtocols: Array[String] = delegate.getEnabledProtocols
 
-  override def setEnabledProtocols(strings: Array[String]): Unit = delegate.setEnabledProtocols(strings)
+  override def setEnabledProtocols(strings: Array[String]): Unit = {
+    if (!lock) {
+      delegate.setEnabledProtocols(strings)
+    }
+  }
 
   override def getSession: SSLSession = delegate.getSession
 
@@ -2118,19 +2131,35 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
 
   override def getHandshakeStatus: SSLEngineResult.HandshakeStatus = delegate.getHandshakeStatus
 
-  override def setUseClientMode(b: Boolean): Unit = delegate.setUseClientMode(b)
+  override def setUseClientMode(b: Boolean): Unit = {
+    if (!lock) {
+      delegate.setUseClientMode(b)
+    }
+  }
 
   override def getUseClientMode: Boolean = delegate.getUseClientMode
 
-  override def setNeedClientAuth(b: Boolean): Unit = delegate.setNeedClientAuth(b)
+  override def setNeedClientAuth(b: Boolean): Unit = {
+    if (!lock) {
+      delegate.setNeedClientAuth(b)
+    }
+  }
 
   override def getNeedClientAuth: Boolean = delegate.getNeedClientAuth
 
-  override def setWantClientAuth(b: Boolean): Unit = delegate.setWantClientAuth(b)
+  override def setWantClientAuth(b: Boolean): Unit = {
+    if (!lock) {
+      delegate.setWantClientAuth(b)
+    }
+  }
 
   override def getWantClientAuth: Boolean = delegate.getWantClientAuth
 
-  override def setEnableSessionCreation(b: Boolean): Unit = delegate.setNeedClientAuth(b)
+  override def setEnableSessionCreation(b: Boolean): Unit = {
+    if (!lock) {
+      delegate.setEnableSessionCreation(b)
+    }
+  }
 
   override def getEnableSessionCreation: Boolean = delegate.getEnableSessionCreation
 
@@ -2146,7 +2175,11 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
 
   override def getSSLParameters: SSLParameters = delegate.getSSLParameters
 
-  override def setSSLParameters(var1: SSLParameters): Unit = delegate.setSSLParameters(var1)
+  override def setSSLParameters(var1: SSLParameters): Unit = {
+    if (!lock) {
+      delegate.setSSLParameters(var1)
+    }
+  }
 }
 
 sealed trait ClientCertificateValidationDataStore extends BasicStore[ClientCertificateValidator] {

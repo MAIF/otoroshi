@@ -7,17 +7,12 @@ as you might have understand, otoroshi can store TLS certificates and use them d
 any certficate added to otoroshi with a valid `CN` and `SANs` can be used in the following seconds to serve https requests. If you do not provide a private key with a certificate chain, the certificate will only be trusted like a CA. If you want to perform mTLS calls on you otoroshi instance, do not forget to enabled it (it is disabled by default for performance reasons as the TLS handshake is bigger with mTLS enabled)
 
 ```sh
-play.server.https.wantClientAuth=true
-# or
-# play.server.https.wantClientNeed=true
 otoroshi.ssl.fromOutside.clientAuth=None|Want|Need
 ```
 
 or using env. variables
 
 ```sh
-HTTPS_WANT_CLIENT_AUTH=true 
-# HTTPS_NEED_CLIENT_AUTH=true 
 SSL_OUTSIDE_CLIENT_AUTH=None|Want|Need
 ```
 

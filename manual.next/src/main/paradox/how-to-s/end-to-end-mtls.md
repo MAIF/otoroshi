@@ -4,17 +4,12 @@ If you want to use MTLS on otoroshi, you first need to enable it. It is not enab
 To enable it just change the following config :
 
 ```sh
-play.server.https.wantClientAuth=true
-# or
-# play.server.https.wantClientNeed=true
 otoroshi.ssl.fromOutside.clientAuth=None|Want|Need
 ```
 
 or using env. variables
 
 ```sh
-HTTPS_WANT_CLIENT_AUTH=true 
-# HTTPS_NEED_CLIENT_AUTH=true 
 SSL_OUTSIDE_CLIENT_AUTH=None|Want|Need
 ```
 
@@ -225,7 +220,6 @@ Download the latest version of the Otoroshi jar and run it like
 ```sh
  java \
   -Dapp.adminPassword=password \
-  -Dplay.server.https.wantClientAuth=true \
   -Dotoroshi.ssl.fromOutside.clientAuth=Want \
   -jar -Dapp.storage=file otoroshi.jar
 
