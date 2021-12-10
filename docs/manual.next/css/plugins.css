@@ -122,6 +122,7 @@
   justify-content: center;
   max-height: 425px;
   min-height: 425px;
+  position: relative;
 }
 
 .platform img {

@@ -257,13 +257,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>A connected user on Otoroshi UI has a list of teams and organizations associated. It can be helpful when you want restrict the rights of a connected user.</p><div class="centered-img">
 <img src="../imgs/organizations-and-teams.png" /></div>
 <h2><a href="#access-to-the-list-of-teams" name="access-to-the-list-of-teams" class="anchor"><span class="anchor-link"></span></a>Access to the list of teams</h2>
-<p>To visualize and edit the list of teams, you can navigate to your instance on the <code>/bo/dashboard/teams</code> route or click on the cog icon and select the teams button.</p>
+<p>To visualize and edit the list of teams, you can navigate to your instance on the <code>https://otoroshi.xxxxxx/bo/dashboard/teams</code> route or click on the cog icon and select the teams button.</p>
 <p>Once on the page, you can create a new item, edit an existing team or delete an existing one.</p>
 <blockquote>
   <p>When a team is deleted, the resources associated are not deleted. On the other hand, the team of associated resources is let empty.</p>
 </blockquote>
 <h2><a href="#entities-location" name="entities-location" class="anchor"><span class="anchor-link"></span></a>Entities location</h2>
-<p>any otoroshi entity has a location property (<code>_loc</code> when serialized to json) explaining where and by whom the entity can be seen. </p>
+<p>Any otoroshi entity has a location property (<code>_loc</code> when serialized to json) explaining where and by whom the entity can be seen. </p>
 <p>An entity can be part of multiple teams in an organization</p>
 <pre class="prettyprint"><code class="language-javascript">{
   &quot;_loc&quot;: {
