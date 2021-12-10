@@ -166,6 +166,12 @@ case "${1}" in
     docker tag otoroshi-jdk11 "maif/otoroshi:dev11"
     cleanup
     ;;
+  build-18)
+    cp ../../otoroshi/target/scala-2.12/otoroshi.jar otoroshi.jar
+    docker build --no-cache -f ./Dockerfile-jdk18-jar -t otoroshi-jdk18 .
+    docker tag otoroshi-jdk18 "maif/otoroshi:dev18"
+    cleanup
+    ;;
   prepare)
     cp ../../otoroshi/target/universal/otoroshi-1.5.0-dev.zip ./otoroshi-dist.zip
     cp ../../otoroshi/target/scala-2.12/otoroshi.jar ./otoroshi.jar
