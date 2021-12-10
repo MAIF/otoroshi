@@ -36,21 +36,21 @@ object GlobalExpressionLanguage {
         val geolocDetails    = attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey)
         Try {
           expressionReplacer.replaceOn(value) {
-            case "date"                                                           => DateTime.now().toString()
-            case r"date.format\('$format@(.*)'\)"                                 => DateTime.now().toString(format)
-            case "service.domain" if service.isDefined                            => service.get._domain
-            case "service.subdomain" if service.isDefined                         => service.get.subdomain
-            case "service.tld" if service.isDefined                               => service.get.domain
-            case "service.env" if service.isDefined                               => service.get.env
+            case "date"                                                             => DateTime.now().toString()
+            case r"date.format\('$format@(.*)'\)"                                   => DateTime.now().toString(format)
+            case "service.domain" if service.isDefined                              => service.get._domain
+            case "service.subdomain" if service.isDefined                           => service.get.subdomain
+            case "service.tld" if service.isDefined                                 => service.get.domain
+            case "service.env" if service.isDefined                                 => service.get.env
             case r"service.groups\['$field@(.*)':'$dv@(.*)'\]" if service.isDefined =>
               Option(service.get.groups(field.toInt)).getOrElse(dv)
-            case r"service.groups\['$field@(.*)'\]" if service.isDefined          =>
+            case r"service.groups\['$field@(.*)'\]" if service.isDefined            =>
               Option(service.get.groups(field.toInt)).getOrElse(s"no-group-$field")
-            case "service.id" if service.isDefined                                => service.get.id
-            case "service.name" if service.isDefined                              => service.get.name
-            case r"service.metadata.$field@(.*):$dv@(.*)" if service.isDefined    =>
+            case "service.id" if service.isDefined                                  => service.get.id
+            case "service.name" if service.isDefined                                => service.get.name
+            case r"service.metadata.$field@(.*):$dv@(.*)" if service.isDefined      =>
               service.get.metadata.get(field).getOrElse(dv)
-            case r"service.metadata.$field@(.*)" if service.isDefined             =>
+            case r"service.metadata.$field@(.*)" if service.isDefined               =>
               service.get.metadata.get(field).getOrElse(s"no-meta-$field")
 
             case "req.fullUrl" if req.isDefined                                 =>
@@ -70,32 +70,32 @@ object GlobalExpressionLanguage {
             case r"req.query.$field@(.*)" if req.isDefined                      =>
               req.get.getQueryString(field).getOrElse(s"no-query-$field")
 
-            case "apikey.name" if apiKey.isDefined                            => apiKey.get.clientName
-            case "apikey.id" if apiKey.isDefined                              => apiKey.get.clientId
-            case r"apikey.metadata.$field@(.*):$dv@(.*)" if apiKey.isDefined  =>
+            case "apikey.name" if apiKey.isDefined                              => apiKey.get.clientName
+            case "apikey.id" if apiKey.isDefined                                => apiKey.get.clientId
+            case r"apikey.metadata.$field@(.*):$dv@(.*)" if apiKey.isDefined    =>
               apiKey.get.metadata.get(field).getOrElse(dv)
-            case r"apikey.metadata.$field@(.*)" if apiKey.isDefined           =>
+            case r"apikey.metadata.$field@(.*)" if apiKey.isDefined             =>
               apiKey.get.metadata.get(field).getOrElse(s"no-meta-$field")
             case r"apikey.tags\['$field@(.*)':'$dv@(.*)'\]" if apiKey.isDefined =>
               Option(apiKey.get.tags.apply(field.toInt)).getOrElse(dv)
-            case r"apikey.tags\['$field@(.*)'\]" if apiKey.isDefined =>
+            case r"apikey.tags\['$field@(.*)'\]" if apiKey.isDefined            =>
               Option(apiKey.get.tags.apply(field.toInt)).getOrElse(s"no-tag-$field")
 
             // for jwt comptab only
-            case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"         =>
+            case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"           =>
               context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"          =>
+            case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"            =>
               context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"       =>
+            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"         =>
               context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"       =>
+            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"         =>
               context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*)\|token.$field2@(.*):$dv@(.*)"            =>
+            case r"token.$field@(.*)\|token.$field2@(.*):$dv@(.*)"              =>
               context.get(field).orElse(context.get(field2)).getOrElse(dv)
-            case r"token.$field@(.*)\|token.$field2@(.*)"                     =>
+            case r"token.$field@(.*)\|token.$field2@(.*)"                       =>
               context.get(field).orElse(context.get(field2)).getOrElse(s"no-token-$field-$field2")
-            case r"token.$field@(.*):$dv@(.*)"                                => context.getOrElse(field, dv)
-            case r"token.$field@(.*)"                                         => context.getOrElse(field, s"no-token-$field")
+            case r"token.$field@(.*):$dv@(.*)"                                  => context.getOrElse(field, dv)
+            case r"token.$field@(.*)"                                           => context.getOrElse(field, s"no-token-$field")
 
             case r"env.$field@(.*):$dv@(.*)" => Option(System.getenv(field)).getOrElse(dv)
             case r"env.$field@(.*)"          => Option(System.getenv(field)).getOrElse(s"no-env-var-$field")

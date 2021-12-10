@@ -158,7 +158,7 @@ class PluginDocumentationGenerator(docPath: String) {
 
     val pluginClazz = "plugin-kind-" + (plugin.pluginType match {
       case PluginType.AppType => PluginType.TransformerType.name
-      case _ => plugin.pluginType.name
+      case _                  => plugin.pluginType.name
       // case PluginType.TransformerType => pl.pluginType.name
       // case PluginType.AccessValidatorType => pl.pluginType.name
       // case PluginType.PreRoutingType => pl.pluginType.name
@@ -169,17 +169,17 @@ class PluginDocumentationGenerator(docPath: String) {
       // case PluginType.RequestHandlerType => pl.pluginType.name
       // case PluginType.CompositeType => pl.pluginType.name
     })
-    val pluginLogo = plugin.pluginType match {
-      case PluginType.AppType => ""
-      case PluginType.TransformerType => ""
+    val pluginLogo  = plugin.pluginType match {
+      case PluginType.AppType             => ""
+      case PluginType.TransformerType     => ""
       case PluginType.AccessValidatorType => ""
-      case PluginType.PreRoutingType => ""
-      case PluginType.RequestSinkType => ""
-      case PluginType.EventListenerType => ""
-      case PluginType.JobType => ""
-      case PluginType.DataExporterType => ""
-      case PluginType.RequestHandlerType => ""
-      case PluginType.CompositeType => ""
+      case PluginType.PreRoutingType      => ""
+      case PluginType.RequestSinkType     => ""
+      case PluginType.EventListenerType   => ""
+      case PluginType.JobType             => ""
+      case PluginType.DataExporterType    => ""
+      case PluginType.RequestHandlerType  => ""
+      case PluginType.CompositeType       => ""
     }
 
     s"""

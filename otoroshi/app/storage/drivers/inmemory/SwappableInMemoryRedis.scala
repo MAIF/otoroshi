@@ -309,7 +309,7 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
   override def ttl(key: String): Future[Long] = {
     pttl(key).map {
       case -1L => -1L
-      case t => Duration(t, TimeUnit.MILLISECONDS).toSeconds
+      case t   => Duration(t, TimeUnit.MILLISECONDS).toSeconds
     }
   }
 

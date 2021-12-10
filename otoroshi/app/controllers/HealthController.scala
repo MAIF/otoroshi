@@ -144,16 +144,22 @@ class HealthController(cc: ControllerComponents)(implicit env: Env) extends Abst
       def transformToArray(input: String): JsValue = {
         val metrics = Json.parse(input)
         metrics match {
-          case JsObject(value) => value.toSeq.foldLeft(Json.arr()) {
-            case (arr, (key, JsObject(value))) =>
-              arr ++ value.toSeq.foldLeft(Json.arr()) {
-                case (arr2, (key2, value2@JsObject(_))) =>
-                  arr2 ++ Json.arr(value2 ++ Json.obj("name" -> key2.applyOnWithPredicate(_.endsWith(" {}"))(_.replace(" {}", "")), "type" -> key))
-                case (arr2, (key2, value2)) => arr2
-              }
-            case (arr, (key, value)) => arr
-          }
-          case a@JsArray(value) => a
+          case JsObject(value)    =>
+            value.toSeq.foldLeft(Json.arr()) {
+              case (arr, (key, JsObject(value))) =>
+                arr ++ value.toSeq.foldLeft(Json.arr()) {
+                  case (arr2, (key2, value2 @ JsObject(_))) =>
+                    arr2 ++ Json.arr(
+                      value2 ++ Json.obj(
+                        "name" -> key2.applyOnWithPredicate(_.endsWith(" {}"))(_.replace(" {}", "")),
+                        "type" -> key
+                      )
+                    )
+                  case (arr2, (key2, value2))               => arr2
+                }
+              case (arr, (key, value))           => arr
+            }
+          case a @ JsArray(value) => a
         }
       }
 

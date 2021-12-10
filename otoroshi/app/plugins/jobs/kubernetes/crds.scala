@@ -562,7 +562,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
           case _                                   => s.as[JsObject]
         }
       }
-      // .applyOn(s => s.as[JsObject] ++ Json.obj("useAkkaHttpClient" -> true))
+    // .applyOn(s => s.as[JsObject] ++ Json.obj("useAkkaHttpClient" -> true))
   }
 
   def customizeApiKey(
