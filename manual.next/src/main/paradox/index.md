@@ -15,7 +15,7 @@
 
 ## Installation
 
-You can download the latest build of Otoroshi as a [fat jar](https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar), as a [zip package](https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi-dist.zip) or as a [docker image](#).
+You can download the latest build of Otoroshi as a @ref:[fat jar](./install/get-otoroshi.md#from-jar-file), as a @ref:[zip package](./install/get-otoroshi.md#from-zip) or as a @ref:[docker image](./install/get-otoroshi.md#from-docker).
 
 You can install and run Otoroshi with this little bash snippet
 
@@ -49,19 +49,19 @@ now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blan
 
 ## Discussion
 
-Join the [Otoroshi](https://gitter.im/MAIF/otoroshi) channel on the [MAIF Gitter](https://gitter.im/MAIF)
+Join the [Otoroshi](https://gitter.im/MAIF/otoroshi) channel on the [MAIF Gitter](https://gitter.im/MAIF) { open=new }
 
 ## Sources
 
-The sources of Otoroshi are available on [Github](https://github.com/MAIF/otoroshi).
+The sources of Otoroshi are available on @link:[Github](https://github.com/MAIF/otoroshi) { open=new }.
 
 ## Logo
 
-You can find the official Otoroshi logo [on GitHub](https://github.com/MAIF/otoroshi/blob/master/resources/otoroshi-logo.png). The Otoroshi logo has been created by François Galioto ([@fgalioto](https://twitter.com/fgalioto))
+You can find the official Otoroshi logo @link:[on GitHub](https://github.com/MAIF/otoroshi/blob/master/resources/otoroshi-logo.png) { open=new }. The Otoroshi logo has been created by François Galioto ([@fgalioto](https://twitter.com/fgalioto))
 
 ## Changelog
 
-Every release, along with the migration instructions, is documented on the [Github Releases](https://github.com/MAIF/otoroshi/releases) page. A condensed version of the changelog is available on [github]((https://github.com/MAIF/otoroshi/CHANGELOG.md)
+Every release, along with the migration instructions, is documented on the @link:[Github Releases](https://github.com/MAIF/otoroshi/releases) { open=new } page. A condensed version of the changelog is available on @link:[github](https://github.com/MAIF/otoroshi/blob/master/CHANGELOG.md) { open=new }
 
 ## Patrons
 
@@ -69,7 +69,7 @@ The work on Otoroshi was funded by <a href="https://www.maif.fr/" target="_blank
 
 ## Licence
 
-Otoroshi is Open Source and available under the [Apache 2 License](https://opensource.org/licenses/Apache-2.0) 
+Otoroshi is Open Source and available under the @link:[Apache 2 License](https://opensource.org/licenses/Apache-2.0)  { open=new }
 
 @@@ index
 
