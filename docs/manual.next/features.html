@@ -250,22 +250,31 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#features" name="features" class="anchor"><span class="anchor-link"></span></a>Features</h1>
-<p>All the features supported by <strong>Otoroshi</strong> are listed below</p>
 <p><strong>Traffic Management</strong></p>
 <ul>
   <li>Can proxy any HTTP(s) service (apis, webapps, websocket, etc)</li>
   <li>Can proxy any TCP service (app, database, etc)</li>
   <li>Traffic mirroring</li>
   <li>Canary deployments</li>
-  <li>Multiple load-balancing otpions: RoundRobin, Random, Sticky, Ip Hash, Best Response Time</li>
+  <li>Multiple load-balancing options: RoundRobin, Random, Sticky, Ip Hash, Best Response Time</li>
   <li>Distributed in-flight request limiting</li>
   <li>Distributed rate limiting</li>
 </ul>
 <p><strong>Services customization</strong></p>
 <ul>
-  <li>Dozens of built-in plugins (circuit breakers, automatic retries, buffering, response compression, headers manipulation, cors, gzip)</li>
-  <li>Custom plugins</li>
-  <li>Private and public visibility</li>
+  <li>Dozens of built-in middlewares (plugins)
+    <ul>
+      <li>circuit breakers</li>
+      <li>automatic retries</li>
+      <li>buffering</li>
+      <li>gzip</li>
+      <li>headers manipulation</li>
+      <li>cors</li>
+      <li>etc</li>
+    </ul>
+  </li>
+  <li>Custom middleware</li>
+  <li>Higly customizable visibility</li>
 </ul>
 <p><strong>Services Monitoring</strong></p>
 <ul>
@@ -281,7 +290,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>Access management with apikeys and quotas</li>
   <li>Automatic apikeys secrets rotation</li>
   <li>HTTPS and TLS</li>
-  <li>Mutual TLS in/out</li>
+  <li>mTLS in/out calls</li>
   <li>Routing constraints</li>
   <li>Routing restrictions</li>
   <li>JWT tokens validation and manipulation</li>

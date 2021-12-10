@@ -262,16 +262,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <h2><a href="#protect-the-access-to-your-api-with-the-otoroshi-management-of-api-keys" name="protect-the-access-to-your-api-with-the-otoroshi-management-of-api-keys" class="anchor"><span class="anchor-link"></span></a>Protect the access to your api with the Otoroshi management of api keys</h2>
 <p>Create a service, exposed on <code>http://myapi.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8080/api/services \
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/services&#39; \
 -d &#39;{&quot;enforceSecureCommunication&quot;: false, &quot;forceHttps&quot;: false, &quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;name&quot;:&quot;myapi&quot;,&quot;description&quot;:&quot;a service&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;myapi&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;&quot;],&quot;privatePatterns&quot;:[&quot;\/.*&quot;],&quot;kind&quot;:&quot;ServiceDescriptor&quot;}&#39; \
 -H &quot;Content-type: application/json&quot; \
 -u admin-api-apikey-id:admin-api-apikey-secret
 </code></pre>
 <p>Try to call this service. You should receive an error from Otoroshi about a missing api key in our request.</p>
-<pre class="prettyprint"><code class="language-sh">curl http://myapi.oto.tools:8080
+<pre class="prettyprint"><code class="language-sh">curl &#39;http://myapi.oto.tools:8080&#39;
 </code></pre>
 <p>Create your first api key with a quota of 10 calls by day and month.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8080/api/apikeys \
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/apikeys&#39; \
 -H &quot;Content-type: application/json&quot; \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- &lt;&lt;&#39;EOF&#39;
@@ -289,7 +289,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 EOF
 </code></pre>
 <p>Call your api with the generated apikey.</p>
-<pre class="prettyprint"><code class="language-sh">curl http://myapi.oto.tools:8080 -u my-first-apikey-id:my-first-apikey-secret
+<pre class="prettyprint"><code class="language-sh">curl &#39;http://myapi.oto.tools:8080&#39; -u my-first-apikey-id:my-first-apikey-secret
 </code></pre>
 <pre class="prettyprint"><code class="language-json">{
   &quot;method&quot;: &quot;GET&quot;,
@@ -307,7 +307,7 @@ EOF
 }
 </code></pre>
 <p>Check your remaining quotas</p>
-<pre class="prettyprint"><code class="language-sh">curl http://myapi.oto.tools:8080 -u my-first-apikey-id:my-first-apikey-secret --include
+<pre class="prettyprint"><code class="language-sh">curl &#39;http://myapi.oto.tools:8080&#39; -u my-first-apikey-id:my-first-apikey-secret --include
 </code></pre>
 <p>This should output these following Otoroshi headers</p>
 <pre class="prettyprint"><code class="language-json">Otoroshi-Daily-Calls-Remaining: 6
@@ -321,7 +321,7 @@ Otoroshi-Monthly-Calls-Remaining: 6
 <p>Well done, you have secured your first api with the apikeys system with limited call quotas.</p>
 <h2><a href="#secure-your-web-app-in-5-minutes-with-an-authentication" name="secure-your-web-app-in-5-minutes-with-an-authentication" class="anchor"><span class="anchor-link"></span></a>Secure your web app in 5 minutes with an authentication</h2>
 <p>Create an in-memory authentication module, with one registered user, to protect your service.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8080/api/auths \
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/auths&#39; \
 -H &quot;Otoroshi-Client-Id: admin-api-apikey-id&quot; \
 -H &quot;Otoroshi-Client-Secret: admin-api-apikey-secret&quot; \
 -H &#39;Content-Type: application/json; charset=utf-8&#39; \
@@ -355,7 +355,7 @@ Otoroshi-Monthly-Calls-Remaining: 6
 EOF
 </code></pre>
 <p>Then create a service secure by the previous authentication module, which proxies <code>google.fr</code> on <code>webapp.oto.tools</code>.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8080/api/services \
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/services&#39; \
 -d &#39;{&quot;enforceSecureCommunication&quot;: false, &quot;forceHttps&quot;: false, &quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;name&quot;:&quot;webapp&quot;,&quot;description&quot;:&quot;a service&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;webapp&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;google.fr&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;\/.*&quot;],&quot;privatePatterns&quot;:[&quot;&quot;],&quot;kind&quot;:&quot;ServiceDescriptor&quot;,&quot;authConfigRef&quot;:&quot;auth_mod_in_memory_auth&quot;,&quot;privateApp&quot;:true}&#39; \
 -H &quot;Content-type: application/json&quot; \
 -u admin-api-apikey-id:admin-api-apikey-secret
