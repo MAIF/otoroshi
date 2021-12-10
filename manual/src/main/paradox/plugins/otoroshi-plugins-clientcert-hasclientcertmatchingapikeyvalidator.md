@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+
 # Client Certificate + Api Key only
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -16,4 +20,6 @@ You can set the client cert. DN in an apikey metadata named `allowed-client-cert
 
 
 
+
+@@@
 

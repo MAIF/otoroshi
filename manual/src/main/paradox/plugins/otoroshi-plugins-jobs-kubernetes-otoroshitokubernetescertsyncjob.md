@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-job }
+
 # Otoroshi certs. to Kubernetes secrets synchronizer
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -143,4 +147,6 @@ This plugin syncs. Otoroshi certs to Kubernetes TLS secrets
 
 
 
+
+@@@
 

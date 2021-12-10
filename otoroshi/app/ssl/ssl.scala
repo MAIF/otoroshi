@@ -380,7 +380,7 @@ case class Cert(
     } getOrElse false
   }
   lazy val cryptoKeyPair: KeyPair = {
-		val privkey = DynamicSSLEngineProvider.readPrivateKeyUniversal(domain, privateKey, password).right.get
+    val privkey = DynamicSSLEngineProvider.readPrivateKeyUniversal(domain, privateKey, password).right.get
 
     //val privkey: PrivateKey = DynamicSSLEngineProvider.readPrivateKey(privkeySpec) /*Try(KeyFactory.getInstance("RSA"))
     //  .orElse(Try(KeyFactory.getInstance("DSA")))
@@ -1654,6 +1654,7 @@ object DynamicSSLEngineProvider {
     val sslParameters          = new SSLParameters
     val matchers               = new java.util.ArrayList[SNIMatcher]()
 
+    engine.setUseClientMode(false)
     clientAuth match {
       case ClientAuth.Want =>
         engine.setWantClientAuth(true)
@@ -2062,7 +2063,7 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
   // sun.security.ssl.X509TrustManagerImpl
   // javax.net.ssl.X509ExtendedTrustManager
   private val hostnameHolder = new AtomicReference[String]()
-  private var lock = false
+  private var lock           = false
 
   def locked(): CustomSSLEngine = {
     // it's fine as the set only appears in the same thread/function as object creation

@@ -2331,15 +2331,16 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   def cleanupFastLookups()(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[Long]
 
   @inline
-  def matchAllHeaders(sr: ServiceDescriptor, query: ServiceDescriptorQuery)(implicit env: Env): Boolean = env.metrics.withTimer("otoroshi.core.proxy.services.match-headers") {
-    val headersSeq: Map[String, String] = query.matchingHeaders.filterNot(_._1.trim.isEmpty)
-    val allHeadersMatched: Boolean      =
-      sr.matchingHeaders.filterNot(_._1.trim.isEmpty).forall { case (key, value) =>
-        val regex = RegexPool.regex(value)
-        headersSeq.get(key).exists(h => regex.matches(h))
-      }
-    allHeadersMatched
-  }
+  def matchAllHeaders(sr: ServiceDescriptor, query: ServiceDescriptorQuery)(implicit env: Env): Boolean =
+    env.metrics.withTimer("otoroshi.core.proxy.services.match-headers") {
+      val headersSeq: Map[String, String] = query.matchingHeaders.filterNot(_._1.trim.isEmpty)
+      val allHeadersMatched: Boolean      =
+        sr.matchingHeaders.filterNot(_._1.trim.isEmpty).forall { case (key, value) =>
+          val regex = RegexPool.regex(value)
+          headersSeq.get(key).exists(h => regex.matches(h))
+        }
+      allHeadersMatched
+    }
 
   @inline
   def sortServices(
@@ -2504,7 +2505,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   def rawFind(query: ServiceDescriptorQuery, requestHeader: RequestHeader, attrs: TypedMap)(implicit
       ec: ExecutionContext,
       env: Env
-  ): Future[Seq[ServiceDescriptor]] = env.metrics.withTimerAsync("otoroshi.core.proxy.services.raw-find")  {
+  ): Future[Seq[ServiceDescriptor]] = env.metrics.withTimerAsync("otoroshi.core.proxy.services.raw-find") {
     ServiceDescriptorDataStore.logger.debug("Full scan of services, should not pass here anymore ...")
     // val redisCli = this.asInstanceOf[KvServiceDescriptorDataStore].redisLike
     // val all = if (redisCli.optimized) {

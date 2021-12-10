@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
+
 # Service discovery target selector (service discovery)
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -31,4 +35,6 @@ This plugin accepts the following configuration:
 
 
 
+
+@@@
 

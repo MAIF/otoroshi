@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+
 # Client certificate matching
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -43,4 +47,6 @@ This plugin can accept the following configuration
 
 
 
+
+@@@
 

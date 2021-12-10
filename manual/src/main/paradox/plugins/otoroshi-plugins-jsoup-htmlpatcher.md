@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+
 # Html Patcher
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -26,4 +30,6 @@ This plugin can inject elements in html pages (in the body or in the head) retur
 
 
 
+
+@@@
 

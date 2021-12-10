@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+
 # Static Response
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -30,4 +34,6 @@ This plugin returns a static response for any request
 
 
 
+
+@@@
 

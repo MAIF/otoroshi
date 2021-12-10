@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
+
 # Jwt user extractor
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -29,4 +33,6 @@ This plugin extract a user from a JWT token
 
 
 
+
+@@@
 

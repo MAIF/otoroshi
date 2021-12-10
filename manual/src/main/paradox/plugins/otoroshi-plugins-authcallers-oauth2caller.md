@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+
 # OAuth2 caller
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -56,4 +60,6 @@ This plugin accepts the following configuration
 
 
 
+
+@@@
 

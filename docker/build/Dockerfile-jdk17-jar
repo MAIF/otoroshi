@@ -2,7 +2,7 @@ FROM openjdk:17
 
 LABEL maintainer "MAIF <oss@maif.fr>"
 
-RUN groupadd -g 999 otoroshi && useradd -r -u 999 -g otoroshi otoroshi
+# RUN groupadd -g 999 otoroshi && useradd -r -u 999 -g otoroshi otoroshi
 
 RUN mkdir -p /usr/app
 
@@ -11,11 +11,11 @@ WORKDIR /usr/app
 COPY ./otoroshi.jar /usr/app
 COPY ./entrypoint-jar.sh /usr/app/
 
-RUN chown -R otoroshi:otoroshi /usr/app
+# RUN chown -R otoroshi:otoroshi /usr/app
 
 ENTRYPOINT ["./entrypoint-jar.sh"]
 
-USER otoroshi
+# USER otoroshi
 
 EXPOSE 8080
 

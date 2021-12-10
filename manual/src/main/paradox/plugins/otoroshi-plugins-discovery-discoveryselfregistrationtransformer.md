@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+
 # Self registration endpoints (service discovery)
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -29,4 +33,6 @@ This plugin accepts the following configuration:
 
 
 
+
+@@@
 

@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+
 # Access log (CLF)
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -47,4 +51,6 @@ The plugin accepts the following configuration
 
 
 
+
+@@@
 

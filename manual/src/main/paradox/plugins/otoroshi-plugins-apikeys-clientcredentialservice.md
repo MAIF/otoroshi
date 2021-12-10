@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-sink }
+
 # Client Credential Service
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -39,4 +43,6 @@ This plugin add an an oauth client credentials service (`https://unhandleddomain
 
 
 
+
+@@@
 

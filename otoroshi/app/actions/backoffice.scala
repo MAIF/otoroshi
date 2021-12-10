@@ -191,7 +191,11 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
         )
         .map(u => u.authority.copy(port = 0).toString()) match {
         case Some(origin) if origin == env.backOfficeHost                                        => {
-          if (req.thePath.startsWith("/bo/api/") && env.datastores.globalConfigDataStore.latest().apiReadOnly && req.method != "GET") {
+          if (
+            req.thePath.startsWith("/bo/api/") && env.datastores.globalConfigDataStore
+              .latest()
+              .apiReadOnly && req.method != "GET"
+          ) {
             Errors.craftResponseResult(
               s"You're not authorized",
               Status(401),

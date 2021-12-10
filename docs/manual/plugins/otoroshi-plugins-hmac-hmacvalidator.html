@@ -31,7 +31,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.0-beta.8
+1.5.0-rc.1
 </div>
 </div>
 <div class="nav-toc">
@@ -193,7 +193,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.0-beta.8
+1.5.0-rc.1
 </div>
 </div>
 <div class="nav-toc">
@@ -345,7 +345,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
+<div class="plugin plugin-hidden plugin-kind-validator">
 <h1><a href="#hmac-access-validator" name="hmac-access-validator" class="anchor"><span class="anchor-link"></span></a>HMAC access validator</h1>
+<img class="plugin-logo plugin-hidden" src=""></img>
 <h2><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h2>
 <ul>
   <li>plugin type: <code>validator</code></li>
@@ -364,7 +366,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>The HMAC signature needs to be set on the <code>Authorization</code> or <code>Proxy-Authorization</code> header.  The format of this header should be : <code>hmac algorithm=&quot;&lt;ALGORITHM&gt;&quot;, headers=&quot;&lt;HEADER&gt;&quot;, signature=&quot;&lt;SIGNATURE&gt;&quot;</code>  As example, a simple nodeJS call with the expected header  ```js  const crypto = require(&lsquo;crypto&rsquo;);  const fetch = require(&lsquo;node-fetch&rsquo;);</p>
 <p>const date = new Date()  const secret = &ldquo;my-secret&rdquo; // equal to the api key secret by default</p>
 <p>const algo = &ldquo;sha512&rdquo;  const signature = crypto.createHmac(algo, secret)  .update(date.getTime().toString())  .digest(&lsquo;base64&rsquo;);</p>
-<p>fetch(&rsquo;<a href="http://myservice.oto.tools:9999/api/test'">http://myservice.oto.tools:9999/api/test'</a>, {  headers: {  &ldquo;Otoroshi-Client-Id&rdquo;: &ldquo;my-id&rdquo;,  &ldquo;Otoroshi-Client-Secret&rdquo;: &ldquo;my-secret&rdquo;,  &ldquo;Date&rdquo;: date.getTime().toString(),  &ldquo;Authorization&rdquo;: <code>hmac algorithm=&quot;hmac-${algo}&quot;, headers=&quot;Date&quot;, signature=&quot;${signature}&quot;</code>,  &ldquo;Accept&rdquo;: &ldquo;application/json&rdquo;  }  })  .then(r =&gt; r.json())  .then(console.log)  ```  In this example, we have an Otoroshi service deployed on <a href="http://myservice.oto.tools:9999/api/test">http://myservice.oto.tools:9999/api/test</a>, protected by api keys.  The secret used is the secret of the api key (by default, but you can change it and define a secret on the plugin configuration).  We send the base64 encoded date of the day, signed by the secret, in the Authorization header. We specify the headers signed and the type of algorithm used.  You can sign more than one header but you have to list them in the headers fields (each one separate by a space, example : headers=&ldquo;Date KeyId&rdquo;).  The algorithm used can be HMAC-SHA1, HMAC-SHA256, HMAC-SHA384 or HMAC-SHA512.</p>
+<p>fetch(&rsquo;<a href="http://myservice.oto.tools:9999/api/test'">http://myservice.oto.tools:9999/api/test'</a>, {  headers: {  &ldquo;Otoroshi-Client-Id&rdquo;: &ldquo;my-id&rdquo;,  &ldquo;Otoroshi-Client-Secret&rdquo;: &ldquo;my-secret&rdquo;,  &ldquo;Date&rdquo;: date.getTime().toString(),  &ldquo;Authorization&rdquo;: <code>hmac algorithm=&quot;hmac-${algo}&quot;, headers=&quot;Date&quot;, signature=&quot;${signature}&quot;</code>,  &ldquo;Accept&rdquo;: &ldquo;application/json&rdquo;  }  })  .then(r =&gt; r.json())  .then(console.log)  ```  In this example, we have an Otoroshi service deployed on <a href="http://myservice.oto.tools:9999/api/test">http://myservice.oto.tools:9999/api/test</a>, protected by api keys.  The secret used is the secret of the api key (by default, but you can change it and define a secret on the plugin configuration).  We send the base64 encoded date of the day, signed by the secret, in the Authorization header. We specify the headers signed and the type of algorithm used.  You can sign more than one header but you have to list them in the headers fields (each one separate by a space, example : headers=&ldquo;Date KeyId&rdquo;).  The algorithm used can be HMAC-SHA1, HMAC-SHA256, HMAC-SHA384 or HMAC-SHA512.</p></div>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../plugins/otoroshi-plugins-hmac-hmaccallerplugin.html">HMAC caller plugin</a></p>
 </div>

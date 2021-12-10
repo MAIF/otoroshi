@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+
 # OIDC headers
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -40,4 +44,6 @@ This plugin injects headers containing tokens and profile from current OIDC prov
 
 
 
+
+@@@
 

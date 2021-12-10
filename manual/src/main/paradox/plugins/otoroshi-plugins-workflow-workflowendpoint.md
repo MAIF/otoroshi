@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+
 # Workflow endpoint
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -25,4 +29,6 @@ This plugin runs a workflow and return the response
 
 
 
+
+@@@
 

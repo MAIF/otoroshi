@@ -50,7 +50,7 @@ export default class CodeInput extends Component {
 
   onChange = (e) => {
     // if (e && e.preventDefault) e.preventDefault();
-    let clean_source = e
+    let clean_source = e;
     if (this.props.mode === 'json') {
       clean_source = e.replace('}{}', '}');
       try {

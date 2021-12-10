@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+
 # Body logger
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -68,4 +72,6 @@ This plugin can accept the following configuration
 
 
 
+
+@@@
 

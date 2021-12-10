@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
+
 # Client certificate as apikey
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -32,4 +36,6 @@ This plugin uses client certificate as an apikey. The apikey will be stored for 
 
 
 
+
+@@@
 

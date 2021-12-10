@@ -127,14 +127,14 @@ case "${1}" in
     prepare_build
     build_jdk11 $2
     # build_jdk16 $2
-    # build_jdk17 $2
+    build_jdk17 $2
     # build_jdk18 $2
     build_graal $2
     cleanup
     docker push "maif/otoroshi:$2"
     docker push "maif/otoroshi:$2-jdk11"
     #docker push "maif/otoroshi:$2-jdk16"
-    #docker push "maif/otoroshi:$2-jdk17"
+    docker push "maif/otoroshi:$2-jdk17"
     #docker push "maif/otoroshi:$2-jdk18"
     docker push "maif/otoroshi:$2-graal"
     docker push "maif/otoroshi:latest"
@@ -159,8 +159,17 @@ case "${1}" in
     ;;
   build-snapshot)
     cp ../../otoroshi/target/scala-2.12/otoroshi.jar otoroshi.jar
+    docker build --no-cache -f ./Dockerfile-jdk17-jar -t otoroshi-jdk17 .
+    docker tag otoroshi-jdk17 "maif/otoroshi:dev"
+    docker tag otoroshi-jdk17 "maif/otoroshi:dev17"
+    docker build --no-cache -f ./Dockerfile-jdk11-jar -t otoroshi-jdk11 .
+    docker tag otoroshi-jdk11 "maif/otoroshi:dev11"
+    cleanup
+    ;;
+  build-18)
+    cp ../../otoroshi/target/scala-2.12/otoroshi.jar otoroshi.jar
     docker build --no-cache -f ./Dockerfile-jdk18-jar -t otoroshi-jdk18 .
-    docker tag otoroshi-jdk18 "maif/otoroshi:dev"
+    docker tag otoroshi-jdk18 "maif/otoroshi:dev18"
     cleanup
     ;;
   prepare)

@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
+
 # Apikey auth module
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -34,4 +38,6 @@ This plugin adds basic auth on service where credentials are valid apikeys on th
 
 
 
+
+@@@
 
