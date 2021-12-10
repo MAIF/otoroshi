@@ -199,6 +199,7 @@ pre {
   white-space: pre;
   overflow: auto;
   line-height: 0.9em !important;
+  border-radius: 4px;
 }
 
 code {
@@ -1127,4 +1128,55 @@ p {
 
 .cluster-tag {
   background-color: lightseagreen;
+}
+
+#instructions-toggle {
+  background-color: rgba(64, 120, 192, 0.1);
+  padding: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex !important;
+  align-items: center;
+}
+
+.instructions-closed {
+  padding-bottom: 12px !important;
+}
+
+.instructions-title {
+  flex: 1;
+  display: block !important;
+  padding: 0 !important;
+}
+
+#instructions-toggle-button {
+  display: initial !important;
+  padding: 6px !important;
+  background-color: #ddd;
+  border-radius: 4px;
+  font-size: .85rem;
+  font-weight: bold;
+}
+
+.instructions {
+  border: 1px solid rgba(64, 120, 192, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  padding-bottom: 0;
+  margin-bottom: 12px;
+}
+
+.instructions-closed * {
+  display: none;
+}
+
+#instructions-toggle-confirm {
+  margin-bottom: 12px;
+  margin-left: auto;
+  padding: 12px !important;
+  background-color: #f9b000;
+  color: #fff;
+  border-radius: 4px;
+  font-size: .85rem;
+  font-weight: bold;
 }

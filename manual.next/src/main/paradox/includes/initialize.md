@@ -1,5 +1,14 @@
 <!--- #initialize-otoroshi --->
+
 If you already have an up and running otoroshi instance, you can skip the following instructions
+
+
+@@@div { .instructions }
+
+<div id="instructions-toggle">
+<span class="instructions-title">I want to follow the instructions to start an instance of Otorohi</span>
+<button id="instructions-toggle-button">close</button>
+</div>
 
 Let's start by downloading the latest Otoroshi.
 
@@ -23,4 +32,7 @@ curl -X POST 'http://otoroshi-api.oto.tools:8080/api/services' \
   -H "Content-type: application/json" \
   -u admin-api-apikey-id:admin-api-apikey-secret
 ```
+
+<button id="instructions-toggle-confirm">Confirm the installation</button>
+@@@
 <!--- #initialize-otoroshi --->

@@ -120,4 +120,53 @@ $(function () {
   }
 
   improveCodeBlock();
+
+  if (document.getElementById("instructions-toggle")) {
+
+    const element = document.getElementById("instructions-toggle")
+
+    let instructionsDone = false
+
+    if (localStorage.getItem("instructions")) {
+      instructionsDone = true
+      document.getElementById("instructions-toggle-button").innerText = "Already done"
+      document.getElementById("instructions-toggle-button").style.backgroundColor = "#fb9000"
+      document.getElementById("instructions-toggle-button").style.color = "#fff"
+      element.parentNode.classList.add("instructions-closed");
+      document.getElementById("instructions-toggle-confirm").style.display = "none";
+    }
+    else {
+      document.getElementById("instructions-toggle-confirm").style.display = "flex";
+    }
+
+    element.addEventListener('click', function (event) {
+      if (element.parentNode.classList.contains("instructions-closed")) {
+        element.parentNode.classList.remove("instructions-closed")
+        if (!instructionsDone) {
+          document.getElementById("instructions-toggle-button").innerText = "close"
+          document.getElementById("instructions-toggle-confirm").style.display = "flex"
+        }
+      } else {
+        element.parentNode.classList.add("instructions-closed")
+        if (!instructionsDone)
+          document.getElementById("instructions-toggle-button").innerText = "Start the installation"
+        else {
+          document.getElementById("instructions-toggle-button").innerText = "Already done"
+          document.getElementById("instructions-toggle-button").style.backgroundColor = "#fb9000"
+          document.getElementById("instructions-toggle-button").style.color = "#fff"
+        }
+        document.getElementById("instructions-toggle-confirm").style.display = "none"
+      }
+    })
+
+    document.getElementById("instructions-toggle-confirm").addEventListener('click', event => {
+      instructionsDone = true
+      localStorage.setItem("instructions", true);
+      element.parentNode.classList.add("instructions-closed")
+      document.getElementById("instructions-toggle-button").innerText = "Already done"
+      document.getElementById("instructions-toggle-button").style.backgroundColor = "#fb9000"
+      document.getElementById("instructions-toggle-button").style.color = "#fff"
+      document.getElementById("instructions-toggle-confirm").style.display = "none"
+    });
+  }
 });
