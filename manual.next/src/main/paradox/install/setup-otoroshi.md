@@ -27,7 +27,7 @@ The **in-memory** datastore is kind of interesting. It can be used for testing p
 @@@div { .plugin .platform } 
 <div style="font-size: 22px; font-weight: bold;">Cassandra</div>
 
-<div class="element-tag cluster-tag">Clustering usage</div>
+<div class="element-tag cluster-tag">Clustering</div>
 
 Experimental support, should be used in cluster mode for leaders
 
@@ -38,6 +38,8 @@ Experimental support, should be used in cluster mode for leaders
 
 @@@div { .plugin .platform } 
 <div style="font-size: 22px; font-weight: bold;">Postgresql</div>
+
+<div class="element-tag cluster-tag">Clustering</div>
 
 Or any postgresql compatible databse like cockroachdb for instance (experimental support, should be used in cluster mode for leaders)
 

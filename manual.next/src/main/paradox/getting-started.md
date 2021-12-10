@@ -18,7 +18,7 @@ java -Dapp.adminPassword=password -jar otoroshi.jar
 Create a service, exposed on `http://myapi.oto.tools:8080`, which will forward all requests to the mirror `https://mirror.otoroshi.io`.
 
 ```sh
-curl -X POST http://otoroshi-api.oto.tools:8080/api/services \
+curl -X POST 'http://otoroshi-api.oto.tools:8080/api/services' \
 -d '{"enforceSecureCommunication": false, "forceHttps": false, "_loc":{"tenant":"default","teams":["default"]},"groupId":"default","groups":["default"],"name":"myapi","description":"a service","env":"prod","domain":"oto.tools","subdomain":"myapi","targetsLoadBalancing":{"type":"RoundRobin"},"targets":[{"host":"mirror.otoroshi.io","scheme":"https","weight":1,"mtlsConfig":{"certs":[],"trustedCerts":[],"mtls":false,"loose":false,"trustAll":false},"tags":[],"metadata":{},"protocol":"HTTP\/1.1","predicate":{"type":"AlwaysMatch"},"ipAddress":null}],"root":"\/","matchingRoot":null,"stripPath":true,"enabled":true,"secComHeaders":{"claimRequestName":null,"stateRequestName":null,"stateResponseName":null},"publicPatterns":[""],"privatePatterns":["\/.*"],"kind":"ServiceDescriptor"}' \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret
@@ -27,13 +27,13 @@ curl -X POST http://otoroshi-api.oto.tools:8080/api/services \
 Try to call this service. You should receive an error from Otoroshi about a missing api key in our request.
 
 ```sh
-curl http://myapi.oto.tools:8080
+curl 'http://myapi.oto.tools:8080'
 ```
 
 Create your first api key with a quota of 10 calls by day and month.
 
 ```sh
-curl -X POST http://otoroshi-api.oto.tools:8080/api/apikeys \
+curl -X POST 'http://otoroshi-api.oto.tools:8080/api/apikeys' \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- <<'EOF'
@@ -54,7 +54,7 @@ EOF
 Call your api with the generated apikey.
 
 ```sh
-curl http://myapi.oto.tools:8080 -u my-first-apikey-id:my-first-apikey-secret
+curl 'http://myapi.oto.tools:8080' -u my-first-apikey-id:my-first-apikey-secret
 ```
 
 ```json
@@ -77,7 +77,7 @@ curl http://myapi.oto.tools:8080 -u my-first-apikey-id:my-first-apikey-secret
 Check your remaining quotas
 
 ```sh
-curl http://myapi.oto.tools:8080 -u my-first-apikey-id:my-first-apikey-secret --include
+curl 'http://myapi.oto.tools:8080' -u my-first-apikey-id:my-first-apikey-secret --include
 ```
 
 This should output these following Otoroshi headers
@@ -103,7 +103,7 @@ Well done, you have secured your first api with the apikeys system with limited 
 Create an in-memory authentication module, with one registered user, to protect your service.
 
 ```sh
-curl -X POST http://otoroshi-api.oto.tools:8080/api/auths \
+curl -X POST 'http://otoroshi-api.oto.tools:8080/api/auths' \
 -H "Otoroshi-Client-Id: admin-api-apikey-id" \
 -H "Otoroshi-Client-Secret: admin-api-apikey-secret" \
 -H 'Content-Type: application/json; charset=utf-8' \
@@ -140,7 +140,7 @@ EOF
 Then create a service secure by the previous authentication module, which proxies `google.fr` on `webapp.oto.tools`.
 
 ```sh
-curl -X POST http://otoroshi-api.oto.tools:8080/api/services \
+curl -X POST 'http://otoroshi-api.oto.tools:8080/api/services' \
 -d '{"enforceSecureCommunication": false, "forceHttps": false, "_loc":{"tenant":"default","teams":["default"]},"groupId":"default","groups":["default"],"name":"webapp","description":"a service","env":"prod","domain":"oto.tools","subdomain":"webapp","targetsLoadBalancing":{"type":"RoundRobin"},"targets":[{"host":"google.fr","scheme":"https","weight":1,"mtlsConfig":{"certs":[],"trustedCerts":[],"mtls":false,"loose":false,"trustAll":false},"tags":[],"metadata":{},"protocol":"HTTP\/1.1","predicate":{"type":"AlwaysMatch"},"ipAddress":null}],"root":"\/","matchingRoot":null,"stripPath":true,"enabled":true,"secComHeaders":{"claimRequestName":null,"stateRequestName":null,"stateResponseName":null},"publicPatterns":["\/.*"],"privatePatterns":[""],"kind":"ServiceDescriptor","authConfigRef":"auth_mod_in_memory_auth","privateApp":true}' \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret
