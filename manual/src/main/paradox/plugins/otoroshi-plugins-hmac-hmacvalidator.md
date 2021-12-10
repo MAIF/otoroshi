@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+
 # HMAC access validator
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -62,4 +66,6 @@ This plugin can be used to check if a HMAC signature is present and valid in Aut
 
 
 
+
+@@@
 

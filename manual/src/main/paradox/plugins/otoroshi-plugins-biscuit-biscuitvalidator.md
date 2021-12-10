@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+
 # Biscuit token validator
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -35,4 +39,6 @@ This plugin validates a Biscuit token.
 
 
 
+
+@@@
 

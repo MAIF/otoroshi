@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+
 # HMAC caller plugin
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -27,4 +31,6 @@ This plugin can be used to call a "protected" api by an HMAC signature. It will 
 
 
 
+
+@@@
 

@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+
 # Envoy Control Plane (experimental)
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -27,4 +31,6 @@ Right now, all the features of otoroshi cannot be exposed as is through Envoy.
 
 
 
+
+@@@
 

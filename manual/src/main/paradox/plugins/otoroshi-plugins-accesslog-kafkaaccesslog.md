@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+
 # Kafka access log
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -45,4 +49,6 @@ The plugin accepts the following configuration
 
 
 
+
+@@@
 

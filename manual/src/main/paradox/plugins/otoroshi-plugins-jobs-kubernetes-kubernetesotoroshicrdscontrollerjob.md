@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-job }
+
 # Kubernetes Otoroshi CRDs Controller
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -143,4 +147,6 @@ This plugin enables Otoroshi CRDs Controller
 
 
 
+
+@@@
 

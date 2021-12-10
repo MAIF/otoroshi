@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-job }
+
 # Workflow job
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -61,4 +65,6 @@ Periodically run a custom workflow
 
 
 
+
+@@@
 

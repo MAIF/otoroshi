@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+
 # Access log (JSON)
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -43,4 +47,6 @@ The plugin accepts the following configuration
 
 
 
+
+@@@
 

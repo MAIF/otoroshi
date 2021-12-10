@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+
 # Public quotas
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -31,4 +35,6 @@ This plugin will enforce public quotas on the current service
 
 
 
+
+@@@
 

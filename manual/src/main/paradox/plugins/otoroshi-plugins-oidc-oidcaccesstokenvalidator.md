@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+
 # OIDC access_token validator
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -75,4 +79,6 @@ This plugin can accept the following configuration
 
 
 
+
+@@@
 

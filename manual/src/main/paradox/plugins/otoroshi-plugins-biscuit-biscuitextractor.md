@@ -1,5 +1,9 @@
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
+
 # Apikey from Biscuit token extractor
+
+<img class="plugin-logo plugin-hidden" src=""></img>
 
 ## Infos
 
@@ -36,4 +40,6 @@ apikey client_id and an #authority fact 'client_sign' that is the HMAC256 signat
 
 
 
+
+@@@
 
