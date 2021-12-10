@@ -262,12 +262,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>API Read Only</code>: Freeze the Otoroshi datastore in read only mode. Only people with access to the actual underlying datastore will be able to disable this.</li>
   <li><code>Auto link default</code> : When no group is specified on a service, it will be assigned to default one</li>
   <li><code>Use circuit breakers</code> : Use circuit breaker on all services</li>
-  <li><code>Use new http client as the default Http client</code> : All http calls will use the new http client client by default</li>
+  <li><code>Use new http client as the default Http client</code> : All http calls will use the new http client by default</li>
   <li><code>Enable live metrics</code> : Enable live metrics in the Otoroshi cluster. Performs a lot of writes in the datastore</li>
   <li><code>Digitus medius</code> : Use middle finger emoji as a response character for endless HTTP responses.</li>
   <li><code>Limit conc. req.</code> : Limit the number of concurrent request processed by Otoroshi to a certain amount. Highly recommended for resilience</li>
-  <li><code>Use X-Forwarded-* headers for routing</code> : When evaluating routing of a request X-Forwarded-* headers will be used if presents</li>
-  <li><code>Max conc. req.</code> : Maximum number of concurrent request processed by otoroshi.</li>
+  <li><code>Use X-Forwarded-* headers for routing</code> : When evaluating routing of a request, X-Forwarded-* headers will be used if presents</li>
+  <li><code>Max conc. req.</code> : Maximum number of concurrent requests processed by otoroshi.</li>
   <li><code>Max HTTP/1.0 resp. size</code> : Maximum size of an HTTP/1.0 response in bytes. After this limit, response will be cut and sent as is. The best value here should satisfy (maxConcurrentRequests * maxHttp10ResponseSize) &lt; process.memory for worst case scenario.</li>
   <li><code>Max local events</code> : Maximum number of events stored.</li>
   <li><code>Lines</code> : <em>deprecated</em></li>
@@ -280,8 +280,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </ul>
 <h3><a href="#quotas-settings" name="quotas-settings" class="anchor"><span class="anchor-link"></span></a>Quotas settings</h3>
 <ul>
-  <li><code>Global throttling</code>: The max. number of requests allowed per seconds globally on Otoroshi</li>
-  <li><code>Throttling per IP</code>: The max. number of requests allowed per seconds per IP address globally on Otoroshi</li>
+  <li><code>Global throttling</code>: The max. number of requests allowed per second globally on Otoroshi</li>
+  <li><code>Throttling per IP</code>: The max. number of requests allowed per second per IP address globally on Otoroshi</li>
 </ul>
 <h3><a href="#analytics-elastic-dashboard-datasource-read-" name="analytics-elastic-dashboard-datasource-read-" class="anchor"><span class="anchor-link"></span></a>Analytics: Elastic dashboard datasource (read)</h3>
 <ul>
@@ -353,11 +353,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </ul>
 <p>Each proxy has the following fields </p>
 <ul>
-  <li><code>Proxy host</code>: host of proxy</li>
-  <li><code>Proxy port</code>: port of proxy</li>
-  <li><code>Proxy principal</code>: user of proxy</li>
-  <li><code>Proxy password</code>: password of proxy</li>
-  <li><code>Non proxy host</code>: IP address that can access the service</li>
+  <li><code>Proxy host</code>: host of proxy</li>
+  <li><code>Proxy port</code>: port of proxy</li>
+  <li><code>Proxy principal</code>: user of proxy</li>
+  <li><code>Proxy password</code>: password of proxy</li>
+  <li><code>Non proxy host</code>: IP address that can access the service</li>
 </ul>
 <h3><a href="#quotas-alerting-settings" name="quotas-alerting-settings" class="anchor"><span class="anchor-link"></span></a>Quotas alerting settings</h3>
 <ul>
