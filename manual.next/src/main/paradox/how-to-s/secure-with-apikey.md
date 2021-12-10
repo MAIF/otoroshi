@@ -75,7 +75,7 @@ curl -X GET \
 
 In some case, we want to change the defaults headers names (and it's a quite good idea).
 
-Let's start by navigate to the `Api keys Constraints` section from the edit page of our sercice.
+Let's start by navigating to the `Api keys Constraints` section from the edit page of our sercice.
 
 The first values to change are the headers names used to read the api key from client. Start by set :
 

@@ -10,7 +10,7 @@ We chose to make Otoroshi the central part of our microservices system, somethin
 <img src="./imgs/architecture-1-bis.png" />
 @@@
 
-Otoroshi tries to embrace our @ref:[global philosophy](./about.md#philosophy) by providing a full featured REST admin api, a gorgeous admin dashboard written in [React](https://reactjs.org/) that uses the api, by generating traffic events, alerts events, audit events that can be consumed by several channels. Otoroshi also supports a bunch of datastores to better match with different use cases.
+Otoroshi tries to embrace our @ref:[global philosophy](./about.md#philosophy) by providing a full featured REST admin api, a gorgeous admin dashboard written in @link:[React](https://reactjs.org) { open=new } that uses the api, by generating traffic events, alerts events, audit events that can be consumed by several channels. Otoroshi also supports a bunch of datastores to better match with different use cases.
 
 @@@ div { .centered-img }
 <img src="./imgs/architecture-2-bis.png" />

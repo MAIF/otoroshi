@@ -6,7 +6,7 @@
 
 ### Deploy a Elasticsearch and kibana stack on Docker
 
-Let's start by create an Elasticsearch and Kibana stack on our machine (if it's already done for you, you can skip this section).
+Let's start by creating an Elasticsearch and Kibana stack on our machine (if it's already done for you, you can skip this section).
 
 To start an Elasticsearch container for development or testing, run:
 

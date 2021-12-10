@@ -78,4 +78,4 @@ All the features supported by **Otoroshi** are listed below
 
 **Developpers portal**
 
-* Using [Daikoku](https://maif.github.io/daikoku/manual/index.html)
+* Using @link:[Daikoku](https://maif.github.io/daikoku/manual/index.html) { open=new }

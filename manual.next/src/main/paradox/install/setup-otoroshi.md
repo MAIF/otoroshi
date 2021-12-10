@@ -3,6 +3,18 @@
 Right now, Otoroshi supports multiple datastore. You can choose one datastore over another depending on your use case.
 
 @@@div { .plugin .platform } 
+<div style="font-size: 22px; font-weight: bold;">Redis</div>
+
+<div class="element-tag recommended-tag">Recommended</div>
+
+The **redis** datastore is quite nice when you want to easily deploy several Otoroshi instances.
+
+<img src="../imgs/redis.png" />
+
+@link:[Documentation](https://redis.io/topics/quickstart)
+@@@
+
+@@@div { .plugin .platform } 
 <div style="font-size: 22px; font-weight: bold;">In memory</div>
 
 The **in-memory** datastore is kind of interesting. It can be used for testing purposes, but it is also a good candidate for production because of its fastness.
@@ -13,17 +25,9 @@ The **in-memory** datastore is kind of interesting. It can be used for testing p
 @@@
 
 @@@div { .plugin .platform } 
-<div style="font-size: 22px; font-weight: bold;">Redis</div>
-
-The **redis** datastore is quite nice when you want to easily deploy several Otoroshi instances.
-
-<img src="../imgs/redis.png" />
-
-@link:[Documentation](https://redis.io/topics/quickstart)
-@@@
-
-@@@div { .plugin .platform } 
 <div style="font-size: 22px; font-weight: bold;">Cassandra</div>
+
+<div class="element-tag cluster-tag">Clustering usage</div>
 
 Experimental support, should be used in cluster mode for leaders
 
@@ -148,8 +152,8 @@ play.http {
 
 See default configuration at
 
-* https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/base.conf
-* https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/application.conf
+* @link:[Base configuration](https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/base.conf) { open=new }
+* @link:[Application configuration](https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/application.conf) { open=new }
 
 ## Configuration with env. variables
 

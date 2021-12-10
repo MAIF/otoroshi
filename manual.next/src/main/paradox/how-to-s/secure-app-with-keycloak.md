@@ -78,7 +78,7 @@ To secure Otoroshi with your Keycloak configuration, we have to register an Auth
 
 Each user, wheter connected user to the Otoroshi UI or at a private Otoroshi app, has an own session. As an administrator of Otoroshi, you can visualize via Otoroshi the list of the connected users and their profile.
 
-Let's start by navigate to the `Admin users sessions` page (just @link:[here](http://otoroshi.oto.tools:8080/bo/dashboard/sessions/admin) or when clicking on the cog, and on the `Admins sessions` button at the bottom of the list).
+Let's start by navigating to the `Admin users sessions` page (just @link:[here](http://otoroshi.oto.tools:8080/bo/dashboard/sessions/admin) or when clicking on the cog, and on the `Admins sessions` button at the bottom of the list).
 
 This page gives a complete view of the connected admins. For each admin, you have his connection date and his expiration date. You can also check the `Profile` and the `Rights` of the connected users.
 

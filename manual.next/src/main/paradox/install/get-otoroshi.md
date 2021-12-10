@@ -1,6 +1,6 @@
 # Get Otoroshi
 
-All release can be bound on the releases page of the repository ([visit it](`https://github.com/MAIF/otoroshi/releases`)).
+All release can be bound on the releases page of the @link:[repository](https://github.com/MAIF/otoroshi/releases) { open=new }.
 
 ## From zip
 

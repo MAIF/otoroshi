@@ -13,12 +13,12 @@ The global config, named `Danger zone` in Otoroshi, is the place to configure Ot
 * `API Read Only`: Freeze the Otoroshi datastore in read only mode. Only people with access to the actual underlying datastore will be able to disable this.
 * `Auto link default` : When no group is specified on a service, it will be assigned to default one
 * `Use circuit breakers` : Use circuit breaker on all services
-* `Use new http client as the default Http client` : All http calls will use the new http client client by default
+* `Use new http client as the default Http client` : All http calls will use the new http client by default
 * `Enable live metrics` : Enable live metrics in the Otoroshi cluster. Performs a lot of writes in the datastore
 * `Digitus medius` : Use middle finger emoji as a response character for endless HTTP responses.
 * `Limit conc. req.` : Limit the number of concurrent request processed by Otoroshi to a certain amount. Highly recommended for resilience
-* `Use X-Forwarded-* headers for routing` : When evaluating routing of a request X-Forwarded-* headers will be used if presents
-* `Max conc. req.` : Maximum number of concurrent request processed by otoroshi.
+* `Use X-Forwarded-* headers for routing` : When evaluating routing of a request, X-Forwarded-* headers will be used if presents
+* `Max conc. req.` : Maximum number of concurrent requests processed by otoroshi.
 * `Max HTTP/1.0 resp. size` : Maximum size of an HTTP/1.0 response in bytes. After this limit, response will be cut and sent as is. The best value here should satisfy (maxConcurrentRequests * maxHttp10ResponseSize) < process.memory for worst case scenario.
 * `Max local events` : Maximum number of events stored.
 * `Lines` : *deprecated* 
@@ -32,8 +32,8 @@ The global config, named `Danger zone` in Otoroshi, is the place to configure Ot
 
 ### Quotas settings
 
-* `Global throttling`: The max. number of requests allowed per seconds globally on Otoroshi
-* `Throttling per IP`: The max. number of requests allowed per seconds per IP address globally on Otoroshi
+* `Global throttling`: The max. number of requests allowed per second globally on Otoroshi
+* `Throttling per IP`: The max. number of requests allowed per second per IP address globally on Otoroshi
 
 ### Analytics: Elastic dashboard datasource (read)
 
@@ -112,11 +112,11 @@ In this section, you can add a list of proxies for :
 
 Each proxy has the following fields 
 
-* `Proxy host`: host of proxy
-* `Proxy port`: port of proxy
-* `Proxy principal`: user of proxy
-* `Proxy password`: password of proxy
-* `Non proxy host`: IP address that can access the service
+* `Proxy host`: host of proxy
+* `Proxy port`: port of proxy
+* `Proxy principal`: user of proxy
+* `Proxy password`: password of proxy
+* `Non proxy host`: IP address that can access the service
 
 ###  Quotas alerting settings
 

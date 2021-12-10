@@ -1,7 +1,7 @@
 
 # Main entities
 
-in this section, we will pass through all the main Otoroshi entities. Otoroshi entities are the main items stored in otoroshi datastore that will be used to configure routing, authentiction, etc.
+In this section, we will pass through all the main Otoroshi entities. Otoroshi entities are the main items stored in otoroshi datastore that will be used to configure routing, authentication, etc.
 
 Any entity has the following properties
 

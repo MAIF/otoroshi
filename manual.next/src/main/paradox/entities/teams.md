@@ -14,7 +14,7 @@ A connected user on Otoroshi UI has a list of teams and organizations associated
 
 ## Access to the list of teams
 
-To visualize and edit the list of teams, you can navigate to your instance on the `/bo/dashboard/teams` route or click on the cog icon and select the teams button.
+To visualize and edit the list of teams, you can navigate to your instance on the `https://otoroshi.xxxxxx/bo/dashboard/teams` route or click on the cog icon and select the teams button.
 
 Once on the page, you can create a new item, edit an existing team or delete an existing one.
 
@@ -22,7 +22,7 @@ Once on the page, you can create a new item, edit an existing team or delete an 
 
 ## Entities location
 
-any otoroshi entity has a location property (`_loc` when serialized to json) explaining where and by whom the entity can be seen. 
+Any otoroshi entity has a location property (`_loc` when serialized to json) explaining where and by whom the entity can be seen. 
 
 An entity can be part of multiple teams in an organization
 

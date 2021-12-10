@@ -7,7 +7,7 @@ An organization have a unique `id`, a `name` and a `description`. As all Otorosh
 For example, you can use the organizations as a mean of :
 
 * to seperate resources by services or entities in your enterprise
-* to split internal and external usage of the resources (it's useful when you have a list of service deployed in your company and another one deployed by your partners)
+* to split internal and external usage of the resources (it's useful when you have a list of services deployed in your company and another one deployed by your partners)
 
 @@@ div { .centered-img }
 <img src="../imgs/organizations-and-teams.png" />
@@ -15,7 +15,7 @@ For example, you can use the organizations as a mean of :
 
 ## Access to the list of organizations
 
-To visualize and edit the list of organizations, you can navigate to your instance on the `/bo/dashboard/organizations` route or click on the cog icon and select the organizations button.
+To visualize and edit the list of organizations, you can navigate to your instance on the `https://otoroshi.xxxxxx/bo/dashboard/organizations` route or click on the cog icon and select the organizations button.
 
 Once on the page, you can create a new item, edit an existing organization or delete an existing one.
 
@@ -23,7 +23,7 @@ Once on the page, you can create a new item, edit an existing organization or de
 
 ## Entities location
 
-any otoroshi entity has a location property (`_loc` when serialized to json) explaining where and by whom the entity can be seen. 
+Any otoroshi entity has a location property (`_loc` when serialized to json) explaining where and by whom the entity can be seen. 
 
 An entity can be part of one organization (`tenant` in the json document)
 

@@ -12,7 +12,7 @@ When it's done, you can authorize an api key on a specific group. Instead of aut
 
 ## Access to the list of service groups
 
-To visualize and edit the list of groups, you can navigate to your instance on the `/bo/dashboard/groups` route or click on the cog icon and select the Service groups button.
+To visualize and edit the list of groups, you can navigate to your instance on the `https://otoroshi.xxxxx/bo/dashboard/groups` route or click on the cog icon and select the Service groups button.
 
 Once on the page, you can create a new item, edit an existing service group or delete an existing one.
 

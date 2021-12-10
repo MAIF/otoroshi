@@ -30,7 +30,7 @@ Try to call this service. You should receive an error from Otoroshi about a miss
 curl http://myapi.oto.tools:8080
 ```
 
-Create your first api key with a quota of ten calls by day and month.
+Create your first api key with a quota of 10 calls by day and month.
 
 ```sh
 curl -X POST http://otoroshi-api.oto.tools:8080/api/apikeys \
@@ -96,11 +96,11 @@ Keep calling the api and confirm that Otoroshi is sending you an apikey exceedin
 }
 ```
 
-Well done, you have secured your api with an apikeys system with limited call quotas.
+Well done, you have secured your first api with the apikeys system with limited call quotas.
 
 ## Secure your web app in 5 minutes with an authentication
 
-Create an authentication module to protect your service.
+Create an in-memory authentication module, with one registered user, to protect your service.
 
 ```sh
 curl -X POST http://otoroshi-api.oto.tools:8080/api/auths \
@@ -137,7 +137,7 @@ curl -X POST http://otoroshi-api.oto.tools:8080/api/auths \
 EOF
 ```
 
-Then create a service secure by the previous authentication module, which proxie `google.fr` on `webapp.oto.tools`.
+Then create a service secure by the previous authentication module, which proxies `google.fr` on `webapp.oto.tools`.
 
 ```sh
 curl -X POST http://otoroshi-api.oto.tools:8080/api/services \

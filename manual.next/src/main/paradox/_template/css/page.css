@@ -1110,3 +1110,21 @@ p {
   font-weight: bolder;
   color: #0d0058;
 }
+
+.element-tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border-radius: 4px;
+  font-size: .85em;
+  color: #fff;
+  padding: 4px;
+}
+
+.recommended-tag {
+  background-color: lightcoral;
+}
+
+.cluster-tag {
+  background-color: lightseagreen;
+}
