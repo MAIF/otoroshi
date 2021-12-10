@@ -1654,6 +1654,7 @@ object DynamicSSLEngineProvider {
     val sslParameters          = new SSLParameters
     val matchers               = new java.util.ArrayList[SNIMatcher]()
 
+    engine.setUseClientMode(false)
     clientAuth match {
       case ClientAuth.Want =>
         engine.setWantClientAuth(true)
