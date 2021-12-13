@@ -255,11 +255,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>Let&rsquo;s start by downloading the latest Otoroshi</p>
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
 </code></pre>
-<p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code></p>
-<p>Now you are almost ready to run Otoroshi for the first time, we want run it with an initial data.</p>
-<p>To do that, you need to add the app.importFrom setting to the Otoroshi configuration (of <code>$APP_IMPORT_FROM</code> env).</p>
-<p>It can be a file path or a URL.</p>
-<p>The content of the initial datastore.</p>
+<p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code> Now you are almost ready to run Otoroshi for the first time, we want run it with an initial data.</p>
+<p>To do that, you need to add the <strong>app.importFrom</strong> setting to the Otoroshi configuration (of <code>$APP_IMPORT_FROM</code> env). It can be a file path or a URL. The content of the initial datastore.</p>
 <pre class="prettyprint"><code class="language-json">{
   &quot;label&quot;: &quot;Otoroshi initial datastore&quot;,
   &quot;admins&quot;: [],
@@ -677,16 +674,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 ...
 </code></pre>
 <blockquote>
-  <p>Warning : when you using Otoroshi with a datastore different from file or in-memory, Otoroshi doesn&rsquo;t will reload the initialization script. If you expected it, you need to clean manually your store.</p>
+  <p>Warning : when you using Otoroshi with a datastore different from file or in-memory, Otoroshi will not reload the initialization script. If you expected, you have to manually clean your store.</p>
 </blockquote>
 <h3><a href="#export-the-current-datastore-via-the-danger-zone" name="export-the-current-datastore-via-the-danger-zone" class="anchor"><span class="anchor-link"></span></a>Export the current datastore via the danger zone</h3>
-<p>When Otoroshi is running, you can backup the global configuration store from the UI. Navigate to your instance (in our case <a href="http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone">http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone</a>) and scroll to the bottom page. </p>
+<p>When Otoroshi is running, you can backup the global configuration store from the UI. Navigate to your instance (in our case <a href="http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone" title="http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone</a>) and scroll to the bottom page. </p>
 <p>Click on <code>Full export</code> button to download the full global configuration.</p>
 <h3><a href="#import-a-datastore-from-file-via-the-danger-zone" name="import-a-datastore-from-file-via-the-danger-zone" class="anchor"><span class="anchor-link"></span></a>Import a datastore from file via the danger zone</h3>
-<p>When Otoroshi is running, you can recover a global configuration from the UI. Navigate to your instance (in our case <a href="http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone">http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone</a>) and scroll to the bottom page. </p>
+<p>When Otoroshi is running, you can recover a global configuration from the UI. Navigate to your instance (in our case <a href="http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone" title="http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone</a>) and scroll to the bottom of the page. </p>
 <p>Click on <code>Recover from a full export file</code> button to apply all configurations from a file.</p>
 <h3><a href="#export-the-current-datastore-with-the-admin-api" name="export-the-current-datastore-with-the-admin-api" class="anchor"><span class="anchor-link"></span></a>Export the current datastore with the Admin API</h3>
-<p>Otoroshi exposes his own Admin API to manage Otoroshi resources. To call this api, you need to an api key with the rights on <code>Otoroshi Admin Api group</code>. This group includes the <code>Otoroshi-admin-api</code> service that you can found on the services page. </p>
+<p>Otoroshi exposes his own Admin API to manage Otoroshi resources. To call this api, you need to have an api key with the rights on <code>Otoroshi Admin Api group</code>. This group includes the <code>Otoroshi-admin-api</code> service that you can found on the services page. </p>
 <p>By default, and with our initial configuration, Otoroshi has already created an api key named <code>Otoroshi Backoffice ApiKey</code>. You can verify the rights of an api key on its page by checking the <code>Authorized On</code> field (you should find the <code>Otoroshi Admin Api group</code> inside).</p>
 <p>The default api key id and secret are <code>admin-api-apikey-id</code> and <code>admin-api-apikey-secret</code>.</p>
 <p>Run the next command with these values.</p>
@@ -695,7 +692,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   -u admin-api-apikey-id:admin-api-apikey-secret \
   &#39;http://otoroshi-api.oto.tools:8080/api/otoroshi.json&#39;
 </code></pre>
-<p>When calling the <code>/api/otoroshi.json</code>, the return should be the current datastore including the service descriptors, the api keys, all others resources like certificates and authentification modules, and the the global config (represented by the form of the danger zone).</p>
+<p>When calling the <code>/api/otoroshi.json</code>, the return should be the current datastore including the service descriptors, the api keys, all others resources like certificates and authentification modules, and the the global config (representing the form of the danger zone).</p>
 <h3><a href="#import-the-current-datastore-with-the-admin-api" name="import-the-current-datastore-with-the-admin-api" class="anchor"><span class="anchor-link"></span></a>Import the current datastore with the Admin API</h3>
 <p>As the same way of previous section, you can erase the current datastore with a POST request. The route is the same : <code>/api/otoroshi.json</code>.</p>
 <pre class="prettyprint"><code class="language-sh">curl \
@@ -1207,7 +1204,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <pre class="prettyprint"><code class="language-json">{ &quot;done&quot;:true }
 </code></pre>
 <blockquote>
-  <p>Note : be very carefully with this POST command. If you send a wrong JSON, you risked to break your instance.</p>
+  <p>Note : be very carefully with this POST command. If you send a wrong JSON, you risk breaking your instance.</p>
 </blockquote>
 <p>The second way is to send the same configuration but from a file. You can pass two kind of file : a <code>json</code> file or a <code>ndjson</code> file. Both files are available as export methods on the danger zone.</p>
 <pre class="prettyprint"><code class="language-sh"># the curl is run from a folder containing the initial-state.json file 

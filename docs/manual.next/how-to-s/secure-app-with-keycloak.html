@@ -279,15 +279,15 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   --detach jboss/keycloak:15.0.1
 </code></pre>
 <p>This should download the image of keycloak (if you haven&rsquo;t already it) and display the digest of the created container. This command mapped TCP port 8080 in the container to port 8080 of your laptop and created a server with <code>admin/admin</code> as admin credentials.</p>
-<p>Once started, you can open a browser on <code>http://localhost:8080/</code> and click on <code>Administration Console</code>. Log to your instance with <code>admin/admin</code> as credentials.</p>
-<p>The first step is to create a Keycloak client, an entity that can request Keycloak to authenticate a user. Click on the <code>clients</code> button on the sidebar, and then on <code>Create</code> button at the right top of the view.</p>
+<p>Once started, you can open a browser on <a href="http://localhost:8080" title="http://localhost:8080" target="_blank" rel="noopener noreferrer">http://localhost:8080</a> and click on <code>Administration Console</code>. Log to your instance with <code>admin/admin</code> as credentials.</p>
+<p>The first step is to create a Keycloak client, an entity that can request Keycloak to authenticate a user. Click on the <strong>clients</strong> button on the sidebar, and then on <strong>Create</strong> button at the top right of the view.</p>
 <p>Fill the client form with the following values.</p>
 <ul>
   <li><code>Client ID</code>: <code>keycloak-otoroshi-backoffice</code></li>
   <li><code>Client Protocol</code>: <code>openid-connect</code></li>
   <li><code>Root URL</code>: <code>http://otoroshi.oto.tools:8080/</code></li>
 </ul>
-<p>End by create the client with the <code>Save</code> button.</p>
+<p>Validate the creation of the client by clicking on the <strong>Save</strong> button.</p>
 <p>The next step is to change the <code>Access Type</code> used by default. Jump to the <code>Access Type</code> field and select <code>confidential</code>. The confidential configuration force the client application to send at Keycloak a client ID and a client Secret. Scroll to the bottom of the page and save the configuration.</p>
 <p>Now scroll to the top of your page. Just at the right of the <code>Settings</code> tab, a new tab appeared : the <code>Credentials</code> page. Click on this tab, and make sure that <code>Client Id and Secret</code> is selected as <code>Client Authenticator</code> and copy the generated <code>Secret</code> to the next part.</p>
 <h3><a href="#create-a-keycloak-provider-module" name="create-a-keycloak-provider-module" class="anchor"><span class="anchor-link"></span></a>Create a Keycloak provider module</h3>
