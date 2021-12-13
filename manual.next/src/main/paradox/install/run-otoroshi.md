@@ -17,6 +17,18 @@ For Java 11
 java -jar otoroshi.jar
 ```
 
+if you want to run the jar file for on a JDK above JDK11, you'll have to add the following flags
+
+```sh
+java \
+  --add-opens=java.base/javax.net.ssl=ALL-UNNAMED \
+  --add-opens=java.base/sun.net.www.protocol.file=ALL-UNNAMED \
+  --add-exports=java.base/sun.security.x509=ALL-UNNAMED \
+  --add-opens=java.base/sun.security.ssl=ALL-UNNAMED \
+  -Dlog4j2.formatMsgNoLookups=True \
+  -jar otoroshi.jar
+```
+
 ## From docker
 
 ```sh

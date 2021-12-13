@@ -141,7 +141,7 @@ libraryDependencies ++= Seq(
 // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"          % "5.1.0" % Test,
   // do not update because the feature is deprecated and will be removed
-  "org.reactivemongo"               %% "reactivemongo"               % "0.20.13",
+  "org.reactivemongo"               %% "reactivemongo"               % "0.20.13" excludeAll ExclusionRule(organization = "org.apache.logging.log4j"),
   "org.iq80.leveldb"                 % "leveldb"                     % "0.12",
 	"org.apache.logging.log4j"				 % "log4j-api" 									 % "2.15.0"
 )
@@ -218,7 +218,10 @@ packagedArtifacts in publish := {
   artifacts + (Artifact(moduleName.value, "jar", "jar", "assets") -> assets)
 }
 
-// should fix issues with https targets on jdk8u161 and beyond
-// if production fails wihtout reason with weird TLS issues on JDK8, just update the following dependency to latest version ... trust me
-//libraryDependencies += "org.mortbay.jetty.alpn" % "jetty-alpn-agent" % "2.0.10"
-//javaAgents += "org.mortbay.jetty.alpn"          % "jetty-alpn-agent" % "2.0.10" % "runtime"
+bashScriptExtraDefines += """
+addJava "--add-opens=java.base/javax.net.ssl=ALL-UNNAMED"
+addJava "--add-opens=java.base/sun.net.www.protocol.file=ALL-UNNAMED"
+addJava "--add-exports=java.base/sun.security.x509=ALL-UNNAMED" 
+addJava "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED" 
+addJava "-Dlog4j2.formatMsgNoLookups=True"
+"""
