@@ -1,22 +1,27 @@
 # Features
 
-All the features supported by **Otoroshi** are listed below
-
 **Traffic Management**
 
 * Can proxy any HTTP(s) service (apis, webapps, websocket, etc)
 * Can proxy any TCP service (app, database, etc)
 * Traffic mirroring
 * Canary deployments
-* Multiple load-balancing otpions: RoundRobin, Random, Sticky, Ip Hash, Best Response Time
+* Multiple load-balancing options: RoundRobin, Random, Sticky, Ip Hash, Best Response Time
 * Distributed in-flight request limiting	
 * Distributed rate limiting 
 
 **Services customization**
 
-* Dozens of built-in plugins (circuit breakers, automatic retries, buffering, response compression, headers manipulation, cors, gzip) 
-* Custom plugins
-* Private and public visibility
+* Dozens of built-in middlewares (plugins) 
+    * circuit breakers
+    * automatic retries
+    * buffering
+    * gzip
+    * headers manipulation
+    * cors
+    * etc 
+* Custom middleware
+* Higly customizable visibility
 
 **Services Monitoring**
 
@@ -32,7 +37,7 @@ All the features supported by **Otoroshi** are listed below
 * Access management with apikeys and quotas
 * Automatic apikeys secrets rotation
 * HTTPS and TLS
-* Mutual TLS in/out
+* mTLS in/out calls 
 * Routing constraints
 * Routing restrictions
 * JWT tokens validation and manipulation

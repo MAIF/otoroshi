@@ -251,7 +251,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#secure-an-app-with-auth0" name="secure-an-app-with-auth0" class="anchor"><span class="anchor-link"></span></a>Secure an app with Auth0</h1>
-<h3><a href="#download-otoroshi" name="download-otoroshi" class="anchor"><span class="anchor-link"></span></a>Download Otoroshi</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p>
+<h3><a href="#download-otoroshi" name="download-otoroshi" class="anchor"><span class="anchor-link"></span></a>Download Otoroshi</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
+<div id="instructions-toggle">
+<span class="instructions-title">I want to follow the instructions to start an instance of Otorohi</span>
+<button id="instructions-toggle-button">close</button>
+</div>
 <p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
 </code></pre>
@@ -265,6 +269,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   -H &quot;Content-type: application/json&quot; \
   -u admin-api-apikey-id:admin-api-apikey-secret
 </code></pre>
+<button id="instructions-toggle-confirm">Confirm the installation</button></div>
 <h3><a href="#configure-an-auth0-client" name="configure-an-auth0-client" class="anchor"><span class="anchor-link"></span></a>Configure an Auth0 client</h3>
 <p>The first step of this tutorial is to setup an Auth0 application with the information of the instance of our Otoroshi.</p>
 <p>Navigate to <a href="https://manage.auth0.com/">https://manage.auth0.com/</a> (create an account if it&rsquo;s not already done). </p>

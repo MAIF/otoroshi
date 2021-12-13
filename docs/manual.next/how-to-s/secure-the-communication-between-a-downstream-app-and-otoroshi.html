@@ -250,7 +250,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#secure-the-communication-between-a-downstream-app-and-otoroshi" name="secure-the-communication-between-a-downstream-app-and-otoroshi" class="anchor"><span class="anchor-link"></span></a>Secure the communication between a downstream app and Otoroshi</h1><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p>
+<h1><a href="#secure-the-communication-between-a-downstream-app-and-otoroshi" name="secure-the-communication-between-a-downstream-app-and-otoroshi" class="anchor"><span class="anchor-link"></span></a>Secure the communication between a downstream app and Otoroshi</h1><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
+<div id="instructions-toggle">
+<span class="instructions-title">I want to follow the instructions to start an instance of Otorohi</span>
+<button id="instructions-toggle-button">close</button>
+</div>
 <p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
 </code></pre>
@@ -264,6 +268,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   -H &quot;Content-type: application/json&quot; \
   -u admin-api-apikey-id:admin-api-apikey-secret
 </code></pre>
+<button id="instructions-toggle-confirm">Confirm the installation</button></div>
 <ol>
   <li>Navigate to <a href="http://otoroshi.oto.tools:8080/bo/services">http://otoroshi.oto.tools:8080/bo/services</a> and create a new service</li>
   <li>Jump to <code>Service exposition settings</code> and add <a href="http://myservice.oto.tools">http://myservice.oto.tools</a> as <code>Exposed domain</code></li>

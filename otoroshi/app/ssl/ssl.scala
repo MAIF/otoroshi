@@ -62,6 +62,9 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 import otoroshi.utils.syntax.implicits._
 
+import java.util
+import java.util.function.BiFunction
+
 /**
  * git over http works with otoroshi
  * ssh and other => http tunneling like https://github.com/mathieuancelin/node-httptunnel or https://github.com/larsbrinkhoff/httptunnel or https://github.com/luizluca/bridge
@@ -2181,6 +2184,14 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
       delegate.setSSLParameters(var1)
     }
   }
+
+  override def setHandshakeApplicationProtocolSelector(selector: BiFunction[SSLEngine, util.List[String], String]): Unit = {
+    delegate.setHandshakeApplicationProtocolSelector(selector)
+  }
+
+  override def getHandshakeApplicationProtocolSelector: BiFunction[SSLEngine, util.List[String], String] = delegate.getHandshakeApplicationProtocolSelector
+  override def getHandshakeApplicationProtocol: String = delegate.getHandshakeApplicationProtocol
+  override def getApplicationProtocol: String = delegate.getApplicationProtocol
 }
 
 sealed trait ClientCertificateValidationDataStore extends BasicStore[ClientCertificateValidator] {
