@@ -441,7 +441,12 @@ console.log(&#39;Server listening:&#39;, `http://localhost:${server.address().po
 [info] otoroshi-env - Generating a self signed SSL certificate for https://*.oto.tools ...
 </code></pre>
 <p>and log into otoroshi with the tuple <code>admin@otoroshi.io / password</code> displayed in the logs. </p>
-<p>Once logged in, navigate to the services pages and create a new item. * Jump to the <code>Service exposition settings</code> and add <code>http://api.frontend.oto.tools</code> as <code>Exposed domain</code>. * Navigate to the <code>Service targets</code> and add the following url <code>https://api.backend.oto.tools:8444/</code> to redirect our call to the previous created backend. * End this step by exposing the service as <code>Public UI</code> on the <code>URL Patterns</code> section.</p>
+<p>Once logged in, navigate to the services pages and create a new item.</p>
+<ul>
+  <li>Jump to the <code>Service exposition settings</code> and add <code>http://api.frontend.oto.tools</code> as <code>Exposed domain</code>.</li>
+  <li>Navigate to the <code>Service targets</code> and add the following url <code>https://api.backend.oto.tools:8444/</code> to redirect our call to the previous created backend.</li>
+  <li>End this step by exposing the service as <code>Public UI</code> on the <code>URL Patterns</code> section.</li>
+</ul>
 <p>and test it</p>
 <pre class="prettyprint"><code class="language-sh">curl &#39;http://api.frontend.oto.tools:8080/&#39;
 </code></pre>
@@ -449,14 +454,16 @@ console.log(&#39;Server listening:&#39;, `http://localhost:${server.address().po
 <pre class="prettyprint"><code class="language-json">{&quot;Otoroshi-Error&quot;: &quot;Something went wrong, you should try later. Thanks for your understanding.&quot;}
 </code></pre>
 <p>you should get an error due to the fact that Otoroshi doesn&rsquo;t know about the server certificate or the client certificate expected by the server.</p>
-<p>We have to add the client certificate for <code>https://api.backend.oto.tools</code> to Otoroshi. Go to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates">http://otoroshi.oto.tools:8080/bo/dashboard/certificates</a> and create a new item. Copy and paste the content of <code>./client/_.backend.oto.tools.cer</code> and <code>./client/_.backend.oto.tools.key</code> respectively in <code>Certificate full chain</code> and <code>Certificate private key</code>.</p>
+<p>We have to add the client certificate for <code>https://api.backend.oto.tools</code> to Otoroshi. </p>
+<p>Go to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates">http://otoroshi.oto.tools:8080/bo/dashboard/certificates</a> and create a new item. Copy and paste the content of <code>./client/_.backend.oto.tools.cer</code> and <code>./client/_.backend.oto.tools.key</code> respectively in <code>Certificate full chain</code> and <code>Certificate private key</code>.</p>
 <p>and retry the following curl command </p>
 <pre class="prettyprint"><code class="language-sh">curl &#39;http://api.frontend.oto.tools:8080/&#39;
 </code></pre>
 <p>the output should be</p>
 <pre class="prettyprint"><code class="language-json">{&quot;message&quot;:&quot;Hello World!&quot;}
 </code></pre>
-<p>now we have to expose <code>https://api.frontend.oto.tools:8443</code> using otoroshi. Go to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates">http://otoroshi.oto.tools:8080/bo/dashboard/certificates</a> and create a new item. Copy and paste the content of <code>./server/_.frontend.oto.tools.cer</code> and <code>./server/_.frontend.oto.tools.key</code> respectively in <code>Certificate full chain</code> and <code>Certificate private key</code>.</p>
+<p>now we have to expose <code>https://api.frontend.oto.tools:8443</code> using otoroshi. </p>
+<p>Go to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates">http://otoroshi.oto.tools:8080/bo/dashboard/certificates</a> and create a new item. Copy and paste the content of <code>./server/_.frontend.oto.tools.cer</code> and <code>./server/_.frontend.oto.tools.key</code> respectively in <code>Certificate full chain</code> and <code>Certificate private key</code>.</p>
 <p>and try the following command</p>
 <pre class="prettyprint"><code class="language-sh">curl --cacert ./ca/ca-frontend.cer &#39;https://api.frontend.oto.tools:8443/&#39;
 </code></pre>
