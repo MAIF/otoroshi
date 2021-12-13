@@ -111,7 +111,7 @@ ldapadd -x -w otoroshi -D "cn=admin,dc=otoroshi,dc=tools" -f bootstrap.ldif -v
 
 ### Create an Authentication configuration
 
-- Go ahead, and navigate to http://otoroshi.oto.tools:8080
+- Go ahead, and navigate to @link:[http://otoroshi.oto.tools:8080](http://otoroshi.oto.tools:8080) { open=new }
 - Click on the cog icon on the top right
 - Then `Authentication configs` button
 - And add a new configuration when clicking on the `Add item` button
@@ -123,7 +123,7 @@ ldapadd -x -w otoroshi -D "cn=admin,dc=otoroshi,dc=tools" -f bootstrap.ldif -v
     - All as `Tenant`
     - All as `Team`
     - Read/Write as `Rights`
-- Set the search filter as (uid=${username})`
+- Set the search filter as `(uid=${username})`
 - Set `cn=admin,dc=otoroshi,dc=tools` as `Admin username`
 - Set `otoroshi` as `Admin password`
 - At the bottom of the page, disable the `secure` button (because we're using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)
@@ -140,37 +140,34 @@ ldapadd -x -w otoroshi -D "cn=admin,dc=otoroshi,dc=tools" -f bootstrap.ldif -v
 
 > Dont' forget to save on the bottom page your configuration before to quit the page.
 
-- Test the connection when clicking on `Test admin connection` button
+- Test the connection when clicking on `Test admin connection` button. This should display a `It works!` message
 
-This should display a `It works!` message
-
-- Finally, test the user connection button and set `johnny/password` or `einstein/password` as credentials.
-
-This should display a `It works!` message
+- Finally, test the user connection button and set `johnny/password` or `einstein/password` as credentials. This should display a `It works!` message
 
 > Dont' forget to save on the bottom page your configuration before to quit the page.
 
+
 ### Connect to Otoroshi with LDAP authentication
 
-To secure Otoroshi with your LDAP configuration, we have to register an Authentication configuration as a BackOffice Auth. configuration.
+To secure Otoroshi with your LDAP configuration, we have to register an **Authentication configuration** as a BackOffice Auth. configuration.
 
-- Navigate to the *danger zone* (when clicking on the cog on the top right and selecting Danger zone)
-- Scroll to the *BackOffice auth. settings*
+- Navigate to the **danger zone** (when clicking on the cog on the top right and selecting Danger zone)
+- Scroll to the **BackOffice auth. settings**
 - Select your last Authentication configuration (created in the previous section)
 - Save the global configuration with the button on the top right
 
 ### Testing your configuration
 
 - Disconnect from your instance
-- Then click on the *Login using third-party* button (or navigate to http://otoroshi.oto.tools:8080/backoffice/auth0/login)
+- Then click on the **Login using third-party** button (or navigate to @link:[http://otoroshi.oto.tools:8080/backoffice/auth0/login](http://otoroshi.oto.tools:8080/backoffice/auth0/login) { open=new })
 - Set `johnny/password` or `einstein/password` as credentials
 
-> A fallback solution is always available, by going to http://otoroshi.oto.tools:8080/bo/simple/login, for administrators in case your LDAP is not available
+> A fallback solution is always available in the event of a bad authentication configuration. By going to http://otoroshi.oto.tools:8080/bo/simple/login, the administrators will be able to redefine the configuration.
 
 
 #### Secure an app with LDAP authentication
 
-Once the configuration is done, you can secure any of Otoroshi services with it. 
+Once the configuration is done, you can secure any of Otoroshi services. 
 
 - Navigate to any created service
 - Jump to the `URL Patterns` section
@@ -220,11 +217,7 @@ You can easily test this behaviour by @ref:[testing](#testing-your-configuration
 
 #### Advanced usage of LDAP Authentication
 
-In the previous section, we have set rights for each LDAP groups. But in some case, we want to have a finer granularity like set rights for a specific user.
-
-The last 4 fields of the authentication form cover this. 
-
-Each field take the `Email field name` as keys, and a json value.
+In the previous section, we have define rights for each LDAP groups. But in some case, we want to have a finer granularity like set rights for a specific user. The last 4 fields of the authentication form cover this. 
 
 Let's start by adding few properties for each connected users with `Extra metadata`.
 
@@ -235,7 +228,7 @@ Let's start by adding few properties for each connected users with `Extra metada
 }
 ```
 
-The next field `Data override` is merged with extra metadata when a user connects to a `private app` (Inside Otoroshi, private app is a service secure by any authentication module) or to the UI. The `Email field name` is configured to match with the `mail` field from LDAP user data.
+The next field `Data override` is merged with extra metadata when a user connects to a `private app` or to the UI (inside Otoroshi, private app is a service secure by any authentication module). The `Email field name` is configured to match with the `mail` field from LDAP user data.
 
 ```json 
 {
@@ -280,11 +273,9 @@ This field supports the creation of virtual groups. A virtual group is composed 
 }
 ```
 
-The last field `Rights override` is useful when you want erase the rights of an user with only specific rights.
+The last field `Rights override` is useful when you want erase the rights of an user with only specific rights. This field is the last to be applied on the user rights. 
 
-The rights override field is the last to be applied on the user rights. 
-
-To resume, when Johnny connects to Otoroshi, he receives the rights to read only on the default Organization (from `Mapping group filter`), then he is promote to administrator role (from `Additional rights group`) and finally his rights are reset with the last field `Rights override` to the read rights.
+To resume, when Johnny connects to Otoroshi, he receives the rights to only read  the default Organization (from **Mapping group filter**), then he is promote to administrator role (from **Additional rights group**) and finally his rights are reset with the last field **Rights override** to the read rights.
 
 ```json 
 {

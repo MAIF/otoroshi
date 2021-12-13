@@ -6,30 +6,29 @@
 
 ### Create a simple service 
 
-1. Navigate to http://otoroshi.oto.tools:8080/bo/dashboard/services and click on the `create new service` button
-2. Jump to `Service exposition settings` and add http://myservice.oto.tools as `Exposed domain`
-3. Jump to `Service targets` and add https://mirror.otoroshi.io/ as `Target 1`
+1. Navigate to @link:[http://otoroshi.oto.tools:8080/bo/dashboard/services](http://otoroshi.oto.tools:8080/bo/dashboard/services) { open=new } and click on the `create new service` button
+2. Jump to `Service exposition settings` and add `http://myservice.oto.tools` as `Exposed domain`
+3. Jump to `Service targets` and add `https://mirror.otoroshi.io` as `Target 1`
 4. Jump to the `URL Patterns` section
 5. Enable your service as `Public UI`
-6. Open a new tab and navigate to http://myservice.oto.tools:8080/
+6. Open a new tab and navigate to @link:[http://myservice.oto.tools:8080](http://myservice.oto.tools:8080/) { open=new }
 
 With this configuration, all routes are public, wihtout any authentication needed.
 
 ### Secure routes with api key
 
-With the previous configuration, all routes are public. 
+With the previous configuration, all routes are public. In our case, we want to secure all routes prefix with `/api`.
 
-In our case, we want to secure all routes prefix with `/api`.
+Let's return to the `URL Patterns` section. 
+Click on **Make service a private api**. This button automatically add `/api` as default in `Private patterns` array. (Note that the field supports regex like. In our case, `/api.*` covers all routes starting by `/api`).
 
-Let's return to the `URL Patterns` section. Click on `Make service a private api`. This button automatically add `/api` as default in `Private patterns` array. (Note that the field supports regex like. In our case, `/api.*` covers all routes starting by `/api`).
+Save your app and navigate to @link:[http://myservice.oto.tools:8080/api/test](http://myservice.oto.tools:8080/api/test) { open=new } again. If the service is configured, you should have a `Service Not found error`, and a success call, in the case you navigate to any other routes which are not starting by `/api/*` like @link:[http://myservice.oto.tools:8080/test/bar](http://myservice.oto.tools:8080/test/bar) { open=new }
 
-Save your app and navigate to http://myservice.oto.tools:8080/api/test again. If the service is configured, you should have a `Service Not found error`, and a success call, in the case you navigate to any other routes which are not starting by `/api/*` like http://myservice.oto.tools:8080/test/bar
-
-This expected error on the `/api/test`, throws by the URL Patterns, indicate to the client that an api key is required to access to the downstream service.
+The expected error on the `/api/test`, throws by the URL Patterns, indicate to the client that an api key is required to access to this part of the downstream service.
 
 ### Generate an api key to request secure services
 
-Navigate to http://otoroshi.oto.tools:8080/bo/dashboard/apikeys/add or when clicking on the `Add apikey` button on the sidebar.
+Navigate to @link:[http://otoroshi.oto.tools:8080/bo/dashboard/apikeys/add](http://otoroshi.oto.tools:8080/bo/dashboard/apikeys/add) { open=new } or when clicking on the **Add apikey** button on the sidebar.
 
 The only required fields of an Otoroshi api key are : 
 
@@ -44,7 +43,7 @@ To simplify the rest of the tutorial, set the values:
 * `my-first-api-key-id` as `ApiKey Id`
 * `my-first-api-key-secret` as `ApiKey Secret`
 
-Click on `Create and stay on this ApiKey` button at the bottom of the page.
+Click on **Create and stay on this ApiKey** button at the bottom of the page.
 
 Now you created the key, it's time to call our previous generated service with it.
 
@@ -118,7 +117,7 @@ One feature of Otoroshi is to restrict the list of accepted api keys by giving a
 
 Let's starting by accept only the api keys which come with the tag of `otoroshi` as value.
 
-Jump to the last part of the `Api Keys Constraints` section, call `Routing constraints` (these constraints are used to route a call to a service, only if all constraint are validated).
+Jump to the last part of the `Api Keys Constraints` section, call `Routing constraints` (these constraints are used to forward a call to a service, only if all constraints are validated).
 
 In our first case, set `otoroshi` in `One Tag in` array and save the service.
 Then call our service with :

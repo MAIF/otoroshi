@@ -13,5 +13,5 @@ then you can run start Otoroshi :
 java -Dapp.adminPassword=password -jar otoroshi.jar 
 ```
 
-Now you can log into Otoroshi at http://otoroshi.oto.tools:8080 with `admin@otoroshi.io/password`
+Now you can log into Otoroshi at @link:[http://otoroshi.oto.tools:8080](http://otoroshi.oto.tools:8080) { open=new } with `admin@otoroshi.io/password`
 <!--- #init --->
