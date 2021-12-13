@@ -2185,13 +2185,16 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
     }
   }
 
-  override def setHandshakeApplicationProtocolSelector(selector: BiFunction[SSLEngine, util.List[String], String]): Unit = {
+  override def setHandshakeApplicationProtocolSelector(
+      selector: BiFunction[SSLEngine, util.List[String], String]
+  ): Unit = {
     delegate.setHandshakeApplicationProtocolSelector(selector)
   }
 
-  override def getHandshakeApplicationProtocolSelector: BiFunction[SSLEngine, util.List[String], String] = delegate.getHandshakeApplicationProtocolSelector
-  override def getHandshakeApplicationProtocol: String = delegate.getHandshakeApplicationProtocol
-  override def getApplicationProtocol: String = delegate.getApplicationProtocol
+  override def getHandshakeApplicationProtocolSelector: BiFunction[SSLEngine, util.List[String], String] =
+    delegate.getHandshakeApplicationProtocolSelector
+  override def getHandshakeApplicationProtocol: String                                                   = delegate.getHandshakeApplicationProtocol
+  override def getApplicationProtocol: String                                                            = delegate.getApplicationProtocol
 }
 
 sealed trait ClientCertificateValidationDataStore extends BasicStore[ClientCertificateValidator] {
