@@ -7,15 +7,9 @@ Let's start by downloading the latest Otoroshi
 curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
 ```
 
-By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1`
+By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1` Now you are almost ready to run Otoroshi for the first time, we want run it with an initial data.
 
-Now you are almost ready to run Otoroshi for the first time, we want run it with an initial data.
-
-To do that, you need to add the app.importFrom setting to the Otoroshi configuration (of `$APP_IMPORT_FROM` env).
-
-It can be a file path or a URL.
-
-The content of the initial datastore.
+To do that, you need to add the **app.importFrom** setting to the Otoroshi configuration (of `$APP_IMPORT_FROM` env). It can be a file path or a URL. The content of the initial datastore.
 
 ```json
 {
@@ -441,23 +435,23 @@ This should display
 ...
 ```
 
-> Warning : when you using Otoroshi with a datastore different from file or in-memory, Otoroshi doesn't will reload the initialization script. If you expected it, you need to clean manually your store.
+> Warning : when you using Otoroshi with a datastore different from file or in-memory, Otoroshi will not reload the initialization script. If you expected, you have to manually clean your store.
 
 ### Export the current datastore via the danger zone
 
-When Otoroshi is running, you can backup the global configuration store from the UI. Navigate to your instance (in our case http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone) and scroll to the bottom page. 
+When Otoroshi is running, you can backup the global configuration store from the UI. Navigate to your instance (in our case @link:[http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone](http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone) { open=new }) and scroll to the bottom page. 
 
 Click on `Full export` button to download the full global configuration.
 
 ### Import a datastore from file via the danger zone
 
-When Otoroshi is running, you can recover a global configuration from the UI. Navigate to your instance (in our case http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone) and scroll to the bottom page. 
+When Otoroshi is running, you can recover a global configuration from the UI. Navigate to your instance (in our case @link:[http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone](http://otoroshi.oto.tools:8080/bo/dashboard/dangerzone) { open=new }) and scroll to the bottom of the page. 
 
 Click on `Recover from a full export file` button to apply all configurations from a file.
 
 ### Export the current datastore with the Admin API
 
-Otoroshi exposes his own Admin API to manage Otoroshi resources. To call this api, you need to an api key with the rights on `Otoroshi Admin Api group`. This group includes the `Otoroshi-admin-api` service that you can found on the services page. 
+Otoroshi exposes his own Admin API to manage Otoroshi resources. To call this api, you need to have an api key with the rights on `Otoroshi Admin Api group`. This group includes the `Otoroshi-admin-api` service that you can found on the services page. 
 
 By default, and with our initial configuration, Otoroshi has already created an api key named `Otoroshi Backoffice ApiKey`. You can verify the rights of an api key on its page by checking the `Authorized On` field (you should find the `Otoroshi Admin Api group` inside).
 
@@ -472,7 +466,7 @@ curl \
   'http://otoroshi-api.oto.tools:8080/api/otoroshi.json'
 ```
 
-When calling the `/api/otoroshi.json`, the return should be the current datastore including the service descriptors, the api keys, all others resources like certificates and authentification modules, and the the global config (represented by the form of the danger zone).
+When calling the `/api/otoroshi.json`, the return should be the current datastore including the service descriptors, the api keys, all others resources like certificates and authentification modules, and the the global config (representing the form of the danger zone).
 
 ### Import the current datastore with the Admin API
 
@@ -991,7 +985,7 @@ This should output :
 { "done":true }
 ```
 
-> Note : be very carefully with this POST command. If you send a wrong JSON, you risked to break your instance.
+> Note : be very carefully with this POST command. If you send a wrong JSON, you risk breaking your instance.
 
 The second way is to send the same configuration but from a file. You can pass two kind of file : a `json` file or a `ndjson` file. Both files are available as export methods on the danger zone.
 

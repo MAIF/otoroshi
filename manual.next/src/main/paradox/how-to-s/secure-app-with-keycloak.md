@@ -17,9 +17,9 @@ docker run \
 
 This should download the image of keycloak (if you haven't already it) and display the digest of the created container. This command mapped TCP port 8080 in the container to port 8080 of your laptop and created a server with `admin/admin` as admin credentials.
 
-Once started, you can open a browser on `http://localhost:8080/` and click on `Administration Console`. Log to your instance with `admin/admin` as credentials.
+Once started, you can open a browser on @link:[http://localhost:8080](http://localhost:8080) { open=new } and click on `Administration Console`. Log to your instance with `admin/admin` as credentials.
 
-The first step is to create a Keycloak client, an entity that can request Keycloak to authenticate a user. Click on the `clients` button on the sidebar, and then on `Create` button at the right top of the view.
+The first step is to create a Keycloak client, an entity that can request Keycloak to authenticate a user. Click on the **clients** button on the sidebar, and then on **Create** button at the top right of the view.
 
 Fill the client form with the following values.
 
@@ -27,7 +27,7 @@ Fill the client form with the following values.
 * `Client Protocol`: `openid-connect`
 * `Root URL`: `http://otoroshi.oto.tools:8080/`
 
-End by create the client with the `Save` button.
+Validate the creation of the client by clicking on the **Save** button.
 
 The next step is to change the `Access Type` used by default. Jump to the `Access Type` field and select `confidential`. The confidential configuration force the client application to send at Keycloak a client ID and a client Secret. Scroll to the bottom of the page and save the configuration.
 

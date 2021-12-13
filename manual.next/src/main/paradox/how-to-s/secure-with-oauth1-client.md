@@ -137,7 +137,7 @@ If you had any errors, make sure of :
 * check if your oauth1 server has the REDIRECT_URI set on *privateapps/...*
 * Make sure your server supports POST or GET oauth1 flow set on authentication module
 
-Once the configuration is working, you can check, when connecting with an Otoroshi admin user, the `Private App session` created (use the cog at the right top of the page, and select `Priv. app sesssions`, or navigate to http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private).
+Once the configuration is working, you can check, when connecting with an Otoroshi admin user, the `Private App session` created (use the cog at the top right of the page, and select `Priv. app sesssions`, or navigate to http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private).
 
 One interesing feature is to check the profile of the connected user. In our case, when clicking on the `Profile` button of the right user, we should have : 
 

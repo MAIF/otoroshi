@@ -8,9 +8,9 @@
 
 The first step of this tutorial is to setup an Auth0 application with the information of the instance of our Otoroshi.
 
-Navigate to https://manage.auth0.com/ (create an account if it's not already done). 
+Navigate to @link:[https://manage.auth0.com](https://manage.auth0.com) { open=new } (create an account if it's not already done). 
 
-Let's create an application when clicking on the `Applications` button on the sidebar. Then click on the `Create application` button on the right top.
+Let's create an application when clicking on the **Applications** button on the sidebar. Then click on the **Create application** button on the top right.
 
 1. Choose `Regular Web Applications` as `Application type`
 2. Then set for example `otoroshi-client` as `Name`, and confirm the creation
@@ -20,29 +20,29 @@ Let's create an application when clicking on the `Applications` button on the si
 6. Set `https://otoroshi.oto.tools:8080` as `Allowed Web Origins` 
 7. Save changes at the bottom of the page.
 
-Once done, we have a full setup, with a client ID and secret at the top of the page, which authorize our Otoroshi and redirect the user to the callback url when it will connect to Auth0.
+Once done, we have a full setup, with a client ID and secret at the top of the page, which authorizes our Otoroshi and redirects the user to the callback url when they log into Auth0.
 
 ### Create an Auth0 provider module
 
 Let's back to Otoroshi to create an authentication module with `OAuth2 / OIDC provider` as `type`.
 
-1. Go ahead, and navigate to http://otoroshi.oto.tools:8080
+1. Go ahead, and navigate to @link:[http://otoroshi.oto.tools:8080](http://otoroshi.oto.tools:8080) { open=new }
 1. Click on the cog icon on the top right
 1. Then `Authentication configs` button
 1. And add a new configuration when clicking on the `Add item` button
 2. Select the `OAuth provider` in the type selector field
 3. Then click on `Get from OIDC config` and paste `https://<tenant-name>.<region>.auth0.com/.well-known/openid-configuration`. Replace the tenant name by the name of your tenant (displayed on the left top of auth0 page), and the region of the tenant (`eu` in my case).
 
-Once done, set the `Client ID` and the `Client secret` from your auth0 application. End the configuration with `http://otoroshi.oto.tools:8080/backoffice/auth0/callback` as `Callback URL`.
+Once done, set the `Client ID` and the `Client secret` from your Auth0 application. End the configuration with `http://otoroshi.oto.tools:8080/backoffice/auth0/callback` as `Callback URL`.
 
 At the bottom of the page, disable the `secure` button (because we're using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs).
 
 ### Connect to Otoroshi with Auth0 authentication
 
-To secure Otoroshi with your Auth0 configuration, we have to register an Authentication configuration as a BackOffice Auth. configuration.
+To secure Otoroshi with your Auth0 configuration, we have to register an **Authentication configuration** as a BackOffice Auth. configuration.
 
-1. Navigate to the *danger zone* (when clicking on the cog on the top right and selecting Danger zone)
-2. Scroll to the *BackOffice auth. settings*
+1. Navigate to the **danger zone** (when clicking on the cog on the top right and selecting Danger zone)
+2. Scroll to the **BackOffice auth. settings**
 3. Select your last Authentication configuration (created in the previous section)
 4. Save the global configuration with the button on the top right
 
@@ -50,7 +50,7 @@ To secure Otoroshi with your Auth0 configuration, we have to register an Authent
 
 1. Disconnect from your instance
 1. Then click on the *Login using third-party* button (or navigate to http://otoroshi.oto.tools:8080)
-2. Click on `Login using Third-party` button
+2. Click on **Login using Third-party** button
 3. If all is configured, Otoroshi will redirect you to the auth0 server login page
 4. Set your account credentials
 5. Good works! You're connected to Otoroshi with an Auth0 module.
@@ -61,14 +61,14 @@ With the previous configuration, you can secure any of Otoroshi services with it
 
 The first step is to apply a little change on the previous configuration. 
 
-1. Navigate to http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs.
-2. Create a new auth module configuration with the same values.
-3. Replace the `Callback URL` field to `http://privateapps.oto.tools:8080/privateapps/generic/callback` (we changed this value because the redirection of a logged user by a third-party server is cover by an other route by Otoroshi).
+1. Navigate to @link:[http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs](http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs) { open=new }.
+2. Create a new **Authentication module** configuration with the same values.
+3. Replace the `Callback URL` field to `http://privateapps.oto.tools:8080/privateapps/generic/callback` (we changed this value because the redirection of a connected user by a third-party server is covered by another route by Otoroshi).
 4. Disable the `secure` button (because we're using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)
 
-> Note : a Otoroshi service is call a private app when it is protected by an authentication module.
+> Note : an Otoroshi service is called **a private app** when it is protected by an Authentication module.
 
-We can set the authentication module on the service.
+We can set the Authentication module on the service.
 
 1. Navigate to any created service
 2. Scroll to `Authentication` section

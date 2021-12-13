@@ -236,7 +236,8 @@ Download the latest version of the Otoroshi jar and run it like
 
 and log into otoroshi with the tuple `admin@otoroshi.io / password` displayed in the logs. 
 
-Once logged in, navigate to the services pages and create a new item. 
+Once logged in, navigate to the services pages and create a new item.
+
 * Jump to the `Service exposition settings` and add `http://api.frontend.oto.tools` as `Exposed domain`. 
 * Navigate to the `Service targets` and add the following url `https://api.backend.oto.tools:8444/` to redirect our call to the previous created backend. 
 * End this step by exposing the service as `Public UI` on the `URL Patterns` section.
@@ -254,7 +255,9 @@ This should output :
 
 you should get an error due to the fact that Otoroshi doesn't know about the server certificate or the client certificate expected by the server.
 
-We have to add the client certificate for `https://api.backend.oto.tools` to Otoroshi. Go to http://otoroshi.oto.tools:8080/bo/dashboard/certificates and create a new item. Copy and paste the content of `./client/_.backend.oto.tools.cer` and `./client/_.backend.oto.tools.key` respectively in `Certificate full chain` and `Certificate private key`.
+We have to add the client certificate for `https://api.backend.oto.tools` to Otoroshi. 
+
+Go to http://otoroshi.oto.tools:8080/bo/dashboard/certificates and create a new item. Copy and paste the content of `./client/_.backend.oto.tools.cer` and `./client/_.backend.oto.tools.key` respectively in `Certificate full chain` and `Certificate private key`.
 
 and retry the following curl command 
 
@@ -267,7 +270,9 @@ the output should be
 {"message":"Hello World!"}
 ```
 
-now we have to expose `https://api.frontend.oto.tools:8443` using otoroshi. Go to http://otoroshi.oto.tools:8080/bo/dashboard/certificates and create a new item. Copy and paste the content of `./server/_.frontend.oto.tools.cer` and `./server/_.frontend.oto.tools.key` respectively in `Certificate full chain` and `Certificate private key`.
+now we have to expose `https://api.frontend.oto.tools:8443` using otoroshi. 
+
+Go to http://otoroshi.oto.tools:8080/bo/dashboard/certificates and create a new item. Copy and paste the content of `./server/_.frontend.oto.tools.cer` and `./server/_.frontend.oto.tools.key` respectively in `Certificate full chain` and `Certificate private key`.
 
 and try the following command
 
