@@ -227,3 +227,6 @@ addJava "--add-exports=java.base/sun.security.x509=ALL-UNNAMED"
 addJava "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED" 
 addJava "-Dlog4j2.formatMsgNoLookups=True"
 """
+
+reStart / mainClass := Some("play.core.server.ProdServerStart")
+reStart / javaOptions ++= Seq("-Dapp.env=dev", "-Dhttp.port=9999", "-Dhttps.port=9998", "--add-opens=java.base/javax.net.ssl=ALL-UNNAMED", "--add-exports=java.base/sun.security.x509=ALL-UNNAMED", "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED", "-Dapp.storage=file", "-Dapp.liveJs=true", "-Dapp.adminPassword=password", "-Dapp.domain=oto.tools", "-Dapp.events.maxSize=0", "-Dotoroshi.cluster.mode=Leader", "-Dapp.instance.name=dev")
