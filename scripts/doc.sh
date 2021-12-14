@@ -15,7 +15,7 @@ clean () {
 
 buildDev () {
   cd $LOCATION/otoroshi
-  sbt ';clean;compile;testOnly OpenapiGeneratorTests;testOnly PluginDocTests'
+  sbt ';clean;compile;testOnly OpenapiGeneratorTests;testOnly PluginDocNextTests'
   # cp $LOCATION/otoroshi/public/openapi.json $LOCATION/manual/src/main/paradox/code/
   cd $LOCATION/manual
   cp -R $LOCATION/kubernetes $LOCATION/manual/src/main/paradox/snippets
@@ -82,14 +82,14 @@ build () {
 }
 
 buildReferenceConf () {
-  cd $LOCATION/manual.next
-  rm $LOCATION/manual.next/src/main/paradox/snippets/reference.conf
-  rm $LOCATION/manual.next/src/main/paradox/snippets/reference-env.conf
-  touch $LOCATION/manual.next/src/main/paradox/snippets/reference.conf
-  touch $LOCATION/manual.next/src/main/paradox/snippets/reference-env.conf
-  cat $LOCATION/otoroshi/conf/application.conf >> $LOCATION/manual.next/src/main/paradox/snippets/reference.conf
-  echo "\n\n" >> $LOCATION/manual.next/src/main/paradox/snippets/reference.conf
-  cat $LOCATION/otoroshi/conf/base.conf >> $LOCATION/manual.next/src/main/paradox/snippets/reference.conf
+  cd $LOCATION/manual
+  rm $LOCATION/manual/src/main/paradox/snippets/reference.conf
+  rm $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
+  touch $LOCATION/manual/src/main/paradox/snippets/reference.conf
+  touch $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
+  cat $LOCATION/otoroshi/conf/application.conf >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
+  echo "\n\n" >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
+  cat $LOCATION/otoroshi/conf/base.conf >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
   node config.js
   node indexer.js
 }
