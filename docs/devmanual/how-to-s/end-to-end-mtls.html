@@ -457,7 +457,11 @@ console.log(&#39;Server listening:&#39;, `http://localhost:${server.address().po
 <p>We have to add the client certificate for <code>https://api.backend.oto.tools</code> to Otoroshi. </p>
 <p>Go to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates">http://otoroshi.oto.tools:8080/bo/dashboard/certificates</a> and create a new item. Copy and paste the content of <code>./client/_.backend.oto.tools.cer</code> and <code>./client/_.backend.oto.tools.key</code> respectively in <code>Certificate full chain</code> and <code>Certificate private key</code>.</p>
 <p>If you don&rsquo;t want to bother with UI copy/paste, you can use the import bundle api endpoint to create an otoroshi certificate automatically from a PEM bundle.</p>
-<pre class="prettyprint"><code class="language-sh">cat ./server/_.backend.oto.tools.cer ./ca/ca-backend.cer ./server/_.backend.oto.tools.key | curl -H &#39;Content-Type: text/plain&#39; -X POST --data-binary @- http://otoroshi-api.oto.tools:8080/api/certificates/_bundle -u admin-api-apikey-id:admin-api-apikey-secret
+<pre class="prettyprint"><code class="language-sh">cat ./server/_.backend.oto.tools.cer ./ca/ca-backend.cer ./server/_.backend.oto.tools.key | curl \
+  -H &#39;Content-Type: text/plain&#39; -X POST \
+  --data-binary @- \
+  -u admin-api-apikey-id:admin-api-apikey-secret \
+  http://otoroshi-api.oto.tools:8080/api/certificates/_bundle 
 </code></pre>
 <p>and retry the following curl command </p>
 <pre class="prettyprint"><code class="language-sh">curl &#39;http://api.frontend.oto.tools:8080/&#39;
@@ -468,7 +472,11 @@ console.log(&#39;Server listening:&#39;, `http://localhost:${server.address().po
 <p>now we have to expose <code>https://api.frontend.oto.tools:8443</code> using otoroshi. </p>
 <p>Go to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates">http://otoroshi.oto.tools:8080/bo/dashboard/certificates</a> and create a new item. Copy and paste the content of <code>./server/_.frontend.oto.tools.cer</code> and <code>./server/_.frontend.oto.tools.key</code> respectively in <code>Certificate full chain</code> and <code>Certificate private key</code>.</p>
 <p>If you don&rsquo;t want to bother with UI copy/paste, you can use the import bundle api endpoint to create an otoroshi certificate automatically from a PEM bundle.</p>
-<pre class="prettyprint"><code class="language-sh">cat ./server/_.frontend.oto.tools.cer ./ca/ca-frontend.cer ./server/_.frontend.oto.tools.key | curl -H &#39;Content-Type: text/plain&#39; -X POST --data-binary @- http://otoroshi-api.oto.tools:8080/api/certificates/_bundle -u admin-api-apikey-id:admin-api-apikey-secret
+<pre class="prettyprint"><code class="language-sh">cat ./server/_.frontend.oto.tools.cer ./ca/ca-frontend.cer ./server/_.frontend.oto.tools.key | curl \
+  -H &#39;Content-Type: text/plain&#39; -X POST \
+  -u admin-api-apikey-id:admin-api-apikey-secret \
+  --data-binary @- \
+  http://otoroshi-api.oto.tools:8080/api/certificates/_bundle
 </code></pre>
 <p>and try the following command</p>
 <pre class="prettyprint"><code class="language-sh">curl --cacert ./ca/ca-frontend.cer &#39;https://api.frontend.oto.tools:8443/&#39;

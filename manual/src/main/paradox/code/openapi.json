@@ -4768,7 +4768,7 @@
     "/api/certificates/_bundle" : {
       "post" : {
         "tags" : [ "certificates" ],
-        "summary" : "???",
+        "summary" : "Import PEM bundle as otoroshi certificates",
         "operationId" : "otoroshi.controllers.adminapi.PkiController.importBundle",
         "parameters" : [ ],
         "security" : [ {
@@ -4810,7 +4810,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/otoroshi.ssl.Cert"
                 }
               }
             }
@@ -4822,7 +4822,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/text plain PEM bundle"
               }
             }
           }
