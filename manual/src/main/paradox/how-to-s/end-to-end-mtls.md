@@ -262,7 +262,11 @@ Go to http://otoroshi.oto.tools:8080/bo/dashboard/certificates and create a new 
 If you don't want to bother with UI copy/paste, you can use the import bundle api endpoint to create an otoroshi certificate automatically from a PEM bundle.
 
 ```sh
-cat ./server/_.backend.oto.tools.cer ./ca/ca-backend.cer ./server/_.backend.oto.tools.key | curl -H 'Content-Type: text/plain' -X POST --data-binary @- http://otoroshi-api.oto.tools:8080/api/certificates/_bundle -u admin-api-apikey-id:admin-api-apikey-secret
+cat ./server/_.backend.oto.tools.cer ./ca/ca-backend.cer ./server/_.backend.oto.tools.key | curl \
+  -H 'Content-Type: text/plain' -X POST \
+  --data-binary @- \
+  -u admin-api-apikey-id:admin-api-apikey-secret \
+  http://otoroshi-api.oto.tools:8080/api/certificates/_bundle 
 ```
 
 and retry the following curl command 
@@ -283,7 +287,11 @@ Go to http://otoroshi.oto.tools:8080/bo/dashboard/certificates and create a new 
 If you don't want to bother with UI copy/paste, you can use the import bundle api endpoint to create an otoroshi certificate automatically from a PEM bundle.
 
 ```sh
-cat ./server/_.frontend.oto.tools.cer ./ca/ca-frontend.cer ./server/_.frontend.oto.tools.key | curl -H 'Content-Type: text/plain' -X POST --data-binary @- http://otoroshi-api.oto.tools:8080/api/certificates/_bundle -u admin-api-apikey-id:admin-api-apikey-secret
+cat ./server/_.frontend.oto.tools.cer ./ca/ca-frontend.cer ./server/_.frontend.oto.tools.key | curl \
+  -H 'Content-Type: text/plain' -X POST \
+  -u admin-api-apikey-id:admin-api-apikey-secret \
+  --data-binary @- \
+  http://otoroshi-api.oto.tools:8080/api/certificates/_bundle
 ```
 
 and try the following command
