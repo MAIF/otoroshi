@@ -426,7 +426,7 @@ class GatewayRequestHandler(
 
   def serveDevAssets() = actionBuilder.async { req =>
     val wholePath = req.relativeUri
-    println(s"dev serving ${wholePath}")
+    logger.debug(s"dev serving asset '${wholePath}'")
     devCache.getIfPresent(wholePath) match {
       case Some((contentType, content)) => Results.Ok(content).as(contentType).future
       case None => {
