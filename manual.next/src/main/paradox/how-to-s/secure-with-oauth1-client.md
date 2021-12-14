@@ -28,10 +28,10 @@ After this command, the container logs should output :
 
 ### Create an OAuth 1 provider module
 
-1. Go ahead, and navigate to http://otoroshi.oto.tools:8080
+1. Go ahead, and navigate to @link:[http://otoroshi.oto.tools:8080](http://otoroshi.oto.tools:8080) { open=new }
 1. Click on the cog icon on the top right
-1. Then `Authentication configs` button
-1. And add a new configuration when clicking on the `Add item` button
+1. Then **Authentication configs** button
+1. And add a new configuration when clicking on the **Add item** button
 2. Select the `Oauth1 provider` in the type selector field
 3. Set a basic name and description like `oauth1-provider`
 4. Set `2NVVBip7I5kfl0TwVmGzTphhC98kmXScpZaoz7ET` as `Consumer key`
@@ -41,7 +41,7 @@ After this command, the container logs should output :
 8. Set `http://localhost:oauth/access_token` as `Access token URL`
 9. Set `http://localhost:5000/api/me` as `Profile URL`
 10. Set `http://otoroshi.oto.tools:8080/backoffice/auth0/callback` as `Callback URL`
-11. At the bottom of the page, disable the `secure` button (because we're using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)
+11. At the bottom of the page, disable the **secure** button (because we're using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)
 
  At this point, your configuration should be similar to :
 
@@ -73,21 +73,21 @@ Save your configuration at the bottom of the page, then navigate to the `danger 
 
 To secure Otoroshi with your OAuth1 configuration, we have to register an Authentication configuration as a BackOffice Auth. configuration.
 
-1. Navigate to the *danger zone* (when clicking on the cog on the top right and selecting Danger zone)
-1. Scroll to the *BackOffice auth. settings*
+1. Navigate to the **danger zone** (when clicking on the cog on the top right and selecting Danger zone)
+1. Scroll to the **BackOffice auth. settings**
 1. Select your last Authentication configuration (created in the previous section)
 1. Save the global configuration with the button on the top right
 
 ### Testing your configuration
 
 1. Disconnect from your instance
-1. Then click on the *Login using third-party* button (or navigate to http://otoroshi.oto.tools:8080)
-2. Click on `Login using Third-party` button
+1. Then click on the **Login using third-party** button (or navigate to http://otoroshi.oto.tools:8080)
+2. Click on **Login using Third-party** button
 3. If all is configured, Otoroshi will redirect you to the oauth 1 server login page
 4. Set `example-user` as user and trust the user by clicking on `yes` button.
 5. Good work! You're connected to Otoroshi with an OAuth1 module.
 
-> A fallback solution is always available, by going to http://otoroshi.oto.tools:8080/bo/simple/login, for administrators in case your Authentication module is not available
+> A fallback solution is always available in the event of a bad authentication configuration. By going to http://otoroshi.oto.tools:8080/bo/simple/login, the administrators will be able to redefine the configuration.
 
 ### Secure an app with OAuth 1 authentication
 
@@ -95,12 +95,12 @@ With the previous configuration, you can secure any of Otoroshi services with it
 
 The first step is to apply a little change on the previous configuration. 
 
-1. Navigate to *http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs*.
+1. Navigate to @link:[http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs](http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs) { open=new }.
 2. Create a new auth module configuration with the same values.
 3. Replace the `Callback URL` field to `http://privateapps.oto.tools:8080/privateapps/generic/callback` (we changed this value because the redirection of a logged user by a third-party server is cover by an other route by Otoroshi).
 4. Disable the `secure` button (because we're using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)
 
-> Note : a Otoroshi service is call a private app when it is protected by an authentication module.
+> Note : an Otoroshi service is called a private app when it is protected by an authentication module.
 
 Our example server supports only one redirect URI. We need to kill it, and to create a new container with `http://otoroshi.oto.tools:8080/privateapps/generic/callback` as `OAUTH1_REDIRECT_URI`
 
@@ -114,7 +114,7 @@ docker run -d --name oauth1-server --rm \
     ghcr.io/beryju/oauth1-test-server
 ```
 
-Once the authentication module and the new container created, we can set the authentication module on the service.
+Once the authentication module and the new container created, we can define the authentication module on the service.
 
 1. Navigate to any created service
 2. Scroll to `Authentication` section
@@ -133,11 +133,11 @@ The allow access to the user.
 
 If you had any errors, make sure of :
 
-* check if you are on http or https, and if the *secure cookie option* is enabled or not on the authentication module
-* check if your oauth1 server has the REDIRECT_URI set on *privateapps/...*
-* Make sure your server supports POST or GET oauth1 flow set on authentication module
+* check if you are on http or https, and if the **secure cookie option** is enabled or not on the authentication module
+* check if your OAuth1 server has the REDIRECT_URI set on **privateapps/...**
+* Make sure your server supports POST or GET OAuth1 flow set on authentication module
 
-Once the configuration is working, you can check, when connecting with an Otoroshi admin user, the `Private App session` created (use the cog at the top right of the page, and select `Priv. app sesssions`, or navigate to http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private).
+Once the configuration is working, you can check, when connecting with an Otoroshi admin user, the `Private App session` created (use the cog at the top right of the page, and select `Priv. app sesssions`, or navigate to @link:[http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private](http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private) { open=new }).
 
 One interesing feature is to check the profile of the connected user. In our case, when clicking on the `Profile` button of the right user, we should have : 
 

@@ -72,7 +72,7 @@ To secure Otoroshi with your Keycloak configuration, we have to register an Auth
 4. Set `admin/admin` as user and trust the user by clicking on `yes` button.
 5. Good work! You're connected to Otoroshi with an Keycloak module.
 
-> A fallback solution is always available, by going to http://otoroshi.oto.tools:8080/bo/simple/login, for administrators in case your Authentication module is not well configured or not available
+> A fallback solution is always available in the event of a bad authentication configuration. By going to http://otoroshi.oto.tools:8080/bo/simple/login, the administrators will be able to redefine the configuration.
 
 ### Visualize an admin user session or a private user session
 
