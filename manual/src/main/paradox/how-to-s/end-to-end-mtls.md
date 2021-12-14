@@ -259,6 +259,12 @@ We have to add the client certificate for `https://api.backend.oto.tools` to Oto
 
 Go to http://otoroshi.oto.tools:8080/bo/dashboard/certificates and create a new item. Copy and paste the content of `./client/_.backend.oto.tools.cer` and `./client/_.backend.oto.tools.key` respectively in `Certificate full chain` and `Certificate private key`.
 
+If you don't want to bother with UI copy/paste, you can use the import bundle api endpoint to create an otoroshi certificate automatically from a PEM bundle.
+
+```sh
+cat ./server/_.backend.oto.tools.cer ./ca/ca-backend.cer ./server/_.backend.oto.tools.key | curl -H 'Content-Type: text/plain' -X POST --data-binary @- http://otoroshi-api.oto.tools:8080/api/certificates/_bundle -u admin-api-apikey-id:admin-api-apikey-secret
+```
+
 and retry the following curl command 
 
 ```sh
@@ -273,6 +279,12 @@ the output should be
 now we have to expose `https://api.frontend.oto.tools:8443` using otoroshi. 
 
 Go to http://otoroshi.oto.tools:8080/bo/dashboard/certificates and create a new item. Copy and paste the content of `./server/_.frontend.oto.tools.cer` and `./server/_.frontend.oto.tools.key` respectively in `Certificate full chain` and `Certificate private key`.
+
+If you don't want to bother with UI copy/paste, you can use the import bundle api endpoint to create an otoroshi certificate automatically from a PEM bundle.
+
+```sh
+cat ./server/_.frontend.oto.tools.cer ./ca/ca-frontend.cer ./server/_.frontend.oto.tools.key | curl -H 'Content-Type: text/plain' -X POST --data-binary @- http://otoroshi-api.oto.tools:8080/api/certificates/_bundle -u admin-api-apikey-id:admin-api-apikey-secret
+```
 
 and try the following command
 

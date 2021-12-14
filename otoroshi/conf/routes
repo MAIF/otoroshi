@@ -242,6 +242,7 @@ GET     /api/certificates/:id                                 otoroshi.controlle
 DELETE  /api/certificates/:id                                 otoroshi.controllers.adminapi.CertificatesController.deleteEntityAction(id)
 PUT     /api/certificates/:id                                 otoroshi.controllers.adminapi.CertificatesController.updateEntityAction(id)
 PATCH   /api/certificates/:id                                 otoroshi.controllers.adminapi.CertificatesController.patchEntityAction(id)
+POST    /api/certificates/_bundle                             otoroshi.controllers.adminapi.PkiController.importBundle()
 GET     /api/certificates                                     otoroshi.controllers.adminapi.CertificatesController.findAllEntitiesAction()
 POST    /api/certificates                                     otoroshi.controllers.adminapi.CertificatesController.createAction()
 
