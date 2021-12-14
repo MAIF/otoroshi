@@ -4765,6 +4765,70 @@
         }
       }
     },
+    "/api/certificates/_bundle" : {
+      "post" : {
+        "tags" : [ "certificates" ],
+        "summary" : "???",
+        "operationId" : "otoroshi.controllers.adminapi.PkiController.importBundle",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Unknown"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Unknown"
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/cluster/state" : {
       "get" : {
         "tags" : [ "cluster" ],
@@ -4863,7 +4927,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/Initial resources template"
                 }
               }
             }
@@ -4875,7 +4939,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/Initial resources template"
               }
             }
           }
