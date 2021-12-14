@@ -361,7 +361,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ScriptsList"
                 }
@@ -423,7 +423,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -598,7 +598,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.Team"
                 }
@@ -607,10 +607,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.Team"
               }
@@ -668,7 +668,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.Team"
                 }
@@ -727,7 +727,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.Team"
                 }
@@ -786,7 +786,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.Team"
                 }
@@ -795,10 +795,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.Team"
               }
@@ -850,7 +850,7 @@
           "201" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.Team"
                 }
@@ -859,10 +859,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.Team"
               }
@@ -912,7 +912,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "type" : "array",
                   "items" : {
@@ -968,7 +968,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -977,12 +977,12 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "$ref" : "#/components/schemas/BulkPatchBody"
               }
             }
           }
@@ -1030,7 +1030,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -1039,12 +1039,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.models.Team"
+                }
               }
             }
           }
@@ -1092,7 +1095,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -1143,7 +1146,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -1152,12 +1155,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.models.Team"
+                }
               }
             }
           }
@@ -1215,7 +1221,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.Target"
                 }
@@ -1224,10 +1230,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.Target"
               }
@@ -1285,7 +1291,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.Target"
                 }
@@ -1294,10 +1300,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.Target"
               }
@@ -1355,7 +1361,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/TargetsList"
                 }
@@ -1414,7 +1420,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/Done"
                 }
@@ -1475,7 +1481,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.auth.AuthModuleConfig"
                 }
@@ -1484,10 +1490,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.auth.AuthModuleConfig"
               }
@@ -1545,7 +1551,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.auth.AuthModuleConfig"
                 }
@@ -1604,7 +1610,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.auth.AuthModuleConfig"
                 }
@@ -1663,7 +1669,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.auth.AuthModuleConfig"
                 }
@@ -1672,10 +1678,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.auth.AuthModuleConfig"
               }
@@ -1831,7 +1837,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -1840,12 +1846,12 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "$ref" : "#/components/schemas/BulkPatchBody"
               }
             }
           }
@@ -1893,7 +1899,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -1902,12 +1908,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.auth.AuthModuleConfig"
+                }
               }
             }
           }
@@ -1955,7 +1964,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -2006,7 +2015,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -2015,12 +2024,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.auth.AuthModuleConfig"
+                }
               }
             }
           }
@@ -2070,7 +2082,7 @@
           "201" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.script.Script"
                 }
@@ -2079,10 +2091,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.script.Script"
               }
@@ -2132,7 +2144,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "type" : "array",
                   "items" : {
@@ -2213,7 +2225,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -2329,7 +2341,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -2338,12 +2350,12 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "$ref" : "#/components/schemas/BulkPatchBody"
               }
             }
           }
@@ -2391,7 +2403,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -2400,12 +2412,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
+                }
               }
             }
           }
@@ -2453,7 +2468,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -2504,7 +2519,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -2513,12 +2528,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
+                }
               }
             }
           }
@@ -2629,7 +2647,7 @@
           "201" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptor"
                 }
@@ -2638,10 +2656,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptor"
               }
@@ -2691,7 +2709,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "type" : "array",
                   "items" : {
@@ -2747,7 +2765,7 @@
           "201" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.Tenant"
                 }
@@ -2756,10 +2774,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.Tenant"
               }
@@ -2809,7 +2827,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "type" : "array",
                   "items" : {
@@ -2927,7 +2945,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -3040,7 +3058,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -3209,7 +3227,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ServiceDescriptorList"
                 }
@@ -3262,7 +3280,7 @@
           "201" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ServiceGroup"
                 }
@@ -3271,10 +3289,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.ServiceGroup"
               }
@@ -3324,7 +3342,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "type" : "array",
                   "items" : {
@@ -3397,7 +3415,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -3469,7 +3487,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -3532,7 +3550,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.GlobalJwtVerifier"
                 }
@@ -3541,10 +3559,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.GlobalJwtVerifier"
               }
@@ -3602,7 +3620,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.GlobalJwtVerifier"
                 }
@@ -3661,7 +3679,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.GlobalJwtVerifier"
                 }
@@ -3720,7 +3738,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.GlobalJwtVerifier"
                 }
@@ -3729,10 +3747,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.GlobalJwtVerifier"
               }
@@ -3951,7 +3969,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -3960,12 +3978,12 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "$ref" : "#/components/schemas/BulkPatchBody"
               }
             }
           }
@@ -4013,7 +4031,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -4022,12 +4040,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptor"
+                }
               }
             }
           }
@@ -4075,7 +4096,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -4126,7 +4147,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -4135,12 +4156,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptor"
+                }
               }
             }
           }
@@ -4294,7 +4318,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -4303,12 +4327,12 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "$ref" : "#/components/schemas/BulkPatchBody"
               }
             }
           }
@@ -4356,7 +4380,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -4365,12 +4389,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfig"
+                }
               }
             }
           }
@@ -4418,7 +4445,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -4469,7 +4496,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -4478,12 +4505,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfig"
+                }
               }
             }
           }
@@ -4533,7 +4563,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -4542,12 +4572,12 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "$ref" : "#/components/schemas/BulkPatchBody"
               }
             }
           }
@@ -4595,7 +4625,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -4604,12 +4634,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.models.Tenant"
+                }
               }
             }
           }
@@ -4657,7 +4690,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -4708,7 +4741,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -4717,12 +4750,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.models.Tenant"
+                }
               }
             }
           }
@@ -4782,6 +4818,70 @@
         }
       }
     },
+    "/api/new/resources" : {
+      "post" : {
+        "tags" : [ "templates" ],
+        "summary" : "Creates a new Resources from a template",
+        "operationId" : "otoroshi.controllers.adminapi.TemplatesController.initiateResources",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Unknown"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Unknown"
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/pki/certs/_p12" : {
       "post" : {
         "tags" : [ "pki" ],
@@ -4834,7 +4934,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -4898,7 +4998,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -4962,7 +5062,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -5068,7 +5168,7 @@
           "201" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.auth.AuthModuleConfig"
                 }
@@ -5077,10 +5177,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.auth.AuthModuleConfig"
               }
@@ -5130,7 +5230,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "type" : "array",
                   "items" : {
@@ -5195,7 +5295,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -5309,7 +5409,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ServiceGroup"
                 }
@@ -5318,10 +5418,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.ServiceGroup"
               }
@@ -5379,7 +5479,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ServiceGroup"
                 }
@@ -5438,7 +5538,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ServiceGroup"
                 }
@@ -5497,7 +5597,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ServiceGroup"
                 }
@@ -5506,10 +5606,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.ServiceGroup"
               }
@@ -5569,7 +5669,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.Tenant"
                 }
@@ -5578,10 +5678,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.Tenant"
               }
@@ -5639,7 +5739,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.Tenant"
                 }
@@ -5698,7 +5798,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.Tenant"
                 }
@@ -5757,7 +5857,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.Tenant"
                 }
@@ -5766,10 +5866,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.Tenant"
               }
@@ -5952,7 +6052,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -6016,7 +6116,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -6079,7 +6179,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.script.Script"
                 }
@@ -6088,10 +6188,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.script.Script"
               }
@@ -6149,7 +6249,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.script.Script"
                 }
@@ -6208,7 +6308,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.script.Script"
                 }
@@ -6267,7 +6367,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.script.Script"
                 }
@@ -6276,10 +6376,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.script.Script"
               }
@@ -6393,7 +6493,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -6509,7 +6609,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/Unknown"
                 }
@@ -6518,10 +6618,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/WebAuthnRegistrationFinishBody"
               }
@@ -6635,7 +6735,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -6690,7 +6790,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -6699,12 +6799,12 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "$ref" : "#/components/schemas/BulkPatchBody"
               }
             }
           }
@@ -6752,7 +6852,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -6761,12 +6861,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.tcp.TcpService"
+                }
               }
             }
           }
@@ -6814,7 +6917,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -6865,7 +6968,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -6874,12 +6977,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.tcp.TcpService"
+                }
               }
             }
           }
@@ -6982,7 +7088,7 @@
           "201" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.tcp.TcpService"
                 }
@@ -6991,10 +7097,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.tcp.TcpService"
               }
@@ -7044,7 +7150,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "type" : "array",
                   "items" : {
@@ -7162,7 +7268,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -7275,7 +7381,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -7452,7 +7558,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
                 }
@@ -7461,10 +7567,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
               }
@@ -7522,7 +7628,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
                 }
@@ -7581,7 +7687,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
                 }
@@ -7640,7 +7746,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
                 }
@@ -7649,10 +7755,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
               }
@@ -7713,7 +7819,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -7777,7 +7883,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -7849,7 +7955,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -7904,7 +8010,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -7913,12 +8019,12 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "$ref" : "#/components/schemas/BulkPatchBody"
               }
             }
           }
@@ -7966,7 +8072,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -7975,12 +8081,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.models.ServiceGroup"
+                }
               }
             }
           }
@@ -8028,7 +8137,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -8079,7 +8188,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -8088,12 +8197,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.models.ServiceGroup"
+                }
               }
             }
           }
@@ -8204,7 +8316,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -8213,12 +8325,12 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "$ref" : "#/components/schemas/BulkPatchBody"
               }
             }
           }
@@ -8266,7 +8378,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -8275,12 +8387,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.script.Script"
+                }
               }
             }
           }
@@ -8328,7 +8443,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -8379,7 +8494,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -8388,12 +8503,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.script.Script"
+                }
               }
             }
           }
@@ -8451,7 +8569,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfig"
                 }
@@ -8460,10 +8578,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfig"
               }
@@ -8521,7 +8639,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfig"
                 }
@@ -8580,7 +8698,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfig"
                 }
@@ -8639,7 +8757,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfig"
                 }
@@ -8648,10 +8766,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfig"
               }
@@ -8712,7 +8830,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -8820,7 +8938,7 @@
           "201" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.GlobalJwtVerifier"
                 }
@@ -8829,10 +8947,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.GlobalJwtVerifier"
               }
@@ -8882,7 +9000,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "type" : "array",
                   "items" : {
@@ -9014,7 +9132,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -9069,7 +9187,7 @@
           "201" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfig"
                 }
@@ -9078,10 +9196,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfig"
               }
@@ -9131,7 +9249,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "type" : "array",
                   "items" : {
@@ -9406,7 +9524,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -9520,7 +9638,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.ssl.Cert"
                 }
@@ -9529,10 +9647,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.ssl.Cert"
               }
@@ -9590,7 +9708,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.ssl.Cert"
                 }
@@ -9649,7 +9767,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.ssl.Cert"
                 }
@@ -9708,7 +9826,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.ssl.Cert"
                 }
@@ -9717,10 +9835,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.ssl.Cert"
               }
@@ -9842,7 +9960,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -9958,7 +10076,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptor"
                 }
@@ -9967,10 +10085,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptor"
               }
@@ -10028,7 +10146,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptor"
                 }
@@ -10087,7 +10205,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptor"
                 }
@@ -10146,7 +10264,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptor"
                 }
@@ -10155,10 +10273,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptor"
               }
@@ -10210,7 +10328,7 @@
           "201" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
                 }
@@ -10219,10 +10337,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
               }
@@ -10272,7 +10390,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "type" : "array",
                   "items" : {
@@ -10345,7 +10463,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -10576,7 +10694,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -10631,7 +10749,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -10640,12 +10758,12 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "$ref" : "#/components/schemas/BulkPatchBody"
               }
             }
           }
@@ -10693,7 +10811,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -10702,12 +10820,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.ssl.Cert"
+                }
               }
             }
           }
@@ -10755,7 +10876,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -10806,7 +10927,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -10815,12 +10936,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.ssl.Cert"
+                }
               }
             }
           }
@@ -10931,7 +11055,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/HealthCheckEventList"
                 }
@@ -11166,7 +11290,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -11274,7 +11398,7 @@
           "201" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.ssl.Cert"
                 }
@@ -11283,10 +11407,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.ssl.Cert"
               }
@@ -11336,7 +11460,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "type" : "array",
                   "items" : {
@@ -11400,7 +11524,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.RemainingQuotas"
                 }
@@ -11459,7 +11583,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.RemainingQuotas"
                 }
@@ -11521,7 +11645,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -11585,7 +11709,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -11701,7 +11825,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -11710,12 +11834,12 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "$ref" : "#/components/schemas/BulkPatchBody"
               }
             }
           }
@@ -11763,7 +11887,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -11772,12 +11896,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.models.GlobalJwtVerifier"
+                }
               }
             }
           }
@@ -11825,7 +11952,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -11876,7 +12003,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkResponseBody"
                 }
@@ -11885,12 +12012,15 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkBody"
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.models.GlobalJwtVerifier"
+                }
               }
             }
           }
@@ -11940,7 +12070,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/StringList"
                 }
@@ -12158,7 +12288,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ServiceDescriptorList"
                 }
@@ -12219,7 +12349,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ErrorTemplate"
                 }
@@ -12228,10 +12358,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.ErrorTemplate"
               }
@@ -12289,7 +12419,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ErrorTemplateList"
                 }
@@ -12348,7 +12478,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/Done"
                 }
@@ -12407,7 +12537,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.models.ErrorTemplate"
                 }
@@ -12416,10 +12546,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.ErrorTemplate"
               }
@@ -12480,7 +12610,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -12560,7 +12690,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -12624,7 +12754,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -12738,7 +12868,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/Unknown"
                 }
@@ -12747,10 +12877,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/WebAuthnRegistrationStartBody"
               }
@@ -12863,7 +12993,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/Any"
                 }
@@ -12872,10 +13002,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/CodeBody"
               }
@@ -12944,7 +13074,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -13016,7 +13146,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -13138,7 +13268,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.ssl.Cert"
                 }
@@ -13147,10 +13277,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/Empty"
               }
@@ -13210,7 +13340,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.tcp.TcpService"
                 }
@@ -13219,10 +13349,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.tcp.TcpService"
               }
@@ -13280,7 +13410,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.tcp.TcpService"
                 }
@@ -13339,7 +13469,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.tcp.TcpService"
                 }
@@ -13398,7 +13528,7 @@
           "200" : {
             "description" : "Successful operation",
             "content" : {
-              "application/json" : {
+              "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.tcp.TcpService"
                 }
@@ -13407,10 +13537,10 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
           "required" : true,
           "content" : {
-            "application/json" : {
+            "application/x-ndjson" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.tcp.TcpService"
               }
@@ -13524,7 +13654,7 @@
           }
         },
         "requestBody" : {
-          "description" : "request body",
+          "description" : "the request body",
           "required" : true,
           "content" : {
             "application/json" : {
@@ -13563,7 +13693,7 @@
             "description" : "Elastic password"
           },
           "indexSettings" : {
-            "description" : "???",
+            "description" : "Indexation settings",
             "$ref" : "#/components/schemas/otoroshi.models.IndexSettings"
           },
           "mtlsConfig" : {
@@ -13589,7 +13719,7 @@
             "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
           },
           "applyTemplate" : {
-            "description" : "???",
+            "description" : "Enable template creation/update",
             "type" : "boolean"
           },
           "version" : {
@@ -13598,7 +13728,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Version of Elasticsearch"
           },
           "user" : {
             "oneOf" : [ {
@@ -13606,7 +13736,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "Elastic user"
+            "description" : "Elasticsearch user"
           }
         }
       },
@@ -14136,9 +14266,16 @@
             "description" : "Field name to get email from user profile",
             "type" : "string"
           },
+          "extractProfileFilterNot" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Exclude LDAP properties matching"
+          },
           "type" : {
-            "type" : "string",
             "description" : "the type of the module",
+            "type" : "string",
             "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
           },
           "metadataField" : {
@@ -14183,6 +14320,13 @@
             } ],
             "description" : "The admin password"
           },
+          "extractProfileFilter" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Only include LDAP properties matching"
+          },
           "sessionCookieValues" : {
             "description" : "Settings for the session cookie",
             "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
@@ -14213,6 +14357,10 @@
             },
             "description" : "LDAP server list of url"
           },
+          "_loc" : {
+            "description" : "Location of the module",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
+          },
           "tags" : {
             "type" : "array",
             "items" : {
@@ -14233,17 +14381,37 @@
             } ],
             "description" : "The admin username"
           },
+          "extractProfile" : {
+            "description" : "Extract profile from LDAP profile",
+            "type" : "boolean"
+          },
           "name" : {
             "description" : "Name of the config",
             "type" : "string"
           },
-          "location" : {
-            "description" : "Location of the module",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
           "desc" : {
             "description" : "Description of the config",
             "type" : "string"
+          }
+        }
+      },
+      "otoroshi.models.QuotasAlmostExceededSettings" : {
+        "description" : "Settings for apikey quotas alerts",
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "description" : "Is quotas alert enabled",
+            "type" : "boolean"
+          },
+          "dailyQuotasThreshold" : {
+            "format" : "double",
+            "description" : "The daily quotas threshold before generating alert",
+            "type" : "number"
+          },
+          "monthlyQuotasThreshold" : {
+            "format" : "double",
+            "description" : "The monthly quotas threshold before generating alert",
+            "type" : "number"
           }
         }
       },
@@ -14291,11 +14459,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.models.BadResponsesFaultConfig"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.models.BadResponsesFaultConfig"
             } ],
             "description" : "Settings for bad responses"
           },
@@ -14303,11 +14467,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.models.LargeRequestFaultConfig"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.models.LargeRequestFaultConfig"
             } ],
             "description" : "Settings for large requests"
           },
@@ -14315,11 +14475,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.models.LargeResponseFaultConfig"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.models.LargeResponseFaultConfig"
             } ],
             "description" : "Settings for large responses"
           },
@@ -14327,11 +14483,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.models.LatencyInjectionFaultConfig"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.models.LatencyInjectionFaultConfig"
             } ],
             "description" : "Settings for latency injection"
           },
@@ -14435,7 +14587,7 @@
             "description" : "This apikey can be used juste with the client_id value",
             "type" : "boolean"
           },
-          "location" : {
+          "_loc" : {
             "description" : "The location of the apikey",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -14555,6 +14707,10 @@
             "description" : "OAuth token URL",
             "type" : "string"
           },
+          "otoroshiRightsField" : {
+            "description" : "Field in user profile to find otoroshi UI rights",
+            "type" : "string"
+          },
           "mtlsConfig" : {
             "description" : "TLS config. for the module (for server accessed endpoints like tokenUrl, introspectionUrl, etc)",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
@@ -14568,8 +14724,8 @@
             "type" : "string"
           },
           "type" : {
-            "type" : "string",
             "description" : "the type of the module",
+            "type" : "string",
             "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
           },
           "introspectionUrl" : {
@@ -14650,6 +14806,14 @@
             "description" : "Use JSON or URL Form Encoded as payload with the OAuth provider",
             "type" : "boolean"
           },
+          "pkce" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "$ref" : "#/components/schemas/otoroshi.auth.PKCEConfig"
+            } ],
+            "description" : "Use PKCE challenge (OAuth 2.1)"
+          },
           "apiKeyTagsField" : {
             "description" : "Field name to extract apikey tags",
             "type" : "string"
@@ -14657,6 +14821,10 @@
           "otoroshiDataField" : {
             "description" : "Field name to get otoroshi metadata from. You can specify sub fields using | as separator",
             "type" : "string"
+          },
+          "_loc" : {
+            "description" : "Location of the module",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "tags" : {
             "type" : "array",
@@ -14669,11 +14837,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
             } ],
             "description" : "Algo. settings to verify JWT token"
           },
@@ -14686,11 +14850,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy configuration for the module's http client"
           },
@@ -14706,6 +14866,10 @@
             } ],
             "description" : "URL of the OIDC config. file"
           },
+          "noWildcardRedirectURI" : {
+            "description" : "Manage redirection without query params for exact string comparison (OAuth 2.1)",
+            "type" : "boolean"
+          },
           "readProfileFromToken" : {
             "description" : "The user profile will be read from the JWT token in id_token",
             "type" : "boolean"
@@ -14717,10 +14881,6 @@
           "claims" : {
             "description" : "The claims of the token",
             "type" : "string"
-          },
-          "location" : {
-            "description" : "Location of the module",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "desc" : {
             "description" : "Description of the config",
@@ -14747,10 +14907,6 @@
             "description" : "Verifier name",
             "type" : "string"
           },
-          "location" : {
-            "description" : "Entity location",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
           "source" : {
             "description" : "Where to find the jwt token",
             "$ref" : "#/components/schemas/otoroshi.models.JwtTokenLocation"
@@ -14760,9 +14916,9 @@
             "type" : "string"
           },
           "type" : {
-            "type" : "string",
             "description" : "the kind of verifier",
-            "enum" : [ "global", "local", "ref" ]
+            "type" : "string",
+            "enum" : [ "global" ]
           },
           "strict" : {
             "description" : "Does it fail if JWT not found",
@@ -14771,6 +14927,10 @@
           "strategy" : {
             "description" : "The strategy of the verifier",
             "$ref" : "#/components/schemas/otoroshi.models.VerifierStrategy"
+          },
+          "_loc" : {
+            "description" : "Entity location",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "desc" : {
             "description" : "Verifier description",
@@ -14903,7 +15063,7 @@
             "description" : "A unique random string to identify your service",
             "type" : "string"
           },
-          "location" : {
+          "_loc" : {
             "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -15075,7 +15235,7 @@
             },
             "description" : "Entity tags"
           },
-          "location" : {
+          "_loc" : {
             "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -15125,7 +15285,40 @@
       },
       "play.api.libs.ws.WSProxyServer" : {
         "type" : "object",
-        "properties" : { },
+        "properties" : {
+          "host" : {
+            "type" : "string",
+            "description" : "The hostname of the proxy server."
+          },
+          "port" : {
+            "type" : "string",
+            "description" : "The port of the proxy server."
+          },
+          "protocol" : {
+            "type" : "string",
+            "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
+          },
+          "principal" : {
+            "type" : "string",
+            "description" : "The principal (aka username) of the credentials for the proxy server."
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "The password for the credentials for the proxy server."
+          },
+          "ntlmDomain" : {
+            "type" : "string",
+            "description" : "The ntlm domain for the proxy server."
+          },
+          "encoding" : {
+            "type" : "string",
+            "description" : "The realm's charset."
+          },
+          "nonProxyHosts" : {
+            "type" : "string",
+            "description" : "The non proxied hosts"
+          }
+        },
         "description" : "Proxy server"
       },
       "otoroshi.models.ServiceDescriptorIdentifier" : {
@@ -15534,7 +15727,7 @@
             "description" : "Canary settings",
             "$ref" : "#/components/schemas/otoroshi.models.Canary"
           },
-          "location" : {
+          "_loc" : {
             "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -15657,6 +15850,22 @@
         "description" : "The otoroshi model for X509 certificates",
         "type" : "object",
         "properties" : {
+          "certType" : {
+            "type" : "string",
+            "description" : "the kind of certificate",
+            "enum" : [ "client", "ca", "letsEncrypt", "keypair", "selfSigned", "certificate" ]
+          },
+          "metadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "Entity metadata"
+          },
+          "subject" : {
+            "description" : "Certificate subject",
+            "type" : "string"
+          },
           "letsEncrypt" : {
             "description" : "Let's encrypt (ACME) generated",
             "type" : "boolean"
@@ -15665,56 +15874,17 @@
             "description" : "Is cert used for its keypair only ?",
             "type" : "boolean"
           },
-          "to" : {
-            "description" : "Stop date",
-            "type" : "number"
-          },
-          "tags" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "Entity tags"
-          },
-          "exposed" : {
-            "description" : "Is the cert exposed (public key exposed in jwks.json)",
-            "type" : "boolean"
-          },
-          "autoRenew" : {
-            "description" : "Auto renew cert",
-            "type" : "boolean"
-          },
-          "id" : {
-            "description" : "Entity id",
+          "description" : {
+            "description" : "Entity description",
             "type" : "string"
           },
           "revoked" : {
             "description" : "Certificate is revoked",
             "type" : "boolean"
           },
-          "from" : {
-            "description" : "Start date",
-            "type" : "number"
-          },
-          "client" : {
-            "description" : "Is cert a client cert ?",
+          "valid" : {
+            "description" : "Is cert valid",
             "type" : "boolean"
-          },
-          "ca" : {
-            "description" : "Is cert a CA ?",
-            "type" : "boolean"
-          },
-          "name" : {
-            "description" : "Entity name",
-            "type" : "string"
-          },
-          "chain" : {
-            "description" : "Certicates chain (PEM encoded)",
-            "type" : "string"
-          },
-          "location" : {
-            "description" : "Entity location",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "password" : {
             "oneOf" : [ {
@@ -15724,6 +15894,38 @@
             } ],
             "description" : "Certificate password"
           },
+          "autoRenew" : {
+            "description" : "Auto renew cert",
+            "type" : "boolean"
+          },
+          "exposed" : {
+            "description" : "Is the cert exposed (public key exposed in jwks.json)",
+            "type" : "boolean"
+          },
+          "client" : {
+            "description" : "Is cert a client cert ?",
+            "type" : "boolean"
+          },
+          "from" : {
+            "description" : "Start date",
+            "type" : "number"
+          },
+          "selfSigned" : {
+            "description" : "Is cert self signed",
+            "type" : "boolean"
+          },
+          "id" : {
+            "description" : "Entity id",
+            "type" : "string"
+          },
+          "ca" : {
+            "description" : "Is cert a CA ?",
+            "type" : "boolean"
+          },
+          "chain" : {
+            "description" : "Certicates chain (PEM encoded)",
+            "type" : "string"
+          },
           "sans" : {
             "type" : "array",
             "items" : {
@@ -15731,23 +15933,19 @@
             },
             "description" : "Certificate SANs"
           },
-          "selfSigned" : {
-            "description" : "Is cert self signed",
-            "type" : "boolean"
+          "_loc" : {
+            "description" : "Entity location",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
-          "entityMetadata" : {
-            "type" : "object",
-            "additionalProperties" : {
+          "tags" : {
+            "type" : "array",
+            "items" : {
               "type" : "string"
             },
-            "description" : "Entity metadata"
+            "description" : "Entity tags"
           },
           "privateKey" : {
             "description" : "Certificate private key (PEM encoded)",
-            "type" : "string"
-          },
-          "domain" : {
-            "description" : "Certificate domain",
             "type" : "string"
           },
           "caRef" : {
@@ -15758,17 +15956,17 @@
             } ],
             "description" : "Reference to the CA (if any)"
           },
-          "description" : {
-            "description" : "Entity description",
+          "domain" : {
+            "description" : "Certificate domain",
             "type" : "string"
           },
-          "subject" : {
-            "description" : "Certificate subject",
+          "name" : {
+            "description" : "Entity name",
             "type" : "string"
           },
-          "valid" : {
-            "description" : "Is cert valid",
-            "type" : "boolean"
+          "to" : {
+            "description" : "Stop date",
+            "type" : "number"
           }
         }
       },
@@ -15919,11 +16117,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.models.CleverCloudSettings"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.models.CleverCloudSettings"
             } ],
             "description" : "Optional CleverCloud configuration"
           },
@@ -15942,11 +16136,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.events.KafkaConfig"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.events.KafkaConfig"
             } ],
             "description" : "Global kafka settings. deprecated"
           },
@@ -15967,17 +16157,17 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.models.ElasticAnalyticsConfig"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.models.ElasticAnalyticsConfig"
             } ],
             "description" : "Config. for elastic reads"
           },
           "trustXForwarded" : {
             "description" : "Use X-Forwarded-* headers for routing",
             "type" : "boolean"
+          },
+          "quotasSettings" : {
+            "description" : "Settings to generate alert when an apikey almost exceeded or exceeded its quotas",
+            "$ref" : "#/components/schemas/otoroshi.models.QuotasAlmostExceededSettings"
           },
           "tags" : {
             "type" : "array",
@@ -16036,11 +16226,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.utils.mailer.MailerSettings"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.utils.mailer.MailerSettings"
             } ],
             "description" : "Optional mailer configuration"
           },
@@ -16104,11 +16290,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.events.StatsdConfig"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.events.StatsdConfig"
             } ],
             "description" : "Statsd settings (agent connection)"
           },
@@ -16240,11 +16422,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.auth.WebAuthnDetails"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.auth.WebAuthnDetails"
             } ],
             "description" : "Webauthn details"
           },
@@ -16284,11 +16462,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy settings for http client"
           },
@@ -16414,10 +16588,6 @@
             "description" : "User rights",
             "$ref" : "#/components/schemas/otoroshi.models.UserRights"
           },
-          "location" : {
-            "description" : "Entity location",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
           "typ" : {
             "description" : "Type of user",
             "$ref" : "#/components/schemas/otoroshi.models.OtoroshiAdminType"
@@ -16430,6 +16600,10 @@
             "description" : "the kind of admin",
             "type" : "string",
             "enum" : [ "simple", "webauthn" ]
+          },
+          "_loc" : {
+            "description" : "Entity location",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "username" : {
             "description" : "User username",
@@ -16542,7 +16716,7 @@
         }
       },
       "otoroshi.models.IndexSettingsInterval" : {
-        "description" : "???",
+        "description" : "Elasticseach indexation interval",
         "type" : "object",
         "properties" : { }
       },
@@ -16736,7 +16910,7 @@
             "description" : "Entity id",
             "type" : "string"
           },
-          "location" : {
+          "_loc" : {
             "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -17147,11 +17321,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenCsrQuery"
-              } ]
+              "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenCsrQuery"
             } ],
             "description" : "JSON generation query"
           },
@@ -17210,7 +17380,7 @@
             "description" : "Creation date of the session",
             "type" : "number"
           },
-          "location" : {
+          "_loc" : {
             "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -17325,15 +17495,15 @@
         }
       },
       "otoroshi.models.IndexSettings" : {
-        "description" : "???",
+        "description" : "Elasticseach indexation settings",
         "type" : "object",
         "properties" : {
           "clientSide" : {
-            "description" : "???",
+            "description" : "Enable index splitting on client side",
             "type" : "boolean"
           },
           "interval" : {
-            "description" : "???",
+            "description" : "Index splitting interval",
             "$ref" : "#/components/schemas/otoroshi.models.IndexSettingsInterval"
           }
         }
@@ -17563,11 +17733,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy used to call elastic"
           },
@@ -17575,11 +17741,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy used to call webhooks"
           },
@@ -17587,11 +17749,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy used to fetch jwks"
           },
@@ -17599,11 +17757,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy used to call OAuth providers"
           },
@@ -17611,11 +17765,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy used to call clevercloud"
           },
@@ -17623,11 +17773,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy used to send alert emails"
           },
@@ -17635,11 +17781,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy used to check authorities"
           },
@@ -17647,11 +17789,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy used to access services targets"
           }
@@ -17799,18 +17937,18 @@
             "description" : "Use webauthn for login",
             "type" : "boolean"
           },
-          "location" : {
-            "description" : "location of the module",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
           "id" : {
             "description" : "id of the module",
             "type" : "string"
           },
           "type" : {
-            "type" : "string",
             "description" : "the type of the module",
+            "type" : "string",
             "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
+          },
+          "_loc" : {
+            "description" : "location of the module",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "users" : {
             "type" : "array",
@@ -18017,7 +18155,7 @@
             "description" : "Expiration date for the session",
             "type" : "number"
           },
-          "location" : {
+          "_loc" : {
             "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -18229,6 +18367,44 @@
         "type" : "string",
         "description" : ""
       },
+      "play.api.libs.ws.DefaultWSProxyServer" : {
+        "type" : "object",
+        "properties" : {
+          "host" : {
+            "type" : "string",
+            "description" : "The hostname of the proxy server."
+          },
+          "port" : {
+            "type" : "string",
+            "description" : "The port of the proxy server."
+          },
+          "protocol" : {
+            "type" : "string",
+            "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
+          },
+          "principal" : {
+            "type" : "string",
+            "description" : "The principal (aka username) of the credentials for the proxy server."
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "The password for the credentials for the proxy server."
+          },
+          "ntlmDomain" : {
+            "type" : "string",
+            "description" : "The ntlm domain for the proxy server."
+          },
+          "encoding" : {
+            "type" : "string",
+            "description" : "The realm's charset."
+          },
+          "nonProxyHosts" : {
+            "type" : "string",
+            "description" : "The non proxied hosts"
+          }
+        },
+        "description" : "Proxy server"
+      },
       "PemCertificateBody" : {
         "type" : "string",
         "description" : "PEM encoded certificate"
@@ -18291,7 +18467,7 @@
             "description" : "Description",
             "type" : "string"
           },
-          "location" : {
+          "_loc" : {
             "description" : "location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
@@ -18314,7 +18490,7 @@
             "description" : "Group size",
             "type" : "integer"
           },
-          "typ" : {
+          "type" : {
             "description" : "Type of data exporter",
             "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType"
           },
@@ -18582,9 +18758,13 @@
             "type" : "boolean"
           },
           "type" : {
-            "type" : "string",
             "description" : "the type of the module",
+            "type" : "string",
             "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
+          },
+          "_loc" : {
+            "description" : "Location of the SAML module",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "issuer" : {
             "description" : "Issuer of the SAML requests",
@@ -18629,10 +18809,6 @@
           "nameIDFormat" : {
             "description" : "Format of the name ID",
             "$ref" : "#/components/schemas/otoroshi.auth.NameIDFormat"
-          },
-          "location" : {
-            "description" : "Location of the SAML module",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "singleLogoutProtocolBinding" : {
             "description" : "Protocol binding used by identity provider to logout users",
@@ -18683,6 +18859,20 @@
           }
         }
       },
+      "otoroshi.auth.PKCEConfig" : {
+        "description" : "Settings for PKCE challenge (OAuth 2.1)",
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "description" : "Is PKCE challenge enabled",
+            "type" : "boolean"
+          },
+          "algorithm" : {
+            "description" : "Hashing algorithm used in PKCE challenge",
+            "type" : "string"
+          }
+        }
+      },
       "otoroshi.events.StatsdConfig" : {
         "description" : "Settings for connection to a statsd agent",
         "type" : "object",
@@ -18714,11 +18904,7 @@
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/Null"
-              }, {
-                "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
-              } ]
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "Web proxy for http client"
           },
@@ -18896,13 +19082,17 @@
             "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
           },
           "type" : {
-            "type" : "string",
             "description" : "the type of the module",
+            "type" : "string",
             "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
           },
           "httpMethod" : {
             "description" : "Method used to fetch access and request token",
             "$ref" : "#/components/schemas/otoroshi.auth.OAuth1Provider"
+          },
+          "_loc" : {
+            "description" : "The location of the OAuth 1 module",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "tags" : {
             "type" : "array",
@@ -18938,10 +19128,6 @@
           "callbackURL" : {
             "description" : "The location where the identity provider returns a browser after the user finishes authenticating with their IDP",
             "type" : "string"
-          },
-          "location" : {
-            "description" : "The location of the OAuth 1 module",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "id" : {
             "description" : "Id of the module",
@@ -19041,6 +19227,13 @@
         "type" : "string",
         "enum" : [ "Legacy", "Latest" ],
         "description" : "Version of the info token"
+      },
+      "BulkPatchBody" : {
+        "type" : "array",
+        "description" : "Body composed of stringified JSON-Patch lines, each one representing updates to an entity",
+        "items" : {
+          "$ref" : "#/components/schemas/PatchDocument"
+        }
       },
       "GlobalConfigImportBody" : {
         "type" : "object",
@@ -19162,10 +19355,6 @@
             "description" : "User rights",
             "$ref" : "#/components/schemas/otoroshi.models.UserRights"
           },
-          "location" : {
-            "description" : "Entity location",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
           "typ" : {
             "description" : "User type",
             "$ref" : "#/components/schemas/otoroshi.models.OtoroshiAdminType"
@@ -19182,6 +19371,10 @@
             "description" : "the kind of admin",
             "type" : "string",
             "enum" : [ "simple", "webauthn" ]
+          },
+          "_loc" : {
+            "description" : "Entity location",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "username" : {
             "description" : "User username",
