@@ -245,5 +245,6 @@ reStart / javaOptions ++= Seq(
   "-Dapp.domain=oto.tools", 
   "-Dapp.events.maxSize=0", 
   "-Dotoroshi.cluster.mode=Leader", 
-  "-Dapp.instance.name=dev"
+  "-Dapp.instance.name=dev",
+  "-Dotoroshi.ssl.fromOutside.clientAuth=Want"
 )

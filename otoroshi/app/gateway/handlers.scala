@@ -293,9 +293,14 @@ class GatewayRequestHandler(
         val host        = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
         val relativeUri = request.relativeUri
         val monitoring  = monitoringPaths.exists(p => relativeUri.startsWith(p))
-        if (env.revolver && (relativeUri.startsWith("/assets/") || relativeUri.startsWith("/__otoroshi_assets/"))) {
-          // I know ...
-          return Some(serveDevAssets())
+        if (env.revolver) {
+          if (relativeUri.startsWith("/__otoroshi_assets/")) {
+            return Some(serveDevAssets()) // I know ...
+          } else if (host == env.backOfficeHost && relativeUri.startsWith("/assets/")) {
+            return Some(serveDevAssets()) // I know ...
+          } else if (host == env.privateAppsHost && relativeUri.startsWith("/assets/")) {
+            return Some(serveDevAssets()) // I know ...
+          }
         }
         host match {
           case _ if relativeUri.contains("__otoroshi_assets")                 => super.routeRequest(request)
