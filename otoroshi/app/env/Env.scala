@@ -405,6 +405,7 @@ class Env(
     .map(_ => true)
     .orElse(configuration.getOptionalWithFileSupport[Boolean]("app.liveJs"))
     .getOrElse(false)
+  lazy val revolver: Boolean = configuration.getOptionalWithFileSupport[Boolean]("app.revolver").getOrElse(false)
 
   lazy val exposeAdminApi: Boolean                         =
     if (clusterConfig.mode.isWorker) false

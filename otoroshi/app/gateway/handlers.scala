@@ -5,10 +5,12 @@ import java.util.concurrent.atomic.AtomicInteger
 import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
+import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.auth.{AuthModuleConfig, SamlAuthModuleConfig, SessionCookieValues}
 import com.google.common.base.Charsets
+import controllers.Assets
 import otoroshi.controllers.HealthController
 import otoroshi.env.Env
 import otoroshi.events._
@@ -30,7 +32,9 @@ import play.core.WebCommands
 import otoroshi.security.OtoroshiClaim
 import otoroshi.ssl.{KeyManagerCompatibility, SSLSessionJavaHelper}
 import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.syntax.implicits.BetterSyntax
 
+import java.io.File
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
 
@@ -289,6 +293,10 @@ class GatewayRequestHandler(
         val host        = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
         val relativeUri = request.relativeUri
         val monitoring  = monitoringPaths.exists(p => relativeUri.startsWith(p))
+        if (env.revolver && (relativeUri.startsWith("/assets/") || relativeUri.startsWith("/__otoroshi_assets/"))) {
+          // I know ...
+          return Some(serveDevAssets())
+        }
         host match {
           case _ if relativeUri.contains("__otoroshi_assets")                 => super.routeRequest(request)
           case _ if relativeUri.startsWith("/__otoroshi_private_apps_login")  => Some(setPrivateAppsCookies())
@@ -397,6 +405,51 @@ class GatewayRequestHandler(
         Some(
           webSocketHandler.forwardCall(reverseProxyAction, snowMonkey, headersInFiltered, headersOutFiltered)
         )
+    }
+  }
+
+  private val devCache = Scaffeine().maximumSize(10000).build[String, (String, ByteString)]
+  private lazy val devMimetypes: Map[String, String] = env.configuration.getOptional[String]("play.http.fileMimeTypes").map { types =>
+    types.split("\\n")
+      .toSeq.map(_.trim)
+      .filter(_.nonEmpty)
+      .map(_.split("=").toSeq)
+      .filter(_.size == 2)
+      .map(v => (v.head, v.tail.head))
+      .toMap
+  }.getOrElse(Map.empty[String, String])
+
+  def serveDevAssets() = actionBuilder.async { req =>
+    val wholePath = req.relativeUri
+    println(s"dev serving ${wholePath}")
+    devCache.getIfPresent(wholePath) match {
+      case Some((contentType, content)) => Results.Ok(content).as(contentType).future
+      case None => {
+        val path = wholePath
+          .replaceFirst("/assets", "")
+          .replaceFirst("/__otoroshi_assets", "")
+          .applyOnIf(wholePath.contains("?"))(_.split("\\?").head)
+        val ext = path.split("\\.").toSeq.lastOption.getOrElse("txt").toLowerCase
+        val mimeType: String = devMimetypes.getOrElse(ext, "text/plain")
+        val fileSource = {
+          val file = new File("./public" + path)
+          if (file.exists()) {
+            FileIO.fromPath(file.toPath).some
+          } else {
+            None
+          }
+        }
+        fileSource.map { source =>
+          source
+            .runFold(ByteString.empty)(_ ++ _)
+            .map { contentRaw =>
+              devCache.put(wholePath, (mimeType, contentRaw))
+              Results.Ok(contentRaw).as(mimeType)
+            }
+        } getOrElse {
+          Results.NotFound(s"file '${wholePath}' not found !").future
+        }
+      }
     }
   }
 

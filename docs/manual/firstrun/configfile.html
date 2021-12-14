@@ -31,7 +31,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.0-rc.1
+1.5.0-rc.2
 </div>
 </div>
 <div class="nav-toc">
@@ -193,7 +193,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.0-rc.1
+1.5.0-rc.2
 </div>
 </div>
 <div class="nav-toc">
@@ -2040,7 +2040,7 @@ play.server.http.idleTimeout = ${?PLAY_SERVER_IDLE_TIMEOUT}       # the default 
 play.server.akka.requestTimeout = 3600s                           # the default server idle timeout (for akka server specifically)
 play.server.akka.requestTimeout = ${?PLAY_SERVER_REQUEST_TIMEOUT} # the default server idle timeout (for akka server specifically)
 
-http2.enabled = no                 # enable HTTP2 support
+http2.enabled = true               # enable HTTP2 support
 http2.enabled = ${?HTTP2_ENABLED}  # enable HTTP2 support
 
 play.server.https.keyStore.path=${?HTTPS_KEYSTORE_PATH}         # settings for the default server keystore
@@ -2048,10 +2048,10 @@ play.server.https.keyStore.type=${?HTTPS_KEYSTORE_TYPE}         # settings for t
 play.server.https.keyStore.password=${?HTTPS_KEYSTORE_PASSWORD} # settings for the default server keystore
 play.server.https.keyStore.algorithm=${?HTTPS_KEYSTORE_ALGO}    # settings for the default server keystore
  
-play.server.https.wantClientAuth = false                        # mTLS Want client auth settings (client cert COULD be provided)
-play.server.https.wantClientAuth = ${?HTTPS_WANT_CLIENT_AUTH}   # mTLS Want client auth settings (client cert COULD be provided)
-play.server.https.needClientAuth = false                        # mTLS Need client auth settings (client cert MUST be provided)
-play.server.https.needClientAuth = ${?HTTPS_NEED_CLIENT_AUTH}   # mTLS Need client auth settings (client cert MUST be provided)
+play.server.https.wantClientAuth = false                        # mTLS Want client auth settings (client cert COULD be provided) #not-used
+play.server.https.wantClientAuth = ${?HTTPS_WANT_CLIENT_AUTH}   # mTLS Want client auth settings (client cert COULD be provided) #not-used
+play.server.https.needClientAuth = false                        # mTLS Need client auth settings (client cert MUST be provided)  #not-used
+play.server.https.needClientAuth = ${?HTTPS_NEED_CLIENT_AUTH}   # mTLS Need client auth settings (client cert MUST be provided)  #not-used
 
 play.server.pidfile.path = &quot;/dev/null&quot;  # pid file path  #not-used
 

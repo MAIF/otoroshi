@@ -304,23 +304,23 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>The only fields to change are : </p>
 <ul>
   <li><code>Client ID</code>: <code>keycloak-otoroshi-backoffice</code></li>
-  <li><code>Client Secret</code>: Paste the Secret from the Credentials Keycloak page. In my case, it&rsquo;s something like <code>90c9bf0b-2c0c-4eb0-aa02-72195beb9da7</code></li>
+  <li><code>Client Secret</code>: Paste the secret from the Credentials Keycloak page. In my case, it&rsquo;s something like <code>90c9bf0b-2c0c-4eb0-aa02-72195beb9da7</code></li>
   <li><code>Callback URL</code>: <code>http://otoroshi.oto.tools:8080/backoffice/auth0/callback</code></li>
 </ul>
 <p>At the bottom of the page, disable the <code>secure</code> button (because we&rsquo;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs). Nothing else to change, just save the configuration.</p>
 <h3><a href="#connect-to-otoroshi-with-keycloak-authentication" name="connect-to-otoroshi-with-keycloak-authentication" class="anchor"><span class="anchor-link"></span></a>Connect to Otoroshi with Keycloak authentication</h3>
 <p>To secure Otoroshi with your Keycloak configuration, we have to register an Authentication configuration as a BackOffice Auth. configuration.</p>
 <ol>
-  <li>Navigate to the <em>danger zone</em> (when clicking on the cog on the top right and selecting Danger zone)</li>
-  <li>Scroll to the <em>BackOffice auth. settings</em></li>
+  <li>Navigate to the <strong>danger zone</strong> (when clicking on the cog on the top right and selecting Danger zone)</li>
+  <li>Scroll to the <strong>BackOffice auth. settings</strong></li>
   <li>Select your last Authentication configuration (created in the previous section)</li>
   <li>Save the global configuration with the button on the top right</li>
 </ol>
 <h3><a href="#testing-your-configuration" name="testing-your-configuration" class="anchor"><span class="anchor-link"></span></a>Testing your configuration</h3>
 <ol>
   <li>Disconnect from your instance</li>
-  <li>Then click on the <em>Login using third-party</em> button (or navigate to <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a>)</li>
-  <li>Click on <code>Login using Third-party</code> button</li>
+  <li>Then click on the <strong>Login using third-party</strong> button (or navigate to <a href="http://otoroshi.oto.tools:8080" title="http://otoroshi.oto.tools:8080" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080</a>)</li>
+  <li>Click on <strong>Login using Third-party</strong> button</li>
   <li>If all is configured, Otoroshi will redirect you to the keycloak login page</li>
   <li>Set <code>admin/admin</code> as user and trust the user by clicking on <code>yes</code> button.</li>
   <li>Good work! You&rsquo;re connected to Otoroshi with an Keycloak module.</li>
@@ -358,7 +358,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   }
 ]
 </code></pre>
-<p>We haven&rsquo;t create any specific groups in Keycloak or specify rights in Otoroshi for him. In this case, the use received the default Otoroshi rights at his connection. We can see that he can navigate on the default Organization and Teams (which are two resources created by Otoroshi at the boot) and that he have the full access (<code>r</code>: Read, <code>w</code>: Write, <code>*</code>: read/write) on its.</p>
+<p>We haven&rsquo;t create any specific groups in Keycloak or specify rights in Otoroshi for him. In this case, the use received the default Otoroshi rights at his connection. The user can navigate on the default Organization and Teams (which are two resources created by Otoroshi at the boot) and have the full access on its (<code>r</code>: Read, <code>w</code>: Write, <code>*</code>: read/write).</p>
 <p>In the same way, you&rsquo;ll find all users connected to a private Otoroshi app when navigate on the <a href="http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private" title="`Private App View`"><code>Private App View</code></a> or using the cog at the top of the page. </p>
 <h3><a href="#configure-the-keycloak-module-to-force-logged-in-users-to-be-an-otoroshi-admin-with-full-access" name="configure-the-keycloak-module-to-force-logged-in-users-to-be-an-otoroshi-admin-with-full-access" class="anchor"><span class="anchor-link"></span></a>Configure the Keycloak module to force logged in users to be an Otoroshi admin with full access</h3>
 <p>Go back to the Keycloak module in <code>Authentication configs</code> view. Turn on the <code>Supers admin only</code> button and save your configuration. Try again the connection to Otoroshi using Keycloak third-party server.</p>
@@ -373,7 +373,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 ]
 </code></pre>
 <h3><a href="#merge-id-token-content-on-user-profile" name="merge-id-token-content-on-user-profile" class="anchor"><span class="anchor-link"></span></a>Merge Id token content on user profile</h3>
-<p>Go back to the Keycloak module in <code>Authentication confgis</code> view. Turn on the <code>Read profile</code> from token button and save your configuration. Try again the connection to Otoroshi using Keycloak third-party server.</p>
+<p>Go back to the Keycloak module in <code>Authentication configs</code> view. Turn on the <code>Read profile</code> from token button and save your configuration. Try again the connection to Otoroshi using Keycloak third-party server.</p>
 <p>Once connected, your profile should be contains all Keycloak id token : </p>
 <pre class="prettyprint"><code class="language-json">{
     &quot;exp&quot;: 1634286674,
@@ -439,19 +439,25 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#manage-the-otoroshi-user-rights-from-keycloak" name="manage-the-otoroshi-user-rights-from-keycloak" class="anchor"><span class="anchor-link"></span></a>Manage the Otoroshi user rights from keycloak</h3>
 <p>One powerful feature supports by Otoroshi, is to use the Keycloak groups attributes to set a list of rights for a Otoroshi user.</p>
 <p>In the Keycloak module, you have a field, named <code>Otoroshi rights field name</code> with <code>otoroshi_rights</code> as default value. This field is used by Otoroshi to retrieve information from the Id token groups.</p>
-<p>Let&rsquo;s create a group in Keycloak, and set our default Admin user inside. In Keycloak admin console : 1. Navigate to the groups view, using the keycloak sidebar 2. Create a new group with <code>my-group</code> as <code>Name</code> 3. Then, on the <code>Attributes</code> tab, create an attribute with <code>otoroshi_rights</code> as <code>Key</code> and the following json array as <code>Value</code></p>
-<pre class="prettyprint"><code class="language-json">[
-    {
-        &quot;tenant&quot;: &quot;*:rw&quot;,
-        &quot;teams&quot;: [
-            &quot;*:rw&quot;,
-            &quot;my-future-team:rw&quot;
-        ]
-    }
+<p>Let&rsquo;s create a group in Keycloak, and set our default Admin user inside. In Keycloak admin console :</p>
+<ol>
+  <li>Navigate to the groups view, using the keycloak sidebar</li>
+  <li>Create a new group with <code>my-group</code> as <code>Name</code></li>
+  <li>
+  <p>Then, on the <code>Attributes</code> tab, create an attribute with <code>otoroshi_rights</code> as <code>Key</code> and the following json array as <code>Value</code></p>
+  <pre class="prettyprint"><code class="language-json">[
+{
+    &quot;tenant&quot;: &quot;*:rw&quot;,
+    &quot;teams&quot;: [
+        &quot;*:rw&quot;,
+        &quot;my-future-team:rw&quot;
+    ]
+}
 ]
-</code></pre>
-<p>With this configuration, the user have a full access on all Otoroshi resources (my-future-team is not created in Otoroshi but it&rsquo;s not a problem, Otoroshi can handle it and use this rights only when the teams will be present)</p>
-<p>Click on the <code>Add</code> button and save the group. The last step is to assign our user to this group. Jump to <code>Users</code> view using the sidebar, click on <code>View all users</code>, edit the user and his group membership using the <code>Groups</code> tab (use <code>join</code> button the assign user in <code>my-group</code>).</p>
+</code></pre></li>
+</ol>
+<p>With this configuration, the user have a full access on all Otoroshi resources (my-future-team is not created in Otoroshi but it&rsquo;s not a problem, Otoroshi can handle it and use this rights only when the team will be present)</p>
+<p>Click on the <strong>Add</strong> button and <strong>save</strong> the group. The last step is to assign our user to this group. Jump to <code>Users</code> view using the sidebar, click on <strong>View all users</strong>, edit the user and his group membership using the <code>Groups</code> tab (use <strong>join</strong> button the assign user in <code>my-group</code>).</p>
 <p>The next step is to add a mapper in the Keycloak client. By default, Keycloak doesn&rsquo;t expose any users information (like group membership or users attribute). We need to ask to Keycloak to expose the user attribute <code>otoroshi_rights</code> set previously on group.</p>
 <p>Navigate to the <code>Keycloak-otoroshi-backoffice</code> client, and jump to <code>Mappers</code> tab. Create a new mapper with the following values: </p>
 <ul>
@@ -463,7 +469,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>Multivalued: <code>√</code></li>
   <li>Aggregate attribute values: <code>√</code></li>
 </ul>
-<p>Go back to the Authentication Keycloak module inside Otoroshi UI, and turn off <code>Super admins only</code>. Save the configuration.</p>
+<p>Go back to the Authentication Keycloak module inside Otoroshi UI, and turn off <strong>Super admins only</strong>. <strong>Save</strong> the configuration.</p>
 <p>Once done, try again the connection to Otoroshi using Keycloak third-party server. Now, your rights should be : </p>
 <pre class="prettyprint"><code class="language-json">[
   {
@@ -476,7 +482,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 ]
 </code></pre>
 <h3><a href="#secure-an-app-with-keycloak-authentication" name="secure-an-app-with-keycloak-authentication" class="anchor"><span class="anchor-link"></span></a>Secure an app with Keycloak authentication</h3>
-<p>The only change to apply on the previous authentication module, is on the callback URL. When you want secure a Otoroshi service, and transform it on <code>Private App</code>, you need to set the <code>Callback URL</code> at <code>http://privateapps.oto.tools:8080/privateapps/generic/callback</code></p>
+<p>The only change to apply on the previous authentication module is on the callback URL. When you want secure a Otoroshi service, and transform it on <code>Private App</code>, you need to set the <code>Callback URL</code> at <code>http://privateapps.oto.tools:8080/privateapps/generic/callback</code>. This configuration will redirect users to the downstream service after they have successfully logged in.</p>
 <ol>
   <li>Go back to the authentication module</li>
   <li>Jump to the <code>Callback URL</code> field</li>

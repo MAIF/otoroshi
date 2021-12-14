@@ -141,9 +141,11 @@ libraryDependencies ++= Seq(
 // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"          % "5.1.0" % Test,
   // do not update because the feature is deprecated and will be removed
-  "org.reactivemongo"               %% "reactivemongo"               % "0.20.13" excludeAll ExclusionRule(organization = "org.apache.logging.log4j"),
+  "org.reactivemongo"               %% "reactivemongo"               % "0.20.13" excludeAll ExclusionRule(organization =
+    "org.apache.logging.log4j"
+  ),
   "org.iq80.leveldb"                 % "leveldb"                     % "0.12",
-	"org.apache.logging.log4j"				 % "log4j-api" 									 % "2.15.0"
+  "org.apache.logging.log4j"         % "log4j-api"                   % "2.15.0"
 )
 
 scalacOptions ++= Seq(
@@ -223,5 +225,25 @@ addJava "--add-opens=java.base/javax.net.ssl=ALL-UNNAMED"
 addJava "--add-opens=java.base/sun.net.www.protocol.file=ALL-UNNAMED"
 addJava "--add-exports=java.base/sun.security.x509=ALL-UNNAMED" 
 addJava "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED" 
-addJava "-Dlog4j2.formatMsgNoLookups=True"
+addJava "-Dlog4j2.formatMsgNoLookups=true"
 """
+
+// run with: ~reStart
+reStart / mainClass := Some("play.core.server.ProdServerStart")
+reStart / javaOptions ++= Seq(
+  "--add-opens=java.base/javax.net.ssl=ALL-UNNAMED", 
+  "--add-exports=java.base/sun.security.x509=ALL-UNNAMED", 
+  "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED", 
+  "-Dlog4j2.formatMsgNoLookups=true",
+  "-Dapp.revolver=true", 
+  "-Dapp.env=dev", 
+  "-Dhttp.port=9999", 
+  "-Dhttps.port=9998", 
+  "-Dapp.storage=file", 
+  "-Dapp.liveJs=true", 
+  "-Dapp.adminPassword=password", 
+  "-Dapp.domain=oto.tools", 
+  "-Dapp.events.maxSize=0", 
+  "-Dotoroshi.cluster.mode=Leader", 
+  "-Dapp.instance.name=dev"
+)

@@ -258,25 +258,24 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>then you can run start Otoroshi :</p>
 <pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -jar otoroshi.jar 
 </code></pre>
-<p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
+<p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080" title="http://otoroshi.oto.tools:8080" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
 <h3><a href="#create-a-simple-service" name="create-a-simple-service" class="anchor"><span class="anchor-link"></span></a>Create a simple service</h3>
 <ol>
-  <li>Navigate to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/services">http://otoroshi.oto.tools:8080/bo/dashboard/services</a> and click on the <code>create new service</code> button</li>
-  <li>Jump to <code>Service exposition settings</code> and add <a href="http://myservice.oto.tools">http://myservice.oto.tools</a> as <code>Exposed domain</code></li>
-  <li>Jump to <code>Service targets</code> and add <a href="https://mirror.otoroshi.io/">https://mirror.otoroshi.io/</a> as <code>Target 1</code></li>
+  <li>Navigate to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/services" title="http://otoroshi.oto.tools:8080/bo/dashboard/services" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080/bo/dashboard/services</a> and click on the <code>create new service</code> button</li>
+  <li>Jump to <code>Service exposition settings</code> and add <code>http://myservice.oto.tools</code> as <code>Exposed domain</code></li>
+  <li>Jump to <code>Service targets</code> and add <code>https://mirror.otoroshi.io</code> as <code>Target 1</code></li>
   <li>Jump to the <code>URL Patterns</code> section</li>
   <li>Enable your service as <code>Public UI</code></li>
-  <li>Open a new tab and navigate to <a href="http://myservice.oto.tools:8080/">http://myservice.oto.tools:8080/</a></li>
+  <li>Open a new tab and navigate to <a href="http://myservice.oto.tools:8080/" title="http://myservice.oto.tools:8080" target="_blank" rel="noopener noreferrer">http://myservice.oto.tools:8080</a></li>
 </ol>
 <p>With this configuration, all routes are public, wihtout any authentication needed.</p>
 <h3><a href="#secure-routes-with-api-key" name="secure-routes-with-api-key" class="anchor"><span class="anchor-link"></span></a>Secure routes with api key</h3>
-<p>With the previous configuration, all routes are public. </p>
-<p>In our case, we want to secure all routes prefix with <code>/api</code>.</p>
-<p>Let&rsquo;s return to the <code>URL Patterns</code> section. Click on <code>Make service a private api</code>. This button automatically add <code>/api</code> as default in <code>Private patterns</code> array. (Note that the field supports regex like. In our case, <code>/api.*</code> covers all routes starting by <code>/api</code>).</p>
-<p>Save your app and navigate to <a href="http://myservice.oto.tools:8080/api/test">http://myservice.oto.tools:8080/api/test</a> again. If the service is configured, you should have a <code>Service Not found error</code>, and a success call, in the case you navigate to any other routes which are not starting by <code>/api/*</code> like <a href="http://myservice.oto.tools:8080/test/bar">http://myservice.oto.tools:8080/test/bar</a></p>
-<p>This expected error on the <code>/api/test</code>, throws by the URL Patterns, indicate to the client that an api key is required to access to the downstream service.</p>
+<p>With the previous configuration, all routes are public. In our case, we want to secure all routes prefix with <code>/api</code>.</p>
+<p>Let&rsquo;s return to the <code>URL Patterns</code> section. Click on <strong>Make service a private api</strong>. This button automatically add <code>/api</code> as default in <code>Private patterns</code> array. (Note that the field supports regex like. In our case, <code>/api.*</code> covers all routes starting by <code>/api</code>).</p>
+<p>Save your app and navigate to <a href="http://myservice.oto.tools:8080/api/test" title="http://myservice.oto.tools:8080/api/test" target="_blank" rel="noopener noreferrer">http://myservice.oto.tools:8080/api/test</a> again. If the service is configured, you should have a <code>Service Not found error</code>, and a success call, in the case you navigate to any other routes which are not starting by <code>/api/*</code> like <a href="http://myservice.oto.tools:8080/test/bar" title="http://myservice.oto.tools:8080/test/bar" target="_blank" rel="noopener noreferrer">http://myservice.oto.tools:8080/test/bar</a></p>
+<p>The expected error on the <code>/api/test</code>, throws by the URL Patterns, indicate to the client that an api key is required to access to this part of the downstream service.</p>
 <h3><a href="#generate-an-api-key-to-request-secure-services" name="generate-an-api-key-to-request-secure-services" class="anchor"><span class="anchor-link"></span></a>Generate an api key to request secure services</h3>
-<p>Navigate to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/apikeys/add">http://otoroshi.oto.tools:8080/bo/dashboard/apikeys/add</a> or when clicking on the <code>Add apikey</code> button on the sidebar.</p>
+<p>Navigate to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/apikeys/add" title="http://otoroshi.oto.tools:8080/bo/dashboard/apikeys/add" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080/bo/dashboard/apikeys/add</a> or when clicking on the <strong>Add apikey</strong> button on the sidebar.</p>
 <p>The only required fields of an Otoroshi api key are : </p>
 <ul>
   <li><code>ApiKey id</code></li>
@@ -289,7 +288,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>my-first-api-key-id</code> as <code>ApiKey Id</code></li>
   <li><code>my-first-api-key-secret</code> as <code>ApiKey Secret</code></li>
 </ul>
-<p>Click on <code>Create and stay on this ApiKey</code> button at the bottom of the page.</p>
+<p>Click on <strong>Create and stay on this ApiKey</strong> button at the bottom of the page.</p>
 <p>Now you created the key, it&rsquo;s time to call our previous generated service with it.</p>
 <p>Otoroshi supports two methods to achieve that. Once by passing Otoroshi api key in two headers : <code>Otoroshi-Client-Id</code> and <code>Otoroshi-Client-Secret</code> (these headers names can be override on each service). And the second by passing Otoroshi api key in the authentication Header (basically the <code>Authorization</code> header) as a basic encoded value.</p>
 <p>Let&rsquo;s ahead and call our service :</p>
@@ -336,7 +335,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>By default, a secure service only accepts requests with api key. But all generated api keys are eligible to call our service and in some case, we want authorize only a couple of api keys.</p>
 <p>One feature of Otoroshi is to restrict the list of accepted api keys by giving a list of <code>metadata</code> or/and <code>tags</code>. Each api key has a list of <code>tags</code> and <code>metadata</code>, which can be used by Otoroshi to forward or not a call with an api key. All api key metadata/tags can be forward to your service (see <code>Otoroshi exchange protocol</code> section of a service to get more information about <code>Send info. token</code>).</p>
 <p>Let&rsquo;s starting by accept only the api keys which come with the tag of <code>otoroshi</code> as value.</p>
-<p>Jump to the last part of the <code>Api Keys Constraints</code> section, call <code>Routing constraints</code> (these constraints are used to route a call to a service, only if all constraint are validated).</p>
+<p>Jump to the last part of the <code>Api Keys Constraints</code> section, call <code>Routing constraints</code> (these constraints are used to forward a call to a service, only if all constraints are validated).</p>
 <p>In our first case, set <code>otoroshi</code> in <code>One Tag in</code> array and save the service. Then call our service with :</p>
 <pre class="prettyprint"><code class="language-sh">curl -X GET \
   -H &#39;Otoroshi-Client-Id: my-first-api-key-id&#39; \
