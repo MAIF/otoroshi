@@ -145,7 +145,7 @@ libraryDependencies ++= Seq(
     "org.apache.logging.log4j"
   ),
   "org.iq80.leveldb"                 % "leveldb"                     % "0.12",
-  "org.apache.logging.log4j"         % "log4j-api"                   % "2.15.0"
+  "org.apache.logging.log4j"         % "log4j-api"                   % "2.16.0"
 )
 
 scalacOptions ++= Seq(
