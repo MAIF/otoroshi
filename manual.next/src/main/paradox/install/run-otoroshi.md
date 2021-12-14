@@ -25,7 +25,7 @@ java \
   --add-opens=java.base/sun.net.www.protocol.file=ALL-UNNAMED \
   --add-exports=java.base/sun.security.x509=ALL-UNNAMED \
   --add-opens=java.base/sun.security.ssl=ALL-UNNAMED \
-  -Dlog4j2.formatMsgNoLookups=True \
+  -Dlog4j2.formatMsgNoLookups=true \
   -jar otoroshi.jar
 ```
 
