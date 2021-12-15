@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-rc.3] - 2021-12-15
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-rc.3+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-rc.2...v1.5.0-rc.3
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-rc.3
+
+- JQ plugin (#984)
+- fix log4j dependency - CVE-2021-45046 (#985)
+- Move manual (#986)
+- New dev mode (#987)
+- PEM bundle import endpoint (#988)
+
 ## [1.5.0-rc.2] - 2021-12-13
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-rc.2+is%3Aclosed
