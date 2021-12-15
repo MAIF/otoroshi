@@ -795,7 +795,9 @@ class HttpHandler()(implicit env: Env) {
                               )
                               .fast
                               .flatMap { body =>
-                                val response: Result = Status(attrs.get(otoroshi.plugins.Keys.StatusOverrideKey).getOrElse(httpResponse.status))(body)
+                                val response: Result = Status(
+                                  attrs.get(otoroshi.plugins.Keys.StatusOverrideKey).getOrElse(httpResponse.status)
+                                )(body)
                                   .withHeaders(
                                     headersOut.filterNot { h =>
                                       val lower = h._1.toLowerCase()
@@ -832,7 +834,9 @@ class HttpHandler()(implicit env: Env) {
                           val response: Result = isChunked match {
                             case true  => {
                               // stream out
-                              val res = Status(attrs.get(otoroshi.plugins.Keys.StatusOverrideKey).getOrElse(httpResponse.status))
+                              val res = Status(
+                                attrs.get(otoroshi.plugins.Keys.StatusOverrideKey).getOrElse(httpResponse.status)
+                              )
                                 .chunked(finalStream)
                                 .withHeaders(
                                   headersOut.filterNot { h =>
@@ -877,7 +881,9 @@ class HttpHandler()(implicit env: Env) {
                                 )
                               }
                               // stream out
-                              val res                         = Status(attrs.get(otoroshi.plugins.Keys.StatusOverrideKey).getOrElse(httpResponse.status))
+                              val res                         = Status(
+                                attrs.get(otoroshi.plugins.Keys.StatusOverrideKey).getOrElse(httpResponse.status)
+                              )
                                 .sendEntity(
                                   HttpEntity.Streamed(
                                     finalStream,

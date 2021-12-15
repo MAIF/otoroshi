@@ -33,5 +33,5 @@ object Keys {
   val GwErrorKey                   = TypedKey[GwError]("otoroshi.core.GwError")
   val StatusOverrideKey            = TypedKey[Int]("otoroshi.core.StatusOverride")
   val MatchedInputTokenKey         = TypedKey[JsValue]("otoroshi.core.MatchedInputToken")
-  val MatchedOutputTokenKey         = TypedKey[JsValue]("otoroshi.core.MatchedOutputToken")
+  val MatchedOutputTokenKey        = TypedKey[JsValue]("otoroshi.core.MatchedOutputToken")
 }

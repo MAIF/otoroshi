@@ -219,7 +219,12 @@ case class HttpRequest(
     )
 }
 
-case class HttpResponse(status: Int, headers: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie], body: () => Source[ByteString, _]) {
+case class HttpResponse(
+    status: Int,
+    headers: Map[String, String],
+    cookies: Seq[WSCookie] = Seq.empty[WSCookie],
+    body: () => Source[ByteString, _]
+) {
   def json: JsValue =
     Json.obj(
       "status"  -> status,

@@ -405,7 +405,7 @@ class Env(
     .map(_ => true)
     .orElse(configuration.getOptionalWithFileSupport[Boolean]("app.liveJs"))
     .getOrElse(false)
-  lazy val revolver: Boolean = configuration.getOptionalWithFileSupport[Boolean]("app.revolver").getOrElse(false)
+  lazy val revolver: Boolean               = configuration.getOptionalWithFileSupport[Boolean]("app.revolver").getOrElse(false)
 
   lazy val exposeAdminApi: Boolean                         =
     if (clusterConfig.mode.isWorker) false
@@ -713,9 +713,13 @@ class Env(
       logger.warn("")
       logger.warn("You MUST change those values before deploying to production")
       logger.warn("You can change configuration by passing path values with config file or via runtime flags")
-      logger.warn("    https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-your-configuration-file")
+      logger.warn(
+        "    https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-your-configuration-file"
+      )
       logger.warn("You can change configuration by passing environment variables")
-      logger.warn("    https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#configuration-with-env-variables")
+      logger.warn(
+        "    https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#configuration-with-env-variables"
+      )
       logger.warn("")
       logger.warn("#########################################")
       logger.warn("")

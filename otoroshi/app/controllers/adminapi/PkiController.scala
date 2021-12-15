@@ -6,7 +6,17 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers
 import org.bouncycastle.asn1.x500.X500Name
-import org.bouncycastle.asn1.x509.{BasicConstraints, ExtendedKeyUsage, Extension, Extensions, ExtensionsGenerator, GeneralName, GeneralNames, KeyPurposeId, KeyUsage}
+import org.bouncycastle.asn1.x509.{
+  BasicConstraints,
+  ExtendedKeyUsage,
+  Extension,
+  Extensions,
+  ExtensionsGenerator,
+  GeneralName,
+  GeneralNames,
+  KeyPurposeId,
+  KeyUsage
+}
 import org.bouncycastle.cert.X509v3CertificateBuilder
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils
 import org.bouncycastle.crypto.util.PrivateKeyFactory
@@ -248,7 +258,10 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
         val bodyStr = bodyRaw.utf8String
         PemCertificate.fromBundle(bodyStr).flatMap(_.toCert()) match {
-          case Failure(e) => BadRequest(Json.obj("error" -> "error while importing PEM bundle", "error_description" -> e.getMessage)).future
+          case Failure(e)       =>
+            BadRequest(
+              Json.obj("error" -> "error while importing PEM bundle", "error_description" -> e.getMessage)
+            ).future
           case Success(otoCert) => {
             otoCert.save().map { _ =>
               Created(otoCert.json)

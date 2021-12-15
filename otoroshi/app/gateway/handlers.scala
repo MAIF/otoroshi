@@ -413,28 +413,33 @@ class GatewayRequestHandler(
     }
   }
 
-  private val devCache = Scaffeine().maximumSize(10000).build[String, (String, ByteString)]
-  private lazy val devMimetypes: Map[String, String] = env.configuration.getOptional[String]("play.http.fileMimeTypes").map { types =>
-    types.split("\\n")
-      .toSeq.map(_.trim)
-      .filter(_.nonEmpty)
-      .map(_.split("=").toSeq)
-      .filter(_.size == 2)
-      .map(v => (v.head, v.tail.head))
-      .toMap
-  }.getOrElse(Map.empty[String, String])
+  private val devCache                               = Scaffeine().maximumSize(10000).build[String, (String, ByteString)]
+  private lazy val devMimetypes: Map[String, String] = env.configuration
+    .getOptional[String]("play.http.fileMimeTypes")
+    .map { types =>
+      types
+        .split("\\n")
+        .toSeq
+        .map(_.trim)
+        .filter(_.nonEmpty)
+        .map(_.split("=").toSeq)
+        .filter(_.size == 2)
+        .map(v => (v.head, v.tail.head))
+        .toMap
+    }
+    .getOrElse(Map.empty[String, String])
 
   def serveDevAssets() = actionBuilder.async { req =>
     val wholePath = req.relativeUri
     logger.debug(s"dev serving asset '${wholePath}'")
     devCache.getIfPresent(wholePath) match {
       case Some((contentType, content)) => Results.Ok(content).as(contentType).future
-      case None => {
-        val path = wholePath
+      case None                         => {
+        val path             = wholePath
           .replaceFirst("/assets", "")
           .replaceFirst("/__otoroshi_assets", "")
           .applyOnIf(wholePath.contains("?"))(_.split("\\?").head)
-        val ext = path.split("\\.").toSeq.lastOption.getOrElse("txt").toLowerCase
+        val ext              = path.split("\\.").toSeq.lastOption.getOrElse("txt").toLowerCase
         val mimeType: String = devMimetypes.getOrElse(ext, "text/plain")
         val fileSource = {
           val file = new File("./public" + path)
