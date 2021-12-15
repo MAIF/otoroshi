@@ -61,6 +61,7 @@ const files = [
   { file: './manual/src/main/paradox/topics/expression-language.md' },
   { file: './manual/src/main/paradox/snippets/build.gradle' },
   { file: './manual/src/main/paradox/snippets/build.sbt' },
+  { file: './manual/src/main/paradox/snippets/fetch.sh' },
   { file: './otoroshi/app/controllers/SwaggerController.scala' },
   { file: './otoroshi/app/openapi/openapi.scala' },
   { file: './otoroshi/app/env/Env.scala' },
