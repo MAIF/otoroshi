@@ -304,7 +304,8 @@ class WebSocketHandler()(implicit env: Env) {
       version = req.version,
       clientCertificateChain = req.clientCertificateChain,
       target = None,
-      claims = claim
+      claims = claim,
+      body = () => requestBody
     )
     val otoroshiRequest = otoroshi.script.HttpRequest(
       url = url,
@@ -314,7 +315,8 @@ class WebSocketHandler()(implicit env: Env) {
       version = req.version,
       clientCertificateChain = req.clientCertificateChain,
       target = Some(_target),
-      claims = claim
+      claims = claim,
+      body = () => requestBody
     )
     val upstreamStart   = System.currentTimeMillis()
     descriptor

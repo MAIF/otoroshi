@@ -6,17 +6,22 @@ import akka.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import otoroshi.env.Env
 import otoroshi.script._
+import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.Result
+import play.api.libs.json.{JsArray, JsObject, JsString, Json}
+import play.api.libs.typedmap.TypedKey
+import play.api.mvc.{Result, Results}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._
 
 class JqBodyTransformer extends RequestTransformer {
 
   private val logger = Logger("otoroshi-plugins-jq")
+
+  private val requestKey  = TypedKey[Future[Source[ByteString, _]]]("otoroshi.plugins.jq.RequestBody")
+  private val responseKey = TypedKey[Source[ByteString, _]]("otoroshi.plugins.jq.ResponseBody")
 
   private val library = ImmutableJqLibrary.of()
 
@@ -26,8 +31,8 @@ class JqBodyTransformer extends RequestTransformer {
     Some(
       Json.obj(
         "JqBodyTransformer" -> Json.obj(
-          "request" -> Json.obj("filter" -> "."),
-          "response" -> Json.obj("filter" -> "."),
+          "request" -> Json.obj("filter" -> ".", "included" -> Json.arr(), "excluded" -> Json.arr()),
+          "response" -> Json.obj("filter" -> ".", "included" -> Json.arr(), "excluded" -> Json.arr()),
         )
       )
     )
@@ -44,54 +49,91 @@ class JqBodyTransformer extends RequestTransformer {
     """.stripMargin
     )
 
+  def shouldApply(included: Seq[String], excluded: Seq[String], uri: String): Boolean = {
+    val isExcluded = if (excluded.isEmpty) false else excluded.exists(p => otoroshi.utils.RegexPool.regex(p).matches(uri))
+    val isIncluded = if (included.isEmpty) true else included.exists(p => otoroshi.utils.RegexPool.regex(p).matches(uri))
+    !isExcluded && isIncluded
+  }
+
   override def transformResponseWithCtx(
     ctx: TransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
-    val newHeaders = ctx.otoroshiResponse.headers.-("Content-Length").-("content-length").+("Transfer-Encoding" -> "chunked")
-    ctx.otoroshiResponse.copy(headers = newHeaders).right.future
+    val config = ctx.configFor("JqBodyTransformer").select("response")
+    val filter = config.select("filter").asOpt[String].getOrElse(".")
+    val included = config.select("included").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val excluded = config.select("excluded").asOpt[Seq[String]].getOrElse(Seq.empty)
+    if (shouldApply(included, excluded, ctx.request.thePath)) {
+      val newHeaders = ctx.otoroshiResponse.headers.-("Content-Length").-("content-length").+("Transfer-Encoding" -> "chunked")
+      ctx.rawResponse.body().runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
+        val bodyStr = bodyRaw.utf8String
+        val request = ImmutableJqRequest
+          .builder()
+          .lib(library)
+          .input(bodyStr)
+          .filter(filter)
+          .build()
+        val response = request.execute()
+        if (response.hasErrors) {
+          logger.error(s"error while transforming response body, sending the original payload instead:\n${response.getErrors.asScala.mkString("\n")}")
+          val errors = JsArray(response.getErrors.asScala.map(err => JsString(err)))
+          Results.InternalServerError(Json.obj("error" -> "error while transforming response body", "details" -> errors)).left
+        } else {
+          val source = Source(response.getOutput.byteString.grouped(32 * 1024).toList)
+          ctx.attrs.put(responseKey -> source)
+          ctx.otoroshiResponse.copy(headers = newHeaders).right
+        }
+      }
+    } else {
+      ctx.otoroshiResponse.rightf
+    }
+  }
+
+  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    val promise = Promise[Source[ByteString, _]]()
+    ctx.attrs.put(requestKey -> promise.future)
+    val config = ctx.configFor("JqBodyTransformer").select("request")
+    val filter = config.select("filter").asOpt[String].getOrElse(".")
+    val included = config.select("included").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val excluded = config.select("excluded").asOpt[Seq[String]].getOrElse(Seq.empty)
+    if (shouldApply(included, excluded, ctx.request.thePath)) {
+      ctx.rawRequest.body().runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
+        val bodyStr = bodyRaw.utf8String
+        val request = ImmutableJqRequest
+          .builder()
+          .lib(library)
+          .input(bodyStr)
+          .filter(filter)
+          .build()
+        val response = request.execute()
+        if (response.hasErrors) {
+          val errors = JsArray(response.getErrors.asScala.map(err => JsString(err)))
+          logger.error(s"error while transforming request body, sending the original payload instead:\n${response.getErrors.asScala.mkString("\n")}")
+          Results.InternalServerError(Json.obj("error" -> "error while transforming request body", "details" -> errors)).left
+        } else {
+          val rawResponseBody = response.getOutput.byteString
+          val rawResponseBodyLength = rawResponseBody.size
+          val newHeaders = ctx.otoroshiRequest.headers.-("Content-Length").-("content-length").+("Content-Length" -> rawResponseBodyLength.toString)
+          val source = Source(rawResponseBody.grouped(32 * 1024).toList)
+          promise.trySuccess(source)
+          ctx.otoroshiRequest.copy(headers = newHeaders).right
+        }
+      }
+    } else {
+      ctx.otoroshiRequest.rightf
+    }
   }
 
   override def transformResponseBodyWithCtx(ctx: TransformerResponseBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
-    val filter = ctx.configFor("JqBodyTransformer").select("response").select("filter").asOpt[String].getOrElse(".")
-    val future = ctx.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-      val bodyStr = bodyRaw.utf8String
-      val request = ImmutableJqRequest
-        .builder()
-        .lib(library)
-        .input(bodyStr)
-        .filter(filter)
-        .build()
-      val response = request.execute()
-      if (response.hasErrors) {
-        // Source(JsArray(response.getErrors.asScala.map(err => JsString(err))).stringify.byteString.grouped(32 * 1024).toList)
-        logger.error(s"error while transforming response body, sending the original payload instead:\n${response.getErrors.asScala.mkString("\n")}")
-        Source(bodyRaw.grouped(32 * 1024).toList)
-      } else {
-        Source(response.getOutput.byteString.grouped(32 * 1024).toList)
-      }
+    ctx.attrs.get(responseKey) match {
+      case None => Source.empty // TODO: challenge it !
+      case Some(body) => body
     }
-    Source.future(future).flatMapConcat(identity)
   }
 
   override def transformRequestBodyWithCtx(ctx: TransformerRequestBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
-    val filter = ctx.configFor("JqBodyTransformer").select("request").select("filter").asOpt[String].getOrElse(".")
-    val future = ctx.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-      val bodyStr = bodyRaw.utf8String
-      val request = ImmutableJqRequest
-        .builder()
-        .lib(library)
-        .input(bodyStr)
-        .filter(filter)
-        .build()
-      val response = request.execute()
-      if (response.hasErrors) {
-        // Source(JsArray(response.getErrors.asScala.map(err => JsString(err))).stringify.byteString.grouped(32 * 1024).toList)
-        logger.error(s"error while transforming request body, sending the original payload instead:\n${response.getErrors.asScala.mkString("\n")}")
-        Source(bodyRaw.grouped(32 * 1024).toList)
-      } else {
-        Source(response.getOutput.byteString.grouped(32 * 1024).toList)
-      }
+    ctx.attrs.get(requestKey) match {
+      case None => Source.empty // TODO: challenge it !
+      case Some(body) => Source.future(body).flatMapConcat(b => b)
     }
-    Source.future(future).flatMapConcat(identity)
   }
 }

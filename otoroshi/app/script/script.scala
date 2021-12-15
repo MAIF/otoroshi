@@ -185,7 +185,8 @@ case class HttpRequest(
     version: String,
     clientCertificateChain: Option[Seq[X509Certificate]],
     target: Option[Target],
-    claims: OtoroshiClaim
+    claims: OtoroshiClaim,
+    body: () => Source[ByteString, _]
 ) {
   lazy val contentType: Option[String] = headers.get("Content-Type").orElse(headers.get("content-type"))
   lazy val host: String                = headers.get("Host").orElse(headers.get("host")).getOrElse("")
@@ -218,7 +219,7 @@ case class HttpRequest(
     )
 }
 
-case class HttpResponse(status: Int, headers: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie]) {
+case class HttpResponse(status: Int, headers: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie], body: () => Source[ByteString, _]) {
   def json: JsValue =
     Json.obj(
       "status"  -> status,
@@ -1326,7 +1327,8 @@ object Implicits {
                         secure = c.secure,
                         httpOnly = c.httpOnly
                       )
-                    )
+                    ),
+                    () => context.otoroshiResult.body.dataStream
                   ),
                   index = index,
                   globalConfig = ConfigUtils.mergeOpt(

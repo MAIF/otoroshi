@@ -303,7 +303,8 @@ object Errors {
                   secure = c.secure,
                   httpOnly = c.httpOnly
                 )
-              )
+              ),
+              () => res.body.dataStream
             ),
             request = req,
             maybeCauseId = maybeCauseId,

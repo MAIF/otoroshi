@@ -394,7 +394,8 @@ class HttpHandler()(implicit env: Env) {
       version = req.version,
       clientCertificateChain = req.clientCertificateChain,
       target = None,
-      claims = claim
+      claims = claim,
+      body = () => requestBody
     )
     val otoroshiRequest                 = otoroshi.script.HttpRequest(
       url = url,
@@ -404,7 +405,8 @@ class HttpHandler()(implicit env: Env) {
       version = req.version,
       clientCertificateChain = req.clientCertificateChain,
       target = Some(_target),
-      claims = claim
+      claims = claim,
+      body = () => requestBody
     )
     val transReqCtx                     = TransformerRequestContext(
       index = -1,
@@ -542,7 +544,8 @@ class HttpHandler()(implicit env: Env) {
               val rawResponse         = otoroshi.script.HttpResponse(
                 status = resp.status,
                 headers = headers.toMap,
-                cookies = resp.cookies
+                cookies = resp.cookies,
+                body = () => resp.bodyAsSource
               )
               val stateRespHeaderName = descriptor.secComHeaders.stateResponseName
                 .getOrElse(env.Headers.OtoroshiStateResp)
@@ -631,7 +634,8 @@ class HttpHandler()(implicit env: Env) {
                   val otoroshiResponse = otoroshi.script.HttpResponse(
                     status = resp.status,
                     headers = _headersOut.toMap,
-                    cookies = resp.cookies
+                    cookies = resp.cookies,
+                    body = () => resp.bodyAsSource
                   )
                   descriptor
                     .transformResponse(
