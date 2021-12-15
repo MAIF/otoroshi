@@ -778,6 +778,68 @@ This plugin can accept the following configuration
 
 @@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
+## JQ bodies transformer
+
+<img class="plugin-logo plugin-hidden" src=""></img>
+
+### Infos
+
+* plugin type: `transformer`
+* configuration root: `JqBodyTransformer`
+
+### Description
+
+This plugin let you transform JSON bodies (in requests and responses) using [JQ filters](https://stedolan.github.io/jq/manual/#Basicfilters).
+
+This plugin can accept the following configuration
+
+```json
+{
+  "JqBodyTransformer" : {
+    "request" : {
+      "filter" : ".",
+      "included" : [ ],
+      "excluded" : [ ]
+    },
+    "response" : {
+      "filter" : ".",
+      "included" : [ ],
+      "excluded" : [ ]
+    }
+  }
+}
+```
+
+
+
+### Default configuration
+
+```json
+{
+  "JqBodyTransformer" : {
+    "request" : {
+      "filter" : ".",
+      "included" : [ ],
+      "excluded" : [ ]
+    },
+    "response" : {
+      "filter" : ".",
+      "included" : [ ],
+      "excluded" : [ ]
+    }
+  }
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+
 ## Html Patcher
 
 <img class="plugin-logo plugin-hidden" src=""></img>

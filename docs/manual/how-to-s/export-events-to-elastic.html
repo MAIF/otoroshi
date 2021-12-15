@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Export events to Elasticsearch · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/cc.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+<link rel="stylesheet" type="text/css" href="../css/plugins.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0-rc.3
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="active page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0-rc.3
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="active page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../how-to-s/index.html">How to&rsquo;s</a></li>
+  <li>Export events to Elasticsearch</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#export-events-to-elasticsearch" name="export-events-to-elasticsearch" class="anchor"><span class="anchor-link"></span></a>Export events to Elasticsearch</h1>
+<h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
+<div id="instructions-toggle">
+<span class="instructions-title">I want to follow the instructions to start an instance of Otorohi</span>
+<button id="instructions-toggle-button">close</button>
+</div>
+<p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-rc.3/otoroshi.jar&#39;
+</code></pre>
+<p>then you can run start Otoroshi :</p>
+<pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -jar otoroshi.jar 
+</code></pre>
+<p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
+<p>Create a service, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/services&#39; \
+  -d &#39;{&quot;enforceSecureCommunication&quot;: false, &quot;forceHttps&quot;: false, &quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;name&quot;:&quot;my-service&quot;,&quot;description&quot;:&quot;a service&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;myservice&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;\/.*&quot;],&quot;privatePatterns&quot;:[],&quot;kind&quot;:&quot;ServiceDescriptor&quot;}&#39; \
+  -H &quot;Content-type: application/json&quot; \
+  -u admin-api-apikey-id:admin-api-apikey-secret
+</code></pre>
+<button id="instructions-toggle-confirm">Confirm the installation</button></div>
+<h3><a href="#deploy-a-elasticsearch-and-kibana-stack-on-docker" name="deploy-a-elasticsearch-and-kibana-stack-on-docker" class="anchor"><span class="anchor-link"></span></a>Deploy a Elasticsearch and kibana stack on Docker</h3>
+<p>Let&rsquo;s start by creating an Elasticsearch and Kibana stack on our machine (if it&rsquo;s already done for you, you can skip this section).</p>
+<p>To start an Elasticsearch container for development or testing, run:</p>
+<pre class="prettyprint"><code class="language-sh">docker network create elastic
+docker pull docker.elastic.co/elasticsearch/elasticsearch:7.15.1
+docker run --name es01-test --net elastic -p 9200:9200 -p 9300:9300 -e &quot;discovery.type=single-node&quot; docker.elastic.co/elasticsearch/elasticsearch:7.15.1
+</code></pre>
+<pre class="prettyprint"><code class="language-sh">docker pull docker.elastic.co/kibana/kibana:7.15.1
+docker run --name kib01-test --net elastic -p 5601:5601 -e &quot;ELASTICSEARCH_HOSTS=http://es01-test:9200&quot; docker.elastic.co/kibana/kibana:7.15.1
+</code></pre>
+<p>To access Kibana, go to <a href="http://localhost:5601" title="http://localhost:5601" target="_blank" rel="noopener noreferrer">http://localhost:5601</a>.</p>
+<h3><a href="#create-an-elasticsearch-exporter" name="create-an-elasticsearch-exporter" class="anchor"><span class="anchor-link"></span></a>Create an Elasticsearch exporter</h3>
+<p>Let&rsquo;s create an exporter. The exporter will export by default all events generated by Otoroshi.</p>
+<ol>
+  <li>Go ahead, and navigate to <a href="http://otoroshi.oto.tools:8080" title="http://otoroshi.oto.tools:8080" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080</a></li>
+  <li>Click on the cog icon on the top right</li>
+  <li>Then <code>Exporters</code> button</li>
+  <li>And add a new configuration when clicking on the <code>Add item</code> button</li>
+  <li>Select the <code>elastic</code> in the <code>type</code> selector field</li>
+  <li>Jump to <code>Exporter config</code></li>
+  <li>Set the following values: <code>Cluster URI</code> -&gt; <code>http://localhost:9200</code></li>
+</ol>
+<p>Then test your configuration by clicking on the <code>Check connection</code> button. This should output a modal with the Elasticsearch version and the number of loaded docs.</p>
+<p>Save at the bottom of the page and enable the exporter (on the top of the page or in list of exporters).</p>
+<h3><a href="#testing-your-configuration" name="testing-your-configuration" class="anchor"><span class="anchor-link"></span></a>Testing your configuration</h3>
+<p>One simple way to test is to setup the reading of our Elasticsearch instance by Otoroshi.</p>
+<p>Navigate to the danger zone (click on the cog on the top right and scroll to <code>danger zone</code>). Jump to the <code>Analytics: Elastic dashboard datasource (read)</code> section.</p>
+<p>Set the following values : <code>Cluster URI</code> -&gt; <code>http://localhost:9200</code></p>
+<p>Then click on the <code>Check connection</code>. This should ouput the same result as the previous part. Save the global configuration and navigate to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/stats" title="http://otoroshi.oto.tools:8080/bo/dashboard/stats" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080/bo/dashboard/stats</a>.</p>
+<p>This should output a list of graphs.</p>
+<h3><a href="#advanced-usage" name="advanced-usage" class="anchor"><span class="anchor-link"></span></a>Advanced usage</h3>
+<p>By default, an exporter handle all events from Otoroshi. In some case, you need to filter the events to send to elasticsearch.</p>
+<p>To filter the events, jump to the <code>Filtering and projection</code> field in exporter view. Otoroshi supports to include a kind of events or to exclude a list of events (if you want to deep learn about this section, read this <a href="../entities/data-exporters.html#matching-and-projections">part</a>). </p>
+<p>An example which keep only events with a field <code>@type</code> of value <code>AlertEvent</code>:</p>
+<pre class="prettyprint"><code class="language-json">{
+    &quot;include&quot;: [
+        { &quot;@type&quot;: &quot;AlertEvent&quot; }
+    ],
+    &quot;exclude&quot;: []
+}
+</code></pre>
+<p>An example which exclude only events with a field <code>@type</code> of value <code>GatewayEvent</code> :</p>
+<pre class="prettyprint"><code class="language-json">{
+    &quot;exclude&quot;: [
+        { &quot;@type&quot;: &quot;GatewayEvent&quot; }
+    ],
+    &quot;include&quot;: []
+}
+</code></pre>
+<p>The next field is the <strong>Projection</strong>. This field is a json when you can list the fields to keep for each event.</p>
+<pre class="prettyprint"><code class="language-json">{
+ &quot;@type&quot;: true,
+ &quot;@timestamp&quot;: true,
+ &quot;@id&quot;: true
+}
+</code></pre>
+<p>With this example, only <code>@type</code>, <code>@timestamp</code> and <code>@id</code> will be send to ES.</p>
+<h3><a href="#debug-your-configuration" name="debug-your-configuration" class="anchor"><span class="anchor-link"></span></a>Debug your configuration</h3>
+<h4><a href="#missing-user-rights-on-elasticsearch" name="missing-user-rights-on-elasticsearch" class="anchor"><span class="anchor-link"></span></a>Missing user rights on Elasticsearch</h4>
+<p>When creating an exporter, Otoroshi try to join the index route of the elasticsearch instance. If you have a specific management access rights on Elasticsearch, you have two possiblities :</p>
+<ul>
+  <li>set a full access to the user used in Otoroshi for write in Elasticsearch</li>
+  <li>set the version of Elasticsearch inside the <code>Version</code> field of your exporter.</li>
+</ul>
+<h4><a href="#none-event-appear-in-your-elasticsearch" name="none-event-appear-in-your-elasticsearch" class="anchor"><span class="anchor-link"></span></a>None event appear in your Elasticsearch</h4>
+<p>When creating an exporter, Otoroshi try to push the index template on Elasticsearch. If the post failed, Otoroshi will fail for each push of events and your database will keep empty. </p>
+<p>To fix this problem, you can try to send the index template with the <code>Manually apply index template</code> button in your exporter.</p>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../how-to-s/import-export-otoroshi-datastore.html">Import and export Otoroshi datastore</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../how-to-s/export-events-to-elastic.html#export-events-to-elasticsearch" class="header">Export events to Elasticsearch</a>
+  <ul>
+    <li><a href="../how-to-s/export-events-to-elastic.html#before-you-start" class="header">Before you start</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html#deploy-a-elasticsearch-and-kibana-stack-on-docker" class="header">Deploy a Elasticsearch and kibana stack on Docker</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html#create-an-elasticsearch-exporter" class="header">Create an Elasticsearch exporter</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html#testing-your-configuration" class="header">Testing your configuration</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html#advanced-usage" class="header">Advanced usage</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html#debug-your-configuration" class="header">Debug your configuration</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2021</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
