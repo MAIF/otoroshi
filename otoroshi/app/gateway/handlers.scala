@@ -205,6 +205,7 @@ class GatewayRequestHandler(
 
   val headersOutFiltered = Seq(
     env.Headers.OtoroshiStateResp,
+    "Keep-Alive",
     "Transfer-Encoding",
     "Content-Length",
     "Raw-Request-Uri",
