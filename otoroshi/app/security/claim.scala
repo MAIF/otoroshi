@@ -44,6 +44,16 @@ case class OtoroshiClaim(
       case Some(v) => copy(metadata = metadata ++ Json.obj(name -> v))
       case None    => this
     }
+
+  def payload(implicit env: Env): JsObject = Json.obj(
+    "iss" -> env.Headers.OtoroshiIssuer,
+    "sub" -> sub,
+    "aud" -> aud,
+    "exp" -> new Date(exp).getTime / 1000,
+    "iat" -> new Date(iat).getTime / 1000,
+    "nbr" -> new Date(iat).getTime / 1000,
+    "jti" -> jti
+  ) ++ metadata
 }
 
 object OtoroshiClaim {
@@ -61,15 +71,7 @@ object OtoroshiClaim {
       "typ" -> "JWT",
       "alg" -> algorithm.getName
     )
-    val payload   = Json.obj(
-      "iss" -> env.Headers.OtoroshiIssuer,
-      "sub" -> claim.sub,
-      "aud" -> claim.aud,
-      "exp" -> new Date(claim.exp).getTime / 1000,
-      "iat" -> new Date(claim.iat).getTime / 1000,
-      "nbr" -> new Date(claim.iat).getTime / 1000,
-      "jti" -> claim.jti
-    ) ++ claim.metadata
+    val payload   = claim.payload
     val signed    = sign(algorithm, header, payload)
     logger.debug(s"signed: $signed")
     signed

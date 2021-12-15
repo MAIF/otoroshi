@@ -202,6 +202,7 @@ class HttpHandler()(implicit env: Env) {
 
     val claim = descriptor.generateInfoToken(apiKey, paUsr, Some(req))
     logger.trace(s"Claim is : $claim")
+    attrs.put(otoroshi.plugins.Keys.OtoTokenKey -> claim.payload)
 
     val stateResponseHeaderName = descriptor.secComHeaders.stateResponseName
       .getOrElse(env.Headers.OtoroshiStateResp)

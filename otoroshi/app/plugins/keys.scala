@@ -4,10 +4,11 @@ import java.util.concurrent.atomic.AtomicLong
 import otoroshi.models.{ApiKey, ApiKeyRotationInfo, PrivateAppsUser, RemainingQuotas, Target}
 import org.joda.time.DateTime
 import otoroshi.gateway.GwError
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.typedmap.TypedKey
 
 object Keys {
+  val OtoTokenKey              = TypedKey[JsObject]("otoroshi.core.OtoToken")
   val ApiKeyKey                = TypedKey[ApiKey]("otoroshi.core.ApiKey")
   val ApiKeyRotationKey        = TypedKey[ApiKeyRotationInfo]("otoroshi.core.ApiKeyRotationInfo")
   val ApiKeyRemainingQuotasKey = TypedKey[RemainingQuotas]("otoroshi.core.RemainingQuotas")
@@ -31,4 +32,6 @@ object Keys {
   val PreExtractedRequestTargetKey = TypedKey[Target]("otoroshi.core.PreExtractedRequestTarget")
   val GwErrorKey                   = TypedKey[GwError]("otoroshi.core.GwError")
   val StatusOverrideKey            = TypedKey[Int]("otoroshi.core.StatusOverride")
+  val MatchedInputTokenKey         = TypedKey[JsValue]("otoroshi.core.MatchedInputToken")
+  val MatchedOutputTokenKey         = TypedKey[JsValue]("otoroshi.core.MatchedOutputToken")
 }
