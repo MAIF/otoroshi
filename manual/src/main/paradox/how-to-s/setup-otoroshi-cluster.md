@@ -5,7 +5,7 @@ In this tutorial, we will deploy an Otoroshi cluster with one leader and 2 worke
 Let's start by downloading the latest jar of Otoroshi.
 
 ```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-rc.3/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
 ```
 
 Then create an instance of Otoroshi and indicates with the `otoroshi.cluster.mode` environment variable that it will be the leader.

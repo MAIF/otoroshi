@@ -13,7 +13,7 @@ If you already have an up and running otoroshi instance, you can skip the follow
 Let's start by downloading the latest Otoroshi.
 
 ```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-rc.3/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
 ```
 
 then you can run start Otoroshi :

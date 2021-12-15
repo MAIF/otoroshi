@@ -4,7 +4,7 @@
 
 Let's start by downloading the latest Otoroshi
 ```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-rc.3/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
 ```
 
 By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1` Now you are almost ready to run Otoroshi for the first time, we want run it with an initial data.
