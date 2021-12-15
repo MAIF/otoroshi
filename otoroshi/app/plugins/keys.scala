@@ -30,4 +30,5 @@ object Keys {
   val GatewayEventExtraInfosKey    = TypedKey[JsValue]("otoroshi.core.GatewayEventExtraInfos")
   val PreExtractedRequestTargetKey = TypedKey[Target]("otoroshi.core.PreExtractedRequestTarget")
   val GwErrorKey                   = TypedKey[GwError]("otoroshi.core.GwError")
+  val StatusOverrideKey            = TypedKey[Int]("otoroshi.core.StatusOverride")
 }
