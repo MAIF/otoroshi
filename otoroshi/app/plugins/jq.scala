@@ -9,7 +9,7 @@ import otoroshi.script._
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, JsString, Json}
+import play.api.libs.json.{JsArray, JsBoolean, JsObject, JsString, Json}
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.{Request, RequestHeader, Result, Results}
 
@@ -40,6 +40,20 @@ class JqBodyTransformer extends RequestTransformer {
   override def description: Option[String] =
     Some(
       s"""This plugin let you transform JSON bodies (in requests and responses) using [JQ filters](https://stedolan.github.io/jq/manual/#Basicfilters).
+        |
+        |Some JSON variables are accessible by default :
+        |
+        | * `$$url`: the request url
+        | * `$$path`: the request path
+        | * `$$domain`: the request domain
+        | * `$$method`: the request method
+        | * `$$headers`: the current request headers (with name in lowercase)
+        | * `$$queryParams`: the current request query params
+        | * `$$otoToken`: the otoroshi protocol token (if one)
+        | * `$$inToken`: the first matched JWT token as is (from verifiers, if one)
+        | * `$$token`: the first matched JWT token as is (from verifiers, if one)
+        | * `$$user`: the current user (if one)
+        | * `$$apikey`: the current apikey (if one)
         |
         |This plugin can accept the following configuration
         |
@@ -87,6 +101,11 @@ class JqBodyTransformer extends RequestTransformer {
           .builder()
           .lib(library)
           .input(bodyStr)
+          .putArgJson("url", JsString(ctx.request.theUrl).stringify)
+          .putArgJson("path", JsString(ctx.request.thePath).stringify)
+          .putArgJson("domain", JsString(ctx.request.theDomain).stringify)
+          .putArgJson("method", JsString(ctx.request.method).stringify)
+          .putArgJson("secured", JsBoolean(ctx.request.theSecured).stringify)
           .applyOnWithOpt(ctx.attrs.get(otoroshi.plugins.Keys.OtoTokenKey)) { case (builder, token) =>
             builder.putArgJson("otoToken", token.stringify)
           }
@@ -145,6 +164,11 @@ class JqBodyTransformer extends RequestTransformer {
           .builder()
           .lib(library)
           .input(bodyStr)
+          .putArgJson("url", JsString(ctx.request.theUrl).stringify)
+          .putArgJson("path", JsString(ctx.request.thePath).stringify)
+          .putArgJson("method", JsString(ctx.request.method).stringify)
+          .putArgJson("domain", JsString(ctx.request.theDomain).stringify)
+          .putArgJson("secured", JsBoolean(ctx.request.theSecured).stringify)
           .applyOnWithOpt(ctx.attrs.get(otoroshi.plugins.Keys.OtoTokenKey)) { case (builder, token) =>
             builder.putArgJson("otoToken", token.stringify)
           }
