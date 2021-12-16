@@ -27,7 +27,9 @@ const files = [
   },
   {
     file: './kubernetes/helm/otoroshi/Chart.yaml',
-    replace: (from, to, source) => source.replace(`appVersion: ${from}`, `appVersion: ${to}`)
+    replace: (from, to, source) => source
+      .replace(`appVersion: ${from}`, `appVersion: ${to}`)
+      .replace(`version: ${from}`, `version: ${to}`)
   },
   {
     file: './kubernetes/helm/otoroshi/values.yaml',
@@ -239,6 +241,10 @@ async function publishDockerOtoroshi(location, version) {
   await runSystemCommand('sh', [path.resolve(location, `./clients/sidecar/build.sh`), 'push-all', version], path.resolve(location, `./clients/sidecar`));
 }
 
+async function publishHelmChart(location, version) {
+  await runSystemCommand('/bin/sh', [path.resolve(location, './scripts/helm.sh'), version], location);
+}
+
 async function buildTcpTunnelingCli(location, version) {
   await runScript(`
     cd ${location}/clients/tcp-udp-tunnel-client
@@ -397,6 +403,7 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
     await ensureStep('CREATE_GITHUB_TAG', releaseFile, () => githubTag(location, to));
     await ensureStep('PUBLISH_LIBRARIES_TO_CENTRAL', releaseFile, () => publishMavenCentral(location, to));
     await ensureStep('PUBLISH_DOCKER_OTOROSHI', releaseFile, () => publishDockerOtoroshi(location, to));
+    await ensureStep('PUBLISH_HELM_CHART', releaseFile, () => publishHelmChart(location, to));
     await ensureStep('CHANGE_TO_DEV_VERSION', releaseFile, () => changeVersion(location, to, next, ['./readme.md']));
     await ensureStep('PUSH_TO_GITHUB', releaseFile, async () => {
       await runSystemCommand('git', ['commit', '-am', `Update version to ${next}`], location);

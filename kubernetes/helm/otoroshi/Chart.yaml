@@ -2,7 +2,7 @@ apiVersion: v3
 name: otoroshi
 description: An Otoroshi based Kubernetes ingress controller
 type: application
-version: 1.0.0
+version: 1.5.0-dev
 appVersion: 1.5.0-dev
 keywords:
   - otoroshi
