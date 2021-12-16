@@ -791,6 +791,20 @@ This plugin can accept the following configuration
 
 This plugin let you transform JSON bodies (in requests and responses) using [JQ filters](https://stedolan.github.io/jq/manual/#Basicfilters).
 
+Some JSON variables are accessible by default :
+
+ * `$url`: the request url
+ * `$path`: the request path
+ * `$domain`: the request domain
+ * `$method`: the request method
+ * `$headers`: the current request headers (with name in lowercase)
+ * `$queryParams`: the current request query params
+ * `$otoToken`: the otoroshi protocol token (if one)
+ * `$inToken`: the first matched JWT token as is (from verifiers, if one)
+ * `$token`: the first matched JWT token as is (from verifiers, if one)
+ * `$user`: the current user (if one)
+ * `$apikey`: the current apikey (if one)
+
 This plugin can accept the following configuration
 
 ```json

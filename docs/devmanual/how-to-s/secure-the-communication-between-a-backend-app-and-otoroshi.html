@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Secure the communication between a downstream app and Otoroshi · Otoroshi</title>
+<title>Secure the communication between a backend app and Otoroshi · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -92,7 +92,7 @@
     <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
-    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="active page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="active page">Secure the communication between a backend app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
@@ -205,7 +205,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
-    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="active page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="active page">Secure the communication between a backend app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
@@ -242,7 +242,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../how-to-s/index.html">How to&rsquo;s</a></li>
-  <li>Secure the communication between a downstream app and Otoroshi</li>
+  <li>Secure the communication between a backend app and Otoroshi</li>
 </ul>
 </div>
 </div>
@@ -250,7 +250,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#secure-the-communication-between-a-downstream-app-and-otoroshi" name="secure-the-communication-between-a-downstream-app-and-otoroshi" class="anchor"><span class="anchor-link"></span></a>Secure the communication between a downstream app and Otoroshi</h1><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
+<h1><a href="#secure-the-communication-between-a-backend-app-and-otoroshi" name="secure-the-communication-between-a-backend-app-and-otoroshi" class="anchor"><span class="anchor-link"></span></a>Secure the communication between a backend app and Otoroshi</h1><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
 <div id="instructions-toggle">
 <span class="instructions-title">I want to follow the instructions to start an instance of Otorohi</span>
 <button id="instructions-toggle-button">close</button>
@@ -288,11 +288,11 @@ PORT=8081 node server.js
 <pre class="prettyprint"><code class="language-sh">challenge-verifier listening on http://0.0.0.0:8081
 </code></pre>
 <p>This project runs an express client with one middleware. The middleware handles each request, and check if the header <code>State token header</code> is present in headers. By default, the incoming expected header is <code>Otoroshi-State</code> by the application and <code>Otoroshi-State-Resp</code> header in the headers of the return request. </p>
-<p>Try to call your service via <a href="http://myservice.oto.tools:8080/">http://myservice.oto.tools:8080/</a>. This should return a successful response with all headers received by the downstream app. </p>
+<p>Try to call your service via <a href="http://myservice.oto.tools:8080/">http://myservice.oto.tools:8080/</a>. This should return a successful response with all headers received by the backend app. </p>
 <p>Now try to disable the middleware in the nodejs file by commenting the following line. </p>
 <pre class="prettyprint"><code class="language-js">// app.use(OtoroshiMiddleware());
 </code></pre>
-<p>Try to call again your service. This time, Otoroshi breaks the return response from your downstream service, and returns.</p>
+<p>Try to call again your service. This time, Otoroshi breaks the return response from your backend service, and returns.</p>
 <pre class="prettyprint"><code class="language-sh">Downstream microservice does not seems to be secured. Cancelling request !
 </code></pre>
 <div class="nav-next">

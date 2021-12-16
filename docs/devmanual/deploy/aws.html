@@ -92,7 +92,7 @@
     <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
-    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
@@ -205,7 +205,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
-    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
@@ -293,7 +293,7 @@ ENTRYPOINT [ &quot;sh&quot;, &quot;-c&quot;, &quot;java $JAVA_OPTS -Djava.securi
 <img src="../imgs/deploy-elb-3.png" /></div>
 <p>Right now an AWS Elastic Beanstalk application has been created, and by default an environment named Otoroshi-env is being created as well.</p>
 <p>AWS Elastic Beanstalk can manage multiple environments of the same application, for instance environments can be (prod, preprod, expriments&hellip;). </p>
-<p>Otoroshi is a bit particular, it doesn&rsquo;t make much sense to have multiple environments, since Otoroshi will handle all the requests from/to downstream services regardless of the environment. </p>
+<p>Otoroshi is a bit particular, it doesn&rsquo;t make much sense to have multiple environments, since Otoroshi will handle all the requests from/to backend services regardless of the environment. </p>
 <p>As you see in the image above, we are now configuring the Otoroshi-env, the one and only environment of Otoroshi.</p>
 <p>For <strong>Configuration presets</strong>, choose custom configuration, now you have a load balancer for your environment with the capacity of at least one instance and at most four. I&rsquo;d recommend at least 2 instances, to change that, on the <strong>Capacity</strong> card hit <strong>Modify</strong>. </p><div class="centered-img">
 <img src="../imgs/deploy-elb-4.png" /></div>

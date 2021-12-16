@@ -92,7 +92,7 @@
     <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
-    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
@@ -205,7 +205,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
-    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
@@ -275,8 +275,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>The <strong>filedb</strong> datastore is pretty handy for testing purposes, but is not supposed to be used in production mode. Not suitable for production usage.</p>
 <img src="../imgs/filedb.png" /></div><div class="centered-img">
 <img src="../imgs/datastores.png" /></div>
-<h2><a href="#setup-your-hosts" name="setup-your-hosts" class="anchor"><span class="anchor-link"></span></a>Setup your hosts</h2>
-<p>By default, Otoroshi starts with domain <code>oto.tools</code> that automatically targets <code>127.0.0.1</code> with no changes to you <code>/etc/hosts</code> file. Of course you can change the domain, you have to add the values in your <code>/etc/hosts</code> file according to the setting you put in Otoroshi configuration</p>
+<h2><a href="#setup-your-hosts-before-running" name="setup-your-hosts-before-running" class="anchor"><span class="anchor-link"></span></a>Setup your hosts before running</h2>
+<p>By default, Otoroshi starts with domain <code>oto.tools</code> that automatically targets <code>127.0.0.1</code> with no changes to your <code>/etc/hosts</code> file. Of course you can change the domain value, you have to add the values in your <code>/etc/hosts</code> file according to the setting you put in Otoroshi configuration or define the right ip address at the DNS provider level</p>
 <ul>
   <li><code>app.domain</code> =&gt; <code>mydomain.org</code></li>
   <li><code>app.backoffice.subdomain</code> =&gt; <code>otoroshi</code></li>
@@ -2113,7 +2113,7 @@ akka { # akka specific configuration
 <ul>
   <li><a href="../install/setup-otoroshi.html#setup-otoroshi" class="header">Setup Otoroshi</a>
   <ul>
-    <li><a href="../install/setup-otoroshi.html#setup-your-hosts" class="header">Setup your hosts</a></li>
+    <li><a href="../install/setup-otoroshi.html#setup-your-hosts-before-running" class="header">Setup your hosts before running</a></li>
     <li><a href="../install/setup-otoroshi.html#setup-your-configuration-file" class="header">Setup your configuration file</a></li>
     <li><a href="../install/setup-otoroshi.html#configuration-with-env-variables" class="header">Configuration with env. variables</a></li>
     <li><a href="../install/setup-otoroshi.html#reference-configuration-for-env-variables" class="header">Reference configuration for env. variables</a></li>

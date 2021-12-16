@@ -92,7 +92,7 @@
     <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
-    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
@@ -205,7 +205,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
-    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
@@ -695,6 +695,61 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;izanamiClientId&quot; : &quot;client&quot;,
     &quot;izanamiClientSecret&quot; : &quot;secret&quot;,
     &quot;timeout&quot; : 5000
+  }
+}
+</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+<h2><a href="#jq-bodies-transformer" name="jq-bodies-transformer" class="anchor"><span class="anchor-link"></span></a>JQ bodies transformer</h2>
+<img class="plugin-logo plugin-hidden" src=""></img>
+<h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
+<ul>
+  <li>plugin type: <code>transformer</code></li>
+  <li>configuration root: <code>JqBodyTransformer</code></li>
+</ul>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin let you transform JSON bodies (in requests and responses) using <a href="https://stedolan.github.io/jq/manual/#Basicfilters">JQ filters</a>.</p>
+<p>Some JSON variables are accessible by default :</p>
+<ul>
+  <li><code>$url</code>: the request url</li>
+  <li><code>$path</code>: the request path</li>
+  <li><code>$domain</code>: the request domain</li>
+  <li><code>$method</code>: the request method</li>
+  <li><code>$headers</code>: the current request headers (with name in lowercase)</li>
+  <li><code>$queryParams</code>: the current request query params</li>
+  <li><code>$otoToken</code>: the otoroshi protocol token (if one)</li>
+  <li><code>$inToken</code>: the first matched JWT token as is (from verifiers, if one)</li>
+  <li><code>$token</code>: the first matched JWT token as is (from verifiers, if one)</li>
+  <li><code>$user</code>: the current user (if one)</li>
+  <li><code>$apikey</code>: the current apikey (if one)</li>
+</ul>
+<p>This plugin can accept the following configuration</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;JqBodyTransformer&quot; : {
+    &quot;request&quot; : {
+      &quot;filter&quot; : &quot;.&quot;,
+      &quot;included&quot; : [ ],
+      &quot;excluded&quot; : [ ]
+    },
+    &quot;response&quot; : {
+      &quot;filter&quot; : &quot;.&quot;,
+      &quot;included&quot; : [ ],
+      &quot;excluded&quot; : [ ]
+    }
+  }
+}
+</code></pre>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;JqBodyTransformer&quot; : {
+    &quot;request&quot; : {
+      &quot;filter&quot; : &quot;.&quot;,
+      &quot;included&quot; : [ ],
+      &quot;excluded&quot; : [ ]
+    },
+    &quot;response&quot; : {
+      &quot;filter&quot; : &quot;.&quot;,
+      &quot;included&quot; : [ ],
+      &quot;excluded&quot; : [ ]
+    }
   }
 }
 </code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
@@ -2309,6 +2364,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#hmac-caller-plugin" class="header">HMAC caller plugin</a></li>
     <li><a href="../plugins/built-in-plugins.html#izanami-canary-campaign" class="header">Izanami Canary Campaign</a></li>
     <li><a href="../plugins/built-in-plugins.html#izanami-apis-proxy" class="header">Izanami APIs Proxy</a></li>
+    <li><a href="../plugins/built-in-plugins.html#jq-bodies-transformer" class="header">JQ bodies transformer</a></li>
     <li><a href="../plugins/built-in-plugins.html#html-patcher" class="header">Html Patcher</a></li>
     <li><a href="../plugins/built-in-plugins.html#body-logger" class="header">Body logger</a></li>
     <li><a href="../plugins/built-in-plugins.html#prometheus-service-metrics" class="header">Prometheus Service Metrics</a></li>

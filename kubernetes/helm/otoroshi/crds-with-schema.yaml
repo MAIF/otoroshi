@@ -845,7 +845,7 @@ spec:
                     type: "string"
               enforceSecureCommunication:
                 description: "When enabled, Otoroshi will try to exchange headers\
-                  \ with downstream service to ensure no one else can use the service\
+                  \ with backend service to ensure no one else can use the service\
                   \ from outside"
                 type: "boolean"
               tags:

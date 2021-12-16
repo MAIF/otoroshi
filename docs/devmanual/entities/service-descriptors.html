@@ -92,7 +92,7 @@
     <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
-    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
@@ -205,7 +205,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
-    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
@@ -271,15 +271,15 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>Send Otoroshi headers back</code>: when enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc &hellip;</li>
   <li><code>Override Host header</code>: when enabled, Otoroshi will automatically set the Host header to corresponding target host</li>
   <li><code>Send X-Forwarded-* headers</code>: when enabled, Otoroshi will send X-Forwarded-* headers to target</li>
-  <li><code>Force HTTPS</code>: will force redirection to https:// if not present</li>
+  <li><code>Force HTTPS</code>: will force redirection to <code>https://</code> if not present</li>
   <li><code>Allow HTTP/1.0 requests</code>: will return an error on HTTP/1.0 request</li>
   <li><code>Use new WebSocket client</code>: will use the new websocket client for every websocket request</li>
   <li><code>TCP/UDP tunneling</code>: with this setting enabled, otoroshi will not proxy http requests anymore but instead will create a secured tunnel between a cli on your machine and otoroshi to proxy any tcp connection with all otoroshi security features enabled</li>
 </ul>
 <h3><a href="#service-exposition-settings" name="service-exposition-settings" class="anchor"><span class="anchor-link"></span></a>Service exposition settings</h3>
 <ul>
-  <li><code>Exposed domain</code>: the domain used to expose your service. Should follow pattern: (http|https)://subdomain?.env?.domain.tld?/root? or regex (http|https):\/\/(.*?).?(.*?).?(.*?).?(.*)\/?(.*)</li>
-  <li><code>Legacy domain</code>: use &lsquo;domain&rsquo;, &lsquo;subdomain&rsquo;, &lsquo;env&rsquo; and &lsquo;matchingRoot&rsquo; for routing in addition to hosts, or just use hosts.</li>
+  <li><code>Exposed domain</code>: the domain used to expose your service. Should follow pattern: <code>(http|https)://subdomain?.env?.domain.tld?/root?</code> or regex <code>(http|https):\/\/(.*?)\.?(.*?)\.?(.*?)\.?(.*)\/?(.*)</code></li>
+  <li><code>Legacy domain</code>: use <code>domain</code>, <code>subdomain</code>, <code>env</code> and <code>matchingRoot</code> for routing in addition to hosts, or just use hosts.</li>
   <li><code>Strip path</code>: when matching, strip the matching prefix from the upstream request URL. Defaults to true</li>
   <li><code>Issue Let&#39;s Encrypt cert.</code>: automatically issue and renew let&rsquo;s encrypt certificate based on domain name. Only if Let&rsquo;s Encrypt enabled in global config.</li>
   <li><code>Issue certificate</code>: automatically issue and renew a certificate based on domain name</li>
@@ -297,13 +297,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>Redirect to local</code>: if you work locally with Otoroshi, you may want to use that feature to redirect one specific service to a local host. For example, you can relocate <a href="https://foo.preprod.bar.com">https://foo.preprod.bar.com</a> to <a href="http://localhost:8080">http://localhost:8080</a> to make some tests</li>
   <li><code>Load balancing</code>: the load balancing algorithm used</li>
   <li><code>Targets</code>: the list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures</li>
-  <li><code>Targets root</code>: Otoroshi will append this root to any target choosen. If the specified root is &lsquo;/api/foo&rsquo;, then a request to <a href="https://yyyyyyy/bar">https://yyyyyyy/bar</a> will actually hit <a href="https://xxxxxxxxx/api/foo/bar">https://xxxxxxxxx/api/foo/bar</a></li>
+  <li><code>Targets root</code>: Otoroshi will append this root to any target choosen. If the specified root is <code>/api/foo</code>, then a request to <a href="https://yyyyyyy/bar">https://yyyyyyy/bar</a> will actually hit <a href="https://xxxxxxxxx/api/foo/bar">https://xxxxxxxxx/api/foo/bar</a></li>
 </ul>
 <h3><a href="#url-patterns" name="url-patterns" class="anchor"><span class="anchor-link"></span></a>URL Patterns</h3>
 <ul>
   <li><code>Make service a &#39;public ui&#39;</code>: add a default pattern as public routes</li>
   <li><code>Make service a &#39;private api&#39;</code>: add a default pattern as private routes</li>
-  <li><code>Public patterns</code>: by default, every services are private only and you&rsquo;ll need an API key to access it. However, if you want to expose a public UI, you can define one or more public patterns (regex) to allow access to anybody. For example if you want to allow anybody on any URL, just use &lsquo;/.*&rsquo;</li>
+  <li><code>Public patterns</code>: by default, every services are private only and you&rsquo;ll need an API key to access it. However, if you want to expose a public UI, you can define one or more public patterns (regex) to allow access to anybody. For example if you want to allow anybody on any URL, just use <code>/.*</code></li>
   <li><code>Private patterns</code>: if you define a public pattern that is a little bit too much, you can make some of public URL private again</li>
 </ul>
 <h3><a href="#restrictions" name="restrictions" class="anchor"><span class="anchor-link"></span></a>Restrictions</h3>
@@ -316,7 +316,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </ul>
 <h3><a href="#otoroshi-exchange-protocol" name="otoroshi-exchange-protocol" class="anchor"><span class="anchor-link"></span></a>Otoroshi exchange protocol</h3>
 <ul>
-  <li><code>Enabled</code>: when enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside.</li>
+  <li><code>Enabled</code>: when enabled, Otoroshi will try to exchange headers with backend service to ensure no one else can use the service from outside.</li>
   <li><code>Send challenge</code>: when disbaled, Otoroshi will not check if target service respond with sent random value.</li>
   <li><code>Send info. token</code>: when enabled, Otoroshi add an additional header containing current call informations</li>
   <li><code>Challenge token version</code>: version the otoroshi exchange protocol challenge. This option will be set to V2 in a near future.</li>

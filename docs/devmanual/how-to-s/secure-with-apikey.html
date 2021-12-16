@@ -92,7 +92,7 @@
     <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
-    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
@@ -205,7 +205,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
-    <li><a href="../how-to-s/secure-the-communication-between-a-downstream-app-and-otoroshi.html" class="page">Secure the communication between a downstream app and Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
@@ -273,7 +273,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>With the previous configuration, all routes are public. In our case, we want to secure all routes prefix with <code>/api</code>.</p>
 <p>Let&rsquo;s return to the <code>URL Patterns</code> section. Click on <strong>Make service a private api</strong>. This button automatically add <code>/api</code> as default in <code>Private patterns</code> array. (Note that the field supports regex like. In our case, <code>/api.*</code> covers all routes starting by <code>/api</code>).</p>
 <p>Save your app and navigate to <a href="http://myservice.oto.tools:8080/api/test" title="http://myservice.oto.tools:8080/api/test" target="_blank" rel="noopener noreferrer">http://myservice.oto.tools:8080/api/test</a> again. If the service is configured, you should have a <code>Service Not found error</code>, and a success call, in the case you navigate to any other routes which are not starting by <code>/api/*</code> like <a href="http://myservice.oto.tools:8080/test/bar" title="http://myservice.oto.tools:8080/test/bar" target="_blank" rel="noopener noreferrer">http://myservice.oto.tools:8080/test/bar</a></p>
-<p>The expected error on the <code>/api/test</code>, throws by the URL Patterns, indicate to the client that an api key is required to access to this part of the downstream service.</p>
+<p>The expected error on the <code>/api/test</code>, throws by the URL Patterns, indicate to the client that an api key is required to access to this part of the backend service.</p>
 <h3><a href="#generate-an-api-key-to-request-secure-services" name="generate-an-api-key-to-request-secure-services" class="anchor"><span class="anchor-link"></span></a>Generate an api key to request secure services</h3>
 <p>Navigate to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/apikeys/add" title="http://otoroshi.oto.tools:8080/bo/dashboard/apikeys/add" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080/bo/dashboard/apikeys/add</a> or when clicking on the <strong>Add apikey</strong> button on the sidebar.</p>
 <p>The only required fields of an Otoroshi api key are : </p>
@@ -348,7 +348,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;Otoroshi-Error&quot;: &quot;Bad API key&quot;
 }
 </code></pre>
-<p>Navigate to the edit page of our api key, and jump to the <code>Metadata and tags</code> section. In this section, add <code>otoroshi</code> in <code>Tags</code> array, then save the api key. Call once again your call and you will normally get a successful response of our downstream service.</p>
+<p>Navigate to the edit page of our api key, and jump to the <code>Metadata and tags</code> section. In this section, add <code>otoroshi</code> in <code>Tags</code> array, then save the api key. Call once again your call and you will normally get a successful response of our backend service.</p>
 <p>In this example, we have restricted our service to be callable only with keys that have <code>otoroshi</code> as a tag.</p>
 <p>But Otoroshi provides others behaviours. For each behaviour, <em>Api key used should</em>:</p>
 <ul>

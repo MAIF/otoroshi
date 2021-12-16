@@ -15769,7 +15769,7 @@
             "type" : "boolean"
           },
           "enforceSecureCommunication" : {
-            "description" : "When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside",
+            "description" : "When enabled, Otoroshi will try to exchange headers with backend service to ensure no one else can use the service from outside",
             "type" : "boolean"
           },
           "missingOnlyHeadersOut" : {
