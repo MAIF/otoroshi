@@ -30,9 +30,9 @@ In this tutorial, we will set the configuration as following :
 
 Now that the plugin is running, third routes are exposed on each matching domain of the regex.
 
-* [GET] - `/.well-known/otoroshi/oauth/jwks.json` : retrieve all public keys presents in Otoroshi
-* [POST] - `/.well-known/otoroshi/oauth/token/introspect` : validate and decode the token 
-* [POST] - `/.well-known/otoroshi/oauth/token` : generate a token with the fields provided
+* `GET  /.well-known/otoroshi/oauth/jwks.json` : retrieve all public keys presents in Otoroshi
+* `POST /.well-known/otoroshi/oauth/token/introspect` : validate and decode the token 
+* `POST /.well-known/otoroshi/oauth/token` : generate a token with the fields provided
 
 Once the global configuration saved, we can deployed a simple service to test it.
 

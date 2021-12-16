@@ -47,7 +47,7 @@ case class StateRespInvalid(
 ) {
 
   def errorMessage(resp: WSResponse): String =
-    s"error while talking with downstream service - ${reason} - ${exchangePayload(resp)}"
+    s"error while talking with backend service - ${reason} - ${exchangePayload(resp)}"
 
   def exchangePayload(resp: WSResponse): JsValue = {
     Json.obj(
@@ -990,7 +990,7 @@ class ReverseProxyAction(env: Env) {
                                                         case BodyAlreadyConsumedException                       =>
                                                           Errors
                                                             .craftResponseResult(
-                                                              s"Something went wrong, the downstream service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
+                                                              s"Something went wrong, the backend service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
                                                               GatewayTimeout,
                                                               req,
                                                               Some(descriptor),
@@ -1006,7 +1006,7 @@ class ReverseProxyAction(env: Env) {
                                                         case RequestTimeoutException                            =>
                                                           Errors
                                                             .craftResponseResult(
-                                                              s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
+                                                              s"Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding",
                                                               GatewayTimeout,
                                                               req,
                                                               Some(descriptor),
@@ -1022,7 +1022,7 @@ class ReverseProxyAction(env: Env) {
                                                         case _: scala.concurrent.TimeoutException               =>
                                                           Errors
                                                             .craftResponseResult(
-                                                              s"Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding",
+                                                              s"Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding",
                                                               GatewayTimeout,
                                                               req,
                                                               Some(descriptor),
@@ -1038,7 +1038,7 @@ class ReverseProxyAction(env: Env) {
                                                         case AllCircuitBreakersOpenException                    =>
                                                           Errors
                                                             .craftResponseResult(
-                                                              s"Something went wrong, the downstream service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
+                                                              s"Something went wrong, the backend service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
                                                               ServiceUnavailable,
                                                               req,
                                                               Some(descriptor),
@@ -1057,7 +1057,7 @@ class ReverseProxyAction(env: Env) {
                                                               .contains("connection refused") =>
                                                           Errors
                                                             .craftResponseResult(
-                                                              s"Something went wrong, the connection to downstream service was refused, you should try later. Thanks for your understanding",
+                                                              s"Something went wrong, the connection to backend service was refused, you should try later. Thanks for your understanding",
                                                               BadGateway,
                                                               req,
                                                               Some(descriptor),

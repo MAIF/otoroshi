@@ -1230,7 +1230,7 @@
     "otoroshi.models.ServiceDescriptor.detectApiKeySooner": "Detect if an apikey is present but do not fail if not",
     "otoroshi.models.ServiceDescriptor.domain": "The domain on which the service is available.",
     "otoroshi.models.ServiceDescriptor.enabled": "Activate or deactivate your service. Once disabled, users will get an error page saying the service does not exist",
-    "otoroshi.models.ServiceDescriptor.enforceSecureCommunication": "When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside",
+    "otoroshi.models.ServiceDescriptor.enforceSecureCommunication": "When enabled, Otoroshi will try to exchange headers with backend service to ensure no one else can use the service from outside",
     "otoroshi.models.ServiceDescriptor.env": "The line on which the service is available. Based on that value, the name of the line will be appended to the subdomain. For line prod, nothing will be appended. For example, if the subdomain is 'foo' and line is 'preprod', then the exposed service will be available at 'foo.preprod.mydomain'",
     "otoroshi.models.ServiceDescriptor.forceHttps": "Will force redirection to https:// if not present",
     "otoroshi.models.ServiceDescriptor.groups": "Each service descriptor is attached to groups. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group",

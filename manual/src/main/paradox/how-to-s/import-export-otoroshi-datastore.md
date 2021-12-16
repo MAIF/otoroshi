@@ -9,7 +9,7 @@ curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5
 
 By default, Otoroshi starts with domain `oto.tools` that targets `127.0.0.1` Now you are almost ready to run Otoroshi for the first time, we want run it with an initial data.
 
-To do that, you need to add the **app.importFrom** setting to the Otoroshi configuration (of `$APP_IMPORT_FROM` env). It can be a file path or a URL. The content of the initial datastore.
+To do that, you need to add the **app.importFrom** setting to the Otoroshi configuration (of `$APP_IMPORT_FROM` env). It can be a file path or a URL. The content of the initial datastore can look something like the following.
 
 ```json
 {

@@ -25,15 +25,15 @@ Let’s say you have an API exposed on http://192.168.0.42 and I want to expose 
 * `Send Otoroshi headers back`: when enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ...
 * `Override Host header`: when enabled, Otoroshi will automatically set the Host header to corresponding target host
 * `Send X-Forwarded-* headers`: when enabled, Otoroshi will send X-Forwarded-* headers to target
-* `Force HTTPS`: will force redirection to https:// if not present
+* `Force HTTPS`: will force redirection to `https://` if not present
 * `Allow HTTP/1.0 requests`: will return an error on HTTP/1.0 request
 * `Use new WebSocket client`: will use the new websocket client for every websocket request
 * `TCP/UDP tunneling`: with this setting enabled, otoroshi will not proxy http requests anymore but instead will create a secured tunnel between a cli on your machine and otoroshi to proxy any tcp connection with all otoroshi security features enabled
 
 ### Service exposition settings
 
-* `Exposed domain`: the domain used to expose your service. Should follow pattern: (http|https)://subdomain?.env?.domain.tld?/root? or regex (http|https):\/\/(.*?)\.?(.*?)\.?(.*?)\.?(.*)\/?(.*)
-* `Legacy domain`: use 'domain', 'subdomain', 'env' and 'matchingRoot' for routing in addition to hosts, or just use hosts.
+* `Exposed domain`: the domain used to expose your service. Should follow pattern: `(http|https)://subdomain?.env?.domain.tld?/root?` or regex `(http|https):\/\/(.*?)\.?(.*?)\.?(.*?)\.?(.*)\/?(.*)`
+* `Legacy domain`: use `domain`, `subdomain`, `env` and `matchingRoot` for routing in addition to hosts, or just use hosts.
 * `Strip path`: when matching, strip the matching prefix from the upstream request URL. Defaults to true
 * `Issue Let's Encrypt cert.`: automatically issue and renew let's encrypt certificate based on domain name. Only if Let's Encrypt enabled in global config.
 * `Issue certificate`: automatically issue and renew a certificate based on domain name
@@ -51,13 +51,13 @@ Let’s say you have an API exposed on http://192.168.0.42 and I want to expose 
 * `Redirect to local`: if you work locally with Otoroshi, you may want to use that feature to redirect one specific service to a local host. For example, you can relocate https://foo.preprod.bar.com to http://localhost:8080 to make some tests
 * `Load balancing`: the load balancing algorithm used
 * `Targets`: the list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures
-* `Targets root`: Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar
+* `Targets root`: Otoroshi will append this root to any target choosen. If the specified root is `/api/foo`, then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar
 
 ### URL Patterns
 
 * `Make service a 'public ui'`: add a default pattern as public routes
 * `Make service a 'private api'`: add a default pattern as private routes
-* `Public patterns`: by default, every services are private only and you'll need an API key to access it. However, if you want to expose a public UI, you can define one or more public patterns (regex) to allow access to anybody. For example if you want to allow anybody on any URL, just use '/.*'
+* `Public patterns`: by default, every services are private only and you'll need an API key to access it. However, if you want to expose a public UI, you can define one or more public patterns (regex) to allow access to anybody. For example if you want to allow anybody on any URL, just use `/.*`
 * `Private patterns`: if you define a public pattern that is a little bit too much, you can make some of public URL private again
 
 ### Restrictions
@@ -70,7 +70,7 @@ Let’s say you have an API exposed on http://192.168.0.42 and I want to expose 
 
 ### Otoroshi exchange protocol
 
-* `Enabled`: when enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside.
+* `Enabled`: when enabled, Otoroshi will try to exchange headers with backend service to ensure no one else can use the service from outside.
 * `Send challenge`: when disbaled, Otoroshi will not check if target service respond with sent random value.
 * `Send info. token`: when enabled, Otoroshi add an additional header containing current call informations
 * `Challenge token version`: version the otoroshi exchange protocol challenge. This option will be set to V2 in a near future.

@@ -64,9 +64,9 @@ Not suitable for production usage.
 <img src="../imgs/datastores.png" />
 @@@
 
-## Setup your hosts
+## Setup your hosts before running
 
-By default, Otoroshi starts with domain `oto.tools` that automatically targets `127.0.0.1` with no changes to you `/etc/hosts` file. Of course you can change the domain, you have to add the values in your `/etc/hosts` file according to the setting you put in Otoroshi configuration
+By default, Otoroshi starts with domain `oto.tools` that automatically targets `127.0.0.1` with no changes to your `/etc/hosts` file. Of course you can change the domain value, you have to add the values in your `/etc/hosts` file according to the setting you put in Otoroshi configuration or define the right ip address at the DNS provider level
 
 * `app.domain` => `mydomain.org`
 * `app.backoffice.subdomain` => `otoroshi`

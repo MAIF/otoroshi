@@ -3,7 +3,7 @@
 - [Documentation and examples](#documentation-and-examples)
 - [Test the expression language](#test-the-expression-language)
 
-The expression language provides an important mechanism for accessing and manipulating Otoroshi data on different inputs. For example, with this mechanism, you can mapping a claim of an inconming token directly in a claim of a generated token (using @ref:[JWT verifiers](../entities/jwt-verifiers.md)). You can add information of the service descriptor traversed such as the domain of the service or the name of the service. This information can be useful on the downstream service.
+The expression language provides an important mechanism for accessing and manipulating Otoroshi data on different inputs. For example, with this mechanism, you can mapping a claim of an inconming token directly in a claim of a generated token (using @ref:[JWT verifiers](../entities/jwt-verifiers.md)). You can add information of the service descriptor traversed such as the domain of the service or the name of the service. This information can be useful on the backend service.
 
 ## Documentation and examples
 <!-- Documentation is in expression-language.js and it build when page is rendered -->

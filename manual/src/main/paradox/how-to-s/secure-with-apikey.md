@@ -24,7 +24,7 @@ Click on **Make service a private api**. This button automatically add `/api` as
 
 Save your app and navigate to @link:[http://myservice.oto.tools:8080/api/test](http://myservice.oto.tools:8080/api/test) { open=new } again. If the service is configured, you should have a `Service Not found error`, and a success call, in the case you navigate to any other routes which are not starting by `/api/*` like @link:[http://myservice.oto.tools:8080/test/bar](http://myservice.oto.tools:8080/test/bar) { open=new }
 
-The expected error on the `/api/test`, throws by the URL Patterns, indicate to the client that an api key is required to access to this part of the downstream service.
+The expected error on the `/api/test`, throws by the URL Patterns, indicate to the client that an api key is required to access to this part of the backend service.
 
 ### Generate an api key to request secure services
 
@@ -137,7 +137,7 @@ This should output :
 ```
 
 Navigate to the edit page of our api key, and jump to the `Metadata and tags` section.
-In this section, add `otoroshi` in `Tags` array, then save the api key. Call once again your call and you will normally get a successful response of our downstream service.
+In this section, add `otoroshi` in `Tags` array, then save the api key. Call once again your call and you will normally get a successful response of our backend service.
 
 In this example, we have restricted our service to be callable only with keys that have `otoroshi` as a tag.
 

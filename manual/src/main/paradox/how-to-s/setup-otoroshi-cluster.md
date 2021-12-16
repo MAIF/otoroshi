@@ -141,7 +141,7 @@ curl -X POST http://otoroshi-api.oto.tools:8091/api/services \
 EOF
 ```
 
-Once created, call two times the service. If all is working, the header received by the downstream service will have `worker-1` and `worker-2` as value.
+Once created, call two times the service. If all is working, the header received by the backend service will have `worker-1` and `worker-2` as value.
 
 ```sh
 curl 'http://api.oto.tools:8080'

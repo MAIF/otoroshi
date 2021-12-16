@@ -260,7 +260,7 @@ Now, your rights should be :
 
 ### Secure an app with Keycloak authentication
 
-The only change to apply on the previous authentication module is on the callback URL. When you want secure a Otoroshi service, and transform it on `Private App`, you need to set the `Callback URL` at `http://privateapps.oto.tools:8080/privateapps/generic/callback`. This configuration will redirect users to the downstream service after they have successfully logged in.
+The only change to apply on the previous authentication module is on the callback URL. When you want secure a Otoroshi service, and transform it on `Private App`, you need to set the `Callback URL` at `http://privateapps.oto.tools:8080/privateapps/generic/callback`. This configuration will redirect users to the backend service after they have successfully logged in.
 
 1. Go back to the authentication module
 2. Jump to the `Callback URL` field

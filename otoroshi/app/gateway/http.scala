@@ -584,7 +584,7 @@ class HttpHandler()(implicit env: Env) {
                       extraInfos ++ Json.obj("stateRespInvalid" -> stateRespInvalid.exchangePayload(resp))
                     attrs.put(otoroshi.plugins.Keys.GatewayEventExtraInfosKey -> newExtraInfos)
                     Errors.craftResponseResult(
-                      "Downstream microservice does not seems to be secured. Cancelling request !",
+                      "Backend server does not seems to be secured. Cancelling request !",
                       BadGateway,
                       req,
                       Some(descriptor),

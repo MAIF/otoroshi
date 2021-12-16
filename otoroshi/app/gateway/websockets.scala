@@ -107,7 +107,7 @@ class WebSocketHandler()(implicit env: Env) {
     val start            = attrs.get(otoroshi.plugins.Keys.RequestStartKey).get
     val requestTimestamp = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
 
-    logger.trace("[WEBSOCKET] Call downstream !!!")
+    logger.trace("[WEBSOCKET] Call backend !!!")
     val stateValue         = IdGenerator.extendedToken(128)
     val stateToken: String = descriptor.secComVersion match {
       case SecComVersion.V1 => stateValue

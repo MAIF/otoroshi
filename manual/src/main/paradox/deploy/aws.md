@@ -79,7 +79,7 @@ Right now an AWS Elastic Beanstalk application has been created, and by default 
 
 AWS Elastic Beanstalk can manage multiple environments of the same application, for instance environments can be (prod, preprod, expriments...).  
 
-Otoroshi is a bit particular, it doesn't make much sense to have multiple environments, since Otoroshi will handle all the requests from/to downstream services regardless of the environment.        
+Otoroshi is a bit particular, it doesn't make much sense to have multiple environments, since Otoroshi will handle all the requests from/to backend services regardless of the environment.        
  
 As you see in the image above, we are now configuring the Otoroshi-env, the one and only environment of Otoroshi.
   

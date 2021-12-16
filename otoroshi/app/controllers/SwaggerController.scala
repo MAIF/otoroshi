@@ -819,7 +819,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
         "forceHttps"                 -> SimpleBooleanType ~~> "Will force redirection to https:// if not present",
         "maintenanceMode"            -> SimpleBooleanType ~~> "Display a maintainance page when a user try to use the service",
         "buildMode"                  -> SimpleBooleanType ~~> "Display a construction page when a user try to use the service",
-        "enforceSecureCommunication" -> SimpleBooleanType ~~> "When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside",
+        "enforceSecureCommunication" -> SimpleBooleanType ~~> "When enabled, Otoroshi will try to exchange headers with backend service to ensure no one else can use the service from outside",
         "sendOtoroshiHeadersBack"    -> SimpleBooleanType ~~> "When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ...",
         "xForwardedHeaders"          -> SimpleBooleanType ~~> "When enabled, Otoroshi will send X-Forwarded-* headers to target",
         "overrideHost"               -> SimpleBooleanType ~~> "When enabled, Otoroshi will automatically set the Host header to corresponding target host",

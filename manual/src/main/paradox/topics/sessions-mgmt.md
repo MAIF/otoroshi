@@ -4,7 +4,7 @@
 
 All logged users to an Otoroshi instance are administrators. An user session is created for each sucessfull connection to the UI. 
 
-These sessions are listed in the `Admin users sessions` (available at this location of your instance */bo/dashboard/sessions/admin*).
+These sessions are listed in the `Admin users sessions` (available in the cog icon menu or at this location of your instance `/bo/dashboard/sessions/admin`).
 
 An admin user session is composed of: 
 
@@ -25,7 +25,7 @@ In the `Admin users sessions` page, you have two more actions:
 
 All logged users to a protected application has an private user session.
 
-These sessions are listed in the `Private apps users sessions` (available at this location of your instance */bo/dashboard/sessions/private*).
+These sessions are listed in the `Private apps users sessions` (available in the cog icon menu or at this location of your instance `/bo/dashboard/sessions/private`).
 
 An private user session is composed of: 
 

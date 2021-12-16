@@ -1,4 +1,4 @@
-# Secure the communication between a downstream app and Otoroshi
+# Secure the communication between a backend app and Otoroshi
 
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
 
@@ -28,7 +28,7 @@ challenge-verifier listening on http://0.0.0.0:8081
 
 This project runs an express client with one middleware. The middleware handles each request, and check if the header `State token header` is present in headers. By default, the incoming expected header is `Otoroshi-State` by the application and `Otoroshi-State-Resp` header in the headers of the return request. 
 
-Try to call your service via http://myservice.oto.tools:8080/. This should return a successful response with all headers received by the downstream app. 
+Try to call your service via http://myservice.oto.tools:8080/. This should return a successful response with all headers received by the backend app. 
 
 Now try to disable the middleware in the nodejs file by commenting the following line. 
 
@@ -36,7 +36,7 @@ Now try to disable the middleware in the nodejs file by commenting the following
 // app.use(OtoroshiMiddleware());
 ```
 
-Try to call again your service. This time, Otoroshi breaks the return response from your downstream service, and returns.
+Try to call again your service. This time, Otoroshi breaks the return response from your backend service, and returns.
 
 ```sh
 Downstream microservice does not seems to be secured. Cancelling request !
