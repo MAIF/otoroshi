@@ -93,7 +93,7 @@
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
-    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
@@ -206,7 +206,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
     <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
-    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using own certificates</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
@@ -254,15 +254,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This section is under rewrite. The following content is deprecated</p></div>
 <p>When everything has failed and you absolutely need a feature in Otoroshi to make your use case work, there is a solution. Plugins is the feature in Otoroshi that allow you to code how Otoroshi should behave when receiving, validating and routing an http request. With request plugin, you can change request / response headers and request / response body the way you want, provide your own apikey, etc.</p>
 <h2><a href="#plugin-types" name="plugin-types" class="anchor"><span class="anchor-link"></span></a>Plugin types</h2>
-<p>there are many plugin types</p>
-<ul>
-  <li><code>request sinks</code> plugins: used when no services are matched in otoroshi. Can reply with any content</li>
-  <li><code>pre-routes</code> plugins: used to extract values (like custom apikeys) and provide them to other plugins or otoroshi engine</li>
-  <li><code>access validation</code> plugins: used to validate if a request can pass or not based on whatever you want</li>
-  <li><code>request transformer</code> plugins: used to transform request, responses and their body. Can be used to return arbitrary content</li>
-  <li><code>event listener</code> plugins: any plugin type can listen to otoroshi internal events and react to thems</li>
-  <li><code>job</code> plugins: tasks taht can run automatically once, on be scheduled with a cron expression or every defined interval</li>
-</ul>
+<p>there are many plugin types explained <a href="plugins.html">here</a> </p>
 <h2><a href="#code-and-signatures" name="code-and-signatures" class="anchor"><span class="anchor-link"></span></a>Code and signatures</h2>
 <ul>
   <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/requestsink.scala#L14-L19">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/requestsink.scala#L14-L19</a></li>
