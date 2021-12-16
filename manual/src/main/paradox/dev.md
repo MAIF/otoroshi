@@ -58,7 +58,14 @@ sbt
 then in the sbt console run the following command
 
 ```sh
-~run -Dapp.storage=file -Dapp.liveJs=true -Dhttps.port=9998 -D-Dapp.privateapps.port=9999 -Dapp.adminPassword=password -Dapp.domain=oto.tools -Dplay.server.https.engineProvider=ssl.DynamicSSLEngineProvider -Dapp.events.maxSize=0
+~run -Dapp.storage=file -Dapp.liveJs=true -Dhttps.port=9998 -Dapp.privateapps.port=9999 -Dapp.adminPassword=password -Dapp.domain=oto.tools -Dplay.server.https.engineProvider=ssl.DynamicSSLEngineProvider -Dapp.events.maxSize=0
+```
+
+or you can use the [sbt-revolver](https://github.com/spray/sbt-revolver) to run otoroshi locally for a more `prod` alike behavior (on the TLS part for instance)
+
+```sh
+~reStart
+# to pass jvm args, you can use: ~reStart --- -Dapp.storage=memory ...
 ```
 
 you can now access your otoroshi instance at `http://otoroshi.oto.tools:9999`
