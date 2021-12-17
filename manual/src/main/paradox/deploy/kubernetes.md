@@ -87,7 +87,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:1.5.0-dev-jdk11
+      - image: maif/otoroshi:1.5.0-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi
         args: ['-Dconfig.file=/usr/app/otoroshi/conf/oto.conf']

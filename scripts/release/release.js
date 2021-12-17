@@ -15,15 +15,15 @@ const JDK8_HOME = process.env.JDK8_HOME;
 const JAVA_HOME = process.env.JAVA_HOME;
 
 const files = [
-  { file: './kubernetes/kustomize/overlays/cluster/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}-jdk11`, `maif/otoroshi:${to}-jdk11`) },
-  { file: './kubernetes/kustomize/overlays/cluster-baremetal/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}-jdk11`, `maif/otoroshi:${to}-jdk11`) },
-  { file: './kubernetes/kustomize/overlays/cluster-baremetal-daemonset/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}-jdk11`, `maif/otoroshi:${to}-jdk11`) },
-  { file: './kubernetes/kustomize/overlays/simple/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}-jdk11`, `maif/otoroshi:${to}-jdk11`) },
-  { file: './kubernetes/kustomize/overlays/simple-baremetal/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}-jdk11`, `maif/otoroshi:${to}-jdk11`) },
-  { file: './kubernetes/kustomize/overlays/simple-baremetal-daemonset/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}-jdk11`, `maif/otoroshi:${to}-jdk11`) },
+  { file: './kubernetes/kustomize/overlays/cluster/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
+  { file: './kubernetes/kustomize/overlays/cluster-baremetal/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
+  { file: './kubernetes/kustomize/overlays/cluster-baremetal-daemonset/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
+  { file: './kubernetes/kustomize/overlays/simple/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
+  { file: './kubernetes/kustomize/overlays/simple-baremetal/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
+  { file: './kubernetes/kustomize/overlays/simple-baremetal-daemonset/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
   {
     file: './manual/src/main/paradox/deploy/kubernetes.md',
-    replace: (from, to, source) => source.replace(`?ref=v${from}`, `?ref=v${to}`).replace(`maif/otoroshi:${from}-jdk11`, `maif/otoroshi:${to}-jdk11`)
+    replace: (from, to, source) => source.replace(`?ref=v${from}`, `?ref=v${to}`).replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`)
   },
   {
     file: './kubernetes/helm/otoroshi/Chart.yaml',
@@ -33,7 +33,7 @@ const files = [
   },
   {
     file: './kubernetes/helm/otoroshi/values.yaml',
-    replace: (from, to, source) => source.replace(`tag: ${from}-jdk11`, `tag: ${to}-jdk11`)
+    replace: (from, to, source) => source.replace(`tag: ${from}`, `tag: ${to}`)
   },
   {
     file: './clients/cli/Cargo.toml',
