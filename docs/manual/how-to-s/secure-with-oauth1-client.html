@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Secure an app with OAuth1 client flow · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/cc.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+<link rel="stylesheet" type="text/css" href="../css/plugins.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="active page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="active page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../how-to-s/index.html">How to&rsquo;s</a></li>
+  <li>Secure an app with OAuth1 client flow</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#secure-an-app-with-oauth1-client-flow" name="secure-an-app-with-oauth1-client-flow" class="anchor"><span class="anchor-link"></span></a>Secure an app with OAuth1 client flow</h1>
+<h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
+<div id="instructions-toggle">
+<span class="instructions-title">I want to follow the instructions to start an instance of Otorohi</span>
+<button id="instructions-toggle-button">close</button>
+</div>
+<p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0/otoroshi.jar&#39;
+</code></pre>
+<p>then you can run start Otoroshi :</p>
+<pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -jar otoroshi.jar 
+</code></pre>
+<p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
+<p>Create a service, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/services&#39; \
+  -d &#39;{&quot;enforceSecureCommunication&quot;: false, &quot;forceHttps&quot;: false, &quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;name&quot;:&quot;my-service&quot;,&quot;description&quot;:&quot;a service&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;myservice&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;\/.*&quot;],&quot;privatePatterns&quot;:[],&quot;kind&quot;:&quot;ServiceDescriptor&quot;}&#39; \
+  -H &quot;Content-type: application/json&quot; \
+  -u admin-api-apikey-id:admin-api-apikey-secret
+</code></pre>
+<button id="instructions-toggle-confirm">Confirm the installation</button></div>
+<h3><a href="#running-an-simple-oauth-1-server" name="running-an-simple-oauth-1-server" class="anchor"><span class="anchor-link"></span></a>Running an simple OAuth 1 server</h3>
+<p>In this tutorial, we&rsquo;ll instanciate a oauth 1 server with docker. If you alredy have the necessary, skip this section <a href="secure-with-oauth1-client.html#create-an-oauth-1-provider-module">to</a>.</p>
+<p>Let&rsquo;s start by running the server</p>
+<pre class="prettyprint"><code class="language-sh">docker run -d --name oauth1-server --rm \
+    -p 5000:5000 \
+    -e OAUTH1_CLIENT_ID=2NVVBip7I5kfl0TwVmGzTphhC98kmXScpZaoz7ET \
+    -e OAUTH1_CLIENT_SECRET=wXzb8tGqXNbBQ5juA0ZKuFAmSW7RwOw8uSbdE3MvbrI8wjcbGp \
+    -e OAUTH1_REDIRECT_URI=http://otoroshi.oto.tools:8080/backoffice/auth0/callback \
+    ghcr.io/beryju/oauth1-test-server
+</code></pre>
+<p>We created a oauth 1 server which accepts <code>http://otoroshi.oto.tools:8080/backoffice/auth0/callback</code> as <code>Redirect URI</code>. This URL is used by Otoroshi to retrieve a token and a profile at the end of an authentication process.</p>
+<p>After this command, the container logs should output :</p>
+<pre class="prettyprint"><code class="language-sh ">127.0.0.1 - - [14/Oct/2021 12:10:49] &quot;HEAD /api/health HTTP/1.1&quot; 200 -
+</code></pre>
+<h3><a href="#create-an-oauth-1-provider-module" name="create-an-oauth-1-provider-module" class="anchor"><span class="anchor-link"></span></a>Create an OAuth 1 provider module</h3>
+<ol>
+  <li>Go ahead, and navigate to <a href="http://otoroshi.oto.tools:8080" title="http://otoroshi.oto.tools:8080" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080</a></li>
+  <li>Click on the cog icon on the top right</li>
+  <li>Then <strong>Authentication configs</strong> button</li>
+  <li>And add a new configuration when clicking on the <strong>Add item</strong> button</li>
+  <li>Select the <code>Oauth1 provider</code> in the type selector field</li>
+  <li>Set a basic name and description like <code>oauth1-provider</code></li>
+  <li>Set <code>2NVVBip7I5kfl0TwVmGzTphhC98kmXScpZaoz7ET</code> as <code>Consumer key</code></li>
+  <li>Set <code>wXzb8tGqXNbBQ5juA0ZKuFAmSW7RwOw8uSbdE3MvbrI8wjcbGp</code> as <code>Consumer secret</code></li>
+  <li>Set <code>http://localhost:5000/oauth/request_token</code> as <code>Request Token URL</code></li>
+  <li>Set <code>http://localhost:5000/oauth/authorize</code> as <code>Authorize URL</code></li>
+  <li>Set <code>http://localhost:oauth/access_token</code> as <code>Access token URL</code></li>
+  <li>Set <code>http://localhost:5000/api/me</code> as <code>Profile URL</code></li>
+  <li>Set <code>http://otoroshi.oto.tools:8080/backoffice/auth0/callback</code> as <code>Callback URL</code></li>
+  <li>At the bottom of the page, disable the <strong>secure</strong> button (because we&rsquo;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)</li>
+</ol>
+<p>At this point, your configuration should be similar to :</p>
+<!-- oto-scenario
+ - goto /bo/dashboard/auth-configs/edit/auth_mod_oauth1.0_provider
+ - wait 1000
+ - screenshot generated-hows-to-secure-with-oauth1-provider.png
+-->
+<img src="../imgs/generated-hows-to-secure-with-oauth1-provider.png" />
+<p>With this configuration, the connected user will receive default access on teams and organizations. If you want to change the access rights for a specific user, you can achieve it with the <code>Rights override</code> field and a configuration like :</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;foo@example.com&quot;: [
+    {
+      &quot;tenant&quot;: &quot;*:rw&quot;,
+      &quot;teams&quot;: [
+        &quot;*:rw&quot;
+      ]
+    }
+  ]
+}
+</code></pre>
+<p>Save your configuration at the bottom of the page, then navigate to the <code>danger zone</code> to use your module as a third-party connection to the Otoroshi UI.</p>
+<h3><a href="#connect-to-otoroshi-with-oauth1-authentication" name="connect-to-otoroshi-with-oauth1-authentication" class="anchor"><span class="anchor-link"></span></a>Connect to Otoroshi with OAuth1 authentication</h3>
+<p>To secure Otoroshi with your OAuth1 configuration, we have to register an Authentication configuration as a BackOffice Auth. configuration.</p>
+<ol>
+  <li>Navigate to the <strong>danger zone</strong> (when clicking on the cog on the top right and selecting Danger zone)</li>
+  <li>Scroll to the <strong>BackOffice auth. settings</strong></li>
+  <li>Select your last Authentication configuration (created in the previous section)</li>
+  <li>Save the global configuration with the button on the top right</li>
+</ol>
+<h3><a href="#testing-your-configuration" name="testing-your-configuration" class="anchor"><span class="anchor-link"></span></a>Testing your configuration</h3>
+<ol>
+  <li>Disconnect from your instance</li>
+  <li>Then click on the <strong>Login using third-party</strong> button (or navigate to <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a>)</li>
+  <li>Click on <strong>Login using Third-party</strong> button</li>
+  <li>If all is configured, Otoroshi will redirect you to the oauth 1 server login page</li>
+  <li>Set <code>example-user</code> as user and trust the user by clicking on <code>yes</code> button.</li>
+  <li>Good work! You&rsquo;re connected to Otoroshi with an OAuth1 module.</li>
+</ol>
+<blockquote>
+  <p>A fallback solution is always available in the event of a bad authentication configuration. By going to <a href="http://otoroshi.oto.tools:8080/bo/simple/login">http://otoroshi.oto.tools:8080/bo/simple/login</a>, the administrators will be able to redefine the configuration.</p>
+</blockquote>
+<h3><a href="#secure-an-app-with-oauth-1-authentication" name="secure-an-app-with-oauth-1-authentication" class="anchor"><span class="anchor-link"></span></a>Secure an app with OAuth 1 authentication</h3>
+<p>With the previous configuration, you can secure any of Otoroshi services with it. </p>
+<p>The first step is to apply a little change on the previous configuration. </p>
+<ol>
+  <li>Navigate to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs" title="http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080/bo/dashboard/auth-configs</a>.</li>
+  <li>Create a new auth module configuration with the same values.</li>
+  <li>Replace the <code>Callback URL</code> field to <code>http://privateapps.oto.tools:8080/privateapps/generic/callback</code> (we changed this value because the redirection of a logged user by a third-party server is cover by an other route by Otoroshi).</li>
+  <li>Disable the <code>secure</code> button (because we&rsquo;re using http and this configuration avoid to include cookie in an HTTP Request without secure channel, typically HTTPs)</li>
+</ol>
+<blockquote>
+  <p>Note : an Otoroshi service is called a private app when it is protected by an authentication module.</p>
+</blockquote>
+<p>Our example server supports only one redirect URI. We need to kill it, and to create a new container with <code>http://otoroshi.oto.tools:8080/privateapps/generic/callback</code> as <code>OAUTH1_REDIRECT_URI</code></p>
+<pre class="prettyprint"><code class="language-sh">docker rm -f oauth1-server
+docker run -d --name oauth1-server --rm \
+    -p 5000:5000 \
+    -e OAUTH1_CLIENT_ID=2NVVBip7I5kfl0TwVmGzTphhC98kmXScpZaoz7ET \
+    -e OAUTH1_CLIENT_SECRET=wXzb8tGqXNbBQ5juA0ZKuFAmSW7RwOw8uSbdE3MvbrI8wjcbGp \
+    -e OAUTH1_REDIRECT_URI=http://privateapps.oto.tools:8080/privateapps/generic/callback \
+    ghcr.io/beryju/oauth1-test-server
+</code></pre>
+<p>Once the authentication module and the new container created, we can define the authentication module on the service.</p>
+<ol>
+  <li>Navigate to any created service</li>
+  <li>Scroll to <code>Authentication</code> section</li>
+  <li>Enable <code>Enforce user authentication</code></li>
+  <li>Select your Authentication config inside the list</li>
+  <li>Enable <code>Strict mode</code></li>
+  <li>Don&rsquo;t forget to save your configuration.</li>
+</ol>
+<p>Now you can try to call your defined service and see the login module appears.</p>
+<blockquote>
+  <img src="../imgs/hows-to-secure-app-with-oauth1-provider-input.png">
+</blockquote>
+<p>The allow access to the user.</p>
+<blockquote>
+  <img src="../imgs/hows-to-secure-app-with-oauth1-provider-trust.png">
+</blockquote>
+<p>If you had any errors, make sure of :</p>
+<ul>
+  <li>check if you are on http or https, and if the <strong>secure cookie option</strong> is enabled or not on the authentication module</li>
+  <li>check if your OAuth1 server has the REDIRECT_URI set on <strong>privateapps/&hellip;</strong></li>
+  <li>Make sure your server supports POST or GET OAuth1 flow set on authentication module</li>
+</ul>
+<p>Once the configuration is working, you can check, when connecting with an Otoroshi admin user, the <code>Private App session</code> created (use the cog at the top right of the page, and select <code>Priv. app sesssions</code>, or navigate to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private" title="http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080/bo/dashboard/sessions/private</a>).</p>
+<p>One interesing feature is to check the profile of the connected user. In our case, when clicking on the <code>Profile</code> button of the right user, we should have : </p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;email&quot;: &quot;foo@example.com&quot;,
+  &quot;id&quot;: 1,
+  &quot;name&quot;: &quot;test name&quot;,
+  &quot;screen_name&quot;: &quot;example-user&quot;
+}
+</code></pre>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../how-to-s/secure-with-oauth2-client-credentials.html">Secure an app with OAuth2 client_credential flow</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../how-to-s/secure-with-oauth1-client.html#secure-an-app-with-oauth1-client-flow" class="header">Secure an app with OAuth1 client flow</a>
+  <ul>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html#before-you-start" class="header">Before you start</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html#running-an-simple-oauth-1-server" class="header">Running an simple OAuth 1 server</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html#create-an-oauth-1-provider-module" class="header">Create an OAuth 1 provider module</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html#connect-to-otoroshi-with-oauth1-authentication" class="header">Connect to Otoroshi with OAuth1 authentication</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html#testing-your-configuration" class="header">Testing your configuration</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html#secure-an-app-with-oauth-1-authentication" class="header">Secure an app with OAuth 1 authentication</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2021</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Expression language · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/cc.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+<link rel="stylesheet" type="text/css" href="../css/plugins.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="active page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="active page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../topics/index.html">Detailed topics</a></li>
+  <li>Expression language</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#expression-language" name="expression-language" class="anchor"><span class="anchor-link"></span></a>Expression language</h1>
+<ul>
+  <li><a href="#documentation-and-examples">Documentation and examples</a></li>
+  <li><a href="#test-the-expression-language">Test the expression language</a></li>
+</ul>
+<p>The expression language provides an important mechanism for accessing and manipulating Otoroshi data on different inputs. For example, with this mechanism, you can mapping a claim of an inconming token directly in a claim of a generated token (using <a href="../entities/jwt-verifiers.html">JWT verifiers</a>). You can add information of the service descriptor traversed such as the domain of the service or the name of the service. This information can be useful on the backend service.</p>
+<h2><a href="#documentation-and-examples" name="documentation-and-examples" class="anchor"><span class="anchor-link"></span></a>Documentation and examples</h2>
+<!-- Documentation is in expression-language.js and it build when page is rendered --><div id="expressions">
+<p>&nbsp;</p></div>
+<p>If an input contains a string starting by <code>${</code>, Otoroshi will try to evaluate the content. If the content doesn&rsquo;t match a known expression, the &lsquo;bad-expr&rsquo; value will be set.</p>
+<h2><a href="#test-the-expression-language" name="test-the-expression-language" class="anchor"><span class="anchor-link"></span></a>Test the expression language</h2>
+<p>You can test to get the same values than the right part by creating these following services. </p>
+<pre class="prettyprint"><code class="language-sh"># Let&#39;s start by downloading the latest Otoroshi.
+curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0/otoroshi.jar&#39;
+
+# Once downloading, run Otoroshi.
+java -Dapp.adminPassword=password -jar otoroshi.jar 
+
+# Create a proxy of the mirror.otoroshi.io on http://myservice.oto.tools:8080
+curl -X POST http://otoroshi-api.oto.tools:8080/api/services \
+-H &quot;Otoroshi-Client-Id: admin-api-apikey-id&quot; \
+-H &quot;Otoroshi-Client-Secret: admin-api-apikey-secret&quot; \
+-H &#39;Content-Type: application/json; charset=utf-8&#39; \
+-d @- &lt;&lt;&#39;EOF&#39;
+{&quot;enforceSecureCommunication&quot;:false,&quot;forceHttps&quot;:false,&quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;id&quot;:&quot;expression-language-api-service&quot;,&quot;name&quot;:&quot;expression-language&quot;,&quot;description&quot;:&quot;expression-language&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;api&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[],&quot;privatePatterns&quot;:[&quot;/.*&quot;],&quot;kind&quot;:&quot;ServiceDescriptor&quot;,&quot;additionalHeaders&quot;:{&quot;my-expr-header.date&quot;:&quot;${date}&quot;,&quot;my-expr-header.date-with-format&quot;:&quot;${date.format(&#39;yyy-MM-dd&#39;)}&quot;,&quot;my-expr-header.request.full-url&quot;:&quot;${req.fullUrl}&quot;,&quot;my-expr-header.request.path&quot;:&quot;${req.path}&quot;,&quot;my-expr-header.request.uri&quot;:&quot;${req.uri}&quot;,&quot;my-expr-header.request.host&quot;:&quot;${req.host}&quot;,&quot;my-expr-header.request.domain&quot;:&quot;${req.domain}&quot;,&quot;my-expr-header.request.method&quot;:&quot;${req.method}&quot;,&quot;my-expr-header.request.protocol&quot;:&quot;${req.protocol}&quot;,&quot;my-expr-header.request.unknown-header&quot;:&quot;${req.headers.foob:default value}&quot;,&quot;my-expr-header.request.header&quot;:&quot;${req.headers.foo}&quot;,&quot;my-expr-header.request.unknown-query&quot;:&quot;${req.query.foob:default value}&quot;,&quot;my-expr-header.request.query&quot;:&quot;${req.query.foo}&quot;,&quot;my-expr-header.service-domain&quot;:&quot;${service.domain}&quot;,&quot;my-expr-header.service-subdomain&quot;:&quot;${service.subdomain}&quot;,&quot;my-expr-header.service-tld&quot;:&quot;${service.tld}&quot;,&quot;my-expr-header.service-env&quot;:&quot;${service.env}&quot;,&quot;my-expr-header.service-id&quot;:&quot;${service.id}&quot;,&quot;my-expr-header.service-name&quot;:&quot;${service.name}&quot;,&quot;my-expr-header.service-unknown-group&quot;:&quot;${service.groups[&#39;0&#39;:&#39;unkown group&#39;]}&quot;,&quot;my-expr-header.service-group&quot;:&quot;${service.groups[&#39;0&#39;]}&quot;,&quot;my-expr-header.service-unknown-metadata&quot;:&quot;${service.metadata.test:default-value}&quot;,&quot;my-expr-header.service-metadata&quot;:&quot;${service.metadata.foo}&quot;,&quot;my-expr-header.apikey.name&quot;:&quot;${apikey.name}&quot;,&quot;my-expr-header.apikey.id&quot;:&quot;${apikey.id}&quot;,&quot;my-expr-header.apikey.unknown-metadata&quot;:&quot;${apikey.metadata.myfield:default value}&quot;,&quot;my-expr-header.apikey.metadata&quot;:&quot;${apikey.metadata.foo}&quot;,&quot;my-expr-header.apikey.unknown-tag&quot;:&quot;${apikey.tags[&#39;0&#39;:&#39;no-found-tag&#39;]}&quot;,&quot;my-expr-header.apikey.tag&quot;:&quot;${apikey.tags[&#39;0&#39;]}&quot;,&quot;my-expr-header.token.replace-header-value&quot;:&quot;${token.foo.replace(&#39;o&#39;,&#39;a&#39;)}&quot;,&quot;my-expr-header.token.replace-header-all-value&quot;:&quot;${token.foo.replaceAll(&#39;o&#39;,&#39;a&#39;)}&quot;,&quot;my-expr-header.token.unknown-fields&quot;:&quot;${token.foob|token.foob2:not-found}&quot;,&quot;my-expr-header.token.foo-field&quot;:&quot;${token.foob|token.foo}&quot;,&quot;my-expr-header.token.unknown-foo-field&quot;:&quot;${token.foob:not-found-foob}&quot;,&quot;my-expr-header.token.unknown-foo&quot;:&quot;${token.foo}&quot;,&quot;my-expr-header.env.unknown-field&quot;:&quot;${env.java_h:not-found-java_h}&quot;,&quot;my-expr-header.env.path&quot;:&quot;${env.PATH}&quot;,&quot;my-expr-header.config.unknown-port-field&quot;:&quot;${config.http.ports:not-found}&quot;,&quot;my-expr-header.config.port&quot;:&quot;${config.http.port}&quot;,&quot;my-expr-header.ctx.replace-field-value&quot;:&quot;${ctx.foo.replace(&#39;o&#39;,&#39;a&#39;)}&quot;,&quot;my-expr-header.ctx.replace-field-all-value&quot;:&quot;${ctx.foo.replaceAll(&#39;o&#39;,&#39;a&#39;)}&quot;,&quot;my-expr-header.ctx.unknown-fields&quot;:&quot;${ctx.foob|ctx.foot:not-found}&quot;,&quot;my-expr-header.ctx.foo-field&quot;:&quot;${ctx.foob|ctx.foo}&quot;,&quot;my-expr-header.ctx.default-value&quot;:&quot;${ctx.foob:other}&quot;,&quot;my-expr-header.ctx.foo&quot;:&quot;${ctx.foo}&quot;,&quot;my-expr-header.ctx.useragent&quot;:&quot;${ctx.useragent.foo}&quot;,&quot;my-expr-header.ctx.geolocation&quot;:&quot;${ctx.geolocation.foo}&quot;}}
+EOF
+
+# Create an authentication module to protect the next service.
+curl -X POST http://otoroshi-api.oto.tools:8080/api/auths \
+-H &quot;Otoroshi-Client-Id: admin-api-apikey-id&quot; \
+-H &quot;Otoroshi-Client-Secret: admin-api-apikey-secret&quot; \
+-H &#39;Content-Type: application/json; charset=utf-8&#39; \
+-d @- &lt;&lt;&#39;EOF&#39;
+{&quot;type&quot;:&quot;basic&quot;,&quot;id&quot;:&quot;auth_mod_in_memory_auth&quot;,&quot;name&quot;:&quot;in-memory-auth&quot;,&quot;desc&quot;:&quot;in-memory-auth&quot;,&quot;users&quot;:[{&quot;name&quot;:&quot;User Otoroshi&quot;,&quot;password&quot;:&quot;$2a$10$oIf4JkaOsfiypk5ZK8DKOumiNbb2xHMZUkYkuJyuIqMDYnR/zXj9i&quot;,&quot;email&quot;:&quot;user@foo.bar&quot;,&quot;metadata&quot;:{&quot;username&quot;:&quot;roger&quot;},&quot;tags&quot;:[&quot;foo&quot;],&quot;webauthn&quot;:null,&quot;rights&quot;:[{&quot;tenant&quot;:&quot;*:r&quot;,&quot;teams&quot;:[&quot;*:r&quot;]}]}],&quot;sessionCookieValues&quot;:{&quot;httpOnly&quot;:true,&quot;secure&quot;:false}}
+EOF
+
+# Create the same proxy but protected by an authentication memory module (in order to retrieve the user&#39;s information after they have successfully logged in)
+curl -X POST http://otoroshi-api.oto.tools:8080/api/services \
+-H &quot;Otoroshi-Client-Id: admin-api-apikey-id&quot; \
+-H &quot;Otoroshi-Client-Secret: admin-api-apikey-secret&quot; \
+-H &#39;Content-Type: application/json; charset=utf-8&#39; \
+-d @- &lt;&lt;&#39;EOF&#39;
+{&quot;enforceSecureCommunication&quot;:false,&quot;forceHttps&quot;:false,&quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;id&quot;:&quot;expression-language-webapp&quot;,&quot;name&quot;:&quot;webapp&quot;,&quot;description&quot;:&quot;webapp&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;webapp&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;authConfigRef&quot;:&quot;auth_mod_in_memory_auth&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;/.*&quot;],&quot;privateApp&quot;:true,&quot;privatePatterns&quot;:[],&quot;kind&quot;:&quot;ServiceDescriptor&quot;,&quot;additionalHeaders&quot;:{&quot;my-expr-header.user&quot;:&quot;${user.name}&quot;,&quot;my-expr-header.user.email&quot;:&quot;${user.email}&quot;,&quot;my-expr-header.user.unknown-metadata&quot;:&quot;${user.metadata.foo:&#39;not-found&#39;}&quot;,&quot;my-expr-header.user.metadata&quot;:&quot;${user.metadata.username}&quot;,&quot;my-expr-header.user.unknown-profile-field&quot;:&quot;${user.profile.username:&#39;not-found&#39;}&quot;,&quot;my-expr-header.user.profile-field&quot;:&quot;${user.profile.name}&quot;}}
+EOF
+</code></pre>
+<p>Then try to call the first service.</p>
+<pre class="prettyprint"><code class="language-sh">curl http://api.oto.tools:8080/api/\?foo\=bar \
+-H &quot;Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJmb28iOiJiYXIifQ.lV130dFXR3bNtWBkwwf9dLmfsRVmnZhfYF9gvAaRzF8&quot; \
+-H &quot;Otoroshi-Client-Id: admin-api-apikey-id&quot; \
+-H &quot;Otoroshi-Client-Secret: admin-api-apikey-secret&quot; \
+-H &quot;foo: bar&quot; | jq
+</code></pre>
+<p>This will returns the list of the received headers by the mirror.</p>
+<pre class="prettyprint"><code class="language-json">{
+  ...
+  &quot;headers&quot;: {
+    ...
+    &quot;my-expr-header.date&quot;: &quot;2021-11-26T10:54:51.112+01:00&quot;,
+    &quot;my-expr-header.ctx.foo&quot;: &quot;no-ctx-foo&quot;,
+    &quot;my-expr-header.env.path&quot;: &quot;/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin&quot;,
+    &quot;my-expr-header.apikey.id&quot;: &quot;admin-api-apikey-id&quot;,
+    &quot;my-expr-header.apikey.tag&quot;: &quot;one-tag&quot;,
+    &quot;my-expr-header.service-id&quot;: &quot;expression-language-api-service&quot;,
+    &quot;my-expr-header.apikey.name&quot;: &quot;Otoroshi Backoffice ApiKey&quot;,
+    &quot;my-expr-header.config.port&quot;: &quot;8080&quot;,
+    &quot;my-expr-header.request.uri&quot;: &quot;/api/?foo=bar&quot;,
+    &quot;my-expr-header.service-env&quot;: &quot;prod&quot;,
+    &quot;my-expr-header.service-tld&quot;: &quot;oto.tools&quot;,
+    &quot;my-expr-header.request.host&quot;: &quot;api.oto.tools:8080&quot;,
+    &quot;my-expr-header.request.path&quot;: &quot;/api/&quot;,
+    &quot;my-expr-header.service-name&quot;: &quot;expression-language&quot;,
+    &quot;my-expr-header.ctx.foo-field&quot;: &quot;no-ctx-foob-foo&quot;,
+    &quot;my-expr-header.ctx.useragent&quot;: &quot;no-ctx-useragent.foo&quot;,
+    &quot;my-expr-header.request.query&quot;: &quot;bar&quot;,
+    &quot;my-expr-header.service-group&quot;: &quot;default&quot;,
+    &quot;my-expr-header.request.domain&quot;: &quot;api.oto.tools&quot;,
+    &quot;my-expr-header.request.header&quot;: &quot;bar&quot;,
+    &quot;my-expr-header.request.method&quot;: &quot;GET&quot;,
+    &quot;my-expr-header.service-domain&quot;: &quot;api.oto.tools&quot;,
+    &quot;my-expr-header.apikey.metadata&quot;: &quot;bar&quot;,
+    &quot;my-expr-header.ctx.geolocation&quot;: &quot;no-ctx-geolocation.foo&quot;,
+    &quot;my-expr-header.token.foo-field&quot;: &quot;no-token-foob-foo&quot;,
+    &quot;my-expr-header.date-with-format&quot;: &quot;2021-11-26&quot;,
+    &quot;my-expr-header.request.full-url&quot;: &quot;http://api.oto.tools:8080/api/?foo=bar&quot;,
+    &quot;my-expr-header.request.protocol&quot;: &quot;http&quot;,
+    &quot;my-expr-header.service-metadata&quot;: &quot;no-meta-foo&quot;,
+    &quot;my-expr-header.ctx.default-value&quot;: &quot;other&quot;,
+    &quot;my-expr-header.env.unknown-field&quot;: &quot;not-found-java_h&quot;,
+    &quot;my-expr-header.service-subdomain&quot;: &quot;api&quot;,
+    &quot;my-expr-header.token.unknown-foo&quot;: &quot;no-token-foo&quot;,
+    &quot;my-expr-header.apikey.unknown-tag&quot;: &quot;one-tag&quot;,
+    &quot;my-expr-header.ctx.unknown-fields&quot;: &quot;not-found&quot;,
+    &quot;my-expr-header.token.unknown-fields&quot;: &quot;not-found&quot;,
+    &quot;my-expr-header.request.unknown-query&quot;: &quot;default value&quot;,
+    &quot;my-expr-header.service-unknown-group&quot;: &quot;default&quot;,
+    &quot;my-expr-header.request.unknown-header&quot;: &quot;default value&quot;,
+    &quot;my-expr-header.apikey.unknown-metadata&quot;: &quot;default value&quot;,
+    &quot;my-expr-header.ctx.replace-field-value&quot;: &quot;no-ctx-foo&quot;,
+    &quot;my-expr-header.token.unknown-foo-field&quot;: &quot;not-found-foob&quot;,
+    &quot;my-expr-header.service-unknown-metadata&quot;: &quot;default-value&quot;,
+    &quot;my-expr-header.config.unknown-port-field&quot;: &quot;not-found&quot;,
+    &quot;my-expr-header.token.replace-header-value&quot;: &quot;no-token-foo&quot;,
+    &quot;my-expr-header.ctx.replace-field-all-value&quot;: &quot;no-ctx-foo&quot;,
+    &quot;my-expr-header.token.replace-header-all-value&quot;: &quot;no-token-foo&quot;,
+  }
+}
+</code></pre>
+<p>Then try the second call to the webapp. Navigate on your browser to <code>http://webapp.oto.tools:8080</code>. Continue with <code>user@foo.bar</code> as user and <code>password</code> as credential.</p>
+<p>This should output:</p>
+<pre class="prettyprint"><code class="language-json">{
+  ...
+  &quot;headers&quot;: {
+    ...
+    &quot;my-expr-header.user&quot;: &quot;User Otoroshi&quot;,
+    &quot;my-expr-header.user.email&quot;: &quot;user@foo.bar&quot;,
+    &quot;my-expr-header.user.metadata&quot;: &quot;roger&quot;,
+    &quot;my-expr-header.user.profile-field&quot;: &quot;User Otoroshi&quot;,
+    &quot;my-expr-header.user.unknown-metadata&quot;: &quot;not-found&quot;,
+    &quot;my-expr-header.user.unknown-profile-field&quot;: &quot;not-found&quot;,
+  }
+}
+</code></pre>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../topics/user-rights.html">Otoroshi user rights</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/expression-language.html#expression-language" class="header">Expression language</a>
+  <ul>
+    <li><a href="../topics/expression-language.html#documentation-and-examples" class="header">Documentation and examples</a></li>
+    <li><a href="../topics/expression-language.html#test-the-expression-language" class="header">Test the expression language</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2021</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+

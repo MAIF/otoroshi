@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Service descriptors · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/cc.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+<link rel="stylesheet" type="text/css" href="../css/plugins.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="active page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="active page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../entities/index.html">Main entities</a></li>
+  <li>Service descriptors</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#service-descriptors" name="service-descriptors" class="anchor"><span class="anchor-link"></span></a>Service descriptors</h1>
+<p>Services or service descriptor, let you declare how to proxy a call from a domain name to another domain name (or multiple domain names). </p><div class="centered-img">
+<img src="../imgs/models-service.png" /></div>
+<p>Let’s say you have an API exposed on <a href="http://192.168.0.42">http://192.168.0.42</a> and I want to expose it on <a href="https://my.api.foo">https://my.api.foo</a>. Otoroshi will proxy all calls to <a href="https://my.api.foo">https://my.api.foo</a> and forward them to <a href="http://192.168.0.42">http://192.168.0.42</a>. While doing that, it will also log everyhting, control accesses, etc.</p>
+<ul>
+  <li><code>Id</code>: a unique random string to identify your service</li>
+  <li><code>Groups</code>: each service descriptor is attached to a group. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group.</li>
+  <li><code>Create a new group</code>: you can create a new group to host this descriptor</li>
+  <li><code>Create dedicated group</code>: you can create a new group with an auto generated name to host this descriptor</li>
+  <li><code>Name</code>: the name of your service. Only for debug and human readability purposes.</li>
+  <li><code>Description</code>: the description of your service. Only for debug and human readability purposes.</li>
+  <li><code>Service enabled</code>: activate or deactivate your service. Once disabled, users will get an error page saying the service does not exist.</li>
+  <li><code>Read only mode</code>: authorize only GET, HEAD, OPTIONS calls on this service</li>
+  <li><code>Maintenance mode</code>: display a maintainance page when a user try to use the service</li>
+  <li><code>Construction mode</code>: display a construction page when a user try to use the service</li>
+  <li><code>Log analytics</code>: Log analytics events for this service on the servers</li>
+  <li><code>Use new http client</code>: will use Akka Http Client for every request</li>
+  <li><code>Detect apikey asap</code>: If the service is public and you provide an apikey, otoroshi will detect it and validate it. Of course this setting may impact performances because of useless apikey lookups.</li>
+  <li><code>Send Otoroshi headers back</code>: when enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc &hellip;</li>
+  <li><code>Override Host header</code>: when enabled, Otoroshi will automatically set the Host header to corresponding target host</li>
+  <li><code>Send X-Forwarded-* headers</code>: when enabled, Otoroshi will send X-Forwarded-* headers to target</li>
+  <li><code>Force HTTPS</code>: will force redirection to <code>https://</code> if not present</li>
+  <li><code>Allow HTTP/1.0 requests</code>: will return an error on HTTP/1.0 request</li>
+  <li><code>Use new WebSocket client</code>: will use the new websocket client for every websocket request</li>
+  <li><code>TCP/UDP tunneling</code>: with this setting enabled, otoroshi will not proxy http requests anymore but instead will create a secured tunnel between a cli on your machine and otoroshi to proxy any tcp connection with all otoroshi security features enabled</li>
+</ul>
+<h3><a href="#service-exposition-settings" name="service-exposition-settings" class="anchor"><span class="anchor-link"></span></a>Service exposition settings</h3>
+<ul>
+  <li><code>Exposed domain</code>: the domain used to expose your service. Should follow pattern: <code>(http|https)://subdomain?.env?.domain.tld?/root?</code> or regex <code>(http|https):\/\/(.*?)\.?(.*?)\.?(.*?)\.?(.*)\/?(.*)</code></li>
+  <li><code>Legacy domain</code>: use <code>domain</code>, <code>subdomain</code>, <code>env</code> and <code>matchingRoot</code> for routing in addition to hosts, or just use hosts.</li>
+  <li><code>Strip path</code>: when matching, strip the matching prefix from the upstream request URL. Defaults to true</li>
+  <li><code>Issue Let&#39;s Encrypt cert.</code>: automatically issue and renew let&rsquo;s encrypt certificate based on domain name. Only if Let&rsquo;s Encrypt enabled in global config.</li>
+  <li><code>Issue certificate</code>: automatically issue and renew a certificate based on domain name</li>
+  <li><code>Possible hostnames</code>: all the possible hostnames for your service</li>
+  <li><code>Possible matching paths</code>: all the possible matching paths for your service</li>
+</ul>
+<h3><a href="#redirection" name="redirection" class="anchor"><span class="anchor-link"></span></a>Redirection</h3>
+<ul>
+  <li><code>Redirection enabled</code>: enabled the redirection. If enabled, a call to that service will redirect to the chosen URL</li>
+  <li><code>Http redirection code</code>: type of redirection used</li>
+  <li><code>Redirect to</code>: URL used to redirect user when the service is called</li>
+</ul>
+<h3><a href="#service-targets" name="service-targets" class="anchor"><span class="anchor-link"></span></a>Service targets</h3>
+<ul>
+  <li><code>Redirect to local</code>: if you work locally with Otoroshi, you may want to use that feature to redirect one specific service to a local host. For example, you can relocate <a href="https://foo.preprod.bar.com">https://foo.preprod.bar.com</a> to <a href="http://localhost:8080">http://localhost:8080</a> to make some tests</li>
+  <li><code>Load balancing</code>: the load balancing algorithm used</li>
+  <li><code>Targets</code>: the list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures</li>
+  <li><code>Targets root</code>: Otoroshi will append this root to any target choosen. If the specified root is <code>/api/foo</code>, then a request to <a href="https://yyyyyyy/bar">https://yyyyyyy/bar</a> will actually hit <a href="https://xxxxxxxxx/api/foo/bar">https://xxxxxxxxx/api/foo/bar</a></li>
+</ul>
+<h3><a href="#url-patterns" name="url-patterns" class="anchor"><span class="anchor-link"></span></a>URL Patterns</h3>
+<ul>
+  <li><code>Make service a &#39;public ui&#39;</code>: add a default pattern as public routes</li>
+  <li><code>Make service a &#39;private api&#39;</code>: add a default pattern as private routes</li>
+  <li><code>Public patterns</code>: by default, every services are private only and you&rsquo;ll need an API key to access it. However, if you want to expose a public UI, you can define one or more public patterns (regex) to allow access to anybody. For example if you want to allow anybody on any URL, just use <code>/.*</code></li>
+  <li><code>Private patterns</code>: if you define a public pattern that is a little bit too much, you can make some of public URL private again</li>
+</ul>
+<h3><a href="#restrictions" name="restrictions" class="anchor"><span class="anchor-link"></span></a>Restrictions</h3>
+<ul>
+  <li><code>Enabled</code>: enable restrictions</li>
+  <li><code>Allow last</code>: Otoroshi will test forbidden and notFound paths before testing allowed paths</li>
+  <li><code>Allowed</code>: allowed paths</li>
+  <li><code>Forbidden</code>: forbidden paths</li>
+  <li><code>Not Found</code>: not found paths</li>
+</ul>
+<h3><a href="#otoroshi-exchange-protocol" name="otoroshi-exchange-protocol" class="anchor"><span class="anchor-link"></span></a>Otoroshi exchange protocol</h3>
+<ul>
+  <li><code>Enabled</code>: when enabled, Otoroshi will try to exchange headers with backend service to ensure no one else can use the service from outside.</li>
+  <li><code>Send challenge</code>: when disbaled, Otoroshi will not check if target service respond with sent random value.</li>
+  <li><code>Send info. token</code>: when enabled, Otoroshi add an additional header containing current call informations</li>
+  <li><code>Challenge token version</code>: version the otoroshi exchange protocol challenge. This option will be set to V2 in a near future.</li>
+  <li><code>Info. token version</code>: version the otoroshi exchange protocol info token. This option will be set to Latest in a near future.</li>
+  <li><code>Tokens TTL</code>: the number of seconds for tokens (state and info) lifes</li>
+  <li><code>State token header name</code>: the name of the header containing the state token. If not specified, the value will be taken from the configuration (otoroshi.headers.comm.state)</li>
+  <li><code>State token response header name</code>: the name of the header containing the state response token. If not specified, the value will be taken from the configuration (otoroshi.headers.comm.stateresp)</li>
+  <li><code>Info token header name</code>: the name of the header containing the info token. If not specified, the value will be taken from the configuration (otoroshi.headers.comm.claim)</li>
+  <li><code>Excluded patterns</code>: by default, when security is enabled, everything is secured. But sometimes you need to exlude something, so just add regex to matching path you want to exlude.</li>
+  <li><code>Use same algo.</code>: when enabled, all JWT token in this section will use the same signing algorithm. If <code>use same algo.</code> is disabled, three more options will be displayed to select an algorithm for each step of the calls :
+    <ul>
+      <li>Otoroshi to backend</li>
+      <li>Backend to otoroshi</li>
+      <li>Info. token</li>
+    </ul>
+  </li>
+  <li>
+  <p><code>Algo.</code>: What kind of algorithm you want to use to verify/sign your JWT token with</p></li>
+  <li><code>SHA Size</code>: Word size for the SHA-2 hash function used</li>
+  <li><code>Hmac secret</code>: used to verify the token</li>
+  <li><code>Base64 encoded secret</code>: if enabled, the extracted token will be base64 decoded before it is verifier</li>
+</ul>
+<h3><a href="#authentication" name="authentication" class="anchor"><span class="anchor-link"></span></a>Authentication</h3>
+<ul>
+  <li><code>Enforce user authentication</code>: when enabled, user will be allowed to use the service (UI) only if they are registered users of the chosen authentication module.</li>
+  <li><code>Auth. config</code>: authentication module used to protect the service</li>
+  <li><code>Create a new auth config.</code>: navigate to the creation of authentication module page</li>
+  <li><code>all auth config.</code>: navigate to the authentication pages</li>
+  <li>
+  <p><code>Excluded patterns</code>: by default, when security is enabled, everything is secured. But sometimes you need to exlude something, so just add regex to matching path you want to exlude.</p></li>
+  <li><code>Strict mode</code>: strict mode enabled</li>
+</ul>
+<h3><a href="#api-keys-constraints" name="api-keys-constraints" class="anchor"><span class="anchor-link"></span></a>Api keys constraints</h3>
+<ul>
+  <li><code>From basic auth.</code>: you can pass the api key in Authorization header (ie. from &lsquo;Authorization: Basic xxx&rsquo; header)</li>
+  <li><code>Allow client id only usage</code>: you can pass the api key using client id only (ie. from Otoroshi-Token header)</li>
+  <li><code>From custom headers</code>: you can pass the api key using custom headers (ie. Otoroshi-Client-Id and Otoroshi-Client-Secret headers)</li>
+  <li><code>From JWT token</code>: you can pass the api key using a JWT token (ie. from &lsquo;Authorization: Bearer xxx&rsquo; header)</li>
+</ul>
+<h4><a href="#basic-auth-api-key" name="basic-auth-api-key" class="anchor"><span class="anchor-link"></span></a>Basic auth. Api Key</h4>
+<ul>
+  <li><code>Custom header name</code>: the name of the header to get Authorization</li>
+  <li><code>Custom query param name</code>: the name of the query param to get Authorization</li>
+</ul>
+<h4><a href="#client-id-only-api-key" name="client-id-only-api-key" class="anchor"><span class="anchor-link"></span></a>Client ID only Api Key</h4>
+<ul>
+  <li><code>Custom header name</code>: the name of the header to get the client id</li>
+  <li><code>Custom query param name</code>: the name of the query param to get the client id</li>
+</ul>
+<h4><a href="#custom-headers-api-key" name="custom-headers-api-key" class="anchor"><span class="anchor-link"></span></a>Custom headers Api Key</h4>
+<ul>
+  <li><code>Custom client id header name</code>: the name of the header to get the client id</li>
+  <li><code>Custom client secret header name</code>: the name of the header to get the client secret</li>
+</ul>
+<h4><a href="#jwt-token-api-key" name="jwt-token-api-key" class="anchor"><span class="anchor-link"></span></a>JWT Token Api Key</h4>
+<ul>
+  <li><code>Secret signed</code>: JWT can be signed by apikey secret using HMAC algo.</li>
+  <li><code>Keypair signed</code>: JWT can be signed by an otoroshi managed keypair using RSA/EC algo.</li>
+  <li><code>Include Http request attrs.</code>: if enabled, you have to put the following fields in the JWT token corresponding to the current http call (httpPath, httpVerb, httpHost)</li>
+  <li><code>Max accepted token lifetime</code>: the maximum number of second accepted as token lifespan</li>
+  <li><code>Custom header name</code>: the name of the header to get the jwt token</li>
+  <li><code>Custom query param name</code>: the name of the query param to get the jwt token</li>
+  <li><code>Custom cookie name</code>: the name of the cookie to get the jwt token</li>
+</ul>
+<h3><a href="#routing-constraints" name="routing-constraints" class="anchor"><span class="anchor-link"></span></a>Routing constraints</h3>
+<ul>
+  <li><code>All Tags in</code> : have all of the following tags</li>
+  <li><code>No Tags in</code> : not have one of the following tags</li>
+  <li><code>One Tag in</code> : have at least one of the following tags</li>
+  <li><code>All Meta. in</code> : have all of the following metadata entries</li>
+  <li><code>No Meta. in</code> : not have one of the following metadata entries</li>
+  <li><code>One Meta. in</code> : have at least one of the following metadata entries</li>
+  <li><code>One Meta key in</code> : have at least one of the following key in metadata</li>
+  <li><code>All Meta key in</code> : have all of the following keys in metadata</li>
+  <li><code>No Meta key in</code> : not have one of the following keys in metadata</li>
+</ul>
+<h3><a href="#cors-support" name="cors-support" class="anchor"><span class="anchor-link"></span></a>CORS support</h3>
+<ul>
+  <li><code>Enabled</code>: if enabled, CORS header will be check for each incoming request</li>
+  <li><code>Allow credentials</code>: if enabled, the credentials will be sent. Credentials are cookies, authorization headers, or TLS client certificates.</li>
+  <li><code>Allow origin</code>: if enabled, it will indicates whether the response can be shared with requesting code from the given</li>
+  <li><code>Max age</code>: response header indicates how long the results of a preflight request (that is the information contained in the Access-Control-Allow-Methods and Access-Control-Allow-Headers headers) can be cached.</li>
+  <li><code>Expose headers</code>: response header allows a server to indicate which response headers should be made available to scripts running in the browser, in response to a cross-origin request.</li>
+  <li><code>Allow headers</code>: response header is used in response to a preflight request which includes the Access-Control-Request-Headers to indicate which HTTP headers can be used during the actual request.</li>
+  <li><code>Allow methods</code>: response header specifies one or more methods allowed when accessing a resource in response to a preflight request.</li>
+  <li><code>Excluded patterns</code>: by default, when cors is enabled, everything has cors. But sometimes you need to exlude something, so just add regex to matching path you want to exlude.</li>
+</ul>
+<h4><a href="#related-documentations" name="related-documentations" class="anchor"><span class="anchor-link"></span></a>Related documentations</h4>
+<ul>
+  <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials" title="Access-Control-Allow-Credentials" target="_blank" rel="noopener noreferrer">Access-Control-Allow-Credentials</a></li>
+  <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin" title="Access-Control-Allow-Origin" target="_blank" rel="noopener noreferrer">Access-Control-Allow-Origin</a></li>
+  <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age" title="Access-Control-Max-Age" target="_blank" rel="noopener noreferrer">Access-Control-Max-Age</a></li>
+  <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Methods" title="Access-Control-Allow-Methods" target="_blank" rel="noopener noreferrer">Access-Control-Allow-Methods</a></li>
+  <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers" title="Access-Control-Allow-Headers" target="_blank" rel="noopener noreferrer">Access-Control-Allow-Headers</a></li>
+</ul>
+<h3><a href="#jwt-tokens-verification" name="jwt-tokens-verification" class="anchor"><span class="anchor-link"></span></a>JWT tokens verification</h3>
+<ul>
+  <li><code>Verifiers</code>: list of selected verifiers to apply on the service</li>
+  <li><code>Enabled</code>: if enabled, Otoroshi will enabled each verifier of the previous list</li>
+  <li><code>Excluded patterns</code>: list of routes where the verifiers will not be apply</li>
+</ul>
+<h3><a href="#pre-routing" name="pre-routing" class="anchor"><span class="anchor-link"></span></a>Pre Routing</h3>
+<p>This part has been deprecated and moved to the plugin section.</p>
+<h3><a href="#access-validation" name="access-validation" class="anchor"><span class="anchor-link"></span></a>Access validation</h3>
+<p>This part has been deprecated and moved to the plugin section.</p>
+<h3><a href="#gzip-support" name="gzip-support" class="anchor"><span class="anchor-link"></span></a>Gzip support</h3>
+<ul>
+  <li><code>Mimetypes allowed list</code>: gzip only the files that are matching to a format in the list</li>
+  <li><code>Mimetypes blocklist</code>: will not gzip files matching to a format in the list. A possible way is to allowed all format by default by setting a <code>*</code> on the <code>Mimetypes allowed list</code> and to add the unwanted format in this list.</li>
+  <li><code>Compression level</code>: the compression level where 9 gives us maximum compression but at the slowest speed. The default compression level is 5 and is a good compromise between speed and compression ratio.</li>
+  <li><code>Buffer size</code>: chunking up a stream of bytes into limited size</li>
+  <li><code>Chunk threshold</code>: if the content type of a request reached over the threshold, the response will be chunked</li>
+  <li><code>Excluded patterns</code>: by default, when gzip is enabled, everything has gzip. But sometimes you need to exlude something, so just add regex to matching path you want to exlude.</li>
+</ul>
+<h3><a href="#client-settings" name="client-settings" class="anchor"><span class="anchor-link"></span></a>Client settings</h3>
+<ul>
+  <li><code>Use circuit breaker</code>: use a circuit breaker to avoid cascading failure when calling chains of services. Highly recommended !</li>
+  <li><code>Cache connections</code>: use a cache at host connection level to avoid reconnection time</li>
+  <li><code>Client attempts</code>: specify how many times the client will retry to fetch the result of the request after an error before giving up.</li>
+  <li><code>Client call timeout</code>: specify how long each call should last at most in milliseconds.</li>
+  <li><code>Client call and stream timeout</code>: specify how long each call should last at most in milliseconds for handling the request and streaming the response.</li>
+  <li><code>Client connection timeout</code>: specify how long each connection should last at most in milliseconds.</li>
+  <li><code>Client idle timeout</code>: specify how long each connection can stay in idle state at most in milliseconds.</li>
+  <li><code>Client global timeout</code>: specify how long the global call (with retries) should last at most in milliseconds.</li>
+  <li><code>C.breaker max errors</code>: specify how many errors can pass before opening the circuit breaker</li>
+  <li><code>C.breaker retry delay</code>: specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor</li>
+  <li><code>C.breaker backoff factor</code>: specify the factor to multiply the delay for each retry</li>
+  <li><code>C.breaker window</code>: specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted</li>
+</ul>
+<h4><a href="#custom-timeout-settings-list-" name="custom-timeout-settings-list-" class="anchor"><span class="anchor-link"></span></a>Custom timeout settings (list)</h4>
+<ul>
+  <li><code>Path</code>: the path on which the timeout will be active</li>
+  <li><code>Client connection timeout</code>: specify how long each connection should last at most in milliseconds.</li>
+  <li><code>Client idle timeout</code>: specify how long each connection can stay in idle state at most in milliseconds.</li>
+  <li><code>Client call and stream timeout</code>: specify how long each call should last at most in milliseconds for handling the request and streaming the response.</li>
+  <li><code>Call timeout</code>: Specify how long each call should last at most in milliseconds.</li>
+  <li><code>Client global timeout</code>: specify how long the global call (with retries) should last at most in milliseconds.</li>
+</ul>
+<h4><a href="#proxy-settings" name="proxy-settings" class="anchor"><span class="anchor-link"></span></a>Proxy settings</h4>
+<ul>
+  <li><code>Proxy host</code>: host of proxy behind the identify provider</li>
+  <li><code>Proxy port</code>: port of proxy behind the identify provider</li>
+  <li><code>Proxy principal</code>: user of proxy</li>
+  <li><code>Proxy password</code>: password of proxy</li>
+</ul>
+<h3><a href="#http-headers" name="http-headers" class="anchor"><span class="anchor-link"></span></a>HTTP Headers</h3>
+<ul>
+  <li><code>Additional Headers In</code>: specify headers that will be added to each client request (from Otoroshi to target). Useful to add authentication.</li>
+  <li><code>Additional Headers Out</code>: specify headers that will be added to each client response (from Otoroshi to client).</li>
+  <li><code>Missing only Headers In</code>: specify headers that will be added to each client request (from Otoroshi to target) if not in the original request.</li>
+  <li><code>Missing only Headers Out</code>: specify headers that will be added to each client response (from Otoroshi to client) if not in the original response.</li>
+  <li><code>Remove incoming headers</code>: remove headers in the client request (from client to Otoroshi).</li>
+  <li><code>Remove outgoing headers</code>: remove headers in the client response (from Otoroshi to client).</li>
+  <li><code>Security headers</code>:</li>
+  <li><code>Utility headers</code>:</li>
+  <li><code>Matching Headers</code>: specify headers that MUST be present on client request to route it (pre routing). Useful to implement versioning.</li>
+  <li><code>Headers verification</code>: verify that some headers has a specific value (post routing)</li>
+</ul>
+<h3><a href="#additional-settings" name="additional-settings" class="anchor"><span class="anchor-link"></span></a>Additional settings</h3>
+<ul>
+  <li><code>OpenAPI</code>: specify an open API descriptor. Useful to display the documentation</li>
+  <li><code>Tags</code>: specify tags for the service</li>
+  <li><code>Metadata</code>: specify metadata for the service. Useful for analytics</li>
+  <li><code>IP allowed list</code>: IP address that can access the service</li>
+  <li><code>IP blocklist</code>: IP address that cannot access the service</li>
+</ul>
+<h3><a href="#canary-mode" name="canary-mode" class="anchor"><span class="anchor-link"></span></a>Canary mode</h3>
+<ul>
+  <li><code>Enabled</code>: Canary mode enabled</li>
+  <li><code>Traffic split</code>: Ratio of traffic that will be sent to canary targets. For instance, if traffic is at 0.2, for 10 request, 2 request will go on canary targets and 8 will go on regular targets.</li>
+  <li><code>Targets</code>: The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures</li>
+  <li><code>Target</code>:</li>
+  <li><code>Targets root</code>: Otoroshi will append this root to any target choosen. If the specified root is &lsquo;/api/foo&rsquo;, then a request to <a href="https://yyyyyyy/bar">https://yyyyyyy/bar</a> will actually hit <a href="https://xxxxxxxxx/api/foo/bar">https://xxxxxxxxx/api/foo/bar</a></li>
+  <li><code>Campaign stats</code>:</li>
+  <li><code>Use canary targets as standard targets</code>:</li>
+</ul>
+<h3><a href="#healthcheck-settings" name="healthcheck-settings" class="anchor"><span class="anchor-link"></span></a>Healthcheck settings</h3>
+<ul>
+  <li><code>HealthCheck enabled</code>: to help failing fast, you can activate healthcheck on a specific URL.</li>
+  <li><code>HealthCheck url</code>: the URL to check. Should return an HTTP 200 response. You can also respond with an &lsquo;Opun-Health-Check-Logic-Test-Result&rsquo; header set to the value of the &lsquo;Opun-Health-Check-Logic-Test&rsquo; request header + 42. to make the healthcheck complete.</li>
+</ul>
+<h3><a href="#fault-injection" name="fault-injection" class="anchor"><span class="anchor-link"></span></a>Fault injection</h3>
+<ul>
+  <li><code>User facing app.</code>: if service is set as user facing, Snow Monkey can be configured to not being allowed to create outage on them.</li>
+  <li><code>Chaos enabled</code>: activate or deactivate chaos setting on this service descriptor.</li>
+</ul>
+<h3><a href="#custom-errors-template" name="custom-errors-template" class="anchor"><span class="anchor-link"></span></a>Custom errors template</h3>
+<ul>
+  <li><code>40x template</code>: html template displayed when 40x error occurred</li>
+  <li><code>50x template</code>: html template displayed when 50x error occurred</li>
+  <li><code>Build mode template</code>: html template displayed when the build mode is enabled</li>
+  <li><code>Maintenance mode template</code>: html template displayed when the maintenance mode is enabled</li>
+  <li><code>Custom messages</code>: override error message one by one</li>
+</ul>
+<h3><a href="#request-transformation" name="request-transformation" class="anchor"><span class="anchor-link"></span></a>Request transformation</h3>
+<p>This part has been deprecated and moved to the plugin section.</p>
+<h3><a href="#plugins" name="plugins" class="anchor"><span class="anchor-link"></span></a>Plugins</h3>
+<ul>
+  <li><code>Plugins</code>:
+    <ul>
+      <li><code>Inject default config</code>: injects, if present, the default configuration of a selected plugin in the configuration object</li>
+      <li><code>Documentation</code>: link to the documentation website of the plugin</li>
+      <li><code>show/hide config. panel</code>: shows and hides the plugin panel which contains the plugin description and configuration</li>
+    </ul>
+  </li>
+  <li><code>Excluded patterns</code>: by default, when plugins are enabled, everything pass in. But sometimes you need to exclude something, so just add regex to matching path you want to exlude.</li>
+  <li><code>Configuration</code>: the configuration of each enabled plugin, split by names and grouped in the same configuration object.</li>
+</ul>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../entities/auth-modules.html">Authentication modules</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../entities/service-descriptors.html#service-descriptors" class="header">Service descriptors</a>
+  <ul>
+    <li><a href="../entities/service-descriptors.html#service-exposition-settings" class="header">Service exposition settings</a></li>
+    <li><a href="../entities/service-descriptors.html#redirection" class="header">Redirection</a></li>
+    <li><a href="../entities/service-descriptors.html#service-targets" class="header">Service targets</a></li>
+    <li><a href="../entities/service-descriptors.html#url-patterns" class="header">URL Patterns</a></li>
+    <li><a href="../entities/service-descriptors.html#restrictions" class="header">Restrictions</a></li>
+    <li><a href="../entities/service-descriptors.html#otoroshi-exchange-protocol" class="header">Otoroshi exchange protocol</a></li>
+    <li><a href="../entities/service-descriptors.html#authentication" class="header">Authentication</a></li>
+    <li><a href="../entities/service-descriptors.html#api-keys-constraints" class="header">Api keys constraints</a></li>
+    <li><a href="../entities/service-descriptors.html#routing-constraints" class="header">Routing constraints</a></li>
+    <li><a href="../entities/service-descriptors.html#cors-support" class="header">CORS support</a></li>
+    <li><a href="../entities/service-descriptors.html#jwt-tokens-verification" class="header">JWT tokens verification</a></li>
+    <li><a href="../entities/service-descriptors.html#pre-routing" class="header">Pre Routing</a></li>
+    <li><a href="../entities/service-descriptors.html#access-validation" class="header">Access validation</a></li>
+    <li><a href="../entities/service-descriptors.html#gzip-support" class="header">Gzip support</a></li>
+    <li><a href="../entities/service-descriptors.html#client-settings" class="header">Client settings</a></li>
+    <li><a href="../entities/service-descriptors.html#http-headers" class="header">HTTP Headers</a></li>
+    <li><a href="../entities/service-descriptors.html#additional-settings" class="header">Additional settings</a></li>
+    <li><a href="../entities/service-descriptors.html#canary-mode" class="header">Canary mode</a></li>
+    <li><a href="../entities/service-descriptors.html#healthcheck-settings" class="header">Healthcheck settings</a></li>
+    <li><a href="../entities/service-descriptors.html#fault-injection" class="header">Fault injection</a></li>
+    <li><a href="../entities/service-descriptors.html#custom-errors-template" class="header">Custom errors template</a></li>
+    <li><a href="../entities/service-descriptors.html#request-transformation" class="header">Request transformation</a></li>
+    <li><a href="../entities/service-descriptors.html#plugins" class="header">Plugins</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2021</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+

@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Events and analytics · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/cc.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+<link rel="stylesheet" type="text/css" href="../css/plugins.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="active page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="active page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../topics/index.html">Detailed topics</a></li>
+  <li>Events and analytics</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#events-and-analytics" name="events-and-analytics" class="anchor"><span class="anchor-link"></span></a>Events and analytics</h1>
+<p>Otoroshi is a solution fully traced : calls to services, access to UI, creation of resources, etc.</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>You have to use <a href="https://www.elastic.co">Elastic</a> to enable analytics features in Otoroshi</p></div>
+<h2><a href="#events" name="events" class="anchor"><span class="anchor-link"></span></a>Events</h2>
+<ul>
+  <li>Analytics event</li>
+  <li>Gateway event</li>
+  <li>TCP event</li>
+  <li>Healthcheck event</li>
+</ul>
+<h2><a href="#event-log" name="event-log" class="anchor"><span class="anchor-link"></span></a>Event log</h2>
+<p>Otoroshi can read his own exported events from an Elasticsearch instance, set up in the danger zone. Theses events are available from the UI, at the following route: <code>https://xxxxx/bo/dashboard/events</code>.</p>
+<p>The <code>Global events</code> page display all events of <strong>GatewayEvent</strong> type. This page is a way to quickly read an interval of events and can be used in addition of a Kibana instance.</p>
+<p>For each event, a list of information will be displayed and an additional button <code>content</code> to watch the full content of the event, at the JSON format. </p>
+<h2><a href="#alerts" name="alerts" class="anchor"><span class="anchor-link"></span></a>Alerts</h2>
+<ul>
+  <li><code>MaxConcurrentRequestReachedAlert</code>: happening when the handled requests number are greater than the limit of concurrent requests indicated in the global configuration of Otoroshi</li>
+  <li><code>CircuitBreakerOpenedAlert</code>: happening when the circuit breaker pass from closed to opened</li>
+  <li><code>CircuitBreakerClosedAlert</code>: happening when the circuit breaker pass from opened to closed</li>
+  <li><code>SessionDiscardedAlert</code>: send when an admin discarded an admin sessions</li>
+  <li><code>SessionsDiscardedAlert</code>: send when an admin discarded all admin sessions</li>
+  <li><code>PanicModeAlert</code>: send when panic mode is enabled</li>
+  <li><code>OtoroshiExportAlert</code>: send when otoroshi global configuration is exported</li>
+  <li><code>U2FAdminDeletedAlert</code>: send when an admin has deleted an other admin user</li>
+  <li><code>BlackListedBackOfficeUserAlert</code>: send when a blacklisted user has tried to acccess to the UI</li>
+  <li><code>AdminLoggedInAlert</code>: send when an user admin has logged to the UI</li>
+  <li><code>AdminFirstLogin</code>: send when an user admin has successfully logged to the UI for the first time</li>
+  <li><code>AdminLoggedOutAlert</code>: send when an user admin has logged out from Otoroshi</li>
+  <li><code>GlobalConfigModification</code>: send when an user amdin has changed the global configuration of Otoroshi</li>
+  <li><code>RevokedApiKeyUsageAlert</code>: send when an user admin has revoked an apikey</li>
+  <li><code>ServiceGroupCreatedAlert</code>: send when an user admin has created a service group</li>
+  <li><code>ServiceGroupUpdatedAlert</code>: send when an user admin has updated a service group</li>
+  <li><code>ServiceGroupDeletedAlert</code>: send when an user admin has deleted a service group</li>
+  <li><code>ServiceCreatedAlert</code>: send when an user admin has created a tcp service</li>
+  <li><code>ServiceUpdatedAlert</code>: send when an user admin has updated a tcp service</li>
+  <li><code>ServiceDeletedAlert</code>: send when an user admin has deleted a tcp service</li>
+  <li><code>ApiKeyCreatedAlert</code>: send when an user admin has crated a new apikey</li>
+  <li><code>ApiKeyUpdatedAlert</code>: send when an user admin has updated a new apikey</li>
+  <li><code>ApiKeyDeletedAlert</code>: send when an user admin has deleted a new apikey</li>
+</ul>
+<h2><a href="#audit" name="audit" class="anchor"><span class="anchor-link"></span></a>Audit</h2>
+<p>With Otoroshi, any admin action and any sucpicious/alert action is recorded. These records are stored in Otoroshi’s datastore (only the last n records, defined by the app.events.maxSize config key). All the records can be send through the analytics mechanism (WebHook, Kafka, Elastic) for external and/or further usage. We recommand sending away those records for security reasons.</p>
+<p>Otoroshi keep the following list of information for each executed action:</p>
+<ul>
+  <li><code>Date</code>: moment of the action</li>
+  <li><code>User</code>: name of the owner</li>
+  <li><code>From</code>: IP of the concerned user</li>
+  <li><code>Action</code>: action performed by the person. The possible actions are:
+    <ul>
+      <li><code>ACCESS_APIKEY</code>: User accessed a apikey</li>
+      <li><code>ACCESS_ALL_APIKEYS</code>: User accessed all apikeys</li>
+      <li><code>CREATE_APIKEY</code>: User created a apikey</li>
+      <li><code>UPDATE_APIKEY</code>: User updated a apikey</li>
+      <li><code>DELETE_APIKEY</code>: User deleted a apikey</li>
+      <li><code>ACCESS_AUTH_MODULE</code>: User accessed an Auth. module</li>
+      <li><code>ACCESS_ALL_AUTH_MODULES</code>: User accessed all Auth. modules</li>
+      <li><code>CREATE_AUTH_MODULE</code>: User created an Auth. module</li>
+      <li><code>UPDATE_AUTH_MODULE</code>: User updated an Auth. module</li>
+      <li><code>DELETE_AUTH_MODULE</code>: User deleted an Auth. module</li>
+      <li><code>ACCESS_CERTIFICATE</code>: User accessed a certificate</li>
+      <li><code>ACCESS_ALL_CERTIFICATES</code>: User accessed all certificates</li>
+      <li><code>CREATE_CERTIFICATE</code>: User created a certificate</li>
+      <li><code>UPDATE_CERTIFICATE</code>: User updated a certificate</li>
+      <li><code>DELETE_CERTIFICATE</code>: User deleted a certificate</li>
+      <li><code>ACCESS_CLIENT_CERT_VALIDATOR</code>: User accessed a client cert. validator</li>
+      <li><code>ACCESS_ALL_CLIENT_CERT_VALIDATORS</code>: User accessed all client cert. validators</li>
+      <li><code>CREATE_CLIENT_CERT_VALIDATOR</code>: User created a client cert. validator</li>
+      <li><code>UPDATE_CLIENT_CERT_VALIDATOR</code>: User updated a client cert. validator</li>
+      <li><code>DELETE_CLIENT_CERT_VALIDATOR</code>: User deleted a client cert. validator</li>
+      <li><code>ACCESS_DATA_EXPORTER_CONFIG</code>: User accessed a data exporter config</li>
+      <li><code>ACCESS_ALL_DATA_EXPORTER_CONFIG</code>: User accessed all data exporter config</li>
+      <li><code>CREATE_DATA_EXPORTER_CONFIG</code>: User created a data exporter config</li>
+      <li><code>UPDATE_DATA_EXPORTER_CONFIG</code>: User updated a data exporter config</li>
+      <li><code>DELETE_DATA_EXPORTER_CONFIG</code>: User deleted a data exporter config</li>
+      <li><code>ACCESS_GLOBAL_JWT_VERIFIER</code>: User accessed a global jwt verifier</li>
+      <li><code>ACCESS_ALL_GLOBAL_JWT_VERIFIERS</code>: User accessed all global jwt verifiers</li>
+      <li><code>CREATE_GLOBAL_JWT_VERIFIER</code>: User created a global jwt verifier</li>
+      <li><code>UPDATE_GLOBAL_JWT_VERIFIER</code>: User updated a global jwt verifier</li>
+      <li><code>DELETE_GLOBAL_JWT_VERIFIER</code>: User deleted a global jwt verifier</li>
+      <li><code>ACCESS_SCRIPT</code>: User accessed a script</li>
+      <li><code>ACCESS_ALL_SCRIPTS</code>: User accessed all scripts</li>
+      <li><code>CREATE_SCRIPT</code>: User created a script</li>
+      <li><code>UPDATE_SCRIPT</code>: User updated a script</li>
+      <li><code>DELETE_SCRIPT</code>: User deleted a Script</li>
+      <li><code>ACCESS_SERVICES_GROUP</code>: User accessed a service group</li>
+      <li><code>ACCESS_ALL_SERVICES_GROUPS</code>: User accessed all services groups</li>
+      <li><code>CREATE_SERVICE_GROUP</code>: User created a service group</li>
+      <li><code>UPDATE_SERVICE_GROUP</code>: User updated a service group</li>
+      <li><code>DELETE_SERVICE_GROUP</code>: User deleted a service group</li>
+      <li><code>ACCESS_SERVICES_FROM_SERVICES_GROUP</code>: User accessed all services from a services group</li>
+      <li><code>ACCESS_TCP_SERVICE</code>: User accessed a tcp service</li>
+      <li><code>ACCESS_ALL_TCP_SERVICES</code>: User accessed all tcp services</li>
+      <li><code>CREATE_TCP_SERVICE</code>: User created a tcp service</li>
+      <li><code>UPDATE_TCP_SERVICE</code>: User updated a tcp service</li>
+      <li><code>DELETE_TCP_SERVICE</code>: User deleted a tcp service</li>
+      <li><code>ACCESS_TEAM</code>: User accessed a Team</li>
+      <li><code>ACCESS_ALL_TEAMS</code>: User accessed all teams</li>
+      <li><code>CREATE_TEAM</code>: User created a team</li>
+      <li><code>UPDATE_TEAM</code>: User updated a team</li>
+      <li><code>DELETE_TEAM</code>: User deleted a team</li>
+      <li><code>ACCESS_TENANT</code>: User accessed a Tenant</li>
+      <li><code>ACCESS_ALL_TENANTS</code>: User accessed all tenants</li>
+      <li><code>CREATE_TENANT</code>: User created a tenant</li>
+      <li><code>UPDATE_TENANT</code>: User updated a tenant</li>
+      <li><code>DELETE_TENANT</code>: User deleted a tenant</li>
+      <li><code>SERVICESEARCH</code>: User searched for a service</li>
+      <li><code>ACTIVATE_PANIC_MODE</code>: Admin activated panic mode</li>
+    </ul>
+  </li>
+  <li>
+  <p><code>Message</code>: explicit message about the action (example: the <code>SERVICESEARCH</code> action happened when an <code>user searched for a service</code>)</p></li>
+  <li><code>Content</code>: all information at JSON format</li>
+</ul>
+<h2><a href="#global-metrics" name="global-metrics" class="anchor"><span class="anchor-link"></span></a>Global metrics</h2>
+<p>The global metrics are displayed on the index page of the Otoroshi UI. Otoroshi provides information about :</p>
+<ul>
+  <li>the number of requests served</li>
+  <li>the amount of data received and sended</li>
+  <li>the number of concurrent requests</li>
+  <li>the number of requests per second</li>
+  <li>the current overhead</li>
+</ul>
+<p>More metrics can be found on the <strong>Global analytics</strong> page (available at <a href="https://xxxxxx/bo/dashboard/stats)">https://xxxxxx/bo/dashboard/stats)</a>.</p>
+<h2><a href="#monitoring-services" name="monitoring-services" class="anchor"><span class="anchor-link"></span></a>Monitoring services</h2>
+<p>Once you have declared services, you can monitor them with Otoroshi. </p>
+<p>Let&rsquo;s starting by setup Otoroshi to push events to an elastic cluster via a data exporter. Then you will can setup Otoroshi events read from an elastic cluster. Go to <code>settings (cog icon) / Danger Zone</code> and expand the <code>Analytics: Elastic cluster (read)</code> section.</p><div class="centered-img">
+<img src="../imgs/push-to-elastic.png" /></div>
+<h3><a href="#service-healthcheck" name="service-healthcheck" class="anchor"><span class="anchor-link"></span></a>Service healthcheck</h3>
+<p>If you have defined an health check URL in the service descriptor, you can access the health check page from the sidebar of the service page.</p><div class="centered-img">
+<img src="../imgs/service-healthcheck.png" /></div>
+<h3><a href="#service-live-stats" name="service-live-stats" class="anchor"><span class="anchor-link"></span></a>Service live stats</h3>
+<p>You can also monitor live stats like total of served request, average response time, average overhead, etc. The live stats page can be accessed from the sidebar of the service page.</p><div class="centered-img">
+<img src="../imgs/service-live-stats.png" /></div>
+<h3><a href="#service-analytics" name="service-analytics" class="anchor"><span class="anchor-link"></span></a>Service analytics</h3>
+<p>You can also get some aggregated metrics. The analytics page can be accessed from the sidebar of the service page.</p><div class="centered-img">
+<img src="../imgs/service-analytics.png" /></div>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../topics/dev-portal.html">Developer portal with Daikoku</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/events-and-analytics.html#events-and-analytics" class="header">Events and analytics</a>
+  <ul>
+    <li><a href="../topics/events-and-analytics.html#events" class="header">Events</a></li>
+    <li><a href="../topics/events-and-analytics.html#event-log" class="header">Event log</a></li>
+    <li><a href="../topics/events-and-analytics.html#alerts" class="header">Alerts</a></li>
+    <li><a href="../topics/events-and-analytics.html#audit" class="header">Audit</a></li>
+    <li><a href="../topics/events-and-analytics.html#global-metrics" class="header">Global metrics</a></li>
+    <li><a href="../topics/events-and-analytics.html#monitoring-services" class="header">Monitoring services</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2021</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
