@@ -23,35 +23,36 @@ sealed trait Log4jExpressionPart {
   def computed: String
 }
 
-case class Log4jExpressionText(value: String) extends Log4jExpressionPart {
+case class Log4jExpressionText(value: String)               extends Log4jExpressionPart {
   override def toString: String = s"Text('$value')"
-  def hasSeparator: Boolean = value.contains(":")
-  def hasDefaultValue: Boolean = value.contains(":-")
-  def defaultValue: String = Try(value.split(":-").apply(1)) match {
+  def hasSeparator: Boolean     = value.contains(":")
+  def hasDefaultValue: Boolean  = value.contains(":-")
+  def defaultValue: String      = Try(value.split(":-").apply(1)) match {
     case Failure(e) => value
     case Success(v) => v
   }
-  def key: String = value.split(":").apply(0)
-  def keyval: String = Try(value.split(":").apply(1)).getOrElse(value)
+  def key: String               = value.split(":").apply(0)
+  def keyval: String            = Try(value.split(":").apply(1)).getOrElse(value)
   def computed: String = {
     (if (hasDefaultValue) defaultValue else value) //(if (hasSeparator) keyval else value))
-      .replaceAll("::", "").toLowerCase()
+      .replaceAll("::", "")
+      .toLowerCase()
   }
 }
 case class Log4jExpression(parts: Seq[Log4jExpressionPart]) extends Log4jExpressionPart {
   override def toString: String = s"Expression(${parts.mkString(", ")})"
-  def computed: String = parts.map(_.computed).mkString("")
+  def computed: String          = parts.map(_.computed).mkString("")
 }
 
 // https://blog.cloudflare.com/exploitation-of-cve-2021-44228-before-public-disclosure-and-evolution-of-waf-evasion-patterns/
 object Log4jExpressionParser {
 
   private def parseExpression(value: String): (Log4jExpression, Int) = {
-    var parts = Seq.empty[Log4jExpressionPart]
-    var i = 0
-    var size = 0
+    var parts  = Seq.empty[Log4jExpressionPart]
+    var i      = 0
+    var size   = 0
     var buffer = ""
-    while(i < value.length) {
+    while (i < value.length) {
       value.apply(i) match {
         case '$' if value.apply(i + 1) == '{' => {
           if (buffer.nonEmpty) {
@@ -63,10 +64,10 @@ object Log4jExpressionParser {
           parts = parts :+ exp
           i = i + size + 1
         }
-        case '}' =>
+        case '}'                              =>
           size = i + 1
           i = value.length
-        case c =>
+        case c                                =>
           buffer = buffer + c
       }
       i = i + 1
@@ -85,15 +86,15 @@ object Log4jExpressionParser {
 
   def parse(value: String): Seq[Log4jExpression] = {
     var expressions = Seq.empty[Log4jExpression]
-    var i = 0
-    while(i < value.length) {
+    var i           = 0
+    while (i < value.length) {
       value.apply(i) match {
         case '$' if value.apply(i + 1) == '{' => {
           val (exp, size) = parseExpression(value.substring(i + 2))
           expressions = expressions :+ exp
           i = i + size + 1
         }
-        case c => // nothing to do here
+        case c                                => // nothing to do here
       }
       i = i + 1
     }
@@ -105,7 +106,8 @@ class Log4jShellFilter extends RequestTransformer {
 
   private val logger = Logger("otoroshi-plugins-log4jshell")
 
-  private val requestBodyKey = TypedKey[Future[Source[ByteString, _]]]("otoroshi.plugins.log4j.Log4jShellFilterRequestBody")
+  private val requestBodyKey =
+    TypedKey[Future[Source[ByteString, _]]]("otoroshi.plugins.log4j.Log4jShellFilterRequestBody")
 
   override def name: String = "Log4jShell mitigation plugin"
 
@@ -113,8 +115,8 @@ class Log4jShellFilter extends RequestTransformer {
     Some(
       Json.obj(
         "Log4jShellFilter" -> Json.obj(
-          "status"  -> 200,
-          "body"  -> "",
+          "status"    -> 200,
+          "body"      -> "",
           "parseBody" -> false
         )
       )
@@ -141,27 +143,31 @@ class Log4jShellFilter extends RequestTransformer {
   def containsBadValue(value: String): Boolean = {
     if (value.contains("${")) {
       value.toLowerCase().contains("${jndi:rmi://") ||
-        value.toLowerCase().contains("${jndi:http://") ||
-        value.toLowerCase().contains("${jndi:ldap://") ||
-        value.toLowerCase().contains("${jndi:") ||
-        Log4jExpressionParser.parseAsExp(value).hasJndi
+      value.toLowerCase().contains("${jndi:http://") ||
+      value.toLowerCase().contains("${jndi:ldap://") ||
+      value.toLowerCase().contains("${jndi:") ||
+      Log4jExpressionParser.parseAsExp(value).hasJndi
     } else {
       false
     }
   }
 
-  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    val config = ctx.configFor("Log4jShellFilter")
-    val status = config.select("status").asOpt[Int].getOrElse(200)
-    val body = config.select("body").asOpt[String].getOrElse("")
+  override def transformRequestWithCtx(
+      ctx: TransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    val config    = ctx.configFor("Log4jShellFilter")
+    val status    = config.select("status").asOpt[Int].getOrElse(200)
+    val body      = config.select("body").asOpt[String].getOrElse("")
     val parseBody = config.select("parseBody").asOpt[Boolean].getOrElse(false)
-    val promise = Promise[Source[ByteString, _]]()
+    val promise   = Promise[Source[ByteString, _]]()
     ctx.attrs.put(requestBodyKey -> promise.future)
-    val hasBadHeaders = ctx.request.headers.toMap.values.flatten.exists(containsBadValue)
-    val hasBadMethod = containsBadValue(ctx.request.method)
-    val hasBadPath = containsBadValue(ctx.request.thePath)
+    val hasBadHeaders    = ctx.request.headers.toMap.values.flatten.exists(containsBadValue)
+    val hasBadMethod     = containsBadValue(ctx.request.method)
+    val hasBadPath       = containsBadValue(ctx.request.thePath)
     val hasBadQueryParam = containsBadValue(ctx.request.rawQueryString)
-    logger.debug(s"hasBadHeaders: $hasBadHeaders, hasBadMethod: $hasBadMethod, hasBadPath: $hasBadPath, hasBadQueryParam: $hasBadQueryParam")
+    logger.debug(
+      s"hasBadHeaders: $hasBadHeaders, hasBadMethod: $hasBadMethod, hasBadPath: $hasBadPath, hasBadQueryParam: $hasBadQueryParam"
+    )
     if (hasBadHeaders || hasBadMethod || hasBadPath || hasBadQueryParam) {
       Results.Status(status)(body).as("text/plain").leftf
     } else {
@@ -183,7 +189,7 @@ class Log4jShellFilter extends RequestTransformer {
   }
 
   override def transformRequestBodyWithCtx(
-    ctx: TransformerRequestBodyContext
+      ctx: TransformerRequestBodyContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     ctx.attrs.get(requestBodyKey) match {
       case None       => ctx.body

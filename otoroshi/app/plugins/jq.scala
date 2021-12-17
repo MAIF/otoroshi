@@ -109,9 +109,12 @@ class JqBodyTransformer extends RequestTransformer {
             builder.putArgJson("apikey", user.lightJson.stringify)
           }
           .putArgJson("queryParams", JsObject(ctx.request.theUri.query().toMap.mapValues(JsString.apply)).stringify)
-          .putArgJson("headers", JsObject(ctx.request.headers.toSimpleMap.map {
-            case (key, value) => (key.toLowerCase, JsString(value))
-          }).stringify)
+          .putArgJson(
+            "headers",
+            JsObject(ctx.request.headers.toSimpleMap.map { case (key, value) =>
+              (key.toLowerCase, JsString(value))
+            }).stringify
+          )
           .filter(filter)
           .build()
         val response = request.execute()
@@ -172,9 +175,12 @@ class JqBodyTransformer extends RequestTransformer {
             builder.putArgJson("apikey", user.lightJson.stringify)
           }
           .putArgJson("queryParams", JsObject(ctx.request.theUri.query().toMap.mapValues(JsString.apply)).stringify)
-          .putArgJson("headers", JsObject(ctx.request.headers.toSimpleMap.map {
-            case (key, value) => (key.toLowerCase, JsString(value))
-          }).stringify)
+          .putArgJson(
+            "headers",
+            JsObject(ctx.request.headers.toSimpleMap.map { case (key, value) =>
+              (key.toLowerCase, JsString(value))
+            }).stringify
+          )
           .filter(filter)
           .build()
         val response = request.execute()

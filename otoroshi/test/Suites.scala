@@ -147,6 +147,6 @@ class DevOtoroshiTests
     )
 
 class Log4jShellTests
-  extends Suites(
-    new Log4jShellSpec()
-  )
+    extends Suites(
+      new Log4jShellSpec()
+    )
