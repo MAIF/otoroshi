@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-rc.4] - 2021-12-17
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-rc.4+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-rc.3...v1.5.0-rc.4
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-rc.4
+
+- Add a log4jshell mitigation plugin (#989)
+
 ## [1.5.0-rc.3] - 2021-12-15
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-rc.3+is%3Aclosed
