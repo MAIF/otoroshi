@@ -8,6 +8,7 @@ import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestBodyC
 import otoroshi.utils.body.BodyUtils
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.{Result, Results}
@@ -102,6 +103,8 @@ object Log4jExpressionParser {
 
 class Log4jShellFilter extends RequestTransformer {
 
+  private val logger = Logger("otoroshi-plugins-log4jshell")
+
   private val requestBodyKey = TypedKey[Future[Source[ByteString, _]]]("otoroshi.plugins.log4j.Log4jShellFilterRequestBody")
 
   override def name: String = "Log4jShell mitigation plugin"
@@ -154,13 +157,11 @@ class Log4jShellFilter extends RequestTransformer {
     val parseBody = config.select("parseBody").asOpt[Boolean].getOrElse(false)
     val promise = Promise[Source[ByteString, _]]()
     ctx.attrs.put(requestBodyKey -> promise.future)
-    val newHeaders = ctx.request.headers.toSimpleMap.filterNot {
-      case (_, value) => containsBadValue(value)
-    }
-    val hasBadHeaders = newHeaders.nonEmpty
+    val hasBadHeaders = ctx.request.headers.toMap.values.flatten.exists(containsBadValue)
     val hasBadMethod = containsBadValue(ctx.request.method)
     val hasBadPath = containsBadValue(ctx.request.thePath)
     val hasBadQueryParam = containsBadValue(ctx.request.rawQueryString)
+    logger.debug(s"hasBadHeaders: $hasBadHeaders, hasBadMethod: $hasBadMethod, hasBadPath: $hasBadPath, hasBadQueryParam: $hasBadQueryParam")
     if (hasBadHeaders || hasBadMethod || hasBadPath || hasBadQueryParam) {
       Results.Status(status)(body).as("text/plain").leftf
     } else {
