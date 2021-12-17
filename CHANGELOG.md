@@ -11,6 +11,8 @@ https://github.com/MAIF/otoroshi/compare/v1.5.0-rc.3...v1.5.0-rc.4
 https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-rc.4
 
 - Add a log4jshell mitigation plugin (#989)
+- fix typos in documentation
+- add helm package publication in the release process
 
 ## [1.5.0-rc.3] - 2021-12-15
 
