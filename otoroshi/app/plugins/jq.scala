@@ -6,6 +6,7 @@ import akka.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import otoroshi.env.Env
 import otoroshi.script._
+import otoroshi.utils.body.BodyUtils
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -70,20 +71,6 @@ class JqBodyTransformer extends RequestTransformer {
       if (included.isEmpty) true else included.exists(p => otoroshi.utils.RegexPool.regex(p).matches(uri))
     !isExcluded && isIncluded
   }
-
-  private def hasBody(request: RequestHeader): Boolean =
-    (request.method, request.headers.get("Content-Length")) match {
-      case ("GET", Some(_))    => true
-      case ("GET", None)       => false
-      case ("HEAD", Some(_))   => true
-      case ("HEAD", None)      => false
-      case ("PATCH", _)        => true
-      case ("POST", _)         => true
-      case ("PUT", _)          => true
-      case ("DELETE", Some(_)) => true
-      case ("DELETE", None)    => false
-      case _                   => true
-    }
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
@@ -157,7 +144,7 @@ class JqBodyTransformer extends RequestTransformer {
     val filter   = config.select("filter").asOpt[String].getOrElse(".")
     val included = config.select("included").asOpt[Seq[String]].getOrElse(Seq.empty)
     val excluded = config.select("excluded").asOpt[Seq[String]].getOrElse(Seq.empty)
-    if (hasBody(ctx.request) && shouldApply(included, excluded, ctx.request.thePath)) {
+    if (BodyUtils.hasBody(ctx.request) && shouldApply(included, excluded, ctx.request.thePath)) {
       ctx.rawRequest.body().runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
         val bodyStr  = bodyRaw.utf8String
         val request  = ImmutableJqRequest

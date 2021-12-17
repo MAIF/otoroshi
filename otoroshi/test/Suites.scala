@@ -144,3 +144,8 @@ class DevOtoroshiTests
     extends Suites(
       new AdminApiSpec("DEV", Configurations.InMemoryConfiguration)
     )
+
+class Log4jShellTests
+  extends Suites(
+    new Log4jShellSpec()
+  )
