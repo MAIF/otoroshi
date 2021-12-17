@@ -770,6 +770,33 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   }
 }
 </code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+<h2><a href="#log4jshell-mitigation-plugin" name="log4jshell-mitigation-plugin" class="anchor"><span class="anchor-link"></span></a>Log4jShell mitigation plugin</h2>
+<img class="plugin-logo plugin-hidden" src=""></img>
+<h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
+<ul>
+  <li>plugin type: <code>transformer</code></li>
+  <li>configuration root: <code>Log4jShellFilter</code></li>
+</ul>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin try to detect Log4jShell attacks in request and block them.</p>
+<p>This plugin can accept the following configuration</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;Log4jShellFilter&quot;: {
+    &quot;status&quot;: 200, // the status send back when an attack expression is found
+    &quot;body&quot;: &quot;&quot;, // the body send back when an attack expression is found
+    &quot;parseBody&quot;: false // enables request body parsing to find attack expression
+  }
+}
+</code></pre>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;Log4jShellFilter&quot; : {
+    &quot;status&quot; : 200,
+    &quot;body&quot; : &quot;&quot;,
+    &quot;parseBody&quot; : false
+  }
+}
+</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#body-logger" name="body-logger" class="anchor"><span class="anchor-link"></span></a>Body logger</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -2366,6 +2393,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#izanami-apis-proxy" class="header">Izanami APIs Proxy</a></li>
     <li><a href="../plugins/built-in-plugins.html#jq-bodies-transformer" class="header">JQ bodies transformer</a></li>
     <li><a href="../plugins/built-in-plugins.html#html-patcher" class="header">Html Patcher</a></li>
+    <li><a href="../plugins/built-in-plugins.html#log4jshell-mitigation-plugin" class="header">Log4jShell mitigation plugin</a></li>
     <li><a href="../plugins/built-in-plugins.html#body-logger" class="header">Body logger</a></li>
     <li><a href="../plugins/built-in-plugins.html#prometheus-service-metrics" class="header">Prometheus Service Metrics</a></li>
     <li><a href="../plugins/built-in-plugins.html#service-metrics" class="header">Service Metrics</a></li>
