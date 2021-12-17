@@ -889,6 +889,54 @@ This plugin can inject elements in html pages (in the body or in the head) retur
 
 @@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
 
+## Log4jShell mitigation plugin
+
+<img class="plugin-logo plugin-hidden" src=""></img>
+
+### Infos
+
+* plugin type: `transformer`
+* configuration root: `Log4jShellFilter`
+
+### Description
+
+This plugin try to detect Log4jShell attacks in request and block them.
+
+This plugin can accept the following configuration
+
+```javascript
+{
+  "Log4jShellFilter": {
+    "status": 200, // the status send back when an attack expression is found
+    "body": "", // the body send back when an attack expression is found
+    "parseBody": false // enables request body parsing to find attack expression
+  }
+}
+```
+
+
+
+### Default configuration
+
+```json
+{
+  "Log4jShellFilter" : {
+    "status" : 200,
+    "body" : "",
+    "parseBody" : false
+  }
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+
 ## Body logger
 
 <img class="plugin-logo plugin-hidden" src=""></img>

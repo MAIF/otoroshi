@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Global config · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/cc.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+<link rel="stylesheet" type="text/css" href="../css/plugins.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0-rc.4
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="active page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0-rc.4
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="active page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../entities/index.html">Main entities</a></li>
+  <li>Global config</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#global-config" name="global-config" class="anchor"><span class="anchor-link"></span></a>Global config</h1>
+<p>The global config, named <code>Danger zone</code> in Otoroshi, is the place to configure Otoroshi globally. </p>
+<blockquote>
+  <p>Warning: In this page, the configuration is really sensitive and affect the global behaviour of Otoroshi.</p>
+</blockquote>
+<h3><a href="#misc-settings" name="misc-settings" class="anchor"><span class="anchor-link"></span></a>Misc. Settings</h3>
+<ul>
+  <li><code>Maintenance mode</code> : It pass every single service in maintenance mode. If an user calls a service, the maintenance page will be displayed</li>
+  <li><code>No OAuth login for BackOffice</code> : Forces admins to login only with user/password or user/password/u2F device</li>
+  <li><code>API Read Only</code>: Freeze the Otoroshi datastore in read only mode. Only people with access to the actual underlying datastore will be able to disable this.</li>
+  <li><code>Auto link default</code> : When no group is specified on a service, it will be assigned to default one</li>
+  <li><code>Use circuit breakers</code> : Use circuit breaker on all services</li>
+  <li><code>Use new http client as the default Http client</code> : All http calls will use the new http client by default</li>
+  <li><code>Enable live metrics</code> : Enable live metrics in the Otoroshi cluster. Performs a lot of writes in the datastore</li>
+  <li><code>Digitus medius</code> : Use middle finger emoji as a response character for endless HTTP responses.</li>
+  <li><code>Limit conc. req.</code> : Limit the number of concurrent request processed by Otoroshi to a certain amount. Highly recommended for resilience</li>
+  <li><code>Use X-Forwarded-* headers for routing</code> : When evaluating routing of a request, X-Forwarded-* headers will be used if presents</li>
+  <li><code>Max conc. req.</code> : Maximum number of concurrent requests processed by otoroshi.</li>
+  <li><code>Max HTTP/1.0 resp. size</code> : Maximum size of an HTTP/1.0 response in bytes. After this limit, response will be cut and sent as is. The best value here should satisfy (maxConcurrentRequests * maxHttp10ResponseSize) &lt; process.memory for worst case scenario.</li>
+  <li><code>Max local events</code> : Maximum number of events stored.</li>
+  <li><code>Lines</code> : <em>deprecated</em></li>
+</ul>
+<h3><a href="#ip-address-filtering-settings" name="ip-address-filtering-settings" class="anchor"><span class="anchor-link"></span></a>IP address filtering settings</h3>
+<ul>
+  <li><code>IP allowed list</code>: Only IP addresses that will be able to access Otoroshi exposed services</li>
+  <li><code>IP blocklist</code>: IP addresses that will be refused to access Otoroshi exposed services</li>
+  <li><code>Endless HTTP Responses</code>: IP addresses for which each request will return around 128 Gb of 0s</li>
+</ul>
+<h3><a href="#quotas-settings" name="quotas-settings" class="anchor"><span class="anchor-link"></span></a>Quotas settings</h3>
+<ul>
+  <li><code>Global throttling</code>: The max. number of requests allowed per second globally on Otoroshi</li>
+  <li><code>Throttling per IP</code>: The max. number of requests allowed per second per IP address globally on Otoroshi</li>
+</ul>
+<h3><a href="#analytics-elastic-dashboard-datasource-read-" name="analytics-elastic-dashboard-datasource-read-" class="anchor"><span class="anchor-link"></span></a>Analytics: Elastic dashboard datasource (read)</h3>
+<ul>
+  <li><code>Cluster URI</code>: Elastic cluster URI</li>
+  <li><code>Index</code>: Elastic index</li>
+  <li><code>Type</code>: Event type (not needed for elasticsearch above 6.x)</li>
+  <li><code>User</code>: Elastic User (optional)</li>
+  <li><code>Password</code>: Elastic password (optional)</li>
+  <li><code>Version</code>: Elastic version (optional, if none provided it will be fetched from cluster)</li>
+  <li><code>Apply template</code>: Automatically apply index template</li>
+  <li><code>Check Connection</code>: Button to test the configuration. It will displayed a modal with checked point, and if the case of it&rsquo;s successfull, it will displayed the found version of the Elasticsearch and the index used</li>
+  <li><code>Manually apply index template</code>: try to put the elasticsearch template by calling the api of elasticsearch</li>
+  <li><code>Show index template</code>: try to retrieve the current index template presents in elasticsearch</li>
+  <li><code>Client side temporal indexes handling</code>: When enabled, Otoroshi will manage the creation of indexes. When it&rsquo;s disabled, Otoroshi will push in the same index</li>
+  <li><code>One index per</code>: When the previous field is enabled, you can choose the interval of time between the creation of a new index in elasticsearch</li>
+  <li><code>Custom TLS Settings</code>: Enable the TLS configuration for the communication with Elasticsearch</li>
+  <li><code>TLS loose</code>: if enabled, will block all untrustful ssl configs</li>
+  <li><code>TrustAll</code>: allows any server certificates even the self-signed ones</li>
+  <li><code>Client certificates</code>: list of client certificates used to communicate with elasticsearch</li>
+  <li><code>Trusted certificates</code>: list of trusted certificates received from elasticsearch</li>
+</ul>
+<h3><a href="#statsd-settings" name="statsd-settings" class="anchor"><span class="anchor-link"></span></a>Statsd settings</h3>
+<ul>
+  <li><code>Datadog agent</code>: The StatsD agent is a Datadog agent</li>
+  <li><code>StatsD agent host</code>: The host on which StatsD agent is listening</li>
+  <li><code>StatsD agent port</code>: The port on which StatsD agent is listening (default is 8125)</li>
+</ul>
+<h3><a href="#backoffice-auth-settings" name="backoffice-auth-settings" class="anchor"><span class="anchor-link"></span></a>Backoffice auth. settings</h3>
+<ul>
+  <li><code>Backoffice auth. config</code>: the authentication module used in front of Otoroshi. It will be used to connect to Otoroshi on the login page</li>
+</ul>
+<h3><a href="#lets-encrypt-settings" name="lets-encrypt-settings" class="anchor"><span class="anchor-link"></span></a>Let&rsquo;s encrypt settings</h3>
+<ul>
+  <li><code>Enabled</code>: when enabled, Otoroshi will have the possiblity to sign certificate from let&rsquo;s encrypt notably in the SSL/TSL Certificates page</li>
+  <li><code>Server URL</code>: ACME endpoint of let&rsquo;s encrypt</li>
+  <li><code>Email addresses</code>: (optional) list of addresses used to order the certificates</li>
+  <li><code>Contact URLs</code>: (optional) list of addresses used to order the certificates</li>
+  <li><code>Public Key</code>: used to ask a certificate to let&rsquo;s encrypt, generated by Otoroshi</li>
+  <li><code>Private Key</code>: used to ask a certificate to let&rsquo;s encrypt, generated by Otoroshi</li>
+</ul>
+<h3><a href="#clevercloud-settings" name="clevercloud-settings" class="anchor"><span class="anchor-link"></span></a>CleverCloud settings</h3>
+<p>Once configured, you can register one clever cloud app of your organization directly as an Otoroshi service.</p>
+<ul>
+  <li><code>CleverCloud consumer key</code>: consumer key of your clever cloud OAuth 1.0 app</li>
+  <li><code>CleverCloud consumer secret</code>: consumer secret of your clever cloud OAuth 1.0 app</li>
+  <li><code>OAuth Token</code>: oauth token of your clever cloud OAuth 1.0 app</li>
+  <li><code>OAuth Secret</code>: oauth token secret of your clever cloud OAuth 1.0 app</li>
+  <li><code>CleverCloud orga. Id</code>: id of your clever cloud organization</li>
+</ul>
+<h3><a href="#global-scripts" name="global-scripts" class="anchor"><span class="anchor-link"></span></a>Global scripts</h3>
+<p>Global scripts will be deprecated soon, please use global plugins instead (see the next section)!</p>
+<h3><a href="#global-plugins" name="global-plugins" class="anchor"><span class="anchor-link"></span></a>Global plugins</h3>
+<ul>
+  <li><code>Enabled</code>: enabled all global plugins</li>
+  <li><code>Plugins</code>: list of added plugins to your instance</li>
+  <li><code>Plugin configuration</code>: each added plugin have a configuration that you can override from this field</li>
+</ul>
+<h3><a href="#proxies" name="proxies" class="anchor"><span class="anchor-link"></span></a>Proxies</h3>
+<p>In this section, you can add a list of proxies for :</p>
+<ul>
+  <li>Proxy for alert emails (mailgun)</li>
+  <li>Proxy for alert webhooks</li>
+  <li>Proxy for Clever-Cloud API access</li>
+  <li>Proxy for services access</li>
+  <li>Proxy for auth. access (OAuth, OIDC)</li>
+  <li>Proxy for client validators</li>
+  <li>Proxy for JWKS access</li>
+  <li>Proxy for elastic access</li>
+</ul>
+<p>Each proxy has the following fields </p>
+<ul>
+  <li><code>Proxy host</code>: host of proxy</li>
+  <li><code>Proxy port</code>: port of proxy</li>
+  <li><code>Proxy principal</code>: user of proxy</li>
+  <li><code>Proxy password</code>: password of proxy</li>
+  <li><code>Non proxy host</code>: IP address that can access the service</li>
+</ul>
+<h3><a href="#quotas-alerting-settings" name="quotas-alerting-settings" class="anchor"><span class="anchor-link"></span></a>Quotas alerting settings</h3>
+<ul>
+  <li><code>Enable quotas exceeding alerts</code>: When apikey quotas is almost exceeded, an alert will be sent</li>
+  <li><code>Daily quotas threshold</code>: The percentage of daily calls before sending alerts</li>
+  <li><code>Monthly quotas threshold</code>: The percentage of monthly calls before sending alerts</li>
+</ul>
+<h3><a href="#user-agent-extraction-settings" name="user-agent-extraction-settings" class="anchor"><span class="anchor-link"></span></a>User-Agent extraction settings</h3>
+<ul>
+  <li><code>User-Agent extraction</code>: Allow user-agent details extraction. Can have impact on consumed memory. </li>
+</ul>
+<h3><a href="#geolocation-extraction-settings" name="geolocation-extraction-settings" class="anchor"><span class="anchor-link"></span></a>Geolocation extraction settings</h3>
+<p>Extract an geolocation for each call to Otoroshi.</p>
+<h3><a href="#tls-settings" name="tls-settings" class="anchor"><span class="anchor-link"></span></a>Tls Settings</h3>
+<ul>
+  <li><code>Use random cert.</code>: Use the first available cert none matches the current domain</li>
+  <li><code>Default domain</code>: When the SNI domain cannot be found, this one will be used to find the matching certificate </li>
+  <li><code>Trust JDK CAs (server)</code>: Trust JDK CAs. The CAs from the JDK CA bundle will be proposed in the certificate request when performing TLS handshake </li>
+  <li><code>Trust JDK CAs (trust)</code>: Trust JDK CAs. The CAs from the JDK CA bundle will be used as trusted CAs when calling HTTPS resources </li>
+  <li><code>Trusted CAs (server)</code>: Select the trusted CAs you want for TLS terminaison. Those CAs only will be proposed in the certificate request when performing TLS handshake </li>
+</ul>
+<h3><a href="#auto-generate-certificates" name="auto-generate-certificates" class="anchor"><span class="anchor-link"></span></a>Auto Generate Certificates</h3>
+<ul>
+  <li><code>Enabled</code>: Generate certificates on the fly when they not exist</li>
+  <li><code>Reply Nicely</code>: When not allowed domain name, accept connection and display a nice error message </li>
+  <li><code>CA</code>: certificate CA used to generate missing certificate</li>
+  <li><code>Allowed domains</code>: Allowed domains</li>
+  <li><code>Not allowed domains</code>: Allowed domains</li>
+</ul>
+<h3><a href="#global-metadata" name="global-metadata" class="anchor"><span class="anchor-link"></span></a>Global metadata</h3>
+<ul>
+  <li><code>Tags</code>: tags attached to the global config</li>
+  <li><code>Metadata</code>: metadata attached to the global config</li>
+</ul>
+<h3><a href="#actions-at-the-bottom-of-the-page" name="actions-at-the-bottom-of-the-page" class="anchor"><span class="anchor-link"></span></a>Actions at the bottom of the page</h3>
+<ul>
+  <li><code>Recover from a full export file</code>: Load global configuration from a previous export</li>
+  <li><code>Full export</code>: Export with all created entities</li>
+  <li><code>Full export (ndjson)</code>: Export your full state of database to ndjson format</li>
+  <li><code>JSON</code>: Get the global config at JSON format </li>
+  <li><code>YAML</code>: Get the global config at YAML format </li>
+  <li><code>Enable Panic Mode</code>: Log out all users from UI and prevent any changes to the database by setting the admin Otoroshi api to read-only. The only way to exit of this mode is to disable this mode directly in the database. </li>
+</ul>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../entities/apikeys.html">Apikeys</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../entities/global-config.html#global-config" class="header">Global config</a>
+  <ul>
+    <li><a href="../entities/global-config.html#misc-settings" class="header">Misc. Settings</a></li>
+    <li><a href="../entities/global-config.html#ip-address-filtering-settings" class="header">IP address filtering settings</a></li>
+    <li><a href="../entities/global-config.html#quotas-settings" class="header">Quotas settings</a></li>
+    <li><a href="../entities/global-config.html#analytics-elastic-dashboard-datasource-read-" class="header">Analytics: Elastic dashboard datasource (read)</a></li>
+    <li><a href="../entities/global-config.html#statsd-settings" class="header">Statsd settings</a></li>
+    <li><a href="../entities/global-config.html#backoffice-auth-settings" class="header">Backoffice auth. settings</a></li>
+    <li><a href="../entities/global-config.html#lets-encrypt-settings" class="header">Let&rsquo;s encrypt settings</a></li>
+    <li><a href="../entities/global-config.html#clevercloud-settings" class="header">CleverCloud settings</a></li>
+    <li><a href="../entities/global-config.html#global-scripts" class="header">Global scripts</a></li>
+    <li><a href="../entities/global-config.html#global-plugins" class="header">Global plugins</a></li>
+    <li><a href="../entities/global-config.html#proxies" class="header">Proxies</a></li>
+    <li><a href="../entities/global-config.html#quotas-alerting-settings" class="header">Quotas alerting settings</a></li>
+    <li><a href="../entities/global-config.html#user-agent-extraction-settings" class="header">User-Agent extraction settings</a></li>
+    <li><a href="../entities/global-config.html#geolocation-extraction-settings" class="header">Geolocation extraction settings</a></li>
+    <li><a href="../entities/global-config.html#tls-settings" class="header">Tls Settings</a></li>
+    <li><a href="../entities/global-config.html#auto-generate-certificates" class="header">Auto Generate Certificates</a></li>
+    <li><a href="../entities/global-config.html#global-metadata" class="header">Global metadata</a></li>
+    <li><a href="../entities/global-config.html#actions-at-the-bottom-of-the-page" class="header">Actions at the bottom of the page</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2021</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
