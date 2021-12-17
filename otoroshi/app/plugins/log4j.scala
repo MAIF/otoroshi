@@ -16,7 +16,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 sealed trait Log4jExpressionPart {
-  def hasJNDI: Boolean = {
+  def hasJndi: Boolean = {
     Try(computed.contains("jndi:")).getOrElse(false)
   }
   def computed: String
@@ -141,7 +141,7 @@ class Log4jShellFilter extends RequestTransformer {
         value.toLowerCase().contains("${jndi:http://") ||
         value.toLowerCase().contains("${jndi:ldap://") ||
         value.toLowerCase().contains("${jndi:") ||
-        Log4jExpression(Log4jExpressionParser.parse(value)).hasJNDI
+        Log4jExpressionParser.parseAsExp(value).hasJndi
     } else {
       false
     }

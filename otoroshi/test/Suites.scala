@@ -105,7 +105,8 @@ object OtoroshiTests {
       new ServicesApiSpec(name, config),
       new ApikeyGroupApiSpec(name, config),
       new ApikeyServiceApiSpec(name, config),
-      new ApikeyApiSpec(name, config)
+      new ApikeyApiSpec(name, config),
+      new Log4jShellSpec()
     )
     Option(System.getenv("TEST_ANALYTICS")) match {
       case Some("true") => suites :+ new AnalyticsSpec(name, config)
