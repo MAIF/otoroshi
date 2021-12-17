@@ -2,8 +2,33 @@ apiVersion: v1
 entries:
   otoroshi:
   - apiVersion: v3
+    appVersion: 1.5.0-rc.4
+    created: "2021-12-17T12:30:21.395655+01:00"
+    dependencies:
+    - condition: global.prod
+      name: redis
+      repository: https://charts.bitnami.com/bitnami
+      version: 15.0.0
+    description: An Otoroshi based Kubernetes ingress controller
+    digest: 4bc7a10682d1c014fb0507af24817a7bb95775a728d6243d55beecc249f78c40
+    icon: https://raw.githubusercontent.com/MAIF/otoroshi/master/resources/otoroshi-logo.png
+    keywords:
+    - otoroshi
+    - ingress
+    - reverseproxy
+    - apimanager
+    maintainers:
+    - name: mathieuancelin
+    name: otoroshi
+    sources:
+    - https://github.com/MAIF/otoroshi
+    type: application
+    urls:
+    - https://maif.github.io/otoroshi/helm/otoroshi-1.5.0-rc.4.tgz
+    version: 1.5.0-rc.4
+  - apiVersion: v3
     appVersion: 1.5.0-dev
-    created: "2021-12-16T14:19:09.423742+01:00"
+    created: "2021-12-17T12:30:21.390712+01:00"
     dependencies:
     - condition: global.prod
       name: redis
@@ -26,29 +51,4 @@ entries:
     urls:
     - https://maif.github.io/otoroshi/helm/otoroshi-1.5.0-dev.tgz
     version: 1.5.0-dev
-  - apiVersion: v3
-    appVersion: 1.5.0-dev
-    created: "2021-12-16T14:19:09.418622+01:00"
-    dependencies:
-    - condition: global.prod
-      name: redis
-      repository: https://charts.bitnami.com/bitnami
-      version: 15.0.0
-    description: An Otoroshi based Kubernetes ingress controller
-    digest: be6c59f21a0f46ee40ec0f3835b114656583c75c3cc2b3fa5c52a0703ff96351
-    icon: https://raw.githubusercontent.com/MAIF/otoroshi/master/resources/otoroshi-logo.png
-    keywords:
-    - otoroshi
-    - ingress
-    - reverseproxy
-    - apimanager
-    maintainers:
-    - name: mathieuancelin
-    name: otoroshi
-    sources:
-    - https://github.com/MAIF/otoroshi
-    type: application
-    urls:
-    - https://maif.github.io/otoroshi/helm/otoroshi-1.0.0.tgz
-    version: 1.0.0
-generated: "2021-12-16T14:19:09.412401+01:00"
+generated: "2021-12-17T12:30:21.382589+01:00"
