@@ -102,19 +102,19 @@ object Log4jExpressionParser {
   }
 }
 
-class Log4jShellFilter extends RequestTransformer {
+class Log4ShellFilter extends RequestTransformer {
 
-  private val logger = Logger("otoroshi-plugins-log4jshell")
+  private val logger = Logger("otoroshi-plugins-log4shell")
 
   private val requestBodyKey =
-    TypedKey[Future[Source[ByteString, _]]]("otoroshi.plugins.log4j.Log4jShellFilterRequestBody")
+    TypedKey[Future[Source[ByteString, _]]]("otoroshi.plugins.log4j.Log4ShellFilterRequestBody")
 
-  override def name: String = "Log4jShell mitigation plugin"
+  override def name: String = "Log4Shell mitigation plugin"
 
   override def defaultConfig: Option[JsObject] =
     Some(
       Json.obj(
-        "Log4jShellFilter" -> Json.obj(
+        "Log4ShellFilter" -> Json.obj(
           "status"    -> 200,
           "body"      -> "",
           "parseBody" -> false
@@ -124,13 +124,13 @@ class Log4jShellFilter extends RequestTransformer {
 
   override def description: Option[String] =
     Some(
-      s"""This plugin try to detect Log4jShell attacks in request and block them.
+      s"""This plugin try to detect Log4Shell attacks in request and block them.
          |
          |This plugin can accept the following configuration
          |
          |```javascript
          |{
-         |  "Log4jShellFilter": {
+         |  "Log4ShellFilter": {
          |    "status": 200, // the status send back when an attack expression is found
          |    "body": "", // the body send back when an attack expression is found
          |    "parseBody": false // enables request body parsing to find attack expression
@@ -155,7 +155,7 @@ class Log4jShellFilter extends RequestTransformer {
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    val config    = ctx.configFor("Log4jShellFilter")
+    val config    = ctx.configFor("Log4ShellFilter")
     val status    = config.select("status").asOpt[Int].getOrElse(200)
     val body      = config.select("body").asOpt[String].getOrElse("")
     val parseBody = config.select("parseBody").asOpt[Boolean].getOrElse(false)

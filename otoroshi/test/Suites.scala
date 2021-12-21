@@ -106,7 +106,7 @@ object OtoroshiTests {
       new ApikeyGroupApiSpec(name, config),
       new ApikeyServiceApiSpec(name, config),
       new ApikeyApiSpec(name, config),
-      new Log4jShellSpec()
+      new Log4ShellSpec()
     )
     Option(System.getenv("TEST_ANALYTICS")) match {
       case Some("true") => suites :+ new AnalyticsSpec(name, config)
@@ -146,7 +146,7 @@ class DevOtoroshiTests
       new AdminApiSpec("DEV", Configurations.InMemoryConfiguration)
     )
 
-class Log4jShellTests
+class Log4ShellTests
     extends Suites(
-      new Log4jShellSpec()
+      new Log4ShellSpec()
     )

