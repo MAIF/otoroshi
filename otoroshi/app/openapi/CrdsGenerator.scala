@@ -422,12 +422,7 @@ class CrdsGenerator(spec: JsValue) {
   def preserveUnknownFieldsSchema: JsValue = Json.obj(
     "openAPIV3Schema" -> Json.obj(
       "x-kubernetes-preserve-unknown-fields" -> true,
-      "type"                                 -> "object",
-      "properties"                           -> Json.obj(
-        "spec" -> Json.obj(
-          "type" -> "object"
-        )
-      )
+      "type"                                 -> "object"
     )
   )
 

@@ -20,9 +20,6 @@ spec:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
         type: "object"
-        properties:
-          spec:
-            type: "object"
   - name: "v1"
     served: true
     storage: true
@@ -102,9 +99,6 @@ spec:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
         type: "object"
-        properties:
-          spec:
-            type: "object"
   - name: "v1"
     served: true
     storage: true
@@ -302,9 +296,6 @@ spec:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
         type: "object"
-        properties:
-          spec:
-            type: "object"
   - name: "v1"
     served: true
     storage: true
@@ -1868,9 +1859,6 @@ spec:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
         type: "object"
-        properties:
-          spec:
-            type: "object"
   - name: "v1"
     served: true
     storage: true
@@ -1937,9 +1925,6 @@ spec:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
         type: "object"
-        properties:
-          spec:
-            type: "object"
   - name: "v1"
     served: true
     storage: true
@@ -2773,9 +2758,6 @@ spec:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
         type: "object"
-        properties:
-          spec:
-            type: "object"
   - name: "v1"
     served: true
     storage: true
@@ -2969,9 +2951,6 @@ spec:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
         type: "object"
-        properties:
-          spec:
-            type: "object"
   - name: "v1"
     served: true
     storage: true
@@ -3042,9 +3021,6 @@ spec:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
         type: "object"
-        properties:
-          spec:
-            type: "object"
   - name: "v1"
     served: true
     storage: true
@@ -3194,9 +3170,6 @@ spec:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
         type: "object"
-        properties:
-          spec:
-            type: "object"
   - name: "v1"
     served: true
     storage: true
@@ -3862,9 +3835,6 @@ spec:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
         type: "object"
-        properties:
-          spec:
-            type: "object"
   - name: "v1"
     served: true
     storage: true
@@ -4170,9 +4140,6 @@ spec:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
         type: "object"
-        properties:
-          spec:
-            type: "object"
   - name: "v1"
     served: true
     storage: true
@@ -4439,9 +4406,6 @@ spec:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
         type: "object"
-        properties:
-          spec:
-            type: "object"
   - name: "v1"
     served: true
     storage: true
@@ -4564,9 +4528,6 @@ spec:
       openAPIV3Schema:
         x-kubernetes-preserve-unknown-fields: true
         type: "object"
-        properties:
-          spec:
-            type: "object"
   - name: "v1"
     served: true
     storage: true
