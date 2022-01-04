@@ -911,7 +911,7 @@ export class DangerZonePage extends Component {
       type: 'select',
       props: {
         label: 'CA',
-        placeholder: 'Selet a CA certificate',
+        placeholder: 'Select a CA certificate',
         help: '...',
         valuesFrom: '/bo/api/proxy/api/certificates?ca=true',
         transformer: (a) => ({
@@ -949,7 +949,7 @@ export class DangerZonePage extends Component {
       type: 'array',
       props: {
         label: 'Trusted CAs (server)',
-        placeholder: 'Selet a CA certificate',
+        placeholder: 'Select a CA certificate',
         valuesFrom: '/bo/api/proxy/api/certificates?ca=true',
         transformer: (a) => ({
           value: a.id,
