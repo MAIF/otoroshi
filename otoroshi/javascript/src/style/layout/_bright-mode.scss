@@ -94,7 +94,8 @@ body.white-mode {
   .navbar-inverse .navbar-nav > li .dropdown-menu,
   textarea.form-control,
   .Select-menu-outer,
-  .plugin-doc {
+  .plugin-doc,
+  .ant-calendar, .ant-calendar-input, .ant-input  {
     @include bright-mode_background-color--light;
   }
 
@@ -133,7 +134,8 @@ body.white-mode {
   .Select-menu-outer,
   .is-open > .Select-control,
   .Select.is-focused > .Select-control,
-  .Select.is-focused:not(.is-open) > .Select-control {
+  .Select.is-focused:not(.is-open) > .Select-control,
+  .ant-calendar-input, .ant-input {
     @include bright-mode_color--darker;
   }
 
