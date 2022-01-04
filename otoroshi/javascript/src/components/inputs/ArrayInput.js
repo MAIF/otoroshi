@@ -100,7 +100,6 @@ export class ArrayInput extends Component {
             </label>
             <div className="col-sm-10" style={{ marginBottom: 20 }}>
               {values.length === 0 && (
-                <div className="col-sm-10">
                   <button
                     disabled={this.props.disabled}
                     type="button"
@@ -108,7 +107,6 @@ export class ArrayInput extends Component {
                     onClick={this.addFirst}>
                     <i className="fas fa-plus-circle" />{' '}
                   </button>
-                </div>
               )}
             </div>
           </div>
