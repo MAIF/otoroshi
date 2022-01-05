@@ -636,7 +636,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                         case Some(apk) => FastFuture.successful(apk)
                                         case None      =>
                                           if (env.clusterConfig.mode.isWorker) {
-                                            ClusterAgent.clusterSaveApikey(env, _apiKey)
+                                            ClusterAgent.clusterSaveApikey(env, _apiKey)(ec, env.otoroshiMaterializer)
                                           }
                                           _apiKey.save().map { _ =>
                                             _apiKey

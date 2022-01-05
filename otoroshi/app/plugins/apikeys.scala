@@ -236,7 +236,7 @@ class CertificateAsApikey extends PreRouting {
                 metadata = (conf \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
               )
               if (env.clusterConfig.mode.isWorker) {
-                ClusterAgent.clusterSaveApikey(env, apikey)
+                ClusterAgent.clusterSaveApikey(env, apikey)(ec, env.otoroshiMaterializer)
               }
               apikey.save().map(_ => apikey)
             }

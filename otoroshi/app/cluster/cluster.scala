@@ -585,7 +585,7 @@ object ClusterAgent {
   def apply(config: ClusterConfig, env: Env) = new ClusterAgent(config, env)
 
   private def clusterGetApikey(env: Env, id: String)(implicit
-      executionContext: ExecutionContext
+      executionContext: ExecutionContext, mat: Materializer
   ): Future[Option[JsValue]] = {
     val cfg         = env.clusterConfig
     val otoroshiUrl = cfg.leader.urls.head
@@ -600,17 +600,19 @@ object ClusterAgent {
       .get()
       .map {
         case r if r.status == 200 => r.json.some
-        case _                    => None
+        case r                    =>
+          r.ignore()
+          None
       }
   }
 
-  def clusterSaveApikey(env: Env, apikey: ApiKey)(implicit executionContext: ExecutionContext): Future[Unit] = {
+  def clusterSaveApikey(env: Env, apikey: ApiKey)(implicit executionContext: ExecutionContext, mat: Materializer): Future[Unit] = {
     val cfg         = env.clusterConfig
     val otoroshiUrl = cfg.leader.urls.head
     clusterGetApikey(env, apikey.clientId)
       .flatMap {
         case None    => {
-          env.MtlsWs
+          val request = env.MtlsWs
             .url(otoroshiUrl + s"/api/apikeys", cfg.mtlsConfig)
             .withHttpHeaders(
               "Host" -> cfg.leader.host
@@ -618,10 +620,14 @@ object ClusterAgent {
             .withAuth(cfg.leader.clientId, cfg.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(cfg.worker.timeout, TimeUnit.MILLISECONDS))
             .withMaybeProxyServer(cfg.proxy)
-            .post(apikey.toJson)
+          request.post(apikey.toJson)
+            .map(_.ignore())
+            .andThen {
+              case Failure(_) => request.ignore()
+            }
         }
         case Some(_) => {
-          env.MtlsWs
+          val request = env.MtlsWs
             .url(otoroshiUrl + s"/api/apikeys/${apikey.clientId}", cfg.mtlsConfig)
             .withHttpHeaders(
               "Host" -> cfg.leader.host
@@ -629,7 +635,11 @@ object ClusterAgent {
             .withAuth(cfg.leader.clientId, cfg.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(cfg.worker.timeout, TimeUnit.MILLISECONDS))
             .withMaybeProxyServer(cfg.proxy)
-            .put(apikey.toJson)
+          request.put(apikey.toJson)
+            .map(_.ignore())
+            .andThen {
+              case Failure(_) => request.ignore()
+            }
         }
       }
       .map(_ => ())
@@ -902,10 +912,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .get()
             .filter { resp =>
               if (resp.status == 200) Cluster.logger.debug(s"Login token $token is valid")
-              resp.ignoreIf(resp.status != 200)
+              resp.ignore() // ignoreIf(resp.status != 200)
               resp.status == 200
             }
-            .map(resp => true)
+            .map(_ => true)
         }
         .recover { case e =>
           Cluster.logger.debug(
@@ -967,7 +977,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           factor = config.retryFactor,
           ctx = "leader-create-login-token"
         ) { tryCount =>
-          env.MtlsWs
+          val request = env.MtlsWs
             .url(otoroshiUrl + s"/api/cluster/login-tokens/$token", config.mtlsConfig)
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
@@ -978,13 +988,16 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
             .withMaybeProxyServer(config.proxy)
-            .post(Json.obj())
+          request.post(Json.obj())
+            .andThen {
+              case Failure(_) => request.ignore()
+            }
             .filter { resp =>
               Cluster.logger.debug(s"login token for ${token} created on the leader ${resp.status}")
-              resp.ignoreIf(resp.status != 201)
+              resp.ignore() // ignoreIf(resp.status != 201)
               resp.status == 201
             }
-            .map(resp => Some(token))
+            .map(_ => Some(token))
         }
     } else {
       FastFuture.successful(None)
@@ -1001,7 +1014,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           factor = config.retryFactor,
           ctx = "leader-create-user-token"
         ) { tryCount =>
-          env.MtlsWs
+          val request = env.MtlsWs
             .url(otoroshiUrl + s"/api/cluster/user-tokens", config.mtlsConfig)
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
@@ -1012,13 +1025,16 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
             .withMaybeProxyServer(config.proxy)
-            .post(user)
+          request.post(user)
+            .andThen {
+              case Failure(_) => request.ignore()
+            }
             .filter { resp =>
               Cluster.logger.debug(s"User token for ${token} created on the leader ${resp.status}")
-              resp.ignoreIf(resp.status != 201)
+              resp.ignore() // ignoreIf(resp.status != 201)
               resp.status == 201
             }
-            .map(resp => Some(()))
+            .map(_ => Some(()))
         }
     } else {
       FastFuture.successful(None)
@@ -1074,7 +1090,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           factor = config.retryFactor,
           ctx = "leader-create-session"
         ) { tryCount =>
-          env.MtlsWs
+          val request = env.MtlsWs
             .url(otoroshiUrl + s"/api/cluster/sessions", config.mtlsConfig)
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
@@ -1085,7 +1101,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
             .withMaybeProxyServer(config.proxy)
-            .post(user.toJson)
+          request.post(user.toJson)
+            .andThen {
+              case Failure(_) => request.ignore()
+            }
             .filter { resp =>
               Cluster.logger.debug(s"Session for ${user.name} created on the leader ${resp.status}")
               resp.ignoreIf(resp.status != 201)
@@ -1168,7 +1187,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             factor = config.retryFactor,
             ctx = "leader-fetch-state"
           ) { tryCount =>
-            env.MtlsWs
+            val request = env.MtlsWs
               .url(otoroshiUrl + s"/api/cluster/state?budget=${config.worker.state.timeout}", config.mtlsConfig)
               .withHttpHeaders(
                 "Host"                                    -> config.leader.host,
@@ -1181,7 +1200,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
               .withMaybeProxyServer(config.proxy)
               .withMethod("GET")
-              .stream()
+            request.stream()
               .filter { resp =>
                 resp.ignoreIf(resp.status != 200)
                 resp.status == 200
@@ -1195,6 +1214,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   Cluster.logger.warn(
                     s"State data coming from '$nodeName' is too old (${from.toString()}). Maybe the leader node '$nodeName' has an issue and needs to be restarted. Failing state fetch !"
                   )
+                  resp.ignore()
                 }
                 predicate
               }
@@ -1382,7 +1402,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               val globalSource      = Source.single(stats)
               val body              = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(env.clusterConfig.gzip())
               val wsBody            = SourceBody(body)
-              env.MtlsWs
+              val request = env.MtlsWs
                 .url(otoroshiUrl + s"/api/cluster/quotas?budget=${config.worker.quotas.timeout}", config.mtlsConfig)
                 .withHttpHeaders(
                   "Host"                                    -> config.leader.host,
@@ -1396,7 +1416,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 .withMaybeProxyServer(config.proxy)
                 .withMethod("PUT")
                 .withBody(wsBody)
-                .stream()
+              request.stream()
+                .andThen {
+                  case Failure(_) => request.ignore()
+                }
                 .filter { resp =>
                   resp.ignore()
                   resp.status == 200

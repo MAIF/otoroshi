@@ -1311,17 +1311,20 @@ case class AkkaWsClientRequest(
       .map(_.head)
   }
 
-  def buildRequest(): HttpRequest = {
-    // val internalUri = Uri(rawUrl)
-    val ct                               = realContentType.getOrElse(ContentTypes.`application/octet-stream`)
-    val cl                               = realContentLength
-    // val ua = realUserAgent.flatMap(s => Try(`User-Agent`(s)).toOption)
-    val (akkaHttpEntity, updatedHeaders) = body match {
+  lazy val (akkaHttpEntity, updatedHeaders) = {
+    val ct                                   = realContentType.getOrElse(ContentTypes.`application/octet-stream`)
+    val cl                                   = realContentLength
+    body match {
       case EmptyBody                         => (HttpEntity.Empty, headers)
       case InMemoryBody(bytes)               => (HttpEntity.apply(ct, bytes), headers)
       case SourceBody(bytes) if cl.isDefined => (HttpEntity(ct, cl.get, bytes), headers)
       case SourceBody(bytes)                 => (HttpEntity(ct, bytes), headers)
     }
+  }
+
+  def buildRequest(): HttpRequest = {
+    // val internalUri = Uri(rawUrl)
+    // val ua = realUserAgent.flatMap(s => Try(`User-Agent`(s)).toOption)
     val akkaHeaders: List[HttpHeader]    = updatedHeaders
       .flatMap { case (key, values) =>
         values.distinct.map(value => HttpHeader.parse(key, value))
@@ -1475,6 +1478,17 @@ object Implicits {
       req match {
         case areq: AkkaWsClientRequest => areq.withFailureIndicator(alreadyFailed).asInstanceOf[req.Self]
         case _                         => req.asInstanceOf[req.Self]
+      }
+    }
+    def ignore()(implicit mat: Materializer): req.Self = {
+      req match {
+        case httpRequest: AkkaWsClientRequest =>
+          Try(httpRequest.akkaHttpEntity.dataBytes.runWith(Sink.ignore)(mat)) match {
+            case Failure(e) => logger.error("Error while discarding request entity bytes ...", e)
+            case _          => ()
+          }
+          req.asInstanceOf[req.Self]
+        case _                          => req.asInstanceOf[req.Self]
       }
     }
   }

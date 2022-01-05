@@ -9,8 +9,8 @@ import otoroshi.env.Env
 import javax.net.ssl.{KeyManager, SSLEngine, SSLSession, X509ExtendedKeyManager, X509KeyManager}
 import otoroshi.models.{GlobalConfig, TlsSettings}
 import otoroshi.utils.http.DN
-
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
 
 import scala.concurrent.duration._
 
@@ -37,6 +37,8 @@ object DynamicKeyManager {
 class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X509KeyManager, env: Env)
     extends X509ExtendedKeyManager {
 
+  // private val logger = Logger("otoroshi-dyn-key-manager")
+
   override def getClientAliases(keyType: String, issuers: Array[Principal]): Array[String] =
     manager.getClientAliases(keyType, issuers)
 
@@ -56,6 +58,7 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
   }
 
   def findCertMatching(domain: String): Option[Cert] = {
+    // logger.debug(s"[${domain}] trying to find cert")
     if (client) {
       val allCertificates = allCerts()
       if (allCertificates.isEmpty) {
@@ -76,7 +79,9 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
       }
     } else {
       DynamicKeyManager.cache.getIfPresent(domain) match {
-        case Some(cert) => Some(cert)
+        case Some(cert) =>
+          // logger.debug(s"[${domain}] found cert from cache: ${cert.id} - '${cert.name}'")
+          Some(cert)
         case None       => {
 
           val tlsSettings = env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings).getOrElse(TlsSettings())
@@ -126,11 +131,16 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
                 .headOption
                 .map { c =>
                   DynamicKeyManager.cache.put(domain, c)
+                  // logger.debug(s"[${domain}] found random cert : ${c.id} - '${c.name}'")
                   c
                 }
             }
-            case None                                 => None
-            case s @ Some(_)                          => s
+            case None                                 =>
+              // logger.debug(s"[${domain}] no cert found !")
+              None
+            case s @ Some(cert)                       =>
+              // logger.debug(s"[${domain}] found cert : ${cert.id} - '${cert.name}'")
+              s
           }
         }
       }
@@ -138,6 +148,7 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
   }
 
   override def getCertificateChain(domain: String): Array[X509Certificate] = {
+    // logger.debug(s"[${domain}] trying to get cert chain ...")
     findCertMatching(domain) match {
       case None       => manager.getCertificateChain(domain)
       case Some(cert) => cert.certificatesChain
@@ -145,6 +156,7 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
   }
 
   override def getPrivateKey(domain: String): PrivateKey = {
+    // logger.debug(s"[${domain}] trying to get private key ...")
     findCertMatching(domain) match {
       case None       => manager.getPrivateKey(domain)
       case Some(cert) => cert.cryptoKeyPair.getPrivate
@@ -161,6 +173,7 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
         val replyNicelyEnabled     = latestConfig.exists(_.autoCert.replyNicely)
         val sessionKey             = SSLSessionJavaHelper.computeKey(engine.getHandshakeSession)
         val matchesAutoCertDomains = latestConfig.exists(_.autoCert.matches(domain))
+        // logger.debug(s"trying to extract domain from SNI. default is '${defaultDomain}'")
         findCertMatching(domain) match {
           case Some(cert)                                                                =>
             sessionKey.foreach(key =>

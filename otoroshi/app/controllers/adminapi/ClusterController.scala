@@ -4,7 +4,6 @@ import java.io.File
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
-
 import otoroshi.actions.ApiAction
 import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
@@ -25,7 +24,7 @@ import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.Future
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
     env: Env
@@ -559,7 +558,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
 
             if (env.clusterConfig.autoUpdateState) {
               Cluster.logger.debug(
-                s"[${env.clusterConfig.mode.name}] Sending state from auto cache (${env.clusterLeaderAgent.cachedCount} items / ${cachedValue.size / 1024} Kb) ..."
+                s"[${env.clusterConfig.mode.name}] Sending state from auto cache (${Option(env.clusterLeaderAgent.cachedCount).getOrElse(0L)} items / ${Option(cachedValue).getOrElse(ByteString.empty).size / 1024} Kb) ..."
               )
               Ok.sendEntity(
                 HttpEntity
