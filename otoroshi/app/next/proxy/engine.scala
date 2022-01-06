@@ -68,7 +68,6 @@ class ProxyEngine() extends RequestHandler {
       _               <- handleTenantCheck(route)
       _               =  report.markDoneAndStart("check-global-maintenance")
       _               <- checkGlobalMaintenance(route)
-      // TODO: handle route enabled (if needed)
       _               =  report.markDoneAndStart("call-before-request-callbacks")
       _               <- callPluginsBeforeRequestCallback(request, route)
       _               =  report.markDoneAndStart("call-pre-route-plugins")
@@ -80,16 +79,15 @@ class ProxyEngine() extends RequestHandler {
       remQuotas       <- checkGlobalLimits(request, route) // generic.scala (1269)
       _               =  report.markDoneAndStart("choose-backend")
       result          <- callTarget(request, route) { backend =>
-        report.markDoneAndStart("transform-requests")
+        report.markDoneAndStart("check-high-overhead")
         for {
-          // TODO: handle high overhead alerting
-          // TODO: transform in one step
+          _             <- handleHighOverhead(request, route)
+          _             =  report.markDoneAndStart("transform-requests")
           finalRequest  <- callRequestTransformer(request, route, backend)
           _             =  report.markDoneAndStart("transform-request-body")
           _             =  report.markDoneAndStart("call-backend")
           response      <- callBackend(request, finalRequest, route, backend)
           _             =  report.markDoneAndStart("transform-response")
-          // TODO: transform in one step
           finalResp     <- callResponseTransformer(request, response, remQuotas, route, backend)
           _             =  report.markDoneAndStart("transform-response-body")
           _             =  report.markDoneAndStart("stream-response")
@@ -120,6 +118,11 @@ class ProxyEngine() extends RequestHandler {
         logger.info(report.json.prettify)
         // logger.info(report.json.asObject.-("steps").prettify)
     }
+  }
+
+  def handleHighOverhead(value: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, Done] = {
+    // TODO: handle high overhead alerting
+    FEither.right(Done)
   }
 
   def handleConcurrentRequest()(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, Done] = {

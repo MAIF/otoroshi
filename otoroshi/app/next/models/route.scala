@@ -66,19 +66,23 @@ case class Route(
   )
 
   def matches(request: RequestHeader)(implicit env: Env): Boolean = {
-    val path = request.thePath
-    val domain = request.theDomain
-    frontend.domains
-      .filter(d => d.domain == domain || RegexPool(d.domain).matches(domain))
-      .filter(d => path.startsWith(d.path) || RegexPool(d.path).matches(path))
-      .nonEmpty
-      .applyOnIf(frontend.headers.nonEmpty) { firstRes =>
-        val headers = request.headers.toSimpleMap.map(t => (t._1.toLowerCase, t._2))
-        val secondRes = frontend.headers.map(t => (t._1.toLowerCase, t._2)).forall {
-          case (key, value) => headers.get(key).contains(value)
+    if (enabled) {
+      val path = request.thePath
+      val domain = request.theDomain
+      frontend.domains
+        .filter(d => d.domain == domain || RegexPool(d.domain).matches(domain))
+        .filter(d => path.startsWith(d.path) || RegexPool(d.path).matches(path))
+        .nonEmpty
+        .applyOnIf(frontend.headers.nonEmpty) { firstRes =>
+          val headers = request.headers.toSimpleMap.map(t => (t._1.toLowerCase, t._2))
+          val secondRes = frontend.headers.map(t => (t._1.toLowerCase, t._2)).forall {
+            case (key, value) => headers.get(key).contains(value)
+          }
+          firstRes && secondRes
         }
-        firstRes && secondRes
-      }
+    } else {
+      false
+    }
   }
 }
 
