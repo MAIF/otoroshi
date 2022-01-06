@@ -64,6 +64,7 @@ class ProxyEngine() extends RequestHandler {
       _               <- handleConcurrentRequest()
       _               =  report.markDoneAndStart("find-route")
       route           <- findRoute(request)
+      _               =  report.setRoute(route.json)
       _               =  report.markDoneAndStart("tenant-check")
       _               <- handleTenantCheck(route)
       _               =  report.markDoneAndStart("check-global-maintenance")
@@ -184,7 +185,7 @@ class ProxyEngine() extends RequestHandler {
   def callTarget(request: Request[Source[ByteString, _]], route: Route)(f: Backend => FEither[ProxyEngineError, Result])(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, Result] = {
     // TODO: implements
     // TODO: handle circuit breaker and target stuff
-    val backend = route.target.backends.head
+    val backend = route.backend.backends.head
     f(backend)
   }
   def maybeStrippedUri(req: RequestHeader, rawUri: String, route: Route): String = {
@@ -214,7 +215,7 @@ class ProxyEngine() extends RequestHandler {
       )
     )
     val target = backend.toTarget
-    val root   = route.target.root
+    val root   = route.backend.root
     val rawUri = request.relativeUri.substring(1)
     val uri    = maybeStrippedUri(request, rawUri, route)
     FEither.right(HttpRequest(
@@ -402,6 +403,7 @@ class ExecutionReport(id: String, creation: DateTime) {
   var overheadOut = -1L
   var overheadOutStart = creation.toDate.getTime
   var termination = creation
+  var route: JsValue = JsNull
 
   def errToJson(error: Throwable): JsValue = {
     Json.obj(
@@ -426,8 +428,14 @@ class ExecutionReport(id: String, creation: DateTime) {
     "overhead_in" -> overheadIn,
     "overhead_out" -> overheadOut,
     "state" -> state.json,
+    "route" -> route,
     "steps" -> JsArray(steps.map(_.json))
   )
+
+  def setRoute(r: JsValue): ExecutionReport = {
+    route = r
+    this
+  }
 
   def markOverheadIn(): ExecutionReport = {
     overheadIn = System.currentTimeMillis() - creation.getMillis

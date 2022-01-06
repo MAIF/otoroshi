@@ -41,7 +41,7 @@ case class Route(
     metadata: Map[String, String],
     enabled: Boolean,
     frontend: Frontend,
-    target: Target,
+    backend: Target,
     client: ClientConfig,
     healthCheck: HealthCheck,
     plugins: Plugins
@@ -59,7 +59,7 @@ case class Route(
     "metadata" -> metadata,
     "enabled" -> enabled,
     "frontend" -> frontend.json,
-    "target" -> target.json,
+    "backend" -> backend.json,
     "client" -> client.toJson,
     "health_check" -> healthCheck.toJson,
     "plugins" -> plugins.json
@@ -100,7 +100,7 @@ object Route {
       headers = Map.empty,
       stripPath = true,
     ),
-    target = Target(
+    backend = Target(
       backends = Seq(Backend(
         hostname = "mirror.otoroshi.io",
         port = 443,

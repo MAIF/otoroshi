@@ -11,7 +11,7 @@ case class PluginInstance(plugin: String, enabled: Boolean, include: Seq[String]
     "enabled" -> enabled,
     "plugin" -> plugin,
     "include" -> include,
-    "include" -> exclude,
+    "exclude" -> exclude,
     "config" -> config.json
   )
 }
