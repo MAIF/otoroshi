@@ -139,6 +139,7 @@ case class EntityLocation(tenant: TenantId = TenantId.default, teams: Seq[TeamId
 }
 
 object EntityLocation {
+  val default = EntityLocation()
   val keyName = "_loc"
   val format  = new Format[EntityLocation] {
     override def writes(o: EntityLocation): JsValue             =

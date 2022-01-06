@@ -151,24 +151,32 @@ case class Plugins(
     }
   }
 
-  private val request_handlers_ref = new AtomicReference[Map[String, RequestHandler]]()
+  private val request_handlers_ref = new AtomicReference[(Boolean, Map[String, RequestHandler])]()
 
   private def getHandlersMap(
       request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Map[String, RequestHandler] =
+  )(implicit ec: ExecutionContext, env: Env): (Boolean, Map[String, RequestHandler]) =
     env.metrics.withTimer("otoroshi.plugins.req-handlers.handlers-map-compute") {
       request_handlers_ref.getOrSet {
         val handlers = getPlugins[RequestHandler](request)
-        handlers.flatMap(h => plugin[RequestHandler](h)).flatMap(rh => rh.handledDomains.map(d => (d, rh))).toMap
+        val handlersMap = handlers.flatMap(h => plugin[RequestHandler](h)).flatMap(rh => rh.handledDomains.map(d => (d, rh))).toMap
+        val hasWildcard = handlersMap.keys.exists(_.contains("*"))
+        (hasWildcard, handlersMap)
       }
     }
 
   def canHandleRequest(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Boolean =
     env.metrics.withTimer("otoroshi.plugins.req-handlers.can-handle-request") {
       if (enabled) {
-        val handlersMap = getHandlersMap(request)
+        val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)
         if (handlersMap.nonEmpty) {
-          handlersMap.contains(request.theDomain)
+          if (handlersMapHasWildcard) {
+            handlersMap.exists {
+              case (key, _) => RegexPool(key).matches(request.theDomain)
+            }
+          } else {
+            handlersMap.contains(request.theDomain)
+          }
         } else {
           false
         }
@@ -182,8 +190,9 @@ case class Plugins(
       defaultRouting: Request[Source[ByteString, _]] => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     if (enabled) {
-      val handlersMap = getHandlersMap(request)
-      handlersMap.get(request.theDomain) match {
+      val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)
+      val maybeHandler = if (handlersMapHasWildcard) handlersMap.find(t => RegexPool(t._1).matches(request.theDomain)).map(_._2) else handlersMap.get(request.theDomain)
+      maybeHandler match {
         case None          => defaultRouting(request)
         case Some(handler) => handler.handle(request, defaultRouting)
       }
