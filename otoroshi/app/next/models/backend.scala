@@ -17,6 +17,7 @@ case class Backend(id: String, name: String, description: String, tags: Seq[Stri
 }
 */
 
+// TODO: handle 2 kind of backend, one inline, one that reference a stored backend
 case class Backend(
   hostname: String,
   port: Int,

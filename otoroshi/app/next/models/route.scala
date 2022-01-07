@@ -10,14 +10,14 @@ import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.libs.json.{JsArray, JsString, JsValue, Json}
 import play.api.mvc.RequestHeader
 
-case class Domain(raw: String) {
+case class DomainAndPath(raw: String) {
   private lazy val parts = raw.split("\\/")
   lazy val domain = parts.head
   lazy val path = if (parts.size == 1) "/" else parts.tail.mkString("/", "/", "")
   def json: JsValue = JsString(raw)
 }
 
-case class Frontend(domains: Seq[Domain], headers: Map[String, String], stripPath: Boolean) {
+case class Frontend(domains: Seq[DomainAndPath], headers: Map[String, String], stripPath: Boolean) {
   def json: JsValue = Json.obj(
     "domains" -> JsArray(domains.map(_.json)),
     "stripPath" -> stripPath,
@@ -25,27 +25,27 @@ case class Frontend(domains: Seq[Domain], headers: Map[String, String], stripPat
   )
 }
 
-case class Target(backends: Seq[Backend], root: String, loadBalancing: LoadBalancing) {
+case class Backends(targets: Seq[Backend], root: String, loadBalancing: LoadBalancing) {
   def json: JsValue = Json.obj(
-    "backends" -> JsArray(backends.map(_.json)),
+    "targets" -> JsArray(targets.map(_.json)),
     "root" -> root,
     "loadBalancing" -> loadBalancing.toJson
   )
 }
 
 case class Route(
-    location: EntityLocation,
-    id: String,
-    name: String,
-    description: String,
-    tags: Seq[String],
-    metadata: Map[String, String],
-    enabled: Boolean,
-    frontend: Frontend,
-    backend: Target,
-    client: ClientConfig,
-    healthCheck: HealthCheck,
-    plugins: Plugins
+  location: EntityLocation,
+  id: String,
+  name: String,
+  description: String,
+  tags: Seq[String],
+  metadata: Map[String, String],
+  enabled: Boolean,
+  frontend: Frontend,
+  backends: Backends,
+  client: ClientConfig,
+  healthCheck: HealthCheck,
+  plugins: Plugins
 ) extends EntityLocationSupport {
   override def internalId: String = id
   override def theName: String = name
@@ -60,7 +60,7 @@ case class Route(
     "metadata" -> metadata,
     "enabled" -> enabled,
     "frontend" -> frontend.json,
-    "backend" -> backend.json,
+    "backend" -> backends.json,
     "client" -> client.toJson,
     "health_check" -> healthCheck.toJson,
     "plugins" -> plugins.json
@@ -101,12 +101,12 @@ object Route {
     metadata = Map.empty,
     enabled = true,
     frontend = Frontend(
-      domains = Seq(Domain("fake-next-gen.oto.tools")),
+      domains = Seq(DomainAndPath("fake-next-gen.oto.tools")),
       headers = Map.empty,
       stripPath = true,
     ),
-    backend = Target(
-      backends = Seq(Backend(
+    backends = Backends(
+      targets = Seq(Backend(
         hostname = "mirror.otoroshi.io",
         port = 443,
         tls = true

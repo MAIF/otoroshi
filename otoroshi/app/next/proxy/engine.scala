@@ -280,7 +280,7 @@ class ProxyEngine() extends RequestHandler {
   def callTarget(request: Request[Source[ByteString, _]], route: Route)(f: Backend => FEither[ProxyEngineError, Result])(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, Result] = {
     // TODO: implements
     // TODO: handle circuit breaker and target stuff
-    val backend = route.backend.backends.head
+    val backend = route.backends.targets.head
     f(backend)
   }
   def maybeStrippedUri(req: RequestHeader, rawUri: String, route: Route): String = {
@@ -310,7 +310,7 @@ class ProxyEngine() extends RequestHandler {
       )
     )
     val target = backend.toTarget
-    val root   = route.backend.root
+    val root   = route.backends.root
     val rawUri = request.relativeUri.substring(1)
     val uri    = maybeStrippedUri(request, rawUri, route)
     FEither.right(HttpRequest(
