@@ -1,7 +1,8 @@
 package otoroshi.next.models
 
 import otoroshi.env.Env
-import otoroshi.models.{ClientConfig, EntityLocation, EntityLocationSupport, HealthCheck, LoadBalancing, RoundRobin}
+import otoroshi.models.{ClientConfig, EntityLocation, EntityLocationSupport, HealthCheck, LoadBalancing, RoundRobin, ServiceDescriptor}
+import otoroshi.script.{Job, JobId}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.RegexPool
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
@@ -84,9 +85,13 @@ case class Route(
       false
     }
   }
+  // TODO: implements. not a complete one, just for compatibility purposes
+  def toServiceDescriptor()
 }
 
 object Route {
+  // TODO: implements
+  def fromServiceDescriptor(service: ServiceDescriptor): Route = ???
   val fake = Route(
     location = EntityLocation.default,
     id = s"route_${IdGenerator.uuid}",
@@ -121,4 +126,9 @@ object Route {
       ))
     )
   )
+}
+
+// TODO: implements
+class RouteLoaderJob() extends Job {
+  override def uniqueId: JobId = ???
 }
