@@ -86,7 +86,7 @@ case class Route(
     }
   }
   // TODO: implements. not a complete one, just for compatibility purposes
-  def toServiceDescriptor()
+  def toServiceDescriptor(): ServiceDescriptor = ???
 }
 
 object Route {
