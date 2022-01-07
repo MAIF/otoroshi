@@ -240,7 +240,7 @@ class ProxyEngine() extends RequestHandler {
 
   def findRoute(request: Request[Source[ByteString, _]])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport): FEither[ProxyEngineError, Route] = {
     // TODO: we need something smarter, sort paths by length when there is a wildcard, then same for domains. We need to aggregate on domains
-    routes.values.find(r => r.matches(request)) match {
+    routes.values.filter(_.enabled).find(r => r.matches(request)) match {
       case Some(route) => FEither.right(route)
       case None =>
         report.markFailure(s"route not found for domain: '${request.theDomain}${request.thePath}'")

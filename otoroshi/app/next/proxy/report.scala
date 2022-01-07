@@ -34,6 +34,7 @@ case class ExecutionReportStep(task: String, start: Long, stop: Long, duration: 
 
 class ExecutionReport(val id: String, val creation: DateTime) {
 
+  // TODO: move into one big case class with mutable ref ?
   // I know mutability is bad etc but here, i know for sure that concurrency is not an issue
   var currentTask: String = ""
   var lastStart: Long = creation.toDate.getTime
