@@ -5,24 +5,26 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.models.RemainingQuotas
+import otoroshi.events.{Alerts, Audit, MaxConcurrentRequestReachedAlert, MaxConcurrentRequestReachedEvent}
+import otoroshi.gateway.Errors
+import otoroshi.models.{GlobalConfig, RemainingQuotas}
 import otoroshi.next.models.{Backend, Route}
-import otoroshi.next.proxy.ProxyEngineError.ResultProxyEngineError
+import otoroshi.next.proxy.ProxyEngineError._
+import otoroshi.next.utils.FEither
 import otoroshi.script.{HttpRequest, HttpResponse, RequestHandler}
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.UrlSanitizer
-import otoroshi.utils.http.Implicits.{BetterStandaloneWSRequest, BetterStandaloneWSResponse}
-import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
+import otoroshi.utils.{TypedMap, UrlSanitizer}
+import otoroshi.utils.http.Implicits._
+import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.ws.WSResponse
-import play.api.mvc.Results.Status
 import play.api.mvc._
 
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
@@ -31,6 +33,7 @@ class ProxyEngine() extends RequestHandler {
 
   private val logger = Logger("otoroshi-next-gen-proxy-engine")
   private val fakeFailureIndicator = new AtomicBoolean(false)
+  private val reqCounter  = new AtomicInteger(0)
   private val routes = TrieMap.newBuilder[String, Route]
     .+=(Route.fake.id -> Route.fake)
     .result()
@@ -45,6 +48,8 @@ class ProxyEngine() extends RequestHandler {
     Json.obj(
       configRoot.get -> Json.obj(
         "enabled" -> true,
+        "debug" -> false,
+        "debug_headers" -> true,
         "domains" -> Json.arr()
       )
     ).some
@@ -56,16 +61,59 @@ class ProxyEngine() extends RequestHandler {
   }
 
   override def handle(request: Request[Source[ByteString, _]], defaultRouting: Request[Source[ByteString, _]] => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    val handleStart = System.currentTimeMillis()
+    implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
+    val config = globalConfig.plugins.config.select(configRoot.get).asOpt[JsObject].getOrElse(Json.obj())
+    val enabled = config.select("enabled").asOpt[Boolean].getOrElse(true)
+    if (enabled) {
+      handleRequest(request, config)
+    } else {
+      defaultRouting(request)
+    }
+  }
+
+  def handleRequest(request: Request[Source[ByteString, _]], config: JsObject)(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig): Future[Result] = {
     val requestId = IdGenerator.uuid
     implicit val report = ExecutionReport(requestId)
+
+    val debug = config.select("debug").asOpt[Boolean].getOrElse(false)
+    val debugHeaders = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
+
+    val snowflake           = env.snowflakeGenerator.nextIdStr()
+    val callDate            = DateTime.now()
+    val requestTimestamp    = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
+    val reqNumber           = reqCounter.incrementAndGet()
+    val remoteAddress       = request.theIpAddress
+    val isSecured           = request.theSecured
+    val from                = request.theIpAddress
+    val counterIn           = new AtomicLong(0L)
+    val counterOut          = new AtomicLong(0L)
+    val start               = System.currentTimeMillis()
+    val bodyAlreadyConsumed = new AtomicBoolean(false)
+    val protocol            = request.theProtocol
+    implicit val attrs      = TypedMap.empty.put(
+      otoroshi.plugins.Keys.RequestNumberKey     -> reqNumber,
+      otoroshi.plugins.Keys.SnowFlakeKey         -> snowflake,
+      otoroshi.plugins.Keys.RequestTimestampKey  -> callDate,
+      otoroshi.plugins.Keys.RequestStartKey      -> start,
+      otoroshi.plugins.Keys.RequestWebsocketKey  -> false,
+      otoroshi.plugins.Keys.RequestCounterInKey  -> counterIn,
+      otoroshi.plugins.Keys.RequestCounterOutKey -> counterOut
+    )
+
+    val elCtx: Map[String, String] = Map(
+      "requestId"        -> snowflake,
+      "requestSnowflake" -> snowflake,
+      "requestTimestamp" -> requestTimestamp
+    )
+
+    attrs.put(otoroshi.plugins.Keys.ElCtxKey -> elCtx)
+
     report.start("check-concurrent-requests")
     (for {
-      _               <- handleConcurrentRequest()
+      _               <- handleConcurrentRequest(request)
       _               =  report.markDoneAndStart("find-route")
       route           <- findRoute(request)
-      _               =  report.setRoute(route.json)
-      _               =  report.markDoneAndStart("tenant-check")
+      _               =  report.markDoneAndStart("tenant-check", Json.obj("found_route" -> route.json).some)
       _               <- handleTenantCheck(route)
       _               =  report.markDoneAndStart("check-global-maintenance")
       _               <- checkGlobalMaintenance(route)
@@ -78,7 +126,7 @@ class ProxyEngine() extends RequestHandler {
       _               <- callAccessValidatorPlugins(request, route)
       _               =  report.markDoneAndStart("enforce-global-limits")
       remQuotas       <- checkGlobalLimits(request, route) // generic.scala (1269)
-      _               =  report.markDoneAndStart("choose-backend")
+      _               =  report.markDoneAndStart("choose-backend", Json.obj("remaining_quotas" -> remQuotas.toJson).some)
       result          <- callTarget(request, route) { backend =>
         report.markDoneAndStart("check-high-overhead")
         for {
@@ -94,6 +142,7 @@ class ProxyEngine() extends RequestHandler {
           _             =  report.markDoneAndStart("stream-response")
           clientResp    <- streamResponse(request, response, finalResp, route, backend)
           _             =  report.markDoneAndStart("call-after-request-callbacks")
+          // TODO: call after callback when shortcircuited too
           _             <- callPluginsAfterRequestCallback(request, route)
           _             =  report.markDoneAndStart("trigger-analytics")
           _             <- triggerProxyDone(request, response, route, backend)
@@ -103,8 +152,7 @@ class ProxyEngine() extends RequestHandler {
       result
     }).value.flatMap {
       case Left(error)   =>
-        report.markDoneAndStart("rendering intermediate result")
-        report.markSuccess()
+        report.markDoneAndStart("rendering intermediate result").markSuccess()
         error.asResult()
       case Right(result) =>
         report.markSuccess()
@@ -116,8 +164,24 @@ class ProxyEngine() extends RequestHandler {
     }.andThen {
       case _ =>
         report.markOverheadOut()
-        logger.info(report.json.prettify)
-        // logger.info(report.json.asObject.-("steps").prettify)
+        if (debug) logger.info(report.json.prettify)
+        // TODO: send to analytics if debug activated on route
+    }.map { res =>
+      val addHeaders = if (debugHeaders) Seq(
+        "x-otoroshi-request-overhead-in" -> report.overheadIn.toString,
+        "x-otoroshi-request-overhead-out" -> report.overheadOut.toString,
+        "x-otoroshi-request-duration" -> report.gduration.toString,
+        "x-otoroshi-request-call-duration" -> report.getStep("call-backend").map(_.duration).getOrElse(-1L).toString,
+        "x-otoroshi-request-state" -> report.state.name,
+        "x-otoroshi-request-creation" -> report.creation.toString,
+        "x-otoroshi-request-termination" -> report.termination.toString,
+      ).applyOnIf(report.state == ExecutionReportState.Failed) { seq =>
+        seq :+ (
+          "x-otoroshi-request-failure" ->
+            report.getStep("request-failure").flatMap(_.ctx.select("error").select("message").asOpt[String]).getOrElse("--")
+        )
+      } else Seq.empty
+      res.withHeaders(addHeaders: _*)
     }
   }
 
@@ -126,13 +190,44 @@ class ProxyEngine() extends RequestHandler {
     FEither.right(Done)
   }
 
-  def handleConcurrentRequest()(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, Done] = {
-    // TODO: handle concurrent requests counter, limiting and alerting
-    FEither.right(Done)
+  def handleConcurrentRequest(request: RequestHeader)(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig, attrs: TypedMap): FEither[ProxyEngineError, Done] = {
+    val currentHandledRequests = env.datastores.requestsDataStore.incrementHandledRequests()
+    env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", currentHandledRequests)
+    if (currentHandledRequests > globalConfig.maxConcurrentRequests) {
+      Audit.send(
+        MaxConcurrentRequestReachedEvent(
+          env.snowflakeGenerator.nextIdStr(),
+          env.env,
+          globalConfig.maxConcurrentRequests,
+          currentHandledRequests
+        )
+      )
+      Alerts.send(
+        MaxConcurrentRequestReachedAlert(
+          env.snowflakeGenerator.nextIdStr(),
+          env.env,
+          globalConfig.maxConcurrentRequests,
+          currentHandledRequests
+        )
+      )
+    }
+    if (globalConfig.limitConcurrentRequests && currentHandledRequests > globalConfig.maxConcurrentRequests) {
+      FEither.apply(Errors
+        .craftResponseResult(
+          s"Cannot process more request",
+          Results.TooManyRequests,
+          request,
+          None,
+          Some("errors.cant.process.more.request"),
+          attrs = attrs
+        )
+        .map(r => Left(ResultProxyEngineError(r))))
+    } else {
+      FEither.right(Done)
+    }
   }
 
   def handleTenantCheck(route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport): FEither[ProxyEngineError, Done] = {
-    // TODO: handle tenant per worker routing
     if (env.clusterConfig.mode.isWorker
         && env.clusterConfig.worker.tenants.nonEmpty
         && !env.clusterConfig.worker.tenants.contains(route.location.tenant)) {
@@ -153,8 +248,8 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def checkGlobalMaintenance(route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport): FEither[ProxyEngineError, Done] = {
-    if (route.id != env.backOfficeServiceId && env.datastores.globalConfigDataStore.latest().maintenanceMode) {
+  def checkGlobalMaintenance(route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig): FEither[ProxyEngineError, Done] = {
+    if (route.id != env.backOfficeServiceId && globalConfig.maintenanceMode) {
       report.markFailure(s"global maintenance activated")
       FEither.left(ResultProxyEngineError(Results.ServiceUnavailable(Json.obj("error" -> "service_unavailable", "error_description" -> "Service in maintenance mode"))))
     } else {
@@ -238,7 +333,7 @@ class ProxyEngine() extends RequestHandler {
       body = () => request.body
     ))
   }
-  def callBackend(rawRequest: Request[Source[ByteString, _]], request : HttpRequest, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport): FEither[ProxyEngineError, WSResponse] = {
+  def callBackend(rawRequest: Request[Source[ByteString, _]], request : HttpRequest, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig): FEither[ProxyEngineError, WSResponse] = {
     // TODO: implements
     val currentReqHasBody = rawRequest.theHasBody
     val wsCookiesIn = request.cookies
@@ -256,7 +351,7 @@ class ProxyEngine() extends RequestHandler {
       .withCookies(wsCookiesIn: _*)
       .withFollowRedirects(false)
       .withMaybeProxyServer(
-        route.client.proxy.orElse(env.datastores.globalConfigDataStore.latest().proxies.services)
+        route.client.proxy.orElse(globalConfig.proxies.services)
       )
 
     // because writeableOf_WsBody always add a 'Content-Type: application/octet-stream' header
@@ -280,8 +375,8 @@ class ProxyEngine() extends RequestHandler {
       body = () => response.bodyAsSource
     ))
   }
-  def streamResponse(rawRequest: Request[Source[ByteString, _]], rawResponse: WSResponse, response: HttpResponse, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, Result] = {
-    // TODO: implements
+  def streamResponse(rawRequest: Request[Source[ByteString, _]], rawResponse: WSResponse, response: HttpResponse, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport): FEither[ProxyEngineError, Result] = {
+    // TODO: missing http/1.0 handling, chunked handling
     val contentType: Option[String] = response.headers
       .get("Content-Type")
       .orElse(response.headers.get("content-type"))
@@ -328,7 +423,7 @@ class ProxyEngine() extends RequestHandler {
         )
       }
     }
-    val res = Status(response.status)
+    val res = Results.Status(response.status)
       .sendEntity(
         HttpEntity.Streamed(
           response.body(),
@@ -339,7 +434,7 @@ class ProxyEngine() extends RequestHandler {
       .withHeaders(
         response.headers.filterNot { h =>
           val lower = h._1.toLowerCase()
-          lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
+          lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding" || lower == "content-length"
         }.toSeq: _*
       )
       .withCookies(cookies: _*)
@@ -353,253 +448,3 @@ class ProxyEngine() extends RequestHandler {
     FEither.right(Done)
   }
 }
-
-sealed trait ProxyEngineError {
-  def asResult()(implicit ec: ExecutionContext, env: Env): Future[Result]
-}
-object ProxyEngineError {
-  // TODO: we need something better that will handler default error return of otoroshi Errors.craftResponseResult
-  case class ResultProxyEngineError(result: Result) extends ProxyEngineError {
-    override def asResult()(implicit ec: ExecutionContext, env: Env): Future[Result] = result.future
-  }
-}
-
-object ExecutionReport {
-  def apply(id: String): ExecutionReport = new ExecutionReport(id, DateTime.now())
-}
-
-sealed trait ExecutionReportState {
-  def name: String
-  def json: JsValue = JsString(name)
-}
-object ExecutionReportState {
-  case object Created    extends ExecutionReportState { def name: String = "Created"    }
-  case object Running    extends ExecutionReportState { def name: String = "Running"    }
-  case object Successful extends ExecutionReportState { def name: String = "Successful" }
-  case object Failed     extends ExecutionReportState { def name: String = "Failed"     }
-}
-
-case class ExecutionReportStep(task: String, start: Long, stop: Long, duration: Long, ctx: JsValue = JsNull) {
-  def json: JsValue = Json.obj(
-    "task" -> task,
-    "start" -> start,
-    "start_fmt" -> new DateTime(start).toString(),
-    "stop" -> stop,
-    "stop_fmt" -> new DateTime(stop).toString(),
-    "duration" -> duration,
-    "ctx" -> ctx
-  )
-}
-
-class ExecutionReport(id: String, creation: DateTime) {
-
-  // TODO: stack based implem
-  var currentTask: String = ""
-  var lastStart: Long = creation.toDate.getTime
-  var state: ExecutionReportState = ExecutionReportState.Created
-  var steps: Seq[ExecutionReportStep] = Seq.empty
-  var gduration = -1L
-  var overheadIn = -1L
-  var overheadOut = -1L
-  var overheadOutStart = creation.toDate.getTime
-  var termination = creation
-  var route: JsValue = JsNull
-
-  def errToJson(error: Throwable): JsValue = {
-    Json.obj(
-      "message" -> error.getMessage,
-      "cause" -> Option(error.getCause).map(errToJson).getOrElse(JsNull).as[JsValue],
-      "stack" -> JsArray(error.getStackTrace.toSeq.map(el => Json.obj(
-        "class_loader_name" -> el.getClassLoaderName,
-        "module_name" -> el.getModuleName,
-        "module_version" -> el.getModuleVersion,
-        "declaring_class" -> el.getClassName,
-        "method_name" -> el.getMethodName,
-        "file_name" -> el.getFileName,
-      )))
-    )
-  }
-
-  def json: JsValue = Json.obj(
-    "id" -> id,
-    "creation" -> creation.toString(),
-    "termination" -> termination.toString(),
-    "duration" -> gduration,
-    "overhead_in" -> overheadIn,
-    "overhead_out" -> overheadOut,
-    "state" -> state.json,
-    "route" -> route,
-    "steps" -> JsArray(steps.map(_.json))
-  )
-
-  def setRoute(r: JsValue): ExecutionReport = {
-    route = r
-    this
-  }
-
-  def markOverheadIn(): ExecutionReport = {
-    overheadIn = System.currentTimeMillis() - creation.getMillis
-    this
-  }
-
-  def startOverheadOut(): ExecutionReport = {
-    overheadOutStart = System.currentTimeMillis()
-    this
-  }
-
-  def markOverheadOut(): ExecutionReport = {
-    overheadOut = System.currentTimeMillis() - overheadOutStart
-    this
-  }
-
-  def markFailure(message: String): ExecutionReport = {
-    state = ExecutionReportState.Failed
-    val stop = System.currentTimeMillis()
-    val duration = stop - lastStart
-    steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration) :+ ExecutionReportStep(s"failure at: ${message}", stop, stop, 0L)
-    lastStart = stop
-    gduration = stop - creation.getMillis
-    termination = new DateTime(stop)
-    this
-  }
-
-  def markFailure(message: String, error: Throwable): ExecutionReport = {
-    state = ExecutionReportState.Failed
-    val stop = System.currentTimeMillis()
-    val duration = stop - lastStart
-    steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration) :+ ExecutionReportStep(s"failure at: ${message}", stop, stop, 0L, errToJson(error))
-    lastStart = stop
-    gduration = stop - creation.getMillis
-    termination = new DateTime(stop)
-    this
-  }
-
-  def markSuccess(): ExecutionReport = {
-    state = ExecutionReportState.Successful
-    val stop = System.currentTimeMillis()
-    val duration = stop - lastStart
-    steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration) :+ ExecutionReportStep(s"success", stop, stop, 0L)
-    lastStart = stop
-    gduration = stop - creation.getMillis
-    termination = new DateTime(stop)
-    this
-  }
-
-  def markDoneAndStart(task: String): ExecutionReport = {
-    state = ExecutionReportState.Running
-    val stop = System.currentTimeMillis()
-    val duration = stop - lastStart
-    steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration)
-    lastStart = stop
-    currentTask = task
-    this
-  }
-
-  def start(task: String): ExecutionReport = {
-    state = ExecutionReportState.Running
-    lastStart = System.currentTimeMillis()
-    currentTask = task
-    this
-  }
-}
-
-/*
- TODO
-
- - Loader Job to keep all route in memory
- - Some kind of reporting mecanism to keep track of everything (useful for debug)
- -
-
- */
-
-/*
-
- new entities
-
- - Route
- - Backend
-
- */
-
-/*
- needed plugins
-
- - redirection plugin
- - tcp/udp tunneling (?? - if possible)
- - headers verification (access validator)
- - readonly route (access validator)
- - readonly apikey (access validator)
- - jwt verifier (access validator)
- - apikey validation with constraints (access validator)
- - auth. module validation (access validator)
- - route restrictions (access validator)
- - public/private path plugin (access validator)
- - force https traffic (pre route)
- - allow http/1.0 traffic (pre route or access validator)
- - snowmonkey (??)
- - canary (??)
- - otoroshi state plugin (transformer)
- - otoroshi claim plugin (transformer)
- - headers manipulation (transformer)
- - headers validation (access validator)
- - endless response clients (transformer)
- - maintenance mode (transformer)
- - construction mode (transformer)
- - apikey extractor (pre route)
- - send otoroshi headers back (transformer)
- - override host header (transformer)
- - send xforwarded headers (transformer)
- - CORS (transformer)
- - gzip (transformer)
- - ip blocklist (access validator)
- - ip allowed list (access validator)
- - custom error templates (transformer)
- - snow monkey (transformer)
-
- */
-
-/*
- killed features
-
- - sidecar (handled with kube stuff now)
- - local redirection
-
- */
-
-object FEither {
-  def apply[L, R](value: Future[Either[L, R]]): FEither[L, R] = new FEither[L, R](value)
-  def apply[L, R](value: Either[L, R]): FEither[L, R] = new FEither[L, R](value.future)
-  def left[L, R](value: L): FEither[L, R] = new FEither[L, R](Left(value).future)
-  def fleft[L, R](value: Future[L])(implicit ec: ExecutionContext): FEither[L, R] = new FEither[L, R](value.map(v => Left(v)))
-  def right[L, R](value: R): FEither[L, R] = new FEither[L, R](Right(value).future)
-  def fright[L, R](value: Future[R])(implicit ec: ExecutionContext): FEither[L, R] = new FEither[L, R](value.map(v => Right(v)))
-}
-
-class FEither[L, R](val value: Future[Either[L, R]]) {
-
-  def map[S](f: R => S)(implicit executor: ExecutionContext): FEither[L, S] = {
-    val result = value.map {
-      case Right(r)    => Right(f(r))
-      case Left(error) => Left(error)
-    }
-    new FEither[L, S](result)
-  }
-
-  def flatMap[S](f: R => FEither[L, S])(implicit executor: ExecutionContext): FEither[L, S] = {
-    val result = value.flatMap {
-      case Right(r)    => f(r).value
-      case Left(error) => Left(error).future
-    }
-    new FEither(result)
-  }
-
-  // def filter(f: R => Boolean)(implicit executor: ExecutionContext): FEither[String, R] = {
-  //   val result = value.flatMap {
-  //     case e @ Right(r) if f(r) => e.future
-  //     case Right(_) => Left("predicate does not match").future
-  //     case l @ Left(_)  => l.future
-  //   }
-  //   new FEither[String, R](result)
-  // }
-}
-
