@@ -118,7 +118,7 @@ object Route {
     healthCheck = HealthCheck(false, "/"),
     plugins = Plugins(Seq(
       PluginInstance(
-        plugin = "cp:???",
+        plugin = "cp:otoroshi.next.plugins.ForceHttpsTraffic",
         enabled = true,
         include = Seq.empty,
         exclude = Seq.empty,

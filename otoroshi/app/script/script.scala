@@ -21,6 +21,7 @@ import otoroshi.gateway.GwError
 
 import javax.script._
 import otoroshi.models._
+import otoroshi.next.plugins.api.NgPlugin
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
@@ -745,7 +746,8 @@ class ScriptManager(env: Env) {
     reqHandlerNames,
     listenerNames,
     jobNames,
-    exporterNames
+    exporterNames,
+    ngNames,
   ) =
     Try {
       import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
@@ -928,7 +930,12 @@ class ScriptManager(env: Env) {
           .filterNot(predicate)
           .map(_.getName)
 
-        (requestTransformers, validators, preRoutes, reqSinks, reqHandlers, listenerNames, jobNames, customExporters)
+        val ngPlugins: Seq[String] = (scanResult.getSubclasses(classOf[NgPlugin].getName).asScala ++
+          scanResult.getClassesImplementing(classOf[NgPlugin].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName)
+
+        (requestTransformers, validators, preRoutes, reqSinks, reqHandlers, listenerNames, jobNames, customExporters, ngPlugins)
       } catch {
         case e: Throwable =>
           e.printStackTrace()
@@ -940,12 +947,21 @@ class ScriptManager(env: Env) {
             Seq.empty[String],
             Seq.empty[String],
             Seq.empty[String],
+            Seq.empty[String],
             Seq.empty[String]
           )
       } finally if (scanResult != null) scanResult.close()
-    } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq
-      .empty[String], Seq
-      .empty[String], Seq.empty[String])
+    } getOrElse (
+      Seq.empty[String],
+      Seq.empty[String],
+      Seq.empty[String],
+      Seq.empty[String],
+      Seq.empty[String],
+      Seq.empty[String],
+      Seq.empty[String],
+      Seq.empty[String],
+      Seq.empty[String]
+    )
 
   private val allPlugins   = Seq(
     transformersNames,
@@ -955,7 +971,8 @@ class ScriptManager(env: Env) {
     reqHandlerNames,
     listenerNames,
     jobNames,
-    exporterNames
+    exporterNames,
+    ngNames
   ).flatten.distinct.sortWith((s1, s2) => s1.compareTo(s2) < 0)
   private val printPlugins =
     env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.plugins.print").getOrElse(false)

@@ -8,7 +8,7 @@ import otoroshi.models.ServiceDescriptor
 import otoroshi.script.CompilingPreRouting.funit
 import otoroshi.utils.TypedMap
 import play.api.libs.json._
-import play.api.mvc.{RequestHeader, Result}
+import play.api.mvc.{RequestHeader, Result, Results}
 import play.twirl.api.Html
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,7 +21,11 @@ case class PreRoutingError(
     contentType: String,
     headers: Map[String, String] = Map.empty
 ) extends RuntimeException("PreRoutingError")
-    with NoStackTrace
+    with NoStackTrace {
+  def asResult: Result = {
+    Results.Status(code).apply(body).as(contentType).withHeaders(headers.toSeq: _*)
+  }
+}
 case class PreRoutingErrorWithResult(result: Result)
     extends RuntimeException("PreRoutingErrorWithResult")
     with NoStackTrace

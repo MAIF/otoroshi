@@ -1,6 +1,7 @@
 package otoroshi.next.proxy
 
 import org.joda.time.DateTime
+import otoroshi.next.utils.JsonErrors
 import play.api.libs.json.{JsArray, JsNull, JsObject, JsString, JsValue, Json}
 
 
@@ -51,21 +52,6 @@ class ExecutionReport(val id: String, val creation: DateTime) {
     steps.find(_.task == task )
   }
 
-  def errToJson(error: Throwable): JsValue = {
-    Json.obj(
-      "message" -> error.getMessage,
-      "cause" -> Option(error.getCause).map(errToJson).getOrElse(JsNull).as[JsValue],
-      "stack" -> JsArray(error.getStackTrace.toSeq.map(el => Json.obj(
-        "class_loader_name" -> el.getClassLoaderName,
-        "module_name" -> el.getModuleName,
-        "module_version" -> el.getModuleVersion,
-        "declaring_class" -> el.getClassName,
-        "method_name" -> el.getMethodName,
-        "file_name" -> el.getFileName,
-      )))
-    )
-  }
-
   def json: JsValue = Json.obj(
     "id" -> id,
     "creation" -> creation.toString(),
@@ -112,7 +98,7 @@ class ExecutionReport(val id: String, val creation: DateTime) {
     state = ExecutionReportState.Failed
     val stop = System.currentTimeMillis()
     val duration = stop - lastStart
-    steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, ctx) :+ ExecutionReportStep("request-failure", stop, stop, 0L, Json.obj("message" -> message, "error" -> errToJson(error)))
+    steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, ctx) :+ ExecutionReportStep("request-failure", stop, stop, 0L, Json.obj("message" -> message, "error" -> JsonErrors.errToJson(error)))
     lastStart = stop
     gduration = stop - creation.getMillis
     termination = new DateTime(stop)

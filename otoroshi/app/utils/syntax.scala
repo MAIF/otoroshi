@@ -44,6 +44,10 @@ object implicits {
       println(obj)
       obj
     }
+    def debugPrintlnWithPrefix(prefix: String): A = {
+      println(prefix + " - " + obj)
+      obj
+    }
     def debugLogger(logger: Logger): A = {
       logger.debug(s"$obj")
       obj

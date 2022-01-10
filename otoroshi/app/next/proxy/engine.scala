@@ -9,15 +9,16 @@ import otoroshi.events.{Alerts, Audit, MaxConcurrentRequestReachedAlert, MaxConc
 import otoroshi.gateway.Errors
 import otoroshi.models.{GlobalConfig, RemainingQuotas}
 import otoroshi.next.models.{Backend, Route}
+import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.ProxyEngineError._
-import otoroshi.next.utils.FEither
-import otoroshi.script.{HttpRequest, HttpResponse, RequestHandler}
-import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.{TypedMap, UrlSanitizer}
+import otoroshi.next.utils.{FEither, JsonErrors}
+import otoroshi.script.RequestHandler
+import otoroshi.security.IdGenerator
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.{TypedMap, UrlSanitizer}
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json._
@@ -26,8 +27,8 @@ import play.api.mvc._
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Success
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success}
 
 class ProxyEngine() extends RequestHandler {
 
@@ -120,7 +121,7 @@ class ProxyEngine() extends RequestHandler {
       _               =  report.markDoneAndStart("call-before-request-callbacks")
       _               <- callPluginsBeforeRequestCallback(request, route)
       _               =  report.markDoneAndStart("call-pre-route-plugins")
-      _               <- callPreRoutePlugins(request, route)
+      _               <- callPreRoutePlugins(snowflake, request, route)
       // TODO: handle tcp/udp tunneling if not possible as plugin
       _               =  report.markDoneAndStart("call-access-validator-plugins")
       _               <- callAccessValidatorPlugins(request, route)
@@ -265,9 +266,37 @@ class ProxyEngine() extends RequestHandler {
     // TODO: implements
     FEither.right(Done)
   }
-  def callPreRoutePlugins(request: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, Done] = {
-    // TODO: implements
-    FEither.right(Done)
+  def callPreRoutePlugins(snowflake: String, request: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig, attrs: TypedMap): FEither[ProxyEngineError, Done] = {
+    val all_plugins = route.plugins.preRoutePlugins(request)
+    if (all_plugins.nonEmpty) {
+      val promise = Promise[Either[ProxyEngineError, Done]]()
+      val _ctx = NgPreRoutingContext(
+        snowflake = snowflake,
+        request = request,
+        route = route,
+        config = Json.obj(),
+        globalConfig = globalConfig.plugins.config,
+        attrs = attrs,
+      )
+      def next(plugins: Seq[PluginWrapper[NgPreRouting]]): Unit = {
+        plugins.headOption match {
+          case None => promise.trySuccess(Right(Done))
+          case Some(wrapper) => {
+            val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
+            wrapper.plugin.preRoute(_ctx.copy(config = pluginConfig)).andThen {
+              case Failure(exception) => promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during pre-routing plugins phase", "error" -> JsonErrors.errToJson(exception))))))
+              case Success(Left(err)) => promise.trySuccess(Left(ResultProxyEngineError(err.result)))
+              case Success(Right(_)) if plugins.size == 1 => promise.trySuccess(Right(Done))
+              case Success(Right(_)) => next(plugins.tail)
+            }
+          }
+        }
+      }
+      next(all_plugins)
+      FEither.apply(promise.future)
+    } else {
+      FEither.right(Done)
+    }
   }
   def callAccessValidatorPlugins(request: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, Done] = {
     // TODO: implements
@@ -295,7 +324,7 @@ class ProxyEngine() extends RequestHandler {
       .map(m => root.replaceFirst(m.replace(".", "\\."), ""))
       .getOrElse(rawUri)
   }
-  def callRequestTransformer(request: Request[Source[ByteString, _]], route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, HttpRequest] = {
+  def callRequestTransformer(request: Request[Source[ByteString, _]], route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, PluginHttpRequest] = {
     // TODO: implements
     val wsCookiesIn = request.cookies.toSeq.map(c =>
       WSCookieWithSameSite(
@@ -313,7 +342,7 @@ class ProxyEngine() extends RequestHandler {
     val root   = route.backends.root
     val rawUri = request.relativeUri.substring(1)
     val uri    = maybeStrippedUri(request, rawUri, route)
-    FEither.right(HttpRequest(
+    FEither.right(PluginHttpRequest(
       // url = s"${request.theProtocol}://${request.theHost}${request.relativeUri}",
       url = s"${target.scheme}://${target.host}$root$uri",
       method = request.method,
@@ -321,19 +350,10 @@ class ProxyEngine() extends RequestHandler {
       cookies = wsCookiesIn,
       version = request.version,
       clientCertificateChain = request.clientCertificateChain,
-      target = backend.toTarget.some,
-      claims = OtoroshiClaim( // TODO: change
-        iss = "otoroshi",
-        sub = "route",
-        aud = "client",
-        exp = DateTime.now().plusSeconds(30).getMillis,
-        iat = DateTime.now().getMillis,
-        jti = IdGenerator.uuid,
-      ),
-      body = () => request.body
+      body = request.body
     ))
   }
-  def callBackend(rawRequest: Request[Source[ByteString, _]], request : HttpRequest, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig): FEither[ProxyEngineError, WSResponse] = {
+  def callBackend(rawRequest: Request[Source[ByteString, _]], request : PluginHttpRequest, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig): FEither[ProxyEngineError, WSResponse] = {
     // TODO: implements
     val currentReqHasBody = rawRequest.theHasBody
     val wsCookiesIn = request.cookies
@@ -366,16 +386,16 @@ class ProxyEngine() extends RequestHandler {
       case Success(_) => report.startOverheadOut()
     })
   }
-  def callResponseTransformer(rawRequest: Request[Source[ByteString, _]], response: WSResponse, quotas: RemainingQuotas, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, HttpResponse] = {
+  def callResponseTransformer(rawRequest: Request[Source[ByteString, _]], response: WSResponse, quotas: RemainingQuotas, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, PluginHttpResponse] = {
     // TODO: implements
-    FEither.right(HttpResponse(
+    FEither.right(PluginHttpResponse(
       status = response.status,
       headers = response.headers.mapValues(_.head),
       cookies = response.cookies,
-      body = () => response.bodyAsSource
+      body = response.bodyAsSource
     ))
   }
-  def streamResponse(rawRequest: Request[Source[ByteString, _]], rawResponse: WSResponse, response: HttpResponse, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport): FEither[ProxyEngineError, Result] = {
+  def streamResponse(rawRequest: Request[Source[ByteString, _]], rawResponse: WSResponse, response: PluginHttpResponse, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport): FEither[ProxyEngineError, Result] = {
     // TODO: missing http/1.0 handling, chunked handling
     val contentType: Option[String] = response.headers
       .get("Content-Type")
@@ -426,7 +446,7 @@ class ProxyEngine() extends RequestHandler {
     val res = Results.Status(response.status)
       .sendEntity(
         HttpEntity.Streamed(
-          response.body(),
+          response.body,
           contentLength,
           contentType
         )
