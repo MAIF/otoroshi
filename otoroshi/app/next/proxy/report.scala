@@ -83,6 +83,18 @@ class ExecutionReport(val id: String, val creation: DateTime) {
     this
   }
 
+  def getDurationNow(): Long = {
+    System.currentTimeMillis() - creation.getMillis
+  }
+
+  def getOverheadInNow(): Long = {
+    overheadIn
+  }
+
+  def getOverheadOutNow(): Long = {
+    overheadOut
+  }
+
   def markFailure(message: String): ExecutionReport = {
     state = ExecutionReportState.Failed
     val stop = System.currentTimeMillis()

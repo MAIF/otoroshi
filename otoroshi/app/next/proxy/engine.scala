@@ -1,6 +1,8 @@
 package otoroshi.next.proxy
 
 import akka.Done
+import akka.http.scaladsl.util.FastFuture
+import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.joda.time.DateTime
@@ -9,6 +11,7 @@ import otoroshi.events.{Alerts, Audit, MaxConcurrentRequestReachedAlert, MaxConc
 import otoroshi.gateway.Errors
 import otoroshi.models.{GlobalConfig, RemainingQuotas}
 import otoroshi.next.models.{Backend, Route}
+import otoroshi.next.plugins.Keys
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.ProxyEngineError._
 import otoroshi.next.utils.{FEither, JsonErrors}
@@ -75,6 +78,7 @@ class ProxyEngine() extends RequestHandler {
   def handleRequest(request: Request[Source[ByteString, _]], config: JsObject)(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig): Future[Result] = {
     val requestId = IdGenerator.uuid
     implicit val report = ExecutionReport(requestId)
+    implicit val mat = env.otoroshiMaterializer
 
     val debug = config.select("debug").asOpt[Boolean].getOrElse(false)
     val debugHeaders = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
@@ -119,40 +123,41 @@ class ProxyEngine() extends RequestHandler {
       _               =  report.markDoneAndStart("check-global-maintenance")
       _               <- checkGlobalMaintenance(route)
       _               =  report.markDoneAndStart("call-before-request-callbacks")
-      _               <- callPluginsBeforeRequestCallback(request, route)
+      _               <- callPluginsBeforeRequestCallback(snowflake, request, route)
       _               =  report.markDoneAndStart("call-pre-route-plugins")
       _               <- callPreRoutePlugins(snowflake, request, route)
       // TODO: handle tcp/udp tunneling if not possible as plugin
       _               =  report.markDoneAndStart("call-access-validator-plugins")
-      _               <- callAccessValidatorPlugins(request, route)
+      _               <- callAccessValidatorPlugins(snowflake, request, route)
       _               =  report.markDoneAndStart("enforce-global-limits")
       remQuotas       <- checkGlobalLimits(request, route) // generic.scala (1269)
       _               =  report.markDoneAndStart("choose-backend", Json.obj("remaining_quotas" -> remQuotas.toJson).some)
-      result          <- callTarget(request, route) { backend =>
+      result          <- callTarget(snowflake, request, route) { backend =>
         report.markDoneAndStart("check-high-overhead")
         for {
           _             <- handleHighOverhead(request, route)
           _             =  report.markDoneAndStart("transform-requests")
-          finalRequest  <- callRequestTransformer(request, route, backend)
+          finalRequest  <- callRequestTransformer(snowflake, request, route, backend)
           _             =  report.markDoneAndStart("transform-request-body")
           _             =  report.markDoneAndStart("call-backend")
-          response      <- callBackend(request, finalRequest, route, backend)
+          response      <- callBackend(snowflake, request, finalRequest, route, backend)
           _             =  report.markDoneAndStart("transform-response")
-          finalResp     <- callResponseTransformer(request, response, remQuotas, route, backend)
+          finalResp     <- callResponseTransformer(snowflake, request, response, remQuotas, route, backend)
           _             =  report.markDoneAndStart("transform-response-body")
           _             =  report.markDoneAndStart("stream-response")
-          clientResp    <- streamResponse(request, response, finalResp, route, backend)
+          clientResp    <- streamResponse(snowflake, request, response, finalResp, route, backend)
           _             =  report.markDoneAndStart("call-after-request-callbacks")
           // TODO: call after callback when shortcircuited too
-          _             <- callPluginsAfterRequestCallback(request, route)
+          _             <- callPluginsAfterRequestCallback(snowflake, request, route)
           _             =  report.markDoneAndStart("trigger-analytics")
-          _             <- triggerProxyDone(request, response, route, backend)
+          _             <- triggerProxyDone(snowflake, request, response, route, backend)
         } yield clientResp
       }
     } yield {
       result
     }).value.flatMap {
       case Left(error)   =>
+        // TODO: transformer error
         report.markDoneAndStart("rendering intermediate result").markSuccess()
         error.asResult()
       case Right(result) =>
@@ -161,6 +166,7 @@ class ProxyEngine() extends RequestHandler {
     }.recover {
       case t: Throwable =>
         report.markFailure("last-recover", t)
+        // TODO: transformer error
         Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> t.getMessage, "report" -> report.json))
     }.andThen {
       case _ =>
@@ -169,6 +175,7 @@ class ProxyEngine() extends RequestHandler {
         // TODO: send to analytics if debug activated on route
     }.map { res =>
       val addHeaders = if (debugHeaders) Seq(
+        "x-otoroshi-request-overhead" -> (report.overheadIn + report.overheadOut).toString,
         "x-otoroshi-request-overhead-in" -> report.overheadIn.toString,
         "x-otoroshi-request-overhead-out" -> report.overheadOut.toString,
         "x-otoroshi-request-duration" -> report.gduration.toString,
@@ -186,12 +193,12 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def handleHighOverhead(value: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, Done] = {
+  def handleHighOverhead(value: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
     // TODO: handle high overhead alerting
     FEither.right(Done)
   }
 
-  def handleConcurrentRequest(request: RequestHeader)(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig, attrs: TypedMap): FEither[ProxyEngineError, Done] = {
+  def handleConcurrentRequest(request: RequestHeader)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
     val currentHandledRequests = env.datastores.requestsDataStore.incrementHandledRequests()
     env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", currentHandledRequests)
     if (currentHandledRequests > globalConfig.maxConcurrentRequests) {
@@ -228,7 +235,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def handleTenantCheck(route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport): FEither[ProxyEngineError, Done] = {
+  def handleTenantCheck(route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
     if (env.clusterConfig.mode.isWorker
         && env.clusterConfig.worker.tenants.nonEmpty
         && !env.clusterConfig.worker.tenants.contains(route.location.tenant)) {
@@ -239,7 +246,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def findRoute(request: Request[Source[ByteString, _]])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport): FEither[ProxyEngineError, Route] = {
+  def findRoute(request: Request[Source[ByteString, _]])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Route] = {
     // TODO: we need something smarter, sort paths by length when there is a wildcard, then same for domains. We need to aggregate on domains
     routes.values.filter(_.enabled).find(r => r.matches(request)) match {
       case Some(route) => FEither.right(route)
@@ -249,7 +256,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def checkGlobalMaintenance(route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig): FEither[ProxyEngineError, Done] = {
+  def checkGlobalMaintenance(route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
     if (route.id != env.backOfficeServiceId && globalConfig.maintenanceMode) {
       report.markFailure(s"global maintenance activated")
       FEither.left(ResultProxyEngineError(Results.ServiceUnavailable(Json.obj("error" -> "service_unavailable", "error_description" -> "Service in maintenance mode"))))
@@ -258,15 +265,71 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def callPluginsBeforeRequestCallback(request: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, Done] = {
-    // TODO: implements
-    FEither.right(Done)
+  def callPluginsBeforeRequestCallback(snowflake: String, request: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+    val all_plugins = route.plugins.transformerPlugins(request)
+    if (all_plugins.nonEmpty) {
+      val promise = Promise[Either[ProxyEngineError, Done]]()
+      val _ctx = NgBeforeRequestContext(
+        snowflake = snowflake,
+        request = request,
+        route = route,
+        config = Json.obj(),
+        globalConfig = globalConfig.plugins.config,
+        attrs = attrs,
+      )
+      def next(plugins: Seq[PluginWrapper[NgRequestTransformer]]): Unit = {
+        plugins.headOption match {
+          case None => promise.trySuccess(Right(Done))
+          case Some(wrapper) => {
+            val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
+            wrapper.plugin.beforeRequest(_ctx.copy(config = pluginConfig)).andThen {
+              case Failure(exception) => promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during before-request plugins phase", "error" -> JsonErrors.errToJson(exception))))))
+              case Success(_) if plugins.size == 1 => promise.trySuccess(Right(Done))
+              case Success(_) => next(plugins.tail)
+            }
+          }
+        }
+      }
+      next(all_plugins)
+      FEither.apply(promise.future)
+    } else {
+      FEither.right(Done)
+    }
   }
-  def callPluginsAfterRequestCallback(request: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, Done] =  {
-    // TODO: implements
-    FEither.right(Done)
+
+  def callPluginsAfterRequestCallback(snowflake: String, request: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] =  {
+    val all_plugins = route.plugins.transformerPlugins(request)
+    if (all_plugins.nonEmpty) {
+      val promise = Promise[Either[ProxyEngineError, Done]]()
+      val _ctx = NgAfterRequestContext(
+        snowflake = snowflake,
+        request = request,
+        route = route,
+        config = Json.obj(),
+        globalConfig = globalConfig.plugins.config,
+        attrs = attrs,
+      )
+      def next(plugins: Seq[PluginWrapper[NgRequestTransformer]]): Unit = {
+        plugins.headOption match {
+          case None => promise.trySuccess(Right(Done))
+          case Some(wrapper) => {
+            val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
+            wrapper.plugin.afterRequest(_ctx.copy(config = pluginConfig)).andThen {
+              case Failure(exception) => promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during before-request plugins phase", "error" -> JsonErrors.errToJson(exception))))))
+              case Success(_) if plugins.size == 1 => promise.trySuccess(Right(Done))
+              case Success(_) => next(plugins.tail)
+            }
+          }
+        }
+      }
+      next(all_plugins)
+      FEither.apply(promise.future)
+    } else {
+      FEither.right(Done)
+    }
   }
-  def callPreRoutePlugins(snowflake: String, request: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig, attrs: TypedMap): FEither[ProxyEngineError, Done] = {
+
+  def callPreRoutePlugins(snowflake: String, request: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
     val all_plugins = route.plugins.preRoutePlugins(request)
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[ProxyEngineError, Done]]()
@@ -298,20 +361,115 @@ class ProxyEngine() extends RequestHandler {
       FEither.right(Done)
     }
   }
-  def callAccessValidatorPlugins(request: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, Done] = {
-    // TODO: implements
-    FEither.right(Done)
+
+  def callAccessValidatorPlugins(snowflake: String, request: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+    val all_plugins = route.plugins.accessValidatorPlugins(request)
+    if (all_plugins.nonEmpty) {
+      val promise = Promise[Either[ProxyEngineError, Done]]()
+      val _ctx = NgAccessContext(
+        snowflake = snowflake,
+        request = request,
+        route = route,
+        config = Json.obj(),
+        globalConfig = globalConfig.plugins.config,
+        attrs = attrs,
+        apikey = attrs.get(Keys.ApikeyKey),
+        user = attrs.get(Keys.UserKey),
+      )
+      def next(plugins: Seq[PluginWrapper[NgAccessValidator]]): Unit = {
+        plugins.headOption match {
+          case None => promise.trySuccess(Right(Done))
+          case Some(wrapper) => {
+            val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
+            wrapper.plugin.access(_ctx.copy(config = pluginConfig)).andThen {
+              case Failure(exception) => promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during pre-routing plugins phase", "error" -> JsonErrors.errToJson(exception))))))
+              case Success(NgAccess.NgDenied(result)) => promise.trySuccess(Left(ResultProxyEngineError(result)))
+              case Success(NgAccess.NgAllowed) if plugins.size == 1 => promise.trySuccess(Right(Done))
+              case Success(NgAccess.NgAllowed) => next(plugins.tail)
+            }
+          }
+        }
+      }
+      next(all_plugins)
+      FEither.apply(promise.future)
+    } else {
+      FEither.right(Done)
+    }
   }
-  def checkGlobalLimits(request: Request[Source[ByteString, _]], route: Route) (implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, RemainingQuotas] = {
-    // TODO: implements
-    FEither.right(RemainingQuotas())
+
+  def checkGlobalLimits(request: Request[Source[ByteString, _]], route: Route) (implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, RemainingQuotas] = {
+    val remoteAddress = request.theIpAddress
+    val isUp = true // TODO: check if okay !
+    def errorResult(status: Results.Status, message: String, code: String): Future[Either[ProxyEngineError, RemainingQuotas]] = {
+      Errors
+        .craftResponseResult(
+          message,
+          status,
+          request,
+          None, // TODO: pass route.toDescriptor
+          Some(code),
+          duration = report.getDurationNow(),
+          overhead = report.getOverheadInNow(),
+          attrs = attrs
+        )
+        .map(e => Left(ResultProxyEngineError(e)))
+    }
+    FEither(env.datastores.globalConfigDataStore.quotasValidationFor(remoteAddress).flatMap { r =>
+      val (within, secCalls, maybeQuota) = r
+      val quota = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
+      if (secCalls > (quota * 10L)) {
+        errorResult(Results.TooManyRequests, "[IP] You performed too much requests", "errors.too.much.requests")
+      } else {
+        if (!within) {
+          errorResult(Results.TooManyRequests, "[GLOBAL] You performed too much requests", "errors.too.much.requests")
+        } else if (globalConfig.ipFiltering.notMatchesWhitelist(remoteAddress)) {
+          errorResult(Results.Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // global whitelist
+        } else if (globalConfig.ipFiltering.matchesBlacklist(remoteAddress)) {
+          errorResult(Results.Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // global blacklist
+        } else if (globalConfig.matchesEndlessIpAddresses(remoteAddress)) {
+          val gigas: Long = 128L * 1024L * 1024L * 1024L
+          val middleFingers = ByteString.fromString(
+            "\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95"
+          )
+          val zeros =
+            ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+          val characters: ByteString =
+            if (!globalConfig.middleFingers) middleFingers else zeros
+          val expected: Long = (gigas / characters.size) + 1L
+          FastFuture.successful(
+            Left(ResultProxyEngineError(Results.Status(200)
+              .sendEntity(
+                HttpEntity.Streamed(
+                  Source
+                    .repeat(characters)
+                    .take(expected), // 128 Go of zeros or middle fingers
+                  None,
+                  Some("application/octet-stream")
+                )
+              )
+            ))
+          )
+        } else if (isUp) {
+          attrs.get(Keys.ApikeyKey)
+            .map(_.updateQuotas())
+            .getOrElse(FastFuture.successful(RemainingQuotas()))
+            .map(rq => Right.apply[ProxyEngineError, RemainingQuotas](rq))
+        } else {
+          // fail fast
+          errorResult(Results.Forbidden, "The service seems to be down :( come back later", "errors.service.down")
+        }
+      }
+    })
   }
-  def callTarget(request: Request[Source[ByteString, _]], route: Route)(f: Backend => FEither[ProxyEngineError, Result])(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, Result] = {
+
+  def callTarget(snowflake: String, request: Request[Source[ByteString, _]], route: Route)(f: Backend => FEither[ProxyEngineError, Result])(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Result] = {
     // TODO: implements
     // TODO: handle circuit breaker and target stuff
     val backend = route.backends.targets.head
+    attrs.put(Keys.BackendKey -> backend)
     f(backend)
   }
+
   def maybeStrippedUri(req: RequestHeader, rawUri: String, route: Route): String = {
     val allPaths = route.frontend.domains.map(_.path)
     val root        = req.relativeUri
@@ -324,8 +482,8 @@ class ProxyEngine() extends RequestHandler {
       .map(m => root.replaceFirst(m.replace(".", "\\."), ""))
       .getOrElse(rawUri)
   }
-  def callRequestTransformer(request: Request[Source[ByteString, _]], route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, PluginHttpRequest] = {
-    // TODO: implements
+
+  def callRequestTransformer(snowflake: String, request: Request[Source[ByteString, _]], route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, PluginHttpRequest] = {
     val wsCookiesIn = request.cookies.toSeq.map(c =>
       WSCookieWithSameSite(
         name = c.name,
@@ -342,19 +500,64 @@ class ProxyEngine() extends RequestHandler {
     val root   = route.backends.root
     val rawUri = request.relativeUri.substring(1)
     val uri    = maybeStrippedUri(request, rawUri, route)
-    FEither.right(PluginHttpRequest(
-      // url = s"${request.theProtocol}://${request.theHost}${request.relativeUri}",
-      url = s"${target.scheme}://${target.host}$root$uri",
+
+    val rawRequest = PluginHttpRequest(
+      url = s"${request.theProtocol}://${request.theHost}${request.relativeUri}",
       method = request.method,
-      headers = request.headers.toSimpleMap - "Host" - "host" + ("Host" -> backend.hostname), // TODO: this will be a plugin
+      headers = request.headers.toSimpleMap,
       cookies = wsCookiesIn,
       version = request.version,
       clientCertificateChain = request.clientCertificateChain,
       body = request.body
-    ))
+    )
+    val otoroshiRequest = PluginHttpRequest(
+      url = s"${target.scheme}://${target.host}$root$uri",
+      method = request.method,
+      headers = request.headers.toSimpleMap,
+      cookies = wsCookiesIn,
+      version = request.version,
+      clientCertificateChain = request.clientCertificateChain,
+      body = request.body
+    )
+
+    val all_plugins = route.plugins.transformerPlugins(request)
+    if (all_plugins.nonEmpty) {
+      val promise = Promise[Either[ProxyEngineError, PluginHttpRequest]]()
+
+      val __ctx = NgTransformerRequestContext(
+        snowflake = snowflake,
+        request = request,
+        rawRequest = rawRequest,
+        otoroshiRequest = otoroshiRequest,
+        apikey = attrs.get(Keys.ApikeyKey),
+        user = attrs.get(Keys.UserKey),
+        route = route,
+        config = Json.obj(),
+        globalConfig = globalConfig.plugins.config,
+        attrs = attrs,
+      )
+      def next(_ctx: NgTransformerRequestContext, plugins: Seq[PluginWrapper[NgRequestTransformer]]): Unit = {
+        plugins.headOption match {
+          case None => promise.trySuccess(Right(_ctx.otoroshiRequest))
+          case Some(wrapper) => {
+            val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
+            wrapper.plugin.transformRequest(_ctx.copy(config = pluginConfig)).andThen {
+              case Failure(exception) => promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during request-transformation plugins phase", "error" -> JsonErrors.errToJson(exception))))))
+              case Success(Left(result)) => promise.trySuccess(Left(ResultProxyEngineError(result)))
+              case Success(Right(req_next)) if plugins.size == 1 => promise.trySuccess(Right(req_next))
+              case Success(Right(req_next)) => next(_ctx.copy(otoroshiRequest = req_next), plugins.tail)
+            }
+          }
+        }
+      }
+      next(__ctx, all_plugins)
+      FEither.apply(promise.future)
+    } else {
+      FEither.right(otoroshiRequest)
+    }
   }
-  def callBackend(rawRequest: Request[Source[ByteString, _]], request : PluginHttpRequest, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig): FEither[ProxyEngineError, WSResponse] = {
-    // TODO: implements
+
+  def callBackend(snowflake: String, rawRequest: Request[Source[ByteString, _]], request : PluginHttpRequest, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, WSResponse] = {
     val currentReqHasBody = rawRequest.theHasBody
     val wsCookiesIn = request.cookies
     val clientReq = env.gatewayClient.urlWithTarget(
@@ -386,16 +589,60 @@ class ProxyEngine() extends RequestHandler {
       case Success(_) => report.startOverheadOut()
     })
   }
-  def callResponseTransformer(rawRequest: Request[Source[ByteString, _]], response: WSResponse, quotas: RemainingQuotas, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, PluginHttpResponse] = {
-    // TODO: implements
-    FEither.right(PluginHttpResponse(
+
+  def callResponseTransformer(snowflake: String, rawRequest: Request[Source[ByteString, _]], response: WSResponse, quotas: RemainingQuotas, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, PluginHttpResponse] = {
+
+    val rawResponse = PluginHttpResponse(
       status = response.status,
-      headers = response.headers.mapValues(_.head),
+      headers = response.headers.mapValues(_.last),
       cookies = response.cookies,
       body = response.bodyAsSource
-    ))
+    )
+    val otoroshiResponse = PluginHttpResponse(
+      status = response.status,
+      headers = response.headers.mapValues(_.last),
+      cookies = response.cookies,
+      body = response.bodyAsSource
+    )
+
+    val all_plugins = route.plugins.transformerPlugins(rawRequest)
+    if (all_plugins.nonEmpty) {
+      val promise = Promise[Either[ProxyEngineError, PluginHttpResponse]]()
+
+      val __ctx = NgTransformerResponseContext(
+        snowflake = snowflake,
+        request = rawRequest,
+        rawResponse = rawResponse,
+        otoroshiResponse = otoroshiResponse,
+        apikey = attrs.get(Keys.ApikeyKey),
+        user = attrs.get(Keys.UserKey),
+        route = route,
+        config = Json.obj(),
+        globalConfig = globalConfig.plugins.config,
+        attrs = attrs,
+      )
+      def next(_ctx: NgTransformerResponseContext, plugins: Seq[PluginWrapper[NgRequestTransformer]]): Unit = {
+        plugins.headOption match {
+          case None => promise.trySuccess(Right(_ctx.otoroshiResponse))
+          case Some(wrapper) => {
+            val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
+            wrapper.plugin.transformResponse(_ctx.copy(config = pluginConfig)).andThen {
+              case Failure(exception) => promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during response-transformation plugins phase", "error" -> JsonErrors.errToJson(exception))))))
+              case Success(Left(result)) => promise.trySuccess(Left(ResultProxyEngineError(result)))
+              case Success(Right(resp_next)) if plugins.size == 1 => promise.trySuccess(Right(resp_next))
+              case Success(Right(resp_next)) => next(_ctx.copy(otoroshiResponse = resp_next), plugins.tail)
+            }
+          }
+        }
+      }
+      next(__ctx, all_plugins)
+      FEither.apply(promise.future)
+    } else {
+      FEither.right(otoroshiResponse)
+    }
   }
-  def streamResponse(rawRequest: Request[Source[ByteString, _]], rawResponse: WSResponse, response: PluginHttpResponse, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport): FEither[ProxyEngineError, Result] = {
+
+  def streamResponse(snowflake: String, rawRequest: Request[Source[ByteString, _]], rawResponse: WSResponse, response: PluginHttpResponse, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Result] = {
     // TODO: missing http/1.0 handling, chunked handling
     val contentType: Option[String] = response.headers
       .get("Content-Type")
@@ -454,7 +701,7 @@ class ProxyEngine() extends RequestHandler {
       .withHeaders(
         response.headers.filterNot { h =>
           val lower = h._1.toLowerCase()
-          lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding" || lower == "content-length"
+          lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding" || lower == "content-length" || lower == "keep-alive"
         }.toSeq: _*
       )
       .withCookies(cookies: _*)
@@ -463,7 +710,8 @@ class ProxyEngine() extends RequestHandler {
       case Some(ctp) => FEither.right(res.as(ctp))
     }
   }
-  def triggerProxyDone(rawRequest: Request[Source[ByteString, _]], rawResponse: WSResponse, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env): FEither[ProxyEngineError, Done] = {
+
+  def triggerProxyDone(snowflake: String, rawRequest: Request[Source[ByteString, _]], rawResponse: WSResponse, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
     // TODO: implements
     FEither.right(Done)
   }

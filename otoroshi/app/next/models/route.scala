@@ -123,8 +123,37 @@ object Route {
         include = Seq.empty,
         exclude = Seq.empty,
         config = PluginInstanceConfig(Json.obj())
-      ))
-    )
+      ),
+      PluginInstance(
+        plugin = "cp:otoroshi.next.plugins.OverrideHost",
+        enabled = true,
+        include = Seq.empty,
+        exclude = Seq.empty,
+        config = PluginInstanceConfig(Json.obj())
+      ),
+      PluginInstance(
+        plugin = "cp:otoroshi.next.plugins.HeadersValidation",
+        enabled = true,
+        include = Seq.empty,
+        exclude = Seq.empty,
+        config = PluginInstanceConfig(Json.obj(
+          "headers" -> Json.obj(
+            "foo" -> "bar"
+          )
+        ))
+      ),
+      PluginInstance(
+        plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
+        enabled = true,
+        include = Seq.empty,
+        exclude = Seq.empty,
+        config = PluginInstanceConfig(Json.obj(
+          "headers" -> Json.obj(
+            "bar" -> "foo"
+          )
+        ))
+      )
+    ))
   )
 }
 

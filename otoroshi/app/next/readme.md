@@ -21,6 +21,7 @@
 - apikey validation with constraints (access validator)
 - auth. module validation (access validator)
 - route restrictions (access validator)
+- apikey restrictions (access validator)
 - public/private path plugin (access validator)
 - force https traffic (pre route)
 - allow http/1.0 traffic (pre route or access validator)

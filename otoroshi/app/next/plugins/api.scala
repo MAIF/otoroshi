@@ -3,11 +3,14 @@ package otoroshi.next.plugins.api
 import akka.Done
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import otoroshi.env.Env
+import otoroshi.gateway.Errors
+import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.next.models.{PluginInstance, Route}
-import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
+import otoroshi.script.{Access, AccessContext, Allowed, ContextWithConfig, Denied, HttpRequest, HttpResponse, InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable, TransformerContext}
 import otoroshi.utils.TypedMap
 import play.api.libs.json._
 import play.api.libs.ws.WSCookie
@@ -201,4 +204,108 @@ object NgPreRouting {
 
 trait NgPreRouting extends NgPlugin {
   def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = NgPreRouting.futureDone
+}
+
+case class NgBeforeRequestContext(
+  snowflake: String,
+  route: Route,
+  request: RequestHeader,
+  config: JsValue,
+  attrs: TypedMap,
+  globalConfig: JsValue = Json.obj()
+)
+
+case class NgAfterRequestContext(
+  snowflake: String,
+  route: Route,
+  request: RequestHeader,
+  config: JsValue,
+  attrs: TypedMap,
+  globalConfig: JsValue = Json.obj()
+)
+
+case class NgTransformerRequestContext(
+  rawRequest: PluginHttpRequest,
+  otoroshiRequest: PluginHttpRequest,
+  snowflake: String,
+  route: Route,
+  apikey: Option[ApiKey],
+  user: Option[PrivateAppsUser],
+  request: RequestHeader,
+  config: JsValue,
+  attrs: TypedMap,
+  globalConfig: JsValue = Json.obj()
+)
+
+case class NgTransformerResponseContext(
+  rawResponse: PluginHttpResponse,
+  otoroshiResponse: PluginHttpResponse,
+  snowflake: String,
+  route: Route,
+  apikey: Option[ApiKey],
+  user: Option[PrivateAppsUser],
+  request: RequestHeader,
+  config: JsValue,
+  attrs: TypedMap,
+  globalConfig: JsValue = Json.obj()
+)
+
+case class NgTransformerErrorContext(
+  snowflake: String,
+  message: String,
+  otoroshiResult: Result,
+  otoroshiResponse: PluginHttpResponse,
+  request: RequestHeader,
+  maybeCauseId: Option[String],
+  callAttempts: Int,
+  route: Route,
+  apikey: Option[ApiKey],
+  user: Option[PrivateAppsUser],
+  config: JsValue,
+  globalConfig: JsValue = Json.obj(),
+  attrs: TypedMap
+)
+
+trait NgRequestTransformer extends NgPlugin {
+
+  def beforeRequest(ctx: NgBeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    FastFuture.successful(())
+  }
+
+  def afterRequest(ctx: NgAfterRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    FastFuture.successful(())
+  }
+
+  def transformError(ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+    FastFuture.successful(ctx.otoroshiResult)
+  }
+
+  def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpRequest]] = {
+    FastFuture.successful(Right(ctx.otoroshiRequest))
+  }
+
+  def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpResponse]] = {
+    FastFuture.successful(Right(ctx.otoroshiResponse))
+  }
+}
+
+case class NgAccessContext(
+  snowflake: String,
+  request: RequestHeader,
+  route: Route,
+  user: Option[PrivateAppsUser],
+  apikey: Option[ApiKey],
+  config: JsValue,
+  attrs: TypedMap,
+  globalConfig: JsValue
+)
+
+sealed trait NgAccess
+object NgAccess {
+  case object NgAllowed extends NgAccess
+  case class NgDenied(result: Result) extends NgAccess
+}
+
+trait NgAccessValidator extends NgNamedPlugin {
+  def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess]
 }

@@ -1,7 +1,7 @@
 package otoroshi.next.models
 
 import otoroshi.env.Env
-import otoroshi.next.plugins.api.{NgNamedPlugin, NgPreRouting, PluginWrapper}
+import otoroshi.next.plugins.api.{NgAccessValidator, NgNamedPlugin, NgPlugin, NgPreRouting, NgRequestTransformer, PluginWrapper}
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
@@ -44,11 +44,31 @@ case class Plugins(slots: Seq[PluginInstance]) {
 
   def json: JsValue = JsArray(slots.map(_.json))
 
+  def transformerPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgRequestTransformer]] = {
+    slots
+      .filter(_.enabled)
+      .filter(_.matches(request))
+      .map(inst => (inst, inst.getPlugin[NgRequestTransformer]))
+      .collect {
+        case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+      }
+  }
+
   def preRoutePlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgPreRouting]] = {
     slots
       .filter(_.enabled)
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgPreRouting]))
+      .collect {
+        case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+      }
+  }
+
+  def accessValidatorPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgAccessValidator]] = {
+    slots
+      .filter(_.enabled)
+      .filter(_.matches(request))
+      .map(inst => (inst, inst.getPlugin[NgAccessValidator]))
       .collect {
         case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
       }
