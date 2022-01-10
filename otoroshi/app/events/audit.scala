@@ -7,6 +7,7 @@ import org.joda.time.DateTime
 import otoroshi.script.{Job, JobContext}
 import play.api.libs.json._
 import otoroshi.ssl.Cert
+import otoroshi.utils.syntax.implicits.BetterJsValue
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -134,12 +135,12 @@ case class CircuitBreakerOpenedEvent(
     `@id`: String,
     `@env`: String,
     target: Target,
-    service: ServiceDescriptor,
+    service: JsValue,
     `@timestamp`: DateTime = DateTime.now()
 ) extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@serviceId`: String = service.id
+  override def `@serviceId`: String = service.select("id").asOpt[String].getOrElse("--")
 
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
@@ -155,7 +156,7 @@ case class CircuitBreakerOpenedEvent(
       "@env"       -> `@env`,
       "audit"      -> "CircuitBreakerOpenedEvent",
       "target"     -> target.toJson,
-      "service"    -> service.toJson
+      "service"    -> service
     )
 }
 
@@ -163,12 +164,12 @@ case class CircuitBreakerClosedEvent(
     `@id`: String,
     `@env`: String,
     target: Target,
-    service: ServiceDescriptor,
+    service: JsValue,
     `@timestamp`: DateTime = DateTime.now()
 ) extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@serviceId`: String = service.id
+  override def `@serviceId`: String = service.select("id").asOpt[String].getOrElse("--")
 
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
@@ -184,7 +185,7 @@ case class CircuitBreakerClosedEvent(
       "@env"       -> `@env`,
       "audit"      -> "CircuitBreakerClosedEvent",
       "target"     -> target.toJson,
-      "service"    -> service.toJson
+      "service"    -> service
     )
 }
 

@@ -186,7 +186,7 @@ trait LoadBalancing {
       trackingId: String,
       requestHeader: RequestHeader,
       targets: Seq[Target],
-      desc: ServiceDescriptor
+      descId: String
   )(implicit env: Env): Target
 }
 
@@ -216,7 +216,7 @@ object RoundRobin extends LoadBalancing {
       trackingId: String,
       req: RequestHeader,
       targets: Seq[Target],
-      desc: ServiceDescriptor
+      descId: String
   )(implicit env: Env): Target = {
     val index: Int = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
     targets.apply(index)
@@ -233,7 +233,7 @@ object Random extends LoadBalancing {
       trackingId: String,
       req: RequestHeader,
       targets: Seq[Target],
-      desc: ServiceDescriptor
+      descId: String
   )(implicit env: Env): Target = {
     val index = random.nextInt(targets.length)
     targets.apply(index)
@@ -248,7 +248,7 @@ object Sticky extends LoadBalancing {
       trackingId: String,
       req: RequestHeader,
       targets: Seq[Target],
-      desc: ServiceDescriptor
+      descId: String
   )(implicit env: Env): Target = {
     val hash: Int  = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
     val index: Int = Hashing.consistentHash(hash, targets.size)
@@ -264,7 +264,7 @@ object IpAddressHash extends LoadBalancing {
       trackingId: String,
       req: RequestHeader,
       targets: Seq[Target],
-      desc: ServiceDescriptor
+      descId: String
   )(implicit env: Env): Target = {
     val remoteAddress = req.theIpAddress
     val hash: Int     = Math.abs(scala.util.hashing.MurmurHash3.stringHash(remoteAddress))
@@ -299,20 +299,20 @@ object BestResponseTime extends LoadBalancing {
       trackingId: String,
       req: RequestHeader,
       targets: Seq[Target],
-      desc: ServiceDescriptor
+      descId: String
   )(implicit env: Env): Target = {
-    val keys                     = targets.map(t => s"${desc.id}-${t.asKey}")
+    val keys                     = targets.map(t => s"${descId}-${t.asKey}")
     val existing                 = responseTimes.toSeq.filter(t => keys.exists(k => t._1 == k))
     val nonExisting: Seq[String] = keys.filterNot(k => responseTimes.contains(k))
     if (existing.size != targets.size) {
-      nonExisting.headOption.flatMap(h => targets.find(t => s"${desc.id}-${t.asKey}" == h)).getOrElse {
+      nonExisting.headOption.flatMap(h => targets.find(t => s"${descId}-${t.asKey}" == h)).getOrElse {
         val index = random.nextInt(targets.length)
         targets.apply(index)
       }
     } else {
       val possibleTargets: Seq[(String, Long)] = existing.map(t => (t._1, t._2.average))
       val (key, _)                             = possibleTargets.minBy(_._2)
-      targets.find(t => s"${desc.id}-${t.asKey}" == key).getOrElse {
+      targets.find(t => s"${descId}-${t.asKey}" == key).getOrElse {
         val index = random.nextInt(targets.length)
         targets.apply(index)
       }
@@ -328,13 +328,13 @@ case class WeightedBestResponseTime(ratio: Double) extends LoadBalancing {
       trackingId: String,
       req: RequestHeader,
       targets: Seq[Target],
-      desc: ServiceDescriptor
+      descId: String
   )(implicit env: Env): Target = {
-    val keys                     = targets.map(t => s"${desc.id}-${t.asKey}")
+    val keys                     = targets.map(t => s"${descId}-${t.asKey}")
     val existing                 = BestResponseTime.responseTimes.toSeq.filter(t => keys.exists(k => t._1 == k))
     val nonExisting: Seq[String] = keys.filterNot(k => BestResponseTime.responseTimes.contains(k))
     if (existing.size != targets.size) {
-      nonExisting.headOption.flatMap(h => targets.find(t => s"${desc.id}-${t.asKey}" == h)).getOrElse {
+      nonExisting.headOption.flatMap(h => targets.find(t => s"${descId}-${t.asKey}" == h)).getOrElse {
         val index: Int = BestResponseTime.random.nextInt(targets.length)
         targets.apply(index)
       }
@@ -343,7 +343,7 @@ case class WeightedBestResponseTime(ratio: Double) extends LoadBalancing {
       val (key, _)                             = possibleTargets.minBy(_._2)
       val cleanRatio: Double                   = if (ratio < 0.0) 0.0 else if (ratio > 0.99) 0.99 else ratio
       val times: Int                           = Math.round(targets.size / (1 - cleanRatio)).toInt - targets.size
-      val bestTarget: Option[Target]           = targets.find(t => s"${desc.id}-${t.asKey}" == key)
+      val bestTarget: Option[Target]           = targets.find(t => s"${descId}-${t.asKey}" == key)
       val fill: Seq[Target]                    = bestTarget.map(t => Seq.fill(times)(t)).getOrElse(Seq.empty[Target])
       val newTargets: Seq[Target]              = targets ++ fill
       val index: Int                           = BestResponseTime.random.nextInt(newTargets.length)

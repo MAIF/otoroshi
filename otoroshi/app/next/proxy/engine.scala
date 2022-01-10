@@ -8,8 +8,8 @@ import akka.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.{Alerts, Audit, MaxConcurrentRequestReachedAlert, MaxConcurrentRequestReachedEvent}
-import otoroshi.gateway.Errors
-import otoroshi.models.{GlobalConfig, RemainingQuotas}
+import otoroshi.gateway.{AllCircuitBreakersOpenException, BodyAlreadyConsumedException, Errors, RequestTimeoutException, ServiceDescriptorCircuitBreaker}
+import otoroshi.models.{GlobalConfig, RemainingQuotas, Target}
 import otoroshi.next.models.{Backend, Route}
 import otoroshi.next.plugins.Keys
 import otoroshi.next.plugins.api._
@@ -26,6 +26,7 @@ import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.ws.WSResponse
+import play.api.mvc.Results.{BadGateway, GatewayTimeout, ServiceUnavailable}
 import play.api.mvc._
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
@@ -132,7 +133,7 @@ class ProxyEngine() extends RequestHandler {
       _               =  report.markDoneAndStart("enforce-global-limits")
       remQuotas       <- checkGlobalLimits(request, route) // generic.scala (1269)
       _               =  report.markDoneAndStart("choose-backend", Json.obj("remaining_quotas" -> remQuotas.toJson).some)
-      result          <- callTarget(snowflake, request, route) { backend =>
+      result          <- callTarget(snowflake, reqNumber, request, route) { backend =>
         report.markDoneAndStart("check-high-overhead")
         for {
           _             <- handleHighOverhead(request, route)
@@ -462,12 +463,208 @@ class ProxyEngine() extends RequestHandler {
     })
   }
 
-  def callTarget(snowflake: String, request: Request[Source[ByteString, _]], route: Route)(f: Backend => FEither[ProxyEngineError, Result])(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Result] = {
-    // TODO: implements
-    // TODO: handle circuit breaker and target stuff
-    val backend = route.backends.targets.head
-    attrs.put(Keys.BackendKey -> backend)
-    f(backend)
+  def getBackend(target: Target, route: Route): Backend = {
+    route.backends.targets.find(b => b.id == target.tags.head).get
+  }
+
+  def callTarget(snowflake: String, reqNumber: Long, request: Request[Source[ByteString, _]], route: Route)(f: Backend => FEither[ProxyEngineError, Result])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Result] = {
+    val trackingId = attrs.get(Keys.RequestTrackingIdKey).getOrElse(IdGenerator.uuid)
+    val bodyAlreadyConsumed = new AtomicBoolean(false)
+    attrs.put(Keys.BodyAlreadyConsumedKey -> bodyAlreadyConsumed)
+    if (
+      globalConfig.useCircuitBreakers && route.client.useCircuitBreaker
+    ) {
+      val cbStart            = System.currentTimeMillis()
+      val counter            = new AtomicInteger(0)
+      val relUri             = request.relativeUri
+      val cachedPath: String =
+        route.client
+          .timeouts(relUri)
+          .map(_ => relUri)
+          .getOrElse("")
+
+      def callF(target: Target, attemps: Int, alreadyFailed: AtomicBoolean): Future[Either[Result, Result]] = {
+        val backend = getBackend(target, route)
+        attrs.put(Keys.BackendKey -> backend)
+        f(backend).value.flatMap {
+          case Left(err) => err.asResult().map(Left.apply) // TODO: optimize
+          case r @ Right(value) => Right(value).future
+        }
+      }
+
+      def handleError(t: Throwable): Future[Either[Result, Result]] = {
+        t match {
+          case BodyAlreadyConsumedException                       =>
+            Errors
+              .craftResponseResult(
+                s"Something went wrong, the backend service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
+                Results.GatewayTimeout,
+                request,
+                None, // TODO: convert here !
+                Some("errors.request.timeout"),
+                duration = report.getDurationNow(),
+                overhead = report.getOverheadInNow(),
+                cbDuration = System.currentTimeMillis - cbStart,
+                callAttempts = counter.get(),
+                attrs = attrs
+              )
+              .map(Left.apply)
+          case RequestTimeoutException                            =>
+            Errors
+              .craftResponseResult(
+                s"Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding",
+                Results.GatewayTimeout,
+                request,
+                None, // TODO: convert here !
+                Some("errors.request.timeout"),
+                duration = report.getDurationNow(),
+                overhead = report.getOverheadInNow(),
+                cbDuration = System.currentTimeMillis - cbStart,
+                callAttempts = counter.get(),
+                attrs = attrs
+              )
+              .map(Left.apply)
+          case _: scala.concurrent.TimeoutException               =>
+            Errors
+              .craftResponseResult(
+                s"Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding",
+                Results.GatewayTimeout,
+                request,
+                None, // TODO: convert here !
+                Some("errors.request.timeout"),
+                duration = report.getDurationNow(),
+                overhead = report.getOverheadInNow(),
+                cbDuration = System.currentTimeMillis - cbStart,
+                callAttempts = counter.get(),
+                attrs = attrs
+              )
+              .map(Left.apply)
+          case AllCircuitBreakersOpenException                    =>
+            Errors
+              .craftResponseResult(
+                s"Something went wrong, the backend service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
+                Results.ServiceUnavailable,
+                request,
+                None, // TODO: convert here !
+                Some("errors.circuit.breaker.open"),
+                duration = report.getDurationNow(),
+                overhead = report.getOverheadInNow(),
+                cbDuration = System.currentTimeMillis - cbStart,
+                callAttempts = counter.get(),
+                attrs = attrs
+              )
+              .map(Left.apply)
+          case error
+            if error != null && error.getMessage != null && error.getMessage
+              .toLowerCase()
+              .contains("connection refused") =>
+            Errors
+              .craftResponseResult(
+                s"Something went wrong, the connection to backend service was refused, you should try later. Thanks for your understanding",
+                Results.BadGateway,
+                request,
+                None, // TODO: convert here !
+                Some("errors.connection.refused"),
+                duration = report.getDurationNow(),
+                overhead = report.getOverheadInNow(),
+                cbDuration = System.currentTimeMillis - cbStart,
+                callAttempts = counter.get(),
+                attrs = attrs
+              )
+              .map(Left.apply)
+          case error if error != null && error.getMessage != null =>
+            logger.error(
+              s"Something went wrong, you should try later",
+              error
+            )
+            Errors
+              .craftResponseResult(
+                s"Something went wrong, you should try later. Thanks for your understanding.",
+                Results.BadGateway,
+                request,
+                None, // TODO: convert here !
+                Some("errors.proxy.error"),
+                duration = report.getDurationNow(),
+                overhead = report.getOverheadInNow(),
+                cbDuration = System.currentTimeMillis - cbStart,
+                callAttempts = counter.get(),
+                attrs = attrs
+              )
+              .map(Left.apply)
+          case error                                              =>
+            logger.error(
+              s"Something went wrong, you should try later",
+              error
+            )
+            Errors
+              .craftResponseResult(
+                s"Something went wrong, you should try later. Thanks for your understanding",
+                Results.BadGateway,
+                request,
+                None, // TODO: convert here !
+                Some("errors.proxy.error"),
+                duration = report.getDurationNow(),
+                overhead = report.getOverheadInNow(),
+                cbDuration = System.currentTimeMillis - cbStart,
+                callAttempts = counter.get(),
+                attrs = attrs
+              )
+              .map(Left.apply)
+        }
+      }
+
+      implicit val scheduler = env.otoroshiScheduler
+      FEither(env.circuitBeakersHolder
+        .get(
+          route.id + cachedPath,
+          () => new ServiceDescriptorCircuitBreaker()
+        )
+        .callGenNg[Result](
+          route.id,
+          route.name,
+          route.backends.targets.map(_.toTarget),
+          route.backends.loadBalancing,
+          route.client,
+          reqNumber.toString,
+          trackingId,
+          request.relativeUri,
+          request,
+          bodyAlreadyConsumed,
+          s"${request.method} ${request.relativeUri}",
+          counter,
+          attrs,
+          callF
+        ) recoverWith {
+        case t: Throwable => handleError(t)
+      } map {
+        case Left(res) => Left(ResultProxyEngineError(res))
+        case Right(value) => Right(value)
+      })
+    } else {
+
+      val target = attrs
+        .get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey)
+        .getOrElse {
+
+          val targets: Seq[Target] = route.backends.targets.map(_.toTarget)
+            .filter(_.predicate.matches(reqNumber.toString, request, attrs))
+            .flatMap(t => Seq.fill(t.weight)(t))
+          route.backends.loadBalancing
+            .select(
+              reqNumber.toString,
+              trackingId,
+              request,
+              targets,
+              route.id
+            )
+      }
+      //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
+      // Round robin loadbalancing is happening here !!!!!
+      //val target = targets.apply(index.toInt)
+      val backend = getBackend(target, route)
+      attrs.put(Keys.BackendKey -> backend)
+      f(backend)
+    }
   }
 
   def maybeStrippedUri(req: RequestHeader, rawUri: String, route: Route): String = {
@@ -501,6 +698,13 @@ class ProxyEngine() extends RequestHandler {
     val rawUri = request.relativeUri.substring(1)
     val uri    = maybeStrippedUri(request, rawUri, route)
 
+    val lazySource = Source.single(ByteString.empty).flatMapConcat { _ =>
+      attrs.get(Keys.BodyAlreadyConsumedKey).foreach(_.compareAndSet(false, true))
+      // TODO : .concat(snowMonkeyContext.trailingRequestBodyStream)
+      // TODO: .map(counterIn.addAndGet(bs.length))
+      request.body
+    }
+
     val rawRequest = PluginHttpRequest(
       url = s"${request.theProtocol}://${request.theHost}${request.relativeUri}",
       method = request.method,
@@ -508,7 +712,7 @@ class ProxyEngine() extends RequestHandler {
       cookies = wsCookiesIn,
       version = request.version,
       clientCertificateChain = request.clientCertificateChain,
-      body = request.body
+      body = lazySource
     )
     val otoroshiRequest = PluginHttpRequest(
       url = s"${target.scheme}://${target.host}$root$uri",
@@ -517,7 +721,7 @@ class ProxyEngine() extends RequestHandler {
       cookies = wsCookiesIn,
       version = request.version,
       clientCertificateChain = request.clientCertificateChain,
-      body = request.body
+      body = lazySource
     )
 
     val all_plugins = route.plugins.transformerPlugins(request)

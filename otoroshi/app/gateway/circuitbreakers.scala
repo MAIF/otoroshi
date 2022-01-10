@@ -12,17 +12,17 @@ import akka.stream.scaladsl.Flow
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.health.HealthCheck
-import otoroshi.models.{ApiKey, ClientConfig, GlobalConfig, ServiceDescriptor, Target}
+import otoroshi.models.{ApiKey, ClientConfig, GlobalConfig, LoadBalancing, ServiceDescriptor, Target}
 import otoroshi.utils.TypedMap
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.mvc.{RequestHeader, Result}
-
 import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.Json
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
-import scala.concurrent.{duration, ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise, duration}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success}
 
@@ -131,26 +131,46 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
   def clear(): Unit = breakers.clear()
 
   def getCircuitBreaker(descriptor: ServiceDescriptor, path: String): AkkaCircuitBreaker = {
+    getCircuitBreakerNg(descriptor.clientConfig, path)
+  }
+
+  def getCircuitBreakerNg(clientConfig: ClientConfig, path: String): AkkaCircuitBreaker = {
     ClientConfig.logger.debug(
-      s"[circuitbreaker] using callTimeout - 1: ${descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout)}"
+      s"[circuitbreaker] using callTimeout - 1: ${clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout)}"
     )
     new AkkaCircuitBreaker(
       scheduler = scheduler,
-      maxFailures = descriptor.clientConfig.maxErrors,
-      callTimeout = descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout),
-      resetTimeout = descriptor.clientConfig.sampleInterval.millis
+      maxFailures = clientConfig.maxErrors,
+      callTimeout = clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout),
+      resetTimeout = clientConfig.sampleInterval.millis
     )
   }
 
   def chooseTarget(
-      descriptor: ServiceDescriptor,
+    descriptor: ServiceDescriptor,
+    path: String,
+    reqId: String,
+    trackingId: String,
+    requestHeader: RequestHeader,
+    attrs: TypedMap
+  ): Option[(Target, AkkaCircuitBreaker)] = {
+    chooseTargetNg(descriptor.id, descriptor.name, descriptor.targets, descriptor.targetsLoadBalancing, descriptor.clientConfig, path, reqId, trackingId, requestHeader, attrs)
+  }
+
+  def chooseTargetNg(
+      // descriptor: ServiceDescriptor,
+      descriptorId: String,
+      descriptorName: String,
+      _targets: Seq[Target],
+      targetsLoadBalancing: LoadBalancing,
+      clientConfig: ClientConfig,
       path: String,
       reqId: String,
       trackingId: String,
       requestHeader: RequestHeader,
       attrs: TypedMap
   ): Option[(Target, AkkaCircuitBreaker)] = {
-    val targets = descriptor.targets
+    val targets = _targets
       .filter(_.predicate.matches(reqId, requestHeader, attrs))
       .filterNot(t => HealthCheck.badHealth.contains(t.asCleanTarget)) // health check can disable targets
       .filterNot(t => breakers.get(t.host).exists(_.cb.isOpen))
@@ -160,7 +180,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
     if (targets.isEmpty) {
       None
     } else {
-      val target = descriptor.targetsLoadBalancing.select(reqId, trackingId, requestHeader, targets, descriptor)
+      val target = targetsLoadBalancing.select(reqId, trackingId, requestHeader, targets, descriptorId)
       //val target = targets.apply(index.toInt)
 
       def buildBreaker(): Unit = {
@@ -170,17 +190,18 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
         //   callTimeout = descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout),
         //   resetTimeout = descriptor.clientConfig.sampleInterval.millis
         // )
-        val cb = getCircuitBreaker(descriptor, path)
+        val cb = getCircuitBreakerNg(clientConfig, path)
+        val desc = Json.obj("id" -> descriptorId, "name" -> descriptorName)
         cb.onOpen {
           env.datastores.globalConfigDataStore.singleton().fast.map { config =>
-            env.metrics.markString(s"services.${descriptor.id}.circuit-breaker", "open")
+            env.metrics.markString(s"services.${descriptorId}.circuit-breaker", "open")
           }
           Audit.send(
             CircuitBreakerOpenedEvent(
               env.snowflakeGenerator.nextIdStr(),
               env.env,
               target,
-              descriptor
+              desc
             )
           )
           Alerts.send(
@@ -188,20 +209,20 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
               env.snowflakeGenerator.nextIdStr(),
               env.env,
               target,
-              descriptor
+              desc
             )
           )
         }
         cb.onClose {
           env.datastores.globalConfigDataStore.singleton().fast.map { config =>
-            env.metrics.markString(s"services.${descriptor.id}.circuit-breaker", "closed")
+            env.metrics.markString(s"services.${descriptorId}.circuit-breaker", "closed")
           }
           Audit.send(
             CircuitBreakerClosedEvent(
               env.snowflakeGenerator.nextIdStr(),
               env.env,
               target,
-              descriptor
+              desc
             )
           )
           Alerts.send(
@@ -209,22 +230,22 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
               env.snowflakeGenerator.nextIdStr(),
               env.env,
               target,
-              descriptor
+              desc
             )
           )
         }
         ClientConfig.logger.debug(
-          s"[circuitbreaker] using callTimeout - 2: ${descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout)}"
+          s"[circuitbreaker] using callTimeout - 2: ${clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout)}"
         )
         breakers.put(
           target.host,
           AkkaCircuitBreakerWrapper(
             cb,
-            maxFailures = descriptor.clientConfig.maxErrors,
-            callTimeout = descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout),
-            resetTimeout = descriptor.clientConfig.sampleInterval.millis,
+            maxFailures = clientConfig.maxErrors,
+            callTimeout = clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout),
+            resetTimeout = clientConfig.sampleInterval.millis,
             callAndStreamTimeout =
-              descriptor.clientConfig.extractTimeout(path, _.callAndStreamTimeout, _.callAndStreamTimeout)
+              clientConfig.extractTimeout(path, _.callAndStreamTimeout, _.callAndStreamTimeout)
           )
         )
       }
@@ -234,11 +255,11 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       } else {
         if (
           breakers.get(target.host).exists { cb =>
-            cb.maxFailures != descriptor.clientConfig.maxErrors ||
-            cb.callTimeout != descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout) ||
-            cb.callAndStreamTimeout != descriptor.clientConfig
+            cb.maxFailures != clientConfig.maxErrors ||
+            cb.callTimeout != clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout) ||
+            cb.callAndStreamTimeout != clientConfig
               .extractTimeout(path, _.callAndStreamTimeout, _.callAndStreamTimeout) ||
-            cb.resetTimeout != descriptor.clientConfig.sampleInterval.millis
+            cb.resetTimeout != clientConfig.sampleInterval.millis
           }
         ) {
           ClientConfig.logger.debug("[circuitbreaker] breaker rebuild !!!!!!")
@@ -253,7 +274,28 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
   }
 
   def callGen[A](
-      descriptor: ServiceDescriptor,
+    descriptor: ServiceDescriptor,
+    reqId: String,
+    trackingId: String,
+    path: String,
+    requestHeader: RequestHeader,
+    bodyAlreadyConsumed: AtomicBoolean,
+    ctx: String,
+    counter: AtomicInteger,
+    attrs: TypedMap,
+    f: (Target, Int, AtomicBoolean) => Future[Either[Result, A]]
+  )(implicit
+    env: Env
+  ): Future[Either[Result, A]] = {
+    callGenNg[A](descriptor.id, descriptor.name, descriptor.targets, descriptor.targetsLoadBalancing, descriptor.clientConfig, reqId, trackingId, path, requestHeader, bodyAlreadyConsumed, ctx, counter, attrs, f)
+  }
+
+  def callGenNg[A](
+      descId: String,
+      descName: String,
+      targets: Seq[Target],
+      targetsLoadBalancing: LoadBalancing,
+      clientConfig: ClientConfig,
       reqId: String,
       trackingId: String,
       path: String,
@@ -268,16 +310,16 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
   ): Future[Either[Result, A]] = {
 
     ClientConfig.logger.debug(
-      s"[circuitbreaker] using globalTimeout: ${descriptor.clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout)}"
+      s"[circuitbreaker] using globalTimeout: ${clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout)}"
     )
     val failure      = Timeout
-      .timeout(Done, descriptor.clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout))
+      .timeout(Done, clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout))
       .flatMap(_ => FastFuture.failed(RequestTimeoutException))
     val maybeSuccess = Retry.retry(
-      descriptor.clientConfig.retries,
-      descriptor.clientConfig.retryInitialDelay,
-      descriptor.clientConfig.backoffFactor,
-      descriptor.name + " : " + ctx,
+      clientConfig.retries,
+      clientConfig.retryInitialDelay,
+      clientConfig.backoffFactor,
+      descName + " : " + ctx,
       counter
     ) { attempts =>
       if (bodyAlreadyConsumed.get) {
@@ -285,14 +327,14 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       } else {
         attrs.get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey).map { target =>
           val alreadyFailed = new AtomicBoolean(false)
-          getCircuitBreaker(descriptor, path).withCircuitBreaker {
+          getCircuitBreakerNg(clientConfig, path).withCircuitBreaker {
             logger.debug(s"Try to call target : $target")
             f(target, attempts, alreadyFailed)
           } andThen { case Failure(_: scala.concurrent.TimeoutException) =>
             alreadyFailed.set(true)
           }
         } getOrElse {
-          chooseTarget(descriptor, path, reqId, trackingId, requestHeader, attrs) match {
+          chooseTargetNg(descId, descName, targets, targetsLoadBalancing, clientConfig, path, reqId, trackingId, requestHeader, attrs) match {
             case Some((target, breaker)) =>
               val alreadyFailed = new AtomicBoolean(false)
               breaker.withCircuitBreaker {

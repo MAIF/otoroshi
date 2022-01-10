@@ -1126,7 +1126,7 @@ class ReverseProxyAction(env: Env) {
                                                               trackingId,
                                                               req,
                                                               targets,
-                                                              descriptor
+                                                              descriptor.id
                                                             )
                                                         }
                                                       //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)

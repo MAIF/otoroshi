@@ -86,7 +86,7 @@ case class Route(
     }
   }
   // TODO: implements. not a complete one, just for compatibility purposes
-  def toServiceDescriptor(): ServiceDescriptor = ???
+  lazy val toServiceDescriptor: ServiceDescriptor = ???
 }
 
 object Route {
@@ -107,6 +107,7 @@ object Route {
     ),
     backends = Backends(
       targets = Seq(Backend(
+        id = "tls://mirror.otoroshi.io:443",
         hostname = "mirror.otoroshi.io",
         port = 443,
         tls = true

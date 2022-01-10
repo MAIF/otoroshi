@@ -19,6 +19,7 @@ case class Backend(id: String, name: String, description: String, tags: Seq[Stri
 
 // TODO: handle 2 kind of backend, one inline, one that reference a stored backend
 case class Backend(
+  id: String,
   hostname: String,
   port: Int,
   tls: Boolean,
@@ -33,7 +34,7 @@ case class Backend(
     case 80 => ""
     case _ => s":${port}"
   }
-  def toTarget: otoroshi.models.Target = otoroshi.models.Target(
+  lazy val toTarget: otoroshi.models.Target = otoroshi.models.Target(
     host = s"${hostname}${defaultPortString}",
     scheme = if (tls) "https" else "http",
     weight = weight,
@@ -41,10 +42,11 @@ case class Backend(
     predicate = predicate,
     ipAddress = ipAddress,
     mtlsConfig = tlsConfig,
-    tags = Seq.empty,
+    tags = Seq(id),
     metadata = Map.empty,
   )
   def json: JsValue = Json.obj(
+    "id" -> id,
     "hostname" -> hostname,
     "port" -> port,
     "tls" -> tls,

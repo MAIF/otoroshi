@@ -150,12 +150,12 @@ case class CircuitBreakerOpenedAlert(
     `@id`: String,
     `@env`: String,
     target: Target,
-    service: ServiceDescriptor,
+    service: JsValue,
     `@timestamp`: DateTime = DateTime.now()
 ) extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@serviceId`: String = service.id
+  override def `@serviceId`: String = service.select("id").asOpt[String].getOrElse("--")
 
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
@@ -171,7 +171,7 @@ case class CircuitBreakerOpenedAlert(
       "@env"       -> `@env`,
       "alert"      -> "CircuitBreakerOpenedAlert",
       "target"     -> target.toJson,
-      "service"    -> service.toJson
+      "service"    -> service
     )
 }
 
@@ -179,12 +179,12 @@ case class CircuitBreakerClosedAlert(
     `@id`: String,
     `@env`: String,
     target: Target,
-    service: ServiceDescriptor,
+    service: JsValue,
     `@timestamp`: DateTime = DateTime.now()
 ) extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
-  override def `@serviceId`: String = service.id
+  override def `@serviceId`: String = service.select("id").asOpt[String].getOrElse("--")
 
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
@@ -200,7 +200,7 @@ case class CircuitBreakerClosedAlert(
       "@env"       -> `@env`,
       "alert"      -> "CircuitBreakerClosedAlert",
       "target"     -> target.toJson,
-      "service"    -> service.toJson
+      "service"    -> service
     )
 }
 
