@@ -1,11 +1,12 @@
 package otoroshi.next.models
 
 import otoroshi.env.Env
-import otoroshi.models.{ClientConfig, EntityLocation, EntityLocationSupport, HealthCheck, Key, LoadBalancing, RoundRobin, ServiceDescriptor, ServiceGroup, ServiceGroupDataStore}
-import otoroshi.script.{Job, JobId}
+import otoroshi.models.{ClientConfig, EntityLocation, EntityLocationSupport, HealthCheck, Key, LoadBalancing, RoundRobin, ServiceDescriptor, ServiceGroup, ServiceGroupDataStore, Target}
+import otoroshi.script.{AccessValidatorRef, Job, JobId}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.RegexPool
+import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.libs.json.{Format, JsArray, JsError, JsLookupResult, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
@@ -71,6 +72,7 @@ case class Route(
   metadata: Map[String, String],
   enabled: Boolean,
   debugFlow: Boolean,
+  groups: Seq[String] = Seq("default"),
   frontend: Frontend,
   backends: Backends,
   client: ClientConfig,
@@ -90,6 +92,7 @@ case class Route(
     "metadata" -> metadata,
     "enabled" -> enabled,
     "debug_flow" -> debugFlow,
+    "groups" -> groups,
     "frontend" -> frontend.json,
     "backend" -> backends.json,
     "client" -> client.toJson,
@@ -116,8 +119,29 @@ case class Route(
       false
     }
   }
-  // TODO: implements. not a complete one, just for compatibility purposes
-  lazy val toServiceDescriptor: ServiceDescriptor = ???
+  
+  lazy val toServiceDescriptor: ServiceDescriptor = ServiceDescriptor(
+    location = location,
+    id = id,
+    name = name,
+    description = description,
+    tags = tags,
+    metadata = metadata,
+    enabled = enabled,
+    groups = groups,
+    env = "prod",
+    domain = "--",
+    subdomain = "--",
+    targets = backends.targets.map(_.toTarget),
+    hosts = frontend.domains.map(_.domain),
+    paths = frontend.domains.map(_.path),
+    stripPath = frontend.stripPath,
+    clientConfig = client,
+    healthCheck = healthCheck,
+    matchingHeaders = frontend.headers,
+    handleLegacyDomain = false,
+    // TODO: need more for some use cases
+  )
 }
 
 object Route {
@@ -163,9 +187,6 @@ object Route {
           )
         ))
       ),
-      // PluginInstance(
-      //   plugin = "cp:otoroshi.next.plugins.TestBodyTransformation",
-      // ),
       PluginInstance(
         plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
         config = PluginInstanceConfig(Json.obj(
@@ -356,6 +377,15 @@ object Route {
           .applyOnIf(service.xForwardedHeaders) { seq =>
             seq :+ PluginInstance(
               plugin = "cp:otoroshi.next.plugins.XForwardedHeaders",
+            )
+          }
+          .applyOnIf(service.publicPatterns.nonEmpty || service.privatePatterns.nonEmpty) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.PublicPrivatePaths",
+              config = PluginInstanceConfig(Json.obj(
+                "private_patterns" -> JsArray(service.privatePatterns.map(JsString.apply)),
+                "public_patterns" -> JsArray(service.publicPatterns.map(JsString.apply))
+              ))
             )
           }
       )

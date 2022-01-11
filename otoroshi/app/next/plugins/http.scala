@@ -29,6 +29,7 @@ class ReadOnlyCalls extends NgAccessValidator {
     }
   }
 }
+
 class AllowHttpMethods extends NgAccessValidator {
   // TODO: add name and config
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
