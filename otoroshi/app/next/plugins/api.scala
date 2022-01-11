@@ -262,7 +262,8 @@ case class NgTransformerRequestContext(
   request: RequestHeader,
   config: JsValue,
   attrs: TypedMap,
-  globalConfig: JsValue = Json.obj()
+  globalConfig: JsValue = Json.obj(),
+  report: ExecutionReport
 ) {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
@@ -289,7 +290,8 @@ case class NgTransformerResponseContext(
   request: RequestHeader,
   config: JsValue,
   attrs: TypedMap,
-  globalConfig: JsValue = Json.obj()
+  globalConfig: JsValue = Json.obj(),
+  report: ExecutionReport
 ) {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,

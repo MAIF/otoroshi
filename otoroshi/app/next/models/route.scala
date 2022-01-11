@@ -258,17 +258,6 @@ object Route {
               ))
             )
           }
-          .applyOnIf(service.additionalHeadersOut.nonEmpty) { seq =>
-            seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
-              enabled = true,
-              include = Seq.empty,
-              exclude = Seq.empty,
-              config = PluginInstanceConfig(Json.obj(
-                "headers" -> JsObject(service.additionalHeadersOut.mapValues(JsString.apply))
-              ))
-            )
-          }
           .applyOnIf(service.maintenanceMode) { seq =>
             seq :+ PluginInstance(
               plugin = "cp:otoroshi.next.plugins.MaintenanceMode"
@@ -282,6 +271,91 @@ object Route {
           .applyOnIf(!service.allowHttp10) { seq =>
             seq :+ PluginInstance(
               plugin = "cp:otoroshi.next.plugins.DisableHttp10"
+            )
+          }
+          .applyOnIf(service.readOnly) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.ReadOnlyCalls"
+            )
+          }
+          .applyOnIf(service.ipFiltering.blacklist.nonEmpty) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.IpAddressBlockList",
+              config = PluginInstanceConfig(Json.obj(
+                "addresses" -> JsArray(service.ipFiltering.blacklist.map(JsString.apply))
+              ))
+            )
+          }
+          .applyOnIf(service.ipFiltering.whitelist.nonEmpty) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.IpAddressAllowedList",
+              config = PluginInstanceConfig(Json.obj(
+                "addresses" -> JsArray(service.ipFiltering.whitelist.map(JsString.apply))
+              ))
+            )
+          }
+          .applyOnIf(service.redirection.enabled) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.Redirection",
+              config = PluginInstanceConfig(service.redirection.toJson.as[JsObject])
+            )
+          }
+          .applyOnIf(service.additionalHeaders.nonEmpty) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.AdditionalHeadersIn",
+              config = PluginInstanceConfig(Json.obj(
+                "headers" -> JsObject(service.additionalHeaders.mapValues(JsString.apply))
+              ))
+            )
+          }
+          .applyOnIf(service.additionalHeadersOut.nonEmpty) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
+              config = PluginInstanceConfig(Json.obj(
+                "headers" -> JsObject(service.additionalHeadersOut.mapValues(JsString.apply))
+              ))
+            )
+          }
+          .applyOnIf(service.missingOnlyHeadersIn.nonEmpty) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.MissingHeadersIn",
+              config = PluginInstanceConfig(Json.obj(
+                "headers" -> JsObject(service.missingOnlyHeadersIn.mapValues(JsString.apply))
+              ))
+            )
+          }
+          .applyOnIf(service.missingOnlyHeadersOut.nonEmpty) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.MissingHeadersOut",
+              config = PluginInstanceConfig(Json.obj(
+                "headers" -> JsObject(service.missingOnlyHeadersOut.mapValues(JsString.apply))
+              ))
+            )
+          }
+          .applyOnIf(service.removeHeadersIn.nonEmpty) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.RemoveHeadersIn",
+              config = PluginInstanceConfig(Json.obj(
+                "headers" -> JsArray(service.removeHeadersIn.map(JsString.apply))
+              ))
+            )
+          }
+          .applyOnIf(service.removeHeadersOut.nonEmpty) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.RemoveHeadersOut",
+              config = PluginInstanceConfig(Json.obj(
+                "headers" -> JsArray(service.removeHeadersOut.map(JsString.apply))
+              ))
+            )
+          }
+          .applyOnIf(service.sendOtoroshiHeadersBack) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.SendOtoroshiHeadersBack",
+            )
+          }
+          .applyOnIf(service.xForwardedHeaders) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.XForwardedHeaders",
             )
           }
       )

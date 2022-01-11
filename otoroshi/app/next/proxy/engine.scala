@@ -74,6 +74,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
+  // TODO: filter bad headers out
   def handleRequest(request: Request[Source[ByteString, _]], config: JsObject)(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig): Future[Result] = {
     val requestId = IdGenerator.uuid
     implicit val mat = env.otoroshiMaterializer
@@ -883,6 +884,7 @@ class ProxyEngine() extends RequestHandler {
         config = Json.obj(),
         globalConfig = globalConfig.plugins.config,
         attrs = attrs,
+        report = report
       )
       def markPluginItem(item: ReportPluginSequenceItem, ctx: NgTransformerRequestContext, result: JsValue): Unit = {
         sequence = sequence.copy(
@@ -1001,6 +1003,7 @@ class ProxyEngine() extends RequestHandler {
         config = Json.obj(),
         globalConfig = globalConfig.plugins.config,
         attrs = attrs,
+        report = report
       )
       def markPluginItem(item: ReportPluginSequenceItem, ctx: NgTransformerResponseContext, result: JsValue): Unit = {
         sequence = sequence.copy(
