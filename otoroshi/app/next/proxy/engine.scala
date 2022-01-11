@@ -157,6 +157,7 @@ class ProxyEngine() extends RequestHandler {
           _             = if (route.debugFlow) {
             // logger.info(report.json.prettify)
             Files.writeString(new File("./request-debug.json").toPath, report.json.prettify)
+            ()
           } else ()
         } yield clientResp
       }
