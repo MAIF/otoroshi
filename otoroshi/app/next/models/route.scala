@@ -279,6 +279,11 @@ object Route {
               plugin = "cp:otoroshi.next.plugins.BuildMode"
             )
           }
+          .applyOnIf(!service.allowHttp10) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.DisableHttp10"
+            )
+          }
       )
     )
   }
