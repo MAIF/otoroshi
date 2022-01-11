@@ -190,7 +190,9 @@ class ProxyEngine() extends RequestHandler {
             report.getStep("request-failure").flatMap(_.ctx.select("error").select("message").asOpt[String]).getOrElse("--")
         )
       } else Seq.empty
-      Files.writeString(new File("./request-debug.json").toPath, report.json.prettify)
+      if (report.getStep("find-route").flatMap(_.ctx.select("found_route").select("debug_flow").asOpt[Boolean]).getOrElse(false)) {
+        Files.writeString(new File("./request-debug.json").toPath, report.json.prettify)
+      }
       res.withHeaders(addHeaders: _*)
     }
   }
