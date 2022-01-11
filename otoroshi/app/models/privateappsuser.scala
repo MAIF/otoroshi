@@ -55,6 +55,7 @@ case class PrivateAppsUser(
     env.datastores.privateAppsUserDataStore.delete(randomId)
 
   def toJson: JsValue        = PrivateAppsUser.fmt.writes(this)
+  def lightJson: JsValue = asJsonCleaned
   def asJsonCleaned: JsValue =
     Json.obj(
       "name"     -> name,

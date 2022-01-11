@@ -1,5 +1,6 @@
 package otoroshi.utils
 
+import play.api.libs.json.{JsBoolean, JsNumber, JsObject, JsString, JsValue}
 import play.api.libs.typedmap.{TypedEntry, TypedKey}
 
 import scala.collection.concurrent.TrieMap
@@ -15,6 +16,7 @@ trait TypedMap {
   def clear(): TypedMap
   def getOrElseUpdate[A](key: TypedKey[A], op: => Any): TypedMap
   def toMap: Map[TypedKey[_], Any]
+  def json: JsValue
 }
 
 object TypedMap {
@@ -25,6 +27,18 @@ object TypedMap {
 }
 
 final class ConcurrentMutableTypedMap(m: TrieMap[TypedKey[_], Any]) extends TypedMap {
+
+  override def json: JsValue = {
+    JsObject(m.toSeq.zipWithIndex.map {
+      case ((key, value: String), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsString(value))
+      case ((key, value: Boolean), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsBoolean(value))
+      case ((key, value: Int), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value))
+      case ((key, value: Double), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value))
+      case ((key, value: Long), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value))
+      case ((key, value: JsValue), idx) => (key.displayName.getOrElse(s"key-${idx}"), value)
+      case ((key, value), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsString(value.toString))
+    })
+  }
 
   override def toString: String = m.mkString("{", ", ", "}")
 

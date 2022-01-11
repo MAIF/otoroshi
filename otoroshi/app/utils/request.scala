@@ -39,6 +39,14 @@ object RequestImplicits {
       }
     }
     @inline
+    def theSecuredTrusted: Boolean = {
+      requestHeader.headers
+        .get("X-Forwarded-Proto")
+        .orElse(requestHeader.headers.get("X-Forwarded-Protocol"))
+        .map(_ == "https")
+        .getOrElse(requestHeader.secure)
+    }
+    @inline
     def theUrl(implicit env: Env): String = {
       s"${theProtocol}://${theHost}${relativeUri}"
     }

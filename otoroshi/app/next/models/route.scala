@@ -41,6 +41,7 @@ case class Route(
   tags: Seq[String],
   metadata: Map[String, String],
   enabled: Boolean,
+  debugFlow: Boolean,
   frontend: Frontend,
   backends: Backends,
   client: ClientConfig,
@@ -59,6 +60,7 @@ case class Route(
     "tags" -> tags,
     "metadata" -> metadata,
     "enabled" -> enabled,
+    "debug_flow" -> debugFlow,
     "frontend" -> frontend.json,
     "backend" -> backends.json,
     "client" -> client.toJson,
@@ -100,6 +102,7 @@ object Route {
     tags = Seq.empty,
     metadata = Map.empty,
     enabled = true,
+    debugFlow = true,
     frontend = Frontend(
       domains = Seq(DomainAndPath("fake-next-gen.oto.tools")),
       headers = Map.empty,
@@ -151,6 +154,17 @@ object Route {
         config = PluginInstanceConfig(Json.obj(
           "headers" -> Json.obj(
             "bar" -> "foo"
+          )
+        ))
+      ),
+      PluginInstance(
+        plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
+        enabled = true,
+        include = Seq.empty,
+        exclude = Seq.empty,
+        config = PluginInstanceConfig(Json.obj(
+          "headers" -> Json.obj(
+            "bar2" -> "foo2"
           )
         ))
       )

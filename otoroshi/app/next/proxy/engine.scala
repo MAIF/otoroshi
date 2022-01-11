@@ -14,7 +14,7 @@ import otoroshi.next.models.{Backend, Route}
 import otoroshi.next.plugins.Keys
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.ProxyEngineError._
-import otoroshi.next.utils.{FEither, JsonErrors}
+import otoroshi.next.utils.{FEither, JsonHelpers}
 import otoroshi.script.RequestHandler
 import otoroshi.security.IdGenerator
 import otoroshi.utils.http.Implicits._
@@ -29,6 +29,8 @@ import play.api.libs.ws.WSResponse
 import play.api.mvc.Results.{BadGateway, GatewayTimeout, ServiceUnavailable}
 import play.api.mvc._
 
+import java.io.File
+import java.nio.file.Files
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -152,6 +154,10 @@ class ProxyEngine() extends RequestHandler {
           _             <- callPluginsAfterRequestCallback(snowflake, request, route)
           _             =  report.markDoneAndStart("trigger-analytics")
           _             <- triggerProxyDone(snowflake, request, response, route, backend)
+          _             = if (route.debugFlow) {
+            // logger.info(report.json.prettify)
+            Files.writeString(new File("./request-debug.json").toPath, report.json.prettify)
+          } else ()
         } yield clientResp
       }
     } yield {
@@ -270,6 +276,15 @@ class ProxyEngine() extends RequestHandler {
     val all_plugins = route.plugins.transformerPlugins(request)
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[ProxyEngineError, Done]]()
+      var sequence = ReportPluginSequence(
+        size = all_plugins.size,
+        kind = "before-request-plugins",
+        start = System.currentTimeMillis(),
+        stop = 0L ,
+        start_ns = System.nanoTime(),
+        stop_ns = 0L,
+        plugins = Seq.empty,
+      )
       val _ctx = NgBeforeRequestContext(
         snowflake = snowflake,
         request = request,
@@ -278,15 +293,37 @@ class ProxyEngine() extends RequestHandler {
         globalConfig = globalConfig.plugins.config,
         attrs = attrs,
       )
+      def markPluginItem(item: ReportPluginSequenceItem, ctx: NgBeforeRequestContext, result: JsValue): Unit = {
+        sequence = sequence.copy(
+          plugins = sequence.plugins :+ item.copy(
+            stop = System.currentTimeMillis(),
+            stop_ns = System.nanoTime(),
+            out = Json.obj(
+              "result" -> result,
+            ).applyOnIf(route.debugFlow)(_ ++ Json.obj("ctx" -> ctx.json))
+          )
+        )
+      }
       def next(plugins: Seq[PluginWrapper[NgRequestTransformer]]): Unit = {
         plugins.headOption match {
           case None => promise.trySuccess(Right(Done))
           case Some(wrapper) => {
             val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
-            wrapper.plugin.beforeRequest(_ctx.copy(config = pluginConfig)).andThen {
-              case Failure(exception) => promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during before-request plugins phase", "error" -> JsonErrors.errToJson(exception))))))
-              case Success(_) if plugins.size == 1 => promise.trySuccess(Right(Done))
-              case Success(_) => next(plugins.tail)
+            val ctx = _ctx.copy(config = pluginConfig)
+            val in: JsValue = if (route.debugFlow) Json.obj("ctx" -> ctx.json) else JsNull
+            val item = ReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+            wrapper.plugin.beforeRequest(ctx).andThen {
+              case Failure(exception) =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
+                report.setContext(sequence.stopSequence().json)
+                promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during before-request plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
+              case Success(_) if plugins.size == 1 =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "successful"))
+                report.setContext(sequence.stopSequence().json)
+                promise.trySuccess(Right(Done))
+              case Success(_) =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "successful"))
+                next(plugins.tail)
             }
           }
         }
@@ -302,6 +339,15 @@ class ProxyEngine() extends RequestHandler {
     val all_plugins = route.plugins.transformerPlugins(request)
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[ProxyEngineError, Done]]()
+      var sequence = ReportPluginSequence(
+        size = all_plugins.size,
+        kind = "after-request-plugins",
+        start = System.currentTimeMillis(),
+        stop = 0L ,
+        start_ns = System.nanoTime(),
+        stop_ns = 0L,
+        plugins = Seq.empty,
+      )
       val _ctx = NgAfterRequestContext(
         snowflake = snowflake,
         request = request,
@@ -310,15 +356,37 @@ class ProxyEngine() extends RequestHandler {
         globalConfig = globalConfig.plugins.config,
         attrs = attrs,
       )
+      def markPluginItem(item: ReportPluginSequenceItem, ctx: NgAfterRequestContext, result: JsValue): Unit = {
+        sequence = sequence.copy(
+          plugins = sequence.plugins :+ item.copy(
+            stop = System.currentTimeMillis(),
+            stop_ns = System.nanoTime(),
+            out = Json.obj(
+              "result" -> result,
+            ).applyOnIf(route.debugFlow)(_ ++ Json.obj("ctx" -> ctx.json))
+          )
+        )
+      }
       def next(plugins: Seq[PluginWrapper[NgRequestTransformer]]): Unit = {
         plugins.headOption match {
           case None => promise.trySuccess(Right(Done))
           case Some(wrapper) => {
             val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
-            wrapper.plugin.afterRequest(_ctx.copy(config = pluginConfig)).andThen {
-              case Failure(exception) => promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during before-request plugins phase", "error" -> JsonErrors.errToJson(exception))))))
-              case Success(_) if plugins.size == 1 => promise.trySuccess(Right(Done))
-              case Success(_) => next(plugins.tail)
+            val ctx = _ctx.copy(config = pluginConfig)
+            val in: JsValue = if (route.debugFlow) Json.obj("ctx" -> ctx.json) else JsNull
+            val item = ReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+            wrapper.plugin.afterRequest(ctx).andThen {
+              case Failure(exception) =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
+                report.setContext(sequence.stopSequence().json)
+                promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during before-request plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
+              case Success(_) if plugins.size == 1 =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "successful"))
+                report.setContext(sequence.stopSequence().json)
+                promise.trySuccess(Right(Done))
+              case Success(_) =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "successful"))
+                next(plugins.tail)
             }
           }
         }
@@ -334,6 +402,15 @@ class ProxyEngine() extends RequestHandler {
     val all_plugins = route.plugins.preRoutePlugins(request)
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[ProxyEngineError, Done]]()
+      var sequence = ReportPluginSequence(
+        size = all_plugins.size,
+        kind = "pre-route-plugins",
+        start = System.currentTimeMillis(),
+        stop = 0L ,
+        start_ns = System.nanoTime(),
+        stop_ns = 0L,
+        plugins = Seq.empty,
+      )
       val _ctx = NgPreRoutingContext(
         snowflake = snowflake,
         request = request,
@@ -342,16 +419,44 @@ class ProxyEngine() extends RequestHandler {
         globalConfig = globalConfig.plugins.config,
         attrs = attrs,
       )
+
+      def markPluginItem(item: ReportPluginSequenceItem, ctx: NgPreRoutingContext, result: JsValue): Unit = {
+        sequence = sequence.copy(
+          plugins = sequence.plugins :+ item.copy(
+            stop = System.currentTimeMillis(),
+            stop_ns = System.nanoTime(),
+            out = Json.obj(
+              "result" -> result,
+            ).applyOnIf(route.debugFlow)(_ ++ Json.obj("ctx" -> ctx.json))
+          )
+        )
+      }
+
       def next(plugins: Seq[PluginWrapper[NgPreRouting]]): Unit = {
         plugins.headOption match {
           case None => promise.trySuccess(Right(Done))
           case Some(wrapper) => {
             val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
-            wrapper.plugin.preRoute(_ctx.copy(config = pluginConfig)).andThen {
-              case Failure(exception) => promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during pre-routing plugins phase", "error" -> JsonErrors.errToJson(exception))))))
-              case Success(Left(err)) => promise.trySuccess(Left(ResultProxyEngineError(err.result)))
-              case Success(Right(_)) if plugins.size == 1 => promise.trySuccess(Right(Done))
-              case Success(Right(_)) => next(plugins.tail)
+            val ctx = _ctx.copy(config = pluginConfig)
+            val in: JsValue = if (route.debugFlow) Json.obj("ctx" -> ctx.json) else JsNull
+            val item = ReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+            wrapper.plugin.preRoute(ctx).andThen {
+              case Failure(exception) =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
+                report.setContext(sequence.stopSequence().json)
+                promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during pre-routing plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
+              case Success(Left(err)) =>
+                val result = err.result
+                markPluginItem(item, ctx, Json.obj("kind" -> "short-circuit", "status" -> result.header.status, "headers" -> result.header.headers))
+                report.setContext(sequence.stopSequence().json)
+                promise.trySuccess(Left(ResultProxyEngineError(result)))
+              case Success(Right(_)) if plugins.size == 1 =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "successful"))
+                report.setContext(sequence.stopSequence().json)
+                promise.trySuccess(Right(Done))
+              case Success(Right(_)) =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "successful"))
+                next(plugins.tail)
             }
           }
         }
@@ -367,6 +472,15 @@ class ProxyEngine() extends RequestHandler {
     val all_plugins = route.plugins.accessValidatorPlugins(request)
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[ProxyEngineError, Done]]()
+      var sequence = ReportPluginSequence(
+        size = all_plugins.size,
+        kind = "access-validator-plugins",
+        start = System.currentTimeMillis(),
+        stop = 0L ,
+        start_ns = System.nanoTime(),
+        stop_ns = 0L,
+        plugins = Seq.empty,
+      )
       val _ctx = NgAccessContext(
         snowflake = snowflake,
         request = request,
@@ -377,16 +491,41 @@ class ProxyEngine() extends RequestHandler {
         apikey = attrs.get(Keys.ApikeyKey),
         user = attrs.get(Keys.UserKey),
       )
+      def markPluginItem(item: ReportPluginSequenceItem, ctx: NgAccessContext, result: JsValue): Unit = {
+        sequence = sequence.copy(
+          plugins = sequence.plugins :+ item.copy(
+            stop = System.currentTimeMillis(),
+            stop_ns = System.nanoTime(),
+            out = Json.obj(
+              "result" -> result,
+            ).applyOnIf(route.debugFlow)(_ ++ Json.obj("ctx" -> ctx.json))
+          )
+        )
+      }
       def next(plugins: Seq[PluginWrapper[NgAccessValidator]]): Unit = {
         plugins.headOption match {
           case None => promise.trySuccess(Right(Done))
           case Some(wrapper) => {
             val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
-            wrapper.plugin.access(_ctx.copy(config = pluginConfig)).andThen {
-              case Failure(exception) => promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during pre-routing plugins phase", "error" -> JsonErrors.errToJson(exception))))))
-              case Success(NgAccess.NgDenied(result)) => promise.trySuccess(Left(ResultProxyEngineError(result)))
-              case Success(NgAccess.NgAllowed) if plugins.size == 1 => promise.trySuccess(Right(Done))
-              case Success(NgAccess.NgAllowed) => next(plugins.tail)
+            val ctx = _ctx.copy(config = pluginConfig)
+            val in: JsValue = if (route.debugFlow) Json.obj("ctx" -> ctx.json) else JsNull
+            val item = ReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+            wrapper.plugin.access(ctx).andThen {
+              case Failure(exception) =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
+                report.setContext(sequence.stopSequence().json)
+                promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during pre-routing plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
+              case Success(NgAccess.NgDenied(result)) =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "denied", "status" -> result.header.status))
+                report.setContext(sequence.stopSequence().json)
+                promise.trySuccess(Left(ResultProxyEngineError(result)))
+              case Success(NgAccess.NgAllowed) if plugins.size == 1 =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "allowed"))
+                report.setContext(sequence.stopSequence().json)
+                promise.trySuccess(Right(Done))
+              case Success(NgAccess.NgAllowed) =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "allowed"))
+                next(plugins.tail)
             }
           }
         }
@@ -727,7 +866,15 @@ class ProxyEngine() extends RequestHandler {
     val all_plugins = route.plugins.transformerPlugins(request)
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[ProxyEngineError, PluginHttpRequest]]()
-
+      var sequence = ReportPluginSequence(
+        size = all_plugins.size,
+        kind = "request-transformer-plugins",
+        start = System.currentTimeMillis(),
+        stop = 0L ,
+        start_ns = System.nanoTime(),
+        stop_ns = 0L,
+        plugins = Seq.empty,
+      )
       val __ctx = NgTransformerRequestContext(
         snowflake = snowflake,
         request = request,
@@ -740,16 +887,41 @@ class ProxyEngine() extends RequestHandler {
         globalConfig = globalConfig.plugins.config,
         attrs = attrs,
       )
+      def markPluginItem(item: ReportPluginSequenceItem, ctx: NgTransformerRequestContext, result: JsValue): Unit = {
+        sequence = sequence.copy(
+          plugins = sequence.plugins :+ item.copy(
+            stop = System.currentTimeMillis(),
+            stop_ns = System.nanoTime(),
+            out = Json.obj(
+              "result" -> result,
+            ).applyOnIf(route.debugFlow)(_ ++ Json.obj("ctx" -> ctx.json))
+          )
+        )
+      }
       def next(_ctx: NgTransformerRequestContext, plugins: Seq[PluginWrapper[NgRequestTransformer]]): Unit = {
         plugins.headOption match {
           case None => promise.trySuccess(Right(_ctx.otoroshiRequest))
           case Some(wrapper) => {
             val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
-            wrapper.plugin.transformRequest(_ctx.copy(config = pluginConfig)).andThen {
-              case Failure(exception) => promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during request-transformation plugins phase", "error" -> JsonErrors.errToJson(exception))))))
-              case Success(Left(result)) => promise.trySuccess(Left(ResultProxyEngineError(result)))
-              case Success(Right(req_next)) if plugins.size == 1 => promise.trySuccess(Right(req_next))
-              case Success(Right(req_next)) => next(_ctx.copy(otoroshiRequest = req_next), plugins.tail)
+            val ctx = _ctx.copy(config = pluginConfig)
+            val in: JsValue = if (route.debugFlow) Json.obj("ctx" -> ctx.json) else JsNull
+            val item = ReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+            wrapper.plugin.transformRequest(ctx).andThen {
+              case Failure(exception) =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
+                report.setContext(sequence.stopSequence().json)
+                promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during request-transformation plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
+              case Success(Left(result)) =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "short-circuit", "status" -> result.header.status, "headers" -> result.header.headers))
+                report.setContext(sequence.stopSequence().json)
+                promise.trySuccess(Left(ResultProxyEngineError(result)))
+              case Success(Right(req_next)) if plugins.size == 1 =>
+                markPluginItem(item, ctx.copy(otoroshiRequest = req_next), Json.obj("kind" -> "successful"))
+                report.setContext(sequence.stopSequence().json)
+                promise.trySuccess(Right(req_next))
+              case Success(Right(req_next)) =>
+                markPluginItem(item, ctx.copy(otoroshiRequest = req_next), Json.obj("kind" -> "successful"))
+                next(_ctx.copy(otoroshiRequest = req_next), plugins.tail)
             }
           }
         }
@@ -812,7 +984,15 @@ class ProxyEngine() extends RequestHandler {
     val all_plugins = route.plugins.transformerPlugins(rawRequest)
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[ProxyEngineError, PluginHttpResponse]]()
-
+      var sequence = ReportPluginSequence(
+        size = all_plugins.size,
+        kind = "response-transformer-plugins",
+        start = System.currentTimeMillis(),
+        stop = 0L ,
+        start_ns = System.nanoTime(),
+        stop_ns = 0L,
+        plugins = Seq.empty,
+      )
       val __ctx = NgTransformerResponseContext(
         snowflake = snowflake,
         request = rawRequest,
@@ -825,16 +1005,41 @@ class ProxyEngine() extends RequestHandler {
         globalConfig = globalConfig.plugins.config,
         attrs = attrs,
       )
+      def markPluginItem(item: ReportPluginSequenceItem, ctx: NgTransformerResponseContext, result: JsValue): Unit = {
+        sequence = sequence.copy(
+          plugins = sequence.plugins :+ item.copy(
+            stop = System.currentTimeMillis(),
+            stop_ns = System.nanoTime(),
+            out = Json.obj(
+              "result" -> result,
+            ).applyOnIf(route.debugFlow)(_ ++ Json.obj("ctx" -> ctx.json))
+          )
+        )
+      }
       def next(_ctx: NgTransformerResponseContext, plugins: Seq[PluginWrapper[NgRequestTransformer]]): Unit = {
         plugins.headOption match {
           case None => promise.trySuccess(Right(_ctx.otoroshiResponse))
           case Some(wrapper) => {
             val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
-            wrapper.plugin.transformResponse(_ctx.copy(config = pluginConfig)).andThen {
-              case Failure(exception) => promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during response-transformation plugins phase", "error" -> JsonErrors.errToJson(exception))))))
-              case Success(Left(result)) => promise.trySuccess(Left(ResultProxyEngineError(result)))
-              case Success(Right(resp_next)) if plugins.size == 1 => promise.trySuccess(Right(resp_next))
-              case Success(Right(resp_next)) => next(_ctx.copy(otoroshiResponse = resp_next), plugins.tail)
+            val ctx = _ctx.copy(config = pluginConfig)
+            val in: JsValue = if (route.debugFlow) Json.obj("ctx" -> ctx.json) else JsNull
+            val item = ReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+            wrapper.plugin.transformResponse(ctx).andThen {
+              case Failure(exception) =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
+                report.setContext(sequence.stopSequence().json)
+                promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during response-transformation plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
+              case Success(Left(result)) =>
+                markPluginItem(item, ctx, Json.obj("kind" -> "short-circuit", "status" -> result.header.status, "headers" -> result.header.headers))
+                report.setContext(sequence.stopSequence().json)
+                promise.trySuccess(Left(ResultProxyEngineError(result)))
+              case Success(Right(resp_next)) if plugins.size == 1 =>
+                markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), Json.obj("kind" -> "successful"))
+                report.setContext(sequence.stopSequence().json)
+                promise.trySuccess(Right(resp_next))
+              case Success(Right(resp_next)) =>
+                markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), Json.obj("kind" -> "successful"))
+                next(_ctx.copy(otoroshiResponse = resp_next), plugins.tail)
             }
           }
         }

@@ -1,9 +1,44 @@
 package otoroshi.next.proxy
 
 import org.joda.time.DateTime
-import otoroshi.next.utils.JsonErrors
+import otoroshi.next.utils.JsonHelpers
 import play.api.libs.json.{JsArray, JsNull, JsObject, JsString, JsValue, Json}
 
+case class ReportPluginSequenceItem(plugin: String, name: String, start: Long, start_ns: Long, stop: Long, stop_ns: Long, in: JsValue, out: JsValue) {
+  def json: JsValue = Json.obj(
+    "plugin" -> plugin,
+    "name" -> name,
+    "start" -> start,
+    "start_fmt" -> new DateTime(start).toString(),
+    "stop" -> stop,
+    "stop_fmt" -> new DateTime(stop).toString(),
+    "duration" -> (stop - start),
+    "duration_ns" -> (stop_ns - start_ns),
+    "execution_debug" -> Json.obj(
+      "in" -> in,
+      "out" -> out
+    )
+  )
+}
+
+case class ReportPluginSequence(size: Int, kind: String, start: Long, start_ns: Long, stop: Long, stop_ns: Long, plugins: Seq[ReportPluginSequenceItem]) {
+  def json: JsValue = Json.obj(
+    "size" -> size,
+    "kind" -> kind,
+    "start" -> start,
+    "start_ns" -> start_ns,
+    "start_fmt" -> new DateTime(start).toString(),
+    "stop" -> stop,
+    "stop_ns" -> stop_ns,
+    "stop_fmt" -> new DateTime(stop).toString(),
+    "duration" -> (stop - start),
+    "duration_ns" -> (stop_ns - start_ns),
+    "plugins" -> JsArray(plugins.map(_.json))
+  )
+  def stopSequence(): ReportPluginSequence = {
+    copy(stop = System.currentTimeMillis(), stop_ns = System.nanoTime())
+  }
+}
 
 object ExecutionReport {
   def apply(id: String): ExecutionReport = new ExecutionReport(id, DateTime.now())
@@ -21,7 +56,7 @@ object ExecutionReportState {
   case object Failed     extends ExecutionReportState { def name: String = "Failed"     }
 }
 
-case class ExecutionReportStep(task: String, start: Long, stop: Long, duration: Long, ctx: JsValue = JsNull) {
+case class ExecutionReportStep(task: String, start: Long, stop: Long, duration: Long, duration_ns: Long, ctx: JsValue = JsNull) {
   def json: JsValue = Json.obj(
     "task" -> task,
     "start" -> start,
@@ -29,6 +64,7 @@ case class ExecutionReportStep(task: String, start: Long, stop: Long, duration: 
     "stop" -> stop,
     "stop_fmt" -> new DateTime(stop).toString(),
     "duration" -> duration,
+    "duration_ns" -> duration_ns,
     "ctx" -> ctx
   )
 }
@@ -39,9 +75,12 @@ class ExecutionReport(val id: String, val creation: DateTime) {
   // I know mutability is bad etc but here, i know for sure that concurrency is not an issue
   var currentTask: String = ""
   var lastStart: Long = creation.toDate.getTime
+  val start_ns: Long = System.nanoTime()
+  var lastStart_ns: Long = start_ns
   var state: ExecutionReportState = ExecutionReportState.Created
   var steps: Seq[ExecutionReportStep] = Seq.empty
   var gduration = -1L
+  var gduration_ns = -1L
   var overheadIn = -1L
   var overheadOut = -1L
   var overheadOutStart = creation.toDate.getTime
@@ -57,6 +96,7 @@ class ExecutionReport(val id: String, val creation: DateTime) {
     "creation" -> creation.toString(),
     "termination" -> termination.toString(),
     "duration" -> gduration,
+    "duration_ns" -> gduration_ns,
     "overhead_in" -> overheadIn,
     "overhead_out" -> overheadOut,
     "state" -> state.json,
@@ -98,10 +138,14 @@ class ExecutionReport(val id: String, val creation: DateTime) {
   def markFailure(message: String): ExecutionReport = {
     state = ExecutionReportState.Failed
     val stop = System.currentTimeMillis()
+    val stop_ns = System.nanoTime()
     val duration = stop - lastStart
-    steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, ctx) :+ ExecutionReportStep("request-failure", stop, stop, 0L, Json.obj("message" -> message))
+    val duration_ns = stop - lastStart_ns
+    steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, ctx) :+ ExecutionReportStep("request-failure", stop, stop, 0L, 0L, Json.obj("message" -> message))
     lastStart = stop
+    lastStart_ns = stop_ns
     gduration = stop - creation.getMillis
+    gduration_ns = stop_ns - start_ns
     termination = new DateTime(stop)
     this
   }
@@ -109,10 +153,14 @@ class ExecutionReport(val id: String, val creation: DateTime) {
   def markFailure(message: String, error: Throwable): ExecutionReport = {
     state = ExecutionReportState.Failed
     val stop = System.currentTimeMillis()
+    val stop_ns = System.nanoTime()
     val duration = stop - lastStart
-    steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, ctx) :+ ExecutionReportStep("request-failure", stop, stop, 0L, Json.obj("message" -> message, "error" -> JsonErrors.errToJson(error)))
+    val duration_ns = stop - lastStart_ns
+    steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, ctx) :+ ExecutionReportStep("request-failure", stop, stop, 0L, 0L, Json.obj("message" -> message, "error" -> JsonHelpers.errToJson(error)))
     lastStart = stop
+    lastStart_ns = stop_ns
     gduration = stop - creation.getMillis
+    gduration_ns = stop_ns - start_ns
     termination = new DateTime(stop)
     this
   }
@@ -120,10 +168,14 @@ class ExecutionReport(val id: String, val creation: DateTime) {
   def markSuccess(): ExecutionReport = {
     state = ExecutionReportState.Successful
     val stop = System.currentTimeMillis()
+    val stop_ns = System.nanoTime()
     val duration = stop - lastStart
-    steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, ctx) :+ ExecutionReportStep(s"request-success", stop, stop, 0L)
+    val duration_ns = stop - lastStart_ns
+    steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, ctx) :+ ExecutionReportStep(s"request-success", stop, stop, 0L, 0L)
     lastStart = stop
+    lastStart_ns = stop_ns
     gduration = stop - creation.getMillis
+    gduration_ns = stop_ns - start_ns
     termination = new DateTime(stop)
     this
   }
@@ -131,9 +183,12 @@ class ExecutionReport(val id: String, val creation: DateTime) {
   def markDoneAndStart(task: String, previousCtx: Option[JsValue] = None): ExecutionReport = {
     state = ExecutionReportState.Running
     val stop = System.currentTimeMillis()
+    val stop_ns = System.nanoTime()
     val duration = stop - lastStart
-    steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, previousCtx.getOrElse(ctx))
+    val duration_ns = stop - lastStart_ns
+    steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, previousCtx.getOrElse(ctx))
     lastStart = stop
+    lastStart_ns = stop_ns
     currentTask = task
     ctx = JsNull
     this
@@ -142,6 +197,7 @@ class ExecutionReport(val id: String, val creation: DateTime) {
   def start(task: String, context: JsValue = JsNull): ExecutionReport = {
     state = ExecutionReportState.Running
     lastStart = System.currentTimeMillis()
+    lastStart_ns = System.nanoTime()
     currentTask = task
     ctx = context
     this

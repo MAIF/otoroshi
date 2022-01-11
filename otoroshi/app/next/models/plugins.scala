@@ -51,7 +51,7 @@ case class Plugins(slots: Seq[PluginInstance]) {
       .map(inst => (inst, inst.getPlugin[NgRequestTransformer]))
       .collect {
         case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
-      }
+      }//.debug(seq => println(s"found ${seq.size} request-transformer plugins"))
   }
 
   def preRoutePlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgPreRouting]] = {
@@ -61,7 +61,7 @@ case class Plugins(slots: Seq[PluginInstance]) {
       .map(inst => (inst, inst.getPlugin[NgPreRouting]))
       .collect {
         case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
-      }
+      }//.debug(seq => println(s"found ${seq.size} pre-route plugins"))
   }
 
   def accessValidatorPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgAccessValidator]] = {
@@ -71,6 +71,6 @@ case class Plugins(slots: Seq[PluginInstance]) {
       .map(inst => (inst, inst.getPlugin[NgAccessValidator]))
       .collect {
         case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
-      }
+      }//.debug(seq => println(s"found ${seq.size} access-validator plugins"))
   }
 }

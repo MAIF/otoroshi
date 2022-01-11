@@ -7,10 +7,10 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import otoroshi.env.Env
-import otoroshi.gateway.Errors
-import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.models.{ApiKey, PrivateAppsUser}
 import otoroshi.next.models.{PluginInstance, Route}
-import otoroshi.script.{Access, AccessContext, Allowed, ContextWithConfig, Denied, HttpRequest, HttpResponse, InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable, TransformerContext}
+import otoroshi.next.utils.JsonHelpers
+import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
 import otoroshi.utils.TypedMap
 import play.api.libs.json._
 import play.api.libs.ws.WSCookie
@@ -18,7 +18,6 @@ import play.api.mvc.{RequestHeader, Result, Results}
 
 import java.security.cert.X509Certificate
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
 
 case class PluginHttpRequest(
@@ -177,7 +176,12 @@ case class NgPreRoutingContext(
   attrs: TypedMap,
 ) {
   def json: JsValue = Json.obj(
-
+    "snowflake" -> snowflake,
+    // "route" -> route.json,
+    "request" -> JsonHelpers.requestToJson(request),
+    "config" -> config,
+    "global_config" -> globalConfig,
+    "attrs" -> attrs.json
   )
 }
 
@@ -213,7 +217,16 @@ case class NgBeforeRequestContext(
   config: JsValue,
   attrs: TypedMap,
   globalConfig: JsValue = Json.obj()
-)
+) {
+  def json: JsValue = Json.obj(
+    "snowflake" -> snowflake,
+    // "route" -> route.json,
+    "request" -> JsonHelpers.requestToJson(request),
+    "config" -> config,
+    "global_config" -> globalConfig,
+    "attrs" -> attrs.json
+  )
+}
 
 case class NgAfterRequestContext(
   snowflake: String,
@@ -222,7 +235,16 @@ case class NgAfterRequestContext(
   config: JsValue,
   attrs: TypedMap,
   globalConfig: JsValue = Json.obj()
-)
+) {
+  def json: JsValue = Json.obj(
+    "snowflake" -> snowflake,
+    // "route" -> route.json,
+    "request" -> JsonHelpers.requestToJson(request),
+    "config" -> config,
+    "global_config" -> globalConfig,
+    "attrs" -> attrs.json
+  )
+}
 
 case class NgTransformerRequestContext(
   rawRequest: PluginHttpRequest,
@@ -235,7 +257,20 @@ case class NgTransformerRequestContext(
   config: JsValue,
   attrs: TypedMap,
   globalConfig: JsValue = Json.obj()
-)
+) {
+  def json: JsValue = Json.obj(
+    "snowflake" -> snowflake,
+    "raw_request" -> rawRequest.json,
+    "otoroshi_request" -> otoroshiRequest.json,
+    "apikey" -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
+    "user" -> user.map(_.lightJson).getOrElse(JsNull).as[JsValue],
+    // "route" -> route.json,
+    "request" -> JsonHelpers.requestToJson(request),
+    "config" -> config,
+    "global_config" -> globalConfig,
+    "attrs" -> attrs.json
+  )
+}
 
 case class NgTransformerResponseContext(
   rawResponse: PluginHttpResponse,
@@ -248,7 +283,20 @@ case class NgTransformerResponseContext(
   config: JsValue,
   attrs: TypedMap,
   globalConfig: JsValue = Json.obj()
-)
+) {
+  def json: JsValue = Json.obj(
+    "snowflake" -> snowflake,
+    "raw_response" -> rawResponse.json,
+    "otoroshi_response" -> otoroshiResponse.json,
+    "apikey" -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
+    "user" -> user.map(_.lightJson).getOrElse(JsNull).as[JsValue],
+    // "route" -> route.json,
+    "request" -> JsonHelpers.requestToJson(request),
+    "config" -> config,
+    "global_config" -> globalConfig,
+    "attrs" -> attrs.json
+  )
+}
 
 case class NgTransformerErrorContext(
   snowflake: String,
@@ -264,7 +312,22 @@ case class NgTransformerErrorContext(
   config: JsValue,
   globalConfig: JsValue = Json.obj(),
   attrs: TypedMap
-)
+) {
+  def json: JsValue = Json.obj(
+    "snowflake" -> snowflake,
+    "maybe_cause_id" -> maybeCauseId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "call_attempts" -> callAttempts,
+    "otoroshi_response" -> otoroshiResponse.json,
+    "otoroshi_result" -> Json.obj("status" -> otoroshiResult.header.status, "headers" -> otoroshiResult.header.headers),
+    "apikey" -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
+    "user" -> user.map(_.lightJson).getOrElse(JsNull).as[JsValue],
+    // "route" -> route.json,
+    "request" -> JsonHelpers.requestToJson(request),
+    "config" -> config,
+    "global_config" -> globalConfig,
+    "attrs" -> attrs.json
+  )
+}
 
 trait NgRequestTransformer extends NgPlugin {
 
@@ -298,7 +361,18 @@ case class NgAccessContext(
   config: JsValue,
   attrs: TypedMap,
   globalConfig: JsValue
-)
+) {
+  def json: JsValue = Json.obj(
+    "snowflake" -> snowflake,
+    "apikey" -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
+    "user" -> user.map(_.lightJson).getOrElse(JsNull).as[JsValue],
+    // "route" -> route.json,
+    "request" -> JsonHelpers.requestToJson(request),
+    "config" -> config,
+    "global_config" -> globalConfig,
+    "attrs" -> attrs.json
+  )
+}
 
 sealed trait NgAccess
 object NgAccess {
