@@ -97,6 +97,7 @@ class ExecutionReport(val id: String, val creation: DateTime) {
     "termination" -> termination.toString(),
     "duration" -> gduration,
     "duration_ns" -> gduration_ns,
+    "overhead" -> (overheadIn + overheadOut),
     "overhead_in" -> overheadIn,
     "overhead_out" -> overheadOut,
     "state" -> state.json,
@@ -140,7 +141,7 @@ class ExecutionReport(val id: String, val creation: DateTime) {
     val stop = System.currentTimeMillis()
     val stop_ns = System.nanoTime()
     val duration = stop - lastStart
-    val duration_ns = stop - lastStart_ns
+    val duration_ns = stop_ns - lastStart_ns
     steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, ctx) :+ ExecutionReportStep("request-failure", stop, stop, 0L, 0L, Json.obj("message" -> message))
     lastStart = stop
     lastStart_ns = stop_ns
@@ -155,7 +156,7 @@ class ExecutionReport(val id: String, val creation: DateTime) {
     val stop = System.currentTimeMillis()
     val stop_ns = System.nanoTime()
     val duration = stop - lastStart
-    val duration_ns = stop - lastStart_ns
+    val duration_ns = stop_ns - lastStart_ns
     steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, ctx) :+ ExecutionReportStep("request-failure", stop, stop, 0L, 0L, Json.obj("message" -> message, "error" -> JsonHelpers.errToJson(error)))
     lastStart = stop
     lastStart_ns = stop_ns
@@ -170,7 +171,7 @@ class ExecutionReport(val id: String, val creation: DateTime) {
     val stop = System.currentTimeMillis()
     val stop_ns = System.nanoTime()
     val duration = stop - lastStart
-    val duration_ns = stop - lastStart_ns
+    val duration_ns = stop_ns - lastStart_ns
     steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, ctx) :+ ExecutionReportStep(s"request-success", stop, stop, 0L, 0L)
     lastStart = stop
     lastStart_ns = stop_ns
@@ -185,7 +186,7 @@ class ExecutionReport(val id: String, val creation: DateTime) {
     val stop = System.currentTimeMillis()
     val stop_ns = System.nanoTime()
     val duration = stop - lastStart
-    val duration_ns = stop - lastStart_ns
+    val duration_ns = stop_ns - lastStart_ns
     steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, previousCtx.getOrElse(ctx))
     lastStart = stop
     lastStart_ns = stop_ns

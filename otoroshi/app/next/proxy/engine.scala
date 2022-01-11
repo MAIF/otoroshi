@@ -136,17 +136,15 @@ class ProxyEngine() extends RequestHandler {
       remQuotas       <- checkGlobalLimits(request, route) // generic.scala (1269)
       _               =  report.markDoneAndStart("choose-backend", Json.obj("remaining_quotas" -> remQuotas.toJson).some)
       result          <- callTarget(snowflake, reqNumber, request, route) { backend =>
-        report.markDoneAndStart("check-high-overhead")
+        report.markDoneAndStart("check-high-overhead", Json.obj("backend" -> backend.json).some)
         for {
           _             <- handleHighOverhead(request, route)
           _             =  report.markDoneAndStart("transform-requests")
           finalRequest  <- callRequestTransformer(snowflake, request, route, backend)
-          _             =  report.markDoneAndStart("transform-request-body")
           _             =  report.markDoneAndStart("call-backend")
           response      <- callBackend(snowflake, request, finalRequest, route, backend)
           _             =  report.markDoneAndStart("transform-response")
           finalResp     <- callResponseTransformer(snowflake, request, response, remQuotas, route, backend)
-          _             =  report.markDoneAndStart("transform-response-body")
           _             =  report.markDoneAndStart("stream-response")
           clientResp    <- streamResponse(snowflake, request, response, finalResp, route, backend)
           _             =  report.markDoneAndStart("call-after-request-callbacks")
@@ -154,11 +152,6 @@ class ProxyEngine() extends RequestHandler {
           _             <- callPluginsAfterRequestCallback(snowflake, request, route)
           _             =  report.markDoneAndStart("trigger-analytics")
           _             <- triggerProxyDone(snowflake, request, response, route, backend)
-          _             = if (route.debugFlow) {
-            // logger.info(report.json.prettify)
-            Files.writeString(new File("./request-debug.json").toPath, report.json.prettify)
-            ()
-          } else ()
         } yield clientResp
       }
     } yield {
@@ -180,7 +173,7 @@ class ProxyEngine() extends RequestHandler {
       case _ =>
         report.markOverheadOut()
         if (debug) logger.info(report.json.prettify)
-        // TODO: send to analytics if debug activated on route
+      // TODO: send to analytics if debug activated on route
     }.map { res =>
       val addHeaders = if (debugHeaders) Seq(
         "x-otoroshi-request-overhead" -> (report.overheadIn + report.overheadOut).toString,
@@ -197,6 +190,7 @@ class ProxyEngine() extends RequestHandler {
             report.getStep("request-failure").flatMap(_.ctx.select("error").select("message").asOpt[String]).getOrElse("--")
         )
       } else Seq.empty
+      Files.writeString(new File("./request-debug.json").toPath, report.json.prettify)
       res.withHeaders(addHeaders: _*)
     }
   }
