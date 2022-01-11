@@ -147,6 +147,13 @@ object Route {
         ))
       ),
       PluginInstance(
+        plugin = "cp:otoroshi.next.plugins.TestBodyTransformation",
+        enabled = true,
+        include = Seq.empty,
+        exclude = Seq.empty,
+        config = PluginInstanceConfig(Json.obj())
+      ),
+      PluginInstance(
         plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
         enabled = true,
         include = Seq.empty,

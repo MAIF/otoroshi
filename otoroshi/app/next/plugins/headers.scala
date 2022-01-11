@@ -2,10 +2,13 @@ package otoroshi.next.plugins
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.Json
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -63,5 +66,22 @@ class AdditionalHeadersOut extends NgRequestTransformer {
   override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpResponse]] = {
     val additionalHeaders = ctx.config.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
     FastFuture.successful(Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders)))
+  }
+}
+
+class TestBodyTransformation extends NgRequestTransformer {
+
+  // TODO: add name and config
+
+  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpRequest]] = {
+    ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _ ).map { bodyRaw =>
+      val body = bodyRaw.utf8String
+      if (body == "hello") {
+        val payload = "hi !!!"
+        Right(ctx.otoroshiRequest.copy(body = Source.single(ByteString(payload)), headers = ctx.otoroshiRequest.headers - "Content-Length" - "content-length" ++ Map("Content-Length" -> payload.size.toString)))
+      } else {
+        Left(Results.BadRequest(Json.obj("error" -> "bad body")))
+      }
+    }
   }
 }

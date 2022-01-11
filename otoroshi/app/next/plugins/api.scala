@@ -44,6 +44,7 @@ case class PluginHttpRequest(
       "method"  -> method,
       "headers" -> headers,
       "version" -> version,
+      "client_cert_chain" -> JsonHelpers.clientCertChainToJson(clientCertificateChain),
       "cookies" -> JsArray(
         cookies.map(c =>
           Json.obj(

@@ -956,7 +956,7 @@ class ProxyEngine() extends RequestHandler {
 
     // because writeableOf_WsBody always add a 'Content-Type: application/octet-stream' header
     val builderWithBody = if (currentReqHasBody) {
-      builder.withBody(rawRequest.body)
+      builder.withBody(request.body)
     } else {
       builder
     }
