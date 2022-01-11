@@ -14,9 +14,7 @@ import play.api.mvc.{Result, Results}
 import scala.concurrent.{ExecutionContext, Future}
 
 class OverrideHost extends NgRequestTransformer {
-
   // TODO: add name and config
-
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpRequest]] = {
     ctx.attrs.get(Keys.BackendKey) match {
       case None => FastFuture.successful(Right(ctx.otoroshiRequest))
@@ -30,9 +28,7 @@ class OverrideHost extends NgRequestTransformer {
 }
 
 class HeadersValidation extends NgAccessValidator {
-
   // TODO: add name and config
-
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val validationHeaders = ctx.config.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty).map {
       case (key, value) => (key.toLowerCase, value)
@@ -60,19 +56,16 @@ class HeadersValidation extends NgAccessValidator {
 }
 
 class AdditionalHeadersOut extends NgRequestTransformer {
-
   // TODO: add name and config
-
   override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpResponse]] = {
+    // TODO: add expression language
     val additionalHeaders = ctx.config.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
     FastFuture.successful(Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders)))
   }
 }
 
+/*
 class TestBodyTransformation extends NgRequestTransformer {
-
-  // TODO: add name and config
-
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpRequest]] = {
     ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _ ).map { bodyRaw =>
       val body = bodyRaw.utf8String
@@ -85,3 +78,4 @@ class TestBodyTransformation extends NgRequestTransformer {
     }
   }
 }
+ */

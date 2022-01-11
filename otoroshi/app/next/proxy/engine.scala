@@ -413,6 +413,7 @@ class ProxyEngine() extends RequestHandler {
         config = Json.obj(),
         globalConfig = globalConfig.plugins.config,
         attrs = attrs,
+        report = report,
       )
 
       def markPluginItem(item: ReportPluginSequenceItem, ctx: NgPreRoutingContext, result: JsValue): Unit = {
@@ -485,6 +486,7 @@ class ProxyEngine() extends RequestHandler {
         attrs = attrs,
         apikey = attrs.get(Keys.ApikeyKey),
         user = attrs.get(Keys.UserKey),
+        report = report,
       )
       def markPluginItem(item: ReportPluginSequenceItem, ctx: NgAccessContext, result: JsValue): Unit = {
         sequence = sequence.copy(

@@ -9,6 +9,7 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser}
 import otoroshi.next.models.{PluginInstance, Route}
+import otoroshi.next.proxy.ExecutionReport
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
 import otoroshi.utils.TypedMap
@@ -175,6 +176,7 @@ case class NgPreRoutingContext(
   config: JsValue,
   globalConfig: JsValue,
   attrs: TypedMap,
+  report: ExecutionReport,
 ) {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
@@ -367,7 +369,8 @@ case class NgAccessContext(
   apikey: Option[ApiKey],
   config: JsValue,
   attrs: TypedMap,
-  globalConfig: JsValue
+  globalConfig: JsValue,
+  report: ExecutionReport
 ) {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,

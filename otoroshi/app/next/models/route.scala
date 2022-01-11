@@ -121,7 +121,7 @@ case class Route(
 }
 
 object Route {
-  // TODO: implements
+
   val fake = Route(
     location = EntityLocation.default,
     id = s"route_${IdGenerator.uuid}",
@@ -151,23 +151,12 @@ object Route {
     plugins = Plugins(Seq(
       PluginInstance(
         plugin = "cp:otoroshi.next.plugins.ForceHttpsTraffic",
-        enabled = true,
-        include = Seq.empty,
-        exclude = Seq.empty,
-        config = PluginInstanceConfig(Json.obj())
       ),
       PluginInstance(
         plugin = "cp:otoroshi.next.plugins.OverrideHost",
-        enabled = true,
-        include = Seq.empty,
-        exclude = Seq.empty,
-        config = PluginInstanceConfig(Json.obj())
       ),
       PluginInstance(
         plugin = "cp:otoroshi.next.plugins.HeadersValidation",
-        enabled = true,
-        include = Seq.empty,
-        exclude = Seq.empty,
         config = PluginInstanceConfig(Json.obj(
           "headers" -> Json.obj(
             "foo" -> "bar"
@@ -176,16 +165,9 @@ object Route {
       ),
       // PluginInstance(
       //   plugin = "cp:otoroshi.next.plugins.TestBodyTransformation",
-      //   enabled = true,
-      //   include = Seq.empty,
-      //   exclude = Seq.empty,
-      //   config = PluginInstanceConfig(Json.obj())
       // ),
       PluginInstance(
         plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
-        enabled = true,
-        include = Seq.empty,
-        exclude = Seq.empty,
         config = PluginInstanceConfig(Json.obj(
           "headers" -> Json.obj(
             "bar" -> "foo"
@@ -194,9 +176,6 @@ object Route {
       ),
       PluginInstance(
         plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
-        enabled = true,
-        include = Seq.empty,
-        exclude = Seq.empty,
         config = PluginInstanceConfig(Json.obj(
           "headers" -> Json.obj(
             "bar2" -> "foo2"
@@ -205,6 +184,7 @@ object Route {
       )
     ))
   )
+
   val fmt = new Format[Route] {
     override def writes(o: Route): JsValue = o.json
     override def reads(json: JsValue): JsResult[Route] = Try {
@@ -263,27 +243,16 @@ object Route {
           .applyOnIf(service.forceHttps) { seq =>
             seq :+ PluginInstance(
               plugin = "cp:otoroshi.next.plugins.ForceHttpsTraffic",
-              enabled = true,
-              include = Seq.empty,
-              exclude = Seq.empty,
-              config = PluginInstanceConfig(Json.obj())
             )
           }
           .applyOnIf(service.overrideHost) { seq =>
             seq :+ PluginInstance(
               plugin = "cp:otoroshi.next.plugins.OverrideHost",
-              enabled = true,
-              include = Seq.empty,
-              exclude = Seq.empty,
-              config = PluginInstanceConfig(Json.obj())
             )
           }
           .applyOnIf(service.headersVerification.nonEmpty) { seq =>
             seq :+ PluginInstance(
               plugin = "cp:otoroshi.next.plugins.HeadersValidation",
-              enabled = true,
-              include = Seq.empty,
-              exclude = Seq.empty,
               config = PluginInstanceConfig(Json.obj(
                 "headers" -> JsObject(service.headersVerification.mapValues(JsString.apply))
               ))
@@ -298,6 +267,16 @@ object Route {
               config = PluginInstanceConfig(Json.obj(
                 "headers" -> JsObject(service.additionalHeadersOut.mapValues(JsString.apply))
               ))
+            )
+          }
+          .applyOnIf(service.maintenanceMode) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.MaintenanceMode"
+            )
+          }
+          .applyOnIf(service.buildMode) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.BuildMode"
             )
           }
       )

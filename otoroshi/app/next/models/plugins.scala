@@ -10,7 +10,7 @@ import play.api.mvc.RequestHeader
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
 
-case class PluginInstanceConfig(raw: JsObject) {
+case class PluginInstanceConfig(raw: JsObject = Json.obj()) {
   def json: JsValue = raw
 }
 
@@ -26,7 +26,7 @@ object PluginInstance {
   }
 }
 
-case class PluginInstance(plugin: String, enabled: Boolean, include: Seq[String], exclude: Seq[String], config: PluginInstanceConfig) {
+case class PluginInstance(plugin: String, enabled: Boolean = true, include: Seq[String] = Seq.empty, exclude: Seq[String] = Seq.empty, config: PluginInstanceConfig = PluginInstanceConfig()) {
   def json: JsValue = Json.obj(
     "enabled" -> enabled,
     "plugin" -> plugin,
