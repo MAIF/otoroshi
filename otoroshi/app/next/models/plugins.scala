@@ -4,7 +4,7 @@ import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgAccessValidator, NgNamedPlugin, NgPlugin, NgPreRouting, NgRequestTransformer, PluginWrapper}
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.json.{JsArray, JsLookupResult, JsObject, JsValue, Json}
 import play.api.mvc.RequestHeader
 
 import scala.concurrent.ExecutionContext
@@ -12,6 +12,18 @@ import scala.reflect.ClassTag
 
 case class PluginInstanceConfig(raw: JsObject) {
   def json: JsValue = raw
+}
+
+object PluginInstance {
+  def readFrom(obj: JsValue): PluginInstance = {
+    PluginInstance(
+      plugin = obj.select("plugin").asString,
+      enabled = obj.select("enabled").asOpt[Boolean].getOrElse(true),
+      include = obj.select("include").asOpt[Seq[String]].getOrElse(Seq.empty),
+      exclude = obj.select("exclude").asOpt[Seq[String]].getOrElse(Seq.empty),
+      config = PluginInstanceConfig(obj.select("config").asOpt[JsObject].getOrElse(Json.obj()))
+    )
+  }
 }
 
 case class PluginInstance(plugin: String, enabled: Boolean, include: Seq[String], exclude: Seq[String], config: PluginInstanceConfig) {
@@ -72,5 +84,16 @@ case class Plugins(slots: Seq[PluginInstance]) {
       .collect {
         case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
       }//.debug(seq => println(s"found ${seq.size} access-validator plugins"))
+  }
+}
+
+object Plugins {
+  def readFrom(lookup: JsLookupResult): Plugins = {
+    lookup.asOpt[JsObject] match {
+      case None => Plugins(Seq.empty)
+      case Some(obj) => Plugins(
+        slots = obj.select("slots").asOpt[Seq[JsValue]].map(_.map(PluginInstance.readFrom)).getOrElse(Seq.empty)
+      )
+    }
   }
 }

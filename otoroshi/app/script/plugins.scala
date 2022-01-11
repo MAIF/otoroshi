@@ -4,6 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import otoroshi.script._
 import otoroshi.utils.RegexPool
@@ -11,10 +12,10 @@ import play.api.libs.json.{Format, JsArray, JsError, JsResult, JsString, JsSucce
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils
-
 import otoroshi.utils.http.RequestImplicits._
 
 import java.util.concurrent.atomic.AtomicReference
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -151,18 +152,26 @@ case class Plugins(
     }
   }
 
-  private val request_handlers_ref = new AtomicReference[(Boolean, Map[String, RequestHandler])]()
+  private val request_handlers_cache = Scaffeine().maximumSize(2).expireAfterWrite(1.minute).build[String, (Boolean, Map[String, RequestHandler])]
+  private val request_handlers_cache_name = "singleton"
+  // private val request_handlers_ref = new AtomicReference[(Boolean, Map[String, RequestHandler])]()
 
   private def getHandlersMap(
       request: RequestHeader
   )(implicit ec: ExecutionContext, env: Env): (Boolean, Map[String, RequestHandler]) =
     env.metrics.withTimer("otoroshi.plugins.req-handlers.handlers-map-compute") {
-      request_handlers_ref.getOrSet {
+      request_handlers_cache.get(request_handlers_cache_name, _ => {
         val handlers = getPlugins[RequestHandler](request)
         val handlersMap = handlers.flatMap(h => plugin[RequestHandler](h)).flatMap(rh => rh.handledDomains.map(d => (d, rh))).toMap
         val hasWildcard = handlersMap.keys.exists(_.contains("*"))
         (hasWildcard, handlersMap)
-      }
+      })
+      // request_handlers_ref.getOrSet {
+      //   val handlers = getPlugins[RequestHandler](request)
+      //   val handlersMap = handlers.flatMap(h => plugin[RequestHandler](h)).flatMap(rh => rh.handledDomains.map(d => (d, rh))).toMap
+      //   val hasWildcard = handlersMap.keys.exists(_.contains("*"))
+      //   (hasWildcard, handlersMap)
+      // }
     }
 
   def canHandleRequest(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Boolean =

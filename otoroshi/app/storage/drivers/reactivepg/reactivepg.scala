@@ -21,6 +21,7 @@ import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
 import io.vertx.sqlclient.{PoolOptions, Row}
 import otoroshi.models._
 import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
+import otoroshi.next.models.{KvRouteDataStore, RouteDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage.stores._
 import otoroshi.storage.{RedisLike, _}
@@ -380,6 +381,9 @@ class ReactivePgDataStores(
 
   private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis, env)
   override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
+
+  private lazy val _routeDataStore = new KvRouteDataStore(redis, env)
+  override def routeDataStore: RouteDataStore = _routeDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore

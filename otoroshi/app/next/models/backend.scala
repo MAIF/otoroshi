@@ -1,9 +1,10 @@
 package otoroshi.next.models
 
 import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
-import otoroshi.models.{AlwaysMatch, TargetPredicate}
+import otoroshi.models.{AlwaysMatch, LoadBalancing, RoundRobin, Target, TargetPredicate}
 import otoroshi.utils.http.MtlsConfig
-import play.api.libs.json.{JsNull, JsString, JsValue, Json}
+import otoroshi.utils.syntax.implicits.BetterJsValue
+import play.api.libs.json.{JsArray, JsLookupResult, JsNull, JsObject, JsString, JsValue, Json}
 
 /*
 case class Backend(id: String, name: String, description: String, tags: Seq[String], metadata: Map[String, String], location: EntityLocation) extends EntityLocationSupport {
@@ -55,4 +56,37 @@ case class Backend(
     "ip_address" -> ipAddress.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "tls_config" -> tlsConfig.json
   )
+}
+
+object Backend {
+  def fromTarget(target: Target): Backend = {
+    Backend(
+      id = target.tags.headOption.getOrElse(target.host),
+      hostname = target.theHost,
+      port = target.thePort,
+      tls = target.scheme.toLowerCase == "https",
+      weight = target.weight,
+      protocol = target.protocol,
+      predicate = target.predicate,
+      ipAddress = target.ipAddress,
+      tlsConfig = target.mtlsConfig,
+    )
+  }
+  def readFrom(obj: JsValue): Backend = {
+    Backend(
+      id = obj.select("id").as[String],
+      hostname = obj.select("hostname").as[String],
+      port = obj.select("port").as[Int],
+      tls = obj.select("tls").asOpt[Boolean].getOrElse(false),
+      weight = obj.select("weight").asOpt[Int].getOrElse(1),
+      tlsConfig = MtlsConfig.read((obj \ "tlsConfig").asOpt[JsValue]),
+      protocol = (obj \ "protocol")
+       .asOpt[String]
+       .filterNot(_.trim.isEmpty)
+       .map(s => HttpProtocol.apply(s))
+       .getOrElse(HttpProtocols.`HTTP/1.1`),
+      predicate = (obj \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
+      ipAddress = (obj \ "ipAddress").asOpt[String].filterNot(_.trim.isEmpty),
+    )
+  }
 }

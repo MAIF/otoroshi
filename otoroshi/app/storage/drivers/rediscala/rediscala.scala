@@ -14,6 +14,7 @@ import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import otoroshi.models._
 import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
+import otoroshi.next.models.{KvRouteDataStore, RouteDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
@@ -454,6 +455,9 @@ abstract class AbstractRedisDataStores(
 
   private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis, env)
   override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
+
+  private lazy val _routeDataStore = new KvRouteDataStore(redis, env)
+  override def routeDataStore: RouteDataStore = _routeDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore

@@ -28,13 +28,14 @@ import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.jobs.updates.Version
 import otoroshi.models.{SimpleAdminDataStore, TenantId, WebAuthnAdminDataStore}
+import otoroshi.next.models.{KvRouteDataStore, RouteDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage._
 import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import otoroshi.utils
-import otoroshi.utils.{future, SchedulerHelper}
+import otoroshi.utils.{SchedulerHelper, future}
 import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
@@ -1699,6 +1700,9 @@ class SwappableInMemoryDataStores(
 
   private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis, env)
   override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
+
+  private lazy val _routeDataStore = new KvRouteDataStore(redis, env)
+  override def routeDataStore: RouteDataStore = _routeDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

@@ -8,7 +8,7 @@ import akka.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.{Alerts, Audit, MaxConcurrentRequestReachedAlert, MaxConcurrentRequestReachedEvent}
-import otoroshi.gateway.{AllCircuitBreakersOpenException, BodyAlreadyConsumedException, Errors, RequestTimeoutException, ServiceDescriptorCircuitBreaker}
+import otoroshi.gateway._
 import otoroshi.models.{GlobalConfig, RemainingQuotas, Target}
 import otoroshi.next.models.{Backend, Route}
 import otoroshi.next.plugins.Keys
@@ -26,7 +26,6 @@ import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.ws.WSResponse
-import play.api.mvc.Results.{BadGateway, GatewayTimeout, ServiceUnavailable}
 import play.api.mvc._
 
 import java.io.File
@@ -41,9 +40,6 @@ class ProxyEngine() extends RequestHandler {
   private val logger = Logger("otoroshi-next-gen-proxy-engine")
   private val fakeFailureIndicator = new AtomicBoolean(false)
   private val reqCounter  = new AtomicInteger(0)
-  private val routes = TrieMap.newBuilder[String, Route]
-    .+=(Route.fake.id -> Route.fake)
-    .result()
 
   override def name: String = "Otoroshi newest proxy engine"
 
@@ -80,11 +76,13 @@ class ProxyEngine() extends RequestHandler {
 
   def handleRequest(request: Request[Source[ByteString, _]], config: JsObject)(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig): Future[Result] = {
     val requestId = IdGenerator.uuid
-    implicit val report = ExecutionReport(requestId)
     implicit val mat = env.otoroshiMaterializer
 
     val debug = config.select("debug").asOpt[Boolean].getOrElse(false)
+    val reporting = config.select("reporting").asOpt[Boolean].getOrElse(true)
     val debugHeaders = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
+
+    implicit val report = ExecutionReport(requestId, reporting)
 
     val snowflake           = env.snowflakeGenerator.nextIdStr()
     val callDate            = DateTime.now()
@@ -172,10 +170,9 @@ class ProxyEngine() extends RequestHandler {
     }.andThen {
       case _ =>
         report.markOverheadOut()
-        if (debug) logger.info(report.json.prettify)
-      // TODO: send to analytics if debug activated on route
+        // TODO: send to analytics if debug activated on route
     }.map { res =>
-      val addHeaders = if (debugHeaders) Seq(
+      val addHeaders = if (reporting && debugHeaders) Seq(
         "x-otoroshi-request-overhead" -> (report.overheadIn + report.overheadOut).toString,
         "x-otoroshi-request-overhead-in" -> report.overheadIn.toString,
         "x-otoroshi-request-overhead-out" -> report.overheadOut.toString,
@@ -190,7 +187,8 @@ class ProxyEngine() extends RequestHandler {
             report.getStep("request-failure").flatMap(_.ctx.select("error").select("message").asOpt[String]).getOrElse("--")
         )
       } else Seq.empty
-      if (report.getStep("find-route").flatMap(_.ctx.select("found_route").select("debug_flow").asOpt[Boolean]).getOrElse(false)) {
+      if (debug) logger.info(report.json.prettify)
+      if (reporting && report.getStep("find-route").flatMap(_.ctx.select("found_route").select("debug_flow").asOpt[Boolean]).getOrElse(false)) {
         Files.writeString(new File("./request-debug.json").toPath, report.json.prettify)
       }
       res.withHeaders(addHeaders: _*)
@@ -252,7 +250,7 @@ class ProxyEngine() extends RequestHandler {
 
   def findRoute(request: Request[Source[ByteString, _]])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Route] = {
     // TODO: we need something smarter, sort paths by length when there is a wildcard, then same for domains. We need to aggregate on domains
-    routes.values.filter(_.enabled).find(r => r.matches(request)) match {
+    env.proxyState.allRoutes().filter(_.enabled).find(r => r.matches(request)) match {
       case Some(route) => FEither.right(route)
       case None =>
         report.markFailure(s"route not found for domain: '${request.theDomain}${request.thePath}'")
