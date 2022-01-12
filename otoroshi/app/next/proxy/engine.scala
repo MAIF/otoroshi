@@ -252,6 +252,7 @@ class ProxyEngine() extends RequestHandler {
   def findRoute(request: Request[Source[ByteString, _]])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Route] = {
     // TODO: we need something smarter, sort paths by length when there is a wildcard, then same for domains. We need to aggregate on domains
     // TODO: need optimizations here !!!!
+    // TODO: perform apikey routing match (descriptor.scala: 2459)
     env.proxyState.allRoutes().filter(_.enabled).find(r => r.matches(request)) match {
       case Some(route) => FEither.right(route)
       case None =>

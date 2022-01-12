@@ -1,7 +1,7 @@
 package otoroshi.next.proxy
 
 import otoroshi.env.Env
-import otoroshi.models.{ClientConfig, EntityLocation, HealthCheck, RoundRobin}
+import otoroshi.models.{ApiKeyRouteMatcher, ClientConfig, EntityLocation, HealthCheck, RoundRobin}
 import otoroshi.next.models._
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
@@ -61,6 +61,7 @@ class ProxyStateLoaderJob extends Job {
           domains = Seq(DomainAndPath(s"${idx}-generated-next-gen.oto.tools")),
           headers = Map.empty,
           stripPath = true,
+          apikey = ApiKeyRouteMatcher(),
         ),
         backends = Backends(
           targets = Seq(Backend(
@@ -113,6 +114,7 @@ class ProxyStateLoaderJob extends Job {
           domains = Seq(DomainAndPath(s"path-generated-next-gen.oto.tools/api/${idx}")),
           headers = Map.empty,
           stripPath = true,
+          apikey = ApiKeyRouteMatcher(),
         ),
         backends = Backends(
           targets = Seq(Backend(

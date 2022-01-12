@@ -1,7 +1,7 @@
 package otoroshi.next.models
 
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.{ApiKeyRouteMatcher, _}
 import otoroshi.next.plugins._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
@@ -21,22 +21,24 @@ case class DomainAndPath(raw: String) {
   def json: JsValue = JsString(raw)
 }
 
-case class Frontend(domains: Seq[DomainAndPath], headers: Map[String, String], stripPath: Boolean) {
+case class Frontend(domains: Seq[DomainAndPath], headers: Map[String, String], stripPath: Boolean, apikey: ApiKeyRouteMatcher) {
   def json: JsValue = Json.obj(
     "domains" -> JsArray(domains.map(_.json)),
     "strip_path" -> stripPath,
-    "headers" -> headers
+    "headers" -> headers,
+    "apikey" -> apikey.json
   )
 }
 
 object Frontend {
   def readFrom(lookup: JsLookupResult): Frontend = {
     lookup.asOpt[JsObject] match {
-      case None => Frontend(Seq.empty, Map.empty, true)
+      case None => Frontend(Seq.empty, Map.empty, true, ApiKeyRouteMatcher())
       case Some(obj) => Frontend(
         domains = obj.select("domains").asOpt[Seq[String]].map(_.map(DomainAndPath.apply)).getOrElse(Seq.empty),
         stripPath = obj.select("strip_path").asOpt[Boolean].getOrElse(true),
         headers = obj.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        apikey = obj.select("apikey").asOpt[JsValue].flatMap(v => ApiKeyRouteMatcher.format.reads(v).asOpt).getOrElse(ApiKeyRouteMatcher())
       )
     }
   }
@@ -129,6 +131,7 @@ case class Route(
   lazy val issueCertificateCA: Option[String] = metadata.get("otoroshi-core-issue-certificate-ca").filter(_.nonEmpty)
   lazy val openapiUrl: Option[String] = metadata.get("otoroshi-core-openapi-url").filter(_.nonEmpty)
 
+  // TODO: move creation/mutation logic on each plugin to avoid desync issues
   lazy val serviceDescriptor: ServiceDescriptor = {
     ServiceDescriptor(
       location = location,
@@ -156,7 +159,6 @@ case class Route(
       useAkkaHttpClient = useAkkaHttpClient,
       useNewWSClient = useAkkaHttpWsClient,
       letsEncrypt = issueLetsEncryptCertificate,
-      // TODO: need more for some use cases
       userFacing = userFacing,
       forceHttps = plugins.getPluginByClass[ForceHttpsTraffic].isDefined,
       maintenanceMode = plugins.getPluginByClass[MaintenanceMode].isDefined,
@@ -167,8 +169,6 @@ case class Route(
       xForwardedHeaders = plugins.getPluginByClass[XForwardedHeaders].isDefined,
       overrideHost = plugins.getPluginByClass[OverrideHost].isDefined,
       allowHttp10 = plugins.getPluginByClass[DisableHttp10].isEmpty,
-      // tcpUdpTunneling: Boolean = false,
-      // detectApiKeySooner: Boolean = false,
       // ///////////////////////////////////////////////////////////
       enforceSecureCommunication = plugins.getPluginByClass[OtoroshiChallenge].orElse(plugins.getPluginByClass[OtoroshiInfos]).isDefined,
       sendInfoToken = plugins.getPluginByClass[OtoroshiInfos].isDefined,
@@ -189,7 +189,7 @@ case class Route(
             plugins.getPluginByClass[OtoroshiInfos].map(_.exclude).getOrElse(Seq.empty)
         ).distinct
       },
-      // secComSettings: AlgoSettings = HSAlgoSettings(512, "secret", false)
+      // not needed because of the next line // secComSettings: AlgoSettings = HSAlgoSettings(512, "secret", false)
       secComUseSameAlgo = false,
       secComAlgoChallengeOtoToBack = plugins.getPluginByClass[OtoroshiChallenge].flatMap(p => AlgoSettings.fromJson(p.config.raw.select("algo_to_backend").asOpt[JsValue].getOrElse(Json.obj())).toOption).getOrElse(HSAlgoSettings(512, "secret", false)),
       secComAlgoChallengeBackToOto = plugins.getPluginByClass[OtoroshiChallenge].flatMap(p => AlgoSettings.fromJson(p.config.raw.select("algo_from_backend").asOpt[JsValue].getOrElse(Json.obj())).toOption).getOrElse(HSAlgoSettings(512, "secret", false)),
@@ -217,14 +217,26 @@ case class Route(
         IpFiltering()
       },
       api = openapiUrl.map(url => ApiDescriptor(true, url.some)).getOrElse(ApiDescriptor(false, None)),
+      jwtVerifier = plugins.getPluginByClass[JwtVerification].flatMap(p => p.config.raw.select("verifiers").asOpt[Seq[String]].map(ids => RefJwtVerifier(ids, true, p.exclude))).getOrElse(RefJwtVerifier()),
+      cors = plugins.getPluginByClass[otoroshi.next.plugins.Cors].flatMap(p => CorsSettings.fromJson(p.config.raw).toOption).getOrElse(CorsSettings()),
+      redirection = plugins.getPluginByClass[Redirection].flatMap(p => RedirectionSettings.format.reads(p.config.raw).asOpt).getOrElse(RedirectionSettings(false)),
+      restrictions = plugins.getPluginByClass[RoutingRestrictions].flatMap(p => Restrictions.format.reads(p.config.raw).asOpt.map(_.copy(enabled = true))).getOrElse(Restrictions()),
+      // tcpUdpTunneling: Boolean = false,
+      // detectApiKeySooner: Boolean = false,
       // canary: Canary = Canary(),
       // chaosConfig: ChaosConfig = ChaosConfig(),
-      jwtVerifier = plugins.getPluginByClass[JwtVerification].flatMap(p => p.config.raw.select("verifiers").asOpt[Seq[String]].map(ids => RefJwtVerifier(ids, true, p.exclude))).getOrElse(RefJwtVerifier()),
-      // cors: CorsSettings = CorsSettings(false),
-      redirection = plugins.getPluginByClass[Redirection].flatMap(p => RedirectionSettings.format.reads(p.config.raw).asOpt).getOrElse(RedirectionSettings(false)),
       // gzip: GzipConfig = GzipConfig(),
-      // apiKeyConstraints: ApiKeyConstraints = ApiKeyConstraints(),
-      restrictions = plugins.getPluginByClass[RoutingRestrictions].flatMap(p => Restrictions.format.reads(p.config.raw).asOpt.map(_.copy(enabled = true))).getOrElse(Restrictions())
+      apiKeyConstraints = {
+        plugins.getPluginByClass[ApikeyExtractor].flatMap { plugin =>
+          ApiKeyConstraints.format.reads(plugin.config.raw).asOpt
+        }.orElse {
+          plugins.getPluginByClass[ApikeyCalls].flatMap { plugin =>
+            ApiKeyConstraints.format.reads(plugin.config.raw).asOpt
+          }
+        }.map { constraints =>
+          constraints.copy(routing = frontend.apikey)
+        }.getOrElse(ApiKeyConstraints())
+      }
     )
   }
 }
@@ -244,6 +256,7 @@ object Route {
       domains = Seq(DomainAndPath("fake-next-gen.oto.tools")),
       headers = Map.empty,
       stripPath = true,
+      apikey = ApiKeyRouteMatcher()
     ),
     backends = Backends(
       targets = Seq(Backend(
@@ -316,6 +329,7 @@ object Route {
     }
   }
 
+  // TODO: move creation/mutation logic on each plugin to avoid desync issues
   def fromServiceDescriptor(service: ServiceDescriptor): Route = {
     Route(
       location = service.location,
@@ -352,6 +366,7 @@ object Route {
         },
         headers = service.matchingHeaders,
         stripPath = service.stripPath,
+        apikey = service.apiKeyConstraints.routing,
       ),
       backends = Backends(
         targets = service.targets.map(Backend.fromTarget),
@@ -539,6 +554,25 @@ object Route {
                 "header_name" -> service.secComHeaders.stateRequestName.getOrElse("Otoroshi-Claim").json,
                 "algo" -> (if (service.secComUseSameAlgo) service.secComSettings.asJson else service.secComAlgoInfoToken.asJson),
               ))
+            )
+          }
+          .applyOnIf(service.cors.enabled) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.Cors",
+              exclude = service.cors.excludedPatterns,
+              config = PluginInstanceConfig(service.cors.asJson.asObject)
+            )
+          }
+          .applyOnIf(service.detectApiKeySooner) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.ApikeyExtractor",
+              config = PluginInstanceConfig(service.apiKeyConstraints.json.asObject)
+            )
+          }
+          .applyOnIf(true) { seq => // TODO: always true ?
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.ApikeyCalls",
+              config = PluginInstanceConfig(service.apiKeyConstraints.json.asObject)
             )
           }
       )

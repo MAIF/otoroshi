@@ -220,44 +220,48 @@ case class ApiKey(
       "tags"       -> tags
     )
 
-  def matchRouting(sr: ServiceDescriptor): Boolean = {
+  def matchRouting(sr: ServiceDescriptor): Boolean = matchRouting(sr.apiKeyConstraints)
+
+  def matchRouting(apiKeyConstraints: ApiKeyConstraints): Boolean = matchRouting(apiKeyConstraints.routing)
+
+  def matchRouting(routing: ApiKeyRouteMatcher): Boolean = {
 
     import SeqImplicits._
 
-    val shouldNotSearchForAnApiKey = sr.hasNoRoutingConstraints
+    val shouldNotSearchForAnApiKey = routing.hasNoRoutingConstraints
 
     if (shouldNotSearchForAnApiKey && constrainedServicesOnly) {
       false
     } else if (shouldNotSearchForAnApiKey) {
       true
     } else {
-      val matchOnRole: Boolean   = Option(sr.apiKeyConstraints.routing.oneTagIn)
+      val matchOnRole: Boolean   = Option(routing.oneTagIn)
         .filter(_.nonEmpty)
         .forall(tags => this.tags.findOne(tags))
-      val matchAllRoles: Boolean = Option(sr.apiKeyConstraints.routing.allTagsIn)
+      val matchAllRoles: Boolean = Option(routing.allTagsIn)
         .filter(_.nonEmpty)
         .forall(tags => this.tags.findAll(tags))
-      val matchNoneRole: Boolean = !Option(sr.apiKeyConstraints.routing.noneTagIn)
+      val matchNoneRole: Boolean = !Option(routing.noneTagIn)
         .filter(_.nonEmpty)
         .exists(tags => this.tags.findOne(tags))
 
-      val matchOneMeta: Boolean  = Option(sr.apiKeyConstraints.routing.oneMetaIn.toSeq)
+      val matchOneMeta: Boolean  = Option(routing.oneMetaIn.toSeq)
         .filter(_.nonEmpty)
         .forall(metas => this.metadata.toSeq.findOne(metas))
-      val matchAllMeta: Boolean  = Option(sr.apiKeyConstraints.routing.allMetaIn.toSeq)
+      val matchAllMeta: Boolean  = Option(routing.allMetaIn.toSeq)
         .filter(_.nonEmpty)
         .forall(metas => this.metadata.toSeq.findAll(metas))
-      val matchNoneMeta: Boolean = !Option(sr.apiKeyConstraints.routing.noneMetaIn.toSeq)
+      val matchNoneMeta: Boolean = !Option(routing.noneMetaIn.toSeq)
         .filter(_.nonEmpty)
         .exists(metas => this.metadata.toSeq.findOne(metas))
 
-      val matchOneMetakeys: Boolean  = Option(sr.apiKeyConstraints.routing.oneMetaKeyIn)
+      val matchOneMetakeys: Boolean  = Option(routing.oneMetaKeyIn)
         .filter(_.nonEmpty)
         .forall(keys => this.metadata.toSeq.map(_._1).findOne(keys))
-      val matchAllMetaKeys: Boolean  = Option(sr.apiKeyConstraints.routing.allMetaKeysIn)
+      val matchAllMetaKeys: Boolean  = Option(routing.allMetaKeysIn)
         .filter(_.nonEmpty)
         .forall(keys => this.metadata.toSeq.map(_._1).findAll(keys))
-      val matchNoneMetaKeys: Boolean = !Option(sr.apiKeyConstraints.routing.noneMetaKeysIn)
+      val matchNoneMetaKeys: Boolean = !Option(routing.noneMetaKeysIn)
         .filter(_.nonEmpty)
         .exists(keys => this.metadata.toSeq.map(_._1).findOne(keys))
 

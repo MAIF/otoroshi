@@ -1066,6 +1066,17 @@ case class ApiKeyRouteMatcher(
     allMetaKeysIn: Seq[String] = Seq.empty
 ) extends {
   def json: JsValue = ApiKeyRouteMatcher.format.writes(this)
+  lazy val isActive: Boolean = !hasNoRoutingConstraints
+  lazy val hasNoRoutingConstraints: Boolean =
+    oneMetaIn.isEmpty &&
+      allMetaIn.isEmpty &&
+      oneTagIn.isEmpty &&
+      allTagsIn.isEmpty &&
+      noneTagIn.isEmpty &&
+      noneMetaIn.isEmpty &&
+      oneMetaKeyIn.isEmpty &&
+      allMetaKeysIn.isEmpty &&
+      noneMetaKeysIn.isEmpty
 }
 
 object ApiKeyRouteMatcher {
@@ -1118,6 +1129,8 @@ case class ApiKeyConstraints(
       "jwtAuth"           -> jwtAuth.json,
       "routing"           -> routing.json
     )
+
+  lazy val hasNoRoutingConstraints: Boolean = routing.hasNoRoutingConstraints
 }
 object ApiKeyConstraints {
   val format = new Format[ApiKeyConstraints] {
@@ -1602,16 +1615,7 @@ case class ServiceDescriptor(
   // def isUriPublic(uri: String): Boolean = !privatePatterns.exists(p => uri.matches(p)) && publicPatterns.exists(p => uri.matches(p))
   def authorizedOnGroup(id: String): Boolean                         = groups.contains(id)
 
-  lazy val hasNoRoutingConstraints: Boolean =
-    this.apiKeyConstraints.routing.oneMetaIn.isEmpty &&
-    this.apiKeyConstraints.routing.allMetaIn.isEmpty &&
-    this.apiKeyConstraints.routing.oneTagIn.isEmpty &&
-    this.apiKeyConstraints.routing.allTagsIn.isEmpty &&
-    this.apiKeyConstraints.routing.noneTagIn.isEmpty &&
-    this.apiKeyConstraints.routing.noneMetaIn.isEmpty &&
-    this.apiKeyConstraints.routing.oneMetaKeyIn.isEmpty &&
-    this.apiKeyConstraints.routing.allMetaKeysIn.isEmpty &&
-    this.apiKeyConstraints.routing.noneMetaKeysIn.isEmpty
+  lazy val hasNoRoutingConstraints: Boolean = apiKeyConstraints.hasNoRoutingConstraints
 
   def isUriPublic(uri: String): Boolean =
     !privatePatterns.exists(p => otoroshi.utils.RegexPool.regex(p).matches(uri)) && publicPatterns.exists(p =>

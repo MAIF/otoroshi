@@ -16,22 +16,22 @@
 
 ## needed plugins
 
-- [ ] apikey extractor asap (pre route)
-- [ ] apikey plugin
-  - [ ] extraction (from allowed locations)
-  - [ ] validate enabled
-  - [ ] validate expiration date
-  - [ ] validate readonly
-  - [ ] validate route restriction
-  - [ ] validate apikeys constraints (should be autonomous actually)
-  - [ ] validate quotas
+- [x] apikey extractor asap (pre route)
+- [x] apikey plugin
+  - [x] extraction (from allowed locations)
+  - [x] validate enabled
+  - [x] validate expiration date
+  - [x] validate readonly
+  - [x] validate route restriction
+  - [x] validate apikeys constraints (should be autonomous actually)
+  - [x] validate quotas
 - [x] jwt verifier (access validator)
 - [x] auth. module validation (access validator)
 - [x] route restrictions (access validator)
 - [x] public/private path plugin (access validator)
 - [x] otoroshi state plugin (transformer)
 - [x] otoroshi claim plugin (transformer)
-- [ ] CORS (transformer)
+- [x] CORS (transformer)
 - [ ] tricky plugins
   - [ ] gzip (transformer)
   - [ ] tcp/udp tunneling (?? - if possible, implies support for WS)
