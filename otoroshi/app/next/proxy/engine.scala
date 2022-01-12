@@ -946,6 +946,7 @@ class ProxyEngine() extends RequestHandler {
       backend.toTarget,
       route.client
     )
+    // TODO: use akka http flag to chose client
     val extractedTimeout = route.client.extractTimeout(rawRequest.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
     val builder          = clientReq
       .withRequestTimeout(extractedTimeout)
@@ -1001,6 +1002,7 @@ class ProxyEngine() extends RequestHandler {
       val __ctx = NgTransformerResponseContext(
         snowflake = snowflake,
         request = rawRequest,
+        response = response,
         rawResponse = rawResponse,
         otoroshiResponse = otoroshiResponse,
         apikey = attrs.get(Keys.ApikeyKey),

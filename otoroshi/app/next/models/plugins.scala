@@ -59,7 +59,7 @@ case class Plugins(slots: Seq[PluginInstance]) {
 
   def getPluginByClass[A](implicit ct: ClassTag[A]): Option[PluginInstance] = {
     val name = s"cp:${ct.runtimeClass.getName}"
-    slots.find(pi => pi.plugin == name)
+    slots.find(pi => pi.plugin == name).filter(_.enabled)
   }
 
   def allPlugins()(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgNamedPlugin]] = {

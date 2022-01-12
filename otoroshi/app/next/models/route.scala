@@ -11,6 +11,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.RequestHeader
 
+import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
 case class DomainAndPath(raw: String) {
@@ -169,28 +170,34 @@ case class Route(
       // tcpUdpTunneling: Boolean = false,
       // detectApiKeySooner: Boolean = false,
       // ///////////////////////////////////////////////////////////
-      // // TODO: group secCom configs in v2, not done yet to avoid breaking stuff
-      // enforceSecureCommunication: Boolean = true,
-      // sendInfoToken: Boolean = true,
-      // sendStateChallenge: Boolean = true,
-      // secComHeaders: SecComHeaders = SecComHeaders(),
-      // secComTtl: FiniteDuration = 30.seconds,
-      // secComVersion: SecComVersion = SecComVersion.V1,
-      // secComInfoTokenVersion: SecComInfoTokenVersion = SecComInfoTokenVersion.Legacy,
-      // secComExcludedPatterns: Seq[String] = Seq.empty[String],
-      // secComSettings: AlgoSettings = HSAlgoSettings(
-      //   512,
-      //   "${config.app.claim.sharedKey}",
-      //   false
-      // ),
-      // secComUseSameAlgo: Boolean = true,
-      // secComAlgoChallengeOtoToBack: AlgoSettings = HSAlgoSettings(512, "secret", false),
-      // secComAlgoChallengeBackToOto: AlgoSettings = HSAlgoSettings(512, "secret", false),
-      // secComAlgoInfoToken: AlgoSettings = HSAlgoSettings(512, "secret", false),
+      enforceSecureCommunication = plugins.getPluginByClass[OtoroshiChallenge].orElse(plugins.getPluginByClass[OtoroshiInfos]).isDefined,
+      sendInfoToken = plugins.getPluginByClass[OtoroshiInfos].isDefined,
+      sendStateChallenge = plugins.getPluginByClass[OtoroshiChallenge].isDefined,
+      secComHeaders = SecComHeaders(
+        claimRequestName = plugins.getPluginByClass[OtoroshiInfos].flatMap(_.config.raw.select("header_name").asOpt[String]),
+        stateRequestName = plugins.getPluginByClass[OtoroshiChallenge].flatMap(_.config.raw.select("request_header_name").asOpt[String]),
+        stateResponseName = plugins.getPluginByClass[OtoroshiChallenge].flatMap(_.config.raw.select("response_header_name").asOpt[String]),
+      ),
+      secComTtl = plugins.getPluginByClass[OtoroshiChallenge].flatMap(p => p.config.raw.select("ttl").asOpt[Long])
+        .orElse(plugins.getPluginByClass[OtoroshiChallenge].flatMap(p => p.config.raw.select("ttl").asOpt[Long]))
+        .getOrElse(30L).seconds,
+      secComVersion = plugins.getPluginByClass[OtoroshiChallenge].map(p => p.config.raw.select("version").asOpt[String].getOrElse("V2")).flatMap(SecComVersion.apply).getOrElse(SecComVersion.V2),
+      secComInfoTokenVersion = plugins.getPluginByClass[OtoroshiInfos].map(p => p.config.raw.select("version").asOpt[String].getOrElse("Latest")).flatMap(SecComInfoTokenVersion.apply).getOrElse(SecComInfoTokenVersion.Latest),
+      secComExcludedPatterns = {
+        (
+          plugins.getPluginByClass[OtoroshiChallenge].map(_.exclude).getOrElse(Seq.empty) ++
+            plugins.getPluginByClass[OtoroshiInfos].map(_.exclude).getOrElse(Seq.empty)
+        ).distinct
+      },
+      // secComSettings: AlgoSettings = HSAlgoSettings(512, "secret", false)
+      secComUseSameAlgo = false,
+      secComAlgoChallengeOtoToBack = plugins.getPluginByClass[OtoroshiChallenge].flatMap(p => AlgoSettings.fromJson(p.config.raw.select("algo_to_backend").asOpt[JsValue].getOrElse(Json.obj())).toOption).getOrElse(HSAlgoSettings(512, "secret", false)),
+      secComAlgoChallengeBackToOto = plugins.getPluginByClass[OtoroshiChallenge].flatMap(p => AlgoSettings.fromJson(p.config.raw.select("algo_from_backend").asOpt[JsValue].getOrElse(Json.obj())).toOption).getOrElse(HSAlgoSettings(512, "secret", false)),
+      secComAlgoInfoToken = plugins.getPluginByClass[OtoroshiInfos].flatMap(p => AlgoSettings.fromJson(p.config.raw.select("algo").asOpt[JsValue].getOrElse(Json.obj())).toOption).getOrElse(HSAlgoSettings(512, "secret", false)),
       // ///////////////////////////////////////////////////////////
-      // privateApp: Boolean = false,
-      // authConfigRef: Option[String] = None,
-      // securityExcludedPatterns: Seq[String] = Seq.empty[String],
+      privateApp = plugins.getPluginByClass[AuthModule].isDefined,
+      authConfigRef = plugins.getPluginByClass[AuthModule].flatMap(_.config.raw.select("auth_module").asOpt[String]),
+      securityExcludedPatterns  = plugins.getPluginByClass[AuthModule].map(_.exclude).getOrElse(Seq.empty),
       // ///////////////////////////////////////////////////////////
       publicPatterns = plugins.getPluginByClass[PublicPrivatePaths].flatMap(p => p.config.raw.select("public_patterns").asOpt[Seq[String]]).getOrElse(Seq.empty),
       privatePatterns = plugins.getPluginByClass[PublicPrivatePaths].flatMap(p => p.config.raw.select("private_patterns").asOpt[Seq[String]]).getOrElse(Seq.empty),
@@ -296,6 +303,7 @@ object Route {
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
         debugFlow = json.select("debug_flow").asOpt[Boolean].getOrElse(false),
+        groups = json.select("groups").asOpt[Seq[String]].getOrElse(Seq("default")),
         frontend = Frontend.readFrom(json.select("frontend")),
         backends = Backends.readFrom(json.select("backend")),
         healthCheck = (json \ "health_check").asOpt(HealthCheck.format).getOrElse(HealthCheck(false, "/")),
@@ -496,6 +504,41 @@ object Route {
             seq :+ PluginInstance(
               plugin = "cp:otoroshi.next.plugins.RoutingRestrictions",
               config = PluginInstanceConfig(service.restrictions.json.asObject)
+            )
+          }
+          .applyOnIf(service.privateApp && service.authConfigRef.isDefined) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.AuthModule",
+              exclude = service.securityExcludedPatterns,
+              config = PluginInstanceConfig(Json.obj(
+                "auth_module" -> service.authConfigRef.get
+              ))
+            )
+          }
+          .applyOnIf(service.enforceSecureCommunication && service.sendStateChallenge) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.OtoroshiChallenge",
+              exclude = service.secComExcludedPatterns,
+              config = PluginInstanceConfig(Json.obj(
+                "version" -> service.secComVersion.str,
+                "ttl" -> service.secComTtl.toSeconds,
+                "request_header_name" -> service.secComHeaders.stateRequestName.getOrElse("Otoroshi-State").json,
+                "response_header_name" -> service.secComHeaders.stateResponseName.getOrElse("Otoroshi-State-Resp").json,
+                "algo_to_backend" -> (if (service.secComUseSameAlgo) service.secComSettings.asJson else service.secComAlgoChallengeOtoToBack.asJson),
+                "algo_from_backend" -> (if (service.secComUseSameAlgo) service.secComSettings.asJson else service.secComAlgoChallengeBackToOto.asJson),
+              ))
+            )
+          }
+          .applyOnIf(service.enforceSecureCommunication && service.sendInfoToken) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.OtoroshiInfos",
+              exclude = service.secComExcludedPatterns,
+              config = PluginInstanceConfig(Json.obj(
+                "version" -> service.secComInfoTokenVersion.version,
+                "ttl" -> service.secComTtl.toSeconds,
+                "header_name" -> service.secComHeaders.stateRequestName.getOrElse("Otoroshi-Claim").json,
+                "algo" -> (if (service.secComUseSameAlgo) service.secComSettings.asJson else service.secComAlgoInfoToken.asJson),
+              ))
             )
           }
       )

@@ -14,7 +14,7 @@ import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
 import otoroshi.utils.TypedMap
 import play.api.libs.json._
-import play.api.libs.ws.WSCookie
+import play.api.libs.ws.{WSCookie, WSResponse}
 import play.api.mvc.{RequestHeader, Result, Results}
 
 import java.security.cert.X509Certificate
@@ -281,6 +281,7 @@ case class NgTransformerRequestContext(
 }
 
 case class NgTransformerResponseContext(
+  response: WSResponse,
   rawResponse: PluginHttpResponse,
   otoroshiResponse: PluginHttpResponse,
   snowflake: String,

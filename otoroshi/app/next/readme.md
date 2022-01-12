@@ -26,15 +26,15 @@
   - [ ] validate apikeys constraints (should be autonomous actually)
   - [ ] validate quotas
 - [x] jwt verifier (access validator)
-- [ ] auth. module validation (access validator)
+- [x] auth. module validation (access validator)
 - [x] route restrictions (access validator)
 - [x] public/private path plugin (access validator)
-- [ ] otoroshi state plugin (transformer)
-- [ ] otoroshi claim plugin (transformer)
+- [x] otoroshi state plugin (transformer)
+- [x] otoroshi claim plugin (transformer)
 - [ ] CORS (transformer)
 - [ ] tricky plugins
   - [ ] gzip (transformer)
-  - [ ] tcp/udp tunneling (?? - if possible)
+  - [ ] tcp/udp tunneling (?? - if possible, implies support for WS)
   - [ ] snow monkey (transformer)
   - [ ] canary (??)
 - [x] headers related plugins
