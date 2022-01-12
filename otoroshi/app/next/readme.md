@@ -23,12 +23,12 @@
   - [ ] validate expiration date
   - [ ] validate readonly
   - [ ] validate route restriction
-  - [ ] validate constraints
+  - [ ] validate apikeys constraints (should be autonomous actually)
   - [ ] validate quotas
 - [ ] jwt verifier (access validator)
 - [ ] auth. module validation (access validator)
 - [ ] route restrictions (access validator)
-- [ ] public/private path plugin (access validator)
+- [x] public/private path plugin (access validator)
 - [ ] otoroshi state plugin (transformer)
 - [ ] otoroshi claim plugin (transformer)
 - [ ] CORS (transformer)

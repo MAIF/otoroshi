@@ -2,6 +2,7 @@ package otoroshi.next.models
 
 import otoroshi.env.Env
 import otoroshi.models._
+import otoroshi.next.plugins._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.RegexPool
@@ -125,6 +126,7 @@ case class Route(
   lazy val issueLetsEncryptCertificate: Boolean = metadata.get("otoroshi-core-issue-lets-encrypt-certificate").contains("true")
   lazy val issueCertificate: Boolean = metadata.get("otoroshi-core-issue-certificate").contains("true")
   lazy val issueCertificateCA: Option[String] = metadata.get("otoroshi-core-issue-certificate-ca").filter(_.nonEmpty)
+  lazy val openapiUrl: Option[String] = metadata.get("otoroshi-core-openapi-url").filter(_.nonEmpty)
 
   lazy val serviceDescriptor: ServiceDescriptor = {
     ServiceDescriptor(
@@ -155,18 +157,18 @@ case class Route(
       letsEncrypt = issueLetsEncryptCertificate,
       // TODO: need more for some use cases
       userFacing = userFacing,
-      // privateApp: Boolean = false,
-      // forceHttps: Boolean = true,
-      // maintenanceMode: Boolean = false,
-      // buildMode: Boolean = false,
+      forceHttps = plugins.getPluginByClass[ForceHttpsTraffic].isDefined,
+      maintenanceMode = plugins.getPluginByClass[MaintenanceMode].isDefined,
+      buildMode =  plugins.getPluginByClass[BuildMode].isDefined,
       // strictlyPrivate: Boolean = false,
-      // sendOtoroshiHeadersBack: Boolean = true,
-      // readOnly: Boolean = false,
-      // xForwardedHeaders: Boolean = false,
-      // overrideHost: Boolean = true,
-      // allowHttp10: Boolean = true,
+      sendOtoroshiHeadersBack =  plugins.getPluginByClass[SendOtoroshiHeadersBack].isDefined,
+      readOnly =  plugins.getPluginByClass[ReadOnlyCalls].isDefined,
+      xForwardedHeaders = plugins.getPluginByClass[XForwardedHeaders].isDefined,
+      overrideHost = plugins.getPluginByClass[OverrideHost].isDefined,
+      allowHttp10 = plugins.getPluginByClass[DisableHttp10].isEmpty,
       // tcpUdpTunneling: Boolean = false,
       // detectApiKeySooner: Boolean = false,
+      // ///////////////////////////////////////////////////////////
       // // TODO: group secCom configs in v2, not done yet to avoid breaking stuff
       // enforceSecureCommunication: Boolean = true,
       // sendInfoToken: Boolean = true,
@@ -186,24 +188,33 @@ case class Route(
       // secComAlgoChallengeBackToOto: AlgoSettings = HSAlgoSettings(512, "secret", false),
       // secComAlgoInfoToken: AlgoSettings = HSAlgoSettings(512, "secret", false),
       // ///////////////////////////////////////////////////////////
+      // privateApp: Boolean = false,
+      // authConfigRef: Option[String] = None,
       // securityExcludedPatterns: Seq[String] = Seq.empty[String],
-      // publicPatterns: Seq[String] = Seq.empty[String],
-      // privatePatterns: Seq[String] = Seq.empty[String],
-      // additionalHeaders: Map[String, String] = Map.empty[String, String],
-      // additionalHeadersOut: Map[String, String] = Map.empty[String, String],
-      // missingOnlyHeadersIn: Map[String, String] = Map.empty[String, String],
-      // missingOnlyHeadersOut: Map[String, String] = Map.empty[String, String],
-      // removeHeadersIn: Seq[String] = Seq.empty[String],
-      // removeHeadersOut: Seq[String] = Seq.empty[String],
-      // headersVerification: Map[String, String] = Map.empty[String, String],
-      // ipFiltering: IpFiltering = IpFiltering(),
-      // api: ApiDescriptor = ApiDescriptor(false, None),
+      // ///////////////////////////////////////////////////////////
+      publicPatterns = plugins.getPluginByClass[PublicPrivatePaths].flatMap(p => p.config.raw.select("public_patterns").asOpt[Seq[String]]).getOrElse(Seq.empty),
+      privatePatterns = plugins.getPluginByClass[PublicPrivatePaths].flatMap(p => p.config.raw.select("private_patterns").asOpt[Seq[String]]).getOrElse(Seq.empty),
+      additionalHeaders = plugins.getPluginByClass[AdditionalHeadersIn].flatMap(p => p.config.raw.select("headers").asOpt[Map[String, String]]).getOrElse(Map.empty),
+      additionalHeadersOut = plugins.getPluginByClass[AdditionalHeadersOut].flatMap(p => p.config.raw.select("headers").asOpt[Map[String, String]]).getOrElse(Map.empty),
+      missingOnlyHeadersIn = plugins.getPluginByClass[MissingHeadersIn].flatMap(p => p.config.raw.select("headers").asOpt[Map[String, String]]).getOrElse(Map.empty),
+      missingOnlyHeadersOut = plugins.getPluginByClass[MissingHeadersOut].flatMap(p => p.config.raw.select("headers").asOpt[Map[String, String]]).getOrElse(Map.empty),
+      removeHeadersIn = plugins.getPluginByClass[RemoveHeadersIn].flatMap(p => p.config.raw.select("header_names").asOpt[Seq[String]]).getOrElse(Seq.empty),
+      removeHeadersOut = plugins.getPluginByClass[RemoveHeadersOut].flatMap(p => p.config.raw.select("header_names").asOpt[Seq[String]]).getOrElse(Seq.empty),
+      headersVerification = plugins.getPluginByClass[HeadersValidation].flatMap(p => p.config.raw.select("headers").asOpt[Map[String, String]]).getOrElse(Map.empty),
+      ipFiltering = if (plugins.getPluginByClass[IpAddressBlockList].isDefined || plugins.getPluginByClass[IpAddressAllowedList].isDefined) {
+        IpFiltering(
+          whitelist = plugins.getPluginByClass[IpAddressAllowedList].flatMap(_.config.raw.select("addresses").asOpt[Seq[String]]).getOrElse(Seq.empty),
+          blacklist = plugins.getPluginByClass[IpAddressBlockList].flatMap(_.config.raw.select("addresses").asOpt[Seq[String]]).getOrElse(Seq.empty),
+        )
+      } else {
+        IpFiltering()
+      },
+      api = openapiUrl.map(url => ApiDescriptor(true, url.some)).getOrElse(ApiDescriptor(false, None)),
       // canary: Canary = Canary(),
       // chaosConfig: ChaosConfig = ChaosConfig(),
       // jwtVerifier: JwtVerifier = RefJwtVerifier(),
-      // authConfigRef: Option[String] = None,
       // cors: CorsSettings = CorsSettings(false),
-      // redirection: RedirectionSettings = RedirectionSettings(false),
+      redirection = plugins.getPluginByClass[Redirection].flatMap(p => RedirectionSettings.format.reads(p.config.raw).asOpt).getOrElse(RedirectionSettings(false)),
       // gzip: GzipConfig = GzipConfig(),
       // apiKeyConstraints: ApiKeyConstraints = ApiKeyConstraints(),
       // restrictions: Restrictions = Restrictions(),
@@ -317,6 +328,8 @@ object Route {
         )
       }.applyOnIf(service.userFacing) { meta =>
         meta ++ Map("otoroshi-core-user-facing" -> "true")
+      }.applyOnIf(service.api.exposeApi) { meta =>
+        meta ++ Map("otoroshi-core-openapi-url" -> service.api.openApiDescriptorUrl.getOrElse(""))
       },
       enabled = service.enabled,
       debugFlow = true,
