@@ -6,8 +6,8 @@ import otoroshi.next.plugins._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.RegexPool
-import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
+import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.RequestHeader
 
@@ -160,7 +160,7 @@ case class Route(
       forceHttps = plugins.getPluginByClass[ForceHttpsTraffic].isDefined,
       maintenanceMode = plugins.getPluginByClass[MaintenanceMode].isDefined,
       buildMode =  plugins.getPluginByClass[BuildMode].isDefined,
-      // strictlyPrivate: Boolean = false,
+      strictlyPrivate = plugins.getPluginByClass[PublicPrivatePaths].flatMap(_.config.raw.select("strict").asOpt[Boolean]).getOrElse(false),
       sendOtoroshiHeadersBack =  plugins.getPluginByClass[SendOtoroshiHeadersBack].isDefined,
       readOnly =  plugins.getPluginByClass[ReadOnlyCalls].isDefined,
       xForwardedHeaders = plugins.getPluginByClass[XForwardedHeaders].isDefined,
@@ -217,7 +217,7 @@ case class Route(
       redirection = plugins.getPluginByClass[Redirection].flatMap(p => RedirectionSettings.format.reads(p.config.raw).asOpt).getOrElse(RedirectionSettings(false)),
       // gzip: GzipConfig = GzipConfig(),
       // apiKeyConstraints: ApiKeyConstraints = ApiKeyConstraints(),
-      // restrictions: Restrictions = Restrictions(),
+      restrictions = plugins.getPluginByClass[RoutingRestrictions].flatMap(p => Restrictions.format.reads(p.config.raw).asOpt.map(_.copy(enabled = true))).getOrElse(Restrictions())
     )
   }
 }
@@ -477,7 +477,8 @@ object Route {
               plugin = "cp:otoroshi.next.plugins.PublicPrivatePaths",
               config = PluginInstanceConfig(Json.obj(
                 "private_patterns" -> JsArray(service.privatePatterns.map(JsString.apply)),
-                "public_patterns" -> JsArray(service.publicPatterns.map(JsString.apply))
+                "public_patterns" -> JsArray(service.publicPatterns.map(JsString.apply)),
+                "strict" -> service.strictlyPrivate
               ))
             )
           }
@@ -489,6 +490,12 @@ object Route {
               config = PluginInstanceConfig(Json.obj(
                 "verifiers" -> JsArray(verifier.ids.map(JsString.apply)),
               ))
+            )
+          }
+          .applyOnIf(service.restrictions.enabled) { seq =>
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.RoutingRestrictions",
+              config = PluginInstanceConfig(service.restrictions.json.asObject)
             )
           }
       )

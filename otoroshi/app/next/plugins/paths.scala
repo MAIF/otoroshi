@@ -16,12 +16,15 @@ class PublicPrivatePaths extends NgAccessValidator {
     val uri = ctx.request.thePath
     val privatePatterns = ctx.config.select("private_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
     val publicPatterns = ctx.config.select("public_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val strict = ctx.config.select("strict").asOpt[Boolean].getOrElse(false)
     val isPublic = !privatePatterns.exists(p => otoroshi.utils.RegexPool.regex(p).matches(uri)) && publicPatterns.exists(p =>
       otoroshi.utils.RegexPool.regex(p).matches(uri)
     )
     if (isPublic) {
       FastFuture.successful(NgAccess.NgAllowed)
-    } else if (!isPublic && (ctx.apikey.isDefined || ctx.user.isDefined)) {
+    } else if (!isPublic && !strict && (ctx.apikey.isDefined || ctx.user.isDefined)) {
+      FastFuture.successful(NgAccess.NgAllowed)
+    } else if (!isPublic && strict && ctx.apikey.isDefined) {
       FastFuture.successful(NgAccess.NgAllowed)
     } else {
       Errors

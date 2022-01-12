@@ -27,7 +27,7 @@
   - [ ] validate quotas
 - [x] jwt verifier (access validator)
 - [ ] auth. module validation (access validator)
-- [ ] route restrictions (access validator)
+- [x] route restrictions (access validator)
 - [x] public/private path plugin (access validator)
 - [ ] otoroshi state plugin (transformer)
 - [ ] otoroshi claim plugin (transformer)
