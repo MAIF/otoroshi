@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import otoroshi.models.{ApiKey, PrivateAppsUser}
+import otoroshi.models.{ApiKey, JwtInjection, PrivateAppsUser}
 import otoroshi.next.models.Backend
 import play.api.libs.typedmap.TypedKey
 
@@ -12,4 +12,5 @@ object Keys {
   val UserKey = TypedKey[PrivateAppsUser]("otoroshi.next.core.User")
   val RequestTrackingIdKey = TypedKey[String]("otoroshi.next.core.TrackingId")
   val BodyAlreadyConsumedKey = TypedKey[AtomicBoolean]("otoroshi.next.core.BodyAlreadyConsumed")
+  val JwtInjectionKey = TypedKey[JwtInjection]("otoroshi.next.core.JwtInjection")
 }

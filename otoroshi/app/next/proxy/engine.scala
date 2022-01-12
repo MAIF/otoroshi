@@ -251,6 +251,7 @@ class ProxyEngine() extends RequestHandler {
 
   def findRoute(request: Request[Source[ByteString, _]])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Route] = {
     // TODO: we need something smarter, sort paths by length when there is a wildcard, then same for domains. We need to aggregate on domains
+    // TODO: need optimizations here !!!!
     env.proxyState.allRoutes().filter(_.enabled).find(r => r.matches(request)) match {
       case Some(route) => FEither.right(route)
       case None =>
@@ -548,7 +549,7 @@ class ProxyEngine() extends RequestHandler {
           message,
           status,
           request,
-          None, // TODO: pass route.toDescriptor
+          route.serviceDescriptor.some,
           Some(code),
           duration = report.getDurationNow(),
           overhead = report.getOverheadInNow(),
@@ -641,7 +642,7 @@ class ProxyEngine() extends RequestHandler {
                 s"Something went wrong, the backend service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
                 Results.GatewayTimeout,
                 request,
-                None, // TODO: convert here !
+                route.serviceDescriptor.some,
                 Some("errors.request.timeout"),
                 duration = report.getDurationNow(),
                 overhead = report.getOverheadInNow(),
@@ -656,7 +657,7 @@ class ProxyEngine() extends RequestHandler {
                 s"Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding",
                 Results.GatewayTimeout,
                 request,
-                None, // TODO: convert here !
+                route.serviceDescriptor.some,
                 Some("errors.request.timeout"),
                 duration = report.getDurationNow(),
                 overhead = report.getOverheadInNow(),
@@ -671,7 +672,7 @@ class ProxyEngine() extends RequestHandler {
                 s"Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding",
                 Results.GatewayTimeout,
                 request,
-                None, // TODO: convert here !
+                route.serviceDescriptor.some,
                 Some("errors.request.timeout"),
                 duration = report.getDurationNow(),
                 overhead = report.getOverheadInNow(),
@@ -686,7 +687,7 @@ class ProxyEngine() extends RequestHandler {
                 s"Something went wrong, the backend service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
                 Results.ServiceUnavailable,
                 request,
-                None, // TODO: convert here !
+                route.serviceDescriptor.some,
                 Some("errors.circuit.breaker.open"),
                 duration = report.getDurationNow(),
                 overhead = report.getOverheadInNow(),
@@ -704,7 +705,7 @@ class ProxyEngine() extends RequestHandler {
                 s"Something went wrong, the connection to backend service was refused, you should try later. Thanks for your understanding",
                 Results.BadGateway,
                 request,
-                None, // TODO: convert here !
+                route.serviceDescriptor.some,
                 Some("errors.connection.refused"),
                 duration = report.getDurationNow(),
                 overhead = report.getOverheadInNow(),
@@ -723,7 +724,7 @@ class ProxyEngine() extends RequestHandler {
                 s"Something went wrong, you should try later. Thanks for your understanding.",
                 Results.BadGateway,
                 request,
-                None, // TODO: convert here !
+                route.serviceDescriptor.some,
                 Some("errors.proxy.error"),
                 duration = report.getDurationNow(),
                 overhead = report.getOverheadInNow(),
@@ -742,7 +743,7 @@ class ProxyEngine() extends RequestHandler {
                 s"Something went wrong, you should try later. Thanks for your understanding",
                 Results.BadGateway,
                 request,
-                None, // TODO: convert here !
+                route.serviceDescriptor.some,
                 Some("errors.proxy.error"),
                 duration = report.getDurationNow(),
                 overhead = report.getOverheadInNow(),

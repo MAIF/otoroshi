@@ -372,7 +372,7 @@ case class NgAccessContext(
   config: JsValue,
   attrs: TypedMap,
   globalConfig: JsValue,
-  report: ExecutionReport
+  report: ExecutionReport,
 ) {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,

@@ -29,7 +29,7 @@ class PublicPrivatePaths extends NgAccessValidator {
           "Not authorized",
           Results.Unauthorized,
           ctx.request,
-          None,
+          ctx.route.serviceDescriptor.some,
           Some("errors.unauthorized"),
           attrs = ctx.attrs
         )

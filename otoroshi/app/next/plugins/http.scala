@@ -4,7 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator}
-import otoroshi.utils.syntax.implicits.BetterJsValue
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -20,7 +20,7 @@ class ReadOnlyCalls extends NgAccessValidator {
           s"Method not allowed",
           Results.MethodNotAllowed,
           ctx.request,
-          None,
+          ctx.route.serviceDescriptor.some,
           Some("errors.method.not.allowed"),
           attrs = ctx.attrs
         ).map(r => NgAccess.NgDenied(r))
@@ -42,7 +42,7 @@ class AllowHttpMethods extends NgAccessValidator {
           s"Method not allowed",
           Results.MethodNotAllowed,
           ctx.request,
-          None,
+          ctx.route.serviceDescriptor.some,
           Some("errors.method.not.allowed"),
           attrs = ctx.attrs
         ).map(r => NgAccess.NgDenied(r))

@@ -4,6 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPreRoutingErrorWithResult}
+import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -17,7 +18,7 @@ class DisableHttp10 extends NgAccessValidator {
           "HTTP/1.0 not allowed",
           Results.ServiceUnavailable,
           ctx.request,
-          None, // TODO: pass route.toDescriptor
+          ctx.route.serviceDescriptor.some,
           Some("errors.http.1_0.not.allowed"),
           duration = ctx.report.getDurationNow(), // TODO: checks if it's the rights move
           overhead = ctx.report.getOverheadInNow(), // TODO: checks if it's the rights move

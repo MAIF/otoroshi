@@ -10,7 +10,7 @@ import otoroshi.models.IpFiltering
 import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgRequestTransformer, NgTransformerRequestContext, PluginHttpRequest}
 import otoroshi.script.RequestTransformer
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits.BetterJsValue
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.http.HttpEntity
 import play.api.mvc.Results.Status
 import play.api.mvc.{Result, Results}
@@ -41,7 +41,7 @@ class IpAddressAllowedList extends NgAccessValidator {
           "Your IP address is not allowed",
           Results.Forbidden,
           ctx.request,
-          None, // TODO: pass route.toDescriptor
+          ctx.route.serviceDescriptor.some,
           Some( "errors.ip.address.not.allowed"),
           duration = ctx.report.getDurationNow(), // TODO: checks if it's the rights move
           overhead = ctx.report.getOverheadInNow(), // TODO: checks if it's the rights move
@@ -75,7 +75,7 @@ class IpAddressBlockList extends NgAccessValidator {
           "Your IP address is not allowed",
           Results.Forbidden,
           ctx.request,
-          None, // TODO: pass route.toDescriptor
+          ctx.route.serviceDescriptor.some,
           Some( "errors.ip.address.not.allowed"),
           duration = ctx.report.getDurationNow(), // TODO: checks if it's the rights move
           overhead = ctx.report.getOverheadInNow(), // TODO: checks if it's the rights move

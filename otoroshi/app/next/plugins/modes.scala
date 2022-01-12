@@ -4,6 +4,7 @@ import akka.Done
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.plugins.api.{NgPreRouting, NgPreRoutingContext, NgPreRoutingError, NgPreRoutingErrorWithResult}
+import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -16,7 +17,7 @@ class MaintenanceMode extends NgPreRouting {
         "Service in maintenance mode",
         Results.ServiceUnavailable,
         ctx.request,
-        None, // TODO: pass route.toDescriptor
+        ctx.route.serviceDescriptor.some,
         Some("errors.service.in.maintenance"),
         duration = ctx.report.getDurationNow(), // TODO: checks if it's the rights move
         overhead = ctx.report.getOverheadInNow(), // TODO: checks if it's the rights move
@@ -33,7 +34,7 @@ class BuildMode extends NgPreRouting {
         "Service under construction",
         Results.ServiceUnavailable,
         ctx.request,
-        None, // TODO: pass route.toDescriptor
+        ctx.route.serviceDescriptor.some,
         Some("errors.service.under.construction"),
         duration = ctx.report.getDurationNow(), // TODO: checks if it's the rights move
         overhead = ctx.report.getOverheadInNow(), // TODO: checks if it's the rights move

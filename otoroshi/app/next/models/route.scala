@@ -212,7 +212,7 @@ case class Route(
       api = openapiUrl.map(url => ApiDescriptor(true, url.some)).getOrElse(ApiDescriptor(false, None)),
       // canary: Canary = Canary(),
       // chaosConfig: ChaosConfig = ChaosConfig(),
-      // jwtVerifier: JwtVerifier = RefJwtVerifier(),
+      jwtVerifier = plugins.getPluginByClass[JwtVerification].flatMap(p => p.config.raw.select("verifiers").asOpt[Seq[String]].map(ids => RefJwtVerifier(ids, true, p.exclude))).getOrElse(RefJwtVerifier()),
       // cors: CorsSettings = CorsSettings(false),
       redirection = plugins.getPluginByClass[Redirection].flatMap(p => RedirectionSettings.format.reads(p.config.raw).asOpt).getOrElse(RedirectionSettings(false)),
       // gzip: GzipConfig = GzipConfig(),
@@ -478,6 +478,16 @@ object Route {
               config = PluginInstanceConfig(Json.obj(
                 "private_patterns" -> JsArray(service.privatePatterns.map(JsString.apply)),
                 "public_patterns" -> JsArray(service.publicPatterns.map(JsString.apply))
+              ))
+            )
+          }
+          .applyOnIf(service.jwtVerifier.enabled && service.jwtVerifier.isRef) { seq =>
+            val verifier = service.jwtVerifier.asInstanceOf[RefJwtVerifier]
+            seq :+ PluginInstance(
+              plugin = "cp:otoroshi.next.plugins.JwtVerification",
+              exclude = verifier.excludedPatterns,
+              config = PluginInstanceConfig(Json.obj(
+                "verifiers" -> JsArray(verifier.ids.map(JsString.apply)),
               ))
             )
           }
