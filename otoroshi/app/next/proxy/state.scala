@@ -27,7 +27,6 @@ class ProxyState(env: Env) {
   }
 }
 
-// TODO: implements
 class ProxyStateLoaderJob extends Job {
 
   override def uniqueId: JobId = JobId("io.otoroshi.next.core.jobs.ProxyStateLoaderJob")
@@ -47,13 +46,13 @@ class ProxyStateLoaderJob extends Job {
   override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
     JobInstantiation.OneInstancePerOtoroshiInstance
 
-  def generateRoutes(): Future[Seq[Route]] = {
+  def generateRoutesByDomain(): Future[Seq[Route]] = {
     (0 until 10000).map { idx =>
       Route(
         location = EntityLocation.default,
-        id = s"route_generated-${idx}",
-        name = s"generated_fake_route_${idx}",
-        description = s"generated_fake_route_${idx}",
+        id = s"route_generated-domain-${idx}",
+        name = s"generated_fake_route_domain_${idx}",
+        description = s"generated_fake_route_domain_${idx}",
         tags = Seq.empty,
         metadata = Map.empty,
         enabled = true,
@@ -99,13 +98,60 @@ class ProxyStateLoaderJob extends Job {
     }.future
   }
 
+  def generateRoutesByName(): Future[Seq[Route]] = {
+    (0 until 10000).map { idx =>
+      Route(
+        location = EntityLocation.default,
+        id = s"route_generated-path-${idx}",
+        name = s"generated_fake_route_path_${idx}",
+        description = s"generated_fake_route_path_${idx}",
+        tags = Seq.empty,
+        metadata = Map.empty,
+        enabled = true,
+        debugFlow = true,
+        frontend = Frontend(
+          domains = Seq(DomainAndPath(s"path-generated-next-gen.oto.tools/api/${idx}")),
+          headers = Map.empty,
+          stripPath = true,
+        ),
+        backends = Backends(
+          targets = Seq(Backend(
+            id = "mirror-1",
+            hostname = "mirror.otoroshi.io",
+            port = 443,
+            tls = true
+          )),
+          root = s"/path-${idx}",
+          loadBalancing = RoundRobin
+        ),
+        client = ClientConfig(),
+        healthCheck = HealthCheck(false, "/"),
+        plugins = Plugins(Seq(
+          PluginInstance(
+            plugin = "cp:otoroshi.next.plugins.OverrideHost",
+            config = PluginInstanceConfig(Json.obj())
+          ),
+          PluginInstance(
+            plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
+            config = PluginInstanceConfig(Json.obj(
+              "headers" -> Json.obj(
+                "bar" -> "foo"
+              )
+            ))
+          )
+        ))
+      )
+    }.future
+  }
+
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     for {
       routes <- env.datastores.routeDataStore.findAll().map(routes => routes ++ Seq(Route.fake))
-      genRoutes <- generateRoutes()
+      genRoutesDomain <- generateRoutesByDomain()
+      genRoutesPath <- generateRoutesByName()
       descriptors <- env.datastores.serviceDescriptorDataStore.findAll()
     } yield {
-      val newRoutes = genRoutes ++ descriptors.map(Route.fromServiceDescriptor) ++ routes
+      val newRoutes = genRoutesDomain ++ genRoutesPath ++ descriptors.map(Route.fromServiceDescriptor) ++ routes
       env.proxyState.updateRoutes(newRoutes)
     }
   }

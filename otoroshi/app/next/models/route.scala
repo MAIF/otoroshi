@@ -1,15 +1,13 @@
 package otoroshi.next.models
 
 import otoroshi.env.Env
-import otoroshi.models.{ClientConfig, EntityLocation, EntityLocationSupport, HealthCheck, Key, LoadBalancing, RoundRobin, ServiceDescriptor, ServiceGroup, ServiceGroupDataStore, Target}
-import otoroshi.script.{AccessValidatorRef, Job, JobId}
+import otoroshi.models._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.RegexPool
-import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
-import play.api.libs.json.{Format, JsArray, JsError, JsLookupResult, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
+import play.api.libs.json._
 import play.api.mvc.RequestHeader
 
 import scala.util.{Failure, Success, Try}
@@ -79,6 +77,7 @@ case class Route(
   healthCheck: HealthCheck,
   plugins: Plugins
 ) extends EntityLocationSupport {
+
   override def internalId: String = id
   override def theName: String = name
   override def theDescription: String = description
@@ -119,29 +118,97 @@ case class Route(
       false
     }
   }
-  
-  lazy val toServiceDescriptor: ServiceDescriptor = ServiceDescriptor(
-    location = location,
-    id = id,
-    name = name,
-    description = description,
-    tags = tags,
-    metadata = metadata,
-    enabled = enabled,
-    groups = groups,
-    env = "prod",
-    domain = "--",
-    subdomain = "--",
-    targets = backends.targets.map(_.toTarget),
-    hosts = frontend.domains.map(_.domain),
-    paths = frontend.domains.map(_.path),
-    stripPath = frontend.stripPath,
-    clientConfig = client,
-    healthCheck = healthCheck,
-    matchingHeaders = frontend.headers,
-    handleLegacyDomain = false,
-    // TODO: need more for some use cases
-  )
+
+  lazy val userFacing: Boolean = metadata.get("otoroshi-core-user-facing").contains("true")
+  lazy val useAkkaHttpClient: Boolean = metadata.get("otoroshi-core-use-akka-http-client").contains("true")
+  lazy val useAkkaHttpWsClient: Boolean = metadata.get("otoroshi-core-use-akka-http-ws-client").contains("true")
+  lazy val issueLetsEncryptCertificate: Boolean = metadata.get("otoroshi-core-issue-lets-encrypt-certificate").contains("true")
+  lazy val issueCertificate: Boolean = metadata.get("otoroshi-core-issue-certificate").contains("true")
+  lazy val issueCertificateCA: Option[String] = metadata.get("otoroshi-core-issue-certificate-ca").filter(_.nonEmpty)
+
+  lazy val serviceDescriptor: ServiceDescriptor = {
+    ServiceDescriptor(
+      location = location,
+      id = id,
+      name = name,
+      description = description,
+      tags = tags,
+      metadata = metadata,
+      enabled = enabled,
+      groups = groups,
+      env = "prod",
+      domain = "--",
+      subdomain = "--",
+      targets = backends.targets.map(_.toTarget),
+      hosts = frontend.domains.map(_.domain),
+      paths = frontend.domains.map(_.path),
+      stripPath = frontend.stripPath,
+      clientConfig = client,
+      healthCheck = healthCheck,
+      matchingHeaders = frontend.headers,
+      handleLegacyDomain = false,
+      targetsLoadBalancing = backends.loadBalancing,
+      issueCert = issueCertificate,
+      issueCertCA = issueCertificateCA,
+      useAkkaHttpClient = useAkkaHttpClient,
+      useNewWSClient = useAkkaHttpWsClient,
+      letsEncrypt = issueLetsEncryptCertificate,
+      // TODO: need more for some use cases
+      userFacing = userFacing,
+      // privateApp: Boolean = false,
+      // forceHttps: Boolean = true,
+      // maintenanceMode: Boolean = false,
+      // buildMode: Boolean = false,
+      // strictlyPrivate: Boolean = false,
+      // sendOtoroshiHeadersBack: Boolean = true,
+      // readOnly: Boolean = false,
+      // xForwardedHeaders: Boolean = false,
+      // overrideHost: Boolean = true,
+      // allowHttp10: Boolean = true,
+      // tcpUdpTunneling: Boolean = false,
+      // detectApiKeySooner: Boolean = false,
+      // // TODO: group secCom configs in v2, not done yet to avoid breaking stuff
+      // enforceSecureCommunication: Boolean = true,
+      // sendInfoToken: Boolean = true,
+      // sendStateChallenge: Boolean = true,
+      // secComHeaders: SecComHeaders = SecComHeaders(),
+      // secComTtl: FiniteDuration = 30.seconds,
+      // secComVersion: SecComVersion = SecComVersion.V1,
+      // secComInfoTokenVersion: SecComInfoTokenVersion = SecComInfoTokenVersion.Legacy,
+      // secComExcludedPatterns: Seq[String] = Seq.empty[String],
+      // secComSettings: AlgoSettings = HSAlgoSettings(
+      //   512,
+      //   "${config.app.claim.sharedKey}",
+      //   false
+      // ),
+      // secComUseSameAlgo: Boolean = true,
+      // secComAlgoChallengeOtoToBack: AlgoSettings = HSAlgoSettings(512, "secret", false),
+      // secComAlgoChallengeBackToOto: AlgoSettings = HSAlgoSettings(512, "secret", false),
+      // secComAlgoInfoToken: AlgoSettings = HSAlgoSettings(512, "secret", false),
+      // ///////////////////////////////////////////////////////////
+      // securityExcludedPatterns: Seq[String] = Seq.empty[String],
+      // publicPatterns: Seq[String] = Seq.empty[String],
+      // privatePatterns: Seq[String] = Seq.empty[String],
+      // additionalHeaders: Map[String, String] = Map.empty[String, String],
+      // additionalHeadersOut: Map[String, String] = Map.empty[String, String],
+      // missingOnlyHeadersIn: Map[String, String] = Map.empty[String, String],
+      // missingOnlyHeadersOut: Map[String, String] = Map.empty[String, String],
+      // removeHeadersIn: Seq[String] = Seq.empty[String],
+      // removeHeadersOut: Seq[String] = Seq.empty[String],
+      // headersVerification: Map[String, String] = Map.empty[String, String],
+      // ipFiltering: IpFiltering = IpFiltering(),
+      // api: ApiDescriptor = ApiDescriptor(false, None),
+      // canary: Canary = Canary(),
+      // chaosConfig: ChaosConfig = ChaosConfig(),
+      // jwtVerifier: JwtVerifier = RefJwtVerifier(),
+      // authConfigRef: Option[String] = None,
+      // cors: CorsSettings = CorsSettings(false),
+      // redirection: RedirectionSettings = RedirectionSettings(false),
+      // gzip: GzipConfig = GzipConfig(),
+      // apiKeyConstraints: ApiKeyConstraints = ApiKeyConstraints(),
+      // restrictions: Restrictions = Restrictions(),
+    )
+  }
 }
 
 object Route {
@@ -237,7 +304,20 @@ object Route {
       name = service.name,
       description = service.description,
       tags = service.tags,
-      metadata = service.metadata,
+      metadata = service.metadata.applyOnIf(service.useAkkaHttpClient) { meta =>
+        meta ++ Map("otoroshi-core-use-akka-http-client" -> "true")
+      }.applyOnIf(service.useNewWSClient) { meta =>
+        meta ++ Map("otoroshi-core-use-akka-http-ws-client" -> "true")
+      }.applyOnIf(service.letsEncrypt) { meta =>
+        meta ++ Map("otoroshi-core-issue-lets-encrypt-certificate" -> "true")
+      }.applyOnIf(service.issueCert) { meta =>
+        meta ++ Map(
+          "otoroshi-core-issue-certificate" -> "true",
+          "otoroshi-core-issue-certificate-ca" -> service.issueCertCA.getOrElse("")
+        )
+      }.applyOnIf(service.userFacing) { meta =>
+        meta ++ Map("otoroshi-core-user-facing" -> "true")
+      },
       enabled = service.enabled,
       debugFlow = true,
       frontend = Frontend(
@@ -400,6 +480,6 @@ class KvRouteDataStore(redisCli: RedisLike, _env: Env)
     with RedisLikeStore[Route] {
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def fmt: Format[Route]               = Route.fmt
-  override def key(id: String): Key                    = Key.Empty / _env.storageRoot / "routes" / id
+  override def key(id: String): Key             = Key.Empty / _env.storageRoot / "routes" / id
   override def extractId(value: Route): String  = value.id
 }

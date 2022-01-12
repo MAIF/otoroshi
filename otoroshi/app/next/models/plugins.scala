@@ -1,10 +1,10 @@
 package otoroshi.next.models
 
 import otoroshi.env.Env
-import otoroshi.next.plugins.api.{NgAccessValidator, NgNamedPlugin, NgPlugin, NgPreRouting, NgRequestTransformer, PluginWrapper}
+import otoroshi.next.plugins.api._
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsArray, JsLookupResult, JsObject, JsValue, Json}
+import play.api.libs.json._
 import play.api.mvc.RequestHeader
 
 import scala.concurrent.ExecutionContext
@@ -26,9 +26,10 @@ object PluginInstance {
   }
 }
 
-case class PluginInstance(plugin: String, enabled: Boolean = true, include: Seq[String] = Seq.empty, exclude: Seq[String] = Seq.empty, config: PluginInstanceConfig = PluginInstanceConfig()) {
+case class PluginInstance(plugin: String, enabled: Boolean = true, debug: Boolean = false, include: Seq[String] = Seq.empty, exclude: Seq[String] = Seq.empty, config: PluginInstanceConfig = PluginInstanceConfig()) {
   def json: JsValue = Json.obj(
     "enabled" -> enabled,
+    "debug" -> debug,
     "plugin" -> plugin,
     "include" -> include,
     "exclude" -> exclude,
@@ -56,6 +57,19 @@ case class Plugins(slots: Seq[PluginInstance]) {
 
   def json: JsValue = JsArray(slots.map(_.json))
 
+  def getPluginByClass[A](implicit ct: ClassTag[A]): Option[PluginInstance] = {
+    val name = s"cp:${ct.runtimeClass.getName}"
+    slots.find(pi => pi.plugin == name)
+  }
+
+  def allPlugins()(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgNamedPlugin]] = {
+    slots
+      .map(inst => (inst, inst.getPlugin[NgNamedPlugin]))
+      .collect {
+        case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+      } //.debug(seq => println(s"found ${seq.size} request-transformer plugins"))
+  }
+
   def transformerPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgRequestTransformer]] = {
     slots
       .filter(_.enabled)
@@ -63,7 +77,7 @@ case class Plugins(slots: Seq[PluginInstance]) {
       .map(inst => (inst, inst.getPlugin[NgRequestTransformer]))
       .collect {
         case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
-      }//.debug(seq => println(s"found ${seq.size} request-transformer plugins"))
+      } //.debug(seq => println(s"found ${seq.size} request-transformer plugins"))
   }
 
   def preRoutePlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgPreRouting]] = {
@@ -73,7 +87,7 @@ case class Plugins(slots: Seq[PluginInstance]) {
       .map(inst => (inst, inst.getPlugin[NgPreRouting]))
       .collect {
         case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
-      }//.debug(seq => println(s"found ${seq.size} pre-route plugins"))
+      } //.debug(seq => println(s"found ${seq.size} pre-route plugins"))
   }
 
   def accessValidatorPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgAccessValidator]] = {
@@ -83,7 +97,7 @@ case class Plugins(slots: Seq[PluginInstance]) {
       .map(inst => (inst, inst.getPlugin[NgAccessValidator]))
       .collect {
         case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
-      }//.debug(seq => println(s"found ${seq.size} access-validator plugins"))
+      } //.debug(seq => println(s"found ${seq.size} access-validator plugins"))
   }
 }
 
