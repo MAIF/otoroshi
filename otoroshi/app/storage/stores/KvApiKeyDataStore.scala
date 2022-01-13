@@ -239,4 +239,20 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
       case None                                                                                             => FastFuture.successful(None)
     }
   }
+
+  override def findAuthorizeKeyForFromCache(clientId: String, serviceId: String)(implicit env: Env): Option[ApiKey] = {
+    env.proxyState.apikey(clientId) match {
+      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(ServiceDescriptorIdentifier(serviceId)) => opt
+      case Some(apiKey)                                                                                     => {
+        env.proxyState.route(serviceId) match {
+          case None          => None
+          case Some(service) => {
+            val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
+            identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
+          }
+        }
+      }
+      case _ => None
+    }
+  }
 }

@@ -179,6 +179,7 @@ class ProxyEngine() extends RequestHandler {
         "x-otoroshi-request-overhead-out" -> report.overheadOut.toString,
         "x-otoroshi-request-duration" -> report.gduration.toString,
         "x-otoroshi-request-call-duration" -> report.getStep("call-backend").map(_.duration).getOrElse(-1L).toString,
+        "x-otoroshi-request-find-route-duration" -> report.getStep("find-route").map(_.duration).getOrElse(-1L).toString,
         "x-otoroshi-request-state" -> report.state.name,
         "x-otoroshi-request-creation" -> report.creation.toString,
         "x-otoroshi-request-termination" -> report.termination.toString,
@@ -253,7 +254,10 @@ class ProxyEngine() extends RequestHandler {
     // TODO: we need something smarter, sort paths by length when there is a wildcard, then same for domains. We need to aggregate on domains
     // TODO: need optimizations here !!!!
     // TODO: perform apikey routing match (descriptor.scala: 2459)
-    env.proxyState.allRoutes().filter(_.enabled).find(r => r.matches(request)) match {
+
+    // env.proxyState.allRoutes().filter(_.enabled).find(r => r.matches(request))
+
+    env.proxyState.getDomainRoutes(request.theDomain).flatMap(_.find(_.matches(request, true))) match {
       case Some(route) => FEither.right(route)
       case None =>
         report.markFailure(s"route not found for domain: '${request.theDomain}${request.thePath}'")

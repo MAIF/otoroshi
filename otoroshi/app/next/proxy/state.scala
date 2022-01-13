@@ -1,29 +1,151 @@
 package otoroshi.next.proxy
 
+import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
-import otoroshi.models.{ApiKeyRouteMatcher, ClientConfig, EntityLocation, HealthCheck, RoundRobin}
+import otoroshi.models._
 import otoroshi.next.models._
 import otoroshi.script._
+import otoroshi.ssl.Cert
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.Json
 
-import scala.collection.concurrent.TrieMap
+import java.util.concurrent.{ConcurrentHashMap, CopyOnWriteArrayList}
+import scala.collection.JavaConverters._
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProxyState(env: Env) {
 
-  private val routes = TrieMap.newBuilder[String, Route]
-    .+=(Route.fake.id -> Route.fake)
-    .result()
+  // private val routes = TrieMap.newBuilder[String, Route]
+  //   .+=(Route.fake.id -> Route.fake)
+  //   .result()
+  // private val apikeys = new TrieMap[String, ApiKey]()
+  // private val jwtVerifiers = new TrieMap[String, GlobalJwtVerifier]()
+  // private val certificates = new TrieMap[String, Cert]()
+  // private val authModules = new TrieMap[String, AuthModuleConfig]()
 
-  def allRoutes(): Seq[Route] = routes.values.toSeq
-  def route(id: String): Option[Route] = routes.get(id)
+  private val chmRoutes = {
+    val map = new ConcurrentHashMap[String, Route]()
+    map.put(Route.fake.id, Route.fake)
+    map
+  }
+  private val chmApikeys = new ConcurrentHashMap[String, ApiKey]()
+  private val chmJwtVerifiers = new ConcurrentHashMap[String, GlobalJwtVerifier]()
+  private val chmCertificates = new ConcurrentHashMap[String, Cert]()
+  private val chmAuthModules = new ConcurrentHashMap[String, AuthModuleConfig]()
+  private val chmRoutesByDomain = new ConcurrentHashMap[String, Seq[Route]]()
+  private val chmRoutesByWildcardDomain = new CopyOnWriteArrayList[Route]()
+
+  def route(id: String): Option[Route] = Option(chmRoutes.get(id))
+  def apikey(id: String): Option[ApiKey] = Option(chmApikeys.get(id))
+  def jwtVerifier(id: String): Option[GlobalJwtVerifier] = Option(chmJwtVerifiers.get(id))
+  def certificate(id: String): Option[Cert] = Option(chmCertificates.get(id))
+  def authModule(id: String): Option[AuthModuleConfig] = Option(chmAuthModules.get(id))
+  def getDomainRoutes(domain: String): Option[Seq[Route]] = {
+    Option(chmRoutesByDomain.get(domain))
+    // TODO: check wildcard domains
+  }
+
+  // def allRoutes(): Iterable[Route] = chmRoutes.values().asScala
+  // def allApikeys(): Seq[ApiKey] = chmApikeys.values().asScala.toSeq
+  // def allJwtVerifiers(): Seq[GlobalJwtVerifier] = chmJwtVerifiers.values().asScala.toSeq
+  // def allCertificates(): Seq[Cert] = chmCertificates.values().asScala.toSeq
+  // def allAuthModules(): Seq[AuthModuleConfig] = chmAuthModules.values().asScala.toSeq
+
+  // def old_allRoutes(): Seq[Route] = routes.values.toSeq
+  // def old_allApikeys(): Seq[ApiKey] = apikeys.values.toSeq
+  // def old_allJwtVerifiers(): Seq[GlobalJwtVerifier] = jwtVerifiers.values.toSeq
+  // def old_allCertificates(): Seq[Cert] = certificates.values.toSeq
+  // def old_allAuthModules(): Seq[AuthModuleConfig] = authModules.values.toSeq
+  // def old_route(id: String): Option[Route] = routes.get(id)
+  // def old_apikey(id: String): Option[ApiKey] = apikeys.get(id)
+  // def old_jwtVerifier(id: String): Option[GlobalJwtVerifier] = jwtVerifiers.get(id)
+  // def old_certificate(id: String): Option[Cert] = certificates.get(id)
+  // def old_authModule(id: String): Option[AuthModuleConfig] = authModules.get(id)
 
   def updateRoutes(new_routes: Seq[Route]): Unit = {
+    // val routeIds = new_routes.map(_.id)
+    // new_routes.foreach(route => routes.put(route.id, route))
+    // routes.keySet.filterNot(key => routeIds.contains(key)).foreach(key => routes.remove(key))
     val routeIds = new_routes.map(_.id)
-    new_routes.foreach(route => routes.put(route.id, route))
-    routes.keySet.filterNot(key => routeIds.contains(key)).foreach(key => routes.remove(key))
+    chmRoutes.putAll(new_routes.map(r => (r.id, r)).toMap.asJava)
+    chmRoutes.keySet.asScala.foreach { key =>
+      if (!routeIds.contains(key)) {
+        chmRoutes.remove(key)
+      }
+    }
+    val routesByDomainRaw: Map[String, Seq[Route]] = new_routes
+      .filter(_.enabled)
+      .flatMap(r => r.frontend.domains.map(d => (d.domain, r.copy(frontend = r.frontend.copy(domains = Seq(d))))))
+      .groupBy(_._1)
+      .mapValues(_.map(_._2).sortWith((r1, r2) => r1.frontend.domains.head.path.length.compareTo(r2.frontend.domains.head.path.length) > 0))
+    val (routesByWildcardDomainRaw, routesByDomain) = routesByDomainRaw.partition(_._1.contains("*"))
+    val routesWithWildcardDomains = routesByWildcardDomainRaw
+      .values
+      .flatten
+      .toSeq
+      .sortWith((r1, r2) => r1.frontend.domains.head.domain.length.compareTo(r2.frontend.domains.head.domain.length) > 0)
+    val domains = routesByDomain.keySet
+    chmRoutesByDomain.putAll(routesByDomain.asJava)
+    chmRoutesByDomain.keySet.asScala.foreach { key =>
+      if (!domains.contains(key)) {
+        chmRoutesByDomain.remove(key)
+      }
+    }
+    chmRoutesByWildcardDomain.clear()
+    chmRoutesByWildcardDomain.addAll(routesWithWildcardDomains.asJava)
+  }
+
+  def updateApikeys(values: Seq[ApiKey]): Unit = {
+    // val apikeyIds = new_apikeys.map(_.clientId)
+    // new_apikeys.foreach(apikey => apikeys.put(apikey.clientId, apikey))
+    // apikeys.keySet.filterNot(key => apikeyIds.contains(key)).foreach(key => apikeys.remove(key))
+    val valueIds = values.map(_.clientId)
+    chmApikeys.putAll(values.map(r => (r.clientId, r)).toMap.asJava)
+    chmApikeys.keySet.asScala.foreach { key =>
+      if (!valueIds.contains(key)) {
+        chmApikeys.remove(key)
+      }
+    }
+  }
+
+  def updateJwtVerifiers(values: Seq[GlobalJwtVerifier]): Unit = {
+    // val verifierIds = new_verifiers.map(_.id)
+    // new_verifiers.foreach(verifier => jwtVerifiers.put(verifier.id, verifier))
+    // jwtVerifiers.keySet.filterNot(key => verifierIds.contains(key)).foreach(key => jwtVerifiers.remove(key))
+    val valueIds = values.map(_.id)
+    chmJwtVerifiers.putAll(values.map(r => (r.id, r)).toMap.asJava)
+    chmJwtVerifiers.keySet.asScala.foreach { key =>
+      if (!valueIds.contains(key)) {
+        chmJwtVerifiers.remove(key)
+      }
+    }
+  }
+
+  def updateCertificates(values: Seq[Cert]): Unit = {
+    // val certificatesIds = new_certificates.map(_.id)
+    // new_certificates.foreach(certificate => certificates.put(certificate.id, certificate))
+    // certificates.keySet.filterNot(key => certificatesIds.contains(key)).foreach(key => certificates.remove(key))
+    val valueIds = values.map(_.id)
+    chmCertificates.putAll(values.map(r => (r.id, r)).toMap.asJava)
+    chmCertificates.keySet.asScala.foreach { key =>
+      if (!valueIds.contains(key)) {
+        chmCertificates.remove(key)
+      }
+    }
+  }
+
+  def updateAuthModules(values: Seq[AuthModuleConfig]): Unit = {
+    // val authModuleIds = new_authModule.map(_.id)
+    // new_authModule.foreach(authModule => authModules.put(authModule.id, authModule))
+    // authModules.keySet.filterNot(key => authModuleIds.contains(key)).foreach(key => authModules.remove(key))
+    val valueIds = values.map(_.id)
+    chmAuthModules.putAll(values.map(r => (r.id, r)).toMap.asJava)
+    chmAuthModules.keySet.asScala.foreach { key =>
+      if (!valueIds.contains(key)) {
+        chmAuthModules.remove(key)
+      }
+    }
   }
 }
 
@@ -147,15 +269,29 @@ class ProxyStateLoaderJob extends Job {
   }
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    for {
+    val start = System.currentTimeMillis()
+    (for {
       routes <- env.datastores.routeDataStore.findAll().map(routes => routes ++ Seq(Route.fake))
       genRoutesDomain <- generateRoutesByDomain()
       genRoutesPath <- generateRoutesByName()
       descriptors <- env.datastores.serviceDescriptorDataStore.findAll()
+      newRoutes = genRoutesDomain ++ genRoutesPath ++ descriptors.map(Route.fromServiceDescriptor) ++ routes
+      // _ = println(s"route stuff in ${System.currentTimeMillis() - start} ms")
+      apikeys <- env.datastores.apiKeyDataStore.findAll()
+      certs <- env.datastores.certificatesDataStore.findAll()
+      verifiers <- env.datastores.globalJwtVerifierDataStore.findAll()
+      modules <- env.datastores.authConfigsDataStore.findAll()
     } yield {
-      val newRoutes = genRoutesDomain ++ genRoutesPath ++ descriptors.map(Route.fromServiceDescriptor) ++ routes
+      // val secondStart = System.currentTimeMillis()
       env.proxyState.updateRoutes(newRoutes)
-    }
+      // println(s"update 1 in ${System.currentTimeMillis() - secondStart} ms")
+      env.proxyState.updateApikeys(apikeys)
+      env.proxyState.updateCertificates(certs)
+      env.proxyState.updateAuthModules(modules)
+      env.proxyState.updateJwtVerifiers(verifiers)
+      // println(s"update in ${System.currentTimeMillis() - secondStart} ms")
+      // println(s"job done in ${System.currentTimeMillis() - start} ms")
+    })
   }
 }
 

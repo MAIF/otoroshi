@@ -103,14 +103,15 @@ case class Route(
     "plugins" -> plugins.json
   )
 
-  def matches(request: RequestHeader)(implicit env: Env): Boolean = {
+  def matches(request: RequestHeader, skipDomainVerif: Boolean)(implicit env: Env): Boolean = {
     if (enabled) {
       val path = request.thePath
       val domain = request.theDomain
       frontend.domains
-        .filter(d => d.domain == domain || RegexPool(d.domain).matches(domain))
-        .filter(d => path.startsWith(d.path) || RegexPool(d.path).matches(path))
-        .nonEmpty
+        .applyOnIf(!skipDomainVerif)(_.filter(d => d.domain == domain || RegexPool(d.domain).matches(domain)))
+        .exists { d =>
+          path.startsWith(d.path) || RegexPool(d.path).matches(path)
+        }
         .applyOnIf(frontend.headers.nonEmpty) { firstRes =>
           val headers = request.headers.toSimpleMap.map(t => (t._1.toLowerCase, t._2))
           val secondRes = frontend.headers.map(t => (t._1.toLowerCase, t._2)).forall {
@@ -362,7 +363,7 @@ object Route {
           } else {
             service.allPaths.flatMap(path => service.allHosts.map(host => s"$host$path"))
           }
-          dap.map(DomainAndPath.apply)
+          dap.map(DomainAndPath.apply).distinct
         },
         headers = service.matchingHeaders,
         stripPath = service.stripPath,
@@ -373,6 +374,7 @@ object Route {
         root = service.root,
         loadBalancing = service.targetsLoadBalancing
       ),
+      groups = service.groups,
       client = service.clientConfig,
       healthCheck = service.healthCheck,
       plugins = Plugins(

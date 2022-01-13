@@ -425,6 +425,7 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
       ec: ExecutionContext,
       env: Env
   ): Future[Option[ApiKey]]
+  def findAuthorizeKeyForFromCache(clientId: String, serviceId: String)(implicit env: Env): Option[ApiKey]
   def deleteFastLookupByGroup(groupId: String, apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def deleteFastLookupByService(serviceId: String, apiKey: ApiKey)(implicit
       ec: ExecutionContext,
