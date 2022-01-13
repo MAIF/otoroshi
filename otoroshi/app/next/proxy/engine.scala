@@ -7,7 +7,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.events.{Alerts, Audit, HighOverheadAlert, Location, MaxConcurrentRequestReachedAlert, MaxConcurrentRequestReachedEvent}
+import otoroshi.events.{Alerts, AnalyticEvent, Audit, AuditEvent, HighOverheadAlert, Location, MaxConcurrentRequestReachedAlert, MaxConcurrentRequestReachedEvent}
 import otoroshi.gateway._
 import otoroshi.models.{GlobalConfig, RemainingQuotas, Target}
 import otoroshi.next.models.{Backend, Route}
@@ -169,8 +169,10 @@ class ProxyEngine() extends RequestHandler {
     }.andThen {
       case _ =>
         report.markOverheadOut()
-        handleHighOverhead(request, attrs.get(Keys.RouteKey))
-        // TODO: send to analytics if debug activated on route
+        attrs.get(Keys.RouteKey).foreach { route =>
+          handleHighOverhead(request, route.some)
+          RequestFlowReport(report, route).toAnalytics()
+        }
     }.map { res =>
       val addHeaders = if (reporting && debugHeaders) Seq(
         "x-otoroshi-request-overhead" -> (report.overheadIn + report.overheadOut).toString,
@@ -1168,4 +1170,30 @@ class ProxyEngine() extends RequestHandler {
     // TODO: implements
     FEither.right(Done)
   }
+}
+
+case class RequestFlowReport(report: ExecutionReport, route: Route) extends AnalyticEvent {
+
+  override def `@service`: String   = route.name
+  override def `@serviceId`: String = route.id
+  def `@id`: String = IdGenerator.uuid
+  def `@timestamp`: org.joda.time.DateTime = timestamp
+  def `@type`: String = "RequestFlowReport"
+  override def fromOrigin: Option[String]    = None
+  override def fromUserAgent: Option[String] = None
+
+  val timestamp = DateTime.now()
+
+  override def toJson(implicit env: Env): JsValue =
+    Json.obj(
+      "@id"          -> `@id`,
+      "@timestamp"   -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(timestamp),
+      "@type"        -> "RequestFlowReport",
+      "@product"     -> "otoroshi",
+      "@serviceId"   -> `@serviceId`,
+      "@service"     -> `@service`,
+      "@env"         -> "prod",
+      "route"        -> route.json,
+      "report"       -> report.json
+    )
 }

@@ -6,6 +6,7 @@ import otoroshi.models._
 import otoroshi.next.models._
 import otoroshi.script._
 import otoroshi.ssl.Cert
+import otoroshi.utils.RegexPool
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.Json
 
@@ -43,8 +44,17 @@ class ProxyState(env: Env) {
   def certificate(id: String): Option[Cert] = Option(chmCertificates.get(id))
   def authModule(id: String): Option[AuthModuleConfig] = Option(chmAuthModules.get(id))
   def getDomainRoutes(domain: String): Option[Seq[Route]] = {
-    Option(chmRoutesByDomain.get(domain))
-    // TODO: check wildcard domains
+    Option(chmRoutesByDomain.get(domain)) match {
+      case s @ Some(_) => s
+      case None => {
+        chmRoutesByWildcardDomain.asScala.filter { route =>
+          RegexPool(route.frontend.domains.head.domain).matches(domain)
+        }.applyOn {
+          case seq if seq.isEmpty => None
+          case seq => seq.some
+        }
+      }
+    }
   }
 
   // def allRoutes(): Iterable[Route] = chmRoutes.values().asScala
