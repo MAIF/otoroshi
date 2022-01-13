@@ -1,23 +1,13 @@
 package otoroshi.script
 
-import java.security.MessageDigest
-import java.security.cert.X509Certificate
-import java.util.Base64
-import java.util.concurrent.TimeUnit
-import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, GwError}
 import otoroshi.models._
-import org.apache.commons.codec.binary.Hex
-import otoroshi.utils.{RegexPool, TypedMap}
+import otoroshi.utils.TypedMap
 import play.api.libs.json._
-import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
-import otoroshi.ssl.{ClientCertificateValidator, PemHeaders}
 
-import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
