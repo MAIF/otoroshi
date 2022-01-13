@@ -1270,7 +1270,7 @@ object ReverseProxyHelper {
       val (within, secCalls, maybeQuota)                 = r
       val quota                                          = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
       val (restrictionsNotPassing, restrictionsResponse) =
-        descriptor.restrictions.handleRestrictions(descriptor, None, req, attrs)
+        descriptor.restrictions.handleRestrictions(descriptor.id, descriptor.some, None, req, attrs)
       if (secCalls > (quota * 10L)) {
         errorResult(TooManyRequests, "[IP] You performed too much requests", "errors.too.much.requests")
       } else {

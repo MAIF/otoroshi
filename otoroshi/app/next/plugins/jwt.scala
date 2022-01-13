@@ -18,23 +18,18 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
     if (verifiers.nonEmpty) {
       val verifier = RefJwtVerifier(verifiers, true, Seq.empty)
       val promise = Promise[NgAccess]()
-      verifier.verify(
+      verifier.verifyFromCache(
         request = ctx.request,
-        desc = ctx.route.serviceDescriptor,
+        desc = ctx.route.serviceDescriptor.some,
         apikey = ctx.apikey,
         user = ctx.user,
         elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
         attrs = ctx.attrs
-      ) { injection =>
-        ctx.attrs.put(JwtInjectionKey -> injection)
-        promise.trySuccess(NgAccess.NgAllowed)
-        Results.Ok("done").future
-      }.map { result =>
-        if (!promise.isCompleted && result.header.status != 200) {
-          promise.trySuccess(NgAccess.NgDenied(result))
-        } else {
+      ).map {
+        case Left(result) => promise.trySuccess(NgAccess.NgDenied(result))
+        case Right(injection) =>
+          ctx.attrs.put(JwtInjectionKey -> injection)
           promise.trySuccess(NgAccess.NgAllowed)
-        }
       }
       promise.future
     } else {

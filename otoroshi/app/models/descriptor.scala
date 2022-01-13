@@ -1317,7 +1317,8 @@ case class Restrictions(
 
   private val cache = new TrieMap[String, (Boolean, Future[Result])]() // Not that clean but perfs matters
 
-  def handleRestrictions(descriptor: ServiceDescriptor, apk: Option[ApiKey], req: RequestHeader, attrs: TypedMap)(
+  // def handleRestrictions(descriptor: ServiceDescriptor, apk: Option[ApiKey], req: RequestHeader, attrs: TypedMap)(
+  def handleRestrictions(id: String, descriptor: Option[ServiceDescriptor], apk: Option[ApiKey], req: RequestHeader, attrs: TypedMap)(
       implicit
       ec: ExecutionContext,
       env: Env
@@ -1329,7 +1330,7 @@ case class Restrictions(
       val method = req.method
       val domain = req.theDomain
       val path   = req.thePath
-      val key    = s"${descriptor.id}:${apk.map(_.clientId).getOrElse("none")}:$method:$domain:$path"
+      val key    = s"${id}:${apk.map(_.clientId).getOrElse("none")}:$method:$domain:$path"
       cache.getOrElseUpdate(
         key, {
           if (allowLast) {
@@ -1340,7 +1341,7 @@ case class Restrictions(
                   "Not Found",
                   Results.NotFound,
                   req,
-                  Some(descriptor),
+                  descriptor,
                   Some("errors.not.found"),
                   emptyBody = true,
                   attrs = attrs
@@ -1353,7 +1354,7 @@ case class Restrictions(
                   "Forbidden",
                   Results.Forbidden,
                   req,
-                  Some(descriptor),
+                  descriptor,
                   Some("errors.forbidden"),
                   emptyBody = true,
                   attrs = attrs
@@ -1366,7 +1367,7 @@ case class Restrictions(
                   "Not Found", // TODO: is it the right response ?
                   Results.NotFound,
                   req,
-                  Some(descriptor),
+                  descriptor,
                   Some("errors.not.found"),
                   emptyBody = true,
                   attrs = attrs
@@ -1384,7 +1385,7 @@ case class Restrictions(
                   "Not Found",
                   Results.NotFound,
                   req,
-                  Some(descriptor),
+                  descriptor,
                   Some("errors.not.found"),
                   emptyBody = true,
                   attrs = attrs
@@ -1397,7 +1398,7 @@ case class Restrictions(
                   "Forbidden",
                   Results.Forbidden,
                   req,
-                  Some(descriptor),
+                  descriptor,
                   Some("errors.forbidden"),
                   emptyBody = true,
                   attrs = attrs
@@ -1410,7 +1411,7 @@ case class Restrictions(
                   "Not Found", // TODO: is it the right response ?
                   Results.NotFound,
                   req,
-                  Some(descriptor),
+                  descriptor,
                   Some("errors.not.found"),
                   emptyBody = true,
                   attrs = attrs

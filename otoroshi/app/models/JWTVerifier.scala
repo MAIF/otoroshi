@@ -988,7 +988,7 @@ sealed trait JwtVerifier extends AsJson {
   )(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    internalVerify(request, desc, apikey, user, elContext, attrs, sendEvent = true)(f).map {
+    internalVerify(request, desc.some, apikey, user, elContext, attrs, sendEvent = true)(f).map {
       case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
       case Right(goodResult) => goodResult
     }
@@ -1004,7 +1004,7 @@ sealed trait JwtVerifier extends AsJson {
   )(
       f: JwtInjection => Future[Either[Result, A]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
-    internalVerify(request, desc, apikey, user, elContext, attrs, sendEvent = true)(f).map {
+    internalVerify(request, desc.some, apikey, user, elContext, attrs, sendEvent = true)(f).map {
       case Left(badResult)   => Left[Result, A](badResult)
       case Right(goodResult) => goodResult
     }
@@ -1020,7 +1020,7 @@ sealed trait JwtVerifier extends AsJson {
   )(
       f: JwtInjection => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    internalVerify(request, desc, apikey, user, elContext, attrs, sendEvent = true)(f).map {
+    internalVerify(request, desc.some, apikey, user, elContext, attrs, sendEvent = true)(f).map {
       case Left(badResult)   => badResult
       case Right(goodResult) => goodResult
     }
@@ -1028,7 +1028,7 @@ sealed trait JwtVerifier extends AsJson {
 
   private[models] def internalVerify[A](
       request: RequestHeader,
-      desc: ServiceDescriptor,
+      descOpt: Option[ServiceDescriptor],
       apikey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       elContext: Map[String, String],
@@ -1052,7 +1052,7 @@ sealed trait JwtVerifier extends AsJson {
                     "error.bad.output.algorithm.name",
                     Results.BadRequest,
                     request,
-                    Some(desc),
+                    descOpt,
                     None,
                     attrs = attrs,
                     sendEvent = sendEvent
@@ -1072,7 +1072,7 @@ sealed trait JwtVerifier extends AsJson {
                   .fromJson(
                     newToken,
                     Some(request),
-                    Some(desc),
+                    descOpt,
                     apikey,
                     user,
                     elContext ++ moreCtx,
@@ -1117,7 +1117,7 @@ sealed trait JwtVerifier extends AsJson {
                 "error.expected.token.not.found",
                 Results.BadRequest,
                 request,
-                Some(desc),
+                descOpt,
                 None,
                 attrs = attrs,
                 sendEvent = sendEvent
@@ -1148,7 +1148,7 @@ sealed trait JwtVerifier extends AsJson {
                 "error.bad.input.algorithm.name",
                 Results.BadRequest,
                 request,
-                Some(desc),
+                descOpt,
                 None,
                 attrs = attrs
               )
@@ -1163,7 +1163,7 @@ sealed trait JwtVerifier extends AsJson {
                     "error.bad.token",
                     Results.BadRequest,
                     request,
-                    Some(desc),
+                    descOpt,
                     None,
                     attrs = attrs,
                     sendEvent = sendEvent
@@ -1177,7 +1177,7 @@ sealed trait JwtVerifier extends AsJson {
                         "error.token.already.present",
                         Results.BadRequest,
                         request,
-                        Some(desc),
+                        descOpt,
                         None,
                         attrs = attrs,
                         sendEvent = sendEvent
@@ -1202,7 +1202,7 @@ sealed trait JwtVerifier extends AsJson {
                             "error.bad.output.algorithm.name",
                             Results.BadRequest,
                             request,
-                            Some(desc),
+                            descOpt,
                             None,
                             attrs = attrs,
                             sendEvent = sendEvent
@@ -1228,7 +1228,7 @@ sealed trait JwtVerifier extends AsJson {
                             "error.bad.output.algorithm.name",
                             Results.BadRequest,
                             request,
-                            Some(desc),
+                            descOpt,
                             None,
                             attrs = attrs,
                             sendEvent = sendEvent
@@ -1249,7 +1249,7 @@ sealed trait JwtVerifier extends AsJson {
                             .fromJson(
                               tSettings.mappingSettings.values,
                               Some(request),
-                              Some(desc),
+                              descOpt,
                               apikey,
                               user,
                               context,
@@ -1266,7 +1266,7 @@ sealed trait JwtVerifier extends AsJson {
                                 JwtExpressionLanguage.fromJson(
                                   (a \ b._1).as[JsValue],
                                   Some(request),
-                                  Some(desc),
+                                  descOpt,
                                   apikey,
                                   user,
                                   context,
@@ -1425,7 +1425,7 @@ case class RefJwtVerifier(
                 .flatMap {
                   case Some(verifier) =>
                     verifier
-                      .internalVerify(request, desc, apikey, user, elContext, attrs, queue.isEmpty)(f)
+                      .internalVerify(request, desc.some, apikey, user, elContext, attrs, queue.isEmpty)(f)
                       .map {
                         case Left(result)  =>
                           last.set(Left(result))
@@ -1463,6 +1463,66 @@ case class RefJwtVerifier(
 
         dequeueNext()
 
+        promise.future
+      }
+    }
+  }
+
+  def verifyFromCache(
+    request: RequestHeader,
+    desc: Option[ServiceDescriptor],
+    apikey: Option[ApiKey],
+    user: Option[PrivateAppsUser],
+    elContext: Map[String, String],
+    attrs: TypedMap
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, JwtInjection]] = {
+    implicit val mat = env.otoroshiMaterializer
+    ids match {
+      case s if s.isEmpty => JwtInjection().right.future
+      case _ => {
+        val promise = Promise[Either[Result, JwtInjection]]
+        def dequeueNext(all: Seq[String], last: Either[Result, JwtInjection]): Unit = {
+          all.headOption match {
+            case None => promise.trySuccess(last)
+            case Some(ref) => env.proxyState.jwtVerifier(ref) match {
+              case Some(verifier) =>
+                verifier
+                  .internalVerify(request, desc, apikey, user, elContext, attrs, all.size == 1)(injection => injection.right.future)
+                  .map {
+                    case Left(result) if all.size == 1 => promise.trySuccess(Left(result))
+                    case Left(result) => dequeueNext(all.tail, Left(result))
+                    case Right(result) =>
+                      result match {
+                        case Left(result) if all.size == 1 => promise.trySuccess(Left(result))
+                        case Left(result) => dequeueNext(all.tail, Left(result))
+                        case Right(flow)  =>
+                          // the first that passes win !
+                          promise.trySuccess(Right(flow))
+                      }
+                  }
+                  .andThen { case Failure(e) => promise.tryFailure(e) }
+              case None           =>
+                Errors
+                  .craftResponseResult(
+                    s"error.bad.globaljwtverifier.id",
+                    Results.InternalServerError,
+                    request,
+                    desc,
+                    None,
+                    attrs = attrs
+                  )
+                  .map { result =>
+                    if (all.size == 1) {
+                      promise.trySuccess(Left(result))
+                    } else {
+                      dequeueNext(all.tail, Left(result))
+                    }
+                  }
+                  .andThen { case Failure(e) => promise.tryFailure(e) }
+            }
+          }
+        }
+        dequeueNext(ids, Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.missing.globaljwtverifier.id"))))
         promise.future
       }
     }

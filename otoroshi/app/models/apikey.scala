@@ -6,20 +6,13 @@ import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.common.base.Charsets
 import otoroshi.env.Env
-import otoroshi.events.{
-  Alerts,
-  ApiKeyQuotasAlmostExceededAlert,
-  ApiKeyQuotasAlmostExceededReason,
-  ApiKeyQuotasExceededAlert,
-  ApiKeyQuotasExceededReason,
-  ApiKeySecretHasRotated,
-  ApiKeySecretWillRotate,
-  RevokedApiKeyUsageAlert
-}
+import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
+import otoroshi.next.plugins.api.NgAccess
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Results.{BadGateway, BadRequest, NotFound, TooManyRequests, Unauthorized}
@@ -552,6 +545,8 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
   }
 }
 
+case class ApikeyTuple(clientId: String, clientSecret: Option[String] = None, jwtToken: Option[DecodedJWT] = None)
+
 object ApiKeyHelper {
 
   import otoroshi.utils.http.RequestImplicits._
@@ -915,7 +910,7 @@ object ApiKeyHelper {
 
     def sendRevokedApiKeyAlert(key: ApiKey) = {
       Alerts.send(
-        RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(), DateTime.now(), env.env, req, key, descriptor, env)
+        RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(), DateTime.now(), env.env, req, key, descriptor.some, env)
       )
     }
 
@@ -1069,10 +1064,10 @@ object ApiKeyHelper {
         }
         case Some(key)
             if key.restrictions
-              .handleRestrictions(descriptor, Some(key), req, attrs)
+              .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
               ._1 => {
           key.restrictions
-            .handleRestrictions(descriptor, Some(key), req, attrs)
+            .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
             ._2
             .map(v => Left(v))
         }
@@ -1108,10 +1103,10 @@ object ApiKeyHelper {
           }
           case Some(key)
               if key.restrictions
-                .handleRestrictions(descriptor, Some(key), req, attrs)
+                .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
                 ._1 => {
             key.restrictions
-              .handleRestrictions(descriptor, Some(key), req, attrs)
+              .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
               ._2
               .map(v => Left(v))
           }
@@ -1144,10 +1139,10 @@ object ApiKeyHelper {
             errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
           case Some(key)
               if key.restrictions
-                .handleRestrictions(descriptor, Some(key), req, attrs)
+                .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
                 ._1 => {
             key.restrictions
-              .handleRestrictions(descriptor, Some(key), req, attrs)
+              .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
               ._2
               .map(v => Left(v))
           }
@@ -1286,10 +1281,10 @@ object ApiKeyHelper {
                           errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
                         case Success(_)
                             if apiKey.restrictions
-                              .handleRestrictions(descriptor, Some(apiKey), req, attrs)
+                              .handleRestrictions(descriptor.id, descriptor.some, Some(apiKey), req, attrs)
                               ._1 => {
                           apiKey.restrictions
-                            .handleRestrictions(descriptor, Some(apiKey), req, attrs)
+                            .handleRestrictions(descriptor.id, descriptor.some, Some(apiKey), req, attrs)
                             ._2
                             .map(v => Left(v))
                         }
@@ -1347,10 +1342,10 @@ object ApiKeyHelper {
                 errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
               case Some(key)
                   if key.restrictions
-                    .handleRestrictions(descriptor, Some(key), req, attrs)
+                    .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
                     ._1 => {
                 key.restrictions
-                  .handleRestrictions(descriptor, Some(key), req, attrs)
+                  .handleRestrictions(descriptor.id, descriptor.some, Some(key), req, attrs)
                   ._2
                   .map(v => Left(v))
               }
@@ -1376,5 +1371,329 @@ object ApiKeyHelper {
       errorResult(BadRequest, "No ApiKey provided", "errors.no.api.key")
     }
     //}
+  }
+
+  def detectApikeyTuple(req: RequestHeader, constraints: ApiKeyConstraints, attrs: TypedMap)(implicit env: Env): Option[ApikeyTuple] = {
+    val authByJwtToken: Option[ApikeyTuple] = req.headers
+      .get(
+        constraints.jwtAuth.headerName
+          .getOrElse(env.Headers.OtoroshiBearer)
+      )
+      .orElse(
+        req.headers.get("Authorization").filter(_.startsWith("Bearer "))
+      )
+      .map(_.replace("Bearer ", ""))
+      .orElse(
+        req.queryString
+          .get(
+            constraints.jwtAuth.queryName
+              .getOrElse(env.Headers.OtoroshiBearerAuthorization)
+          )
+          .flatMap(_.lastOption)
+      )
+      .orElse(
+        req.cookies
+          .get(
+            constraints.jwtAuth.cookieName
+              .getOrElse(env.Headers.OtoroshiJWTAuthorization)
+          )
+          .map(_.value)
+      )
+      .filter(_.split("\\.").length == 3)
+      .flatMap(v => Try(JWT.decode(v)).toOption)
+      .flatMap(jwt => jwt
+        .claimStr("clientId")
+        .orElse(jwt.claimStr("client_id"))
+        .orElse(jwt.claimStr("cid"))
+        .orElse(jwt.claimStr("iss")).map(cid => (cid, jwt)))
+      .map(t => ApikeyTuple(t._1, jwtToken = t._2.some))
+    val authBasic: Option[ApikeyTuple] = req.headers
+      .get(
+        constraints.basicAuth.headerName
+          .getOrElse(env.Headers.OtoroshiAuthorization)
+      )
+      .orElse(
+        req.headers.get("Authorization").filter(_.startsWith("Basic "))
+      )
+      .map(_.replace("Basic ", ""))
+      .flatMap(e => Try(decodeBase64(e)).toOption)
+      .orElse(
+        req.queryString
+          .get(
+            constraints.basicAuth.queryName
+              .getOrElse(env.Headers.OtoroshiBasicAuthorization)
+          )
+          .flatMap(_.lastOption)
+          .flatMap(e => Try(decodeBase64(e)).toOption)
+      )
+      .map(_.split(":"))
+      .filter(_.size == 2)
+      .map(parts => ApikeyTuple(parts.head, parts.lastOption))
+    val authByCustomHeaders: Option[ApikeyTuple] = req.headers
+      .get(
+        constraints.customHeadersAuth.clientIdHeaderName
+          .getOrElse(env.Headers.OtoroshiClientId)
+      )
+      .flatMap(id =>
+        req.headers
+          .get(
+            constraints.customHeadersAuth.clientSecretHeaderName
+              .getOrElse(env.Headers.OtoroshiClientSecret)
+          )
+          .map(s => ApikeyTuple(id, s.some))
+      )
+    val authBySimpleApiKeyClientId: Option[ApikeyTuple] = req.headers
+      .get(
+        constraints.clientIdAuth.headerName
+          .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+      )
+      .orElse(
+        req.queryString
+          .get(
+            constraints.clientIdAuth.queryName
+              .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+          )
+          .flatMap(_.lastOption)
+      ).map(ApikeyTuple(_))
+    val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(a => ApikeyTuple(a.clientId, a.clientSecret.some))
+    if (preExtractedApiKey.isDefined) {
+      preExtractedApiKey
+    } else if (authBySimpleApiKeyClientId.isDefined && constraints.clientIdAuth.enabled) {
+      authBySimpleApiKeyClientId
+    } else if (authByCustomHeaders.isDefined && constraints.customHeadersAuth.enabled) {
+      authByCustomHeaders
+    } else if (authByJwtToken.isDefined && constraints.jwtAuth.enabled) {
+      authByJwtToken
+    } else if (authBasic.isDefined && constraints.basicAuth.enabled) {
+      authBasic
+    } else {
+      None
+    }
+  }
+
+  def validateApikeyTuple(req: RequestHeader, apikeyTuple: ApikeyTuple, constraints: ApiKeyConstraints, service: String)(implicit env: Env): Either[Option[ApiKey], ApiKey] = {
+    env.datastores.apiKeyDataStore.findAuthorizeKeyForFromCache(apikeyTuple.clientId, service) match {
+      case None => None.left
+      case Some(apikey) => apikeyTuple match {
+        case ApikeyTuple(_, None, None) if apikey.allowClientIdOnly => apikey.right
+        case ApikeyTuple(_, Some(secret), None) if apikey.isValid(secret) => apikey.right
+        case ApikeyTuple(_, Some(secret), None) if apikey.isInvalid(secret) => apikey.some.left
+        case ApikeyTuple(_, None, Some(jwt)) => {
+          val possibleKeyPairId               = apikey.metadata.get("jwt-sign-keypair")
+          val kid                             = Option(jwt.getKeyId)
+            .orElse(possibleKeyPairId)
+            .filter(_ => constraints.jwtAuth.keyPairSigned)
+            .filter(id => if (possibleKeyPairId.isDefined) possibleKeyPairId.get == id else true)
+            .flatMap(id => DynamicSSLEngineProvider.certificates.get(id))
+          val kp                              = kid.map(_.cryptoKeyPair)
+          val algorithmOpt: Option[Algorithm] = Option(jwt.getAlgorithm).collect {
+            case "HS256" if constraints.jwtAuth.secretSigned =>
+              Algorithm.HMAC256(apikey.clientSecret)
+            case "HS384" if constraints.jwtAuth.secretSigned =>
+              Algorithm.HMAC384(apikey.clientSecret)
+            case "HS512" if constraints.jwtAuth.secretSigned =>
+              Algorithm.HMAC512(apikey.clientSecret)
+            case "ES256" if kid.isDefined                                     =>
+              Algorithm.ECDSA256(
+                kp.get.getPublic.asInstanceOf[ECPublicKey],
+                kp.get.getPrivate.asInstanceOf[ECPrivateKey]
+              )
+            case "ES384" if kid.isDefined                                     =>
+              Algorithm.ECDSA384(
+                kp.get.getPublic.asInstanceOf[ECPublicKey],
+                kp.get.getPrivate.asInstanceOf[ECPrivateKey]
+              )
+            case "ES512" if kid.isDefined                                     =>
+              Algorithm.ECDSA512(
+                kp.get.getPublic.asInstanceOf[ECPublicKey],
+                kp.get.getPrivate.asInstanceOf[ECPrivateKey]
+              )
+            case "RS256" if kid.isDefined                                     =>
+              Algorithm.RSA256(
+                kp.get.getPublic.asInstanceOf[RSAPublicKey],
+                kp.get.getPrivate.asInstanceOf[RSAPrivateKey]
+              )
+            case "RS384" if kid.isDefined                                     =>
+              Algorithm.RSA384(
+                kp.get.getPublic.asInstanceOf[RSAPublicKey],
+                kp.get.getPrivate.asInstanceOf[RSAPrivateKey]
+              )
+            case "RS512" if kid.isDefined                                     =>
+              Algorithm.RSA512(
+                kp.get.getPublic.asInstanceOf[RSAPublicKey],
+                kp.get.getPrivate.asInstanceOf[RSAPrivateKey]
+              )
+          }
+          val exp                             =
+            Option(jwt.getClaim("exp")).filterNot(_.isNull).map(_.asLong())
+          val iat                             =
+            Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
+          val httpPath                        = Option(jwt.getClaim("httpPath"))
+            .filterNot(_.isNull)
+            .map(_.asString())
+          val httpVerb                        = Option(jwt.getClaim("httpVerb"))
+            .filterNot(_.isNull)
+            .map(_.asString())
+          val httpHost                        = Option(jwt.getClaim("httpHost"))
+            .filterNot(_.isNull)
+            .map(_.asString())
+          algorithmOpt match {
+            case Some(algorithm) => {
+              val verifier =
+                JWT
+                  .require(algorithm)
+                  //.withIssuer(clientId)
+                  .acceptLeeway(10)
+                  .build
+              Try(verifier.verify(jwt))
+                .filter { token =>
+                  val xsrfToken       = token.getClaim("xsrfToken")
+                  val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
+                  if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
+                    xsrfToken.asString() == xsrfTokenHeader.get
+                  } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
+                    false
+                  } else {
+                    true
+                  }
+                }
+                .filter { _ =>
+                  constraints.jwtAuth.maxJwtLifespanSecs.map { maxJwtLifespanSecs =>
+                    if (exp.isEmpty || iat.isEmpty) {
+                      false
+                    } else {
+                      if ((exp.get - iat.get) <= maxJwtLifespanSecs) {
+                        true
+                      } else {
+                        false
+                      }
+                    }
+                  } getOrElse {
+                    true
+                  }
+                }
+                .filter { _ =>
+                  if (constraints.jwtAuth.includeRequestAttributes) {
+                    val matchPath = httpPath.exists(_ == req.relativeUri)
+                    val matchVerb =
+                      httpVerb.exists(_.toLowerCase == req.method.toLowerCase)
+                    val matchHost = httpHost.exists(_.toLowerCase == req.theHost)
+                    matchPath && matchVerb && matchHost
+                  } else {
+                    true
+                  }
+                } match {
+                  case Success(_) => apikey.right
+                  case Failure(e) => apikey.some.left
+                }
+            }
+            case None            => apikey.some.left
+          }
+        }
+        case _ => apikey.some.left
+      }
+    }
+  }
+
+  def passWithApiKeyFromCache(req: RequestHeader, constraints: ApiKeyConstraints, attrs: TypedMap, service: String)(implicit ec: ExecutionContext, env: Env): Future[Either[Result, ApiKey]] = {
+
+    val config = env.datastores.globalConfigDataStore.latest()
+
+    def error(status: Results.Status, message: String, code: String): Future[Either[Result, ApiKey]] = {
+      Errors.craftResponseResult(message, status, req, None /* TODO: pass the service None */, code.some, attrs = attrs).map(Left.apply)
+    }
+
+    def sendRevokedApiKeyAlert(key: ApiKey) = {
+      Alerts.send(
+        RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(), DateTime.now(), env.env, req, key, None, env)
+      )
+    }
+
+    def sendQuotasAlmostExceededError(key: ApiKey, quotas: RemainingQuotas): Unit = {
+      val quotasSettings = config.quotasSettings
+      if (quotasSettings.enabled) {
+        if (
+          quotas.currentCallsPerDay >= (quotasSettings.dailyQuotasThreshold * quotas.authorizedCallsPerDay)
+        ) {
+          ApiKeyQuotasAlmostExceededAlert(
+            `@id` = env.snowflakeGenerator.nextIdStr(),
+            `@env` = env.env,
+            apikey = key,
+            remainingQuotas = quotas,
+            settings = config.quotasSettings,
+            reason = ApiKeyQuotasAlmostExceededReason.DailyQuotasAlmostExceeded
+          ).toAnalytics()
+        }
+        if (
+          quotas.currentCallsPerMonth >= (quotasSettings.monthlyQuotasThreshold * quotas.authorizedCallsPerMonth)
+        ) {
+          ApiKeyQuotasAlmostExceededAlert(
+            `@id` = env.snowflakeGenerator.nextIdStr(),
+            `@env` = env.env,
+            apikey = key,
+            remainingQuotas = quotas,
+            settings = quotasSettings,
+            reason = ApiKeyQuotasAlmostExceededReason.MonthlyQuotasAlmostExceeded
+          ).toAnalytics()
+        }
+      }
+    }
+
+    def sendQuotasExceededError(key: ApiKey, quotas: RemainingQuotas): Unit = {
+      val quotasSettings = config.quotasSettings
+      if (
+        quotas.currentCallsPerDay >= (quotasSettings.dailyQuotasThreshold * quotas.authorizedCallsPerDay)
+      ) {
+        ApiKeyQuotasExceededAlert(
+          `@id` = env.snowflakeGenerator.nextIdStr(),
+          `@env` = env.env,
+          apikey = key,
+          remainingQuotas = quotas,
+          reason = ApiKeyQuotasExceededReason.DailyQuotasExceeded
+        ).toAnalytics()
+      }
+      if (
+        quotas.currentCallsPerMonth >= (quotasSettings.monthlyQuotasThreshold * quotas.authorizedCallsPerMonth)
+      ) {
+        ApiKeyQuotasExceededAlert(
+          `@id` = env.snowflakeGenerator.nextIdStr(),
+          `@env` = env.env,
+          apikey = key,
+          remainingQuotas = quotas,
+          reason = ApiKeyQuotasExceededReason.MonthlyQuotasExceeded
+        ).toAnalytics()
+      }
+    }
+
+    detectApikeyTuple(req, constraints, attrs) match {
+      case None => error(Results.BadRequest, "no apikey", "errors.no.api.key")
+      case Some(apikeyTuple) => validateApikeyTuple(req, apikeyTuple, constraints, service) match {
+        case Left(None) => error(Results.BadRequest, "no apikey", "errors.no.api.key")
+        case Left(Some(apikey)) =>
+          sendRevokedApiKeyAlert(apikey)
+          error(Results.Unauthorized, "bad apikey", "errors.bad.api.key")
+        case Right(apikey) if !apikey.matchRouting(constraints) =>
+            error(Results.Unauthorized, "Invalid API key", "errors.bad.api.key")
+        case Right(apikey) if apikey.restrictions.handleRestrictions(service, None, Some(apikey), req, attrs)._1 => {
+          apikey.restrictions
+            .handleRestrictions(service, None, Some(apikey), req, attrs)._2
+            .map(v => Left(v))
+        }
+        case Right(apikey) => {
+          apikey.withinQuotasAndRotationQuotas().flatMap {
+            case (true, rotationInfos, quotas) =>
+              rotationInfos.foreach { i =>
+                attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+              }
+              attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+              sendQuotasAlmostExceededError(apikey, quotas)
+              apikey.right.future
+            case (false, _, quotas) =>
+              sendQuotasExceededError(apikey, quotas)
+              error(Results.TooManyRequests, "You performed too much requests", "errors.too.much.requests")
+          }
+        }
+      }
+    }
   }
 }

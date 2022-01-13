@@ -34,7 +34,8 @@ class AuthModule extends NgAccessValidator {
               )
               .map(NgAccess.NgDenied.apply)
           case Some(ref) => {
-            env.datastores.authConfigsDataStore.findById(ref).flatMap {
+            // env.datastores.authConfigsDataStore.findById(ref).flatMap {
+            env.proxyState.authModule(ref) match {
               case None       =>
                 Errors
                   .craftResponseResult(
@@ -47,6 +48,7 @@ class AuthModule extends NgAccessValidator {
                   )
                   .map(NgAccess.NgDenied.apply)
               case Some(auth) => {
+                // here there is a datastore access (by key) to get the user session
                 PrivateAppsUserHelper.isPrivateAppsSessionValidWithAuth(ctx.request, descriptor, auth).flatMap {
                   case Some(paUsr) =>
                     ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> paUsr)
