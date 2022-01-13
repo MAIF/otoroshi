@@ -171,8 +171,6 @@ class GatewayRequestHandler(
   lazy val logger = Logger("otoroshi-http-handler")
   // lazy val debugLogger = Logger("otoroshi-http-handler-debug")
 
-  lazy val analyticsQueue = env.otoroshiActorSystem.actorOf(AnalyticsQueue.props(env))
-
   lazy val ipRegex         = RegexPool.regex(
     "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(:\\d{2,5})?$"
   )
@@ -387,7 +385,7 @@ class GatewayRequestHandler(
               zeRequest,
               httpHandler.forwardAction(
                 reverseProxyAction,
-                analyticsQueue,
+                env.analyticsQueue,
                 snowMonkey,
                 headersInFiltered,
                 headersOutFiltered
@@ -399,7 +397,7 @@ class GatewayRequestHandler(
             httpHandler.forwardCall(
               actionBuilder,
               reverseProxyAction,
-              analyticsQueue,
+              env.analyticsQueue,
               snowMonkey,
               headersInFiltered,
               headersOutFiltered

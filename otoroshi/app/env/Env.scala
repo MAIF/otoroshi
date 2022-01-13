@@ -12,7 +12,7 @@ import ch.qos.logback.classic.{Level, LoggerContext}
 import otoroshi.cluster._
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import otoroshi.events._
-import otoroshi.gateway.CircuitBreakersHolder
+import otoroshi.gateway.{AnalyticsQueue, CircuitBreakersHolder}
 import otoroshi.health.{HealthCheckerActor, StartHealthCheck}
 
 import javax.management.remote.{JMXConnectorServerFactory, JMXServiceURL}
@@ -156,6 +156,7 @@ class Env(
 
   val healthCheckerActor  = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
   val otoroshiEventsActor = otoroshiActorSystem.actorOf(OtoroshiEventsActorSupervizer.props(this))
+  val analyticsQueue = otoroshiActorSystem.actorOf(AnalyticsQueue.props(this))
 
   lazy val sidecarConfig: Option[SidecarConfig] = (
     configuration.getOptionalWithFileSupport[String]("app.sidecar.serviceId"),

@@ -293,6 +293,12 @@ object BestResponseTime extends LoadBalancing {
     avg.incrBy(responseTime)
   }
 
+  def incrementAverage(id: String, target: Target, responseTime: Long): Unit = {
+    val key = s"${id}-${target.asKey}"
+    val avg = responseTimes.getOrElseUpdate(key, AtomicAverage(new AtomicLong(0), new AtomicLong(0)))
+    avg.incrBy(responseTime)
+  }
+
   override def needTrackingCookie: Boolean = false
   override def toJson: JsValue             = Json.obj("type" -> "BestResponseTime")
   override def select(

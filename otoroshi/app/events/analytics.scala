@@ -2,7 +2,6 @@ package otoroshi.events
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-
 import akka.actor.{Actor, ActorRef, PoisonPill, Props, Terminated}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
@@ -13,6 +12,7 @@ import otoroshi.env.Env
 import otoroshi.events.impl.{ElasticReadsAnalytics, ElasticWritesAnalytics, WebHookAnalytics}
 import otoroshi.models._
 import org.joda.time.DateTime
+import otoroshi.next.models.Route
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.tcp.TcpService
 import play.api.Logger
@@ -302,6 +302,7 @@ case class GatewayEvent(
     `@serviceId`: String,
     `@service`: String,
     descriptor: Option[ServiceDescriptor],
+    route: Option[Route] = None,
     `@product`: String = "--",
     remainingQuotas: RemainingQuotas,
     viz: Option[OtoroshiViz],
@@ -344,6 +345,7 @@ object GatewayEvent {
       "@serviceId"         -> o.`@serviceId`,
       "@service"           -> o.`@service`,
       "descriptor"         -> o.descriptor.map(d => ServiceDescriptor.toJson(d)).getOrElse(JsNull).as[JsValue],
+      "route"              -> o.route.map(_.json).getOrElse(JsNull).as[JsValue],
       "@product"           -> o.`@product`,
       "remainingQuotas"    -> o.remainingQuotas,
       "viz"                -> o.viz.map(_.toJson).getOrElse(JsNull).as[JsValue],
