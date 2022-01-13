@@ -26,7 +26,7 @@ case class Frontend(domains: Seq[DomainAndPath], headers: Map[String, String], s
     "domains" -> JsArray(domains.map(_.json)),
     "strip_path" -> stripPath,
     "headers" -> headers,
-    "apikey" -> apikey.json
+    "apikey" -> apikey.gentleJson
   )
 }
 
@@ -228,12 +228,8 @@ case class Route(
       // chaosConfig: ChaosConfig = ChaosConfig(),
       // gzip: GzipConfig = GzipConfig(),
       apiKeyConstraints = {
-        plugins.getPluginByClass[ApikeyExtractor].flatMap { plugin =>
+        plugins.getPluginByClass[ApikeyCalls].flatMap { plugin =>
           ApiKeyConstraints.format.reads(plugin.config.raw).asOpt
-        }.orElse {
-          plugins.getPluginByClass[ApikeyCalls].flatMap { plugin =>
-            ApiKeyConstraints.format.reads(plugin.config.raw).asOpt
-          }
         }.map { constraints =>
           constraints.copy(routing = frontend.apikey)
         }.getOrElse(ApiKeyConstraints())
@@ -253,6 +249,7 @@ object Route {
     metadata = Map.empty,
     enabled = true,
     debugFlow = true,
+    groups = Seq("default"),
     frontend = Frontend(
       domains = Seq(DomainAndPath("fake-next-gen.oto.tools")),
       headers = Map.empty,
@@ -272,20 +269,23 @@ object Route {
     client = ClientConfig(),
     healthCheck = HealthCheck(false, "/"),
     plugins = Plugins(Seq(
+      // PluginInstance(
+      //   plugin = "cp:otoroshi.next.plugins.ForceHttpsTraffic",
+      // ),
       PluginInstance(
-        plugin = "cp:otoroshi.next.plugins.ForceHttpsTraffic",
+        plugin = "cp:otoroshi.next.plugins.ApikeyCalls"
       ),
       PluginInstance(
         plugin = "cp:otoroshi.next.plugins.OverrideHost",
       ),
-      PluginInstance(
-        plugin = "cp:otoroshi.next.plugins.HeadersValidation",
-        config = PluginInstanceConfig(Json.obj(
-          "headers" -> Json.obj(
-            "foo" -> "bar"
-          )
-        ))
-      ),
+      //PluginInstance(
+      //  plugin = "cp:otoroshi.next.plugins.HeadersValidation",
+      //  config = PluginInstanceConfig(Json.obj(
+      //    "headers" -> Json.obj(
+      //      "foo" -> "bar"
+      //    )
+      //  ))
+      //),
       PluginInstance(
         plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
         config = PluginInstanceConfig(Json.obj(

@@ -7,7 +7,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.events.{Alerts, Audit, MaxConcurrentRequestReachedAlert, MaxConcurrentRequestReachedEvent}
+import otoroshi.events.{Alerts, Audit, HighOverheadAlert, Location, MaxConcurrentRequestReachedAlert, MaxConcurrentRequestReachedEvent}
 import otoroshi.gateway._
 import otoroshi.models.{GlobalConfig, RemainingQuotas, Target}
 import otoroshi.next.models.{Backend, Route}
@@ -135,10 +135,8 @@ class ProxyEngine() extends RequestHandler {
       remQuotas       <- checkGlobalLimits(request, route) // generic.scala (1269)
       _               =  report.markDoneAndStart("choose-backend", Json.obj("remaining_quotas" -> remQuotas.toJson).some)
       result          <- callTarget(snowflake, reqNumber, request, route) { backend =>
-        report.markDoneAndStart("check-high-overhead", Json.obj("backend" -> backend.json).some)
+        report.markDoneAndStart("transform-requests", Json.obj("backend" -> backend.json).some)
         for {
-          _             <- handleHighOverhead(request, route)
-          _             =  report.markDoneAndStart("transform-requests")
           finalRequest  <- callRequestTransformer(snowflake, request, route, backend)
           _             =  report.markDoneAndStart("call-backend")
           response      <- callBackend(snowflake, request, finalRequest, route, backend)
@@ -171,6 +169,7 @@ class ProxyEngine() extends RequestHandler {
     }.andThen {
       case _ =>
         report.markOverheadOut()
+        handleHighOverhead(request, attrs.get(Keys.RouteKey))
         // TODO: send to analytics if debug activated on route
     }.map { res =>
       val addHeaders = if (reporting && debugHeaders) Seq(
@@ -197,8 +196,21 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def handleHighOverhead(value: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
-    // TODO: handle high overhead alerting
+  def handleHighOverhead(req: Request[Source[ByteString, _]], route: Option[Route])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+    val overhead = report.getOverheadNow()
+    if (overhead > env.overheadThreshold) {
+      HighOverheadAlert(
+        `@id` = env.snowflakeGenerator.nextIdStr(),
+        limitOverhead = env.overheadThreshold,
+        currentOverhead = overhead,
+        serviceDescriptor = route.map(_.serviceDescriptor),
+        target = Location(
+          scheme = req.theProtocol,
+          host = req.theHost,
+          uri = req.relativeUri
+        )
+      ).toAnalytics()
+    }
     FEither.right(Done)
   }
 
@@ -251,14 +263,12 @@ class ProxyEngine() extends RequestHandler {
   }
 
   def findRoute(request: Request[Source[ByteString, _]])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Route] = {
-    // TODO: we need something smarter, sort paths by length when there is a wildcard, then same for domains. We need to aggregate on domains
-    // TODO: need optimizations here !!!!
     // TODO: perform apikey routing match (descriptor.scala: 2459)
-
     // env.proxyState.allRoutes().filter(_.enabled).find(r => r.matches(request))
-
     env.proxyState.getDomainRoutes(request.theDomain).flatMap(_.find(_.matches(request, true))) match {
-      case Some(route) => FEither.right(route)
+      case Some(route) =>
+        attrs.put(Keys.RouteKey -> route)
+        FEither.right(route)
       case None =>
         report.markFailure(s"route not found for domain: '${request.theDomain}${request.thePath}'")
         FEither.left(ResultProxyEngineError(Results.NotFound(Json.obj("error" -> "not_found", "error_description" -> "no route found !"))))
@@ -494,8 +504,8 @@ class ProxyEngine() extends RequestHandler {
         config = Json.obj(),
         globalConfig = globalConfig.plugins.config,
         attrs = attrs,
-        apikey = attrs.get(Keys.ApikeyKey),
-        user = attrs.get(Keys.UserKey),
+        apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+        user = attrs.get(otoroshi.plugins.Keys.UserKey),
         report = report,
       )
       def markPluginItem(item: ReportPluginSequenceItem, ctx: NgAccessContext, debug: Boolean, result: JsValue): Unit = {
@@ -598,7 +608,7 @@ class ProxyEngine() extends RequestHandler {
             ))
           )
         } else if (isUp) {
-          attrs.get(Keys.ApikeyKey)
+          attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
             .map(_.updateQuotas())
             .getOrElse(FastFuture.successful(RemainingQuotas()))
             .map(rq => Right.apply[ProxyEngineError, RemainingQuotas](rq))
@@ -859,7 +869,8 @@ class ProxyEngine() extends RequestHandler {
       cookies = wsCookiesIn,
       version = request.version,
       clientCertificateChain = request.clientCertificateChain,
-      body = lazySource
+      body = lazySource,
+      backend = None
     )
     val otoroshiRequest = PluginHttpRequest(
       url = s"${target.scheme}://${target.host}$root$uri",
@@ -868,7 +879,8 @@ class ProxyEngine() extends RequestHandler {
       cookies = wsCookiesIn,
       version = request.version,
       clientCertificateChain = request.clientCertificateChain,
-      body = lazySource
+      body = lazySource,
+      backend = backend.some
     )
 
     val all_plugins = route.plugins.transformerPlugins(request)
@@ -888,8 +900,8 @@ class ProxyEngine() extends RequestHandler {
         request = request,
         rawRequest = rawRequest,
         otoroshiRequest = otoroshiRequest,
-        apikey = attrs.get(Keys.ApikeyKey),
-        user = attrs.get(Keys.UserKey),
+        apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+        user = attrs.get(otoroshi.plugins.Keys.UserKey),
         route = route,
         config = Json.obj(),
         globalConfig = globalConfig.plugins.config,
@@ -946,12 +958,30 @@ class ProxyEngine() extends RequestHandler {
   def callBackend(snowflake: String, rawRequest: Request[Source[ByteString, _]], request : PluginHttpRequest, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, WSResponse] = {
     val currentReqHasBody = rawRequest.theHasBody
     val wsCookiesIn = request.cookies
-    val clientReq = env.gatewayClient.urlWithTarget(
-      UrlSanitizer.sanitize(request.url),
-      backend.toTarget,
-      route.client
-    )
-    // TODO: use akka http flag to chose client
+    val finalTarget: Target = request.backend.getOrElse(backend).toTarget
+    attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> finalTarget)
+    val clientConfig = route.client
+    val clientReq = route.useAkkaHttpClient match {
+      case _ if finalTarget.mtlsConfig.mtls =>
+        env.gatewayClient.akkaUrlWithTarget(
+          UrlSanitizer.sanitize(request.url),
+          finalTarget,
+          clientConfig
+        )
+      case true                             =>
+        env.gatewayClient.akkaUrlWithTarget(
+          UrlSanitizer.sanitize(request.url),
+          finalTarget,
+          clientConfig
+        )
+      case false                            =>
+        env.gatewayClient.urlWithTarget(
+          UrlSanitizer.sanitize(request.url),
+          finalTarget,
+          clientConfig
+        )
+    }
+    // TODO: count bytes ;)
     val extractedTimeout = route.client.extractTimeout(rawRequest.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
     val builder          = clientReq
       .withRequestTimeout(extractedTimeout)
@@ -1010,8 +1040,8 @@ class ProxyEngine() extends RequestHandler {
         response = response,
         rawResponse = rawResponse,
         otoroshiResponse = otoroshiResponse,
-        apikey = attrs.get(Keys.ApikeyKey),
-        user = attrs.get(Keys.UserKey),
+        apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+        user = attrs.get(otoroshi.plugins.Keys.UserKey),
         route = route,
         config = Json.obj(),
         globalConfig = globalConfig.plugins.config,

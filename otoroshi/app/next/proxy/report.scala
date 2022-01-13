@@ -144,6 +144,10 @@ class ExecutionReport(val id: String, val creation: DateTime, val reporting: Boo
     overheadOut
   }
 
+  def getOverheadNow(): Long = {
+    getOverheadInNow() + getOverheadOutNow()
+  }
+
   def markFailure(message: String): ExecutionReport = {
     if (reporting) {
       state = ExecutionReportState.Failed

@@ -12,7 +12,7 @@ import otoroshi.env.Env
 import otoroshi.models.{QuotasAlmostExceededSettings, _}
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json.{Format, JsArray, JsError, JsResult, JsString, JsSuccess, JsValue, Json, Writes}
+import play.api.libs.json.{Format, JsArray, JsError, JsNull, JsResult, JsString, JsSuccess, JsValue, Json, Writes}
 import play.api.libs.ws.WSAuthScheme
 import play.api.mvc.RequestHeader
 import otoroshi.ssl.Cert
@@ -119,13 +119,13 @@ case class HighOverheadAlert(
     `@id`: String,
     limitOverhead: Double,
     currentOverhead: Long,
-    serviceDescriptor: ServiceDescriptor,
+    serviceDescriptor: Option[ServiceDescriptor],
     target: Location,
     `@timestamp`: DateTime = DateTime.now()
 ) extends AlertEvent {
 
-  override def `@service`: String   = serviceDescriptor.name
-  override def `@serviceId`: String = serviceDescriptor.id
+  override def `@service`: String   = serviceDescriptor.map(_.name).getOrElse("--")
+  override def `@serviceId`: String = serviceDescriptor.map(_.id).getOrElse("--")
 
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
@@ -136,13 +136,13 @@ case class HighOverheadAlert(
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
       "@type"      -> `@type`,
       "@product"   -> _env.eventsName,
-      "@serviceId" -> serviceDescriptor.id,
-      "@service"   -> serviceDescriptor.name,
+      "@serviceId" -> `@serviceId`,
+      "@service"   -> `@service`,
       "alert"      -> "HighOverheadAlert",
       "limit"      -> limitOverhead,
       "overhead"   -> currentOverhead,
       "target"     -> Location.format.writes(target),
-      "service"    -> serviceDescriptor.toJson
+      "service"    -> serviceDescriptor.map(_.toJson).getOrElse(JsNull).asValue
     )
 }
 

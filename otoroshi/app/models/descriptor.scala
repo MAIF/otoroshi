@@ -39,6 +39,7 @@ import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.syntax.implicits.BetterSyntax
 
 case class ServiceDescriptorQuery(
     subdomain: String,
@@ -1066,6 +1067,16 @@ case class ApiKeyRouteMatcher(
     allMetaKeysIn: Seq[String] = Seq.empty
 ) extends {
   def json: JsValue = ApiKeyRouteMatcher.format.writes(this)
+  def gentleJson: JsValue = Json.obj()
+    .applyOnIf(noneTagIn.nonEmpty)(obj => obj ++ Json.obj("noneTagIn" -> noneTagIn))
+    .applyOnIf(oneTagIn.nonEmpty)(obj => obj ++ Json.obj("oneTagIn" -> oneTagIn))
+    .applyOnIf(allTagsIn.nonEmpty)(obj => obj ++ Json.obj("allTagsIn" -> allTagsIn))
+    .applyOnIf(noneMetaIn.nonEmpty)(obj => obj ++ Json.obj("noneMetaIn" -> noneMetaIn))
+    .applyOnIf(oneMetaIn.nonEmpty)(obj => obj ++ Json.obj("oneMetaIn" -> oneMetaIn))
+    .applyOnIf(allMetaIn.nonEmpty)(obj => obj ++ Json.obj("allMetaIn" -> allMetaIn))
+    .applyOnIf(noneMetaKeysIn.nonEmpty)(obj => obj ++ Json.obj("noneMetaKeysIn" -> noneMetaKeysIn))
+    .applyOnIf(oneMetaKeyIn.nonEmpty)(obj => obj ++ Json.obj("oneMetaKeyIn" -> oneMetaKeyIn))
+    .applyOnIf(allMetaKeysIn.nonEmpty)(obj => obj ++ Json.obj("allMetaKeysIn" -> allMetaKeysIn))
   lazy val isActive: Boolean = !hasNoRoutingConstraints
   lazy val hasNoRoutingConstraints: Boolean =
     oneMetaIn.isEmpty &&

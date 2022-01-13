@@ -8,11 +8,12 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser}
-import otoroshi.next.models.{PluginInstance, Route}
+import otoroshi.next.models.{Backend, PluginInstance, Route}
 import otoroshi.next.proxy.ExecutionReport
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
 import otoroshi.utils.TypedMap
+import otoroshi.utils.syntax.implicits.BetterJsReadable
 import play.api.libs.json._
 import play.api.libs.ws.{WSCookie, WSResponse}
 import play.api.mvc.{RequestHeader, Result, Results}
@@ -28,7 +29,8 @@ case class PluginHttpRequest(
   cookies: Seq[WSCookie] = Seq.empty[WSCookie],
   version: String,
   clientCertificateChain: Option[Seq[X509Certificate]],
-  body: Source[ByteString, _]
+  body: Source[ByteString, _],
+  backend: Option[Backend]
 ) {
   lazy val contentType: Option[String] = headers.get("Content-Type").orElse(headers.get("content-type"))
   lazy val host: String                = headers.get("Host").orElse(headers.get("host")).getOrElse("")
@@ -46,6 +48,7 @@ case class PluginHttpRequest(
       "headers" -> headers,
       "version" -> version,
       "client_cert_chain" -> JsonHelpers.clientCertChainToJson(clientCertificateChain),
+      "backend" -> backend.map(_.json).getOrElse(JsNull).asValue,
       "cookies" -> JsArray(
         cookies.map(c =>
           Json.obj(

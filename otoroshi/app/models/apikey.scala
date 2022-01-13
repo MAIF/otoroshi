@@ -1668,12 +1668,12 @@ object ApiKeyHelper {
     detectApikeyTuple(req, constraints, attrs) match {
       case None => error(Results.BadRequest, "no apikey", "errors.no.api.key")
       case Some(apikeyTuple) => validateApikeyTuple(req, apikeyTuple, constraints, service) match {
-        case Left(None) => error(Results.BadRequest, "no apikey", "errors.no.api.key")
+        case Left(None) => error(Results.BadRequest, "invalid apikey", "errors.invalid.api.key")
         case Left(Some(apikey)) =>
           sendRevokedApiKeyAlert(apikey)
           error(Results.Unauthorized, "bad apikey", "errors.bad.api.key")
         case Right(apikey) if !apikey.matchRouting(constraints) =>
-            error(Results.Unauthorized, "Invalid API key", "errors.bad.api.key")
+            error(Results.Unauthorized, "invalid apikey", "errors.invalid.api.key")
         case Right(apikey) if apikey.restrictions.handleRestrictions(service, None, Some(apikey), req, attrs)._1 => {
           apikey.restrictions
             .handleRestrictions(service, None, Some(apikey), req, attrs)._2
@@ -1687,7 +1687,10 @@ object ApiKeyHelper {
               }
               attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
               sendQuotasAlmostExceededError(apikey, quotas)
-              apikey.right.future
+              apikey.updateQuotas().map { remainingQuotas =>
+                attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+                apikey.right
+              }
             case (false, _, quotas) =>
               sendQuotasExceededError(apikey, quotas)
               error(Results.TooManyRequests, "You performed too much requests", "errors.too.much.requests")

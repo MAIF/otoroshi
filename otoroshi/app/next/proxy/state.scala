@@ -9,6 +9,7 @@ import otoroshi.ssl.Cert
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.Json
 
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{ConcurrentHashMap, CopyOnWriteArrayList}
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
@@ -149,6 +150,10 @@ class ProxyState(env: Env) {
   }
 }
 
+object ProxyStateLoaderJob {
+  val firstSync = new AtomicBoolean(false)
+}
+
 class ProxyStateLoaderJob extends Job {
 
   override def uniqueId: JobId = JobId("io.otoroshi.next.core.jobs.ProxyStateLoaderJob")
@@ -159,7 +164,7 @@ class ProxyStateLoaderJob extends Job {
 
   override def kind: JobKind = JobKind.ScheduledEvery
 
-  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 1.second.some
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 1.millisecond.some
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
@@ -291,6 +296,7 @@ class ProxyStateLoaderJob extends Job {
       env.proxyState.updateJwtVerifiers(verifiers)
       // println(s"update in ${System.currentTimeMillis() - secondStart} ms")
       // println(s"job done in ${System.currentTimeMillis() - start} ms")
+      ProxyStateLoaderJob.firstSync.compareAndSet(false, true)
     })
   }
 }

@@ -243,7 +243,7 @@ class HttpHandler()(implicit env: Env) {
         `@id` = env.snowflakeGenerator.nextIdStr(),
         limitOverhead = env.overheadThreshold,
         currentOverhead = overhead,
-        serviceDescriptor = descriptor,
+        serviceDescriptor = descriptor.some,
         target = Location(
           scheme = req.theProtocol,
           host = req.theHost,

@@ -14,6 +14,7 @@ import otoroshi.controllers.adminapi.{ApiKeysFromGroupController, _}
 import otoroshi.env._
 import otoroshi.gateway._
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
+import otoroshi.next.proxy.ProxyStateLoaderJob
 import otoroshi.storage.DataStores
 import otoroshi.utils.metrics.Metrics
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
@@ -58,6 +59,8 @@ object OtoroshiLoaderHelper {
         .getOrElse(true)
     val waitForFirstClusterFetchEnabled =
       components.env.configuration.getOptional[Boolean]("app.boot.waitForFirstClusterFetch").getOrElse(true)
+    val waitProxyStateSync =
+      components.env.configuration.getOptional[Boolean]("app.boot.waitProxyStateSync").getOrElse(true)
 
     val globalWaitTimeout: Long                =
       components.env.configuration.getOptional[Long]("app.boot.waitTimeout").getOrElse(60000)
@@ -69,6 +72,8 @@ object OtoroshiLoaderHelper {
       components.env.configuration.getOptional[Long]("app.boot.waitForTlsInitTimeout").getOrElse(10000)
     val waitForFirstClusterFetchTimeout: Long  =
       components.env.configuration.getOptional[Long]("app.boot.waitForFirstClusterFetchTimeout").getOrElse(10000)
+    val waitProxyStateSyncTimeout: Long =
+      components.env.configuration.getOptional[Long]("app.boot.waitProxyStateSyncTimeout").getOrElse(10000)
 
     def timeout(duration: FiniteDuration): Future[Unit] = {
       val promise = Promise[Unit]
@@ -170,6 +175,28 @@ object OtoroshiLoaderHelper {
       }
     }
 
+    def waitForFirstProxyStateSync(): Future[Unit] = {
+      if (waitProxyStateSync) {
+        logger.info("waiting for proxy-state initialization ...")
+        Future.firstCompletedOf(
+          Seq(
+            timeout(waitProxyStateSyncTimeout.millis),
+            Source
+              .tick(1.second, 1.second, ())
+              .map { _ =>
+                ProxyStateLoaderJob.firstSync.get()
+              }
+              .filter(identity)
+              .take(1)
+              .runWith(Sink.head)(mat)
+              .map(_ => ())
+          )
+        )
+      } else {
+        FastFuture.successful(())
+      }
+    }
+
     if (globalWait) {
       val start   = System.currentTimeMillis()
       logger.info("waiting for subsystems initialization ...")
@@ -178,6 +205,7 @@ object OtoroshiLoaderHelper {
         _ <- waitForTlsInit()
         _ <- waitForPluginSearch()
         _ <- waitForPluginsCompilation()
+        _ <- waitForFirstProxyStateSync()
       } yield ()
       Await.result(waiting, globalWaitTimeout.millis)
       logger.info(s"subsystems initialization done in ${System.currentTimeMillis() - start} ms.")
