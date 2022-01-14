@@ -9,14 +9,14 @@ import java.util
 import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 
-class CustomCollector(registry: SemanticMetricRegistry)
+class CustomCollector(registry: SemanticMetricRegistry, jmxRegistry: MetricRegistry)
     extends io.prometheus.client.Collector
     with io.prometheus.client.Collector.Describable {
 
   private val sampleBuilder: SampleBuilder = new DefaultSampleBuilder
 
-  def fromCounter(entry: util.Map.Entry[MetricId, Counter]): MetricFamilySamples = {
-    val sample = getSample(entry.getKey, entry.getValue.getCount.doubleValue)
+  def fromCounter(key: MetricId, entryValue: Counter): MetricFamilySamples = {
+    val sample = getSample(key, entryValue.getCount.doubleValue)
     new MetricFamilySamples(sample.name, Type.GAUGE, "", util.Arrays.asList(sample))
   }
 
@@ -30,8 +30,8 @@ class CustomCollector(registry: SemanticMetricRegistry)
     )
   }
 
-  def fromGauge(entry: util.Map.Entry[MetricId, Gauge[_]]): MetricFamilySamples = {
-    val obj   = entry.getValue.getValue
+  def fromGauge(key: MetricId, entryValue: Gauge[_]): MetricFamilySamples = {
+    val obj   = entryValue.getValue
     var value = .0
 
     obj match {
@@ -40,7 +40,7 @@ class CustomCollector(registry: SemanticMetricRegistry)
       case _              => return null
     }
 
-    val sample = getSample(entry.getKey, value)
+    val sample = getSample(key, value)
     new MetricFamilySamples(sample.name, Type.GAUGE, "", util.Arrays.asList(sample))
   }
 
@@ -114,41 +114,43 @@ class CustomCollector(registry: SemanticMetricRegistry)
     new MetricFamilySamples(samples.get(0).name, Type.SUMMARY, "", samples)
   }
 
-  def fromHistogram(entry: util.Map.Entry[MetricId, Histogram]): MetricFamilySamples =
+  def fromHistogram(key: MetricId, entryValue: Histogram): MetricFamilySamples =
     fromSnapshotAndCount(
-      entry.getKey.getKey,
-      entry.getValue.getSnapshot,
-      entry.getValue.getCount,
+      key.getKey,
+      entryValue.getSnapshot,
+      entryValue.getCount,
       1.0,
-      entry.getKey.getTags
+      key.getTags
     )
 
-  def fromTimer(entry: util.Map.Entry[MetricId, Timer]): MetricFamilySamples =
+  def fromTimer(key: MetricId, entryValue: Timer): MetricFamilySamples =
     fromSnapshotAndCount(
-      entry.getKey.getKey,
-      entry.getValue.getSnapshot,
-      entry.getValue.getCount,
+      key.getKey,
+      entryValue.getSnapshot,
+      entryValue.getCount,
       1.0d / TimeUnit.SECONDS.toNanos(1L),
-      entry.getKey.getTags
+      key.getTags
     )
 
-  def fromMeter(entry: util.Map.Entry[MetricId, Meter]): MetricFamilySamples = {
-    val sample = getSample(entry.getKey, entry.getValue.getCount, "_count")
+  def fromMeter(key: MetricId, entryValue: Meter): MetricFamilySamples = {
+    val sample = getSample(key, entryValue.getCount, "_count")
     new MetricFamilySamples(sample.name, Type.COUNTER, "", util.Arrays.asList(sample))
   }
 
   override def collect: util.List[MetricFamilySamples] = {
     val mfSamplesMap = new util.HashMap[String, MetricFamilySamples]
 
-    registry.getGauges.entrySet.forEach(entry => addToMap(mfSamplesMap, fromGauge(entry)))
+    registry.getGauges.entrySet.forEach(entry => addToMap(mfSamplesMap, fromGauge(entry.getKey, entry.getValue)))
+    registry.getCounters.entrySet.forEach(entry => addToMap(mfSamplesMap, fromCounter(entry.getKey, entry.getValue)))
+    registry.getHistograms.entrySet.forEach(entry => addToMap(mfSamplesMap, fromHistogram(entry.getKey, entry.getValue)))
+    registry.getTimers.entrySet.forEach(entry => addToMap(mfSamplesMap, fromTimer(entry.getKey, entry.getValue)))
+    registry.getMeters.entrySet.forEach(entry => addToMap(mfSamplesMap, fromMeter(entry.getKey, entry.getValue)))
 
-    registry.getCounters.entrySet.forEach(entry => addToMap(mfSamplesMap, fromCounter(entry)))
-
-    registry.getHistograms.entrySet.forEach(entry => addToMap(mfSamplesMap, fromHistogram(entry)))
-
-    registry.getTimers.entrySet.forEach(entry => addToMap(mfSamplesMap, fromTimer(entry)))
-
-    registry.getMeters.entrySet.forEach(entry => addToMap(mfSamplesMap, fromMeter(entry)))
+    jmxRegistry.getGauges.entrySet.forEach(entry => addToMap(mfSamplesMap, fromGauge(MetricId.build(entry.getKey), entry.getValue)))
+    jmxRegistry.getCounters.entrySet.forEach(entry => addToMap(mfSamplesMap, fromCounter(MetricId.build(entry.getKey), entry.getValue)))
+    jmxRegistry.getHistograms.entrySet.forEach(entry => addToMap(mfSamplesMap, fromHistogram(MetricId.build(entry.getKey), entry.getValue)))
+    jmxRegistry.getTimers.entrySet.forEach(entry => addToMap(mfSamplesMap, fromTimer(MetricId.build(entry.getKey), entry.getValue)))
+    jmxRegistry.getMeters.entrySet.forEach(entry => addToMap(mfSamplesMap, fromMeter(MetricId.build(entry.getKey), entry.getValue)))
 
     new util.ArrayList[MetricFamilySamples](mfSamplesMap.values)
   }
