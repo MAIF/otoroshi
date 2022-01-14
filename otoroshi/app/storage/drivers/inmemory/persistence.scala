@@ -27,6 +27,7 @@ import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.hashing.MurmurHash3
@@ -100,7 +101,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
       val value = (item \ "v").as[JsValue]
       val what  = (item \ "w").as[String]
       val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
-      fromJson(what, value).map(v => store.put(key, v)).getOrElse(println(s"file read error for: ${item.prettify} "))
+      fromJson(what, value, ds._modern).map(v => store.put(key, v)).getOrElse(println(s"file read error for: ${item.prettify} "))
       if (ttl > -1L) {
         expirations.put(key, ttl)
       }
@@ -108,13 +109,28 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     ds.redis.swap(Memory(store, expirations), SwapStrategy.Replace)
   }
 
-  private def fromJson(what: String, value: JsValue): Option[Any] = {
+  private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
     import collection.JavaConverters._
 
     what match {
       case "counter" => Some(ByteString(value.as[Long].toString))
       case "string"  => Some(ByteString(value.as[String]))
+      case "set"     if modern => {
+        val list = scala.collection.mutable.HashSet.empty[ByteString]
+        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        Some(list)
+      }
+      case "list"    if modern => {
+        val list = scala.collection.mutable.MutableList.empty[ByteString]
+        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        Some(list)
+      }
+      case "hash"    if modern => {
+        val map = new TrieMap[String, ByteString]()
+        map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
+        Some(map)
+      }
       case "set"     => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
@@ -227,7 +243,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
               val value = (item \ "v").as[JsValue]
               val what  = (item \ "w").as[String]
               val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
-              fromJson(what, value).foreach(v => store.put(key, v))
+              fromJson(what, value, ds._modern).foreach(v => store.put(key, v))
               if (ttl > -1L) {
                 expirations.put(key, ttl)
               }
@@ -238,13 +254,28 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
       }
   }
 
-  private def fromJson(what: String, value: JsValue): Option[Any] = {
+  private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
     import collection.JavaConverters._
 
     what match {
       case "counter" => Some(ByteString(value.as[Long].toString))
       case "string"  => Some(ByteString(value.as[String]))
+      case "set"     if modern => {
+        val list = scala.collection.mutable.HashSet.empty[ByteString]
+        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        Some(list)
+      }
+      case "list"    if modern => {
+        val list = scala.collection.mutable.MutableList.empty[ByteString]
+        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        Some(list)
+      }
+      case "hash"    if modern => {
+        val map = new TrieMap[String, ByteString]()
+        map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
+        Some(map)
+      }
       case "set"     => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
@@ -399,7 +430,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
             val value = (item \ "v").as[JsValue]
             val what  = (item \ "w").as[String]
             val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
-            fromJson(what, value)
+            fromJson(what, value, ds._modern)
               .map(v => store.put(key, v))
               .getOrElse(println(s"file read error for: ${item.prettify} "))
             if (ttl > -1L) {
@@ -414,13 +445,28 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     }
   }
 
-  private def fromJson(what: String, value: JsValue): Option[Any] = {
+  private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
     import collection.JavaConverters._
 
     what match {
       case "counter" => Some(ByteString(value.as[Long].toString))
       case "string"  => Some(ByteString(value.as[String]))
+      case "set"     if modern => {
+        val list = scala.collection.mutable.HashSet.empty[ByteString]
+        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        Some(list)
+      }
+      case "list"    if modern => {
+        val list = scala.collection.mutable.MutableList.empty[ByteString]
+        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        Some(list)
+      }
+      case "hash"    if modern => {
+        val map = new TrieMap[String, ByteString]()
+        map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
+        Some(map)
+      }
       case "set"     => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)

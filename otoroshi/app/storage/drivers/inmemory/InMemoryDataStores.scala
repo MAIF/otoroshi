@@ -28,6 +28,8 @@ import otoroshi.storage.stores.{DataExporterConfigDataStore, KvRawDataStore, Tea
 import scala.concurrent.{ExecutionContext, Future}
 import otoroshi.utils.syntax.implicits._
 
+import scala.collection.concurrent.TrieMap
+
 class InMemoryDataStores(
     configuration: Configuration,
     environment: Environment,
@@ -50,7 +52,13 @@ class InMemoryDataStores(
     )
   val materializer     = Materializer(actorSystem)
   val _optimized       = configuration.getOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
-  lazy val redis       = new SwappableInMemoryRedis(_optimized, env, actorSystem)
+  val _modern          = configuration.getOptional[Boolean]("app.inmemory.modern").getOrElse(false)
+  // lazy val redis       = new SwappableInMemoryRedis(_optimized, env, actorSystem)
+  lazy val redis       = if (_modern) {
+    new ModernSwappableInMemoryRedis(_optimized, env, actorSystem)
+  } else {
+    new SwappableInMemoryRedis(_optimized, env, actorSystem)
+  }
 
   lazy val persistence = persistenceKind match {
     case PersistenceKind.HttpPersistenceKind => new HttpPersistence(this, env)
@@ -310,10 +318,16 @@ class InMemoryDataStores(
       case lng: Long                                                       => ("string", JsString(lng.toString))
       case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] =>
         ("hash", JsObject(map.asScala.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
+      case map: TrieMap[String, ByteString] =>
+        ("hash", JsObject(map.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
       case list: java.util.concurrent.CopyOnWriteArrayList[ByteString]     =>
         ("list", JsArray(list.asScala.toSeq.map(a => JsString(a.utf8String))))
+      case list: scala.collection.mutable.MutableList[ByteString]     =>
+        ("list", JsArray(list.toSeq.map(a => JsString(a.utf8String))))
       case set: java.util.concurrent.CopyOnWriteArraySet[ByteString]       =>
         ("set", JsArray(set.asScala.toSeq.map(a => JsString(a.utf8String))))
+      case set: scala.collection.mutable.HashSet[ByteString]       =>
+        ("set", JsArray(set.toSeq.map(a => JsString(a.utf8String))))
       case _                                                               => ("none", JsNull)
     }
   }

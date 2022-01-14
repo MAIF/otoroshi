@@ -46,7 +46,6 @@ import play.api.{Configuration, Environment, Logger}
 import redis.RedisClientMasterSlaves
 import otoroshi.security.IdGenerator
 import otoroshi.ssl._
-import otoroshi.storage.drivers.inmemory.{Memory, SwappableInMemoryRedis}
 import otoroshi.storage.stores.{DataExporterConfigDataStore, KvRawDataStore, TeamDataStore, TenantDataStore}
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.http.MtlsConfig
@@ -860,6 +859,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   implicit lazy val mat   = env.otoroshiMaterializer
   implicit lazy val sched = env.otoroshiScheduler
 
+  private val _modern = env.configuration.getOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
+
   private val lastPoll                      = new AtomicReference[DateTime](DateTime.parse("1970-01-01T00:00:00.000"))
   private val pollRef                       = new AtomicReference[Cancellable]()
   private val pushRef                       = new AtomicReference[Cancellable]()
@@ -1150,13 +1151,28 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
   }
 
-  private def fromJson(what: String, value: JsValue): Option[Any] = {
+  private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
     import collection.JavaConverters._
 
     what match {
       case "counter" => Some(ByteString(value.as[Long].toString))
       case "string"  => Some(ByteString(value.as[String]))
+      case "set"     if modern => {
+        val list = scala.collection.mutable.HashSet.empty[ByteString]
+        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        Some(list)
+      }
+      case "list"    if modern => {
+        val list = scala.collection.mutable.MutableList.empty[ByteString]
+        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        Some(list)
+      }
+      case "hash"    if modern => {
+        val map = new TrieMap[String, ByteString]()
+        map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
+        Some(map)
+      }
       case "set"     => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
@@ -1245,7 +1261,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                     val value = (item \ "v").as[JsValue]
                     val what  = (item \ "w").as[String]
                     val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
-                    fromJson(what, value).foreach(v => store.put(key, v))
+                    fromJson(what, value, _modern).foreach(v => store.put(key, v))
                     if (ttl > -1L) {
                       expirations.put(key, ttl)
                     }
@@ -1536,7 +1552,12 @@ class SwappableInMemoryDataStores(
     )
   private val materializer       = Materializer(actorSystem)
   val _optimized                 = configuration.getOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
-  lazy val redis                 = new SwappableInMemoryRedis(_optimized, env, actorSystem)
+  val _modern                    = configuration.getOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
+  lazy val redis                 = if (_modern) {
+    new ModernSwappableInMemoryRedis(_optimized, env, actorSystem)
+  } else {
+    new SwappableInMemoryRedis(_optimized, env, actorSystem)
+  }
 
   override def before(
       configuration: Configuration,
@@ -1601,7 +1622,7 @@ class SwappableInMemoryDataStores(
       val value = (item \ "v").as[JsValue]
       val what  = (item \ "w").as[String]
       val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
-      fromJson(what, value).foreach(v => store.put(key, v))
+      fromJson(what, value, _modern).foreach(v => store.put(key, v))
       if (ttl > -1L) {
         expirations.put(key, ttl)
       }
@@ -1609,13 +1630,28 @@ class SwappableInMemoryDataStores(
     redis.swap(Memory(store, expirations), env.clusterConfig.worker.swapStrategy)
   }
 
-  private def fromJson(what: String, value: JsValue): Option[Any] = {
+  private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
     import collection.JavaConverters._
 
     what match {
       case "counter" => Some(ByteString(value.as[Long].toString))
       case "string"  => Some(ByteString(value.as[String]))
+      case "set"     if modern => {
+        val list = scala.collection.mutable.HashSet.empty[ByteString]
+        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        Some(list)
+      }
+      case "list"    if modern => {
+        val list = scala.collection.mutable.MutableList.empty[ByteString]
+        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        Some(list)
+      }
+      case "hash"    if modern => {
+        val map = new TrieMap[String, ByteString]()
+        map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
+        Some(map)
+      }
       case "set"     => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
@@ -1909,10 +1945,16 @@ class SwappableInMemoryDataStores(
       case lng: Long                                                       => ("string", JsString(lng.toString))
       case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] =>
         ("hash", JsObject(map.asScala.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
+      case map: TrieMap[String, ByteString] =>
+        ("hash", JsObject(map.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
       case list: java.util.concurrent.CopyOnWriteArrayList[ByteString]     =>
         ("list", JsArray(list.asScala.toSeq.map(a => JsString(a.utf8String))))
+      case list: scala.collection.mutable.MutableList[ByteString]     =>
+        ("list", JsArray(list.toSeq.map(a => JsString(a.utf8String))))
       case set: java.util.concurrent.CopyOnWriteArraySet[ByteString]       =>
         ("set", JsArray(set.asScala.toSeq.map(a => JsString(a.utf8String))))
+      case set: scala.collection.mutable.HashSet[ByteString]       =>
+        ("set", JsArray(set.toSeq.map(a => JsString(a.utf8String))))
       case _                                                               => ("none", JsNull)
     }
   }

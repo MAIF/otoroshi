@@ -26,7 +26,7 @@ class ProxyState(env: Env) {
   private val jwtVerifiers = new TrieMap[String, GlobalJwtVerifier]()
   private val certificates = new TrieMap[String, Cert]()
   private val authModules = new TrieMap[String, AuthModuleConfig]()
-  private val routesByDomain = new TrieMap[String, Seq[Route]]()
+  val routesByDomain = new TrieMap[String, Seq[Route]]()
 
   // private val chmRoutes = {
   //   val map = new ConcurrentHashMap[String, Route]()
@@ -277,31 +277,95 @@ class ProxyStateLoaderJob extends Job {
     }.future
   }
 
+  def generateRandomRoutes(): Future[Seq[Route]] = {
+    (0 until ((Math.random() * 50) + 10).toInt).map { idx =>
+      Route(
+        location = EntityLocation.default,
+        id = s"route_generated-random-${idx}",
+        name = s"generated_fake_route_random_${idx}",
+        description = s"generated_fake_route_radom_${idx}",
+        tags = Seq.empty,
+        metadata = Map.empty,
+        enabled = true,
+        debugFlow = true,
+        frontend = Frontend(
+          domains = Seq(DomainAndPath(s"random-generated-next-gen.oto.tools/api/${idx}")),
+          headers = Map.empty,
+          stripPath = true,
+          apikey = ApiKeyRouteMatcher(),
+        ),
+        backends = Backends(
+          targets = Seq(Backend(
+            id = "mirror-1",
+            hostname = "mirror.otoroshi.io",
+            port = 443,
+            tls = true
+          )),
+          root = s"/path-${idx}",
+          loadBalancing = RoundRobin
+        ),
+        client = ClientConfig(),
+        healthCheck = HealthCheck(false, "/"),
+        plugins = Plugins(Seq(
+          PluginInstance(
+            plugin = "cp:otoroshi.next.plugins.OverrideHost",
+            config = PluginInstanceConfig(Json.obj())
+          ),
+          PluginInstance(
+            plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
+            config = PluginInstanceConfig(Json.obj(
+              "headers" -> Json.obj(
+                "bar" -> "foo"
+              )
+            ))
+          )
+        ))
+      )
+    }.future
+  }
+
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val start = System.currentTimeMillis()
-    (for {
+    for {
       routes <- env.datastores.routeDataStore.findAll().map(routes => routes ++ Seq(Route.fake))
       genRoutesDomain <- generateRoutesByDomain()
       genRoutesPath <- generateRoutesByName()
+      genRandom <- generateRandomRoutes()
       descriptors <- env.datastores.serviceDescriptorDataStore.findAll()
-      newRoutes = genRoutesDomain ++ genRoutesPath ++ descriptors.map(Route.fromServiceDescriptor) ++ routes
-      // _ = println(s"route stuff in ${System.currentTimeMillis() - start} ms")
+      newRoutes = genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(Route.fromServiceDescriptor) ++ routes
       apikeys <- env.datastores.apiKeyDataStore.findAll()
       certs <- env.datastores.certificatesDataStore.findAll()
       verifiers <- env.datastores.globalJwtVerifierDataStore.findAll()
       modules <- env.datastores.authConfigsDataStore.findAll()
     } yield {
-      // val secondStart = System.currentTimeMillis()
       env.proxyState.updateRoutes(newRoutes)
-      // println(s"update 1 in ${System.currentTimeMillis() - secondStart} ms")
       env.proxyState.updateApikeys(apikeys)
       env.proxyState.updateCertificates(certs)
       env.proxyState.updateAuthModules(modules)
       env.proxyState.updateJwtVerifiers(verifiers)
-      // println(s"update in ${System.currentTimeMillis() - secondStart} ms")
-      // println(s"job done in ${System.currentTimeMillis() - start} ms")
       ProxyStateLoaderJob.firstSync.compareAndSet(false, true)
-    })
+
+      /*
+      println(s"job done in ${System.currentTimeMillis() - start} ms")
+      val expectedDomains = newRoutes.flatMap(_.frontend.domains.map(_.domain)).distinct
+      val expectedSize = expectedDomains.size
+      val actualDomains = env.proxyState.routesByDomain.keySet.toSeq
+      val actualSize = actualDomains.size
+      val diff1 = expectedDomains.diff(actualDomains)
+      val diff2 = actualDomains.diff(expectedDomains)
+      val diff3 = newRoutes.diff(env.proxyState.allRoutes())
+      val diff4 = env.proxyState.allRoutes().diff(newRoutes)
+      println(s"got ${newRoutes.size} routes now !")
+      println(s"expectedSize is: ${expectedSize}, actualSize is: ${actualSize}, diff1: ${diff1.size}, diff2: ${diff2.size}, diff3: ${diff3.size}, diff4: ${diff4.size}")
+      if (diff1.nonEmpty || diff2.nonEmpty || diff3.nonEmpty || diff4.nonEmpty) {
+        println(s"diff1: ${diff1}")
+        println(s"diff2: ${diff2}")
+        println(s"diff3: ${diff3}")
+        println(s"diff4: ${diff4}")
+      }
+      */
+
+    }
   }
 }
 
