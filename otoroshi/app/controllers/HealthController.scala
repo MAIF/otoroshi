@@ -155,11 +155,11 @@ class HealthController(cc: ControllerComponents)(implicit env: Env) extends Abst
                         "type" -> key
                       )
                     )
-                  case (arr2, (key2, value2))               => arr2
+                  case (arr2, (key2, value2)) => arr2
                 }
-              case (arr, (key, value))           => arr
+              case (arr, (key, value)) => arr
             }
-          case a @ JsArray(value) => a
+          case a => a
         }
       }
 
