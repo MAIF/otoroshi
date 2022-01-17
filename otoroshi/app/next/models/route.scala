@@ -355,7 +355,7 @@ object Route {
         meta ++ Map("otoroshi-core-openapi-url" -> service.api.openApiDescriptorUrl.getOrElse(""))
       },
       enabled = service.enabled,
-      debugFlow = debug, // TODO: remove it when release ;)
+      debugFlow = debug,
       frontend = Frontend(
         domains = {
           val dap = if (service.allPaths.isEmpty) {

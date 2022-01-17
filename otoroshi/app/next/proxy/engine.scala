@@ -52,6 +52,28 @@ class ProxyEngine() extends RequestHandler {
     .maximumSize(2)
     .build()
 
+  private val headersOutStatic = Seq(
+    "Keep-Alive",
+    "Transfer-Encoding",
+    "Content-Length",
+    "Content-Type",
+    "Raw-Request-Uri",
+    "Remote-Address",
+    "Timeout-Access",
+    "Tls-Session-Info",
+    "Set-Cookie"
+  )
+
+  private val headersInStatic = Seq(
+    "X-Forwarded-For",
+    "X-Forwarded-Proto",
+    "X-Forwarded-Protocol",
+    "Raw-Request-Uri",
+    "Remote-Address",
+    "Timeout-Access",
+    "Tls-Session-Info"
+  )
+
   override def name: String = "Otoroshi newest proxy engine"
 
   override def description: Option[String] = "This plugin holds the next generation otoroshi proxy engine implementation".some
@@ -97,7 +119,6 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  // TODO: filter bad headers out
   @inline
   def handleRequest(request: Request[Source[ByteString, _]], config: JsObject)(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig): Future[Result] = {
     val requestId = IdGenerator.uuid
@@ -210,9 +231,9 @@ class ProxyEngine() extends RequestHandler {
         )
       } else Seq.empty
       if (debug) logger.info(report.json.prettify)
-      if (reporting && report.getStep("find-route").flatMap(_.ctx.select("found_route").select("debug_flow").asOpt[Boolean]).getOrElse(false)) {
-        Files.writeString(new File("./request-debug.json").toPath, report.json.prettify)
-      }
+      // if (reporting && report.getStep("find-route").flatMap(_.ctx.select("found_route").select("debug_flow").asOpt[Boolean]).getOrElse(false)) {
+      //   Files.writeString(new File("./request-debug.json").toPath, report.json.prettify)
+      // }
       res.withHeaders(addHeaders: _*)
     })
   }
@@ -882,6 +903,20 @@ class ProxyEngine() extends RequestHandler {
       request.body
     }
 
+    val headersInFiltered = Seq(
+      env.Headers.OtoroshiState,
+      env.Headers.OtoroshiClaim,
+      env.Headers.OtoroshiRequestId,
+      env.Headers.OtoroshiClientId,
+      env.Headers.OtoroshiClientSecret,
+      env.Headers.OtoroshiAuthorization,
+    ).++(headersInStatic).map(_.toLowerCase)
+
+    val headers = request.headers.toSimpleMap
+      .filterNot {
+        case (key, _) => headersInFiltered.contains(key.toLowerCase())
+      }
+
     val rawRequest = PluginHttpRequest(
       url = s"${request.theProtocol}://${request.theHost}${request.relativeUri}",
       method = request.method,
@@ -1180,12 +1215,15 @@ class ProxyEngine() extends RequestHandler {
       case _                                                                                     => false
     }
     val status = attrs.get(otoroshi.plugins.Keys.StatusOverrideKey).getOrElse(response.status)
-    val willStream = if (rawRequest.version == "HTTP/1.0") false else (!isChunked)
-    val headers: Seq[(String, String)] = response.headers.filterNot { h =>
-      val lower = h._1.toLowerCase()
-      lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding" || lower == "keep-alive"
-    }.applyOnIf(willStream)(_.filterNot(h => h._1.toLowerCase() == "content-length")).toSeq
-    if (rawRequest.version == "HTTP/1.0") {
+    val isHttp10 = rawRequest.version == "HTTP/1.0"
+    val willStream = if (isHttp10) false else (!isChunked)
+    val headersOutFiltered = Seq(
+      env.Headers.OtoroshiStateResp,
+    ).++(headersOutStatic).map(_.toLowerCase)
+    val headers: Seq[(String, String)] = response.headers.filterNot {
+      case (key, _) => headersOutFiltered.contains(key.toLowerCase())
+    }.applyOnIf(!isHttp10)(_.filterNot(h => h._1.toLowerCase() == "content-length")).toSeq
+    if (isHttp10) {
       logger.warn(
         s"HTTP/1.0 request, storing temporary result in memory :( (${rawRequest.theProtocol}://${rawRequest.theHost}${rawRequest.relativeUri})"
       )
