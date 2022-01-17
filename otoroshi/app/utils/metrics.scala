@@ -151,32 +151,29 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   def markLong(name: String, value: Long): Unit     = mark(name, value)
   def markDouble(name: String, value: Double): Unit = mark(name, value)
 
-  def counter(name: MetricId): Counter = {
-    metricRegistry.counter(name)
-    jmxRegistry.counter(name.getKey)
+  def counterInc(name: MetricId): Unit = {
+    metricRegistry.counter(name).inc()
+    jmxRegistry.counter(name.getKey).inc()
   }
-  def counter(name: String): Counter = {
-    metricRegistry.counter(MetricId.build(name))
-    jmxRegistry.counter(name)
-  }
-
-  def histogram(name: MetricId): Histogram = {
-    metricRegistry.histogram(name)
-    jmxRegistry.histogram(name.getKey)
-  }
-  def histogram(name: String): Histogram = {
-    metricRegistry.histogram(MetricId.build(name))
-    jmxRegistry.histogram(name)
+  def counterInc(name: String): Unit = {
+    metricRegistry.counter(MetricId.build(name)).inc()
+    jmxRegistry.counter(name).inc()
   }
 
-  def timer(name: MetricId): Timer = {
-    metricRegistry.timer(name)
-    jmxRegistry.timer(name.getKey)
+  def histogramUpdate(name: MetricId, value: Long): Unit = {
+    metricRegistry.histogram(name).update(value)
+    jmxRegistry.histogram(name.getKey).update(value)
   }
-  def timer(name: String): Timer = {
-    metricRegistry.timer(MetricId.build(name))
-    jmxRegistry.timer(name)
+  def histogramUpdate(name: String, value: Long): Unit = {
+    metricRegistry.histogram(MetricId.build(name)).update(value)
+    jmxRegistry.histogram(name).update(value)
   }
+
+  def timerUpdate(name: MetricId, duration: Long, unit: TimeUnit): Unit = {
+    metricRegistry.timer(name).update(duration, unit)
+    jmxRegistry.timer(name.getKey).update(duration, unit)
+  }
+
   def timerUpdate(name: String, duration: Long, unit: TimeUnit): Unit = {
     metricRegistry.timer(MetricId.build(name)).update(duration, unit)
     jmxRegistry.timer(name).update(duration, unit)

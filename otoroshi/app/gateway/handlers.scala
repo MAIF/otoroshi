@@ -60,7 +60,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
       s"Client Error: $message from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.theHost}${request.relativeUri} ($statusCode) - ${request.headers.toSimpleMap
         .mkString(";")}"
     )
-    env.metrics.counter("errors.client").inc()
+    env.metrics.counterInc("errors.client")
     env.datastores.globalConfigDataStore.singleton().map { config =>
       env.datastores.serviceDescriptorDataStore.updateMetricsOnError(config)
     }
@@ -93,7 +93,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
         .mkString(";")}",
       exception
     )
-    env.metrics.counter("errors.server").inc()
+    env.metrics.counterInc("errors.server")
     env.datastores.globalConfigDataStore.singleton().map { config =>
       env.datastores.serviceDescriptorDataStore.updateMetricsOnError(config)
     }

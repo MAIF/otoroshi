@@ -508,13 +508,13 @@ class Env(
     ahcStats.set(otoroshiActorSystem.scheduler.scheduleWithFixedDelay(1.second, 1.second) { () =>
       scala.util.Try {
         val stats = ahcClient.underlying[DefaultAsyncHttpClient].getClientStats
-        metrics.histogram("ahc-total-active-connections").update(stats.getTotalActiveConnectionCount)
-        metrics.histogram("ahc-total-connections").update(stats.getTotalConnectionCount)
-        metrics.histogram("ahc-total-idle-connections").update(stats.getTotalIdleConnectionCount)
+        metrics.histogramUpdate("ahc-total-active-connections", stats.getTotalActiveConnectionCount)
+        metrics.histogramUpdate("ahc-total-connections", stats.getTotalConnectionCount)
+        metrics.histogramUpdate("ahc-total-idle-connections", stats.getTotalIdleConnectionCount)
         stats.getStatsPerHost.asScala.foreach { case (key, value) =>
-          metrics.histogram(key + "-ahc-total-active-connections").update(value.getHostActiveConnectionCount)
-          metrics.histogram(key + "-ahc-total-connections").update(value.getHostConnectionCount)
-          metrics.histogram(key + "-ahc-total-idle-connections").update(value.getHostIdleConnectionCount)
+          metrics.histogramUpdate(key + "-ahc-total-active-connections", value.getHostActiveConnectionCount)
+          metrics.histogramUpdate(key + "-ahc-total-connections", value.getHostConnectionCount)
+          metrics.histogramUpdate(key + "-ahc-total-idle-connections", value.getHostIdleConnectionCount)
         }
       } match {
         case Success(_) => ()
@@ -557,13 +557,13 @@ class Env(
     internalAhcStats.set(otoroshiActorSystem.scheduler.scheduleWithFixedDelay(1.second, 1.second) { () =>
       scala.util.Try {
         val stats = wsClient.underlying[DefaultAsyncHttpClient].getClientStats
-        metrics.histogram("ahc-total-active-connections").update(stats.getTotalActiveConnectionCount)
-        metrics.histogram("ahc-total-connections").update(stats.getTotalConnectionCount)
-        metrics.histogram("ahc-total-idle-connections").update(stats.getTotalIdleConnectionCount)
+        metrics.histogramUpdate("ahc-total-active-connections", stats.getTotalActiveConnectionCount)
+        metrics.histogramUpdate("ahc-total-connections", stats.getTotalConnectionCount)
+        metrics.histogramUpdate("ahc-total-idle-connections", stats.getTotalIdleConnectionCount)
         stats.getStatsPerHost.asScala.foreach { case (key, value) =>
-          metrics.histogram(key + "-ahc-total-active-connections").update(value.getHostActiveConnectionCount)
-          metrics.histogram(key + "-ahc-total-connections").update(value.getHostConnectionCount)
-          metrics.histogram(key + "-ahc-total-idle-connections").update(value.getHostIdleConnectionCount)
+          metrics.histogramUpdate(key + "-ahc-total-active-connections", value.getHostActiveConnectionCount)
+          metrics.histogramUpdate(key + "-ahc-total-connections", value.getHostConnectionCount)
+          metrics.histogramUpdate(key + "-ahc-total-idle-connections", value.getHostIdleConnectionCount)
         }
       } match {
         case Success(_) => ()

@@ -390,25 +390,19 @@ object Exporters {
         dataIn: Long,
         dataOut: Long
     ): Unit = {
-      env.metrics.counter(MetricId.build("otoroshi.requests.count").tagged("serviceName", "otoroshi")).inc()
+      env.metrics.counterInc(MetricId.build("otoroshi.requests.count").tagged("serviceName", "otoroshi"))
       env.metrics
-        .histogram(MetricId.build("otoroshi.requests.duration.millis").tagged("serviceName", "otoroshi"))
-        .update(duration)
+        .histogramUpdate(MetricId.build("otoroshi.requests.duration.millis").tagged("serviceName", "otoroshi"), duration)
       env.metrics
-        .histogram(MetricId.build("otoroshi.requests.overheadWoCb.millis").tagged("serviceName", "otoroshi"))
-        .update(overheadWoCb)
+        .histogramUpdate(MetricId.build("otoroshi.requests.overheadWoCb.millis").tagged("serviceName", "otoroshi"), overheadWoCb)
       env.metrics
-        .histogram(MetricId.build("otoroshi.requests.cbDuration.millis").tagged("serviceName", "otoroshi"))
-        .update(cbDuration)
+        .histogramUpdate(MetricId.build("otoroshi.requests.cbDuration.millis").tagged("serviceName", "otoroshi"), cbDuration)
       env.metrics
-        .histogram(MetricId.build("otoroshi.requests.overhead.millis").tagged("serviceName", "otoroshi"))
-        .update(overhead)
+        .histogramUpdate(MetricId.build("otoroshi.requests.overhead.millis").tagged("serviceName", "otoroshi"), overhead)
       env.metrics
-        .histogram(MetricId.build("otoroshi.requests.data.in.bytes").tagged("serviceName", "otoroshi"))
-        .update(dataIn)
+        .histogramUpdate(MetricId.build("otoroshi.requests.data.in.bytes").tagged("serviceName", "otoroshi"), dataIn)
       env.metrics
-        .histogram(MetricId.build("otoroshi.requests.data.out.bytes").tagged("serviceName", "otoroshi"))
-        .update(dataOut)
+        .histogramUpdate(MetricId.build("otoroshi.requests.data.out.bytes").tagged("serviceName", "otoroshi"), dataOut)
     }
 
     // @tailrec
@@ -472,25 +466,19 @@ object Exporters {
             })
 
             incGlobalOtoroshiMetrics(duration, overheadWoCb, cbDuration, overhead, dataIn, dataOut)
-            env.metrics.counter(MetricId.build(s"otoroshi.service.requests.count").tagged(tags.asJava)).inc()
+            env.metrics.counterInc(MetricId.build(s"otoroshi.service.requests.count").tagged(tags.asJava))
             env.metrics
-              .histogram(MetricId.build(s"otoroshi.service.requests.duration.millis").tagged(tags.asJava))
-              .update(duration)
+              .histogramUpdate(MetricId.build(s"otoroshi.service.requests.duration.millis").tagged(tags.asJava), duration)
             env.metrics
-              .histogram(MetricId.build(s"otoroshi.service.requests.overheadWoCb.millis").tagged(tags.asJava))
-              .update(overheadWoCb)
+              .histogramUpdate(MetricId.build(s"otoroshi.service.requests.overheadWoCb.millis").tagged(tags.asJava), overheadWoCb)
             env.metrics
-              .histogram(MetricId.build(s"otoroshi.service.requests.cbDuration.millis").tagged(tags.asJava))
-              .update(cbDuration)
+              .histogramUpdate(MetricId.build(s"otoroshi.service.requests.cbDuration.millis").tagged(tags.asJava), cbDuration)
             env.metrics
-              .histogram(MetricId.build(s"otoroshi.service.requests.overhead.millis").tagged(tags.asJava))
-              .update(overhead)
+              .histogramUpdate(MetricId.build(s"otoroshi.service.requests.overhead.millis").tagged(tags.asJava), overhead)
             env.metrics
-              .histogram(MetricId.build(s"otoroshi.service.requests.data.in.bytes").tagged(tags.asJava))
-              .update(dataIn)
+              .histogramUpdate(MetricId.build(s"otoroshi.service.requests.data.in.bytes").tagged(tags.asJava), dataIn)
             env.metrics
-              .histogram(MetricId.build(s"otoroshi.service.requests.data.out.bytes").tagged(tags.asJava))
-              .update(dataOut)
+              .histogramUpdate(MetricId.build(s"otoroshi.service.requests.data.out.bytes").tagged(tags.asJava), dataOut)
           } match {
             case Failure(e) => logger.error("error while collection tags", e)
             case _          =>

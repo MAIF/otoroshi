@@ -123,20 +123,18 @@ class ServiceMetrics extends RequestTransformer {
     //     s"otoroshi.requests.duration.seconds.${ctx.request.theProtocol}.${ctx.request.method.toLowerCase()}.${ctx.rawResponse.status}"
     //   )
     //   .update(duration)
-    env.metrics.counter(s"otoroshi.requests.total").inc()
-    env.metrics.histogram(s"otoroshi.requests.duration.millis").update(duration)
+    env.metrics.counterInc(s"otoroshi.requests.total")
+    env.metrics.histogramUpdate(s"otoroshi.requests.duration.millis", duration)
     env.metrics
-      .counter(
+      .counterInc(
         s"otoroshi.service.requests.total.${ctx.descriptor.name.slug}.${ctx.request.theProtocol}.${ctx.request.method
           .toLowerCase()}.${ctx.rawResponse.status}"
       )
-      .inc()
     env.metrics
-      .histogram(
+      .histogramUpdate(
         s"otoroshi.service.requests.duration.millis.${ctx.descriptor.name.slug}.${ctx.request.theProtocol}.${ctx.request.method
           .toLowerCase()}.${ctx.rawResponse.status}"
-      )
-      .update(duration)
+      , duration)
     Right(ctx.otoroshiResponse).future
   }
 
@@ -157,20 +155,18 @@ class ServiceMetrics extends RequestTransformer {
     //     s"otoroshi.requests.duration.seconds.${ctx.request.theProtocol}.${ctx.request.method.toLowerCase()}.${ctx.rawResponse.status}"
     //   )
     //   .update(duration)
-    env.metrics.counter(s"otoroshi.requests.total").inc()
-    env.metrics.histogram(s"otoroshi.requests.duration.millis").update(duration)
+    env.metrics.counterInc(s"otoroshi.requests.total")
+    env.metrics.histogramUpdate(s"otoroshi.requests.duration.millis", duration)
     env.metrics
-      .counter(
+      .counterInc(
         s"otoroshi.service.requests.total.${ctx.descriptor.name.slug}.${ctx.request.theProtocol}.${ctx.request.method
           .toLowerCase()}.${ctx.otoroshiResponse.status}"
       )
-      .inc()
     env.metrics
-      .histogram(
+      .histogramUpdate(
         s"otoroshi.service.requests.duration.millis.${ctx.descriptor.name.slug}.${ctx.request.theProtocol}.${ctx.request.method
           .toLowerCase()}.${ctx.otoroshiResponse.status}"
-      )
-      .update(duration)
+      , duration)
     ctx.otoroshiResult.future
   }
 }

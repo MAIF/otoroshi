@@ -445,15 +445,15 @@ class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
   override def rawGet(key: String): Future[Option[Any]] = redis.get(key)
 
   override def flushall(): Future[Boolean] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.flushall()
   }
   override def get(key: String): Future[Option[ByteString]] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.get(key)
   }
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.mget(keys: _*)
   }
   override def set(
@@ -462,7 +462,7 @@ class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
       exSeconds: Option[Long] = None,
       pxMilliseconds: Option[Long] = None
   ): Future[Boolean] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.set(key, value, exSeconds, pxMilliseconds)
   }
   override def setBS(
@@ -471,115 +471,115 @@ class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
       exSeconds: Option[Long] = None,
       pxMilliseconds: Option[Long] = None
   ): Future[Boolean] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.setBS(key, value, exSeconds, pxMilliseconds)
   }
   override def del(keys: String*): Future[Long] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.del(keys: _*)
   }
   override def incr(key: String): Future[Long] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.incr(key)
   }
   override def incrby(key: String, increment: Long): Future[Long] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.incrby(key, increment)
   }
   override def exists(key: String): Future[Boolean] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.exists(key)
   }
   override def keys(pattern: String): Future[Seq[String]] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.keys(pattern)
   }
   override def hdel(key: String, fields: String*): Future[Long] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.hdel(key, fields: _*)
   }
   override def hgetall(key: String): Future[Map[String, ByteString]] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.hgetall(key)
   }
   override def hset(key: String, field: String, value: String): Future[Boolean] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.hset(key, field, value)
   }
   override def hsetBS(key: String, field: String, value: ByteString): Future[Boolean] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.hsetBS(key, field, value)
   }
   override def llen(key: String): Future[Long] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.llen(key)
   }
   override def lpush(key: String, values: String*): Future[Long] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.lpush(key, values: _*)
   }
   override def lpushLong(key: String, values: Long*): Future[Long] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.lpushLong(key, values: _*)
   }
   override def lpushBS(key: String, values: ByteString*): Future[Long] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.lpushBS(key, values: _*)
   }
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.lrange(key, start, stop)
   }
   override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.ltrim(key, start, stop)
   }
   override def pttl(key: String): Future[Long] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.pttl(key)
   }
   override def ttl(key: String): Future[Long] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.ttl(key)
   }
   override def expire(key: String, seconds: Int): Future[Boolean] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.expire(key, seconds)
   }
   override def pexpire(key: String, milliseconds: Long): Future[Boolean] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.pexpire(key, milliseconds)
   }
   override def sadd(key: String, members: String*): Future[Long] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.sadd(key, members: _*)
   }
   override def saddBS(key: String, members: ByteString*): Future[Long] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.saddBS(key, members: _*)
   }
   override def sismember(key: String, member: String): Future[Boolean] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.sismember(key, member)
   }
   override def sismemberBS(key: String, member: ByteString): Future[Boolean] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.sismemberBS(key, member)
   }
   override def smembers(key: String): Future[Seq[ByteString]] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.smembers(key)
   }
   override def srem(key: String, members: String*): Future[Long] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.srem(key, members: _*)
   }
   override def sremBS(key: String, members: ByteString*): Future[Long] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.sremBS(key, members: _*)
   }
   override def scard(key: String): Future[Long] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.scard(key)
   }
 
@@ -587,7 +587,7 @@ class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
-    env.metrics.counter("redis.ops").inc()
+    env.metrics.counterInc("redis.ops")
     redis.setnxBS(key, value, ttl)
   }
 }
