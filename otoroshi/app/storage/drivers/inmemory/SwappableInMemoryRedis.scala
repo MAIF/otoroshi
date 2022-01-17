@@ -1,8 +1,5 @@
 package otoroshi.storage.drivers.inmemory
 
-import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
-import java.util.regex.Pattern
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
@@ -14,6 +11,9 @@ import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 
+import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
+import java.util.regex.Pattern
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
@@ -438,9 +438,11 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
 
   val patterns: TrieMap[String, Pattern] = new TrieMap[String, Pattern]()
 
-  private lazy val _storeHolder = new AtomicReference[ModernMemory](ModernMemory())
+  // private lazy val _storeHolder = new AtomicReference[ModernMemory](ModernMemory())
 
-  @inline private def memory: ModernMemory = _storeHolder.get()
+  //@inline private def memory: ModernMemory = _storeHolder.get()
+
+  val memory = ModernMemory()
 
   private val cancel = actorSystem.scheduler.scheduleAtFixedRate(0.millis, 100.millis)(SchedulerHelper.runnable {
     try {
@@ -463,9 +465,7 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
   def rawSwap(nstore: scala.collection.Map[String, Any], nexpirations: scala.collection.Map[String, Long]): Unit = {
     env.metrics.withTimer(s"memory-swap-modern") {
       val oldSize = memory.size
-      _storeHolder.updateAndGet { oldMemory =>
-        oldMemory.swap(nstore, nexpirations)
-      }
+      memory.swap(nstore, nexpirations)
       val newSize = memory.size
       SwappableInMemoryRedis.logger.debug(
         s"[${env.clusterConfig.mode.name}] Swapping modern store instance now ! ($oldSize / $newSize)"
