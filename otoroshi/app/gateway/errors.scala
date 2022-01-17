@@ -6,6 +6,7 @@ import otoroshi.events._
 import otoroshi.models.{RemainingQuotas, ServiceDescriptor}
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
+import otoroshi.next.models.Route
 import otoroshi.script.Implicits._
 import otoroshi.script.{HttpResponse, TransformerErrorContext}
 import otoroshi.utils.TypedMap
@@ -37,7 +38,8 @@ object Errors {
       callAttempts: Int = 0,
       emptyBody: Boolean = false,
       sendEvent: Boolean = true,
-      attrs: TypedMap
+      attrs: TypedMap,
+      maybeRoute: Option[Route] = None
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
 
     val errorId = env.snowflakeGenerator.nextIdStr()
@@ -246,8 +248,8 @@ object Errors {
       }
     }
 
-    def customResult(descriptor: ServiceDescriptor): Future[Result] = {
-      env.datastores.errorTemplateDataStore.findById(descriptor.id).flatMap {
+    def customResult(descriptorId: String): Future[Result] = {
+      env.datastores.errorTemplateDataStore.findById(descriptorId).flatMap {
         case None                => standardResult()
         case Some(errorTemplate) => {
           val accept = req.headers.get("Accept").getOrElse("text/html").split(",").toSeq
@@ -282,9 +284,9 @@ object Errors {
       }
     }
 
-    (maybeDescriptor match {
-      case Some(desc) =>
-        customResult(desc).flatMap { res =>
+    ((maybeDescriptor, maybeRoute) match {
+      case (Some(desc), _) => {
+        customResult(desc.id).flatMap { res =>
           val ctx = TransformerErrorContext(
             index = -1,
             snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse(env.snowflakeGenerator.nextIdStr()),
@@ -317,7 +319,12 @@ object Errors {
           )
           desc.transformError(ctx)(env, ec, env.otoroshiMaterializer)
         }
-      case None       => standardResult()
+      }
+      case (_, Some(route)) => {
+        // TODO: handle error transformer here
+        standardResult()
+      }
+      case _ => standardResult()
     }) andThen {
       case scala.util.Success(resp) if sendEvent => sendAnalytics(resp.header.headers.toSeq.map(Header.apply))
     }
