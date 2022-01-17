@@ -33,13 +33,13 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
       }
       promise.future
     } else {
-      NgAccess.NgAllowed.future
+      NgAccess.NgAllowed.vfuture
     }
   }
 
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpRequest]] = {
     ctx.attrs.get(JwtInjectionKey) match {
-      case None => ctx.otoroshiRequest.right.future
+      case None => ctx.otoroshiRequest.right.vfuture
       case Some(injection) => {
         ctx.otoroshiRequest
           .applyOnIf(injection.removeCookies.nonEmpty) { req => req.copy(cookies = req.cookies.filterNot(c => injection.removeCookies.contains(c.name))) }
@@ -47,7 +47,7 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
           .applyOnIf(injection.additionalHeaders.nonEmpty) { req => req.copy(headers = req.headers ++ injection.additionalHeaders) }
           .applyOnIf(injection.additionalCookies.nonEmpty) { req => req.copy(cookies = req.cookies ++ injection.additionalCookies.map(t => DefaultWSCookie(t._1, t._2))) }
           .right
-          .future
+          .vfuture
       }
     }
   }

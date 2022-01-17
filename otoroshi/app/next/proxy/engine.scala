@@ -1,10 +1,10 @@
 package otoroshi.next.proxy
 
 import akka.Done
-import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events._
@@ -20,17 +20,21 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.http.WSCookieWithSameSite
+import otoroshi.utils.streams.MaxLengthLimiter
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{TypedMap, UrlSanitizer}
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.ws.WSResponse
+import play.api.mvc.Results.Status
 import play.api.mvc._
 
 import java.io.File
 import java.nio.file.Files
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
+import javax.net.ssl.SSLContext
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
@@ -39,6 +43,14 @@ class ProxyEngine() extends RequestHandler {
   private val logger = Logger("otoroshi-next-gen-proxy-engine")
   private val fakeFailureIndicator = new AtomicBoolean(false)
   private val reqCounter  = new AtomicInteger(0)
+
+  private val enabledRef = new AtomicBoolean(true)
+  private val enabledDomains = new AtomicReference(Seq.empty[String])
+
+  private val configCache: Cache[String, JsObject] = Scaffeine()
+    .expireAfterWrite(10.seconds)
+    .maximumSize(2)
+    .build()
 
   override def name: String = "Otoroshi newest proxy engine"
 
@@ -57,16 +69,28 @@ class ProxyEngine() extends RequestHandler {
     ).some
   }
 
+  @inline
+  private def getConfig()(implicit ec: ExecutionContext, env: Env): JsObject = {
+    configCache.get("config", key => {
+      val config = env.datastores.globalConfigDataStore.latest().plugins.config.select(configRoot.get).asObject
+      val enabled = config.select("enabled").asOpt[Boolean].getOrElse(true)
+      val domains = if (enabled) config.select("domains").asOpt[Seq[String]].getOrElse(Seq("*-next-gen.oto.tools")) else Seq.empty[String]
+      enabledRef.set(enabled)
+      enabledDomains.set(domains)
+      config
+    })
+  }
+
   override def handledDomains(implicit ec: ExecutionContext, env: Env): Seq[String] = {
-    val config = env.datastores.globalConfigDataStore.latest().plugins.config.select(configRoot.get)
-    config.select("domains").asOpt[Seq[String]].getOrElse(Seq("*-next-gen.oto.tools"))
+    val config = getConfig()
+    enabledDomains.get()
   }
 
   override def handle(request: Request[Source[ByteString, _]], defaultRouting: Request[Source[ByteString, _]] => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
-    val config = globalConfig.plugins.config.select(configRoot.get).asOpt[JsObject].getOrElse(Json.obj())
-    val enabled = config.select("enabled").asOpt[Boolean].getOrElse(true)
-    if (enabled) {
+    val config = getConfig()
+    if (enabledRef.get()) {
+      // env.metrics.withTimerAsync("handle-ng-request")(handleRequest(request, config))
       handleRequest(request, config)
     } else {
       defaultRouting(request)
@@ -74,28 +98,23 @@ class ProxyEngine() extends RequestHandler {
   }
 
   // TODO: filter bad headers out
+  @inline
   def handleRequest(request: Request[Source[ByteString, _]], config: JsObject)(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig): Future[Result] = {
     val requestId = IdGenerator.uuid
-    implicit val mat = env.otoroshiMaterializer
-
-    val debug = config.select("debug").asOpt[Boolean].getOrElse(false)
     val reporting = config.select("reporting").asOpt[Boolean].getOrElse(true)
-    val debugHeaders = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
-
     implicit val report = ExecutionReport(requestId, reporting)
+    report.start("start-handling")
+    val debug = config.select("debug").asOpt[Boolean].getOrElse(false)
+    val debugHeaders = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
+    implicit val mat = env.otoroshiMaterializer
 
     val snowflake           = env.snowflakeGenerator.nextIdStr()
     val callDate            = DateTime.now()
     val requestTimestamp    = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
     val reqNumber           = reqCounter.incrementAndGet()
-    val remoteAddress       = request.theIpAddress
-    val isSecured           = request.theSecured
-    val from                = request.theIpAddress
     val counterIn           = new AtomicLong(0L)
     val counterOut          = new AtomicLong(0L)
     val start               = System.currentTimeMillis()
-    val bodyAlreadyConsumed = new AtomicBoolean(false)
-    val protocol            = request.theProtocol
     implicit val attrs      = TypedMap.empty.put(
       otoroshi.plugins.Keys.RequestNumberKey     -> reqNumber,
       otoroshi.plugins.Keys.SnowFlakeKey         -> snowflake,
@@ -114,7 +133,7 @@ class ProxyEngine() extends RequestHandler {
 
     attrs.put(otoroshi.plugins.Keys.ElCtxKey -> elCtx)
 
-    report.start("check-concurrent-requests")
+    report.markDoneAndStart("check-concurrent-requests")
     (for {
       _               <- handleConcurrentRequest(request)
       _               =  report.markDoneAndStart("find-route")
@@ -146,8 +165,8 @@ class ProxyEngine() extends RequestHandler {
           _             =  report.markDoneAndStart("call-after-request-callbacks")
           // TODO: call after callback when shortcircuited too
           _             <- callPluginsAfterRequestCallback(snowflake, request, route)
-          _             =  report.markDoneAndStart("trigger-analytics")
-          _             <- triggerProxyDone(snowflake, request, response, finalRequest, finalResp, route, backend)
+          //_             =  report.markDoneAndStart("trigger-analytics")
+          //_             <- triggerProxyDone(snowflake, request, response, finalRequest, finalResp, route, backend)
         } yield clientResp
       }
     } yield {
@@ -159,7 +178,7 @@ class ProxyEngine() extends RequestHandler {
         error.asResult()
       case Right(result) =>
         report.markSuccess()
-        result.future
+        result.vfuture
     }.recover {
       case t: Throwable =>
         report.markFailure("last-recover", t)
@@ -271,6 +290,7 @@ class ProxyEngine() extends RequestHandler {
         attrs.put(Keys.RouteKey -> route)
         FEither.right(route)
       case None =>
+        // TODO: call sinks here !
         report.markFailure(s"route not found for domain: '${request.theDomain}${request.thePath}'")
         FEither.left(ResultProxyEngineError(Results.NotFound(Json.obj("error" -> "not_found", "error_description" -> "no route found !"))))
     }
@@ -595,23 +615,21 @@ class ProxyEngine() extends RequestHandler {
           val characters: ByteString =
             if (!globalConfig.middleFingers) middleFingers else zeros
           val expected: Long = (gigas / characters.size) + 1L
-          FastFuture.successful(
-            Left(ResultProxyEngineError(Results.Status(200)
-              .sendEntity(
-                HttpEntity.Streamed(
-                  Source
-                    .repeat(characters)
-                    .take(expected), // 128 Go of zeros or middle fingers
-                  None,
-                  Some("application/octet-stream")
-                )
+          Left(ResultProxyEngineError(Results.Status(200)
+            .sendEntity(
+              HttpEntity.Streamed(
+                Source
+                  .repeat(characters)
+                  .take(expected), // 128 Go of zeros or middle fingers
+                None,
+                Some("application/octet-stream")
               )
-            ))
-          )
+            )
+          )).vfuture
         } else if (isUp) {
           attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
             .map(_.updateQuotas())
-            .getOrElse(FastFuture.successful(RemainingQuotas()))
+            .getOrElse(RemainingQuotas().vfuture)
             .map(rq => Right.apply[ProxyEngineError, RemainingQuotas](rq))
         } else {
           // fail fast
@@ -646,7 +664,7 @@ class ProxyEngine() extends RequestHandler {
         attrs.put(Keys.BackendKey -> backend)
         f(backend).value.flatMap {
           case Left(err) => err.asResult().map(Left.apply) // TODO: optimize
-          case r @ Right(value) => Right(value).future
+          case r @ Right(value) => Right(value).vfuture
         }
       }
 
@@ -1097,7 +1115,6 @@ class ProxyEngine() extends RequestHandler {
   }
 
   def streamResponse(snowflake: String, rawRequest: Request[Source[ByteString, _]], rawResponse: WSResponse, response: PluginHttpResponse, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Result] = {
-    // TODO: missing http/1.0 handling, chunked handling
     val contentType: Option[String] = response.headers
       .get("Content-Type")
       .orElse(response.headers.get("content-type"))
@@ -1144,24 +1161,82 @@ class ProxyEngine() extends RequestHandler {
         )
       }
     }
-    val res = Results.Status(response.status)
-      .sendEntity(
-        HttpEntity.Streamed(
-          response.body,
-          contentLength,
-          contentType
+
+    val noContentLengthHeader: Boolean =
+      rawResponse.contentLength.isEmpty
+    val hasChunkedHeader: Boolean      = rawResponse
+      .header("Transfer-Encoding")
+      .orElse(response.headers.get("Transfer-Encoding"))
+      .exists(h => h.toLowerCase().contains("chunked"))
+    val isChunked: Boolean             = rawResponse.isChunked() match {
+      case Some(chunked)                                                                         => chunked
+      case None if !env.emptyContentLengthIsChunked                                              =>
+        hasChunkedHeader // false
+      case None if env.emptyContentLengthIsChunked && hasChunkedHeader                           =>
+        true
+      case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader =>
+        true
+      case _                                                                                     => false
+    }
+    val status = attrs.get(otoroshi.plugins.Keys.StatusOverrideKey).getOrElse(response.status)
+    val willStream = if (rawRequest.version == "HTTP/1.0") false else (!isChunked)
+    val headers: Seq[(String, String)] = response.headers.filterNot { h =>
+      val lower = h._1.toLowerCase()
+      lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding" || lower == "keep-alive"
+    }.applyOnIf(willStream)(_.filterNot(h => h._1.toLowerCase() == "content-length")).toSeq
+    if (rawRequest.version == "HTTP/1.0") {
+      logger.warn(
+        s"HTTP/1.0 request, storing temporary result in memory :( (${rawRequest.theProtocol}://${rawRequest.theHost}${rawRequest.relativeUri})"
+      )
+      FEither(response.body
+        .via(
+          MaxLengthLimiter(
+            globalConfig.maxHttp10ResponseSize.toInt,
+            str => logger.warn(str)
+          )
         )
-      )
-      .withHeaders(
-        response.headers.filterNot { h =>
-          val lower = h._1.toLowerCase()
-          lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding" || lower == "content-length" || lower == "keep-alive"
-        }.toSeq: _*
-      )
-      .withCookies(cookies: _*)
-    contentType match {
-      case None      => FEither.right(res)
-      case Some(ctp) => FEither.right(res.as(ctp))
+        .runWith(
+          Sink.reduce[ByteString]((bs, n) => bs.concat(n))
+        )
+        .map { body =>
+          val response: Result = Status(status)(body)
+            .withHeaders(headers: _*)
+            .withCookies(cookies: _*)
+          contentType match {
+            case None      => Right(response)
+            case Some(ctp) => Right(response.as(ctp))
+          }
+        })
+    } else {
+      isChunked match {
+        case true => {
+          // stream out
+          val res = Status(status)
+            .chunked(response.body)
+            .withHeaders(headers: _*)
+            .withCookies(cookies: _*)
+          contentType match {
+            case None      => FEither.right(res)
+            case Some(ctp) => FEither.right(res.as(ctp))
+          }
+        }
+        case false => {
+          val res = Results.Status(status)
+            .sendEntity(
+              HttpEntity.Streamed(
+                response.body,
+                contentLength,
+                contentType
+              )
+            )
+            .withHeaders(headers: _*)
+            .withCookies(cookies: _*)
+          contentType match {
+            case None      => FEither.right(res)
+            case Some(ctp) => FEither.right(res.as(ctp))
+          }
+        }
+      }
     }
   }
 

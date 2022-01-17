@@ -1,6 +1,5 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator}
@@ -21,11 +20,11 @@ class PublicPrivatePaths extends NgAccessValidator {
       otoroshi.utils.RegexPool.regex(p).matches(uri)
     )
     if (isPublic) {
-      FastFuture.successful(NgAccess.NgAllowed)
+      NgAccess.NgAllowed.vfuture
     } else if (!isPublic && !strict && (ctx.apikey.isDefined || ctx.user.isDefined)) {
-      FastFuture.successful(NgAccess.NgAllowed)
+      NgAccess.NgAllowed.vfuture
     } else if (!isPublic && strict && ctx.apikey.isDefined) {
-      FastFuture.successful(NgAccess.NgAllowed)
+      NgAccess.NgAllowed.vfuture
     } else {
       Errors
         .craftResponseResult(

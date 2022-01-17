@@ -30,6 +30,14 @@ object implicits {
     def option: Option[A]                                           = Some(obj)
     def left[B]: Either[A, B]                                       = Left(obj)
     def right[B]: Either[B, A]                                      = Right(obj)
+    @inline
+    def vfuture: Future[A]                                          = {
+      // Future.successful(obj)
+      FastFuture.successful(obj)
+    }
+    @inline
+    def stdFuture: Future[A]                                        = Future.successful(obj)
+    @inline
     def future: Future[A]                                           = FastFuture.successful(obj)
     def asFuture: Future[A]                                         = FastFuture.successful(obj)
     def toFuture: Future[A]                                         = FastFuture.successful(obj)

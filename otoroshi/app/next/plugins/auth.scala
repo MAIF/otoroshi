@@ -19,7 +19,7 @@ class AuthModule extends NgAccessValidator {
     val req = ctx.request
     val descriptor = ctx.route.serviceDescriptor
     ctx.attrs.get(otoroshi.plugins.Keys.UserKey) match {
-      case Some(_) => NgAccess.NgAllowed.future
+      case Some(_) => NgAccess.NgAllowed.vfuture
       case None => {
         ctx.config.select("auth_module").asOpt[String] match {
           case None =>
@@ -52,7 +52,7 @@ class AuthModule extends NgAccessValidator {
                 PrivateAppsUserHelper.isPrivateAppsSessionValidWithAuth(ctx.request, descriptor, auth).flatMap {
                   case Some(paUsr) =>
                     ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> paUsr)
-                    NgAccess.NgAllowed.future
+                    NgAccess.NgAllowed.vfuture
                   case None => {
                     val redirect = req
                       .getQueryString("redirect")
@@ -70,7 +70,7 @@ class AuthModule extends NgAccessValidator {
                           descriptor,
                           auth
                         ): _*
-                      )).future
+                      )).vfuture
                   }
                 }
               }

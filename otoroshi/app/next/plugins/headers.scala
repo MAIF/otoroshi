@@ -1,16 +1,12 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.RemainingQuotas
 import otoroshi.next.plugins.api._
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.Json
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,12 +15,12 @@ class OverrideHost extends NgRequestTransformer {
   // TODO: add name and config
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpRequest]] = {
     ctx.attrs.get(Keys.BackendKey) match {
-      case None => FastFuture.successful(Right(ctx.otoroshiRequest))
+      case None => Right(ctx.otoroshiRequest).vfuture
       case Some(backend) =>
         val host = backend.hostname
         val headers = ctx.otoroshiRequest.headers.-("Host").-("host").+("Host" -> host)
         val request = ctx.otoroshiRequest.copy(headers = headers)
-        FastFuture.successful(Right(request))
+        Right(request).vfuture
     }
   }
 }
@@ -41,7 +37,7 @@ class HeadersValidation extends NgAccessValidator {
     if (validationHeaders.forall {
       case (key, value) => headers.get(key).contains(value)
     }) {
-      FastFuture.successful(NgAccess.NgAllowed)
+      NgAccess.NgAllowed.vfuture
     } else {
       Errors
         .craftResponseResult(
@@ -62,7 +58,7 @@ class AdditionalHeadersOut extends NgRequestTransformer {
   override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpResponse]] = {
     // TODO: add expression language
     val additionalHeaders = ctx.config.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
-    FastFuture.successful(Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders)))
+    Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders)).vfuture
   }
 }
 
@@ -71,7 +67,7 @@ class AdditionalHeadersIn extends NgRequestTransformer {
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpRequest]] = {
     // TODO: add expression language
     val additionalHeaders = ctx.config.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
-    FastFuture.successful(Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders)))
+    Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders)).vfuture
   }
 }
 
@@ -82,7 +78,7 @@ class MissingHeadersIn extends NgRequestTransformer {
     val additionalHeaders = ctx.config.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty).filter {
       case (key, _) => !ctx.otoroshiRequest.headers.contains(key) && !ctx.otoroshiRequest.headers.contains(key.toLowerCase)
     }
-    FastFuture.successful(Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders)))
+    Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders)).vfuture
   }
 }
 
@@ -93,7 +89,7 @@ class MissingHeadersOut extends NgRequestTransformer {
     val additionalHeaders = ctx.config.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty).filter {
       case (key, _) => !ctx.otoroshiResponse.headers.contains(key) && !ctx.otoroshiResponse.headers.contains(key.toLowerCase)
     }
-    FastFuture.successful(Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders)))
+    Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders)).vfuture
   }
 }
 
@@ -101,9 +97,9 @@ class RemoveHeadersOut extends NgRequestTransformer {
   // TODO: add name and config
   override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpResponse]] = {
     val headers = ctx.config.select("header_names").asOpt[Seq[String]].getOrElse(Seq.empty).map(_.toLowerCase)
-    FastFuture.successful(Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers.filterNot {
+    Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers.filterNot {
       case (key, _) => headers.contains(key.toLowerCase)
-    })))
+    })).vfuture
   }
 }
 
@@ -111,9 +107,9 @@ class RemoveHeadersIn extends NgRequestTransformer {
   // TODO: add name and config
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpRequest]] = {
     val headers = ctx.config.select("header_names").asOpt[Seq[String]].getOrElse(Seq.empty).map(_.toLowerCase)
-    FastFuture.successful(Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers.filterNot {
+    Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers.filterNot {
       case (key, _) => headers.contains(key.toLowerCase)
-    })))
+    })).vfuture
   }
 }
 
@@ -165,7 +161,7 @@ class SendOtoroshiHeadersBack extends NgRequestTransformer {
             .toString
         )
       )
-    FastFuture.successful(Right(ctx.otoroshiResponse.copy(headers = newHeaders.toMap)))
+    Right(ctx.otoroshiResponse.copy(headers = newHeaders.toMap)).vfuture
   }
 }
 
@@ -196,7 +192,7 @@ class XForwardedHeaders extends NgRequestTransformer {
     } else {
       Seq.empty[(String, String)]
     }
-    FastFuture.successful(Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders.toMap)))
+    Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders.toMap)).vfuture
   }
 }
 

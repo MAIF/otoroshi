@@ -355,7 +355,7 @@ object Route {
         meta ++ Map("otoroshi-core-openapi-url" -> service.api.openApiDescriptorUrl.getOrElse(""))
       },
       enabled = service.enabled,
-      debugFlow = true,
+      debugFlow = true, // TODO: remove it when release ;)
       frontend = Frontend(
         domains = {
           val dap = if (service.allPaths.isEmpty) {
@@ -574,6 +574,8 @@ object Route {
           .applyOnIf(true) { seq => // TODO: always true ?
             seq :+ PluginInstance(
               plugin = "cp:otoroshi.next.plugins.ApikeyCalls",
+              include = service.privatePatterns,
+              exclude = service.publicPatterns,
               config = PluginInstanceConfig(service.apiKeyConstraints.json.asObject)
             )
           }

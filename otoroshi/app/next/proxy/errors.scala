@@ -11,6 +11,6 @@ sealed trait ProxyEngineError {
 }
 object ProxyEngineError {
   case class ResultProxyEngineError(result: Result) extends ProxyEngineError {
-    override def asResult()(implicit ec: ExecutionContext, env: Env): Future[Result] = result.future
+    override def asResult()(implicit ec: ExecutionContext, env: Env): Future[Result] = result.vfuture
   }
 }

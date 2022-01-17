@@ -73,7 +73,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
     ctx.attrs.put(OtoroshiChallengeKeys.StateTokenKey -> stateToken)
     ctx.attrs.put(OtoroshiChallengeKeys.ConfigKey -> config)
     val stateRequestHeaderName = config.requestHeaderName.getOrElse(env.Headers.OtoroshiState)
-    ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ Map(stateRequestHeaderName -> stateToken)).right.future
+    ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ Map(stateRequestHeaderName -> stateToken)).right.vfuture
   }
 
   override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpResponse]] = {
@@ -269,7 +269,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
           ).map(Left.apply)
         }
       }
-      case Right(_) => ctx.otoroshiResponse.right.future
+      case Right(_) => ctx.otoroshiResponse.right.vfuture
     }
   }
 }
@@ -285,6 +285,6 @@ class OtoroshiInfos extends NgRequestTransformer {
     ctx.attrs.put(otoroshi.plugins.Keys.OtoTokenKey -> claim.payload)
     val serialized = claim.serialize(config.algo)
     val headerName = config.headerName.getOrElse(env.Headers.OtoroshiClaim)
-    ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ Map(headerName -> serialized)).right.future
+    ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ Map(headerName -> serialized)).right.vfuture
   }
 }

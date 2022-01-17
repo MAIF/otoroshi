@@ -1,6 +1,5 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator}
@@ -25,7 +24,7 @@ class ReadOnlyCalls extends NgAccessValidator {
           attrs = ctx.attrs
         ).map(r => NgAccess.NgDenied(r))
     } else {
-      FastFuture.successful(NgAccess.NgAllowed)
+      NgAccess.NgAllowed.vfuture
     }
   }
 }
@@ -47,7 +46,7 @@ class AllowHttpMethods extends NgAccessValidator {
           attrs = ctx.attrs
         ).map(r => NgAccess.NgDenied(r))
     } else {
-      FastFuture.successful(NgAccess.NgAllowed)
+      NgAccess.NgAllowed.vfuture
     }
   }
 }

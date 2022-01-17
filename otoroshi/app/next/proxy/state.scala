@@ -227,7 +227,7 @@ class ProxyStateLoaderJob extends Job {
           )
         ))
       )
-    }.future
+    }.vfuture
   }
 
   def generateRoutesByName(): Future[Seq[Route]] = {
@@ -274,7 +274,7 @@ class ProxyStateLoaderJob extends Job {
           )
         ))
       )
-    }.future
+    }.vfuture
   }
 
   def generateRandomRoutes(): Future[Seq[Route]] = {
@@ -321,7 +321,7 @@ class ProxyStateLoaderJob extends Job {
           )
         ))
       )
-    }.future
+    }.vfuture
   }
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {

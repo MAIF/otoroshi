@@ -33,10 +33,10 @@ class Cors extends NgRequestTransformer with NgPreRouting {
           .NoContent
           .withHeaders(cors.asHeaders(req): _*))
           .left
-          .future
+          .vfuture
       }
     } else {
-      Done.right.future
+      Done.right.vfuture
     }
   }
 
@@ -58,6 +58,6 @@ class Cors extends NgRequestTransformer with NgPreRouting {
         ))
       )
       .filterNot(h => h._2 == "null")
-    ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ corsHeaders).right.future
+    ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ corsHeaders).right.vfuture
   }
 }

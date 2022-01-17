@@ -15,18 +15,18 @@ import scala.concurrent.{ExecutionContext, Future}
       case None => {
         val config = ApiKeyConstraints.format.reads(ctx.config).getOrElse(ApiKeyConstraints())
         ApiKeyHelper.detectApikeyTuple(ctx.request, config, ctx.attrs) match {
-          case None => Done.right.future
+          case None => Done.right.vfuture
           case Some(tuple) => {
             ApiKeyHelper.validateApikeyTuple(ctx.request, tuple, config, ctx.route.id) match {
-              case Left(_) => Done.right.future
+              case Left(_) => Done.right.vfuture
               case Right(apikey) =>
                 ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
-                Done.right.future
+                Done.right.vfuture
             }
           }
         }
       }
-      case Some(_) => Done.right.future
+      case Some(_) => Done.right.vfuture
     }
   }
 }*/
@@ -46,7 +46,7 @@ class ApikeyCalls extends NgAccessValidator {
             NgAccess.NgAllowed
         }
       }
-      case Some(_) => NgAccess.NgAllowed.future
+      case Some(_) => NgAccess.NgAllowed.vfuture
     }
   }
 }

@@ -1,14 +1,12 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.IpFiltering
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgRequestTransformer, NgTransformerRequestContext, PluginHttpRequest}
-import otoroshi.script.RequestTransformer
+import otoroshi.next.plugins.api._
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.http.HttpEntity
@@ -34,7 +32,7 @@ class IpAddressAllowedList extends NgAccessValidator {
       false
     }
     if (shouldPass) {
-      FastFuture.successful(NgAccess.NgAllowed)
+      NgAccess.NgAllowed.vfuture
     } else {
       Errors
         .craftResponseResult(
@@ -68,7 +66,7 @@ class IpAddressBlockList extends NgAccessValidator {
       false
     }
     if (!shouldNotPass) {
-      FastFuture.successful(NgAccess.NgAllowed)
+      NgAccess.NgAllowed.vfuture
     } else {
       Errors
         .craftResponseResult(
@@ -120,9 +118,9 @@ class EndlessHttpResponse extends NgRequestTransformer {
             Some("application/octet-stream")
           )
         )
-      FastFuture.successful(Left(result))
+      Left(result).vfuture
     } else {
-      FastFuture.successful(Right(ctx.otoroshiRequest))
+      Right(ctx.otoroshiRequest).vfuture
     }
   }
 }

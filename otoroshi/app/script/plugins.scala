@@ -197,13 +197,13 @@ case class Plugins(
   def handleRequest(
       request: Request[Source[ByteString, _]],
       defaultRouting: Request[Source[ByteString, _]] => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  )(implicit ec: ExecutionContext, env: Env): Future[Result] = env.metrics.withTimer("handle-dispatch") {
     if (enabled) {
       val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)
       val maybeHandler = if (handlersMapHasWildcard) handlersMap.find(t => RegexPool(t._1).matches(request.theDomain)).map(_._2) else handlersMap.get(request.theDomain)
       maybeHandler match {
         case None          => defaultRouting(request)
-        case Some(handler) => handler.handle(request, defaultRouting)
+        case Some(handler) => env.metrics.withTimerAsync("handle-ng-request")(handler.handle(request, defaultRouting))
       }
     } else {
       defaultRouting(request)

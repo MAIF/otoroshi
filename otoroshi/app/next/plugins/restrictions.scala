@@ -15,7 +15,7 @@ class RoutingRestrictions extends NgAccessValidator {
     if (restrictionsNotPassing) {
       restrictionsResponse.map(r => NgAccess.NgDenied(r))
     } else {
-      NgAccess.NgAllowed.future
+      NgAccess.NgAllowed.vfuture
     }
   }
 }

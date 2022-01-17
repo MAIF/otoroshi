@@ -379,7 +379,8 @@ class GatewayRequestHandler(
   def reverseProxyCall(request: RequestHeader, config: Option[GlobalConfig]): Option[Handler] = {
     request.headers.get("Sec-WebSocket-Version") match {
       case None    => {
-        if (config.exists(_.plugins.canHandleRequest(request))) {
+        val exists = env.metrics.withTimer("handle-search-handler")(config.exists(_.plugins.canHandleRequest(request)))
+        if (exists) {
           Some(actionBuilder.async(sourceBodyParser) { zeRequest =>
             config.get.plugins.handleRequest(
               zeRequest,

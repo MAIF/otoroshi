@@ -2,7 +2,6 @@ package otoroshi.next.plugins.api
 
 import akka.Done
 import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -13,7 +12,7 @@ import otoroshi.next.proxy.ExecutionReport
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
 import otoroshi.utils.TypedMap
-import otoroshi.utils.syntax.implicits.BetterJsReadable
+import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
 import play.api.libs.json._
 import play.api.libs.ws.{WSCookie, WSResponse}
 import play.api.mvc.{RequestHeader, Result, Results}
@@ -210,7 +209,7 @@ case class NgPreRoutingErrorRaw(
 case class NgPreRoutingErrorWithResult(result: Result) extends NgPreRoutingError
 
 object NgPreRouting {
-  val futureDone: Future[Either[NgPreRoutingError, Done]] = FastFuture.successful(Right(Done))
+  val futureDone: Future[Either[NgPreRoutingError, Done]] = Right(Done).vfuture
 }
 
 trait NgPreRouting extends NgPlugin {
@@ -346,24 +345,20 @@ case class NgTransformerErrorContext(
 
 trait NgRequestTransformer extends NgPlugin {
 
-  def beforeRequest(ctx: NgBeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    FastFuture.successful(())
-  }
+  def beforeRequest(ctx: NgBeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = ().vfuture
 
-  def afterRequest(ctx: NgAfterRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    FastFuture.successful(())
-  }
+  def afterRequest(ctx: NgAfterRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = ().vfuture
 
   def transformError(ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
-    FastFuture.successful(ctx.otoroshiResult)
+    ctx.otoroshiResult.vfuture
   }
 
   def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpRequest]] = {
-    FastFuture.successful(Right(ctx.otoroshiRequest))
+    Right(ctx.otoroshiRequest).vfuture
   }
 
   def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpResponse]] = {
-    FastFuture.successful(Right(ctx.otoroshiResponse))
+    Right(ctx.otoroshiResponse).vfuture
   }
 }
 

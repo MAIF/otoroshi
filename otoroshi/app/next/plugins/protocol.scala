@@ -1,9 +1,8 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPreRoutingErrorWithResult}
+import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator}
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.mvc.Results
 
@@ -25,7 +24,7 @@ class DisableHttp10 extends NgAccessValidator {
           attrs = ctx.attrs
         ).map(r => NgAccess.NgDenied(r))
     } else {
-      FastFuture.successful(NgAccess.NgAllowed)
+      NgAccess.NgAllowed.vfuture
     }
   }
 }
