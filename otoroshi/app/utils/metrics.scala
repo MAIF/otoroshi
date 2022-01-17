@@ -177,6 +177,10 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
     metricRegistry.timer(MetricId.build(name))
     jmxRegistry.timer(name)
   }
+  def timerUpdate(name: String, duration: Long, unit: TimeUnit): Unit = {
+    metricRegistry.timer(MetricId.build(name)).update(duration, unit)
+    jmxRegistry.timer(name).update(duration, unit)
+  }
 
   override def withTimer[T](name: String, display: Boolean = false)(f: => T): T = {
     val jmxCtx = jmxRegistry.timer(name).time()

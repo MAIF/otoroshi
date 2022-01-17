@@ -187,11 +187,12 @@ class ProxyEngine() extends RequestHandler {
     }.andThen {
       case _ =>
         report.markOverheadOut()
+        report.markDurations()
         attrs.get(Keys.RouteKey).foreach { route =>
           handleHighOverhead(request, route.some)
           RequestFlowReport(report, route).toAnalytics()
         }
-    }.map { res =>
+    }.applyOnIf(/*env.env == "dev" && */(debug || debugHeaders))(_.map { res =>
       val addHeaders = if (reporting && debugHeaders) Seq(
         "x-otoroshi-request-overhead" -> (report.overheadIn + report.overheadOut).toString,
         "x-otoroshi-request-overhead-in" -> report.overheadIn.toString,
@@ -213,7 +214,7 @@ class ProxyEngine() extends RequestHandler {
         Files.writeString(new File("./request-debug.json").toPath, report.json.prettify)
       }
       res.withHeaders(addHeaders: _*)
-    }
+    })
   }
 
   def handleHighOverhead(req: Request[Source[ByteString, _]], route: Option[Route])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {

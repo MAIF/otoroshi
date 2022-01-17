@@ -326,13 +326,16 @@ class ProxyStateLoaderJob extends Job {
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val start = System.currentTimeMillis()
+    val config = env.datastores.globalConfigDataStore.latest().plugins.config.select("NextGenProxyEngine").asObject
+    val debug = config.select("debug").asOpt[Boolean].getOrElse(false)
+    val debugHeaders = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
     for {
       routes <- env.datastores.routeDataStore.findAll().map(routes => routes ++ Seq(Route.fake))
       genRoutesDomain <- generateRoutesByDomain()
       genRoutesPath <- generateRoutesByName()
       genRandom <- generateRandomRoutes()
       descriptors <- env.datastores.serviceDescriptorDataStore.findAll()
-      newRoutes = genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(Route.fromServiceDescriptor) ++ routes
+      newRoutes = genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d => Route.fromServiceDescriptor(d, debug || debugHeaders)) ++ routes
       apikeys <- env.datastores.apiKeyDataStore.findAll()
       certs <- env.datastores.certificatesDataStore.findAll()
       verifiers <- env.datastores.globalJwtVerifierDataStore.findAll()

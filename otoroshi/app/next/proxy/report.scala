@@ -1,8 +1,11 @@
 package otoroshi.next.proxy
 
 import org.joda.time.DateTime
+import otoroshi.env.Env
 import otoroshi.next.utils.JsonHelpers
 import play.api.libs.json._
+
+import java.util.concurrent.TimeUnit
 
 case class ReportPluginSequenceItem(plugin: String, name: String, start: Long, start_ns: Long, stop: Long, stop_ns: Long, in: JsValue, out: JsValue) {
   def json: JsValue = Json.obj(
@@ -67,6 +70,9 @@ case class ExecutionReportStep(task: String, start: Long, stop: Long, duration: 
     "duration_ns" -> duration_ns,
     "ctx" -> ctx
   )
+  def markDuration()(implicit env: Env): Unit = {
+    env.metrics.timerUpdate("ng-report-request-step-" + task, duration, TimeUnit.NANOSECONDS)
+  }
 }
 
 class ExecutionReport(val id: String, val creation: DateTime, val reporting: Boolean) {
@@ -86,6 +92,14 @@ class ExecutionReport(val id: String, val creation: DateTime, val reporting: Boo
   var overheadOutStart = creation.toDate.getTime
   var termination = creation
   var ctx: JsValue = JsNull
+
+  def markDurations()(implicit env: Env): Unit = {
+    env.metrics.timerUpdate("ng-report-request-duration", gduration_ns, TimeUnit.NANOSECONDS)
+    env.metrics.timerUpdate("ng-report-request-overhead", overheadIn + overheadOut, TimeUnit.MILLISECONDS)
+    env.metrics.timerUpdate("ng-report-request-overhead-in", overheadIn, TimeUnit.MILLISECONDS)
+    env.metrics.timerUpdate("ng-report-request-overhead-out", overheadOut, TimeUnit.MILLISECONDS)
+    steps.foreach(_.markDuration())
+  }
 
   def getStep(task: String): Option[ExecutionReportStep] = {
     steps.find(_.task == task )

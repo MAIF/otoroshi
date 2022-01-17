@@ -331,7 +331,7 @@ object Route {
   }
 
   // TODO: move creation/mutation logic on each plugin to avoid desync issues
-  def fromServiceDescriptor(service: ServiceDescriptor): Route = {
+  def fromServiceDescriptor(service: ServiceDescriptor, debug: Boolean): Route = {
     Route(
       location = service.location,
       id = service.id,
