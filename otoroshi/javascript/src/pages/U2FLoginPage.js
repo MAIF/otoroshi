@@ -237,8 +237,8 @@ export class U2FLoginPage extends Component {
       <div className="jumbotron">
         <h1>Admin login</h1>
         <form className="form-horizontal" onSubmit={this.simpleLogin}>
-          <div className="mb-3">
-            <label className="col-sm-2 control-label">Username</label>
+          <div className="row mb-3">
+            <label className="col-xs-12 col-sm-2 col-form-label">Username</label>
             <div className="col-sm-10">
               <input
                 type="text"
@@ -249,8 +249,8 @@ export class U2FLoginPage extends Component {
               />
             </div>
           </div>
-          <div className="mb-3">
-            <label className="col-sm-2 control-label">Password</label>
+          <div className="row mb-3">
+            <label className="col-xs-12 col-sm-2 col-form-label">Password</label>
             <div className="col-sm-10">
               <input
                 type="password"
@@ -261,27 +261,25 @@ export class U2FLoginPage extends Component {
               />
             </div>
           </div>
-          <div className="mb-3">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10">
+          <div className="row mb-3">
+            <label className="col-xs-12 col-sm-2 col-form-label" />
+            <div className="col-sm-10 text-start">
               <button
                 type="submit"
                 className="btn"
-                style={{ marginLeft: 0 }}
                 onClick={this.simpleLogin}>
                 Login
               </button>
               <button
                 type="button"
-                className="btn hide"
-                style={{ marginLeft: 10 }}
+                className="btn ms-2 hide"
                 onClick={this.webAuthnLogin}>
                 Login with WebAuthn
               </button>
             </div>
           </div>
-          <div className="mb-3">
-            <label className="col-sm-2 control-label" />
+          <div className="row mb-3">
+            <label className="col-xs-12 col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <p>{!this.state.error && this.state.message}</p>
               <p style={{ color: 'red', width: '100%', textAlign: 'left' }}>
