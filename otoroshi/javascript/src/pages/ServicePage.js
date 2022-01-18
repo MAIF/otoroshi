@@ -3425,7 +3425,7 @@ export class TemplateInput extends Component {
   </head>
   <body>
       <div class="container">
-        <div class="header clearfix">
+        <div class="header">
             <nav class="navbar-inverse"></nav>
             <a class="navbar-brand" href="/" style="display: flex;">
             <span>おとろし</span>&nbsp; Otoroshi
