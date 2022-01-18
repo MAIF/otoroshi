@@ -1,6 +1,7 @@
 package otoroshi.next.plugins
 
 import akka.stream.Materializer
+import otoroshi.el.HeadersExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.RemainingQuotas
@@ -105,8 +106,18 @@ class AdditionalHeadersOut extends NgRequestTransformer {
   override def description: Option[String] = "This plugin adds headers in the otoroshi response".some
   override def defaultConfig: Option[JsObject] = HeaderValuesConfig().json.asObject.some
   override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
-    // TODO: add expression language
-    val additionalHeaders = ctx.cachedConfig(internalName)(configReads).getOrElse(HeaderValuesConfig()).headers
+    val additionalHeaders = ctx.cachedConfig(internalName)(configReads).getOrElse(HeaderValuesConfig()).headers.mapValues { value =>
+      HeadersExpressionLanguage(
+        value,
+        ctx.request.some,
+        ctx.route.serviceDescriptor.some,
+        ctx.apikey,
+        ctx.user,
+        ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+        ctx.attrs,
+        env
+      )
+    }
     Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders)).vfuture
   }
 }
@@ -118,8 +129,18 @@ class AdditionalHeadersIn extends NgRequestTransformer {
   override def description: Option[String] = "This plugin adds headers in the incoming otoroshi request".some
   override def defaultConfig: Option[JsObject] = HeaderValuesConfig().json.asObject.some
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
-    // TODO: add expression language
-    val additionalHeaders = ctx.cachedConfig(internalName)(configReads).getOrElse(HeaderValuesConfig()).headers
+    val additionalHeaders = ctx.cachedConfig(internalName)(configReads).getOrElse(HeaderValuesConfig()).headers.mapValues { value =>
+      HeadersExpressionLanguage(
+        value,
+        ctx.request.some,
+        ctx.route.serviceDescriptor.some,
+        ctx.apikey,
+        ctx.user,
+        ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+        ctx.attrs,
+        env
+      )
+    }
     Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders)).vfuture
   }
 }
@@ -131,9 +152,19 @@ class MissingHeadersIn extends NgRequestTransformer {
   override def description: Option[String] = "This plugin adds headers (if missing) in the incoming otoroshi request".some
   override def defaultConfig: Option[JsObject] = HeaderValuesConfig().json.asObject.some
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
-    // TODO: add expression language
     val additionalHeaders = ctx.cachedConfig(internalName)(configReads).getOrElse(HeaderValuesConfig()).headers.filter {
       case (key, _) => !ctx.otoroshiRequest.headers.contains(key) && !ctx.otoroshiRequest.headers.contains(key.toLowerCase)
+    }.mapValues { value =>
+      HeadersExpressionLanguage(
+        value,
+        ctx.request.some,
+        ctx.route.serviceDescriptor.some,
+        ctx.apikey,
+        ctx.user,
+        ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+        ctx.attrs,
+        env
+      )
     }
     Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders)).vfuture
   }
@@ -146,9 +177,19 @@ class MissingHeadersOut extends NgRequestTransformer {
   override def description: Option[String] = "This plugin adds headers (if missing) in the otoroshi response".some
   override def defaultConfig: Option[JsObject] = HeaderValuesConfig().json.asObject.some
   override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
-    // TODO: add expression language
     val additionalHeaders = ctx.cachedConfig(internalName)(configReads).getOrElse(HeaderValuesConfig()).headers.filter {
       case (key, _) => !ctx.otoroshiResponse.headers.contains(key) && !ctx.otoroshiResponse.headers.contains(key.toLowerCase)
+    }.mapValues { value =>
+      HeadersExpressionLanguage(
+        value,
+        ctx.request.some,
+        ctx.route.serviceDescriptor.some,
+        ctx.apikey,
+        ctx.user,
+        ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+        ctx.attrs,
+        env
+      )
     }
     Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders)).vfuture
   }
