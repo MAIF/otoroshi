@@ -87,7 +87,7 @@ class IpAddressBlockList extends NgAccessValidator {
 
 class EndlessHttpResponse extends NgRequestTransformer {
   // TODO: add name and config
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpRequest]] = {
+  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val remoteAddress = ctx.request.theIpAddress
     val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
     val finger = ctx.config.select("finger").asOpt[Boolean].getOrElse(false)

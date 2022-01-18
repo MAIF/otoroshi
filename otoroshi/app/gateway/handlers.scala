@@ -66,6 +66,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
     }
     val snowflake     = env.snowflakeGenerator.nextIdStr()
     val attrs         = TypedMap.empty
+    // TODO: call NgRequestSinks
     RequestSink.maybeSinkRequest(
       snowflake,
       request,
@@ -99,6 +100,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
     }
     val snowflake     = env.snowflakeGenerator.nextIdStr()
     val attrs         = TypedMap.empty
+    // TODO: call NgRequestSinks
     RequestSink.maybeSinkRequest(
       snowflake,
       request,

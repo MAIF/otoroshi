@@ -41,7 +41,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
     }
   }
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpResponse]] = {
+  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val req = ctx.request
     val cors = CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true, excludedPatterns = Seq.empty)
     val corsHeaders = cors

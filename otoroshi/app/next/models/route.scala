@@ -4,14 +4,14 @@ import akka.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.models.{ApiKeyRouteMatcher, _}
 import otoroshi.next.plugins._
-import otoroshi.next.plugins.api.{NgRequestTransformer, NgTransformerErrorContext, NgTransformerResponseContext, PluginHelper, PluginHttpResponse, PluginWrapper}
+import otoroshi.next.plugins.api.{NgPluginHelper, NgPluginHttpResponse, NgRequestTransformer, NgRouteMatcherContext, NgTransformerErrorContext, NgTransformerResponseContext, PluginWrapper}
 import otoroshi.next.proxy.ProxyEngineError.ResultProxyEngineError
 import otoroshi.next.proxy.{ProxyEngineError, ReportPluginSequence, ReportPluginSequenceItem}
 import otoroshi.next.utils.{FEither, JsonHelpers}
 import otoroshi.script.TransformerErrorContext
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.RegexPool
+import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -87,7 +87,7 @@ case class Route(
   backends: Backends,
   client: ClientConfig,
   healthCheck: HealthCheck,
-  plugins: Plugins
+  plugins: NgPlugins
 ) extends EntityLocationSupport {
 
   override def internalId: String = id
@@ -111,11 +111,11 @@ case class Route(
     "plugins" -> plugins.json
   )
 
-  def matches(request: RequestHeader, skipDomainVerif: Boolean)(implicit env: Env): Boolean = {
+  def matches(request: RequestHeader, attrs: TypedMap, skipDomainVerif: Boolean)(implicit env: Env): Boolean = {
     if (enabled) {
       val path = request.thePath
       val domain = request.theDomain
-      frontend.domains
+      val res = frontend.domains
         .applyOnIf(!skipDomainVerif)(_.filter(d => d.domain == domain || RegexPool(d.domain).matches(domain)))
         .exists { d =>
           path.startsWith(d.path) || RegexPool(d.path).matches(path)
@@ -127,6 +127,21 @@ case class Route(
           }
           firstRes && secondRes
         }
+      val matchers = plugins.routeMatcherPlugins(request)(env.otoroshiExecutionContext, env)
+      if (matchers.nonEmpty) {
+        matchers.forall { matcher =>
+          val ctx = NgRouteMatcherContext(
+            snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get,
+            request = request,
+            route = this,
+            config = matcher.instance.config.raw,
+            attrs = attrs,
+          )
+          matcher.plugin.matches(ctx)
+        }
+      } else {
+        res
+      }
     } else {
       false
     }
@@ -248,7 +263,7 @@ case class Route(
   def transformError(__ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     val all_plugins = plugins.transformerPlugins(__ctx.request)
     if (all_plugins.nonEmpty) {
-      val promise = Promise[Either[ProxyEngineError, PluginHttpResponse]]()
+      val promise = Promise[Either[ProxyEngineError, NgPluginHttpResponse]]()
       val report = __ctx.report
       var sequence = ReportPluginSequence(
         size = all_plugins.size,
@@ -336,15 +351,15 @@ object Route {
     ),
     client = ClientConfig(),
     healthCheck = HealthCheck(false, "/"),
-    plugins = Plugins(Seq(
+    plugins = NgPlugins(Seq(
       PluginInstance(
-        plugin = PluginHelper.pluginId[ApikeyCalls]
+        plugin = NgPluginHelper.pluginId[ApikeyCalls]
       ),
       PluginInstance(
-        plugin = PluginHelper.pluginId[OverrideHost],
+        plugin = NgPluginHelper.pluginId[OverrideHost],
       ),
       PluginInstance(
-        plugin = PluginHelper.pluginId[AdditionalHeadersOut],
+        plugin = NgPluginHelper.pluginId[AdditionalHeadersOut],
         config = PluginInstanceConfig(Json.obj(
           "headers" -> Json.obj(
             "bar" -> "foo"
@@ -352,7 +367,7 @@ object Route {
         ))
       ),
       PluginInstance(
-        plugin = PluginHelper.pluginId[AdditionalHeadersOut],
+        plugin = NgPluginHelper.pluginId[AdditionalHeadersOut],
         config = PluginInstanceConfig(Json.obj(
           "headers" -> Json.obj(
             "bar2" -> "foo2"
@@ -379,7 +394,7 @@ object Route {
         backends = Backends.readFrom(json.select("backend")),
         healthCheck = (json \ "health_check").asOpt(HealthCheck.format).getOrElse(HealthCheck(false, "/")),
         client = (json \ "client").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
-        plugins = Plugins.readFrom(json.select("plugins")),
+        plugins = NgPlugins.readFrom(json.select("plugins")),
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -389,7 +404,7 @@ object Route {
 
   // TODO: move creation/mutation logic on each plugin to avoid desync issues
   def fromServiceDescriptor(service: ServiceDescriptor, debug: Boolean): Route = {
-    import PluginHelper.pluginId
+    import NgPluginHelper.pluginId
     Route(
       location = service.location,
       id = service.id,
@@ -435,7 +450,7 @@ object Route {
       groups = service.groups,
       client = service.clientConfig,
       healthCheck = service.healthCheck,
-      plugins = Plugins(
+      plugins = NgPlugins(
         Seq.empty[PluginInstance]
           .applyOnIf(service.forceHttps) { seq =>
             seq :+ PluginInstance(

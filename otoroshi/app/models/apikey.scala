@@ -1374,223 +1374,233 @@ object ApiKeyHelper {
   }
 
   def detectApikeyTuple(req: RequestHeader, constraints: ApiKeyConstraints, attrs: TypedMap)(implicit env: Env): Option[ApikeyTuple] = {
-    val authByJwtToken: Option[ApikeyTuple] = req.headers
-      .get(
-        constraints.jwtAuth.headerName
-          .getOrElse(env.Headers.OtoroshiBearer)
-      )
-      .orElse(
-        req.headers.get("Authorization").filter(_.startsWith("Bearer "))
-      )
-      .map(_.replace("Bearer ", ""))
-      .orElse(
-        req.queryString
+    attrs.get(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey) match {
+      case s @ Some(_) => s
+      case None => {
+        val authByJwtToken: Option[ApikeyTuple] = req.headers
           .get(
-            constraints.jwtAuth.queryName
-              .getOrElse(env.Headers.OtoroshiBearerAuthorization)
+            constraints.jwtAuth.headerName
+              .getOrElse(env.Headers.OtoroshiBearer)
           )
-          .flatMap(_.lastOption)
-      )
-      .orElse(
-        req.cookies
+          .orElse(
+            req.headers.get("Authorization").filter(_.startsWith("Bearer "))
+          )
+          .map(_.replace("Bearer ", ""))
+          .orElse(
+            req.queryString
+              .get(
+                constraints.jwtAuth.queryName
+                  .getOrElse(env.Headers.OtoroshiBearerAuthorization)
+              )
+              .flatMap(_.lastOption)
+          )
+          .orElse(
+            req.cookies
+              .get(
+                constraints.jwtAuth.cookieName
+                  .getOrElse(env.Headers.OtoroshiJWTAuthorization)
+              )
+              .map(_.value)
+          )
+          .filter(_.split("\\.").length == 3)
+          .flatMap(v => Try(JWT.decode(v)).toOption)
+          .flatMap(jwt => jwt
+            .claimStr("clientId")
+            .orElse(jwt.claimStr("client_id"))
+            .orElse(jwt.claimStr("cid"))
+            .orElse(jwt.claimStr("iss")).map(cid => (cid, jwt)))
+          .map(t => ApikeyTuple(t._1, jwtToken = t._2.some))
+        val authBasic: Option[ApikeyTuple] = req.headers
           .get(
-            constraints.jwtAuth.cookieName
-              .getOrElse(env.Headers.OtoroshiJWTAuthorization)
+            constraints.basicAuth.headerName
+              .getOrElse(env.Headers.OtoroshiAuthorization)
           )
-          .map(_.value)
-      )
-      .filter(_.split("\\.").length == 3)
-      .flatMap(v => Try(JWT.decode(v)).toOption)
-      .flatMap(jwt => jwt
-        .claimStr("clientId")
-        .orElse(jwt.claimStr("client_id"))
-        .orElse(jwt.claimStr("cid"))
-        .orElse(jwt.claimStr("iss")).map(cid => (cid, jwt)))
-      .map(t => ApikeyTuple(t._1, jwtToken = t._2.some))
-    val authBasic: Option[ApikeyTuple] = req.headers
-      .get(
-        constraints.basicAuth.headerName
-          .getOrElse(env.Headers.OtoroshiAuthorization)
-      )
-      .orElse(
-        req.headers.get("Authorization").filter(_.startsWith("Basic "))
-      )
-      .map(_.replace("Basic ", ""))
-      .flatMap(e => Try(decodeBase64(e)).toOption)
-      .orElse(
-        req.queryString
-          .get(
-            constraints.basicAuth.queryName
-              .getOrElse(env.Headers.OtoroshiBasicAuthorization)
+          .orElse(
+            req.headers.get("Authorization").filter(_.startsWith("Basic "))
           )
-          .flatMap(_.lastOption)
+          .map(_.replace("Basic ", ""))
           .flatMap(e => Try(decodeBase64(e)).toOption)
-      )
-      .map(_.split(":"))
-      .filter(_.size == 2)
-      .map(parts => ApikeyTuple(parts.head, parts.lastOption))
-    val authByCustomHeaders: Option[ApikeyTuple] = req.headers
-      .get(
-        constraints.customHeadersAuth.clientIdHeaderName
-          .getOrElse(env.Headers.OtoroshiClientId)
-      )
-      .flatMap(id =>
-        req.headers
-          .get(
-            constraints.customHeadersAuth.clientSecretHeaderName
-              .getOrElse(env.Headers.OtoroshiClientSecret)
+          .orElse(
+            req.queryString
+              .get(
+                constraints.basicAuth.queryName
+                  .getOrElse(env.Headers.OtoroshiBasicAuthorization)
+              )
+              .flatMap(_.lastOption)
+              .flatMap(e => Try(decodeBase64(e)).toOption)
           )
-          .map(s => ApikeyTuple(id, s.some))
-      )
-    val authBySimpleApiKeyClientId: Option[ApikeyTuple] = req.headers
-      .get(
-        constraints.clientIdAuth.headerName
-          .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
-      )
-      .orElse(
-        req.queryString
+          .map(_.split(":"))
+          .filter(_.size == 2)
+          .map(parts => ApikeyTuple(parts.head, parts.lastOption))
+        val authByCustomHeaders: Option[ApikeyTuple] = req.headers
           .get(
-            constraints.clientIdAuth.queryName
+            constraints.customHeadersAuth.clientIdHeaderName
+              .getOrElse(env.Headers.OtoroshiClientId)
+          )
+          .flatMap(id =>
+            req.headers
+              .get(
+                constraints.customHeadersAuth.clientSecretHeaderName
+                  .getOrElse(env.Headers.OtoroshiClientSecret)
+              )
+              .map(s => ApikeyTuple(id, s.some))
+          )
+        val authBySimpleApiKeyClientId: Option[ApikeyTuple] = req.headers
+          .get(
+            constraints.clientIdAuth.headerName
               .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
           )
-          .flatMap(_.lastOption)
-      ).map(ApikeyTuple(_))
-    val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(a => ApikeyTuple(a.clientId, a.clientSecret.some))
-    if (preExtractedApiKey.isDefined) {
-      preExtractedApiKey
-    } else if (authBySimpleApiKeyClientId.isDefined && constraints.clientIdAuth.enabled) {
-      authBySimpleApiKeyClientId
-    } else if (authByCustomHeaders.isDefined && constraints.customHeadersAuth.enabled) {
-      authByCustomHeaders
-    } else if (authByJwtToken.isDefined && constraints.jwtAuth.enabled) {
-      authByJwtToken
-    } else if (authBasic.isDefined && constraints.basicAuth.enabled) {
-      authBasic
-    } else {
-      None
+          .orElse(
+            req.queryString
+              .get(
+                constraints.clientIdAuth.queryName
+                  .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+              )
+              .flatMap(_.lastOption)
+          ).map(ApikeyTuple(_))
+        val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(a => ApikeyTuple(a.clientId, a.clientSecret.some))
+        if (preExtractedApiKey.isDefined) {
+          preExtractedApiKey
+        } else if (authBySimpleApiKeyClientId.isDefined && constraints.clientIdAuth.enabled) {
+          authBySimpleApiKeyClientId
+        } else if (authByCustomHeaders.isDefined && constraints.customHeadersAuth.enabled) {
+          authByCustomHeaders
+        } else if (authByJwtToken.isDefined && constraints.jwtAuth.enabled) {
+          authByJwtToken
+        } else if (authBasic.isDefined && constraints.basicAuth.enabled) {
+          authBasic
+        } else {
+          None
+        }
+      }
     }
   }
 
-  def validateApikeyTuple(req: RequestHeader, apikeyTuple: ApikeyTuple, constraints: ApiKeyConstraints, service: String)(implicit env: Env): Either[Option[ApiKey], ApiKey] = {
-    env.datastores.apiKeyDataStore.findAuthorizeKeyForFromCache(apikeyTuple.clientId, service) match {
-      case None => None.left
-      case Some(apikey) => apikeyTuple match {
-        case ApikeyTuple(_, None, None) if apikey.allowClientIdOnly => apikey.right
-        case ApikeyTuple(_, Some(secret), None) if apikey.isValid(secret) => apikey.right
-        case ApikeyTuple(_, Some(secret), None) if apikey.isInvalid(secret) => apikey.some.left
-        case ApikeyTuple(_, None, Some(jwt)) => {
-          val possibleKeyPairId               = apikey.metadata.get("jwt-sign-keypair")
-          val kid                             = Option(jwt.getKeyId)
-            .orElse(possibleKeyPairId)
-            .filter(_ => constraints.jwtAuth.keyPairSigned)
-            .filter(id => if (possibleKeyPairId.isDefined) possibleKeyPairId.get == id else true)
-            .flatMap(id => DynamicSSLEngineProvider.certificates.get(id))
-          val kp                              = kid.map(_.cryptoKeyPair)
-          val algorithmOpt: Option[Algorithm] = Option(jwt.getAlgorithm).collect {
-            case "HS256" if constraints.jwtAuth.secretSigned =>
-              Algorithm.HMAC256(apikey.clientSecret)
-            case "HS384" if constraints.jwtAuth.secretSigned =>
-              Algorithm.HMAC384(apikey.clientSecret)
-            case "HS512" if constraints.jwtAuth.secretSigned =>
-              Algorithm.HMAC512(apikey.clientSecret)
-            case "ES256" if kid.isDefined                                     =>
-              Algorithm.ECDSA256(
-                kp.get.getPublic.asInstanceOf[ECPublicKey],
-                kp.get.getPrivate.asInstanceOf[ECPrivateKey]
-              )
-            case "ES384" if kid.isDefined                                     =>
-              Algorithm.ECDSA384(
-                kp.get.getPublic.asInstanceOf[ECPublicKey],
-                kp.get.getPrivate.asInstanceOf[ECPrivateKey]
-              )
-            case "ES512" if kid.isDefined                                     =>
-              Algorithm.ECDSA512(
-                kp.get.getPublic.asInstanceOf[ECPublicKey],
-                kp.get.getPrivate.asInstanceOf[ECPrivateKey]
-              )
-            case "RS256" if kid.isDefined                                     =>
-              Algorithm.RSA256(
-                kp.get.getPublic.asInstanceOf[RSAPublicKey],
-                kp.get.getPrivate.asInstanceOf[RSAPrivateKey]
-              )
-            case "RS384" if kid.isDefined                                     =>
-              Algorithm.RSA384(
-                kp.get.getPublic.asInstanceOf[RSAPublicKey],
-                kp.get.getPrivate.asInstanceOf[RSAPrivateKey]
-              )
-            case "RS512" if kid.isDefined                                     =>
-              Algorithm.RSA512(
-                kp.get.getPublic.asInstanceOf[RSAPublicKey],
-                kp.get.getPrivate.asInstanceOf[RSAPrivateKey]
-              )
-          }
-          val exp                             =
-            Option(jwt.getClaim("exp")).filterNot(_.isNull).map(_.asLong())
-          val iat                             =
-            Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
-          val httpPath                        = Option(jwt.getClaim("httpPath"))
-            .filterNot(_.isNull)
-            .map(_.asString())
-          val httpVerb                        = Option(jwt.getClaim("httpVerb"))
-            .filterNot(_.isNull)
-            .map(_.asString())
-          val httpHost                        = Option(jwt.getClaim("httpHost"))
-            .filterNot(_.isNull)
-            .map(_.asString())
-          algorithmOpt match {
-            case Some(algorithm) => {
-              val verifier =
-                JWT
-                  .require(algorithm)
-                  //.withIssuer(clientId)
-                  .acceptLeeway(10)
-                  .build
-              Try(verifier.verify(jwt))
-                .filter { token =>
-                  val xsrfToken       = token.getClaim("xsrfToken")
-                  val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
-                  if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
-                    xsrfToken.asString() == xsrfTokenHeader.get
-                  } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
-                    false
-                  } else {
-                    true
-                  }
-                }
-                .filter { _ =>
-                  constraints.jwtAuth.maxJwtLifespanSecs.map { maxJwtLifespanSecs =>
-                    if (exp.isEmpty || iat.isEmpty) {
-                      false
-                    } else {
-                      if ((exp.get - iat.get) <= maxJwtLifespanSecs) {
-                        true
-                      } else {
+  def validateApikeyTuple(req: RequestHeader, apikeyTuple: ApikeyTuple, constraints: ApiKeyConstraints, service: String, attrs: TypedMap)(implicit env: Env): Either[Option[ApiKey], ApiKey] = {
+    attrs.get(otoroshi.next.plugins.Keys.PreExtractedApikeyKey) match {
+      case Some(either) => either
+      case None => {
+        env.datastores.apiKeyDataStore.findAuthorizeKeyForFromCache(apikeyTuple.clientId, service) match {
+          case None => None.left
+          case Some(apikey) => apikeyTuple match {
+            case ApikeyTuple(_, None, None) if apikey.allowClientIdOnly => apikey.right
+            case ApikeyTuple(_, Some(secret), None) if apikey.isValid(secret) => apikey.right
+            case ApikeyTuple(_, Some(secret), None) if apikey.isInvalid(secret) => apikey.some.left
+            case ApikeyTuple(_, None, Some(jwt)) => {
+              val possibleKeyPairId = apikey.metadata.get("jwt-sign-keypair")
+              val kid = Option(jwt.getKeyId)
+                .orElse(possibleKeyPairId)
+                .filter(_ => constraints.jwtAuth.keyPairSigned)
+                .filter(id => if (possibleKeyPairId.isDefined) possibleKeyPairId.get == id else true)
+                .flatMap(id => DynamicSSLEngineProvider.certificates.get(id))
+              val kp = kid.map(_.cryptoKeyPair)
+              val algorithmOpt: Option[Algorithm] = Option(jwt.getAlgorithm).collect {
+                case "HS256" if constraints.jwtAuth.secretSigned =>
+                  Algorithm.HMAC256(apikey.clientSecret)
+                case "HS384" if constraints.jwtAuth.secretSigned =>
+                  Algorithm.HMAC384(apikey.clientSecret)
+                case "HS512" if constraints.jwtAuth.secretSigned =>
+                  Algorithm.HMAC512(apikey.clientSecret)
+                case "ES256" if kid.isDefined =>
+                  Algorithm.ECDSA256(
+                    kp.get.getPublic.asInstanceOf[ECPublicKey],
+                    kp.get.getPrivate.asInstanceOf[ECPrivateKey]
+                  )
+                case "ES384" if kid.isDefined =>
+                  Algorithm.ECDSA384(
+                    kp.get.getPublic.asInstanceOf[ECPublicKey],
+                    kp.get.getPrivate.asInstanceOf[ECPrivateKey]
+                  )
+                case "ES512" if kid.isDefined =>
+                  Algorithm.ECDSA512(
+                    kp.get.getPublic.asInstanceOf[ECPublicKey],
+                    kp.get.getPrivate.asInstanceOf[ECPrivateKey]
+                  )
+                case "RS256" if kid.isDefined =>
+                  Algorithm.RSA256(
+                    kp.get.getPublic.asInstanceOf[RSAPublicKey],
+                    kp.get.getPrivate.asInstanceOf[RSAPrivateKey]
+                  )
+                case "RS384" if kid.isDefined =>
+                  Algorithm.RSA384(
+                    kp.get.getPublic.asInstanceOf[RSAPublicKey],
+                    kp.get.getPrivate.asInstanceOf[RSAPrivateKey]
+                  )
+                case "RS512" if kid.isDefined =>
+                  Algorithm.RSA512(
+                    kp.get.getPublic.asInstanceOf[RSAPublicKey],
+                    kp.get.getPrivate.asInstanceOf[RSAPrivateKey]
+                  )
+              }
+              val exp =
+                Option(jwt.getClaim("exp")).filterNot(_.isNull).map(_.asLong())
+              val iat =
+                Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
+              val httpPath = Option(jwt.getClaim("httpPath"))
+                .filterNot(_.isNull)
+                .map(_.asString())
+              val httpVerb = Option(jwt.getClaim("httpVerb"))
+                .filterNot(_.isNull)
+                .map(_.asString())
+              val httpHost = Option(jwt.getClaim("httpHost"))
+                .filterNot(_.isNull)
+                .map(_.asString())
+              algorithmOpt match {
+                case Some(algorithm) => {
+                  val verifier =
+                    JWT
+                      .require(algorithm)
+                      //.withIssuer(clientId)
+                      .acceptLeeway(10)
+                      .build
+                  Try(verifier.verify(jwt))
+                    .filter { token =>
+                      val xsrfToken = token.getClaim("xsrfToken")
+                      val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
+                      if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
+                        xsrfToken.asString() == xsrfTokenHeader.get
+                      } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
                         false
+                      } else {
+                        true
                       }
                     }
-                  } getOrElse {
-                    true
+                    .filter { _ =>
+                      constraints.jwtAuth.maxJwtLifespanSecs.map { maxJwtLifespanSecs =>
+                        if (exp.isEmpty || iat.isEmpty) {
+                          false
+                        } else {
+                          if ((exp.get - iat.get) <= maxJwtLifespanSecs) {
+                            true
+                          } else {
+                            false
+                          }
+                        }
+                      } getOrElse {
+                        true
+                      }
+                    }
+                    .filter { _ =>
+                      if (constraints.jwtAuth.includeRequestAttributes) {
+                        val matchPath = httpPath.exists(_ == req.relativeUri)
+                        val matchVerb =
+                          httpVerb.exists(_.toLowerCase == req.method.toLowerCase)
+                        val matchHost = httpHost.exists(_.toLowerCase == req.theHost)
+                        matchPath && matchVerb && matchHost
+                      } else {
+                        true
+                      }
+                    } match {
+                    case Success(_) => apikey.right
+                    case Failure(e) => apikey.some.left
                   }
                 }
-                .filter { _ =>
-                  if (constraints.jwtAuth.includeRequestAttributes) {
-                    val matchPath = httpPath.exists(_ == req.relativeUri)
-                    val matchVerb =
-                      httpVerb.exists(_.toLowerCase == req.method.toLowerCase)
-                    val matchHost = httpHost.exists(_.toLowerCase == req.theHost)
-                    matchPath && matchVerb && matchHost
-                  } else {
-                    true
-                  }
-                } match {
-                  case Success(_) => apikey.right
-                  case Failure(e) => apikey.some.left
-                }
+                case None => apikey.some.left
+              }
             }
-            case None            => apikey.some.left
+            case _ => apikey.some.left
           }
         }
-        case _ => apikey.some.left
       }
     }
   }
@@ -1667,7 +1677,7 @@ object ApiKeyHelper {
 
     detectApikeyTuple(req, constraints, attrs) match {
       case None => error(Results.BadRequest, "no apikey", "errors.no.api.key")
-      case Some(apikeyTuple) => validateApikeyTuple(req, apikeyTuple, constraints, service) match {
+      case Some(apikeyTuple) => validateApikeyTuple(req, apikeyTuple, constraints, service, attrs) match {
         case Left(None) => error(Results.BadRequest, "invalid apikey", "errors.invalid.api.key")
         case Left(Some(apikey)) =>
           sendRevokedApiKeyAlert(apikey)

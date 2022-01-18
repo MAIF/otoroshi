@@ -48,7 +48,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
   val logger = Logger("otoroshi-next-plugins-otoroshi-challenge")
 
   // TODO: add name and config
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpRequest]] = {
+  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = OtoroshiChallengeConfig(ctx.config)
     val jti                    = IdGenerator.uuid
     val stateValue             = IdGenerator.extendedToken(128)
@@ -76,7 +76,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
     ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ Map(stateRequestHeaderName -> stateToken)).right.vfuture
   }
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpResponse]] = {
+  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.attrs.get(OtoroshiChallengeKeys.ConfigKey).get
     val stateValue = ctx.attrs.get(OtoroshiChallengeKeys.StateValueKey).get
     val stateRespHeaderName = config.responseHeaderName.getOrElse(env.Headers.OtoroshiStateResp)
@@ -281,7 +281,7 @@ class OtoroshiInfos extends NgRequestTransformer {
 
   val logger = Logger("otoroshi-next-plugins-otoroshi-infos")
   // TODO: add name and config
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpRequest]] = {
+  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = OtoroshiInfoConfig(ctx.config)
     val claim = ctx.route.serviceDescriptor.generateInfoToken(ctx.apikey, ctx.user, ctx.request.some) // TODO: not ideal, should change it
     logger.trace(s"Claim is : $claim")

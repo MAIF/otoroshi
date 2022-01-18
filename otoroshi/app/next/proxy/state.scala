@@ -5,7 +5,7 @@ import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.next.models._
 import otoroshi.next.plugins.{AdditionalHeadersOut, OverrideHost}
-import otoroshi.next.plugins.api.PluginHelper
+import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.script._
 import otoroshi.ssl.Cert
 import otoroshi.utils.RegexPool
@@ -180,7 +180,7 @@ class ProxyStateLoaderJob extends Job {
     JobInstantiation.OneInstancePerOtoroshiInstance
 
   def generateRoutesByDomain(env: Env): Future[Seq[Route]] = {
-    import PluginHelper.pluginId
+    import NgPluginHelper.pluginId
     if (env.env == "dev") {
       (0 until 10000).map { idx =>
         Route(
@@ -210,7 +210,7 @@ class ProxyStateLoaderJob extends Job {
           ),
           client = ClientConfig(),
           healthCheck = HealthCheck(false, "/"),
-          plugins = Plugins(Seq(
+          plugins = NgPlugins(Seq(
             PluginInstance(
               plugin = pluginId[OverrideHost],
               enabled = true,
@@ -238,7 +238,7 @@ class ProxyStateLoaderJob extends Job {
   }
 
   def generateRoutesByName(env: Env): Future[Seq[Route]] = {
-    import PluginHelper.pluginId
+    import NgPluginHelper.pluginId
     if (env.env == "dev") {
       (0 until 10000).map { idx =>
         Route(
@@ -268,7 +268,7 @@ class ProxyStateLoaderJob extends Job {
           ),
           client = ClientConfig(),
           healthCheck = HealthCheck(false, "/"),
-          plugins = Plugins(Seq(
+          plugins = NgPlugins(Seq(
             PluginInstance(
               plugin = pluginId[OverrideHost],
               config = PluginInstanceConfig(Json.obj())
@@ -290,7 +290,7 @@ class ProxyStateLoaderJob extends Job {
   }
 
   def generateRandomRoutes(env: Env): Future[Seq[Route]] = {
-    import PluginHelper.pluginId
+    import NgPluginHelper.pluginId
     if (env.env == "dev") {
       (0 until ((Math.random() * 50) + 10).toInt).map { idx =>
         Route(
@@ -320,7 +320,7 @@ class ProxyStateLoaderJob extends Job {
           ),
           client = ClientConfig(),
           healthCheck = HealthCheck(false, "/"),
-          plugins = Plugins(Seq(
+          plugins = NgPlugins(Seq(
             PluginInstance(
               plugin = pluginId[OverrideHost],
               config = PluginInstanceConfig(Json.obj())

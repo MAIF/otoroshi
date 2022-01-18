@@ -53,7 +53,7 @@ case class PluginInstance(plugin: String, enabled: Boolean = true, debug: Boolea
   }
 }
 
-case class Plugins(slots: Seq[PluginInstance]) {
+case class NgPlugins(slots: Seq[PluginInstance]) {
 
   def json: JsValue = JsArray(slots.map(_.json))
 
@@ -67,7 +67,17 @@ case class Plugins(slots: Seq[PluginInstance]) {
       .map(inst => (inst, inst.getPlugin[NgNamedPlugin]))
       .collect {
         case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
-      } //.debug(seq => println(s"found ${seq.size} request-transformer plugins"))
+      }
+  }
+
+  def requestSinkPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgRequestSink]] = {
+    slots
+      .filter(_.enabled)
+      .filter(_.matches(request))
+      .map(inst => (inst, inst.getPlugin[NgRequestSink]))
+      .collect {
+        case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+      }
   }
 
   def transformerPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgRequestTransformer]] = {
@@ -77,7 +87,7 @@ case class Plugins(slots: Seq[PluginInstance]) {
       .map(inst => (inst, inst.getPlugin[NgRequestTransformer]))
       .collect {
         case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
-      } //.debug(seq => println(s"found ${seq.size} request-transformer plugins"))
+      }
   }
 
   def preRoutePlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgPreRouting]] = {
@@ -99,13 +109,23 @@ case class Plugins(slots: Seq[PluginInstance]) {
         case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
       } //.debug(seq => println(s"found ${seq.size} access-validator plugins"))
   }
+
+  def routeMatcherPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgRouteMatcher]] = {
+    slots
+      .filter(_.enabled)
+      .filter(_.matches(request))
+      .map(inst => (inst, inst.getPlugin[NgRouteMatcher]))
+      .collect {
+        case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+      }
+  }
 }
 
-object Plugins {
-  def readFrom(lookup: JsLookupResult): Plugins = {
+object NgPlugins {
+  def readFrom(lookup: JsLookupResult): NgPlugins = {
     lookup.asOpt[JsObject] match {
-      case None => Plugins(Seq.empty)
-      case Some(obj) => Plugins(
+      case None => NgPlugins(Seq.empty)
+      case Some(obj) => NgPlugins(
         slots = obj.select("slots").asOpt[Seq[JsValue]].map(_.map(PluginInstance.readFrom)).getOrElse(Seq.empty)
       )
     }

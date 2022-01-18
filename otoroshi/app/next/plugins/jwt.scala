@@ -4,7 +4,7 @@ import akka.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.models.RefJwtVerifier
 import otoroshi.next.plugins.Keys.JwtInjectionKey
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgRequestTransformer, NgTransformerRequestContext, PluginHttpRequest}
+import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgRequestTransformer, NgTransformerRequestContext, NgPluginHttpRequest}
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.{Cookie, Result, Results}
@@ -37,7 +37,7 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
     }
   }
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpRequest]] = {
+  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     ctx.attrs.get(JwtInjectionKey) match {
       case None => ctx.otoroshiRequest.right.vfuture
       case Some(injection) => {

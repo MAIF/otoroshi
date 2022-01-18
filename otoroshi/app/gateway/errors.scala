@@ -7,7 +7,7 @@ import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.{RemainingQuotas, ServiceDescriptor}
 import otoroshi.next.models.Route
-import otoroshi.next.plugins.api.{NgTransformerErrorContext, PluginHttpResponse}
+import otoroshi.next.plugins.api.{NgTransformerErrorContext, NgPluginHttpResponse}
 import otoroshi.script.Implicits._
 import otoroshi.script.{HttpResponse, TransformerErrorContext}
 import otoroshi.utils.TypedMap
@@ -417,7 +417,7 @@ object Errors {
           val ctx = NgTransformerErrorContext(
             snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse(env.snowflakeGenerator.nextIdStr()),
             message = message,
-            otoroshiResponse = PluginHttpResponse(
+            otoroshiResponse = NgPluginHttpResponse(
               res.header.status,
               res.header.headers,
               res.newCookies.map(c =>
