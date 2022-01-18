@@ -907,7 +907,7 @@ export class TopBar extends Component {
             </ul>
             <form id="navbar" className="navbar-form navbar-left">
               {selected && (
-                <div className="form-group" style={{ marginRight: 10 }}>
+                <div className="mb-3" style={{ marginRight: 10 }}>
                   <span
                     title="Current line"
                     className="label label-success"
@@ -916,7 +916,7 @@ export class TopBar extends Component {
                   </span>
                 </div>
               )}
-              <div className="form-group" style={{ marginLeft: 10, marginRight: 10 }}>
+              <div className="mb-3" style={{ marginLeft: 10, marginRight: 10 }}>
                 <Async
                   ref={(r) => (this.selector = r)}
                   name="service-search"

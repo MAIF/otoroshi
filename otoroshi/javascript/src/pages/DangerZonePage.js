@@ -1307,7 +1307,7 @@ export class DangerZonePage extends Component {
     return (
       <div>
         <div className="row">
-          <div className="form-group btnsService">
+          <div className="mb-3 btnsService">
             <div className="col-md-10">
               <div className="btn-group pull-right">
                 <button
@@ -1341,7 +1341,7 @@ export class DangerZonePage extends Component {
             onChange={this.readyToPush}
           />
           {!this.state.readyToPush && (
-            <div className="form-group">
+            <div className="mb-3">
               <label className="col-sm-2 control-label" />
               <div className="col-sm-10">
                 <label
@@ -1362,7 +1362,7 @@ export class DangerZonePage extends Component {
             </div>
           )}
           {this.state.readyToPush && (
-            <div className="form-group">
+            <div className="mb-3">
               <label className="col-sm-2 control-label" />
               <div className="col-sm-10">
                 <button type="button" className="btn btn-danger" onClick={this.importData}>
@@ -1375,7 +1375,7 @@ export class DangerZonePage extends Component {
         </form>
         <hr />
         <form className="form-horizontal">
-          <div className="form-group">
+          <div className="mb-3">
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10">
               <button type="button" className="btn btn-success" onClick={this.fullExport}>
@@ -1409,7 +1409,7 @@ export class DangerZonePage extends Component {
 class BackOfficeAuthButtons extends Component {
   render() {
     return (
-      <div className="form-group">
+      <div className="mb-3">
         <label className="col-xs-12 col-sm-2 control-label" />
         <div className="col-sm-10">
           {!this.props.rawValue.backOfficeAuthRef && (
@@ -1541,7 +1541,7 @@ class GlobalScripts extends Component {
           config={config.jobConfig}
           onChangeConfig={(e) => this.changeTheValue('jobConfig', e)}
         />
-        <div className="form-group">
+        <div className="mb-3">
           <Suspense fallback={<div>loading ...</div>}>
             <CodeInput
               label="Jobs configuration"
@@ -1559,7 +1559,7 @@ class GlobalScripts extends Component {
           config={config.sinkConfig}
           onChangeConfig={(e) => this.changeTheValue('sinkConfig', e)}
         />
-        <div className="form-group">
+        <div className="mb-3">
           <Suspense fallback={<div>loading ...</div>}>
             <CodeInput
               label="Request sinks configuration"
@@ -1577,7 +1577,7 @@ class GlobalScripts extends Component {
           config={config.preRouteConfig}
           onChangeConfig={(e) => this.changeTheValue('preRouteConfig', e)}
         />
-        <div className="form-group">
+        <div className="mb-3">
           <Suspense fallback={<div>loading ...</div>}>
             <CodeInput
               label="Pre-routes configuration"
@@ -1595,7 +1595,7 @@ class GlobalScripts extends Component {
           config={config.validatorConfig}
           onChangeConfig={(e) => this.changeTheValue('validatorConfig', e)}
         />
-        <div className="form-group">
+        <div className="mb-3">
           <Suspense fallback={<div>loading ...</div>}>
             <CodeInput
               label="Access validators configuration"
@@ -1613,7 +1613,7 @@ class GlobalScripts extends Component {
           config={config.transformersConfig}
           onChangeConfig={(e) => this.changeTheValue('transformersConfig', e)}
         />
-        <div className="form-group">
+        <div className="mb-3">
           <Suspense fallback={<div>loading ...</div>}>
             <CodeInput
               label="Transformers configuration"
@@ -1657,7 +1657,7 @@ class GlobalPlugins extends Component {
           config={config.config}
           onChangeConfig={(e) => this.changeTheValue('config', e)}
         />
-        <div className="form-group">
+        <div className="mb-3">
           <Suspense fallback={<div>loading ...</div>}>
             <CodeInput
               label="plugins configuration"
@@ -1675,7 +1675,7 @@ class GlobalPlugins extends Component {
 export class Message extends Component {
   render() {
     return (
-      <div className="form-group">
+      <div className="mb-3">
         <label className="col-xs-12 col-sm-2 control-label" />
         <div className="col-sm-10">
           <div className="sub-container sub-container__bg-color">

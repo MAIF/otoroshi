@@ -363,7 +363,7 @@ class CertificateValid extends Component {
       );
 
     return (
-      <div className="form-group">
+      <div className="mb-3">
         <label className="col-sm-2 control-label" />
         <div className="col-sm-10">
           {this.state.valid === true &&

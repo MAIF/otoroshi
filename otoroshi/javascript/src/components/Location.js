@@ -99,7 +99,7 @@ export class Location extends Component {
           })}
           help="The teams where this entity will belong"
         />
-        <div className="form-group">
+        <div className="mb-3">
           <label className="col-xs-12 col-sm-2 control-label"></label>
           <div className="col-sm-10">
             {window.__user.superAdmin && (

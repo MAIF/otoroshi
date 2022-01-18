@@ -270,7 +270,7 @@ class CompilationTools extends Component {
 
   render() {
     return (
-      <div className="form-group">
+      <div className="mb-3">
         <label className="col-xs-12 col-sm-2 control-label" />
         <div className="col-sm-10">
           <button
@@ -293,7 +293,7 @@ class CompilationTools extends Component {
 export class Warning extends Component {
   render() {
     return (
-      <div className="form-group">
+      <div className="mb-3">
         <label className="col-xs-12 col-sm-2 control-label" />
         <div className="col-sm-10">
           <div className="sub-container sub-container__bg-color">

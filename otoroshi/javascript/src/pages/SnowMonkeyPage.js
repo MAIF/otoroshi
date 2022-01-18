@@ -172,7 +172,7 @@ export class SnowMonkeyPage extends Component {
     return (
       <div>
         <div className="row">
-          <div className="form-group btnsService">
+          <div className="mb-3 btnsService">
             <div className="col-xs-12 col-sm-10 displayGroupBtn">
               <button
                 type="button"

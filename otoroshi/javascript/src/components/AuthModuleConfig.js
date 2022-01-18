@@ -278,7 +278,7 @@ export class Oauth2ModuleConfig extends Component {
     }
     return (
       <div>
-        <div className="form-group">
+        <div className="mb-3">
           <label
             htmlFor={`input-${this.props.label}`}
             className="col-xs-12 col-sm-2 control-label"
@@ -967,7 +967,7 @@ export class BasicModuleConfig extends Component {
           help="..."
           onChange={(v) => changeTheValue(path + '.webauthn', v)}
         />
-        <div className="form-group">
+        <div className="mb-3">
           <label htmlFor={`input-users`} className="col-sm-2 control-label">
             Users
           </label>
@@ -990,7 +990,7 @@ export class BasicModuleConfig extends Component {
           </div>
         </div>
         {!this.state.showRaw && (
-          <div className="form-group">
+          <div className="mb-3">
             <label className="col-sm-2 control-label">Users raw</label>
             <div className="col-sm-10">
               <button
@@ -1003,7 +1003,7 @@ export class BasicModuleConfig extends Component {
           </div>
         )}
         {this.state.showRaw && (
-          <div className="form-group">
+          <div className="mb-3">
             <label className="col-sm-2 control-label">Users raw</label>
             <div className="col-sm-10">
               <button
@@ -1156,7 +1156,7 @@ export class LdapModuleConfig extends Component {
           onChange={(v) => changeTheValue(path + '.userBase', v)}
         />
         <Separator title="Match LDAP group to Otoroshi rights" />
-        <div className="form-group">
+        <div className="mb-3">
           <label className="col-xs-12 col-sm-2 control-label">
             Mapping group filter <Help text="Map LDAP groups with Otoroshi rights" />
           </label>
@@ -1322,7 +1322,7 @@ export class LdapModuleConfig extends Component {
           help="..."
           onChange={(v) => changeTheValue(path + '.extractProfileFilterNot', v)}
         />
-        <div className="form-group">
+        <div className="mb-3">
           <label className="col-xs-12 col-sm-2 control-label"></label>
           <div className="col-sm-10" style={{ display: 'flex' }}>
             <button type="button" className="btn btn-success" onClick={this.check}>
@@ -1448,7 +1448,7 @@ class LdapUserLoginTest extends Component {
   render() {
     return (
       <form className="form-horizontal">
-        <div className="form-group">
+        <div className="mb-3">
           <label className="col-sm-2">Username</label>
           <div className="col-sm-10">
             <input
@@ -1460,7 +1460,7 @@ class LdapUserLoginTest extends Component {
             />
           </div>
         </div>
-        <div className="form-group">
+        <div className="mb-3">
           <label className="col-sm-2">Password</label>
           <div className="col-sm-10">
             <input
@@ -1472,7 +1472,7 @@ class LdapUserLoginTest extends Component {
             />
           </div>
         </div>
-        <div className="form-group">
+        <div className="mb-3">
           <label className="col-sm-2"></label>
           <div className="col-sm-10">
             <button type="button" className="btn btn-success" onClick={this.check}>
@@ -1686,7 +1686,7 @@ export class SamlModuleConfig extends Component {
         if (this.props.value.warning) {
           const { warning } = this.props.value;
           return (
-            <div className="form-group">
+            <div className="mb-3">
               <label className="col-xs-12 col-sm-2 control-label"></label>
               <div className="col-sm-10">{warning.error ? warning.error : warning.success}</div>
             </div>
@@ -1975,7 +1975,7 @@ export class SamlModuleConfig extends Component {
   render() {
     return (
       <div>
-        <div className="form-group">
+        <div className="mb-3">
           <label
             htmlFor={`input-${this.props.label}`}
             className="col-xs-12 col-sm-2 control-label"></label>

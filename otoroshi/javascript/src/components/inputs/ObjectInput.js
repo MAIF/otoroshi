@@ -71,7 +71,7 @@ export function ObjectInput(props) {
   return (
     <div>
       {data.length === 0 && (
-        <div className="form-group">
+        <div className="mb-3">
           <label htmlFor={`input-${props.label}`} className="col-xs-12 col-sm-2 control-label">
             {props.label} <Help text={props.help} />
           </label>
@@ -87,7 +87,7 @@ export function ObjectInput(props) {
         </div>
       )}
       {data.map(({ key, value, idx }, i) => (
-        <div className="form-group" key={`keys-${idx}`}>
+        <div className="mb-3" key={`keys-${idx}`}>
           {i === 0 && (
             <label className="col-xs-12 col-sm-2 control-label">
               {props.label} <Help text={props.help} />
@@ -182,7 +182,7 @@ export class VerticalObjectInput extends Component {
     return (
       <div>
         {values.length === 0 && (
-          <div className="form-group">
+          <div className="mb-3">
             <div className="col-xs-12">
               <label htmlFor={`input-${this.props.label}`} className="control-label">
                 {this.props.label} <Help text={this.props.help} />
@@ -200,7 +200,7 @@ export class VerticalObjectInput extends Component {
           </div>
         )}
         {values.map((value, idx) => (
-          <div className="form-group" style={{ marginBottom: 5 }}>
+          <div className="mb-3" style={{ marginBottom: 5 }}>
             <div className="col-xs-12">
               {idx === 0 && (
                 <label className="control-label">

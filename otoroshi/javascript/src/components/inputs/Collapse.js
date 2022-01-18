@@ -24,7 +24,7 @@ export class Collapse extends Component {
       return (
         <div data-screenshot={this.props.dataScreenshot || ''}>
           <hr />
-          <div className="form-group">
+          <div className="mb-3">
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10" onClick={this.toggle} style={{ cursor: 'pointer' }}>
               <span style={{ color: '#f9b000', fontWeight: 'bold', marginTop: 7 }}>
@@ -45,7 +45,7 @@ export class Collapse extends Component {
       return (
         <div data-screenshot={this.props.dataScreenshot || ''}>
           <hr />
-          <div className="form-group">
+          <div className="mb-3">
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10" onClick={this.toggle} style={{ cursor: 'pointer' }}>
               <span style={{ color: '#f9b000', fontWeight: 'bold', marginTop: 7 }}>

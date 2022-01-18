@@ -291,7 +291,7 @@ export class U2FRegisterPage extends Component {
           </div>
         )}
         <form className="form-horizontal hide">
-          <div className="form-group">
+          <div className="mb-3">
             <label className="col-sm-2 control-label">Label</label>
             <div className="col-sm-10">
               <input
@@ -303,7 +303,7 @@ export class U2FRegisterPage extends Component {
               />
             </div>
           </div>
-          <div className="form-group">
+          <div className="mb-3">
             <label className="col-sm-2 control-label">Email</label>
             <div className="col-sm-10">
               <input
@@ -315,7 +315,7 @@ export class U2FRegisterPage extends Component {
               />
             </div>
           </div>
-          <div className="form-group">
+          <div className="mb-3">
             <label className="col-sm-2 control-label">Password</label>
             <div className="col-sm-10">
               <input
@@ -327,7 +327,7 @@ export class U2FRegisterPage extends Component {
               />
             </div>
           </div>
-          <div className="form-group">
+          <div className="mb-3">
             <label className="col-sm-2 control-label">Re-type Password</label>
             <div className="col-sm-10">
               <input
@@ -339,7 +339,7 @@ export class U2FRegisterPage extends Component {
               />
             </div>
           </div>
-          <div className="form-group">
+          <div className="mb-3">
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10">
               <button type="button" className="btn btn-success" onClick={this.simpleRegister}>
@@ -354,7 +354,7 @@ export class U2FRegisterPage extends Component {
               </button>
             </div>
           </div>
-          <div className="form-group">
+          <div className="mb-3">
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10">
               <p>{!this.state.error && this.state.message}</p>
@@ -587,7 +587,7 @@ export class RegisterAdminModal extends Component {
       <>
         <div className="modal-body">
           <form className="form-horizontal">
-            <div className="form-group">
+            <div className="mb-3">
               <label className="col-sm-2 control-label">Label</label>
               <div className="col-sm-10">
                 <input
@@ -599,7 +599,7 @@ export class RegisterAdminModal extends Component {
                 />
               </div>
             </div>
-            <div className="form-group">
+            <div className="mb-3">
               <label className="col-sm-2 control-label">Username</label>
               <div className="col-sm-10">
                 <input
@@ -613,7 +613,7 @@ export class RegisterAdminModal extends Component {
               </div>
             </div>
             {this.props.mode === 'update' && (
-              <div className="form-group">
+              <div className="mb-3">
                 <label className="col-sm-2 control-label">Old Password</label>
                 <div className="col-sm-10">
                   <input
@@ -627,7 +627,7 @@ export class RegisterAdminModal extends Component {
                 </div>
               </div>
             )}
-            <div className="form-group">
+            <div className="mb-3">
               <label className="col-sm-2 control-label">Password</label>
               <div className="col-sm-10">
                 <input
@@ -642,7 +642,7 @@ export class RegisterAdminModal extends Component {
                 />
               </div>
             </div>
-            <div className="form-group">
+            <div className="mb-3">
               <label className="col-sm-2 control-label">Re-type Password</label>
               <div className="col-sm-10">
                 <input
@@ -659,11 +659,11 @@ export class RegisterAdminModal extends Component {
                 />
               </div>
             </div>
-            <div className="form-group hide">
+            <div className="mb-3 hide">
               <label className="col-sm-2 control-label" />
               <div className="col-sm-10"></div>
             </div>
-            <div className="form-group">
+            <div className="mb-3">
               <label className="col-sm-2 control-label" />
               <div className="col-sm-10">
                 <p>{!this.state.error && this.state.message}</p>
@@ -834,7 +834,7 @@ export class AdminEditionModal extends Component {
               value={this.state.password2}
               onChange={(e) => this.setState({ password2: e })}
             />
-            <div className="form-group">
+            <div className="mb-3">
               <label className="col-xs-12 col-sm-2 control-label"></label>
               <div className="col-sm-10" style={{ display: 'flex' }}>
                 <button type="button" className="btn btn-success" onClick={this.setPassword}>

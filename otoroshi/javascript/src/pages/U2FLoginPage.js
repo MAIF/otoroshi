@@ -236,8 +236,8 @@ export class U2FLoginPage extends Component {
     return (
       <div className="jumbotron">
         <h1>Admin login</h1>
-        <form className="form-horizontal" style={{ textAlign: 'left' }} onSubmit={this.simpleLogin}>
-          <div className="form-group">
+        <form className="form-horizontal" onSubmit={this.simpleLogin}>
+          <div className="mb-3">
             <label className="col-sm-2 control-label">Username</label>
             <div className="col-sm-10">
               <input
@@ -249,7 +249,7 @@ export class U2FLoginPage extends Component {
               />
             </div>
           </div>
-          <div className="form-group">
+          <div className="mb-3">
             <label className="col-sm-2 control-label">Password</label>
             <div className="col-sm-10">
               <input
@@ -261,7 +261,7 @@ export class U2FLoginPage extends Component {
               />
             </div>
           </div>
-          <div className="form-group">
+          <div className="mb-3">
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10">
               <button
@@ -280,7 +280,7 @@ export class U2FLoginPage extends Component {
               </button>
             </div>
           </div>
-          <div className="form-group">
+          <div className="mb-3">
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10">
               <p>{!this.state.error && this.state.message}</p>

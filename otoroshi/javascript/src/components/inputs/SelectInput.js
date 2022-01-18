@@ -87,7 +87,7 @@ export class SelectInput extends Component {
   render() {
     if (this.state.error) {
       return (
-        <div className="form-group">
+        <div className="mb-3">
           <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
             {this.props.label} <Help text={this.props.help} />
           </label>
@@ -101,7 +101,7 @@ export class SelectInput extends Component {
     }
     if (this.props.classic && !this.props.disabled) {
       return (
-        <div className="form-group">
+        <div className="mb-3">
           <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
             {this.props.label} <Help text={this.props.help} />
           </label>
@@ -136,7 +136,7 @@ export class SelectInput extends Component {
       );
     }
     return (
-      <div className="form-group">
+      <div className="mb-3">
         <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
           {this.props.label} <Help text={this.props.help} />
         </label>

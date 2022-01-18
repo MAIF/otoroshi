@@ -153,7 +153,7 @@ class Target extends Component {
           }}
         />
         {this.state.firstUrlError && (
-          <div className="form-group">
+          <div className="mb-3">
             <label className="col-xs-12 col-sm-2 control-label" />
             <div className="col-sm-10" style={{ display: 'flex' }}>
               <span className="label label-danger">
@@ -516,7 +516,7 @@ class CanaryCampaign extends Component {
 
   render() {
     return (
-      <div className="form-group">
+      <div className="mb-3">
         <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
           Campaign stats <Help text="Stats about users target in the current canary campaign" />
         </label>
@@ -1111,7 +1111,7 @@ export class ServicePage extends Component {
     return (
       <div>
         <form className="form-horizontal">
-          <div className="form-group btnsService">
+          <div className="mb-3 btnsService">
             <div className="col-xs-12 col-sm-10 displayGroupBtn">
               <button
                 className="btn btn-danger"
@@ -1219,7 +1219,7 @@ export class ServicePage extends Component {
             transformer={(a) => ({ value: a.id, label: a.name })}
             help="Each service descriptor is attached to a group. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group."
           />
-          <div className="form-group">
+          <div className="mb-3">
             <label className="col-xs-12 col-sm-2 control-label" />
             <div className="col-sm-10">
               <button
@@ -1421,7 +1421,7 @@ export class ServicePage extends Component {
                     onChange={(e) => this.changeTheValue('matchingRoot', e)}
                   />
                 )}
-                <div className="form-group">
+                <div className="mb-3">
                   <label className="col-xs-12 col-sm-2 control-label" />
                   <div className="col-sm-10">
                     <button
@@ -1752,7 +1752,7 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={false}
             label="URL Patterns">
-            <div className="form-group">
+            <div className="mb-3">
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
                 <PublicUiButton
@@ -1895,7 +1895,7 @@ export class ServicePage extends Component {
             {!this.state.service.secComUseSameAlgo && (
               <>
                 <hr style={{ borderTop: '1px solid #595959' }} />
-                <div className="form-group">
+                <div className="mb-3">
                   <label className="col-xs-12 col-sm-2 control-label">Otoroshi to backend</label>
                   <div className="col-sm-10">
                     <AlgoSettings
@@ -1906,7 +1906,7 @@ export class ServicePage extends Component {
                   </div>
                 </div>
                 <hr style={{ borderTop: '1px solid #595959' }} />
-                <div className="form-group">
+                <div className="mb-3">
                   <label className="col-xs-12 col-sm-2 control-label">Backend to otoroshi</label>
                   <div className="col-sm-10">
                     <AlgoSettings
@@ -1917,7 +1917,7 @@ export class ServicePage extends Component {
                   </div>
                 </div>
                 <hr style={{ borderTop: '1px solid #595959' }} />
-                <div className="form-group">
+                <div className="mb-3">
                   <label className="col-xs-12 col-sm-2 control-label">Info. token</label>
                   <div className="col-sm-10">
                     <AlgoSettings
@@ -1950,7 +1950,7 @@ export class ServicePage extends Component {
               transformer={(a) => ({ value: a.id, label: a.name })}
               help="..."
             />
-            <div className="form-group">
+            <div className="mb-3">
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
                 {!this.state.service.authConfigRef && (
@@ -1984,7 +1984,7 @@ export class ServicePage extends Component {
               help="Strict mode enabled"
               onChange={(v) => this.changeTheValue('strictlyPrivate', v)}
             />
-            <div className="form-group">
+            <div className="mb-3">
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
                 <p className="sub-container sub-container__bg-color">
@@ -2234,7 +2234,7 @@ export class ServicePage extends Component {
                   transformer={a => ({ value: a.id, label: a.name })}
                   help="..."
                 />
-                <div className="form-group">
+                <div className="mb-3">
                   <label className="col-xs-12 col-sm-2 control-label" />
                   <div className="col-sm-10">
                     {!this.state.service.thirdPartyApiKey.oidcConfigRef && (
@@ -2435,7 +2435,7 @@ export class ServicePage extends Component {
                   help="Is JWT verification enabled for this service"
                   onChange={(v) => this.changeTheValue('jwtVerifier.enabled', v)}
                 />
-                <div className="form-group">
+                <div className="mb-3">
                   <label className="col-xs-12 col-sm-2 control-label" />
                   <div className="col-sm-10">
                     {this.state.service.jwtVerifier.ids.length === 0 && (
@@ -2519,7 +2519,7 @@ export class ServicePage extends Component {
               help="By default, when pre-routing is enabled, everything is verified. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
               onChange={(v) => this.changeTheValue('preRouting.excludedPatterns', v)}
             />
-            <div className="form-group">
+            <div className="mb-3">
               <Suspense fallback={<div>loading ...</div>}>
                 <CodeInput
                   label="Configuration"
@@ -2593,7 +2593,7 @@ export class ServicePage extends Component {
               help="By default, when access validation is enabled, everything is verified. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
               onChange={(v) => this.changeTheValue('accessValidator.excludedPatterns', v)}
             />
-            <div className="form-group">
+            <div className="mb-3">
               <Suspense fallback={<div>loading ...</div>}>
                 <CodeInput
                   label="Configuration"
@@ -2609,7 +2609,7 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Validation authority">
-            <div class="form-group">
+            <div class="mb-3">
               <label class="col-xs-12 col-sm-2 control-label" />
               <div class="col-sm-10">
                 <div
@@ -2639,7 +2639,7 @@ export class ServicePage extends Component {
               transformer={a => ({ value: a.id, label: a.name })}
               help="..."
             />
-            <div className="form-group">
+            <div className="mb-3">
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
                 {!this.state.service.clientValidatorRef && (
@@ -2836,7 +2836,7 @@ export class ServicePage extends Component {
               onChange={(v) => this.changeTheValue('clientConfig.proxy', v)}
             />
             {false && (
-              <div className="form-group">
+              <div className="mb-3">
                 <label className="col-xs-12 col-sm-2 control-label" />
                 <div className="col-sm-10">
                   <button
@@ -2903,7 +2903,7 @@ export class ServicePage extends Component {
               help="Remove headers in the client response (from Otoroshi to client)."
               onChange={(v) => this.changeTheValue('removeHeadersOut', v)}
             />
-            <div className="form-group">
+            <div className="mb-3">
               <label
                 htmlFor={`input-${this.props.label}`}
                 className="col-xs-12 col-sm-2 control-label">
@@ -2995,7 +2995,7 @@ export class ServicePage extends Component {
                 </button>
               </div>
             </div>
-            <div className="form-group">
+            <div className="mb-3">
               <label
                 htmlFor={`input-${this.props.label}`}
                 className="col-xs-12 col-sm-2 control-label">
@@ -3126,7 +3126,7 @@ export class ServicePage extends Component {
               onChange={(e) => this.changeTheValue('canary.root', e)}
             />
             <CanaryCampaign serviceId={this.state.service.id} />
-            <div className="form-group">
+            <div className="mb-3">
               <label
                 htmlFor={`input-${this.props.label}`}
                 className="col-xs-12 col-sm-2 control-label"
@@ -3195,7 +3195,7 @@ export class ServicePage extends Component {
             label="Custom errors template">
             {!this.state.neverSaved && <TemplateInput service={this.state.service} />}
             {this.state.neverSaved && (
-              <div className="form-group">
+              <div className="mb-3">
                 <label className="col-xs-12 col-sm-2 control-label" />
                 <div className="col-sm-10">
                   <p className="sub-container sub-container__bg-color">
@@ -3258,7 +3258,7 @@ export class ServicePage extends Component {
               config={this.state.service.transformerConfig}
               onChangeConfig={(e) => this.changeTheValue('transformerConfig', e)}
             />
-            <div className="form-group">
+            <div className="mb-3">
               <Suspense fallback={<div>loading ...</div>}>
                 <CodeInput
                   label="Configuration"
@@ -3301,7 +3301,7 @@ export class ServicePage extends Component {
               help="By default, when plugins are enabled, everything pass in. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
               onChange={(v) => this.changeTheValue('plugins.excluded', v)}
             />
-            <div className="form-group">
+            <div className="mb-3">
               <Suspense fallback={<div>loading ...</div>}>
                 <CodeInput
                   label="Configuration"
@@ -3321,7 +3321,7 @@ export class ServicePage extends Component {
 export class Message extends Component {
   render() {
     return (
-      <div className="form-group">
+      <div className="mb-3">
         <label className="col-xs-12 col-sm-2 control-label" />
         <div className="col-sm-10">
           <div className="sub-container sub-container__bg-color">
@@ -3524,7 +3524,7 @@ export class TemplateInput extends Component {
   render() {
     if (!this.state.template) {
       return (
-        <div className="form-group">
+        <div className="mb-3">
           <label className="col-xs-12 col-sm-2 control-label" />
           <div className="col-sm-10">
             <button type="button" className="btn btn-success" onClick={this.createTemplate}>
@@ -3536,7 +3536,7 @@ export class TemplateInput extends Component {
     }
     return (
       <div>
-        <div className="form-group">
+        <div className="mb-3">
           <label className="col-xs-12 col-sm-2 control-label" />
           <div className="col-sm-8">
             <p style={{ padding: 10, borderRadius: 5, backgroundColor: '#494948' }}>
@@ -3561,7 +3561,7 @@ export class TemplateInput extends Component {
             </button>
           </div>
         </div>
-        <div className="form-group">
+        <div className="mb-3">
           <label className="col-xs-12 col-sm-2 control-label" />
           <div className="col-sm-10" />
         </div>

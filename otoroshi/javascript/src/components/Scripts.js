@@ -120,7 +120,7 @@ class PluginsDescription extends Component {
             this.findNode(
               script,
               <div
-                className="form-group"
+                className="mb-3"
                 style={{
                   marginLeft: 10,
                   marginRight: 50,
@@ -325,7 +325,7 @@ export class Scripts extends Component {
           config={this.props.config}
           onChangeConfig={this.props.onChangeConfig}
         />
-        <div className="form-group">
+        <div className="mb-3">
           <label className="col-xs-12 col-sm-2 control-label" />
           <div className="col-sm-10">
             {this.props.refs && this.props.refs.length === 0 && (
