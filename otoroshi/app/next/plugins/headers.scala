@@ -7,12 +7,15 @@ import otoroshi.models.RemainingQuotas
 import otoroshi.next.plugins.api._
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class OverrideHost extends NgRequestTransformer {
-  // TODO: add name and config
+  override def core: Boolean = true
+  override def name: String = "Override host header"
+  override def description: Option[String] = "This plugin override the current Host header with the Host of the backend target".some
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     ctx.attrs.get(Keys.BackendKey) match {
       case None => Right(ctx.otoroshiRequest).vfuture
@@ -121,7 +124,7 @@ class SendOtoroshiHeadersBack extends NgRequestTransformer {
     val headers = ctx.otoroshiResponse.headers.toSeq
     val snowflake = ctx.attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get
     val requestTimestamp = ctx.attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).get.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
-    val remainingQuotas = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey).getOrElse(RemainingQuotas()) // TODO: append quotas in attrs in apikey plugin
+    val remainingQuotas = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey).getOrElse(RemainingQuotas())
     val upstreamLatency = ctx.report.getStep("call-backend").map(_.duration).getOrElse(-1L).toString
     val overhead = ctx.report.overheadIn.toString
     val newHeaders = headers
@@ -196,19 +199,3 @@ class XForwardedHeaders extends NgRequestTransformer {
     Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders.toMap)).vfuture
   }
 }
-
-/*
-class TestBodyTransformation extends NgRequestTransformer {
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpRequest]] = {
-    ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _ ).map { bodyRaw =>
-      val body = bodyRaw.utf8String
-      if (body == "hello") {
-        val payload = "hi !!!"
-        Right(ctx.otoroshiRequest.copy(body = Source.single(ByteString(payload)), headers = ctx.otoroshiRequest.headers - "Content-Length" - "content-length" ++ Map("Content-Length" -> payload.size.toString)))
-      } else {
-        Left(Results.BadRequest(Json.obj("error" -> "bad body")))
-      }
-    }
-  }
-}
- */

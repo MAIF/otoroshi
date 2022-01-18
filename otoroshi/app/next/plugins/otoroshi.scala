@@ -28,6 +28,14 @@ case class OtoroshiChallengeConfig(raw: JsValue) {
   lazy val responseHeaderName: Option[String] = raw.select("response_header_name").asOpt[String]
   lazy val algoOtoToBackend: AlgoSettings = AlgoSettings.fromJson(raw.select("algo_to_backend").asOpt[JsObject].getOrElse(Json.obj())).getOrElse(HSAlgoSettings(512, "secret", false))
   lazy val algoBackendToOto: AlgoSettings = AlgoSettings.fromJson(raw.select("algo_from_backend").asOpt[JsObject].getOrElse(Json.obj())).getOrElse(HSAlgoSettings(512, "secret", false))
+  def json: JsObject = Json.obj(
+    "version" -> secComVersion.json,
+    "ttl" -> secComTtl.toSeconds,
+    "request_header_name" -> requestHeaderName,
+    "response_header_name" -> responseHeaderName,
+    "algo_to_backend" -> algoOtoToBackend.asJson,
+    "algo_from_backend" -> algoBackendToOto.asJson,
+  )
 }
 
 case class OtoroshiInfoConfig(raw: JsValue) {
@@ -35,6 +43,12 @@ case class OtoroshiInfoConfig(raw: JsValue) {
   lazy val secComTtl: FiniteDuration = raw.select("ttl").asOpt[Long].map(_.seconds).getOrElse(30.seconds)
   lazy val headerName: Option[String] = raw.select("header_name").asOpt[String]
   lazy val algo: AlgoSettings = AlgoSettings.fromJson(raw.select("algo").asOpt[JsObject].getOrElse(Json.obj())).getOrElse(HSAlgoSettings(512, "secret", false))
+  def json: JsObject = Json.obj(
+    "version" -> secComVersion.json,
+    "ttl" -> secComTtl.toSeconds,
+    "header_name" -> headerName,
+    "algo" -> algo.asJson
+  )
 }
 
 object OtoroshiChallengeKeys {
@@ -45,11 +59,14 @@ object OtoroshiChallengeKeys {
 
 class OtoroshiChallenge extends NgRequestTransformer {
 
-  val logger = Logger("otoroshi-next-plugins-otoroshi-challenge")
+  private val logger = Logger("otoroshi-next-plugins-otoroshi-challenge")
+  override def core: Boolean = true
+  override def name: String = "Otoroshi challenge token"
+  override def description: Option[String] = "This plugin adds a jwt challenge token to the request to a backend and expects a response with a matching token".some
+  override def defaultConfig: Option[JsObject] = OtoroshiChallengeConfig(Json.obj()).json.asObject.some
 
-  // TODO: add name and config
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
-    val config = OtoroshiChallengeConfig(ctx.config)
+    val config = ctx.cachedConfigFn(internalName)(json => OtoroshiChallengeConfig(json).some).getOrElse(OtoroshiChallengeConfig(ctx.config))
     val jti                    = IdGenerator.uuid
     val stateValue             = IdGenerator.extendedToken(128)
     val stateToken: String     = config.secComVersion match {
@@ -80,7 +97,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
     val config = ctx.attrs.get(OtoroshiChallengeKeys.ConfigKey).get
     val stateValue = ctx.attrs.get(OtoroshiChallengeKeys.StateValueKey).get
     val stateRespHeaderName = config.responseHeaderName.getOrElse(env.Headers.OtoroshiStateResp)
-    val isUp = true // TODO: check if right
+    val isUp = true
     val stateResp           = ctx.request.headers
       .get(stateRespHeaderName)
       .orElse(ctx.request.headers.get(stateRespHeaderName.toLowerCase))
@@ -269,10 +286,14 @@ class OtoroshiChallenge extends NgRequestTransformer {
 
 class OtoroshiInfos extends NgRequestTransformer {
 
-  val logger = Logger("otoroshi-next-plugins-otoroshi-infos")
-  // TODO: add name and config
+  private val logger = Logger("otoroshi-next-plugins-otoroshi-infos")
+  override def core: Boolean = true
+  override def name: String = "Otoroshi info. token"
+  override def description: Option[String] = "This plugin adds a jwt info. token to the request to a backend".some
+  override def defaultConfig: Option[JsObject] = OtoroshiInfoConfig(Json.obj()).json.asObject.some
+
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
-    val config = OtoroshiInfoConfig(ctx.config)
+    val config = ctx.cachedConfigFn(internalName)(json => OtoroshiInfoConfig(json).some).getOrElse(OtoroshiInfoConfig(ctx.config))
     val claim = ctx.route.serviceDescriptor.generateInfoToken(ctx.apikey, ctx.user, ctx.request.some) // TODO: not ideal, should change it
     logger.trace(s"Claim is : $claim")
     ctx.attrs.put(otoroshi.plugins.Keys.OtoTokenKey -> claim.payload)

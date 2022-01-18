@@ -167,7 +167,6 @@ class ProxyEngine() extends RequestHandler {
       _               <- callPluginsBeforeRequestCallback(snowflake, request, route)
       _               =  report.markDoneAndStart("call-pre-route-plugins")
       _               <- callPreRoutePlugins(snowflake, request, route)
-      // TODO: handle tcp/udp tunneling if not possible as plugin
       _               =  report.markDoneAndStart("call-access-validator-plugins")
       _               <- callAccessValidatorPlugins(snowflake, request, route)
       _               =  report.markDoneAndStart("enforce-global-limits")
