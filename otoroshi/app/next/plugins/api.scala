@@ -202,7 +202,7 @@ trait CachedConfigContext {
     val key = s"${route.id}::${plugin}"
     CachedConfigContext.cache.getIfPresent(key) match {
       case None => reads.reads(config) match {
-        case JsError(_) => None // TODO: log
+        case JsError(_) => None
         case JsSuccess(value, _) =>
           CachedConfigContext.cache.put(key, value)
           Some(value)

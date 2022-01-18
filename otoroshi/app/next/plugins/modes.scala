@@ -10,7 +10,9 @@ import play.api.mvc.Results
 import scala.concurrent.{ExecutionContext, Future}
 
 class MaintenanceMode extends NgPreRouting {
-  // TODO: add name and config
+  override def core: Boolean = true
+  override def name: String = "Maintenance mode"
+  override def description: Option[String] = "This plugin displays a maintenance page".some
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     Errors
       .craftResponseResult(
@@ -19,8 +21,8 @@ class MaintenanceMode extends NgPreRouting {
         ctx.request,
         None,
         Some("errors.service.in.maintenance"),
-        duration = ctx.report.getDurationNow(), // TODO: checks if it's the rights move
-        overhead = ctx.report.getOverheadInNow(), // TODO: checks if it's the rights move
+        duration = ctx.report.getDurationNow(),
+        overhead = ctx.report.getOverheadInNow(),
         attrs = ctx.attrs,
         maybeRoute = ctx.route.some,
       ).map(r => Left(NgPreRoutingErrorWithResult(r)))
@@ -28,7 +30,9 @@ class MaintenanceMode extends NgPreRouting {
 }
 
 class BuildMode extends NgPreRouting {
-  // TODO: add name and config
+  override def core: Boolean = true
+  override def name: String = "Build mode"
+  override def description: Option[String] = "This plugin displays a build page".some
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     Errors
       .craftResponseResult(
@@ -37,8 +41,8 @@ class BuildMode extends NgPreRouting {
         ctx.request,
         None,
         Some("errors.service.under.construction"),
-        duration = ctx.report.getDurationNow(), // TODO: checks if it's the rights move
-        overhead = ctx.report.getOverheadInNow(), // TODO: checks if it's the rights move
+        duration = ctx.report.getDurationNow(),
+        overhead = ctx.report.getOverheadInNow(),
         attrs = ctx.attrs,
         maybeRoute = ctx.route.some,
       ).map(r => Left(NgPreRoutingErrorWithResult(r)))

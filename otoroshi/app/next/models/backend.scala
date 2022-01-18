@@ -1,24 +1,15 @@
 package otoroshi.next.models
 
 import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
-import otoroshi.models.{AlwaysMatch, LoadBalancing, RoundRobin, Target, TargetPredicate}
+import otoroshi.models.{AlwaysMatch, Target, TargetPredicate}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits.BetterJsValue
-import play.api.libs.json.{JsArray, JsLookupResult, JsNull, JsObject, JsString, JsValue, Json}
+import play.api.libs.json.{JsNull, JsString, JsValue, Json}
 
-/*
-case class Backend(id: String, name: String, description: String, tags: Seq[String], metadata: Map[String, String], location: EntityLocation) extends EntityLocationSupport {
+import java.util.concurrent.atomic.AtomicBoolean
 
-  override def internalId: String = id
-  override def theName: String = name
-  override def theDescription: String = description
-  override def theTags: Seq[String] = tags
-  override def theMetadata: Map[String, String] = metadata
-  override def json: JsValue = ???
-}
-*/
+case class SelectedBackend(backend: Backend, attempts: Int, alreadyFailed: AtomicBoolean, cbStart: Long)
 
-// TODO: handle 2 kind of backend, one inline, one that reference a stored backend
 case class Backend(
   id: String,
   hostname: String,

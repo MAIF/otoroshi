@@ -1,39 +1,14 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.http.scaladsl.util.FastFuture
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
-import otoroshi.models.{ApiKeyConstraints, ApiKeyHelper}
+import otoroshi.models.{ApiKeyConstraints, ApiKeyHelper, RedirectionSettings}
 import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.JsObject
+import play.api.libs.json.{JsObject, Reads}
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
-
-/*class ApikeyExtractor extends NgPreRouting {
-  // TODO: add name and config
-  override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
-    ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
-      case None => {
-        val config = ApiKeyConstraints.format.reads(ctx.config).getOrElse(ApiKeyConstraints())
-        ApiKeyHelper.detectApikeyTuple(ctx.request, config, ctx.attrs) match {
-          case None => Done.right.vfuture
-          case Some(tuple) => {
-            ApiKeyHelper.validateApikeyTuple(ctx.request, tuple, config, ctx.route.id) match {
-              case Left(_) => Done.right.vfuture
-              case Right(apikey) =>
-                ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
-                Done.right.vfuture
-            }
-          }
-        }
-      }
-      case Some(_) => Done.right.vfuture
-    }
-  }
-}*/
 
 class ApikeyCalls extends NgAccessValidator with NgRouteMatcher {
 
@@ -42,8 +17,15 @@ class ApikeyCalls extends NgAccessValidator with NgRouteMatcher {
     .maximumSize(1000)
     .build()
 
+  private val configReads: Reads[ApiKeyConstraints] = ApiKeyConstraints.format
+
+  override def core: Boolean = true
+  override def name: String = "Apikeys"
+  override def description: Option[String] = "This plugin expects to find an apikey to allow the request to pass".some
+  override def defaultConfig: Option[JsObject] = ApiKeyConstraints().json.asObject.some
+
   override def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean = {
-    val constraints = configCache.get(ctx.route.id, _ => ApiKeyConstraints.format.reads(ctx.config).getOrElse(ApiKeyConstraints()))
+    val constraints = configCache.get(ctx.route.id, _ => configReads.reads(ctx.config).getOrElse(ApiKeyConstraints()))
     if (constraints.routing.hasNoRoutingConstraints) {
       true
     } else {
@@ -62,7 +44,6 @@ class ApikeyCalls extends NgAccessValidator with NgRouteMatcher {
     }
   }
 
-  // TODO: add name and config
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
       case None => {

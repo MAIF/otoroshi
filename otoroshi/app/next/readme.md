@@ -2,11 +2,14 @@
 
 ## TODO
 
+- [ ] tricky plugins
+- [ ] detect apikeys sooner
+- [ ] remove apikey stuff from request before the forward
 - [x] Loader Job to keep all route in memory
-- [ ] Loader Job to keep all apikeys in memory
-- [ ] Loader Job to keep all certificates in memory
-- [ ] Loader Job to keep all auth. modules in memory
-- [ ] Loader Job to keep all jwt verifiers in memory
+- [x] Loader Job to keep all apikeys in memory
+- [x] Loader Job to keep all certificates in memory
+- [x] Loader Job to keep all auth. modules in memory
+- [x] Loader Job to keep all jwt verifiers in memory
 - [x] Some kind of reporting mecanism to keep track of everything (useful for debug)
 
 ## new entities

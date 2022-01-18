@@ -247,11 +247,6 @@ class OtoroshiChallenge extends NgRequestTransformer {
             ctx.request,
             None,
             Some("errors.service.not.secured"),
-            // duration = System.currentTimeMillis - start,
-            // overhead = (System
-            //   .currentTimeMillis() - secondStart) + firstOverhead,
-            // cbDuration = cbDuration,
-            // callAttempts = callAttempts,
             attrs = ctx.attrs,
             maybeRoute = ctx.route.some,
           ).map(Left.apply)
@@ -262,11 +257,6 @@ class OtoroshiChallenge extends NgRequestTransformer {
             ctx.request,
             None,
             Some("errors.service.down"),
-            // duration = System.currentTimeMillis - start,
-            // overhead = (System
-            //   .currentTimeMillis() - secondStart) + firstOverhead,
-            // cbDuration = cbDuration,
-            // callAttempts = callAttempts,
             attrs = ctx.attrs,
             maybeRoute = ctx.route.some,
           ).map(Left.apply)

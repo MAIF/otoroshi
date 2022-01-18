@@ -4,17 +4,44 @@ import akka.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.models.RefJwtVerifier
 import otoroshi.next.plugins.Keys.JwtInjectionKey
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgRequestTransformer, NgTransformerRequestContext, NgPluginHttpRequest}
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
+import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginHttpRequest, NgRequestTransformer, NgTransformerRequestContext}
+import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
+import play.api.libs.json.{Format, JsError, JsObject, JsResult, JsSuccess, JsValue, Json, Reads}
 import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.{Cookie, Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success, Try}
+
+case class JwtVerificationConfig(verifiers: Seq[String] = Seq.empty) {
+  def json: JsValue = JwtVerificationConfig.format.writes(this)
+}
+
+object JwtVerificationConfig {
+  val format = new Format[JwtVerificationConfig] {
+    override def reads(json: JsValue): JsResult[JwtVerificationConfig] = Try {
+      JwtVerificationConfig(
+        verifiers = json.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    override def writes(o: JwtVerificationConfig): JsValue = Json.obj("verifiers" -> o.verifiers)
+  }
+}
 
 class JwtVerification extends NgAccessValidator with NgRequestTransformer {
-  // TODO: add name and config
+
+  private val configReads: Reads[JwtVerificationConfig] = JwtVerificationConfig.format
+
+  override def core: Boolean = true
+  override def name: String = "Jwt verifiers"
+  override def description: Option[String] = "This plugin verifies the current request with one or more jwt verifier".some
+  override def defaultConfig: Option[JsObject] = JwtVerificationConfig().json.asObject.some
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val verifiers = ctx.config.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty)
+    // val verifiers = ctx.config.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val JwtVerificationConfig(verifiers) = ctx.cachedConfig(internalName)(configReads).getOrElse(JwtVerificationConfig())
     if (verifiers.nonEmpty) {
       val verifier = RefJwtVerifier(verifiers, true, Seq.empty)
       val promise = Promise[NgAccess]()

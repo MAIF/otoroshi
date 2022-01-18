@@ -155,7 +155,6 @@ case class Route(
   lazy val issueCertificateCA: Option[String] = metadata.get("otoroshi-core-issue-certificate-ca").filter(_.nonEmpty)
   lazy val openapiUrl: Option[String] = metadata.get("otoroshi-core-openapi-url").filter(_.nonEmpty)
 
-  // TODO: move creation/mutation logic on each plugin to avoid desync issues
   lazy val serviceDescriptor: ServiceDescriptor = {
     ServiceDescriptor(
       location = location,
@@ -402,7 +401,6 @@ object Route {
     }
   }
 
-  // TODO: move creation/mutation logic on each plugin to avoid desync issues
   def fromServiceDescriptor(service: ServiceDescriptor, debug: Boolean): Route = {
     import NgPluginHelper.pluginId
     Route(
