@@ -44,9 +44,10 @@ class HeadersValidation extends NgAccessValidator {
           "bad request",
           Results.BadRequest,
           ctx.request,
-          ctx.route.serviceDescriptor.some,
           None,
-          attrs = ctx.attrs
+          None,
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some,
         )
         .map(NgAccess.NgDenied.apply)
     }

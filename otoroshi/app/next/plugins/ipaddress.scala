@@ -39,11 +39,12 @@ class IpAddressAllowedList extends NgAccessValidator {
           "Your IP address is not allowed",
           Results.Forbidden,
           ctx.request,
-          ctx.route.serviceDescriptor.some,
+          None,
           Some( "errors.ip.address.not.allowed"),
           duration = ctx.report.getDurationNow(), // TODO: checks if it's the rights move
           overhead = ctx.report.getOverheadInNow(), // TODO: checks if it's the rights move
-          attrs = ctx.attrs
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some,
         ).map(r => NgAccess.NgDenied(r))
     }
   }
@@ -73,11 +74,12 @@ class IpAddressBlockList extends NgAccessValidator {
           "Your IP address is not allowed",
           Results.Forbidden,
           ctx.request,
-          ctx.route.serviceDescriptor.some,
+          None,
           Some( "errors.ip.address.not.allowed"),
           duration = ctx.report.getDurationNow(), // TODO: checks if it's the rights move
           overhead = ctx.report.getOverheadInNow(), // TODO: checks if it's the rights move
-          attrs = ctx.attrs
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some,
         ).map(r => NgAccess.NgDenied(r))
     }
   }

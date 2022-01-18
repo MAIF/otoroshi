@@ -17,11 +17,12 @@ class DisableHttp10 extends NgAccessValidator {
           "HTTP/1.0 not allowed",
           Results.ServiceUnavailable,
           ctx.request,
-          ctx.route.serviceDescriptor.some,
+          None,
           Some("errors.http.1_0.not.allowed"),
           duration = ctx.report.getDurationNow(), // TODO: checks if it's the rights move
           overhead = ctx.report.getOverheadInNow(), // TODO: checks if it's the rights move
-          attrs = ctx.attrs
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some,
         ).map(r => NgAccess.NgDenied(r))
     } else {
       NgAccess.NgAllowed.vfuture

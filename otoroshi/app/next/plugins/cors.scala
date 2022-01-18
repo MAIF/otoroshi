@@ -24,9 +24,10 @@ class Cors extends NgRequestTransformer with NgPreRouting {
           "Cors error",
           Results.NotFound,
           ctx.request,
-          ctx.route.serviceDescriptor.some,
+          None,
           "errors.cors.error".some,
-          attrs = ctx.attrs
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some,
         ).map(r => Left(NgPreRoutingErrorWithResult(r)))
       } else {
         NgPreRoutingErrorWithResult(Results

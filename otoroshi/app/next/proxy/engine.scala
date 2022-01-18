@@ -137,6 +137,7 @@ class ProxyEngine() extends RequestHandler {
     val counterOut          = new AtomicLong(0L)
     val start               = System.currentTimeMillis()
     implicit val attrs      = TypedMap.empty.put(
+      otoroshi.next.plugins.Keys.ReportKey       -> report,
       otoroshi.plugins.Keys.RequestNumberKey     -> reqNumber,
       otoroshi.plugins.Keys.SnowFlakeKey         -> snowflake,
       otoroshi.plugins.Keys.RequestTimestampKey  -> callDate,
@@ -604,11 +605,12 @@ class ProxyEngine() extends RequestHandler {
           message,
           status,
           request,
-          route.serviceDescriptor.some,
+          None,
           Some(code),
           duration = report.getDurationNow(),
           overhead = report.getOverheadInNow(),
-          attrs = attrs
+          attrs = attrs,
+          maybeRoute = route.some,
         )
         .map(e => Left(ResultProxyEngineError(e)))
     }
@@ -695,13 +697,14 @@ class ProxyEngine() extends RequestHandler {
                 s"Something went wrong, the backend service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
                 Results.GatewayTimeout,
                 request,
-                route.serviceDescriptor.some,
+                None,
                 Some("errors.request.timeout"),
                 duration = report.getDurationNow(),
                 overhead = report.getOverheadInNow(),
                 cbDuration = System.currentTimeMillis - cbStart,
                 callAttempts = counter.get(),
-                attrs = attrs
+                attrs = attrs,
+                maybeRoute = route.some,
               )
               .map(Left.apply)
           case RequestTimeoutException                            =>
@@ -710,13 +713,14 @@ class ProxyEngine() extends RequestHandler {
                 s"Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding",
                 Results.GatewayTimeout,
                 request,
-                route.serviceDescriptor.some,
+                None,
                 Some("errors.request.timeout"),
                 duration = report.getDurationNow(),
                 overhead = report.getOverheadInNow(),
                 cbDuration = System.currentTimeMillis - cbStart,
                 callAttempts = counter.get(),
-                attrs = attrs
+                attrs = attrs,
+                maybeRoute = route.some,
               )
               .map(Left.apply)
           case _: scala.concurrent.TimeoutException               =>
@@ -725,13 +729,14 @@ class ProxyEngine() extends RequestHandler {
                 s"Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding",
                 Results.GatewayTimeout,
                 request,
-                route.serviceDescriptor.some,
+                None,
                 Some("errors.request.timeout"),
                 duration = report.getDurationNow(),
                 overhead = report.getOverheadInNow(),
                 cbDuration = System.currentTimeMillis - cbStart,
                 callAttempts = counter.get(),
-                attrs = attrs
+                attrs = attrs,
+                maybeRoute = route.some,
               )
               .map(Left.apply)
           case AllCircuitBreakersOpenException                    =>
@@ -740,13 +745,14 @@ class ProxyEngine() extends RequestHandler {
                 s"Something went wrong, the backend service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
                 Results.ServiceUnavailable,
                 request,
-                route.serviceDescriptor.some,
+                None,
                 Some("errors.circuit.breaker.open"),
                 duration = report.getDurationNow(),
                 overhead = report.getOverheadInNow(),
                 cbDuration = System.currentTimeMillis - cbStart,
                 callAttempts = counter.get(),
-                attrs = attrs
+                attrs = attrs,
+                maybeRoute = route.some,
               )
               .map(Left.apply)
           case error
@@ -758,13 +764,14 @@ class ProxyEngine() extends RequestHandler {
                 s"Something went wrong, the connection to backend service was refused, you should try later. Thanks for your understanding",
                 Results.BadGateway,
                 request,
-                route.serviceDescriptor.some,
+                None,
                 Some("errors.connection.refused"),
                 duration = report.getDurationNow(),
                 overhead = report.getOverheadInNow(),
                 cbDuration = System.currentTimeMillis - cbStart,
                 callAttempts = counter.get(),
-                attrs = attrs
+                attrs = attrs,
+                maybeRoute = route.some,
               )
               .map(Left.apply)
           case error if error != null && error.getMessage != null =>
@@ -777,13 +784,14 @@ class ProxyEngine() extends RequestHandler {
                 s"Something went wrong, you should try later. Thanks for your understanding.",
                 Results.BadGateway,
                 request,
-                route.serviceDescriptor.some,
+                None,
                 Some("errors.proxy.error"),
                 duration = report.getDurationNow(),
                 overhead = report.getOverheadInNow(),
                 cbDuration = System.currentTimeMillis - cbStart,
                 callAttempts = counter.get(),
-                attrs = attrs
+                attrs = attrs,
+                maybeRoute = route.some,
               )
               .map(Left.apply)
           case error                                              =>
@@ -796,13 +804,14 @@ class ProxyEngine() extends RequestHandler {
                 s"Something went wrong, you should try later. Thanks for your understanding",
                 Results.BadGateway,
                 request,
-                route.serviceDescriptor.some,
+                None,
                 Some("errors.proxy.error"),
                 duration = report.getDurationNow(),
                 overhead = report.getOverheadInNow(),
                 cbDuration = System.currentTimeMillis - cbStart,
                 callAttempts = counter.get(),
-                attrs = attrs
+                attrs = attrs,
+                maybeRoute = route.some,
               )
               .map(Left.apply)
         }

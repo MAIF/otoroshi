@@ -19,9 +19,10 @@ class ReadOnlyCalls extends NgAccessValidator {
           s"Method not allowed",
           Results.MethodNotAllowed,
           ctx.request,
-          ctx.route.serviceDescriptor.some,
+          None,
           Some("errors.method.not.allowed"),
-          attrs = ctx.attrs
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some,
         ).map(r => NgAccess.NgDenied(r))
     } else {
       NgAccess.NgAllowed.vfuture
@@ -41,9 +42,10 @@ class AllowHttpMethods extends NgAccessValidator {
           s"Method not allowed",
           Results.MethodNotAllowed,
           ctx.request,
-          ctx.route.serviceDescriptor.some,
+          None,
           Some("errors.method.not.allowed"),
-          attrs = ctx.attrs
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some,
         ).map(r => NgAccess.NgDenied(r))
     } else {
       NgAccess.NgAllowed.vfuture

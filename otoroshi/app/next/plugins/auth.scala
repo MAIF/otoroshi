@@ -28,9 +28,10 @@ class AuthModule extends NgAccessValidator {
                 "Auth. config. ref not found on the descriptor",
                 Results.InternalServerError,
                 ctx.request,
-                ctx.route.serviceDescriptor.some,
+                None,
                 "errors.auth.config.ref.not.found".some,
-                attrs = ctx.attrs
+                attrs = ctx.attrs,
+                maybeRoute = ctx.route.some,
               )
               .map(NgAccess.NgDenied.apply)
           case Some(ref) => {
@@ -42,9 +43,10 @@ class AuthModule extends NgAccessValidator {
                     "Auth. config. not found on the descriptor",
                     Results.InternalServerError,
                     ctx.request,
-                    ctx.route.serviceDescriptor.some,
+                    None,
                     "errors.auth.config.not.found".some,
-                    attrs = ctx.attrs
+                    attrs = ctx.attrs,
+                    maybeRoute = ctx.route.some,
                   )
                   .map(NgAccess.NgDenied.apply)
               case Some(auth) => {

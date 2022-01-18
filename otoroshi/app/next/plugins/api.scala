@@ -14,6 +14,7 @@ import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
+import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.ws.{WSCookie, WSResponse}
 import play.api.mvc.{RequestHeader, Result, Results}
@@ -77,6 +78,17 @@ case class PluginHttpResponse(
   cookies: Seq[WSCookie] = Seq.empty[WSCookie],
   body: Source[ByteString, _]
 ) {
+  def asResult: Result = {
+    val ctype = headers.get("Content-Type").orElse(headers.get("content-type"))
+    val clength = headers.get("Content-Length").orElse(headers.get("content-length")).map(_.toLong)
+    Results.Status(status)
+      .sendEntity(HttpEntity.Streamed(body, clength, ctype))
+      .withHeaders(headers.toSeq: _*)
+      .withCookies()
+      .applyOnWithOpt(ctype) {
+        case (r, typ) => r.as(typ)
+      }
+  }
   def json: JsValue =
     Json.obj(
       "status"  -> status,
@@ -360,7 +372,6 @@ case class NgTransformerResponseContext(
 case class NgTransformerErrorContext(
   snowflake: String,
   message: String,
-  otoroshiResult: Result,
   otoroshiResponse: PluginHttpResponse,
   request: RequestHeader,
   maybeCauseId: Option[String],
@@ -370,14 +381,15 @@ case class NgTransformerErrorContext(
   user: Option[PrivateAppsUser],
   config: JsValue,
   globalConfig: JsValue = Json.obj(),
-  attrs: TypedMap
+  attrs: TypedMap,
+  report: ExecutionReport
 ) extends CachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     "maybe_cause_id" -> maybeCauseId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "call_attempts" -> callAttempts,
     "otoroshi_response" -> otoroshiResponse.json,
-    "otoroshi_result" -> Json.obj("status" -> otoroshiResult.header.status, "headers" -> otoroshiResult.header.headers),
+    // "otoroshi_result" -> Json.obj("status" -> otoroshiResult.header.status, "headers" -> otoroshiResult.header.headers),
     "apikey" -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
     "user" -> user.map(_.lightJson).getOrElse(JsNull).as[JsValue],
     // "route" -> route.json,
@@ -395,8 +407,8 @@ trait NgRequestTransformer extends NgPlugin {
 
   def afterRequest(ctx: NgAfterRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = ().vfuture
 
-  def transformError(ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
-    ctx.otoroshiResult.vfuture
+  def transformError(ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[PluginHttpResponse] = {
+    ctx.otoroshiResponse.vfuture
   }
 
   def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpRequest]] = {

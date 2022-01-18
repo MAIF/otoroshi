@@ -17,11 +17,12 @@ class MaintenanceMode extends NgPreRouting {
         "Service in maintenance mode",
         Results.ServiceUnavailable,
         ctx.request,
-        ctx.route.serviceDescriptor.some,
+        None,
         Some("errors.service.in.maintenance"),
         duration = ctx.report.getDurationNow(), // TODO: checks if it's the rights move
         overhead = ctx.report.getOverheadInNow(), // TODO: checks if it's the rights move
-        attrs = ctx.attrs
+        attrs = ctx.attrs,
+        maybeRoute = ctx.route.some,
       ).map(r => Left(NgPreRoutingErrorWithResult(r)))
   }
 }
@@ -34,11 +35,12 @@ class BuildMode extends NgPreRouting {
         "Service under construction",
         Results.ServiceUnavailable,
         ctx.request,
-        ctx.route.serviceDescriptor.some,
+        None,
         Some("errors.service.under.construction"),
         duration = ctx.report.getDurationNow(), // TODO: checks if it's the rights move
         overhead = ctx.report.getOverheadInNow(), // TODO: checks if it's the rights move
-        attrs = ctx.attrs
+        attrs = ctx.attrs,
+        maybeRoute = ctx.route.some,
       ).map(r => Left(NgPreRoutingErrorWithResult(r)))
   }
 }

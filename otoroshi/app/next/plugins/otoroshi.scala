@@ -222,14 +222,15 @@ class OtoroshiChallenge extends NgRequestTransformer {
             "No service found for the specified target host, the service descriptor should be verified !",
             Results.NotFound,
             ctx.request,
-            ctx.route.serviceDescriptor.some,
+            None,
             "errors.no.service.found".some,
             // duration = System.currentTimeMillis - start,
             // overhead = (System
             //   .currentTimeMillis() - secondStart) + firstOverhead,
             // cbDuration = cbDuration,
             // callAttempts = callAttempts,
-            attrs = ctx.attrs
+            attrs = ctx.attrs,
+            maybeRoute = ctx.route.some,
           ).map(Left.apply)
         } else if (isUp) {
           logger.error(stateRespInvalid.errorMessage(ctx.response))
@@ -244,28 +245,30 @@ class OtoroshiChallenge extends NgRequestTransformer {
             "Backend server does not seems to be secured. Cancelling request !",
             Results.BadGateway,
             ctx.request,
-            ctx.route.serviceDescriptor.some,
+            None,
             Some("errors.service.not.secured"),
             // duration = System.currentTimeMillis - start,
             // overhead = (System
             //   .currentTimeMillis() - secondStart) + firstOverhead,
             // cbDuration = cbDuration,
             // callAttempts = callAttempts,
-            attrs = ctx.attrs
+            attrs = ctx.attrs,
+            maybeRoute = ctx.route.some,
           ).map(Left.apply)
         } else {
           Errors.craftResponseResult(
             "The service seems to be down :( come back later",
             Forbidden,
             ctx.request,
-            ctx.route.serviceDescriptor.some,
+            None,
             Some("errors.service.down"),
             // duration = System.currentTimeMillis - start,
             // overhead = (System
             //   .currentTimeMillis() - secondStart) + firstOverhead,
             // cbDuration = cbDuration,
             // callAttempts = callAttempts,
-            attrs = ctx.attrs
+            attrs = ctx.attrs,
+            maybeRoute = ctx.route.some,
           ).map(Left.apply)
         }
       }
