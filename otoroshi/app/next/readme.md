@@ -5,6 +5,7 @@
 - [ ] tricky plugins
 - [ ] detect apikeys sooner
 - [ ] remove apikey stuff from request before the forward
+- [x] handle ws
 - [x] Loader Job to keep all route in memory
 - [x] Loader Job to keep all apikeys in memory
 - [x] Loader Job to keep all certificates in memory
@@ -15,7 +16,7 @@
 ## new entities
 
 - [x] Route
-- [ ] Backend
+- [x] Backend
 
 ## needed plugins
 
@@ -37,7 +38,7 @@
 - [x] CORS (transformer)
 - [ ] tricky plugins
   - [ ] gzip (transformer)
-  - [ ] tcp/udp tunneling (?? - if possible, implies support for WS)
+  - [x] tcp/udp tunneling (?? - if possible, implies support for WS)
   - [ ] snow monkey (transformer)
   - [ ] canary (??)
 - [x] headers related plugins

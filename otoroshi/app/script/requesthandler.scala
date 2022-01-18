@@ -1,7 +1,7 @@
 package otoroshi.script
 
 import akka.http.scaladsl.model.Uri
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -14,10 +14,11 @@ import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
 import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.{Request, Result, Results}
+import play.api.mvc.{Request, RequestHeader, Result, Results}
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.http.websocket.{Message => PlayWSMessage}
 
 trait RequestHandler extends StartableAndStoppable with NamedPlugin {
   override def pluginType: PluginType                                      = PluginType.RequestHandlerType
@@ -25,7 +26,11 @@ trait RequestHandler extends StartableAndStoppable with NamedPlugin {
   def handle(
       request: Request[Source[ByteString, _]],
       defaultRouting: Request[Source[ByteString, _]] => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result]               = defaultRouting(request)
+  )(implicit ec: ExecutionContext, env: Env): Future[Result] = defaultRouting(request)
+  def handleWs(
+    request: RequestHeader,
+    defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = defaultRouting(request)
 }
 
 class ForwardTrafficHandler extends RequestHandler {

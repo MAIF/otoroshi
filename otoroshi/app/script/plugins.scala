@@ -2,7 +2,7 @@ package otoroshi.script.plugins
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
@@ -197,13 +197,29 @@ case class Plugins(
   def handleRequest(
       request: Request[Source[ByteString, _]],
       defaultRouting: Request[Source[ByteString, _]] => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = env.metrics.withTimer("handle-dispatch") {
+  )(implicit ec: ExecutionContext, env: Env): Future[Result] = env.metrics.withTimer("handle-ng-dispatch") {
     if (enabled) {
       val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)
       val maybeHandler = if (handlersMapHasWildcard) handlersMap.find(t => RegexPool(t._1).matches(request.theDomain)).map(_._2) else handlersMap.get(request.theDomain)
       maybeHandler match {
         case None          => defaultRouting(request)
         case Some(handler) => env.metrics.withTimerAsync("handle-ng-request")(handler.handle(request, defaultRouting))
+      }
+    } else {
+      defaultRouting(request)
+    }
+  }
+
+  def handleWsRequest(
+    request: RequestHeader,
+    defaultRouting: RequestHeader => Future[Either[Result, Flow[play.api.http.websocket.Message, play.api.http.websocket.Message, _]]]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[play.api.http.websocket.Message, play.api.http.websocket.Message, _]]] = env.metrics.withTimer("handle-ng-ws-dispatch") {
+    if (enabled) {
+      val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)
+      val maybeHandler = if (handlersMapHasWildcard) handlersMap.find(t => RegexPool(t._1).matches(request.theDomain)).map(_._2) else handlersMap.get(request.theDomain)
+      maybeHandler match {
+        case None          => defaultRouting(request)
+        case Some(handler) => env.metrics.withTimerAsync("handle-ng-ws-request")(handler.handleWs(request, defaultRouting))
       }
     } else {
       defaultRouting(request)

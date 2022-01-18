@@ -1,8 +1,9 @@
 package otoroshi.next.proxy
 
 import akka.Done
+import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import org.joda.time.DateTime
@@ -19,7 +20,7 @@ import otoroshi.script.RequestHandler
 import otoroshi.security.IdGenerator
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.http.WSCookieWithSameSite
+import otoroshi.utils.http.{HeadersHelper, WSCookieWithSameSite}
 import otoroshi.utils.streams.MaxLengthLimiter
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{TypedMap, UrlSanitizer}
@@ -27,13 +28,15 @@ import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.ws.WSResponse
-import play.api.mvc.Results.Status
+import play.api.mvc.Results.{NotFound, Status}
 import play.api.mvc._
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
+import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
+import play.api.libs.streams.ActorFlow
 
 class ProxyEngine() extends RequestHandler {
 
@@ -105,14 +108,21 @@ class ProxyEngine() extends RequestHandler {
     enabledDomains.get()
   }
 
-  // TODO: handleWs
-
   override def handle(request: Request[Source[ByteString, _]], defaultRouting: Request[Source[ByteString, _]] => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
     val config = getConfig()
     if (enabledRef.get()) {
-      // env.metrics.withTimerAsync("handle-ng-request")(handleRequest(request, config))
       handleRequest(request, config)
+    } else {
+      defaultRouting(request)
+    }
+  }
+
+  override def handleWs(request: RequestHeader, defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
+    val config = getConfig()
+    if (enabledRef.get()) {
+      handleWsRequest(request, config)
     } else {
       defaultRouting(request)
     }
@@ -158,7 +168,7 @@ class ProxyEngine() extends RequestHandler {
     (for {
       _               <- handleConcurrentRequest(request)
       _               =  report.markDoneAndStart("find-route")
-      route           <- findRoute(request)
+      route           <- findRoute(request, request.body)
       _               =  report.markDoneAndStart("tenant-check", Json.obj("found_route" -> route.json).some)
       _               <- handleTenantCheck(route)
       _               =  report.markDoneAndStart("check-global-maintenance")
@@ -176,14 +186,13 @@ class ProxyEngine() extends RequestHandler {
         case sb @ SelectedBackend(backend, attempts, alreadyFailed, cbStart) =>
           report.markDoneAndStart("transform-requests", Json.obj("backend" -> backend.json).some)
           for {
-            finalRequest  <- callRequestTransformer(snowflake, request, route, backend)
+            finalRequest  <- callRequestTransformer(snowflake, request, request.body, route, backend)
             _             =  report.markDoneAndStart("call-backend")
             response      <- callBackend(snowflake, request, finalRequest, route, backend)
             _             =  report.markDoneAndStart("transform-response")
             finalResp     <- callResponseTransformer(snowflake, request, response, remQuotas, route, backend)
             _             =  report.markDoneAndStart("stream-response")
             clientResp    <- streamResponse(snowflake, request, response, finalResp, route, backend)
-            _             =  report.markDoneAndStart("call-after-request-callbacks")
             _             =  report.markDoneAndStart("trigger-analytics")
             _             <- triggerProxyDone(snowflake, request, response, finalRequest, finalResp, route, backend, sb)
           } yield clientResp
@@ -235,7 +244,96 @@ class ProxyEngine() extends RequestHandler {
     })
   }
 
-  def handleHighOverhead(req: Request[Source[ByteString, _]], route: Option[Route])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+  @inline
+  def handleWsRequest(request: RequestHeader, config: JsObject)(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    val requestId = IdGenerator.uuid
+    val reporting = config.select("reporting").asOpt[Boolean].getOrElse(true)
+    implicit val report = ExecutionReport(requestId, reporting)
+    report.start("start-handling")
+    implicit val mat = env.otoroshiMaterializer
+
+    val snowflake           = env.snowflakeGenerator.nextIdStr()
+    val callDate            = DateTime.now()
+    val requestTimestamp    = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
+    val reqNumber           = reqCounter.incrementAndGet()
+    val counterIn           = new AtomicLong(0L)
+    val counterOut          = new AtomicLong(0L)
+    val start               = System.currentTimeMillis()
+    implicit val attrs      = TypedMap.empty.put(
+      otoroshi.next.plugins.Keys.ReportKey       -> report,
+      otoroshi.plugins.Keys.RequestNumberKey     -> reqNumber,
+      otoroshi.plugins.Keys.SnowFlakeKey         -> snowflake,
+      otoroshi.plugins.Keys.RequestTimestampKey  -> callDate,
+      otoroshi.plugins.Keys.RequestStartKey      -> start,
+      otoroshi.plugins.Keys.RequestWebsocketKey  -> false,
+      otoroshi.plugins.Keys.RequestCounterInKey  -> counterIn,
+      otoroshi.plugins.Keys.RequestCounterOutKey -> counterOut
+    )
+
+    val elCtx: Map[String, String] = Map(
+      "requestId"        -> snowflake,
+      "requestSnowflake" -> snowflake,
+      "requestTimestamp" -> requestTimestamp
+    )
+
+    attrs.put(otoroshi.plugins.Keys.ElCtxKey -> elCtx)
+
+    val fakeBody = Source.empty[ByteString]
+    report.markDoneAndStart("check-concurrent-requests")
+    (for {
+      _               <- handleConcurrentRequest(request)
+      _               =  report.markDoneAndStart("find-route")
+      route           <- findRoute(request, fakeBody)
+      _               =  report.markDoneAndStart("tenant-check", Json.obj("found_route" -> route.json).some)
+      _               <- handleTenantCheck(route)
+      _               =  report.markDoneAndStart("check-global-maintenance")
+      _               <- checkGlobalMaintenance(route)
+      _               =  report.markDoneAndStart("call-before-request-callbacks")
+      _               <- callPluginsBeforeRequestCallback(snowflake, request, route)
+      _               =  report.markDoneAndStart("call-pre-route-plugins")
+      _               <- callPreRoutePlugins(snowflake, request, route)
+      _               =  report.markDoneAndStart("call-access-validator-plugins")
+      _               <- callAccessValidatorPlugins(snowflake, request, route)
+      _               =  report.markDoneAndStart("enforce-global-limits")
+      remQuotas       <- checkGlobalLimits(request, route) // generic.scala (1269)
+      _               =  report.markDoneAndStart("choose-backend", Json.obj("remaining_quotas" -> remQuotas.toJson).some)
+      result          <- callWsTarget(snowflake, reqNumber, request, route) {
+        case sb @ SelectedBackend(backend, attempts, alreadyFailed, cbStart) =>
+          report.markDoneAndStart("transform-requests", Json.obj("backend" -> backend.json).some)
+          for {
+            finalRequest  <- callRequestTransformer(snowflake, request, fakeBody, route, backend)
+            _             =  report.markDoneAndStart("call-backend")
+            flow          <- callWsBackend(snowflake, request, finalRequest, route, backend)
+            _             =  report.markDoneAndStart("trigger-analytics")
+            _             <- triggerWsProxyDone(snowflake, request, finalRequest, route, backend, sb)
+          } yield flow
+      }
+    } yield {
+      result
+    }).value.flatMap {
+      case Left(error)   =>
+        report.markDoneAndStart("rendering intermediate result").markSuccess()
+        error.asResult().map(r => Left(r))
+      case Right(flow) =>
+        report.markSuccess()
+        Right(flow).vfuture
+    }.recover {
+      case t: Throwable =>
+        report.markFailure("last-recover", t)
+        Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> t.getMessage, "report" -> report.json)).left
+    }.andThen {
+      case _ =>
+        report.markOverheadOut()
+        report.markDurations()
+        attrs.get(Keys.RouteKey).foreach { route =>
+          callPluginsAfterRequestCallback(snowflake, request, route)
+          handleHighOverhead(request, route.some)
+          RequestFlowReport(report, route).toAnalytics()
+        }
+    }
+  }
+
+  def handleHighOverhead(req: RequestHeader, route: Option[Route])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
     val overhead = report.getOverheadNow()
     if (overhead > env.overheadThreshold) {
       HighOverheadAlert(
@@ -301,17 +399,17 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def findRoute(request: Request[Source[ByteString, _]])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Route] = {
+  def findRoute(request: RequestHeader, body: Source[ByteString, _])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Route] = {
     // env.proxyState.allRoutes().filter(_.enabled).find(r => r.matches(request))
     env.proxyState.getDomainRoutes(request.theDomain).flatMap(_.find(_.matches(request, attrs,  true))) match {
       case Some(route) =>
         attrs.put(Keys.RouteKey -> route)
         FEither.right(route)
-      case None => callRequestSinkPlugins(request)
+      case None => callRequestSinkPlugins(request, body)
     }
   }
 
-  def callRequestSinkPlugins(request: Request[Source[ByteString, _]])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer):  FEither[ProxyEngineError, Route] = {
+  def callRequestSinkPlugins(request: RequestHeader, body: Source[ByteString, _])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer):  FEither[ProxyEngineError, Route] = {
     def failure(): FEither[ProxyEngineError, Route] = {
       report.markFailure(s"route not found for domain: '${request.theDomain}${request.thePath}'")
       FEither.left(ResultProxyEngineError(Results.NotFound(Json.obj("error" -> "not_found", "error_description" -> "no route found !"))))
@@ -330,7 +428,7 @@ class ProxyEngine() extends RequestHandler {
             origin = NgRequestOrigin.NgReverseProxy,
             status = 404,
             message = s"route not found",
-            body = request.body
+            body = body
           )
           (wrapper, ctx)
         }
@@ -357,7 +455,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def callPluginsBeforeRequestCallback(snowflake: String, request: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+  def callPluginsBeforeRequestCallback(snowflake: String, request: RequestHeader, route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
     val all_plugins = route.plugins.transformerPlugins(request)
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[ProxyEngineError, Done]]()
@@ -421,7 +519,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def callPluginsAfterRequestCallback(snowflake: String, request: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] =  {
+  def callPluginsAfterRequestCallback(snowflake: String, request: RequestHeader, route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] =  {
     val all_plugins = route.plugins.transformerPlugins(request)
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[ProxyEngineError, Done]]()
@@ -485,7 +583,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def callPreRoutePlugins(snowflake: String, request: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+  def callPreRoutePlugins(snowflake: String, request: RequestHeader, route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
     val all_plugins = route.plugins.preRoutePlugins(request)
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[ProxyEngineError, Done]]()
@@ -557,7 +655,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def callAccessValidatorPlugins(snowflake: String, request: Request[Source[ByteString, _]], route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+  def callAccessValidatorPlugins(snowflake: String, request: RequestHeader, route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
     val all_plugins = route.plugins.accessValidatorPlugins(request)
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[ProxyEngineError, Done]]()
@@ -628,7 +726,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def checkGlobalLimits(request: Request[Source[ByteString, _]], route: Route) (implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, RemainingQuotas] = {
+  def checkGlobalLimits(request: RequestHeader, route: Route) (implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, RemainingQuotas] = {
     val remoteAddress = request.theIpAddress
     val isUp = true
     def errorResult(status: Results.Status, message: String, code: String): Future[Either[ProxyEngineError, RemainingQuotas]] = {
@@ -903,6 +1001,213 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
+  def callWsTarget(snowflake: String, reqNumber: Long, request: RequestHeader, route: Route)(f: SelectedBackend => FEither[ProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]] = {
+    val cbStart            = System.currentTimeMillis()
+    val trackingId = attrs.get(Keys.RequestTrackingIdKey).getOrElse(IdGenerator.uuid)
+    val bodyAlreadyConsumed = new AtomicBoolean(false)
+    attrs.put(Keys.BodyAlreadyConsumedKey -> bodyAlreadyConsumed)
+    if (
+      globalConfig.useCircuitBreakers && route.client.useCircuitBreaker
+    ) {
+      val counter            = new AtomicInteger(0)
+      val relUri             = request.relativeUri
+      val cachedPath: String =
+        route.client
+          .timeouts(relUri)
+          .map(_ => relUri)
+          .getOrElse("")
+
+      def callF(target: Target, attempts: Int, alreadyFailed: AtomicBoolean): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+        val backend = getBackend(target, route)
+        attrs.put(Keys.BackendKey -> backend)
+        f(SelectedBackend(backend, attempts, alreadyFailed, cbStart)).value.flatMap {
+          case Left(err) => err.asResult().map(Left.apply) // TODO: optimize
+          case r @ Right(value) => Right(value).vfuture
+        }
+      }
+
+      def handleError(t: Throwable): Future[Either[Result,  Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+        t match {
+          case BodyAlreadyConsumedException                       =>
+            Errors
+              .craftResponseResult(
+                s"Something went wrong, the backend service does not respond quickly enough but consumed all the request body, you should try later. Thanks for your understanding",
+                Results.GatewayTimeout,
+                request,
+                None,
+                Some("errors.request.timeout"),
+                duration = report.getDurationNow(),
+                overhead = report.getOverheadInNow(),
+                cbDuration = System.currentTimeMillis - cbStart,
+                callAttempts = counter.get(),
+                attrs = attrs,
+                maybeRoute = route.some,
+              )
+              .map(Left.apply)
+          case RequestTimeoutException                            =>
+            Errors
+              .craftResponseResult(
+                s"Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding",
+                Results.GatewayTimeout,
+                request,
+                None,
+                Some("errors.request.timeout"),
+                duration = report.getDurationNow(),
+                overhead = report.getOverheadInNow(),
+                cbDuration = System.currentTimeMillis - cbStart,
+                callAttempts = counter.get(),
+                attrs = attrs,
+                maybeRoute = route.some,
+              )
+              .map(Left.apply)
+          case _: scala.concurrent.TimeoutException               =>
+            Errors
+              .craftResponseResult(
+                s"Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding",
+                Results.GatewayTimeout,
+                request,
+                None,
+                Some("errors.request.timeout"),
+                duration = report.getDurationNow(),
+                overhead = report.getOverheadInNow(),
+                cbDuration = System.currentTimeMillis - cbStart,
+                callAttempts = counter.get(),
+                attrs = attrs,
+                maybeRoute = route.some,
+              )
+              .map(Left.apply)
+          case AllCircuitBreakersOpenException                    =>
+            Errors
+              .craftResponseResult(
+                s"Something went wrong, the backend service seems a little bit overwhelmed, you should try later. Thanks for your understanding",
+                Results.ServiceUnavailable,
+                request,
+                None,
+                Some("errors.circuit.breaker.open"),
+                duration = report.getDurationNow(),
+                overhead = report.getOverheadInNow(),
+                cbDuration = System.currentTimeMillis - cbStart,
+                callAttempts = counter.get(),
+                attrs = attrs,
+                maybeRoute = route.some,
+              )
+              .map(Left.apply)
+          case error
+            if error != null && error.getMessage != null && error.getMessage
+              .toLowerCase()
+              .contains("connection refused") =>
+            Errors
+              .craftResponseResult(
+                s"Something went wrong, the connection to backend service was refused, you should try later. Thanks for your understanding",
+                Results.BadGateway,
+                request,
+                None,
+                Some("errors.connection.refused"),
+                duration = report.getDurationNow(),
+                overhead = report.getOverheadInNow(),
+                cbDuration = System.currentTimeMillis - cbStart,
+                callAttempts = counter.get(),
+                attrs = attrs,
+                maybeRoute = route.some,
+              )
+              .map(Left.apply)
+          case error if error != null && error.getMessage != null =>
+            logger.error(
+              s"Something went wrong, you should try later",
+              error
+            )
+            Errors
+              .craftResponseResult(
+                s"Something went wrong, you should try later. Thanks for your understanding.",
+                Results.BadGateway,
+                request,
+                None,
+                Some("errors.proxy.error"),
+                duration = report.getDurationNow(),
+                overhead = report.getOverheadInNow(),
+                cbDuration = System.currentTimeMillis - cbStart,
+                callAttempts = counter.get(),
+                attrs = attrs,
+                maybeRoute = route.some,
+              )
+              .map(Left.apply)
+          case error                                              =>
+            logger.error(
+              s"Something went wrong, you should try later",
+              error
+            )
+            Errors
+              .craftResponseResult(
+                s"Something went wrong, you should try later. Thanks for your understanding",
+                Results.BadGateway,
+                request,
+                None,
+                Some("errors.proxy.error"),
+                duration = report.getDurationNow(),
+                overhead = report.getOverheadInNow(),
+                cbDuration = System.currentTimeMillis - cbStart,
+                callAttempts = counter.get(),
+                attrs = attrs,
+                maybeRoute = route.some,
+              )
+              .map(Left.apply)
+        }
+      }
+
+      implicit val scheduler = env.otoroshiScheduler
+      FEither(env.circuitBeakersHolder
+        .get(
+          route.id + cachedPath,
+          () => new ServiceDescriptorCircuitBreaker()
+        )
+        .callGenNg[Flow[PlayWSMessage, PlayWSMessage, _]](
+          route.id,
+          route.name,
+          route.backends.targets.map(_.toTarget),
+          route.backends.loadBalancing,
+          route.client,
+          reqNumber.toString,
+          trackingId,
+          request.relativeUri,
+          request,
+          bodyAlreadyConsumed,
+          s"${request.method} ${request.relativeUri}",
+          counter,
+          attrs,
+          callF
+        ) recoverWith {
+        case t: Throwable => handleError(t)
+      } map {
+        case Left(res) => Left(ResultProxyEngineError(res))
+        case Right(value) => Right(value)
+      })
+    } else {
+
+      val target = attrs
+        .get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey)
+        .getOrElse {
+
+          val targets: Seq[Target] = route.backends.targets.map(_.toTarget)
+            .filter(_.predicate.matches(reqNumber.toString, request, attrs))
+            .flatMap(t => Seq.fill(t.weight)(t))
+          route.backends.loadBalancing
+            .select(
+              reqNumber.toString,
+              trackingId,
+              request,
+              targets,
+              route.id
+            )
+        }
+      //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
+      // Round robin loadbalancing is happening here !!!!!
+      //val target = targets.apply(index.toInt)
+      val backend = getBackend(target, route)
+      attrs.put(Keys.BackendKey -> backend)
+      f(SelectedBackend(backend, 1, new AtomicBoolean(false), cbStart))
+    }
+  }
+
   def maybeStrippedUri(req: RequestHeader, rawUri: String, route: Route): String = {
     val allPaths = route.frontend.domains.map(_.path)
     val root        = req.relativeUri
@@ -916,7 +1221,7 @@ class ProxyEngine() extends RequestHandler {
       .getOrElse(rawUri)
   }
 
-  def callRequestTransformer(snowflake: String, request: Request[Source[ByteString, _]], route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, NgPluginHttpRequest] = {
+  def callRequestTransformer(snowflake: String, request: RequestHeader, body: Source[ByteString, _], route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, NgPluginHttpRequest] = {
     val wsCookiesIn = request.cookies.toSeq.map(c =>
       WSCookieWithSameSite(
         name = c.name,
@@ -936,7 +1241,7 @@ class ProxyEngine() extends RequestHandler {
 
     val lazySource = Source.single(ByteString.empty).flatMapConcat { _ =>
       attrs.get(Keys.BodyAlreadyConsumedKey).foreach(_.compareAndSet(false, true))
-      request.body
+      body
     }
 
     val headersInFiltered = Seq(
@@ -1043,6 +1348,57 @@ class ProxyEngine() extends RequestHandler {
       FEither.apply(promise.future)
     } else {
       FEither.right(otoroshiRequest)
+    }
+  }
+
+  def callWsBackend(snowflake: String, rawRequest: RequestHeader, request : NgPluginHttpRequest, route: Route, backend: Backend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]] = {
+    val finalTarget: Target = request.backend.getOrElse(backend).toTarget
+    attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> finalTarget)
+    val all_tunnel_handlers = route.plugins.tunnelHandlerPlugins(rawRequest)
+    if (all_tunnel_handlers.nonEmpty) {
+       val handler = all_tunnel_handlers.head
+       if (request.relativeUri.startsWith("/.well-known/otoroshi/tunnel")) {
+         val ctx = NgTunnelHandlerContext(
+           snowflake = snowflake,
+           request = rawRequest,
+           route = route,
+           config = handler.instance.config.raw,
+           attrs = attrs,
+         )
+         FEither(handler.plugin.handle(ctx).right.vfuture)
+       } else {
+         FEither(Errors
+           .craftResponseResult(
+             s"Resource not found",
+             NotFound,
+             rawRequest,
+             None,
+             Some("errors.resource.not.found"),
+             attrs = attrs,
+             maybeRoute = route.some
+           ).map(r => Left(ResultProxyEngineError(r))))
+       }
+    } else {
+      if (route.useAkkaHttpWsClient) {
+        FEither(WebSocketProxyActor.wsCall(
+          UrlSanitizer.sanitize(request.url),
+          request.headers.toSeq,
+          route.serviceDescriptor,
+          finalTarget
+        ).right.vfuture)
+      } else {
+        FEither(ActorFlow
+          .actorRef(out =>
+            WebSocketProxyActor.props(
+              UrlSanitizer.sanitize(request.url),
+              out,
+              request.headers.toSeq,
+              route.serviceDescriptor,
+              finalTarget,
+              env
+            )
+          )(env.otoroshiActorSystem, env.otoroshiMaterializer).right.vfuture)
+      }
     }
   }
 
@@ -1323,6 +1679,127 @@ class ProxyEngine() extends RequestHandler {
         }
       }
     }
+  }
+
+  def triggerWsProxyDone(snowflake: String, rawRequest: RequestHeader, request: NgPluginHttpRequest, route: Route, backend: Backend, sb: SelectedBackend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+    Future {
+      val actualDuration: Long = report.getDurationNow()
+      val overhead: Long = report.getOverheadNow()
+      val upstreamLatency: Long = report.getStep("call-backend").map(_.duration).getOrElse(-1L)
+      val apiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
+      val paUsr = attrs.get(otoroshi.plugins.Keys.UserKey)
+      val callDate = attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).get
+      val counterIn = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
+      val counterOut = attrs.get(otoroshi.plugins.Keys.RequestCounterOutKey).get
+      val fromOtoroshi = rawRequest.headers
+        .get(env.Headers.OtoroshiRequestId)
+        .orElse(rawRequest.headers.get(env.Headers.OtoroshiGatewayParentRequest))
+      val duration: Long = {
+        if (route.id == env.backOfficeServiceId && actualDuration > 300L)
+          300L
+        else actualDuration
+      }
+      env.analyticsQueue ! AnalyticsQueueEvent(
+        route.serviceDescriptor,
+        duration,
+        overhead,
+        counterIn.get(),
+        counterOut.get(),
+        upstreamLatency,
+        globalConfig
+      )
+      route.backends.loadBalancing match {
+        case BestResponseTime =>
+          BestResponseTime.incrementAverage(route.id, backend.toTarget, duration)
+        case WeightedBestResponseTime(_) =>
+          BestResponseTime.incrementAverage(route.id, backend.toTarget, duration)
+        case _ =>
+      }
+      val fromLbl =
+        rawRequest.headers
+          .get(env.Headers.OtoroshiVizFromLabel)
+          .getOrElse("internet")
+      val viz: OtoroshiViz = OtoroshiViz(
+        to = route.id,
+        toLbl = route.name,
+        from = rawRequest.headers
+          .get(env.Headers.OtoroshiVizFrom)
+          .getOrElse("internet"),
+        fromLbl = fromLbl,
+        fromTo = s"$fromLbl###${route.name}"
+      )
+      val cbDuration = System.currentTimeMillis() - sb.cbStart
+      val evt = GatewayEvent(
+        `@id` = env.snowflakeGenerator.nextIdStr(),
+        reqId = snowflake,
+        parentReqId = fromOtoroshi,
+        `@timestamp` = DateTime.now(),
+        `@calledAt` = callDate,
+        protocol = rawRequest.version,
+        to = Location(
+          scheme = rawRequest.theProtocol,
+          host = rawRequest.theHost,
+          uri = rawRequest.relativeUri
+        ),
+        target = Location(
+          scheme = backend.toTarget.scheme,
+          host = backend.toTarget.host,
+          uri = rawRequest.relativeUri
+        ),
+        duration = duration,
+        overhead = overhead,
+        cbDuration = cbDuration,
+        overheadWoCb = overhead - cbDuration,
+        callAttempts = sb.attempts,
+        url = rawRequest.theUrl,
+        method = rawRequest.method,
+        from = rawRequest.theIpAddress,
+        env = "prod",
+        data = DataInOut(
+          dataIn = counterIn.get(),
+          dataOut = counterOut.get()
+        ),
+        status = 200,
+        headers = rawRequest.headers.toSimpleMap.toSeq.map(Header.apply),
+        headersOut = Seq.empty,
+        otoroshiHeadersIn = request.headers.toSeq.map(Header.apply),
+        otoroshiHeadersOut = Seq.empty,
+        extraInfos = attrs.get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey),
+        identity = apiKey
+          .map(k =>
+            Identity(
+              identityType = "APIKEY",
+              identity = k.clientId,
+              label = k.clientName
+            )
+          )
+          .orElse(
+            paUsr.map(k =>
+              Identity(
+                identityType = "PRIVATEAPP",
+                identity = k.email,
+                label = k.name
+              )
+            )
+          ),
+        responseChunked = false,
+        `@serviceId` = route.id,
+        `@service` = route.name,
+        descriptor = None,
+        route = Some(route),
+        `@product` = route.metadata.getOrElse("product", "--"),
+        remainingQuotas = attrs.get(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey).getOrElse(RemainingQuotas()),
+        viz = Some(viz),
+        clientCertChain = rawRequest.clientCertChainPem,
+        err = attrs.get(otoroshi.plugins.Keys.GwErrorKey).isDefined,
+        gwError = attrs.get(otoroshi.plugins.Keys.GwErrorKey).map(_.message),
+        userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
+        geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
+        extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
+      )
+      evt.toAnalytics()
+    }(env.analyticsExecutionContext)
+    FEither.right(Done)
   }
 
   def triggerProxyDone(snowflake: String, rawRequest: Request[Source[ByteString, _]], rawResponse: WSResponse, request: NgPluginHttpRequest, response: NgPluginHttpResponse, route: Route, backend: Backend, sb: SelectedBackend)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {

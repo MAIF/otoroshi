@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.{FileIO, Source}
+import akka.stream.scaladsl.{FileIO, Flow, Source}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.auth.{AuthModuleConfig, SamlAuthModuleConfig, SessionCookieValues}
@@ -379,9 +379,9 @@ class GatewayRequestHandler(
 
   @inline
   def reverseProxyCall(request: RequestHeader, config: Option[GlobalConfig]): Option[Handler] = {
+    val exists = env.metrics.withTimer("handle-search-handler")(config.exists(_.plugins.canHandleRequest(request)))
     request.headers.get("Sec-WebSocket-Version") match {
       case None    => {
-        val exists = env.metrics.withTimer("handle-search-handler")(config.exists(_.plugins.canHandleRequest(request)))
         if (exists) {
           Some(actionBuilder.async(sourceBodyParser) { zeRequest =>
             config.get.plugins.handleRequest(
@@ -408,10 +408,20 @@ class GatewayRequestHandler(
           )
         }
       }
-      case Some(_) =>
-        Some(
-          webSocketHandler.forwardCall(reverseProxyAction, snowMonkey, headersInFiltered, headersOutFiltered)
-        )
+      case Some(_) => {
+        if (exists) {
+          Some(WebSocket.acceptOrResult[play.api.http.websocket.Message, play.api.http.websocket.Message] { zeRequest =>
+            config.get.plugins.handleWsRequest(
+              zeRequest,
+              r => webSocketHandler.forwardCallRaw(r, reverseProxyAction, snowMonkey, headersInFiltered, headersOutFiltered)
+            )
+          })
+        } else {
+          Some(
+            webSocketHandler.forwardCall(reverseProxyAction, snowMonkey, headersInFiltered, headersOutFiltered)
+          )
+        }
+      }
     }
   }
 

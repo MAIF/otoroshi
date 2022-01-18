@@ -119,6 +119,16 @@ case class NgPlugins(slots: Seq[PluginInstance]) {
         case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
       }
   }
+
+  def tunnelHandlerPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgTunnelHandler]] = {
+    slots
+      .filter(_.enabled)
+      .filter(_.matches(request))
+      .map(inst => (inst, inst.getPlugin[NgTunnelHandler]))
+      .collect {
+        case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+      }
+  }
 }
 
 object NgPlugins {

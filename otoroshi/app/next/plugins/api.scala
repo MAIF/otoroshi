@@ -3,7 +3,7 @@ package otoroshi.next.plugins.api
 import akka.Done
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
@@ -15,6 +15,7 @@ import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, Startabl
 import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
 import play.api.http.HttpEntity
+import play.api.http.websocket.Message
 import play.api.libs.json._
 import play.api.libs.ws.{WSCookie, WSResponse}
 import play.api.mvc.{RequestHeader, Result, Results}
@@ -508,4 +509,33 @@ case class NgRouteMatcherContext(
 
 trait NgRouteMatcher extends NgNamedPlugin {
   def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean
+}
+
+case class NgTunnelHandlerContext(
+  snowflake: String,
+  request: RequestHeader,
+  route: Route,
+  config: JsValue,
+  attrs: TypedMap,
+) {
+  def json: JsValue = Json.obj(
+    "snowflake" -> snowflake,
+    // "route" -> route.json,
+    "route" -> "omitted_for_brevity",
+    "request" -> JsonHelpers.requestToJson(request),
+    "config" -> config,
+    "attrs" -> attrs.json
+  )
+}
+
+trait NgTunnelHandler extends NgNamedPlugin with NgAccessValidator {
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val isWebsocket = ctx.request.headers.get("Sec-WebSocket-Version").isDefined
+    if (isWebsocket) {
+      NgAccess.NgAllowed.vfuture
+    } else {
+      NgAccess.NgDenied(Results.NotFound(Json.obj("error" -> "not_found"))).vfuture
+    }
+  }
+  def handle(ctx: NgTunnelHandlerContext)(implicit env: Env, ec: ExecutionContext): Flow[Message, Message, _]
 }
