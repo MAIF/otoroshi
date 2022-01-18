@@ -26,6 +26,7 @@
     "licences": "legally"
   },
   "dependencies": {
+    "@popperjs/core": "^2.11.2",
     "antd": "3.26.0",
     "bcryptjs": "2.4.3",
     "bootstrap": "^5.1.3",
