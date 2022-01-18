@@ -3,6 +3,7 @@ package otoroshi.next.models
 import otoroshi.env.Env
 import otoroshi.models.{ApiKeyRouteMatcher, _}
 import otoroshi.next.plugins._
+import otoroshi.next.plugins.api.PluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.RegexPool
@@ -12,6 +13,7 @@ import play.api.libs.json._
 import play.api.mvc.RequestHeader
 
 import scala.concurrent.duration._
+import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
 case class DomainAndPath(raw: String) {
@@ -269,25 +271,14 @@ object Route {
     client = ClientConfig(),
     healthCheck = HealthCheck(false, "/"),
     plugins = Plugins(Seq(
-      // PluginInstance(
-      //   plugin = "cp:otoroshi.next.plugins.ForceHttpsTraffic",
-      // ),
       PluginInstance(
-        plugin = "cp:otoroshi.next.plugins.ApikeyCalls"
+        plugin = PluginHelper.pluginId[ApikeyCalls]
       ),
       PluginInstance(
-        plugin = "cp:otoroshi.next.plugins.OverrideHost",
+        plugin = PluginHelper.pluginId[OverrideHost],
       ),
-      //PluginInstance(
-      //  plugin = "cp:otoroshi.next.plugins.HeadersValidation",
-      //  config = PluginInstanceConfig(Json.obj(
-      //    "headers" -> Json.obj(
-      //      "foo" -> "bar"
-      //    )
-      //  ))
-      //),
       PluginInstance(
-        plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
+        plugin = PluginHelper.pluginId[AdditionalHeadersOut],
         config = PluginInstanceConfig(Json.obj(
           "headers" -> Json.obj(
             "bar" -> "foo"
@@ -295,7 +286,7 @@ object Route {
         ))
       ),
       PluginInstance(
-        plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
+        plugin = PluginHelper.pluginId[AdditionalHeadersOut],
         config = PluginInstanceConfig(Json.obj(
           "headers" -> Json.obj(
             "bar2" -> "foo2"
@@ -332,6 +323,7 @@ object Route {
 
   // TODO: move creation/mutation logic on each plugin to avoid desync issues
   def fromServiceDescriptor(service: ServiceDescriptor, debug: Boolean): Route = {
+    import PluginHelper.pluginId
     Route(
       location = service.location,
       id = service.id,
@@ -381,17 +373,17 @@ object Route {
         Seq.empty[PluginInstance]
           .applyOnIf(service.forceHttps) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.ForceHttpsTraffic",
+              plugin = pluginId[ForceHttpsTraffic],
             )
           }
           .applyOnIf(service.overrideHost) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.OverrideHost",
+              plugin = pluginId[OverrideHost],
             )
           }
           .applyOnIf(service.headersVerification.nonEmpty) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.HeadersValidation",
+              plugin = pluginId[HeadersValidation],
               config = PluginInstanceConfig(Json.obj(
                 "headers" -> JsObject(service.headersVerification.mapValues(JsString.apply))
               ))
@@ -399,27 +391,27 @@ object Route {
           }
           .applyOnIf(service.maintenanceMode) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.MaintenanceMode"
+              plugin = pluginId[MaintenanceMode]
             )
           }
           .applyOnIf(service.buildMode) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.BuildMode"
+              plugin = pluginId[BuildMode]
             )
           }
           .applyOnIf(!service.allowHttp10) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.DisableHttp10"
+              plugin = pluginId[DisableHttp10]
             )
           }
           .applyOnIf(service.readOnly) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.ReadOnlyCalls"
+              plugin = pluginId[ReadOnlyCalls]
             )
           }
           .applyOnIf(service.ipFiltering.blacklist.nonEmpty) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.IpAddressBlockList",
+              plugin = pluginId[IpAddressBlockList],
               config = PluginInstanceConfig(Json.obj(
                 "addresses" -> JsArray(service.ipFiltering.blacklist.map(JsString.apply))
               ))
@@ -427,7 +419,7 @@ object Route {
           }
           .applyOnIf(service.ipFiltering.whitelist.nonEmpty) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.IpAddressAllowedList",
+              plugin = pluginId[IpAddressAllowedList],
               config = PluginInstanceConfig(Json.obj(
                 "addresses" -> JsArray(service.ipFiltering.whitelist.map(JsString.apply))
               ))
@@ -435,13 +427,13 @@ object Route {
           }
           .applyOnIf(service.redirection.enabled) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.Redirection",
+              plugin = pluginId[Redirection],
               config = PluginInstanceConfig(service.redirection.toJson.as[JsObject])
             )
           }
           .applyOnIf(service.additionalHeaders.nonEmpty) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.AdditionalHeadersIn",
+              plugin = pluginId[AdditionalHeadersIn],
               config = PluginInstanceConfig(Json.obj(
                 "headers" -> JsObject(service.additionalHeaders.mapValues(JsString.apply))
               ))
@@ -449,7 +441,7 @@ object Route {
           }
           .applyOnIf(service.additionalHeadersOut.nonEmpty) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
+              plugin = pluginId[AdditionalHeadersOut],
               config = PluginInstanceConfig(Json.obj(
                 "headers" -> JsObject(service.additionalHeadersOut.mapValues(JsString.apply))
               ))
@@ -457,7 +449,7 @@ object Route {
           }
           .applyOnIf(service.missingOnlyHeadersIn.nonEmpty) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.MissingHeadersIn",
+              plugin = pluginId[MissingHeadersIn],
               config = PluginInstanceConfig(Json.obj(
                 "headers" -> JsObject(service.missingOnlyHeadersIn.mapValues(JsString.apply))
               ))
@@ -465,7 +457,7 @@ object Route {
           }
           .applyOnIf(service.missingOnlyHeadersOut.nonEmpty) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.MissingHeadersOut",
+              plugin = pluginId[MissingHeadersOut],
               config = PluginInstanceConfig(Json.obj(
                 "headers" -> JsObject(service.missingOnlyHeadersOut.mapValues(JsString.apply))
               ))
@@ -473,7 +465,7 @@ object Route {
           }
           .applyOnIf(service.removeHeadersIn.nonEmpty) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.RemoveHeadersIn",
+              plugin = pluginId[RemoveHeadersIn],
               config = PluginInstanceConfig(Json.obj(
                 "headers" -> JsArray(service.removeHeadersIn.map(JsString.apply))
               ))
@@ -481,7 +473,7 @@ object Route {
           }
           .applyOnIf(service.removeHeadersOut.nonEmpty) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.RemoveHeadersOut",
+              plugin = pluginId[RemoveHeadersOut],
               config = PluginInstanceConfig(Json.obj(
                 "headers" -> JsArray(service.removeHeadersOut.map(JsString.apply))
               ))
@@ -489,17 +481,17 @@ object Route {
           }
           .applyOnIf(service.sendOtoroshiHeadersBack) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.SendOtoroshiHeadersBack",
+              plugin = pluginId[SendOtoroshiHeadersBack],
             )
           }
           .applyOnIf(service.xForwardedHeaders) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.XForwardedHeaders",
+              plugin = pluginId[XForwardedHeaders],
             )
           }
           .applyOnIf(service.publicPatterns.nonEmpty || service.privatePatterns.nonEmpty) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.PublicPrivatePaths",
+              plugin = pluginId[PublicPrivatePaths],
               config = PluginInstanceConfig(Json.obj(
                 "private_patterns" -> JsArray(service.privatePatterns.map(JsString.apply)),
                 "public_patterns" -> JsArray(service.publicPatterns.map(JsString.apply)),
@@ -510,7 +502,7 @@ object Route {
           .applyOnIf(service.jwtVerifier.enabled && service.jwtVerifier.isRef) { seq =>
             val verifier = service.jwtVerifier.asInstanceOf[RefJwtVerifier]
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.JwtVerification",
+              plugin = pluginId[JwtVerification],
               exclude = verifier.excludedPatterns,
               config = PluginInstanceConfig(Json.obj(
                 "verifiers" -> JsArray(verifier.ids.map(JsString.apply)),
@@ -519,13 +511,13 @@ object Route {
           }
           .applyOnIf(service.restrictions.enabled) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.RoutingRestrictions",
+              plugin = pluginId[RoutingRestrictions],
               config = PluginInstanceConfig(service.restrictions.json.asObject)
             )
           }
           .applyOnIf(service.privateApp && service.authConfigRef.isDefined) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.AuthModule",
+              plugin = pluginId[AuthModule],
               exclude = service.securityExcludedPatterns,
               config = PluginInstanceConfig(Json.obj(
                 "auth_module" -> service.authConfigRef.get
@@ -534,7 +526,7 @@ object Route {
           }
           .applyOnIf(service.enforceSecureCommunication && service.sendStateChallenge) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.OtoroshiChallenge",
+              plugin = pluginId[OtoroshiChallenge],
               exclude = service.secComExcludedPatterns,
               config = PluginInstanceConfig(Json.obj(
                 "version" -> service.secComVersion.str,
@@ -548,7 +540,7 @@ object Route {
           }
           .applyOnIf(service.enforceSecureCommunication && service.sendInfoToken) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.OtoroshiInfos",
+              plugin = pluginId[OtoroshiInfos],
               exclude = service.secComExcludedPatterns,
               config = PluginInstanceConfig(Json.obj(
                 "version" -> service.secComInfoTokenVersion.version,
@@ -560,20 +552,17 @@ object Route {
           }
           .applyOnIf(service.cors.enabled) { seq =>
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.Cors",
+              plugin = pluginId[Cors],
               exclude = service.cors.excludedPatterns,
               config = PluginInstanceConfig(service.cors.asJson.asObject)
             )
           }
           .applyOnIf(service.detectApiKeySooner) { seq =>
-            seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.ApikeyExtractor",
-              config = PluginInstanceConfig(service.apiKeyConstraints.json.asObject)
-            )
+            seq // TODO: implements ?
           }
           .applyOnIf(true) { seq => // TODO: always true ?
             seq :+ PluginInstance(
-              plugin = "cp:otoroshi.next.plugins.ApikeyCalls",
+              plugin = pluginId[ApikeyCalls],
               include = service.privatePatterns,
               exclude = service.publicPatterns,
               config = PluginInstanceConfig(service.apiKeyConstraints.json.asObject)

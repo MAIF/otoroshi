@@ -5,6 +5,7 @@ import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser}
 import otoroshi.next.models.{Backend, PluginInstance, Route}
@@ -18,8 +19,14 @@ import play.api.libs.ws.{WSCookie, WSResponse}
 import play.api.mvc.{RequestHeader, Result, Results}
 
 import java.security.cert.X509Certificate
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
+
+object PluginHelper {
+  def pluginId[A](implicit ct: ClassTag[A]): String = s"cp:${ct.runtimeClass.getName}"
+}
 
 case class PluginHttpRequest(
   url: String,
@@ -169,6 +176,45 @@ trait NgNamedPlugin extends NamedPlugin { self =>
     }
 }
 
+object CachedConfigContext {
+  private val cache: Cache[String, Any] = Scaffeine()
+    .expireAfterWrite(5.seconds)
+    .maximumSize(1000)
+    .build()
+}
+
+trait CachedConfigContext {
+  def route: Route
+  def config: JsValue
+  def cachedConfig[A](plugin: String)(reads: Reads[A]): Option[A] = Try {
+    val key = s"${route.id}::${plugin}"
+    CachedConfigContext.cache.getIfPresent(key) match {
+      case None => reads.reads(config) match {
+        case JsError(_) => None // TODO: log
+        case JsSuccess(value, _) =>
+          CachedConfigContext.cache.put(key, value)
+          Some(value)
+      }
+      case Some(v) => Some(v.asInstanceOf[A])
+    }
+  }.toOption.flatten
+
+  def cachedConfigFn[A](plugin: String)(reads: JsValue => Option[A]): Option[A] =Try {
+    val key = s"${route.id}::${plugin}"
+    CachedConfigContext.cache.getIfPresent(key) match {
+      case None => reads(config) match {
+        case None => None
+        case s @ Some(value) =>
+          CachedConfigContext.cache.put(key, value)
+          s
+      }
+      case Some(v) => Some(v.asInstanceOf[A])
+    }
+  }.toOption.flatten
+  def rawConfig[A](reads: Reads[A]): Option[A] = reads.reads(config).asOpt
+  def rawConfigFn[A](reads: JsValue => Option[A]): Option[A] = reads(config)
+}
+
 trait NgPlugin extends StartableAndStoppable with NgNamedPlugin with InternalEventListener
 
 case class NgPreRoutingContext(
@@ -179,7 +225,7 @@ case class NgPreRoutingContext(
   globalConfig: JsValue,
   attrs: TypedMap,
   report: ExecutionReport,
-) {
+) extends CachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     // "route" -> route.json,
@@ -223,7 +269,7 @@ case class NgBeforeRequestContext(
   config: JsValue,
   attrs: TypedMap,
   globalConfig: JsValue = Json.obj()
-) {
+) extends CachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     // "route" -> route.json,
@@ -242,7 +288,7 @@ case class NgAfterRequestContext(
   config: JsValue,
   attrs: TypedMap,
   globalConfig: JsValue = Json.obj()
-) {
+) extends CachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     // "route" -> route.json,
@@ -266,7 +312,7 @@ case class NgTransformerRequestContext(
   attrs: TypedMap,
   globalConfig: JsValue = Json.obj(),
   report: ExecutionReport
-) {
+) extends CachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     "raw_request" -> rawRequest.json,
@@ -295,7 +341,7 @@ case class NgTransformerResponseContext(
   attrs: TypedMap,
   globalConfig: JsValue = Json.obj(),
   report: ExecutionReport
-) {
+) extends CachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     "raw_response" -> rawResponse.json,
@@ -325,7 +371,7 @@ case class NgTransformerErrorContext(
   config: JsValue,
   globalConfig: JsValue = Json.obj(),
   attrs: TypedMap
-) {
+) extends CachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     "maybe_cause_id" -> maybeCauseId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -372,7 +418,7 @@ case class NgAccessContext(
   attrs: TypedMap,
   globalConfig: JsValue,
   report: ExecutionReport,
-) {
+) extends CachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     "apikey" -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
@@ -394,4 +440,39 @@ object NgAccess {
 
 trait NgAccessValidator extends NgNamedPlugin {
   def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess]
+}
+
+sealed trait NgRequestOrigin {
+  def name: String
+}
+object NgRequestOrigin {
+  case object NgErrorHandler extends NgRequestOrigin { def name: String = "NgErrorHandler" }
+  case object NgReverseProxy extends NgRequestOrigin { def name: String = "NgReverseProxy" }
+}
+
+case class NgRequestSinkContext(
+  snowflake: String,
+  request: RequestHeader,
+  config: JsValue,
+  attrs: TypedMap,
+  origin: NgRequestOrigin,
+  status: Int,
+  message: String,
+  body: Source[ByteString, _]
+) {
+  def json: JsValue = Json.obj(
+    "snowflake" -> snowflake,
+    "request" -> JsonHelpers.requestToJson(request),
+    "config" -> config,
+    "attrs" -> attrs.json,
+    "origin" -> origin.name,
+    "status" -> status,
+    "message" -> message
+  )
+}
+
+trait NgRequestSink extends NgNamedPlugin {
+  def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean       = false
+  def handle(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] =
+    Results.NotImplemented(Json.obj("error" -> "not implemented yet")).vfuture
 }

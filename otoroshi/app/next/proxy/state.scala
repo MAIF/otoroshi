@@ -4,6 +4,8 @@ import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.next.models._
+import otoroshi.next.plugins.{AdditionalHeadersOut, OverrideHost}
+import otoroshi.next.plugins.api.PluginHelper
 import otoroshi.script._
 import otoroshi.ssl.Cert
 import otoroshi.utils.RegexPool
@@ -177,151 +179,166 @@ class ProxyStateLoaderJob extends Job {
   override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
     JobInstantiation.OneInstancePerOtoroshiInstance
 
-  def generateRoutesByDomain(): Future[Seq[Route]] = {
-    (0 until 10000).map { idx =>
-      Route(
-        location = EntityLocation.default,
-        id = s"route_generated-domain-${idx}",
-        name = s"generated_fake_route_domain_${idx}",
-        description = s"generated_fake_route_domain_${idx}",
-        tags = Seq.empty,
-        metadata = Map.empty,
-        enabled = true,
-        debugFlow = true,
-        frontend = Frontend(
-          domains = Seq(DomainAndPath(s"${idx}-generated-next-gen.oto.tools")),
-          headers = Map.empty,
-          stripPath = true,
-          apikey = ApiKeyRouteMatcher(),
-        ),
-        backends = Backends(
-          targets = Seq(Backend(
-            id = "mirror-1",
-            hostname = "mirror.otoroshi.io",
-            port = 443,
-            tls = true
-          )),
-          root = s"/gen-${idx}",
-          loadBalancing = RoundRobin
-        ),
-        client = ClientConfig(),
-        healthCheck = HealthCheck(false, "/"),
-        plugins = Plugins(Seq(
-          PluginInstance(
-            plugin = "cp:otoroshi.next.plugins.OverrideHost",
-            enabled = true,
-            include = Seq.empty,
-            exclude = Seq.empty,
-            config = PluginInstanceConfig(Json.obj())
+  def generateRoutesByDomain(env: Env): Future[Seq[Route]] = {
+    import PluginHelper.pluginId
+    if (env.env == "dev") {
+      (0 until 10000).map { idx =>
+        Route(
+          location = EntityLocation.default,
+          id = s"route_generated-domain-${idx}",
+          name = s"generated_fake_route_domain_${idx}",
+          description = s"generated_fake_route_domain_${idx}",
+          tags = Seq.empty,
+          metadata = Map.empty,
+          enabled = true,
+          debugFlow = true,
+          frontend = Frontend(
+            domains = Seq(DomainAndPath(s"${idx}-generated-next-gen.oto.tools")),
+            headers = Map.empty,
+            stripPath = true,
+            apikey = ApiKeyRouteMatcher(),
           ),
-          PluginInstance(
-            plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
-            enabled = true,
-            include = Seq.empty,
-            exclude = Seq.empty,
-            config = PluginInstanceConfig(Json.obj(
-              "headers" -> Json.obj(
-                "bar" -> "foo"
-              )
-            ))
-          )
-        ))
-      )
-    }.vfuture
+          backends = Backends(
+            targets = Seq(Backend(
+              id = "mirror-1",
+              hostname = "mirror.otoroshi.io",
+              port = 443,
+              tls = true
+            )),
+            root = s"/gen-${idx}",
+            loadBalancing = RoundRobin
+          ),
+          client = ClientConfig(),
+          healthCheck = HealthCheck(false, "/"),
+          plugins = Plugins(Seq(
+            PluginInstance(
+              plugin = pluginId[OverrideHost],
+              enabled = true,
+              include = Seq.empty,
+              exclude = Seq.empty,
+              config = PluginInstanceConfig(Json.obj())
+            ),
+            PluginInstance(
+              plugin = pluginId[AdditionalHeadersOut],
+              enabled = true,
+              include = Seq.empty,
+              exclude = Seq.empty,
+              config = PluginInstanceConfig(Json.obj(
+                "headers" -> Json.obj(
+                  "bar" -> "foo"
+                )
+              ))
+            )
+          ))
+        )
+      }.vfuture
+    } else {
+      Seq.empty.vfuture
+    }
   }
 
-  def generateRoutesByName(): Future[Seq[Route]] = {
-    (0 until 10000).map { idx =>
-      Route(
-        location = EntityLocation.default,
-        id = s"route_generated-path-${idx}",
-        name = s"generated_fake_route_path_${idx}",
-        description = s"generated_fake_route_path_${idx}",
-        tags = Seq.empty,
-        metadata = Map.empty,
-        enabled = true,
-        debugFlow = true,
-        frontend = Frontend(
-          domains = Seq(DomainAndPath(s"path-generated-next-gen.oto.tools/api/${idx}")),
-          headers = Map.empty,
-          stripPath = true,
-          apikey = ApiKeyRouteMatcher(),
-        ),
-        backends = Backends(
-          targets = Seq(Backend(
-            id = "mirror-1",
-            hostname = "mirror.otoroshi.io",
-            port = 443,
-            tls = true
-          )),
-          root = s"/path-${idx}",
-          loadBalancing = RoundRobin
-        ),
-        client = ClientConfig(),
-        healthCheck = HealthCheck(false, "/"),
-        plugins = Plugins(Seq(
-          PluginInstance(
-            plugin = "cp:otoroshi.next.plugins.OverrideHost",
-            config = PluginInstanceConfig(Json.obj())
+  def generateRoutesByName(env: Env): Future[Seq[Route]] = {
+    import PluginHelper.pluginId
+    if (env.env == "dev") {
+      (0 until 10000).map { idx =>
+        Route(
+          location = EntityLocation.default,
+          id = s"route_generated-path-${idx}",
+          name = s"generated_fake_route_path_${idx}",
+          description = s"generated_fake_route_path_${idx}",
+          tags = Seq.empty,
+          metadata = Map.empty,
+          enabled = true,
+          debugFlow = true,
+          frontend = Frontend(
+            domains = Seq(DomainAndPath(s"path-generated-next-gen.oto.tools/api/${idx}")),
+            headers = Map.empty,
+            stripPath = true,
+            apikey = ApiKeyRouteMatcher(),
           ),
-          PluginInstance(
-            plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
-            config = PluginInstanceConfig(Json.obj(
-              "headers" -> Json.obj(
-                "bar" -> "foo"
-              )
-            ))
-          )
-        ))
-      )
-    }.vfuture
+          backends = Backends(
+            targets = Seq(Backend(
+              id = "mirror-1",
+              hostname = "mirror.otoroshi.io",
+              port = 443,
+              tls = true
+            )),
+            root = s"/path-${idx}",
+            loadBalancing = RoundRobin
+          ),
+          client = ClientConfig(),
+          healthCheck = HealthCheck(false, "/"),
+          plugins = Plugins(Seq(
+            PluginInstance(
+              plugin = pluginId[OverrideHost],
+              config = PluginInstanceConfig(Json.obj())
+            ),
+            PluginInstance(
+              plugin = pluginId[AdditionalHeadersOut],
+              config = PluginInstanceConfig(Json.obj(
+                "headers" -> Json.obj(
+                  "bar" -> "foo"
+                )
+              ))
+            )
+          ))
+        )
+      }.vfuture
+    } else {
+      Seq.empty.vfuture
+    }
   }
 
-  def generateRandomRoutes(): Future[Seq[Route]] = {
-    (0 until ((Math.random() * 50) + 10).toInt).map { idx =>
-      Route(
-        location = EntityLocation.default,
-        id = s"route_generated-random-${idx}",
-        name = s"generated_fake_route_random_${idx}",
-        description = s"generated_fake_route_radom_${idx}",
-        tags = Seq.empty,
-        metadata = Map.empty,
-        enabled = true,
-        debugFlow = true,
-        frontend = Frontend(
-          domains = Seq(DomainAndPath(s"random-generated-next-gen.oto.tools/api/${idx}")),
-          headers = Map.empty,
-          stripPath = true,
-          apikey = ApiKeyRouteMatcher(),
-        ),
-        backends = Backends(
-          targets = Seq(Backend(
-            id = "mirror-1",
-            hostname = "mirror.otoroshi.io",
-            port = 443,
-            tls = true
-          )),
-          root = s"/path-${idx}",
-          loadBalancing = RoundRobin
-        ),
-        client = ClientConfig(),
-        healthCheck = HealthCheck(false, "/"),
-        plugins = Plugins(Seq(
-          PluginInstance(
-            plugin = "cp:otoroshi.next.plugins.OverrideHost",
-            config = PluginInstanceConfig(Json.obj())
+  def generateRandomRoutes(env: Env): Future[Seq[Route]] = {
+    import PluginHelper.pluginId
+    if (env.env == "dev") {
+      (0 until ((Math.random() * 50) + 10).toInt).map { idx =>
+        Route(
+          location = EntityLocation.default,
+          id = s"route_generated-random-${idx}",
+          name = s"generated_fake_route_random_${idx}",
+          description = s"generated_fake_route_radom_${idx}",
+          tags = Seq.empty,
+          metadata = Map.empty,
+          enabled = true,
+          debugFlow = true,
+          frontend = Frontend(
+            domains = Seq(DomainAndPath(s"random-generated-next-gen.oto.tools/api/${idx}")),
+            headers = Map.empty,
+            stripPath = true,
+            apikey = ApiKeyRouteMatcher(),
           ),
-          PluginInstance(
-            plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
-            config = PluginInstanceConfig(Json.obj(
-              "headers" -> Json.obj(
-                "bar" -> "foo"
-              )
-            ))
-          )
-        ))
-      )
-    }.vfuture
+          backends = Backends(
+            targets = Seq(Backend(
+              id = "mirror-1",
+              hostname = "mirror.otoroshi.io",
+              port = 443,
+              tls = true
+            )),
+            root = s"/path-${idx}",
+            loadBalancing = RoundRobin
+          ),
+          client = ClientConfig(),
+          healthCheck = HealthCheck(false, "/"),
+          plugins = Plugins(Seq(
+            PluginInstance(
+              plugin = pluginId[OverrideHost],
+              config = PluginInstanceConfig(Json.obj())
+            ),
+            PluginInstance(
+              plugin = pluginId[AdditionalHeadersOut],
+              config = PluginInstanceConfig(Json.obj(
+                "headers" -> Json.obj(
+                  "bar" -> "foo"
+                )
+              ))
+            )
+          ))
+        )
+      }.vfuture
+    } else {
+      Seq.empty.vfuture
+    }
   }
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
@@ -330,12 +347,13 @@ class ProxyStateLoaderJob extends Job {
     val debug = config.select("debug").asOpt[Boolean].getOrElse(false)
     val debugHeaders = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
     for {
-      routes <- env.datastores.routeDataStore.findAll().map(routes => routes ++ Seq(Route.fake))
-      genRoutesDomain <- generateRoutesByDomain()
-      genRoutesPath <- generateRoutesByName()
-      genRandom <- generateRandomRoutes()
+      routes <- env.datastores.routeDataStore.findAll()
+      genRoutesDomain <- generateRoutesByDomain(env)
+      genRoutesPath <- generateRoutesByName(env)
+      genRandom <- generateRandomRoutes(env)
       descriptors <- env.datastores.serviceDescriptorDataStore.findAll()
-      newRoutes = genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d => Route.fromServiceDescriptor(d, debug || debugHeaders)) ++ routes
+      fakeRoutes = if (env.env == "dev") Seq(Route.fake) else Seq.empty
+      newRoutes = genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d => Route.fromServiceDescriptor(d, debug || debugHeaders)) ++ routes ++ fakeRoutes
       apikeys <- env.datastores.apiKeyDataStore.findAll()
       certs <- env.datastores.certificatesDataStore.findAll()
       verifiers <- env.datastores.globalJwtVerifierDataStore.findAll()
