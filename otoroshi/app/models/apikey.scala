@@ -545,7 +545,14 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
   }
 }
 
-case class ApikeyTuple(clientId: String, clientSecret: Option[String] = None, jwtToken: Option[DecodedJWT] = None)
+sealed trait ApikeyLocationKind 
+object ApikeyLocationKind {
+  case object Header extends ApikeyLocationKind
+  case object Cookie extends ApikeyLocationKind
+  case object Query  extends ApikeyLocationKind
+}
+case class ApikeyLocation(kind: ApikeyLocationKind, name: String)
+case class ApikeyTuple(clientId: String, clientSecret: Option[String] = None, jwtToken: Option[DecodedJWT] = None, location: Option[ApikeyLocation])
 
 object ApiKeyHelper {
 
@@ -1377,14 +1384,17 @@ object ApiKeyHelper {
     attrs.get(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey) match {
       case s @ Some(_) => s
       case None => {
+        var location = ApikeyLocation(ApikeyLocationKind.Header, "--")
         val authByJwtToken: Option[ApikeyTuple] = req.headers
           .get(
             constraints.jwtAuth.headerName
               .getOrElse(env.Headers.OtoroshiBearer)
           )
+          .seffectOnWithPredicate(_.isDefined)(_ => location = ApikeyLocation(ApikeyLocationKind.Header, constraints.jwtAuth.headerName.getOrElse(env.Headers.OtoroshiBearer)))
           .orElse(
             req.headers.get("Authorization").filter(_.startsWith("Bearer "))
           )
+          .seffectOnWithPredicate(_.isDefined)(_ => location = ApikeyLocation(ApikeyLocationKind.Header, "Authorization"))
           .map(_.replace("Bearer ", ""))
           .orElse(
             req.queryString
@@ -1393,6 +1403,7 @@ object ApiKeyHelper {
                   .getOrElse(env.Headers.OtoroshiBearerAuthorization)
               )
               .flatMap(_.lastOption)
+              .seffectOnWithPredicate(_.isDefined)(_ => location = ApikeyLocation(ApikeyLocationKind.Query, constraints.jwtAuth.queryName.getOrElse(env.Headers.OtoroshiBearerAuthorization)))
           )
           .orElse(
             req.cookies
@@ -1401,6 +1412,7 @@ object ApiKeyHelper {
                   .getOrElse(env.Headers.OtoroshiJWTAuthorization)
               )
               .map(_.value)
+              .seffectOnWithPredicate(_.isDefined)(_ => location = ApikeyLocation(ApikeyLocationKind.Cookie, constraints.jwtAuth.cookieName.getOrElse(env.Headers.OtoroshiJWTAuthorization)))
           )
           .filter(_.split("\\.").length == 3)
           .flatMap(v => Try(JWT.decode(v)).toOption)
@@ -1409,14 +1421,16 @@ object ApiKeyHelper {
             .orElse(jwt.claimStr("client_id"))
             .orElse(jwt.claimStr("cid"))
             .orElse(jwt.claimStr("iss")).map(cid => (cid, jwt)))
-          .map(t => ApikeyTuple(t._1, jwtToken = t._2.some))
+          .map(t => ApikeyTuple(t._1, jwtToken = t._2.some, location = location.some))
         val authBasic: Option[ApikeyTuple] = req.headers
           .get(
             constraints.basicAuth.headerName
               .getOrElse(env.Headers.OtoroshiAuthorization)
           )
+          .seffectOnWithPredicate(_.isDefined)(_ => location = ApikeyLocation(ApikeyLocationKind.Header, constraints.basicAuth.headerName.getOrElse(env.Headers.OtoroshiAuthorization)))
           .orElse(
             req.headers.get("Authorization").filter(_.startsWith("Basic "))
+              .seffectOnWithPredicate(_.isDefined)(_ => location = ApikeyLocation(ApikeyLocationKind.Header, "Authorization"))
           )
           .map(_.replace("Basic ", ""))
           .flatMap(e => Try(decodeBase64(e)).toOption)
@@ -1428,28 +1442,31 @@ object ApiKeyHelper {
               )
               .flatMap(_.lastOption)
               .flatMap(e => Try(decodeBase64(e)).toOption)
+              .seffectOnWithPredicate(_.isDefined)(_ => location = ApikeyLocation(ApikeyLocationKind.Query, constraints.basicAuth.queryName.getOrElse(env.Headers.OtoroshiBasicAuthorization)))
           )
           .map(_.split(":"))
           .filter(_.size == 2)
-          .map(parts => ApikeyTuple(parts.head, parts.lastOption))
+          .map(parts => ApikeyTuple(parts.head, parts.lastOption, location = location.some))
         val authByCustomHeaders: Option[ApikeyTuple] = req.headers
           .get(
             constraints.customHeadersAuth.clientIdHeaderName
               .getOrElse(env.Headers.OtoroshiClientId)
           )
+          .seffectOnWithPredicate(_.isDefined)(_ => location = ApikeyLocation(ApikeyLocationKind.Header, constraints.customHeadersAuth.clientIdHeaderName.getOrElse(env.Headers.OtoroshiClientId)))
           .flatMap(id =>
             req.headers
               .get(
                 constraints.customHeadersAuth.clientSecretHeaderName
                   .getOrElse(env.Headers.OtoroshiClientSecret)
               )
-              .map(s => ApikeyTuple(id, s.some))
+              .map(s => ApikeyTuple(id, s.some, location = location.some))
           )
         val authBySimpleApiKeyClientId: Option[ApikeyTuple] = req.headers
           .get(
             constraints.clientIdAuth.headerName
               .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
           )
+          .seffectOnWithPredicate(_.isDefined)(_ => location = ApikeyLocation(ApikeyLocationKind.Header, constraints.clientIdAuth.headerName.getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)))
           .orElse(
             req.queryString
               .get(
@@ -1457,8 +1474,9 @@ object ApiKeyHelper {
                   .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
               )
               .flatMap(_.lastOption)
-          ).map(ApikeyTuple(_))
-        val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(a => ApikeyTuple(a.clientId, a.clientSecret.some))
+              .seffectOnWithPredicate(_.isDefined)(_ => location = ApikeyLocation(ApikeyLocationKind.Query, constraints.clientIdAuth.queryName.getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)))
+          ).map(v => ApikeyTuple(v, location = location.some))
+        val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(a => ApikeyTuple(a.clientId, a.clientSecret.some, location = None)).orElse(attrs.get(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey))
         if (preExtractedApiKey.isDefined) {
           preExtractedApiKey
         } else if (authBySimpleApiKeyClientId.isDefined && constraints.clientIdAuth.enabled) {
@@ -1483,10 +1501,10 @@ object ApiKeyHelper {
         env.datastores.apiKeyDataStore.findAuthorizeKeyForFromCache(apikeyTuple.clientId, service) match {
           case None => None.left
           case Some(apikey) => apikeyTuple match {
-            case ApikeyTuple(_, None, None) if apikey.allowClientIdOnly => apikey.right
-            case ApikeyTuple(_, Some(secret), None) if apikey.isValid(secret) => apikey.right
-            case ApikeyTuple(_, Some(secret), None) if apikey.isInvalid(secret) => apikey.some.left
-            case ApikeyTuple(_, None, Some(jwt)) => {
+            case ApikeyTuple(_, None, None, _) if apikey.allowClientIdOnly => apikey.right
+            case ApikeyTuple(_, Some(secret), None, _) if apikey.isValid(secret) => apikey.right
+            case ApikeyTuple(_, Some(secret), None, _) if apikey.isInvalid(secret) => apikey.some.left
+            case ApikeyTuple(_, None, Some(jwt), _) => {
               val possibleKeyPairId = apikey.metadata.get("jwt-sign-keypair")
               val kid = Option(jwt.getKeyId)
                 .orElse(possibleKeyPairId)

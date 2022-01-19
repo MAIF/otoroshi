@@ -2,8 +2,8 @@
 
 ## TODO
 
-- [ ] tricky plugins
-- [ ] remove apikey stuff from request before the forward
+- [x] remove apikey stuff from request before the forward
+- [x] tricky plugins
 - [x] handle ws
 - [x] Loader Job to keep all route in memory
 - [x] Loader Job to keep all apikeys in memory

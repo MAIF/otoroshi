@@ -2,15 +2,17 @@ package otoroshi.next.plugins
 
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
-import otoroshi.models.{ApiKeyConstraints, ApiKeyHelper, RedirectionSettings}
+import otoroshi.models.{ApiKeyConstraints, ApiKeyHelper, ApikeyLocationKind, ApikeyTuple, RedirectionSettings}
 import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.{JsObject, Reads}
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
+import akka.stream.Materializer
+import play.api.mvc.Result
 
-class ApikeyCalls extends NgAccessValidator with NgRouteMatcher {
+class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRouteMatcher {
 
   private val configCache: Cache[String, ApiKeyConstraints] = Scaffeine()
     .expireAfterWrite(5.seconds)
@@ -59,5 +61,22 @@ class ApikeyCalls extends NgAccessValidator with NgRouteMatcher {
       case Some(_) => NgAccess.NgAllowed.vfuture
     }
   }
-  // TODO: remove apikey header in reqtrans
+
+  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result,NgPluginHttpRequest]] = {
+    ctx.attrs.get(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey) match {
+      case Some(ApikeyTuple(_, _, _, Some(location))) => {
+        location.kind match {
+          case ApikeyLocationKind.Header => ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers.filterNot(_._1.toLowerCase() == location.name.toLowerCase())).right.vfuture
+          case ApikeyLocationKind.Query  => {
+            val uri = ctx.otoroshiRequest.uri
+            val newQuery = uri.rawQueryString.map(_ => uri.query().filterNot(_._1 == location.name).toString())
+            val newUrl = uri.copy(rawQueryString = newQuery).toString()
+            ctx.otoroshiRequest.copy(url = newUrl).right.vfuture
+          }
+          case ApikeyLocationKind.Cookie => ctx.otoroshiRequest.copy(cookies = ctx.otoroshiRequest.cookies.filterNot(_.name == location.name)).right.vfuture
+        }
+      }
+      case _ => ctx.otoroshiRequest.right.vfuture
+    }
+  }
 }
