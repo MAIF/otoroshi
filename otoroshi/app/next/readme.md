@@ -3,7 +3,6 @@
 ## TODO
 
 - [ ] tricky plugins
-- [ ] detect apikeys sooner
 - [ ] remove apikey stuff from request before the forward
 - [x] handle ws
 - [x] Loader Job to keep all route in memory
@@ -40,7 +39,7 @@
   - [ ] gzip (transformer)
   - [x] tcp/udp tunneling (?? - if possible, implies support for WS)
   - [ ] snow monkey (transformer)
-  - [ ] canary (??)
+  - [x] canary (??)
 - [x] headers related plugins
   - [x] add headers in (transformer)
   - [x] add headers out (transformer)
@@ -66,3 +65,4 @@
 
 - [x] sidecar (handled with kube stuff now)
 - [x] local redirection
+- [x] detect apikeys sooner

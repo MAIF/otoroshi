@@ -175,6 +175,8 @@ class ProxyEngine() extends RequestHandler {
       _               <- checkGlobalMaintenance(route)
       _               =  report.markDoneAndStart("call-before-request-callbacks")
       _               <- callPluginsBeforeRequestCallback(snowflake, request, route)
+      _               =  report.markDoneAndStart("extract-tracking-id")
+      _               =  extractTrackingId(snowflake, request, reqNumber, route)
       _               =  report.markDoneAndStart("call-pre-route-plugins")
       _               <- callPreRoutePlugins(snowflake, request, route)
       _               =  report.markDoneAndStart("call-access-validator-plugins")
@@ -290,6 +292,8 @@ class ProxyEngine() extends RequestHandler {
       _               <- checkGlobalMaintenance(route)
       _               =  report.markDoneAndStart("call-before-request-callbacks")
       _               <- callPluginsBeforeRequestCallback(snowflake, request, route)
+      _               =  report.markDoneAndStart("extract-tracking-id")
+      _               =  extractTrackingId(snowflake, request, reqNumber, route)
       _               =  report.markDoneAndStart("call-pre-route-plugins")
       _               <- callPreRoutePlugins(snowflake, request, route)
       _               =  report.markDoneAndStart("call-access-validator-plugins")
@@ -330,6 +334,16 @@ class ProxyEngine() extends RequestHandler {
           handleHighOverhead(request, route.some)
           RequestFlowReport(report, route).toAnalytics()
         }
+    }
+  }
+
+  def extractTrackingId(snowflake: String, req: RequestHeader, reqNumber: Int, route: Route)(implicit attrs: TypedMap): Unit = {
+    if (route.backends.loadBalancing.needTrackingCookie) {
+      val trackingId: String = req.cookies
+        .get("otoroshi-tracking")
+        .map(_.value)
+        .getOrElse(IdGenerator.uuid + "-" + reqNumber)
+      attrs.put(otoroshi.plugins.Keys.RequestTrackingIdKey -> trackingId)
     }
   }
 
@@ -794,9 +808,10 @@ class ProxyEngine() extends RequestHandler {
     route.backends.targets.find(b => b.id == target.tags.head).get
   }
 
-  def callTarget(snowflake: String, reqNumber: Long, request: Request[Source[ByteString, _]], route: Route)(f: SelectedBackend => FEither[ProxyEngineError, Result])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Result] = {
+  def callTarget(snowflake: String, reqNumber: Long, request: Request[Source[ByteString, _]], _route: Route)(f: SelectedBackend => FEither[ProxyEngineError, Result])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Result] = {
     val cbStart            = System.currentTimeMillis()
-    val trackingId = attrs.get(Keys.RequestTrackingIdKey).getOrElse(IdGenerator.uuid)
+    val route =  attrs.get(otoroshi.next.plugins.Keys.PossibleBackendsKey).map(b => _route.copy(backends = b)).getOrElse(_route)
+    val trackingId = attrs.get(otoroshi.plugins.Keys.RequestTrackingIdKey).getOrElse(IdGenerator.uuid)
     val bodyAlreadyConsumed = new AtomicBoolean(false)
     attrs.put(Keys.BodyAlreadyConsumedKey -> bodyAlreadyConsumed)
     if (
@@ -1001,9 +1016,10 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def callWsTarget(snowflake: String, reqNumber: Long, request: RequestHeader, route: Route)(f: SelectedBackend => FEither[ProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]] = {
+  def callWsTarget(snowflake: String, reqNumber: Long, request: RequestHeader, _route: Route)(f: SelectedBackend => FEither[ProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]] = {
     val cbStart            = System.currentTimeMillis()
-    val trackingId = attrs.get(Keys.RequestTrackingIdKey).getOrElse(IdGenerator.uuid)
+    val route =  attrs.get(otoroshi.next.plugins.Keys.PossibleBackendsKey).map(b => _route.copy(backends = b)).getOrElse(_route)
+    val trackingId = attrs.get(otoroshi.plugins.Keys.RequestTrackingIdKey).getOrElse(IdGenerator.uuid)
     val bodyAlreadyConsumed = new AtomicBoolean(false)
     attrs.put(Keys.BodyAlreadyConsumedKey -> bodyAlreadyConsumed)
     if (
@@ -1556,7 +1572,7 @@ class ProxyEngine() extends RequestHandler {
       .orElse(response.headers.get("content-length"))
       .orElse(rawResponse.contentLengthStr)
       .map(_.toLong)
-    val cookies = response.cookies.map {
+    val _cookies = response.cookies.map {
       case c: WSCookieWithSameSite =>
         Cookie(
           name = c.name,
@@ -1594,7 +1610,19 @@ class ProxyEngine() extends RequestHandler {
         )
       }
     }
-
+    val cookies = attrs.get(otoroshi.plugins.Keys.RequestTrackingIdKey) match {
+      case None => _cookies
+      case Some(trackingId) => {
+        _cookies :+ play.api.mvc.Cookie(
+          name = "otoroshi-tracking",
+          value = trackingId,
+          maxAge = Some(2592000),
+          path = "/",
+          domain = Some(rawRequest.theDomain),
+          httpOnly = false
+        )
+      }
+    }
     val noContentLengthHeader: Boolean =
       rawResponse.contentLength.isEmpty
     val hasChunkedHeader: Boolean      = rawResponse
