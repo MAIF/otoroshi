@@ -14,6 +14,7 @@ import otoroshi.controllers.adminapi.{ApiKeysFromGroupController, _}
 import otoroshi.env._
 import otoroshi.gateway._
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
+import otoroshi.next.controllers.adminapi.RoutesController
 import otoroshi.next.proxy.ProxyStateLoaderJob
 import otoroshi.storage.DataStores
 import otoroshi.utils.metrics.Metrics
@@ -330,6 +331,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val teamsController              = wire[TeamsController]
   lazy val tenantsController            = wire[TenantsController]
   lazy val dataExporterConfigController = wire[DataExporterConfigController]
+  lazy val routesController             = wire[RoutesController]
 
   override lazy val assets: Assets = wire[Assets]
 

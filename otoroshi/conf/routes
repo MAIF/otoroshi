@@ -426,6 +426,19 @@ PATCH   /api/data-exporter-configs/:id                      otoroshi.controllers
 GET     /api/data-exporter-configs                          otoroshi.controllers.adminapi.DataExporterConfigController.findAllEntitiesAction()
 POST    /api/data-exporter-configs                          otoroshi.controllers.adminapi.DataExporterConfigController.createAction()
 
+## Routes
+GET     /api/experimental/routes/_template                  otoroshi.next.controllers.adminapi.RoutesController.initiateRoute()
+POST    /api/experimental/routes/_bulk                      otoroshi.next.controllers.adminapi.RoutesController.bulkCreateAction()
+PUT     /api/experimental/routes/_bulk                      otoroshi.next.controllers.adminapi.RoutesController.bulkUpdateAction()
+PATCH   /api/experimental/routes/_bulk                      otoroshi.next.controllers.adminapi.RoutesController.bulkPatchAction()
+DELETE  /api/experimental/routes/_bulk                      otoroshi.next.controllers.adminapi.RoutesController.bulkDeleteAction()
+GET     /api/experimental/routes/:id                        otoroshi.next.controllers.adminapi.RoutesController.findEntityByIdAction(id)
+DELETE  /api/experimental/routes/:id                        otoroshi.next.controllers.adminapi.RoutesController.deleteEntityAction(id)
+PUT     /api/experimental/routes/:id                        otoroshi.next.controllers.adminapi.RoutesController.updateEntityAction(id)
+PATCH   /api/experimental/routes/:id                        otoroshi.next.controllers.adminapi.RoutesController.patchEntityAction(id)
+GET     /api/experimental/routes                            otoroshi.next.controllers.adminapi.RoutesController.findAllEntitiesAction()
+POST    /api/experimental/routes                            otoroshi.next.controllers.adminapi.RoutesController.createAction()
+
 GET     /api/stats/global                                     otoroshi.controllers.adminapi.AnalyticsController.globalStats(from: Option[String], to: Option[String])
 GET     /api/status/global                                    otoroshi.controllers.adminapi.AnalyticsController.globalStatus(from: Option[String], to: Option[String])
 GET     /api/stats                                            otoroshi.controllers.adminapi.AnalyticsController.filterableStats(from: Option[String], to: Option[String])

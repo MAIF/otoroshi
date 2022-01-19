@@ -353,7 +353,7 @@ class ProxyStateLoaderJob extends Job {
       genRandom <- generateRandomRoutes(env)
       descriptors <- env.datastores.serviceDescriptorDataStore.findAll()
       fakeRoutes = if (env.env == "dev") Seq(Route.fake) else Seq.empty
-      newRoutes = genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d => Route.fromServiceDescriptor(d, debug || debugHeaders)) ++ routes ++ fakeRoutes
+      newRoutes = genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d => Route.fromServiceDescriptor(d, debug || debugHeaders).debug(_.serviceDescriptor)) ++ routes ++ fakeRoutes
       apikeys <- env.datastores.apiKeyDataStore.findAll()
       certs <- env.datastores.certificatesDataStore.findAll()
       verifiers <- env.datastores.globalJwtVerifierDataStore.findAll()

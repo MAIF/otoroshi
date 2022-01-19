@@ -251,7 +251,7 @@ case class Route(
       ).flatten.nonEmpty,
       // detectApiKeySooner: Boolean = false,
       canary = plugins.getPluginByClass[CanaryMode].flatMap(p => Canary.format.reads(p.config.raw).asOpt.map(_.copy(enabled = true))).getOrElse(Canary()),
-      // chaosConfig: ChaosConfig = ChaosConfig(),
+      chaosConfig = plugins.getPluginByClass[SnowMonkeyChaos].flatMap(p => ChaosConfig._fmt.reads(p.config.raw).asOpt.map(_.copy(enabled = true))).getOrElse(ChaosConfig(enabled = true)),
       gzip = plugins.getPluginByClass[GzipResponseCompressor].flatMap(p => GzipConfig._fmt.reads(p.config.raw).asOpt.map(_.copy(enabled = true, excludedPatterns = p.exclude))).getOrElse(GzipConfig(enabled = true)),
       apiKeyConstraints = {
         plugins.getPluginByClass[ApikeyCalls].flatMap { plugin =>
@@ -662,6 +662,12 @@ object Route {
             seq :+ PluginInstance(
               plugin = pluginId[CanaryMode],
               config = PluginInstanceConfig(service.canary.toJson.asObject)
+            )
+          }
+          .applyOnIf(service.chaosConfig.enabled) { seq =>
+            seq :+ PluginInstance(
+              plugin = pluginId[SnowMonkeyChaos],
+              config = PluginInstanceConfig(service.chaosConfig.asJson.asObject)
             )
           }
           .applyOnIf(service.tcpUdpTunneling) { seq =>

@@ -13,6 +13,7 @@ import otoroshi.api.OtoroshiLoaderHelper
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import play.api.ApplicationLoader.Context
 import controllers.{Assets, AssetsComponents}
+import otoroshi.next.controllers.adminapi.RoutesController
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.EssentialFilter
@@ -115,6 +116,7 @@ package object modules {
     lazy val teamsController              = wire[TeamsController]
     lazy val tenantsController            = wire[TenantsController]
     lazy val dataExporterConfigController = wire[DataExporterConfigController]
+    lazy val routesController             = wire[RoutesController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {
