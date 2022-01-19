@@ -3,7 +3,7 @@ package otoroshi.next.plugins
 import akka.Done
 import otoroshi.el.RedirectionExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.models.{RedirectionSettings, Restrictions}
+import otoroshi.models.RedirectionSettings
 import otoroshi.next.plugins.api.{NgPreRouting, NgPreRoutingContext, NgPreRoutingError, NgPreRoutingErrorWithResult}
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
 import play.api.libs.json.{JsObject, Reads}

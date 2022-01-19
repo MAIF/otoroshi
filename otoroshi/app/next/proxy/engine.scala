@@ -1,7 +1,6 @@
 package otoroshi.next.proxy
 
 import akka.Done
-import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
@@ -20,13 +19,15 @@ import otoroshi.script.RequestHandler
 import otoroshi.security.IdGenerator
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.http.{HeadersHelper, WSCookieWithSameSite}
+import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.streams.MaxLengthLimiter
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{TypedMap, UrlSanitizer}
 import play.api.Logger
 import play.api.http.HttpEntity
+import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
+import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSResponse
 import play.api.mvc.Results.{NotFound, Status}
 import play.api.mvc._
@@ -35,8 +36,6 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, At
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
-import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
-import play.api.libs.streams.ActorFlow
 
 class ProxyEngine() extends RequestHandler {
 

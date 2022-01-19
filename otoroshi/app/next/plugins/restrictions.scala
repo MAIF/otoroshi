@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
 import otoroshi.env.Env
-import otoroshi.models.{RestrictionPath, Restrictions}
+import otoroshi.models.Restrictions
 import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator}
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
 import play.api.libs.json.{JsObject, Reads}

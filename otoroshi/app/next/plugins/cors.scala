@@ -5,7 +5,7 @@ import akka.stream.Materializer
 import otoroshi.el.HeadersExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models.{CorsSettings, RedirectionSettings}
+import otoroshi.models.CorsSettings
 import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.{JsObject, Reads}

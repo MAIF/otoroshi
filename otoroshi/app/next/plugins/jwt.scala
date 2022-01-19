@@ -4,11 +4,11 @@ import akka.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.models.RefJwtVerifier
 import otoroshi.next.plugins.Keys.JwtInjectionKey
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginHttpRequest, NgRequestTransformer, NgTransformerRequestContext}
+import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
-import play.api.libs.json.{Format, JsError, JsObject, JsResult, JsSuccess, JsValue, Json, Reads}
+import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
-import play.api.mvc.{Cookie, Result, Results}
+import play.api.mvc.Result
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}

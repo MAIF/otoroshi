@@ -10,7 +10,7 @@ import otoroshi.next.plugins.api._
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
 import play.api.http.HttpEntity
-import play.api.libs.json.{Format, JsError, JsObject, JsResult, JsSuccess, JsValue, Json, Reads}
+import play.api.libs.json._
 import play.api.mvc.Results.Status
 import play.api.mvc.{Result, Results}
 

@@ -1,16 +1,16 @@
 package otoroshi.next.plugins
 
+import akka.stream.Materializer
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
-import otoroshi.models.{ApiKeyConstraints, ApiKeyHelper, ApikeyLocationKind, ApikeyTuple, RedirectionSettings}
+import otoroshi.models.{ApiKeyConstraints, ApiKeyHelper, ApikeyLocationKind, ApikeyTuple}
 import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.{JsObject, Reads}
+import play.api.mvc.Result
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
-import akka.stream.Materializer
-import play.api.mvc.Result
 
 class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRouteMatcher {
 
