@@ -204,15 +204,16 @@ class ProxyEngine() extends RequestHandler {
     }).value.flatMap {
       case Left(error)   =>
         report.markDoneAndStart("rendering intermediate result").markSuccess()
-        error.asResult()  // TODO: result transformer
+        error.asResult()
       case Right(result) =>
         report.markSuccess()
-        result.vfuture  // TODO: result transformer
+        result.vfuture
     }.recover {
       case t: Throwable =>
         report.markFailure("last-recover", t)
-        // TODO: result transformer
         Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> t.getMessage, "report" -> report.json))
+    }.applyOnWithOpt(attrs.get(Keys.ResultTransformerKey)) {
+      case (future, transformer) => future.flatMap(transformer)
     }.andThen {
       case _ =>
         report.markOverheadOut()
@@ -318,15 +319,19 @@ class ProxyEngine() extends RequestHandler {
     }).value.flatMap {
       case Left(error)   =>
         report.markDoneAndStart("rendering intermediate result").markSuccess()
-        error.asResult().map(r => Left(r)) // TODO: result transformer
+        error.asResult().map(r => Left(r))
       case Right(flow) =>
         report.markSuccess()
-        Right(flow).vfuture  // TODO: result transformer
+        Right(flow).vfuture
     }.recover {
       case t: Throwable =>
         report.markFailure("last-recover", t)
-        // TODO: result transformer
         Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> t.getMessage, "report" -> report.json)).left
+    }.applyOnWithOpt(attrs.get(Keys.ResultTransformerKey)) {
+      case (future, transformer) => future.flatMap {
+        case Left(r) => transformer(r).map(Left.apply)
+        case r@Right(_) => r.vfuture
+      }
     }.andThen {
       case _ =>
         report.markOverheadOut()
