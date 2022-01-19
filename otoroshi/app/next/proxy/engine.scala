@@ -204,13 +204,14 @@ class ProxyEngine() extends RequestHandler {
     }).value.flatMap {
       case Left(error)   =>
         report.markDoneAndStart("rendering intermediate result").markSuccess()
-        error.asResult()
+        error.asResult()  // TODO: result transformer
       case Right(result) =>
         report.markSuccess()
-        result.vfuture
+        result.vfuture  // TODO: result transformer
     }.recover {
       case t: Throwable =>
         report.markFailure("last-recover", t)
+        // TODO: result transformer
         Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> t.getMessage, "report" -> report.json))
     }.andThen {
       case _ =>
@@ -317,13 +318,14 @@ class ProxyEngine() extends RequestHandler {
     }).value.flatMap {
       case Left(error)   =>
         report.markDoneAndStart("rendering intermediate result").markSuccess()
-        error.asResult().map(r => Left(r))
+        error.asResult().map(r => Left(r)) // TODO: result transformer
       case Right(flow) =>
         report.markSuccess()
-        Right(flow).vfuture
+        Right(flow).vfuture  // TODO: result transformer
     }.recover {
       case t: Throwable =>
         report.markFailure("last-recover", t)
+        // TODO: result transformer
         Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> t.getMessage, "report" -> report.json)).left
     }.andThen {
       case _ =>

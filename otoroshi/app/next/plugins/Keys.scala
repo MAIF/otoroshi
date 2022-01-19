@@ -4,8 +4,10 @@ import otoroshi.models.{ApiKey, ApikeyTuple, JwtInjection}
 import otoroshi.next.models.{Backend, Backends, Route}
 import otoroshi.next.proxy.ExecutionReport
 import play.api.libs.typedmap.TypedKey
+import play.api.mvc.Result
 
 import java.util.concurrent.atomic.AtomicBoolean
+import scala.concurrent.Future
 
 object Keys {
   val ReportKey = TypedKey[ExecutionReport]("otoroshi.next.core.Report")
@@ -16,4 +18,5 @@ object Keys {
   val PreExtractedApikeyTupleKey = TypedKey[ApikeyTuple]("otoroshi.next.core.PreExtractedApikeyTuple")
   val BodyAlreadyConsumedKey = TypedKey[AtomicBoolean]("otoroshi.next.core.BodyAlreadyConsumed")
   val JwtInjectionKey = TypedKey[JwtInjection]("otoroshi.next.core.JwtInjection")
+  val ResultTransformerKey = TypedKey[Function[Result, Future[Result]]]("otoroshi.next.core.ResultTransformer")
 }
