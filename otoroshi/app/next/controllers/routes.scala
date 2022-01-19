@@ -22,7 +22,7 @@ class RoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-route-api")
+  lazy val logger = Logger("otoroshi-routes-api")
 
   override def buildError(status: Int, message: String): ApiError[JsValue] =
     JsonApiError(status, play.api.libs.json.JsString(message))
@@ -170,6 +170,7 @@ class RoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
           port = 443,
           tls = true
         )),
+        targetRefs = Seq.empty,
         root = "/",
         loadBalancing = RoundRobin
       ),

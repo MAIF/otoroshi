@@ -19,7 +19,7 @@ import io.lettuce.core.resource.{ClientResources, DefaultClientResources}
 import io.lettuce.core.{AbstractRedisClient, ReadFrom, RedisClient, RedisURI}
 import otoroshi.models._
 import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
-import otoroshi.next.models.{KvRouteDataStore, RouteDataStore}
+import otoroshi.next.models.{KvRouteDataStore, KvStoredBackendDataStore, RouteDataStore, StoredBackendDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage._
 import otoroshi.storage.stores._
@@ -217,6 +217,9 @@ class LettuceDataStores(
 
   private lazy val _routeDataStore = new KvRouteDataStore(redis, env)
   override def routeDataStore: RouteDataStore = _routeDataStore
+
+  private lazy val _backendsDataStore = new KvStoredBackendDataStore(redis, env)
+  override def backendsDataStore: StoredBackendDataStore = _backendsDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore

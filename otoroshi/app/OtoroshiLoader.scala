@@ -9,11 +9,11 @@ import otoroshi.controllers.adminapi._
 import otoroshi.env.Env
 import otoroshi.gateway._
 import otoroshi.loader.modules._
-import otoroshi.api.OtoroshiLoaderHelper
+import otoroshi.api.{OtoroshiEnvHolder, OtoroshiLoaderHelper}
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import play.api.ApplicationLoader.Context
 import controllers.{Assets, AssetsComponents}
-import otoroshi.next.controllers.adminapi.RoutesController
+import otoroshi.next.controllers.adminapi.{BackendsController, RoutesController}
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.EssentialFilter
@@ -56,7 +56,7 @@ package object modules {
 
     lazy val circuitBreakersHolder: CircuitBreakersHolder = wire[CircuitBreakersHolder]
 
-    implicit lazy val env: Env = new Env(
+    implicit lazy val env: Env = OtoroshiEnvHolder.set(new Env(
       configuration = configuration,
       environment = environment,
       lifecycle = applicationLifecycle,
@@ -65,7 +65,7 @@ package object modules {
       getHttpPort = getHttpPort,
       getHttpsPort = getHttpsPort,
       testing = testing
-    )
+    ))
 
     lazy val reverseProxyAction: ReverseProxyAction = wire[ReverseProxyAction]
     lazy val httpHandler: HttpHandler               = wire[HttpHandler]
@@ -117,6 +117,7 @@ package object modules {
     lazy val tenantsController            = wire[TenantsController]
     lazy val dataExporterConfigController = wire[DataExporterConfigController]
     lazy val routesController             = wire[RoutesController]
+    lazy val backendsController           = wire[BackendsController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

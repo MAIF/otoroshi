@@ -14,7 +14,7 @@ import otoroshi.controllers.adminapi.{ApiKeysFromGroupController, _}
 import otoroshi.env._
 import otoroshi.gateway._
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
-import otoroshi.next.controllers.adminapi.RoutesController
+import otoroshi.next.controllers.adminapi.{BackendsController, RoutesController}
 import otoroshi.next.proxy.ProxyStateLoaderJob
 import otoroshi.storage.DataStores
 import otoroshi.utils.metrics.Metrics
@@ -30,6 +30,7 @@ import play.filters.HttpFiltersComponents
 import router.Routes
 import otoroshi.ssl.DynamicSSLEngineProvider
 
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
 
@@ -216,6 +217,15 @@ object OtoroshiLoaderHelper {
   }
 }
 
+object OtoroshiEnvHolder {
+  private val ref = new AtomicReference[Env]()
+  def set(env: Env): Env = {
+    ref.set(env)
+    env
+  }
+  def get(): Env = ref.get()
+}
+
 class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfig, _configuration: Config)
     extends AkkaHttpServerComponents
     with BuiltInComponents
@@ -266,7 +276,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
 
   lazy val circuitBreakersHolder: CircuitBreakersHolder = wire[CircuitBreakersHolder]
 
-  implicit lazy val env: Env = new Env(
+  implicit lazy val env: Env = OtoroshiEnvHolder.set(new Env(
     configuration = configuration,
     environment = environment,
     lifecycle = applicationLifecycle,
@@ -275,7 +285,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
     getHttpPort = None,
     getHttpsPort = None,
     testing = false
-  )
+  ))
 
   override lazy val httpFilters: Seq[EssentialFilter] = Seq()
 
@@ -332,6 +342,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val tenantsController            = wire[TenantsController]
   lazy val dataExporterConfigController = wire[DataExporterConfigController]
   lazy val routesController             = wire[RoutesController]
+  lazy val backendsController           = wire[BackendsController]
 
   override lazy val assets: Assets = wire[Assets]
 

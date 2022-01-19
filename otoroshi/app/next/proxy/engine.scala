@@ -811,8 +811,8 @@ class ProxyEngine() extends RequestHandler {
     })
   }
 
-  def getBackend(target: Target, route: Route): Backend = {
-    route.backends.targets.find(b => b.id == target.tags.head).get
+  def getBackend(target: Target, route: Route)(implicit env: Env): Backend = {
+    route.backends.allTargets.find(b => b.id == target.tags.head).get
   }
 
   def callTarget(snowflake: String, reqNumber: Long, request: Request[Source[ByteString, _]], _route: Route)(f: SelectedBackend => FEither[ProxyEngineError, Result])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Result] = {
@@ -978,7 +978,7 @@ class ProxyEngine() extends RequestHandler {
         .callGenNg[Result](
           route.id,
           route.name,
-          route.backends.targets.map(_.toTarget),
+          route.backends.allTargets.map(_.toTarget),
           route.backends.loadBalancing,
           route.client,
           reqNumber.toString,
@@ -1002,7 +1002,7 @@ class ProxyEngine() extends RequestHandler {
         .get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey)
         .getOrElse {
 
-          val targets: Seq[Target] = route.backends.targets.map(_.toTarget)
+          val targets: Seq[Target] = route.backends.allTargets.map(_.toTarget)
             .filter(_.predicate.matches(reqNumber.toString, request, attrs))
             .flatMap(t => Seq.fill(t.weight)(t))
           route.backends.loadBalancing
@@ -1186,7 +1186,7 @@ class ProxyEngine() extends RequestHandler {
         .callGenNg[Flow[PlayWSMessage, PlayWSMessage, _]](
           route.id,
           route.name,
-          route.backends.targets.map(_.toTarget),
+          route.backends.allTargets.map(_.toTarget),
           route.backends.loadBalancing,
           route.client,
           reqNumber.toString,
@@ -1210,7 +1210,7 @@ class ProxyEngine() extends RequestHandler {
         .get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey)
         .getOrElse {
 
-          val targets: Seq[Target] = route.backends.targets.map(_.toTarget)
+          val targets: Seq[Target] = route.backends.allTargets.map(_.toTarget)
             .filter(_.predicate.matches(reqNumber.toString, request, attrs))
             .flatMap(t => Seq.fill(t.weight)(t))
           route.backends.loadBalancing

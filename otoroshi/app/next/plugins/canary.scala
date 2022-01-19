@@ -59,6 +59,7 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
       case true  =>
         val backends = Backends(
           targets = config.targets.map(Backend.fromTarget),
+          targetRefs = Seq.empty,
           root = config.root,
           loadBalancing = ctx.route.backends.loadBalancing,
         )

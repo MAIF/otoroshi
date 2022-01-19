@@ -25,6 +25,7 @@ class ProxyState(env: Env) {
     .+=(Route.fake.id -> Route.fake)
     .result()
   private val apikeys = new TrieMap[String, ApiKey]()
+  private val backends = new TrieMap[String, Backend]()
   private val jwtVerifiers = new TrieMap[String, GlobalJwtVerifier]()
   private val certificates = new TrieMap[String, Cert]()
   private val authModules = new TrieMap[String, AuthModuleConfig]()
@@ -42,6 +43,7 @@ class ProxyState(env: Env) {
   // private val chmRoutesByDomain = new ConcurrentHashMap[String, Seq[Route]]()
   private val cowRoutesByWildcardDomain = new CopyOnWriteArrayList[Route]()
 
+  def backend(id: String): Option[Backend] = backends.get(id) // Option(chmRoutes.get(id))
   def route(id: String): Option[Route] = routes.get(id) // Option(chmRoutes.get(id))
   def apikey(id: String): Option[ApiKey] = apikeys.get(id) // Option(chmApikeys.get(id))
   def jwtVerifier(id: String): Option[GlobalJwtVerifier] = jwtVerifiers.get(id) // Option(chmJwtVerifiers.get(id))
@@ -97,6 +99,10 @@ class ProxyState(env: Env) {
     // }
     cowRoutesByWildcardDomain.clear()
     cowRoutesByWildcardDomain.addAll(routesWithWildcardDomains.asJava)
+  }
+
+  def updateBackends(values: Seq[StoredBackend]): Unit = {
+    backends.++=(values.map(v => (v.id, v.backend))).--=(apikeys.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateApikeys(values: Seq[ApiKey]): Unit = {
@@ -205,6 +211,7 @@ class ProxyStateLoaderJob extends Job {
               port = 443,
               tls = true
             )),
+            targetRefs = Seq.empty,
             root = s"/gen-${idx}",
             loadBalancing = RoundRobin
           ),
@@ -263,6 +270,7 @@ class ProxyStateLoaderJob extends Job {
               port = 443,
               tls = true
             )),
+            targetRefs = Seq.empty,
             root = s"/path-${idx}",
             loadBalancing = RoundRobin
           ),
@@ -315,6 +323,7 @@ class ProxyStateLoaderJob extends Job {
               port = 443,
               tls = true
             )),
+            targetRefs = Seq.empty,
             root = s"/path-${idx}",
             loadBalancing = RoundRobin
           ),
@@ -358,8 +367,10 @@ class ProxyStateLoaderJob extends Job {
       certs <- env.datastores.certificatesDataStore.findAll()
       verifiers <- env.datastores.globalJwtVerifierDataStore.findAll()
       modules <- env.datastores.authConfigsDataStore.findAll()
+      backends <- env.datastores.backendsDataStore.findAll()
     } yield {
       env.proxyState.updateRoutes(newRoutes)
+      env.proxyState.updateBackends(backends)
       env.proxyState.updateApikeys(apikeys)
       env.proxyState.updateCertificates(certs)
       env.proxyState.updateAuthModules(modules)

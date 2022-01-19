@@ -1,26 +1,25 @@
 package otoroshi.next.models
 
 import akka.stream.Materializer
+import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
-import otoroshi.models.{ApiKeyRouteMatcher, _}
+import otoroshi.models._
 import otoroshi.next.plugins._
-import otoroshi.next.plugins.api.{NgPluginHelper, NgPluginHttpResponse, NgRequestTransformer, NgRouteMatcherContext, NgTransformerErrorContext, NgTransformerResponseContext, NgTunnelHandler, PluginWrapper}
+import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.ProxyEngineError.ResultProxyEngineError
 import otoroshi.next.proxy.{ProxyEngineError, ReportPluginSequence, ReportPluginSequenceItem}
-import otoroshi.next.utils.{FEither, JsonHelpers}
-import otoroshi.script.TransformerErrorContext
+import otoroshi.next.utils.JsonHelpers
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.gzip.GzipConfig
-import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
-import scala.reflect.ClassTag
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 case class DomainAndPath(raw: String) {
@@ -53,20 +52,27 @@ object Frontend {
   }
 }
 
-case class Backends(targets: Seq[Backend], root: String, loadBalancing: LoadBalancing) {
+case class Backends(targets: Seq[Backend], targetRefs: Seq[String], root: String, loadBalancing: LoadBalancing) {
+  // I know it's not ideal but we'll go with it for now !
+  lazy val allTargets: Seq[Backend] = targets ++ targetRefs.map(OtoroshiEnvHolder.get().proxyState.backend).collect {
+    case Some(backend) => backend
+  }
   def json: JsValue = Json.obj(
     "targets" -> JsArray(targets.map(_.json)),
+    "target_refs" -> JsArray(targetRefs.map(JsString.apply)),
     "root" -> root,
     "load_balancing" -> loadBalancing.toJson
   )
 }
 
 object Backends {
-  def readFrom(lookup: JsLookupResult): Backends = {
+  def readFrom(lookup: JsLookupResult): Backends = readFromJson(lookup.as[JsValue])
+  def readFromJson(lookup: JsValue): Backends = {
     lookup.asOpt[JsObject] match {
-      case None => Backends(Seq.empty, "/", RoundRobin)
+      case None => Backends(Seq.empty, Seq.empty, "/", RoundRobin)
       case Some(obj) => Backends(
         targets = obj.select("targets").asOpt[Seq[JsValue]].map(_.map(Backend.readFrom)).getOrElse(Seq.empty),
+        targetRefs = obj.select("target_refs").asOpt[Seq[String]].getOrElse(Seq.empty),
         root = obj.select("root").asOpt[String].getOrElse("/"),
         loadBalancing = LoadBalancing.format.reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj())).getOrElse(RoundRobin)
       )
@@ -169,7 +175,7 @@ case class Route(
       env = "prod",
       domain = "--",
       subdomain = "--",
-      targets = backends.targets.map(_.toTarget),
+      targets = backends.allTargets.map(_.toTarget),
       hosts = frontend.domains.map(_.domain),
       paths = frontend.domains.map(_.path),
       stripPath = frontend.stripPath,
@@ -349,6 +355,7 @@ object Route {
         port = 443,
         tls = true
       )),
+      targetRefs = Seq.empty,
       root = "/",
       loadBalancing = RoundRobin
     ),
@@ -446,6 +453,7 @@ object Route {
       ),
       backends = Backends(
         targets = service.targets.map(Backend.fromTarget),
+        targetRefs = Seq.empty,
         root = service.root,
         loadBalancing = service.targetsLoadBalancing
       ),
