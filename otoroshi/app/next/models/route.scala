@@ -4,13 +4,14 @@ import akka.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.models.{ApiKeyRouteMatcher, _}
 import otoroshi.next.plugins._
-import otoroshi.next.plugins.api.{NgPluginHelper, NgPluginHttpResponse, NgRequestTransformer, NgRouteMatcherContext, NgTransformerErrorContext, NgTransformerResponseContext, PluginWrapper}
+import otoroshi.next.plugins.api.{NgPluginHelper, NgPluginHttpResponse, NgRequestTransformer, NgRouteMatcherContext, NgTransformerErrorContext, NgTransformerResponseContext, NgTunnelHandler, PluginWrapper}
 import otoroshi.next.proxy.ProxyEngineError.ResultProxyEngineError
 import otoroshi.next.proxy.{ProxyEngineError, ReportPluginSequence, ReportPluginSequenceItem}
 import otoroshi.next.utils.{FEither, JsonHelpers}
 import otoroshi.script.TransformerErrorContext
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
+import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
@@ -244,11 +245,14 @@ case class Route(
       cors = plugins.getPluginByClass[otoroshi.next.plugins.Cors].flatMap(p => CorsSettings.fromJson(p.config.raw).toOption).getOrElse(CorsSettings()),
       redirection = plugins.getPluginByClass[Redirection].flatMap(p => RedirectionSettings.format.reads(p.config.raw).asOpt).getOrElse(RedirectionSettings(false)),
       restrictions = plugins.getPluginByClass[RoutingRestrictions].flatMap(p => Restrictions.format.reads(p.config.raw).asOpt.map(_.copy(enabled = true))).getOrElse(Restrictions()),
-      // tcpUdpTunneling: Boolean = false,
+      tcpUdpTunneling = Seq(
+        plugins.getPluginByClass[TcpTunnel],
+        plugins.getPluginByClass[UdpTunnel]
+      ).flatten.nonEmpty,
       // detectApiKeySooner: Boolean = false,
-      // canary: Canary = Canary(),
+      canary = plugins.getPluginByClass[CanaryMode].flatMap(p => Canary.format.reads(p.config.raw).asOpt.map(_.copy(enabled = true))).getOrElse(Canary()),
       // chaosConfig: ChaosConfig = ChaosConfig(),
-      // gzip: GzipConfig = GzipConfig(),
+      gzip = plugins.getPluginByClass[GzipResponseCompressor].flatMap(p => GzipConfig._fmt.reads(p.config.raw).asOpt.map(_.copy(enabled = true, excludedPatterns = p.exclude))).getOrElse(GzipConfig(enabled = true)),
       apiKeyConstraints = {
         plugins.getPluginByClass[ApikeyCalls].flatMap { plugin =>
           ApiKeyConstraints.format.reads(plugin.config.raw).asOpt
@@ -646,6 +650,33 @@ object Route {
               exclude = service.publicPatterns,
               config = PluginInstanceConfig(service.apiKeyConstraints.json.asObject)
             )
+          }
+          .applyOnIf(service.gzip.enabled) { seq =>
+            seq :+ PluginInstance(
+              plugin = pluginId[GzipResponseCompressor],
+              exclude = service.gzip.excludedPatterns,
+              config = PluginInstanceConfig(service.gzip.asJson.asObject)
+            )
+          }
+          .applyOnIf(service.canary.enabled) { seq =>
+            seq :+ PluginInstance(
+              plugin = pluginId[CanaryMode],
+              config = PluginInstanceConfig(service.canary.toJson.asObject)
+            )
+          }
+          .applyOnIf(service.tcpUdpTunneling) { seq =>
+            val udp = service.targets.exists(_.scheme.toLowerCase.contains("udp://"))
+            if (udp) {
+              seq :+ PluginInstance(
+                plugin = pluginId[UdpTunnel],
+                config = PluginInstanceConfig(Json.obj())
+              )
+            } else {
+              seq :+ PluginInstance(
+                plugin = pluginId[TcpTunnel],
+                config = PluginInstanceConfig(Json.obj())
+              )
+            }
           }
       )
     )

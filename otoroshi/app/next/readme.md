@@ -35,10 +35,10 @@
 - [x] otoroshi state plugin (transformer)
 - [x] otoroshi claim plugin (transformer)
 - [x] CORS (transformer)
-- [ ] tricky plugins
-  - [ ] gzip (transformer)
+- [x] tricky plugins
+  - [x] gzip (transformer)
   - [x] tcp/udp tunneling (?? - if possible, implies support for WS)
-  - [ ] snow monkey (transformer)
+  - [x] snow monkey (transformer)
   - [x] canary (??)
 - [x] headers related plugins
   - [x] add headers in (transformer)
