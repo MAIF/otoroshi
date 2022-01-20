@@ -20,6 +20,8 @@ import play.api.mvc._
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import otoroshi.models.PrivateAppsUser
+import otoroshi.models.ApiKey
 
 case class OtoroshiChallengeConfig(raw: JsValue) {
   lazy val secComVersion: SecComVersion = SecComVersion(raw.select("version").asOpt[String].getOrElse("V2")).getOrElse(SecComVersion.V2)
@@ -28,6 +30,7 @@ case class OtoroshiChallengeConfig(raw: JsValue) {
   lazy val responseHeaderName: Option[String] = raw.select("response_header_name").asOpt[String]
   lazy val algoOtoToBackend: AlgoSettings = AlgoSettings.fromJson(raw.select("algo_to_backend").asOpt[JsObject].getOrElse(Json.obj())).getOrElse(HSAlgoSettings(512, "secret", false))
   lazy val algoBackendToOto: AlgoSettings = AlgoSettings.fromJson(raw.select("algo_from_backend").asOpt[JsObject].getOrElse(Json.obj())).getOrElse(HSAlgoSettings(512, "secret", false))
+  lazy val stateRespLeeway: Int =  raw.select("state_resp_leeway").asOpt[Int].getOrElse(10)
   def json: JsObject = Json.obj(
     "version" -> secComVersion.json,
     "ttl" -> secComTtl.toSeconds,
@@ -35,6 +38,7 @@ case class OtoroshiChallengeConfig(raw: JsValue) {
     "response_header_name" -> responseHeaderName,
     "algo_to_backend" -> algoOtoToBackend.asJson,
     "algo_from_backend" -> algoBackendToOto.asJson,
+    "state_resp_leeway" -> stateRespLeeway,
   )
 }
 
@@ -158,7 +162,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
                     .require(algo)
                     .withAudience(env.Headers.OtoroshiIssuer)
                     .withClaim("state-resp", stateValue)
-                    .acceptLeeway(10) // TODO: customize ???
+                    .acceptLeeway(config.stateRespLeeway)
                     .build()
                     .verify(resp)
                   val extractedState: Option[String] =
@@ -294,9 +298,91 @@ class OtoroshiInfos extends NgRequestTransformer {
   override def description: Option[String] = "This plugin adds a jwt info. token to the request to a backend".some
   override def defaultConfig: Option[JsObject] = OtoroshiInfoConfig(Json.obj()).json.asObject.some
 
+  // TODO: move elsewhere to be common
+  private def generateInfoToken(
+    secComInfoTokenVersion: SecComInfoTokenVersion,
+    secComTtl: FiniteDuration,
+    apiKey: Option[ApiKey],
+    paUsr: Option[PrivateAppsUser],
+    requestHeader: Option[RequestHeader],
+    issuer: Option[String] = None,
+    sub: Option[String] = None
+  )(implicit env: Env): OtoroshiClaim = {
+    import otoroshi.ssl.SSLImplicits._
+    val clientCertChain = requestHeader
+      .flatMap(_.clientCertificateChain)
+      .map(chain =>
+        JsArray(
+          chain.map(c => c.asJson)
+        )
+      )
+    secComInfoTokenVersion match {
+      case SecComInfoTokenVersion.Legacy => {
+        OtoroshiClaim(
+          iss = issuer.getOrElse(env.Headers.OtoroshiIssuer),
+          sub = sub.getOrElse(
+            paUsr
+              .map(k => s"pa:${k.email}")
+              .orElse(apiKey.map(k => s"apikey:${k.clientId}"))
+              .getOrElse("--")
+          ),
+          aud = this.name,
+          exp = DateTime.now().plus(secComTtl.toMillis).toDate.getTime,
+          iat = DateTime.now().toDate.getTime,
+          jti = IdGenerator.uuid
+        ).withClaim("email", paUsr.map(_.email))
+          .withClaim("name", paUsr.map(_.name).orElse(apiKey.map(_.clientName)))
+          .withClaim("picture", paUsr.flatMap(_.picture))
+          .withClaim("user_id", paUsr.flatMap(_.userId).orElse(apiKey.map(_.clientId)))
+          .withClaim("given_name", paUsr.flatMap(_.field("given_name")))
+          .withClaim("family_name", paUsr.flatMap(_.field("family_name")))
+          .withClaim("gender", paUsr.flatMap(_.field("gender")))
+          .withClaim("locale", paUsr.flatMap(_.field("locale")))
+          .withClaim("nickname", paUsr.flatMap(_.field("nickname")))
+          .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadataJson)))
+          .withJsArrayClaim("clientCertChain", clientCertChain)
+          .withClaim(
+            "metadata",
+            paUsr
+              .flatMap(_.otoroshiData)
+              .orElse(apiKey.map(_.metadataJson))
+              .map(m => Json.stringify(Json.toJson(m)))
+          )
+          .withClaim("tags", apiKey.map(a => Json.stringify(JsArray(a.tags.map(JsString.apply)))))
+          .withClaim("user", paUsr.map(u => Json.stringify(u.asJsonCleaned)))
+          .withClaim("apikey", apiKey.map(ak => Json.stringify(ak.lightJson)))
+      }
+      case SecComInfoTokenVersion.Latest => {
+        OtoroshiClaim(
+          iss = issuer.getOrElse(env.Headers.OtoroshiIssuer),
+          sub = sub.getOrElse(
+            paUsr
+              .map(k => k.email)
+              .orElse(apiKey.map(k => k.clientName))
+              .getOrElse("public")
+          ),
+          aud = this.name,
+          exp = DateTime.now().plus(secComTtl.toMillis).toDate.getTime,
+          iat = DateTime.now().toDate.getTime,
+          jti = IdGenerator.uuid
+        ).withClaim(
+          "access_type",
+          (apiKey, paUsr) match {
+            case (Some(_), Some(_)) => "both" // should never happen
+            case (None, Some(_))    => "user"
+            case (Some(_), None)    => "apikey"
+            case (None, None)       => "public"
+          }
+        )
+        .withJsObjectClaim("user", paUsr.map(_.asJsonCleaned.as[JsObject]))
+        .withJsObjectClaim("apikey", apiKey.map(ak => ak.lightJson))
+      }
+    }
+  }
+
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfigFn(internalName)(json => OtoroshiInfoConfig(json).some).getOrElse(OtoroshiInfoConfig(ctx.config))
-    val claim = ctx.route.serviceDescriptor.generateInfoToken(ctx.apikey, ctx.user, ctx.request.some) // TODO: not ideal, should change it
+    val claim = generateInfoToken(config.secComVersion, config.secComTtl, ctx.apikey, ctx.user, ctx.request.some)
     logger.trace(s"Claim is : $claim")
     ctx.attrs.put(OtoroshiChallengeKeys.ClaimKey -> claim)
     ctx.attrs.put(otoroshi.plugins.Keys.OtoTokenKey -> claim.payload)

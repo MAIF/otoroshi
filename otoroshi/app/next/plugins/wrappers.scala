@@ -426,7 +426,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
           ctx.route.serviceDescriptor,
           ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj()),
           ctx.attrs,
-          ctx.globalConfig, // env.datastores.globalConfigDataStore.latest().plugins.config.select(plugin.configRoot.getOrElse("--")).asOpt[JsValue].getOrElse(Json.obj()) // TODO: check here
+          ctx.globalConfig, // env.datastores.globalConfigDataStore.latest().plugins.config.select(plugin.configRoot.getOrElse("--")).asOpt[JsValue].getOrElse(Json.obj())
         )
         plugin.asInstanceOf[PreRouting].preRoute(octx)
           .map(_ => Done.right)

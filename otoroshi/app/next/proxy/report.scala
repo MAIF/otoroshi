@@ -77,7 +77,7 @@ case class ExecutionReportStep(task: String, start: Long, stop: Long, duration: 
 
 class ExecutionReport(val id: String, val creation: DateTime, val reporting: Boolean) {
 
-  // TODO: move into one big case class with mutable ref ?
+  // IDEA: move into one big case class with mutable ref if issues are declared ?
   // I know mutability is bad etc but here, i know for sure that concurrency is not an issue
   var currentTask: String = ""
   var lastStart: Long = creation.toDate.getTime
