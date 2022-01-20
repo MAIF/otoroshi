@@ -452,7 +452,7 @@ object NgAccess {
 }
 
 trait NgAccessValidator extends NgNamedPlugin {
-  def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess]
+  def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = NgAccess.NgAllowed.vfuture
 }
 
 sealed trait NgRequestOrigin {
