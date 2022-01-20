@@ -13,7 +13,7 @@ import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import otoroshi.models._
 import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
-import otoroshi.next.models.{KvRouteDataStore, KvStoredBackendDataStore, RouteDataStore, StoredBackendDataStore}
+import otoroshi.next.models.{KvRouteDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, RouteDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage.{DataStoreHealth, DataStores, RawDataStore, RedisLike}
 import otoroshi.storage.stores._
@@ -153,8 +153,11 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _routeDataStore = new KvRouteDataStore(redis, env)
   override def routeDataStore: RouteDataStore = _routeDataStore
 
-  private lazy val _backendsDataStore = new KvStoredBackendDataStore(redis, env)
-  override def backendsDataStore: StoredBackendDataStore = _backendsDataStore
+  private lazy val _targetsDataStore = new KvStoredNgTargetDataStore(redis, env)
+  override def targetsDataStore: StoredNgTargetDataStore = _targetsDataStore
+
+  private lazy val _backendsDataStore = new KvStoredNgBackendDataStore(redis, env)
+  override def backendsDataStore: StoredNgBackendDataStore = _backendsDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

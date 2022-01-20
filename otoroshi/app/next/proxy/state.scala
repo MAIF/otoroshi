@@ -25,32 +25,22 @@ class ProxyState(env: Env) {
     .+=(Route.fake.id -> Route.fake)
     .result()
   private val apikeys = new TrieMap[String, ApiKey]()
-  private val backends = new TrieMap[String, NgTarget]()
+  private val targets = new TrieMap[String, NgTarget]()
+  private val backends = new TrieMap[String, Backend]()
   private val jwtVerifiers = new TrieMap[String, GlobalJwtVerifier]()
   private val certificates = new TrieMap[String, Cert]()
   private val authModules = new TrieMap[String, AuthModuleConfig]()
   val routesByDomain = new TrieMap[String, Seq[Route]]()
-
-  // private val chmRoutes = {
-  //   val map = new ConcurrentHashMap[String, Route]()
-  //   map.put(Route.fake.id, Route.fake)
-  //   map
-  // }
-  // private val chmApikeys = new ConcurrentHashMap[String, ApiKey]()
-  // private val chmJwtVerifiers = new ConcurrentHashMap[String, GlobalJwtVerifier]()
-  // private val chmCertificates = new ConcurrentHashMap[String, Cert]()
-  // private val chmAuthModules = new ConcurrentHashMap[String, AuthModuleConfig]()
-  // private val chmRoutesByDomain = new ConcurrentHashMap[String, Seq[Route]]()
   private val cowRoutesByWildcardDomain = new CopyOnWriteArrayList[Route]()
 
-  def backend(id: String): Option[NgTarget] = backends.get(id) // Option(chmRoutes.get(id))
-  def route(id: String): Option[Route] = routes.get(id) // Option(chmRoutes.get(id))
-  def apikey(id: String): Option[ApiKey] = apikeys.get(id) // Option(chmApikeys.get(id))
-  def jwtVerifier(id: String): Option[GlobalJwtVerifier] = jwtVerifiers.get(id) // Option(chmJwtVerifiers.get(id))
-  def certificate(id: String): Option[Cert] = certificates.get(id) // Option(chmCertificates.get(id))
-  def authModule(id: String): Option[AuthModuleConfig] = authModules.get(id) // Option(chmAuthModules.get(id))
+  def backend(id: String): Option[Backend] = backends.get(id)
+  def target(id: String): Option[NgTarget] = targets.get(id)
+  def route(id: String): Option[Route] = routes.get(id)
+  def apikey(id: String): Option[ApiKey] = apikeys.get(id)
+  def jwtVerifier(id: String): Option[GlobalJwtVerifier] = jwtVerifiers.get(id)
+  def certificate(id: String): Option[Cert] = certificates.get(id)
+  def authModule(id: String): Option[AuthModuleConfig] = authModules.get(id)
   def getDomainRoutes(domain: String): Option[Seq[Route]] = {
-    //Option(chmRoutesByDomain.get(domain)) match {
     routesByDomain.get(domain) match {
       case s @ Some(_) => s
       case None => {
@@ -72,13 +62,6 @@ class ProxyState(env: Env) {
 
   def updateRoutes(values: Seq[Route]): Unit = {
     routes.++=(values.map(v => (v.id, v))).--=(routes.keySet.toSeq.diff(values.map(_.id)))
-    // val routeIds = new_routes.map(_.id)
-    // chmRoutes.putAll(new_routes.map(r => (r.id, r)).toMap.asJava)
-    // chmRoutes.keySet.asScala.foreach { key =>
-    //   if (!routeIds.contains(key)) {
-    //     chmRoutes.remove(key)
-    //   }
-    // }
     val routesByDomainRaw: Map[String, Seq[Route]] = values
       .filter(_.enabled)
       .flatMap(r => r.frontend.domains.map(d => (d.domain, r.copy(frontend = r.frontend.copy(domains = Seq(d))))))
@@ -91,74 +74,32 @@ class ProxyState(env: Env) {
       .toSeq
       .sortWith((r1, r2) => r1.frontend.domains.head.domain.length.compareTo(r2.frontend.domains.head.domain.length) > 0)
     routesByDomain.++=(all_routesByDomain).--=(routesByDomain.keySet.toSeq.diff(all_routesByDomain.keySet.toSeq))
-    // chmRoutesByDomain.putAll(routesByDomain.asJava)
-    // chmRoutesByDomain.keySet.asScala.foreach { key =>
-    //   if (!domains.contains(key)) {
-    //     chmRoutesByDomain.remove(key)
-    //   }
-    // }
     cowRoutesByWildcardDomain.clear()
     cowRoutesByWildcardDomain.addAll(routesWithWildcardDomains.asJava)
   }
 
-  def updateBackends(values: Seq[StoredBackend]): Unit = {
-    backends.++=(values.map(v => (v.id, v.backend))).--=(apikeys.keySet.toSeq.diff(values.map(_.id)))
+  def updateTargets(values: Seq[StoredNgTarget]): Unit = {
+    targets.++=(values.map(v => (v.id, v.target))).--=(targets.keySet.toSeq.diff(values.map(_.id)))
+  }
+
+  def updateBackends(values: Seq[StoredNgBackend]): Unit = {
+    backends.++=(values.map(v => (v.id, v.backend))).--=(backends.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateApikeys(values: Seq[ApiKey]): Unit = {
     apikeys.++=(values.map(v => (v.clientId, v))).--=(apikeys.keySet.toSeq.diff(values.map(_.clientId)))
-    // val apikeyIds = new_apikeys.map(_.clientId)
-    // new_apikeys.foreach(apikey => apikeys.put(apikey.clientId, apikey))
-    // apikeys.keySet.filterNot(key => apikeyIds.contains(key)).foreach(key => apikeys.remove(key))
-    // val valueIds = values.map(_.clientId)
-    // chmApikeys.putAll(values.map(r => (r.clientId, r)).toMap.asJava)
-    // chmApikeys.keySet.asScala.foreach { key =>
-    //   if (!valueIds.contains(key)) {
-    //     chmApikeys.remove(key)
-    //   }
-    // }
   }
 
   def updateJwtVerifiers(values: Seq[GlobalJwtVerifier]): Unit = {
     jwtVerifiers.++=(values.map(v => (v.id, v))).--=(jwtVerifiers.keySet.toSeq.diff(values.map(_.id)))
-    // val verifierIds = new_verifiers.map(_.id)
-    // new_verifiers.foreach(verifier => jwtVerifiers.put(verifier.id, verifier))
-    // jwtVerifiers.keySet.filterNot(key => verifierIds.contains(key)).foreach(key => jwtVerifiers.remove(key))
-    // val valueIds = values.map(_.id)
-    // chmJwtVerifiers.putAll(values.map(r => (r.id, r)).toMap.asJava)
-    // chmJwtVerifiers.keySet.asScala.foreach { key =>
-    //   if (!valueIds.contains(key)) {
-    //     chmJwtVerifiers.remove(key)
-    //   }
-    // }
   }
 
   def updateCertificates(values: Seq[Cert]): Unit = {
     certificates.++=(values.map(v => (v.id, v))).--=(certificates.keySet.toSeq.diff(values.map(_.id)))
-    // val certificatesIds = new_certificates.map(_.id)
-    // new_certificates.foreach(certificate => certificates.put(certificate.id, certificate))
-    // certificates.keySet.filterNot(key => certificatesIds.contains(key)).foreach(key => certificates.remove(key))
-    // val valueIds = values.map(_.id)
-    // chmCertificates.putAll(values.map(r => (r.id, r)).toMap.asJava)
-    // chmCertificates.keySet.asScala.foreach { key =>
-    //   if (!valueIds.contains(key)) {
-    //     chmCertificates.remove(key)
-    //   }
-    // }
   }
 
   def updateAuthModules(values: Seq[AuthModuleConfig]): Unit = {
     authModules.++=(values.map(v => (v.id, v))).--=(authModules.keySet.toSeq.diff(values.map(_.id)))
-    // val authModuleIds = new_authModule.map(_.id)
-    // new_authModule.foreach(authModule => authModules.put(authModule.id, authModule))
-    // authModules.keySet.filterNot(key => authModuleIds.contains(key)).foreach(key => authModules.remove(key))
-    // val valueIds = values.map(_.id)
-    // chmAuthModules.putAll(values.map(r => (r.id, r)).toMap.asJava)
-    // chmAuthModules.keySet.asScala.foreach { key =>
-    //   if (!valueIds.contains(key)) {
-    //     chmAuthModules.remove(key)
-    //   }
-    // }
   }
 }
 
@@ -367,9 +308,11 @@ class ProxyStateLoaderJob extends Job {
       certs <- env.datastores.certificatesDataStore.findAll()
       verifiers <- env.datastores.globalJwtVerifierDataStore.findAll()
       modules <- env.datastores.authConfigsDataStore.findAll()
+      targets <- env.datastores.targetsDataStore.findAll()
       backends <- env.datastores.backendsDataStore.findAll()
     } yield {
       env.proxyState.updateRoutes(newRoutes)
+      env.proxyState.updateTargets(targets)
       env.proxyState.updateBackends(backends)
       env.proxyState.updateApikeys(apikeys)
       env.proxyState.updateCertificates(certs)

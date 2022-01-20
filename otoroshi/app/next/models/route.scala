@@ -54,34 +54,6 @@ object Frontend {
   }
 }
 
-case class Backend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String, loadBalancing: LoadBalancing) {
-  // I know it's not ideal but we'll go with it for now !
-  lazy val allTargets: Seq[NgTarget] = targets ++ targetRefs.map(OtoroshiEnvHolder.get().proxyState.backend).collect {
-    case Some(backend) => backend
-  }
-  def json: JsValue = Json.obj(
-    "targets" -> JsArray(targets.map(_.json)),
-    "target_refs" -> JsArray(targetRefs.map(JsString.apply)),
-    "root" -> root,
-    "load_balancing" -> loadBalancing.toJson
-  )
-}
-
-object Backend {
-  def readFrom(lookup: JsLookupResult): Backend = readFromJson(lookup.as[JsValue])
-  def readFromJson(lookup: JsValue): Backend = {
-    lookup.asOpt[JsObject] match {
-      case None => Backend(Seq.empty, Seq.empty, "/", RoundRobin)
-      case Some(obj) => Backend(
-        targets = obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)).getOrElse(Seq.empty),
-        targetRefs = obj.select("target_refs").asOpt[Seq[String]].getOrElse(Seq.empty),
-        root = obj.select("root").asOpt[String].getOrElse("/"),
-        loadBalancing = LoadBalancing.format.reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj())).getOrElse(RoundRobin)
-      )
-    }
-  }
-}
-
 case class Route(
   location: EntityLocation,
   id: String,
@@ -94,6 +66,7 @@ case class Route(
   groups: Seq[String] = Seq("default"),
   frontend: Frontend,
   backend: Backend,
+  backendRef: Option[String] = None,
   client: ClientConfig,
   healthCheck: HealthCheck,
   plugins: NgPlugins
@@ -115,6 +88,7 @@ case class Route(
     "groups" -> groups,
     "frontend" -> frontend.json,
     "backend" -> backend.json,
+    "backend_ref" -> backendRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "client" -> client.toJson,
     "health_check" -> healthCheck.toJson,
     "plugins" -> plugins.json
@@ -355,6 +329,7 @@ object Route {
       stripPath = true,
       apikey = ApiKeyRouteMatcher()
     ),
+    backendRef = None,
     backend = Backend(
       targets = Seq(NgTarget(
         id = "tls://mirror.otoroshi.io:443",
@@ -397,6 +372,8 @@ object Route {
   val fmt = new Format[Route] {
     override def writes(o: Route): JsValue = o.json
     override def reads(json: JsValue): JsResult[Route] = Try {
+      val ref = json.select("backend_ref").asOpt[String]
+      val refBackend = ref.flatMap(r => OtoroshiEnvHolder.get().proxyState.backend(r)).getOrElse(Backend(Seq.empty, Seq.empty, "/", RoundRobin))
       Route(
         location = otoroshi.models.EntityLocation.readFromKey(json),
         id = json.select("id").as[String],
@@ -408,7 +385,11 @@ object Route {
         debugFlow = json.select("debug_flow").asOpt[Boolean].getOrElse(false),
         groups = json.select("groups").asOpt[Seq[String]].getOrElse(Seq("default")),
         frontend = Frontend.readFrom(json.select("frontend")),
-        backend = Backend.readFrom(json.select("backend")),
+        backend = ref match {
+          case None => Backend.readFrom(json.select("backend"))
+          case Some(r) => refBackend
+        },
+        backendRef = ref,
         healthCheck = (json \ "health_check").asOpt(HealthCheck.format).getOrElse(HealthCheck(false, "/")),
         client = (json \ "client").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
         plugins = NgPlugins.readFrom(json.select("plugins")),
@@ -458,6 +439,7 @@ object Route {
         stripPath = service.stripPath,
         apikey = service.apiKeyConstraints.routing,
       ),
+      backendRef = None,
       backend = Backend(
         targets = service.targets.map(NgTarget.fromTarget),
         targetRefs = Seq.empty,

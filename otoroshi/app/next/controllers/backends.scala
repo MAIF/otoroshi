@@ -12,10 +12,10 @@ import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class BackendsController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
   extends AbstractController(cc)
-    with BulkControllerHelper[StoredBackend, JsValue]
-    with CrudControllerHelper[StoredBackend, JsValue] {
+    with BulkControllerHelper[StoredNgBackend, JsValue]
+    with CrudControllerHelper[StoredNgBackend, JsValue] {
 
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
@@ -25,27 +25,27 @@ class BackendsController(val ApiAction: ApiAction, val cc: ControllerComponents)
   override def buildError(status: Int, message: String): ApiError[JsValue] =
     JsonApiError(status, play.api.libs.json.JsString(message))
 
-  override def extractId(entity: StoredBackend): String = entity.id
+  override def extractId(entity: StoredNgBackend): String = entity.id
 
-  override def readEntity(json: JsValue): Either[String, StoredBackend] =
-    StoredBackend.format.reads(json).asEither match {
+  override def readEntity(json: JsValue): Either[String, StoredNgBackend] =
+    StoredNgBackend.format.reads(json).asEither match {
       case Left(e)  => Left(e.toString())
       case Right(r) => Right(r)
     }
 
-  override def writeEntity(entity: StoredBackend): JsValue = StoredBackend.format.writes(entity)
+  override def writeEntity(entity: StoredNgBackend): JsValue = StoredNgBackend.format.writes(entity)
 
   override def findByIdOps(
                             id: String
-                          )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[StoredBackend]]] = {
+                          )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.findById(id).map { opt =>
       Right(
         OptionalEntityAndContext(
           entity = opt,
-          action = "ACCESS_STORED_BACKEND",
+          action = "ACCESS_STORED_NG_BACKEND",
           message = "User accessed a backend",
-          metadata = Json.obj("StoredBackendId" -> id),
-          alert = "StoredBackendAccessed"
+          metadata = Json.obj("StoredNgBackendId" -> id),
+          alert = "StoredNgBackendAccessed"
         )
       )
     }
@@ -53,32 +53,32 @@ class BackendsController(val ApiAction: ApiAction, val cc: ControllerComponents)
 
   override def findAllOps(
                            req: RequestHeader
-                         )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[StoredBackend]]] = {
+                         )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.findAll().map { seq =>
       Right(
         SeqEntityAndContext(
           entity = seq,
-          action = "ACCESS_ALL_STORED_BACKENDS",
+          action = "ACCESS_ALL_STORED_NG_BACKENDS",
           message = "User accessed all backends",
           metadata = Json.obj(),
-          alert = "StoredBackendsAccessed"
+          alert = "StoredNgBackendsAccessed"
         )
       )
     }
   }
 
   override def createEntityOps(
-                                entity: StoredBackend
-                              )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredBackend]]] = {
+                                entity: StoredNgBackend
+                              )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.set(entity).map {
       case true  => {
         Right(
           EntityAndContext(
             entity = entity,
-            action = "CREATE_STORED_BACKEND",
+            action = "CREATE_STORED_NG_BACKEND",
             message = "User created a backend",
             metadata = entity.json.as[JsObject],
-            alert = "StoredBackendCreatedAlert"
+            alert = "StoredNgBackendCreatedAlert"
           )
         )
       }
@@ -94,17 +94,17 @@ class BackendsController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   override def updateEntityOps(
-                                entity: StoredBackend
-                              )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredBackend]]] = {
+                                entity: StoredNgBackend
+                              )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.set(entity).map {
       case true  => {
         Right(
           EntityAndContext(
             entity = entity,
-            action = "UPDATE_STORED_BACKEND",
+            action = "UPDATE_STORED_NG_BACKEND",
             message = "User updated a backend",
             metadata = entity.json.as[JsObject],
-            alert = "StoredBackendUpdatedAlert"
+            alert = "StoredNgBackendUpdatedAlert"
           )
         )
       }
@@ -121,15 +121,15 @@ class BackendsController(val ApiAction: ApiAction, val cc: ControllerComponents)
 
   override def deleteEntityOps(
                                 id: String
-                              )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[StoredBackend]]] = {
+                              )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.delete(id).map {
       case true  => {
         Right(
           NoEntityAndContext(
-            action = "DELETE_STORED_BACKEND",
+            action = "DELETE_STORED_NG_BACKEND",
             message = "User deleted a backend",
-            metadata = Json.obj("StoredBackendId" -> id),
-            alert = "StoredBackendDeletedAlert"
+            metadata = Json.obj("StoredNgBackendId" -> id),
+            alert = "StoredNgBackendDeletedAlert"
           )
         )
       }
@@ -144,20 +144,15 @@ class BackendsController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
-  def initiateStoredBackend() = ApiAction {
-    Ok(StoredBackend(
+  def initiateStoredNgBackend() = ApiAction {
+    Ok(StoredNgBackend(
       location = EntityLocation.default,
       id = s"backend_${IdGenerator.uuid}",
       name = "New backend",
       description = "A new backend",
       tags = Seq.empty,
       metadata = Map.empty,
-      backend = NgTarget(
-        id = "target_1",
-        hostname = "mirror.otoroshi.io",
-        port = 443,
-        tls = true
-      )
+      backend = Backend(Seq.empty, Seq.empty, "/", RoundRobin)
     ).json)
   }
 }

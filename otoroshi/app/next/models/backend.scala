@@ -10,29 +10,57 @@ import play.api.libs.json._
 
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.{Failure, Success, Try}
+import otoroshi.api.OtoroshiEnvHolder
 
-object StoredBackend {
-  val format = new Format[StoredBackend] {
-    override def reads(json: JsValue): JsResult[StoredBackend] = Try {
-      StoredBackend(
+case class Backend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String, loadBalancing: LoadBalancing) {
+  // I know it's not ideal but we'll go with it for now !
+  lazy val allTargets: Seq[NgTarget] = targets ++ targetRefs.map(OtoroshiEnvHolder.get().proxyState.target).collect {
+    case Some(backend) => backend
+  }.distinct
+  def json: JsValue = Json.obj(
+    "targets" -> JsArray(targets.map(_.json)),
+    "target_refs" -> JsArray(targetRefs.map(JsString.apply)),
+    "root" -> root,
+    "load_balancing" -> loadBalancing.toJson
+  )
+}
+
+object Backend {
+  def readFrom(lookup: JsLookupResult): Backend = readFromJson(lookup.as[JsValue])
+  def readFromJson(lookup: JsValue): Backend = {
+    lookup.asOpt[JsObject] match {
+      case None => Backend(Seq.empty, Seq.empty, "/", RoundRobin)
+      case Some(obj) => Backend(
+        targets = obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)).getOrElse(Seq.empty),
+        targetRefs = obj.select("target_refs").asOpt[Seq[String]].getOrElse(Seq.empty),
+        root = obj.select("root").asOpt[String].getOrElse("/"),
+        loadBalancing = LoadBalancing.format.reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj())).getOrElse(RoundRobin)
+      )
+    }
+  }
+}
+
+object StoredNgTarget {
+  val format = new Format[StoredNgTarget] {
+    override def reads(json: JsValue): JsResult[StoredNgTarget] = Try {
+      StoredNgTarget(
         location = otoroshi.models.EntityLocation.readFromKey(json),
         id = json.select("id").as[String],
         name = json.select("id").as[String],
         description = json.select("description").asOpt[String].getOrElse(""),
         tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        backend = NgTarget.readFrom(json.select("backend").as[JsValue]),
+        target = NgTarget.readFrom(json.select("target").as[JsValue]),
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
       case Success(route) => JsSuccess(route)
     }
-    override def writes(o: StoredBackend): JsValue = o.json
+    override def writes(o: StoredNgTarget): JsValue = o.json
   }
 }
 
-// TODO: do we store backend or targets ...
-case class StoredBackend(location: EntityLocation, id: String, name: String, description: String, tags: Seq[String], metadata: Map[String, String], backend: NgTarget) extends EntityLocationSupport {
+case class StoredNgTarget(location: EntityLocation, id: String, name: String, description: String, tags: Seq[String], metadata: Map[String, String], target: NgTarget) extends EntityLocationSupport {
   override def internalId: String = id
   override def theName: String = name
   override def theDescription: String = description
@@ -44,19 +72,19 @@ case class StoredBackend(location: EntityLocation, id: String, name: String, des
     "description" -> description,
     "tags" -> tags,
     "metadata" -> metadata,
-    "backend" -> backend.json,
+    "target" -> target.json,
   )
 }
 
-trait StoredBackendDataStore extends BasicStore[StoredBackend]
+trait StoredNgTargetDataStore extends BasicStore[StoredNgTarget]
 
-class KvStoredBackendDataStore(redisCli: RedisLike, _env: Env)
-  extends StoredBackendDataStore
-    with RedisLikeStore[StoredBackend] {
+class KvStoredNgTargetDataStore(redisCli: RedisLike, _env: Env)
+  extends StoredNgTargetDataStore
+    with RedisLikeStore[StoredNgTarget] {
   override def redisLike(implicit env: Env): RedisLike = redisCli
-  override def fmt: Format[StoredBackend]              = StoredBackend.format
-  override def key(id: String): Key                    = Key.Empty / _env.storageRoot / "backends" / id
-  override def extractId(value: StoredBackend): String = value.id
+  override def fmt: Format[StoredNgTarget]              = StoredNgTarget.format
+  override def key(id: String): Key                    = Key.Empty / _env.storageRoot / "targets" / id
+  override def extractId(value: StoredNgTarget): String = value.id
 }
 
 case class SelectedBackendTarget(target: NgTarget, attempts: Int, alreadyFailed: AtomicBoolean, cbStart: Long)
@@ -131,4 +159,51 @@ object NgTarget {
       ipAddress = (obj \ "ipAddress").asOpt[String].filterNot(_.trim.isEmpty),
     )
   }
+}
+
+object StoredNgBackend {
+  val format = new Format[StoredNgBackend] {
+    override def reads(json: JsValue): JsResult[StoredNgBackend] = Try {
+      StoredNgBackend(
+        location = otoroshi.models.EntityLocation.readFromKey(json),
+        id = json.select("id").as[String],
+        name = json.select("id").as[String],
+        description = json.select("description").asOpt[String].getOrElse(""),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+        backend = Backend.readFromJson(json.select("backend").as[JsValue]),
+      )
+    } match {
+      case Failure(exception) => JsError(exception.getMessage)
+      case Success(route) => JsSuccess(route)
+    }
+    override def writes(o: StoredNgBackend): JsValue = o.json
+  }
+}
+
+case class StoredNgBackend(location: EntityLocation, id: String, name: String, description: String, tags: Seq[String], metadata: Map[String, String], backend: Backend) extends EntityLocationSupport {
+  override def internalId: String = id
+  override def theName: String = name
+  override def theDescription: String = description
+  override def theTags: Seq[String] = tags
+  override def theMetadata: Map[String, String] = metadata
+  override def json: JsValue = location.jsonWithKey ++ Json.obj(
+    "id" -> id,
+    "name" -> name,
+    "description" -> description,
+    "tags" -> tags,
+    "metadata" -> metadata,
+    "backend" -> backend.json,
+  )
+}
+
+trait StoredNgBackendDataStore extends BasicStore[StoredNgBackend]
+
+class KvStoredNgBackendDataStore(redisCli: RedisLike, _env: Env)
+  extends StoredNgBackendDataStore
+    with RedisLikeStore[StoredNgBackend] {
+  override def redisLike(implicit env: Env): RedisLike   = redisCli
+  override def fmt: Format[StoredNgBackend]              = StoredNgBackend.format
+  override def key(id: String): Key                      = Key.Empty / _env.storageRoot / "backends" / id
+  override def extractId(value: StoredNgBackend): String = value.id
 }

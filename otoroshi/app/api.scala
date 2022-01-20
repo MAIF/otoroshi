@@ -1,21 +1,22 @@
 package otoroshi.api
 
-import otoroshi.actions._
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
-import otoroshi.cluster.ClusterMode
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers.{Assets, AssetsComponents}
+import otoroshi.actions._
+import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
+import otoroshi.cluster.ClusterMode
 import otoroshi.controllers._
-import otoroshi.controllers.adminapi.{ApiKeysFromGroupController, _}
+import otoroshi.controllers.adminapi._
 import otoroshi.env._
 import otoroshi.gateway._
-import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
-import otoroshi.next.controllers.adminapi.{BackendsController, RoutesController}
+import otoroshi.next.controllers.adminapi.{NgBackendsController, NgTargetsController, RoutesController}
 import otoroshi.next.proxy.ProxyStateLoaderJob
+import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.storage.DataStores
 import otoroshi.utils.metrics.Metrics
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
@@ -28,11 +29,9 @@ import play.api.{BuiltInComponents, Configuration, Logger, LoggerConfigurator}
 import play.core.server.{AkkaHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
-import otoroshi.ssl.DynamicSSLEngineProvider
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
-import scala.concurrent.duration._
 
 object OtoroshiLoaderHelper {
 
@@ -342,7 +341,8 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val tenantsController            = wire[TenantsController]
   lazy val dataExporterConfigController = wire[DataExporterConfigController]
   lazy val routesController             = wire[RoutesController]
-  lazy val backendsController           = wire[BackendsController]
+  lazy val targetsController            = wire[NgTargetsController]
+  lazy val backendsController           = wire[NgBackendsController]
 
   override lazy val assets: Assets = wire[Assets]
 

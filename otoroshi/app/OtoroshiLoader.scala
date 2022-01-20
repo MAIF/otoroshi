@@ -1,29 +1,24 @@
 package otoroshi.loader
 
-import otoroshi.actions._
-import akka.stream.scaladsl.{Sink, Source}
-import otoroshi.cluster.ClusterMode
 import com.softwaremill.macwire._
+import controllers.{Assets, AssetsComponents}
+import otoroshi.actions._
+import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
+import otoroshi.api.{OtoroshiEnvHolder, OtoroshiLoaderHelper}
 import otoroshi.controllers._
 import otoroshi.controllers.adminapi._
 import otoroshi.env.Env
 import otoroshi.gateway._
 import otoroshi.loader.modules._
-import otoroshi.api.{OtoroshiEnvHolder, OtoroshiLoaderHelper}
-import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
+import otoroshi.next.controllers.adminapi.{NgBackendsController, NgTargetsController, RoutesController}
 import play.api.ApplicationLoader.Context
-import controllers.{Assets, AssetsComponents}
-import otoroshi.next.controllers.adminapi.{BackendsController, RoutesController}
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.EssentialFilter
 import play.api.routing.Router
+import play.api.{Application, ApplicationLoader, BuiltInComponentsFromContext, LoggerConfigurator}
 import play.filters.HttpFiltersComponents
 import router.Routes
-import otoroshi.ssl.DynamicSSLEngineProvider
-import play.api.{Application, ApplicationLoader, BuiltInComponentsFromContext, LoggerConfigurator}
-
-import scala.concurrent.{Await, Future}
 
 class OtoroshiLoader extends ApplicationLoader {
 
@@ -117,7 +112,8 @@ package object modules {
     lazy val tenantsController            = wire[TenantsController]
     lazy val dataExporterConfigController = wire[DataExporterConfigController]
     lazy val routesController             = wire[RoutesController]
-    lazy val backendsController           = wire[BackendsController]
+    lazy val targetsController            = wire[NgTargetsController]
+    lazy val backendsController           = wire[NgBackendsController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {
