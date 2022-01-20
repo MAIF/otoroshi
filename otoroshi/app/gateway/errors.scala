@@ -148,12 +148,9 @@ object Errors {
             fromTo = s"$fromLbl###${route.name}"
           )
           val _target          = attrs.get(otoroshi.plugins.Keys.RequestTargetKey).getOrElse(descriptor.target)
-          val scheme           =
-            if (descriptor.redirectToLocal) descriptor.localScheme else _target.scheme
+          val scheme           = _target.scheme
           val host             = TargetExpressionLanguage(
-            if (descriptor.redirectToLocal)
-              descriptor.localHost
-            else _target.host,
+            _target.host,
             Some(req),
             Some(descriptor),
             attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
