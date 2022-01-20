@@ -1,4 +1,4 @@
-package otoroshi.next.plugins
+package otoroshi.next.plugins.wrappers
 
 import akka.Done
 import otoroshi.env.Env
@@ -18,6 +18,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.next.models.NgTarget
 import play.api.mvc.Cookie
 import otoroshi.utils.http.WSCookieWithSameSite
+import otoroshi.next.plugins.OtoroshiChallengeKeys
 
 class PreRoutingWrapper extends NgPreRouting {
   

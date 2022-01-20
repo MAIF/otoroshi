@@ -5,6 +5,7 @@ import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.next.plugins._
+import otoroshi.next.plugins.wrappers._
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.ProxyEngineError.ResultProxyEngineError
 import otoroshi.next.proxy.{ProxyEngineError, ReportPluginSequence, ReportPluginSequenceItem}
@@ -23,6 +24,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 import otoroshi.script.NamedPlugin
 import otoroshi.script.PluginType
+import otoroshi.script.plugins.Plugins
 
 case class DomainAndPath(raw: String) {
   private lazy val parts = raw.split("\\/")
@@ -245,8 +247,21 @@ case class Route(
         }.map { constraints =>
           constraints.copy(routing = frontend.apikey)
         }.getOrElse(ApiKeyConstraints())
-      }
-      // TODO: handle plugins
+      },
+      plugins = {
+        val possiblePlugins = plugins.slots.filter(slot => slot.plugin.startsWith("cp:otoroshi.next.plugins.wrappers."))
+        val refs = possiblePlugins.map(_.config.raw.select("plugin").as[String])
+        val exclusion: Seq[String] = possiblePlugins.map(_.exclude).reduce((a, b) => a.intersect(b))
+        val config = possiblePlugins.map(p => (p.config.raw, p.config.raw.value.keySet.-("plugin").head)).map { 
+          case (pconfig, key) => pconfig.select(key).asObject
+        }.foldLeft(Json.obj())(_ ++ _)
+        Plugins(
+          enabled = possiblePlugins.nonEmpty,
+          excluded = exclusion,
+          refs = refs,
+          config = config
+        )
+      },
     )
   }
 
