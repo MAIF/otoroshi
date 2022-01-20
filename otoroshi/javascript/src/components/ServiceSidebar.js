@@ -41,7 +41,7 @@ export class ServiceSidebar extends Component {
     const base = `/bo/dashboard/lines/${env}/services/${serviceId}/`;
     const className = (part) => (`${base}${part}` === pathname ? 'active' : '');
     return (
-      <ul className="nav nav-sidebar">
+      <ul className="nav flex-column nav-sidebar">
         <li>
           <h3
             style={{ marginTop: 0 }}

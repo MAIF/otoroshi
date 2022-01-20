@@ -11,7 +11,7 @@ export function DefaultSidebar(props) {
   const className = (part) =>
     base === pathname && search.indexOf(`env=${part}`) > -1 ? 'active' : '';
   return (
-    <ul className="nav nav-sidebar">
+    <ul className="nav flex-column nav-sidebar">
       <li>
         <h3 style={{ marginTop: 0 }}>
           <i className="fas fa-cubes" /> Services

@@ -144,7 +144,7 @@ class BackOfficeAppContainer extends Component {
               <div className="sidebar-container">
                 <div className="sidebar-content">
                   <GlobalTenantSelector />
-                  <ul className="nav nav-sidebar">
+                  <ul className="nav flex-column nav-sidebar">
                     <li>
                       <h2>
                         <a
