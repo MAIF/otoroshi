@@ -709,17 +709,34 @@ object Route {
             }
             .map { 
               case (ref, plugin) =>
+
+                def makeInst(id: String): Option[PluginInstance] = {
+                  val config: JsValue =  plugin.configRoot
+                    .flatMap(r => service.plugins.config.select(r).asOpt[JsValue])
+                    .orElse(plugin.defaultConfig)
+                    .getOrElse(Json.obj())
+                  val configName: String = plugin.configRoot.getOrElse("config")
+                  PluginInstance(
+                    plugin = id, 
+                    exclude = service.plugins.excluded, 
+                    config = PluginInstanceConfig(Json.obj(
+                      "plugin" -> ref,
+                      configName -> config
+                    ))
+                  ).some
+                }
+
                 plugin.pluginType match {
-                  case PluginType.AppType =>             PluginInstance(plugin = pluginId[RequestTransformerWrapper], exclude = service.plugins.excluded, config = PluginInstanceConfig(Json.obj("plugin" -> ref))).some
-                  case PluginType.TransformerType =>     PluginInstance(plugin = pluginId[RequestTransformerWrapper], exclude = service.plugins.excluded, config = PluginInstanceConfig(Json.obj("plugin" -> ref))).some
-                  case PluginType.AccessValidatorType => PluginInstance(plugin = pluginId[AccessValidatorWrapper], exclude = service.plugins.excluded, config = PluginInstanceConfig(Json.obj("plugin" -> ref))).some
-                  case PluginType.PreRoutingType =>      PluginInstance(plugin = pluginId[PreRoutingWrapper], exclude = service.plugins.excluded, config = PluginInstanceConfig(Json.obj("plugin" -> ref))).some
-                  case PluginType.RequestSinkType =>     PluginInstance(plugin = pluginId[RequestSinkWrapper], exclude = service.plugins.excluded, config = PluginInstanceConfig(Json.obj("plugin" -> ref))).some
+                  case PluginType.AppType =>             makeInst(pluginId[RequestTransformerWrapper])
+                  case PluginType.TransformerType =>     makeInst(pluginId[RequestTransformerWrapper])
+                  case PluginType.AccessValidatorType => makeInst(pluginId[AccessValidatorWrapper])
+                  case PluginType.PreRoutingType =>      makeInst(pluginId[PreRoutingWrapper])
+                  case PluginType.RequestSinkType =>     makeInst(pluginId[RequestSinkWrapper])
+                  case PluginType.CompositeType =>       makeInst(pluginId[CompositeWrapper])
                   case PluginType.EventListenerType =>   None
                   case PluginType.JobType =>             None
                   case PluginType.DataExporterType =>    None
                   case PluginType.RequestHandlerType =>  None
-                  case PluginType.CompositeType =>       PluginInstance(plugin = pluginId[CompositeWrapper], exclude = service.plugins.excluded, config = PluginInstanceConfig(Json.obj("plugin" -> ref))).some
                 }
             }
             .collect {
