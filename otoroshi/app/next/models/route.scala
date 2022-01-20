@@ -21,6 +21,8 @@ import play.api.mvc.{RequestHeader, Result, Results}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
+import otoroshi.script.NamedPlugin
+import otoroshi.script.PluginType
 
 case class DomainAndPath(raw: String) {
   private lazy val parts = raw.split("\\/")
@@ -270,6 +272,7 @@ case class Route(
           constraints.copy(routing = frontend.apikey)
         }.getOrElse(ApiKeyConstraints())
       }
+      // TODO: handle plugins
     )
   }
 
@@ -416,7 +419,7 @@ object Route {
     }
   }
 
-  def fromServiceDescriptor(service: ServiceDescriptor, debug: Boolean): Route = {
+  def fromServiceDescriptor(service: ServiceDescriptor, debug: Boolean)(implicit ec: ExecutionContext, env: Env): Route = {
     import NgPluginHelper.pluginId
     Route(
       location = service.location,
@@ -695,6 +698,32 @@ object Route {
                 plugin = pluginId[TcpTunnel],
                 config = PluginInstanceConfig(Json.obj())
               )
+            }
+          }
+          .applyOnIf(service.plugins.enabled) { seq =>
+            seq ++ service.plugins.refs.map { ref =>
+              (ref, env.scriptManager.getAnyScript[NamedPlugin](ref))
+            }
+            .collect {
+              case (ref, Right(plugin)) => (ref, plugin)
+            }
+            .map { 
+              case (ref, plugin) =>
+                plugin.pluginType match {
+                  case PluginType.AppType =>             PluginInstance(plugin = pluginId[RequestTransformerWrapper], exclude = service.plugins.excluded, config = PluginInstanceConfig(Json.obj("plugin" -> ref))).some
+                  case PluginType.TransformerType =>     PluginInstance(plugin = pluginId[RequestTransformerWrapper], exclude = service.plugins.excluded, config = PluginInstanceConfig(Json.obj("plugin" -> ref))).some
+                  case PluginType.AccessValidatorType => PluginInstance(plugin = pluginId[AccessValidatorWrapper], exclude = service.plugins.excluded, config = PluginInstanceConfig(Json.obj("plugin" -> ref))).some
+                  case PluginType.PreRoutingType =>      PluginInstance(plugin = pluginId[PreRoutingWrapper], exclude = service.plugins.excluded, config = PluginInstanceConfig(Json.obj("plugin" -> ref))).some
+                  case PluginType.RequestSinkType =>     PluginInstance(plugin = pluginId[RequestSinkWrapper], exclude = service.plugins.excluded, config = PluginInstanceConfig(Json.obj("plugin" -> ref))).some
+                  case PluginType.EventListenerType =>   None
+                  case PluginType.JobType =>             None
+                  case PluginType.DataExporterType =>    None
+                  case PluginType.RequestHandlerType =>  None
+                  case PluginType.CompositeType =>       PluginInstance(plugin = pluginId[CompositeWrapper], exclude = service.plugins.excluded, config = PluginInstanceConfig(Json.obj("plugin" -> ref))).some
+                }
+            }
+            .collect {
+              case Some(plugin) => plugin
             }
           }
       )

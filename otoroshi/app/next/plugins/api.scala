@@ -25,6 +25,8 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
+import play.api.mvc.Cookie
+import otoroshi.utils.http.WSCookieWithSameSite
 
 object NgPluginHelper {
   def pluginId[A](implicit ct: ClassTag[A]): String = s"cp:${ct.runtimeClass.getName}"
@@ -85,7 +87,18 @@ case class NgPluginHttpResponse(
     Results.Status(status)
       .sendEntity(HttpEntity.Streamed(body, clength, ctype))
       .withHeaders(headers.toSeq: _*)
-      .withCookies()
+      .withCookies(cookies.map { c =>
+        Cookie(
+          name = c.name,
+          value = c.value,
+          maxAge = c.maxAge.map(_.toInt),
+          path = c.path.getOrElse("/"),
+          domain = c.domain,
+          secure = c.secure,
+          httpOnly = c.httpOnly,
+          sameSite = c.asInstanceOf[WSCookieWithSameSite].sameSite // this one is risky ;)
+        )  
+      }: _*)
       .applyOnWithOpt(ctype) {
         case (r, typ) => r.as(typ)
       }

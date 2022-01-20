@@ -52,6 +52,7 @@ case class OtoroshiInfoConfig(raw: JsValue) {
 }
 
 object OtoroshiChallengeKeys {
+  val ClaimKey = TypedKey[OtoroshiClaim]("otoroshi.next.core.plugins.OtoroshiChallenge.OtoroshiClaim")
   val StateTokenKey = TypedKey[String]("otoroshi.next.core.plugins.OtoroshiChallenge.StateToken")
   val StateValueKey = TypedKey[String]("otoroshi.next.core.plugins.OtoroshiChallenge.StateValue")
   val ConfigKey = TypedKey[OtoroshiChallengeConfig]("otoroshi.next.core.plugins.OtoroshiChallenge.Config")
@@ -83,8 +84,9 @@ class OtoroshiChallenge extends NgRequestTransformer {
             .getTime,
           iat = DateTime.now().toDate.getTime,
           jti = jti
-        ).withClaim("state", stateValue)
-          .serialize(config.algoOtoToBackend)
+        )
+        .withClaim("state", stateValue)
+        .serialize(config.algoOtoToBackend)
     }
     ctx.attrs.put(OtoroshiChallengeKeys.StateValueKey -> stateValue)
     ctx.attrs.put(OtoroshiChallengeKeys.StateTokenKey -> stateToken)
@@ -296,6 +298,7 @@ class OtoroshiInfos extends NgRequestTransformer {
     val config = ctx.cachedConfigFn(internalName)(json => OtoroshiInfoConfig(json).some).getOrElse(OtoroshiInfoConfig(ctx.config))
     val claim = ctx.route.serviceDescriptor.generateInfoToken(ctx.apikey, ctx.user, ctx.request.some) // TODO: not ideal, should change it
     logger.trace(s"Claim is : $claim")
+    ctx.attrs.put(OtoroshiChallengeKeys.ClaimKey -> claim)
     ctx.attrs.put(otoroshi.plugins.Keys.OtoTokenKey -> claim.payload)
     val serialized = claim.serialize(config.algo)
     val headerName = config.headerName.getOrElse(env.Headers.OtoroshiClaim)
