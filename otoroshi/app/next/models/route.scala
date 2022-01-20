@@ -52,9 +52,9 @@ object Frontend {
   }
 }
 
-case class Backends(targets: Seq[Backend], targetRefs: Seq[String], root: String, loadBalancing: LoadBalancing) {
+case class Backend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String, loadBalancing: LoadBalancing) {
   // I know it's not ideal but we'll go with it for now !
-  lazy val allTargets: Seq[Backend] = targets ++ targetRefs.map(OtoroshiEnvHolder.get().proxyState.backend).collect {
+  lazy val allTargets: Seq[NgTarget] = targets ++ targetRefs.map(OtoroshiEnvHolder.get().proxyState.backend).collect {
     case Some(backend) => backend
   }
   def json: JsValue = Json.obj(
@@ -65,13 +65,13 @@ case class Backends(targets: Seq[Backend], targetRefs: Seq[String], root: String
   )
 }
 
-object Backends {
-  def readFrom(lookup: JsLookupResult): Backends = readFromJson(lookup.as[JsValue])
-  def readFromJson(lookup: JsValue): Backends = {
+object Backend {
+  def readFrom(lookup: JsLookupResult): Backend = readFromJson(lookup.as[JsValue])
+  def readFromJson(lookup: JsValue): Backend = {
     lookup.asOpt[JsObject] match {
-      case None => Backends(Seq.empty, Seq.empty, "/", RoundRobin)
-      case Some(obj) => Backends(
-        targets = obj.select("targets").asOpt[Seq[JsValue]].map(_.map(Backend.readFrom)).getOrElse(Seq.empty),
+      case None => Backend(Seq.empty, Seq.empty, "/", RoundRobin)
+      case Some(obj) => Backend(
+        targets = obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)).getOrElse(Seq.empty),
         targetRefs = obj.select("target_refs").asOpt[Seq[String]].getOrElse(Seq.empty),
         root = obj.select("root").asOpt[String].getOrElse("/"),
         loadBalancing = LoadBalancing.format.reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj())).getOrElse(RoundRobin)
@@ -91,7 +91,7 @@ case class Route(
   debugFlow: Boolean,
   groups: Seq[String] = Seq("default"),
   frontend: Frontend,
-  backends: Backends,
+  backend: Backend,
   client: ClientConfig,
   healthCheck: HealthCheck,
   plugins: NgPlugins
@@ -112,7 +112,7 @@ case class Route(
     "debug_flow" -> debugFlow,
     "groups" -> groups,
     "frontend" -> frontend.json,
-    "backend" -> backends.json,
+    "backend" -> backend.json,
     "client" -> client.toJson,
     "health_check" -> healthCheck.toJson,
     "plugins" -> plugins.json
@@ -175,7 +175,7 @@ case class Route(
       env = "prod",
       domain = "--",
       subdomain = "--",
-      targets = backends.allTargets.map(_.toTarget),
+      targets = backend.allTargets.map(_.toTarget),
       hosts = frontend.domains.map(_.domain),
       paths = frontend.domains.map(_.path),
       stripPath = frontend.stripPath,
@@ -183,7 +183,7 @@ case class Route(
       healthCheck = healthCheck,
       matchingHeaders = frontend.headers,
       handleLegacyDomain = false,
-      targetsLoadBalancing = backends.loadBalancing,
+      targetsLoadBalancing = backend.loadBalancing,
       issueCert = issueCertificate,
       issueCertCA = issueCertificateCA,
       useAkkaHttpClient = useAkkaHttpClient,
@@ -229,8 +229,12 @@ case class Route(
       authConfigRef = plugins.getPluginByClass[AuthModule].flatMap(_.config.raw.select("auth_module").asOpt[String]),
       securityExcludedPatterns  = plugins.getPluginByClass[AuthModule].map(_.exclude).getOrElse(Seq.empty),
       // ///////////////////////////////////////////////////////////
-      publicPatterns = plugins.getPluginByClass[PublicPrivatePaths].flatMap(p => p.config.raw.select("public_patterns").asOpt[Seq[String]]).getOrElse(Seq.empty),
-      privatePatterns = plugins.getPluginByClass[PublicPrivatePaths].flatMap(p => p.config.raw.select("private_patterns").asOpt[Seq[String]]).getOrElse(Seq.empty),
+      publicPatterns = plugins.getPluginByClass[PublicPrivatePaths].flatMap(p => p.config.raw.select("public_patterns").asOpt[Seq[String]])
+                        .orElse(plugins.getPluginByClass[ApikeyCalls].map(p => p.exclude))
+                        .getOrElse(Seq.empty),
+      privatePatterns = plugins.getPluginByClass[PublicPrivatePaths].flatMap(p => p.config.raw.select("private_patterns").asOpt[Seq[String]])
+                        .orElse(plugins.getPluginByClass[ApikeyCalls].map(p => p.include))
+                        .getOrElse(Seq.empty),
       additionalHeaders = plugins.getPluginByClass[AdditionalHeadersIn].flatMap(p => p.config.raw.select("headers").asOpt[Map[String, String]]).getOrElse(Map.empty),
       additionalHeadersOut = plugins.getPluginByClass[AdditionalHeadersOut].flatMap(p => p.config.raw.select("headers").asOpt[Map[String, String]]).getOrElse(Map.empty),
       missingOnlyHeadersIn = plugins.getPluginByClass[MissingHeadersIn].flatMap(p => p.config.raw.select("headers").asOpt[Map[String, String]]).getOrElse(Map.empty),
@@ -255,7 +259,7 @@ case class Route(
         plugins.getPluginByClass[TcpTunnel],
         plugins.getPluginByClass[UdpTunnel]
       ).flatten.nonEmpty,
-      // detectApiKeySooner: Boolean = false,
+      detectApiKeySooner = plugins.getPluginByClass[ApikeyCalls].flatMap(p => p.config.raw.select("validate").asOpt[Boolean].map(v => !v)).getOrElse(false),
       canary = plugins.getPluginByClass[CanaryMode].flatMap(p => Canary.format.reads(p.config.raw).asOpt.map(_.copy(enabled = true))).getOrElse(Canary()),
       chaosConfig = plugins.getPluginByClass[SnowMonkeyChaos].flatMap(p => ChaosConfig._fmt.reads(p.config.raw).asOpt.map(_.copy(enabled = true))).getOrElse(ChaosConfig(enabled = true)),
       gzip = plugins.getPluginByClass[GzipResponseCompressor].flatMap(p => GzipConfig._fmt.reads(p.config.raw).asOpt.map(_.copy(enabled = true, excludedPatterns = p.exclude))).getOrElse(GzipConfig(enabled = true)),
@@ -348,8 +352,8 @@ object Route {
       stripPath = true,
       apikey = ApiKeyRouteMatcher()
     ),
-    backends = Backends(
-      targets = Seq(Backend(
+    backend = Backend(
+      targets = Seq(NgTarget(
         id = "tls://mirror.otoroshi.io:443",
         hostname = "mirror.otoroshi.io",
         port = 443,
@@ -401,7 +405,7 @@ object Route {
         debugFlow = json.select("debug_flow").asOpt[Boolean].getOrElse(false),
         groups = json.select("groups").asOpt[Seq[String]].getOrElse(Seq("default")),
         frontend = Frontend.readFrom(json.select("frontend")),
-        backends = Backends.readFrom(json.select("backend")),
+        backend = Backend.readFrom(json.select("backend")),
         healthCheck = (json \ "health_check").asOpt(HealthCheck.format).getOrElse(HealthCheck(false, "/")),
         client = (json \ "client").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
         plugins = NgPlugins.readFrom(json.select("plugins")),
@@ -451,8 +455,8 @@ object Route {
         stripPath = service.stripPath,
         apikey = service.apiKeyConstraints.routing,
       ),
-      backends = Backends(
-        targets = service.targets.map(Backend.fromTarget),
+      backend = Backend(
+        targets = service.targets.map(NgTarget.fromTarget),
         targetRefs = Seq.empty,
         root = service.root,
         loadBalancing = service.targetsLoadBalancing
@@ -611,7 +615,8 @@ object Route {
               plugin = pluginId[AuthModule],
               exclude = service.securityExcludedPatterns,
               config = PluginInstanceConfig(Json.obj(
-                "auth_module" -> service.authConfigRef.get
+                "auth_module" -> service.authConfigRef.get,
+                "pass_with_apikey" -> !service.strictlyPrivate
               ))
             )
           }
@@ -648,15 +653,15 @@ object Route {
               config = PluginInstanceConfig(service.cors.asJson.asObject)
             )
           }
-          .applyOnIf(service.detectApiKeySooner) { seq =>
-            seq // TODO: implements ?
-          }
-          .applyOnIf(true) { seq => // TODO: always true ?
+          .applyOnIf(true) { seq =>
             seq :+ PluginInstance(
               plugin = pluginId[ApikeyCalls],
               include = service.privatePatterns,
               exclude = service.publicPatterns,
-              config = PluginInstanceConfig(service.apiKeyConstraints.json.asObject)
+              config = PluginInstanceConfig(service.apiKeyConstraints.json.asObject ++ Json.obj(
+                "validate" -> !service.detectApiKeySooner,
+                "pass_with_user" -> !service.strictlyPrivate
+              ))
             )
           }
           .applyOnIf(service.gzip.enabled) { seq =>

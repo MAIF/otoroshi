@@ -25,7 +25,7 @@ class ProxyState(env: Env) {
     .+=(Route.fake.id -> Route.fake)
     .result()
   private val apikeys = new TrieMap[String, ApiKey]()
-  private val backends = new TrieMap[String, Backend]()
+  private val backends = new TrieMap[String, NgTarget]()
   private val jwtVerifiers = new TrieMap[String, GlobalJwtVerifier]()
   private val certificates = new TrieMap[String, Cert]()
   private val authModules = new TrieMap[String, AuthModuleConfig]()
@@ -43,7 +43,7 @@ class ProxyState(env: Env) {
   // private val chmRoutesByDomain = new ConcurrentHashMap[String, Seq[Route]]()
   private val cowRoutesByWildcardDomain = new CopyOnWriteArrayList[Route]()
 
-  def backend(id: String): Option[Backend] = backends.get(id) // Option(chmRoutes.get(id))
+  def backend(id: String): Option[NgTarget] = backends.get(id) // Option(chmRoutes.get(id))
   def route(id: String): Option[Route] = routes.get(id) // Option(chmRoutes.get(id))
   def apikey(id: String): Option[ApiKey] = apikeys.get(id) // Option(chmApikeys.get(id))
   def jwtVerifier(id: String): Option[GlobalJwtVerifier] = jwtVerifiers.get(id) // Option(chmJwtVerifiers.get(id))
@@ -204,8 +204,8 @@ class ProxyStateLoaderJob extends Job {
             stripPath = true,
             apikey = ApiKeyRouteMatcher(),
           ),
-          backends = Backends(
-            targets = Seq(Backend(
+          backend = Backend(
+            targets = Seq(NgTarget(
               id = "mirror-1",
               hostname = "mirror.otoroshi.io",
               port = 443,
@@ -263,8 +263,8 @@ class ProxyStateLoaderJob extends Job {
             stripPath = true,
             apikey = ApiKeyRouteMatcher(),
           ),
-          backends = Backends(
-            targets = Seq(Backend(
+          backend = Backend(
+            targets = Seq(NgTarget(
               id = "mirror-1",
               hostname = "mirror.otoroshi.io",
               port = 443,
@@ -316,8 +316,8 @@ class ProxyStateLoaderJob extends Job {
             stripPath = true,
             apikey = ApiKeyRouteMatcher(),
           ),
-          backends = Backends(
-            targets = Seq(Backend(
+          backend = Backend(
+            targets = Seq(NgTarget(
               id = "mirror-1",
               hostname = "mirror.otoroshi.io",
               port = 443,

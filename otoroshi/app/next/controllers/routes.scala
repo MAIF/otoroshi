@@ -163,8 +163,8 @@ class RoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
         stripPath = true,
         apikey = ApiKeyRouteMatcher()
       ),
-      backends = Backends(
-        targets = Seq(Backend(
+      backend = Backend(
+        targets = Seq(NgTarget(
           id = "target_1",
           hostname = "mirror.otoroshi.io",
           port = 443,

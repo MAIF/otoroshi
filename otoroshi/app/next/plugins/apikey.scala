@@ -47,8 +47,14 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
   }
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val validate = ctx.config.select("validate").asOpt[Boolean].getOrElse(false)
+    val maybeUser = ctx.attrs.get(otoroshi.plugins.Keys.UserKey)
+    val pass = ctx.config.select("pass_with_user").asOpt[Boolean].getOrElse(false) match {
+      case true => maybeUser.isDefined
+      case false => false
+    }
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
-      case None => {
+      case None if validate && !pass => {
         val constraints = configCache.get(ctx.route.id, _ => ApiKeyConstraints.format.reads(ctx.config).getOrElse(ApiKeyConstraints()))
         // Here are 2 + 12 datastore calls to handle quotas
         ApiKeyHelper.passWithApiKeyFromCache(ctx.request, constraints, ctx.attrs, ctx.route.id).map {
@@ -58,7 +64,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
             NgAccess.NgAllowed
         }
       }
-      case Some(_) => NgAccess.NgAllowed.vfuture
+      case _ => NgAccess.NgAllowed.vfuture
     }
   }
 

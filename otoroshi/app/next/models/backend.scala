@@ -21,7 +21,7 @@ object StoredBackend {
         description = json.select("description").asOpt[String].getOrElse(""),
         tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        backend = Backend.readFrom(json.select("backend").as[JsValue]),
+        backend = NgTarget.readFrom(json.select("backend").as[JsValue]),
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -31,7 +31,8 @@ object StoredBackend {
   }
 }
 
-case class StoredBackend(location: EntityLocation, id: String, name: String, description: String, tags: Seq[String], metadata: Map[String, String], backend: Backend) extends EntityLocationSupport {
+// TODO: do we store backend or targets ...
+case class StoredBackend(location: EntityLocation, id: String, name: String, description: String, tags: Seq[String], metadata: Map[String, String], backend: NgTarget) extends EntityLocationSupport {
   override def internalId: String = id
   override def theName: String = name
   override def theDescription: String = description
@@ -58,9 +59,9 @@ class KvStoredBackendDataStore(redisCli: RedisLike, _env: Env)
   override def extractId(value: StoredBackend): String = value.id
 }
 
-case class SelectedBackend(backend: Backend, attempts: Int, alreadyFailed: AtomicBoolean, cbStart: Long)
+case class SelectedBackendTarget(target: NgTarget, attempts: Int, alreadyFailed: AtomicBoolean, cbStart: Long)
 
-case class Backend(
+case class NgTarget(
   id: String,
   hostname: String,
   port: Int,
@@ -99,9 +100,9 @@ case class Backend(
   )
 }
 
-object Backend {
-  def fromTarget(target: Target): Backend = {
-    Backend(
+object NgTarget {
+  def fromTarget(target: Target): NgTarget = {
+    NgTarget(
       id = target.tags.headOption.getOrElse(target.host),
       hostname = target.theHost,
       port = target.thePort,
@@ -113,8 +114,8 @@ object Backend {
       tlsConfig = target.mtlsConfig,
     )
   }
-  def readFrom(obj: JsValue): Backend = {
-    Backend(
+  def readFrom(obj: JsValue): NgTarget = {
+    NgTarget(
       id = obj.select("id").as[String],
       hostname = obj.select("hostname").as[String],
       port = obj.select("port").as[Int],

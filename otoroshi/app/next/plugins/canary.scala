@@ -5,7 +5,7 @@ import akka.http.scaladsl.util.FastFuture.EnhancedFuture
 import akka.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.models.Canary
-import otoroshi.next.models.{Backend, Backends}
+import otoroshi.next.models.{NgTarget, Backend}
 import otoroshi.next.plugins.api._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
@@ -57,11 +57,11 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
     env.datastores.canaryDataStore.isCanary(ctx.route.id, trackingId, config.traffic, reqNumber, gconfig).fast.map {
       case false => Right(Done)
       case true  =>
-        val backends = Backends(
-          targets = config.targets.map(Backend.fromTarget),
+        val backends = Backend(
+          targets = config.targets.map(NgTarget.fromTarget),
           targetRefs = Seq.empty,
           root = config.root,
-          loadBalancing = ctx.route.backends.loadBalancing,
+          loadBalancing = ctx.route.backend.loadBalancing,
         )
         ctx.attrs.put(otoroshi.next.plugins.Keys.PossibleBackendsKey -> backends)
         Right(Done)

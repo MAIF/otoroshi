@@ -8,7 +8,7 @@ import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser}
-import otoroshi.next.models.{Backend, PluginInstance, Route}
+import otoroshi.next.models.{NgTarget, PluginInstance, Route}
 import otoroshi.next.proxy.ExecutionReport
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
@@ -38,7 +38,7 @@ case class NgPluginHttpRequest(
   version: String,
   clientCertificateChain: Option[Seq[X509Certificate]],
   body: Source[ByteString, _],
-  backend: Option[Backend]
+  backend: Option[NgTarget]
 ) {
   lazy val contentType: Option[String] = headers.get("Content-Type").orElse(headers.get("content-type"))
   lazy val host: String                = headers.get("Host").orElse(headers.get("host")).getOrElse("")

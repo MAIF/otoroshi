@@ -44,9 +44,13 @@ class AuthModule extends NgAccessValidator {
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val req = ctx.request
     val descriptor = ctx.route.serviceDescriptor
+    val maybeApikey = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
+    val pass = ctx.config.select("pass_with_apikey").asOpt[Boolean].getOrElse(false) match {
+      case true => maybeApikey.isDefined
+      case false => false
+    }
     ctx.attrs.get(otoroshi.plugins.Keys.UserKey) match {
-      case Some(_) => NgAccess.NgAllowed.vfuture
-      case None => {
+      case None if !pass => {
         val NgAuthModuleConfig(module) = ctx.cachedConfig(internalName)(configReads).getOrElse(NgAuthModuleConfig())
         module match {
           case None =>
@@ -107,6 +111,7 @@ class AuthModule extends NgAccessValidator {
           }
         }
       }
+      case _ => NgAccess.NgAllowed.vfuture
     }
   }
 }

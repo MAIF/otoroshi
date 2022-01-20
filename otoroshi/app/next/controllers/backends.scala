@@ -152,7 +152,7 @@ class BackendsController(val ApiAction: ApiAction, val cc: ControllerComponents)
       description = "A new backend",
       tags = Seq.empty,
       metadata = Map.empty,
-      backend = Backend(
+      backend = NgTarget(
         id = "target_1",
         hostname = "mirror.otoroshi.io",
         port = 443,
