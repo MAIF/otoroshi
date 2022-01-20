@@ -180,7 +180,7 @@ class BackOfficeAppContainer extends Component {
                 </div>
               </div>
             </div>
-            <div className="col-sm-10 col-sm-offset-2 main">
+            <div className="col-sm-10 offset-sm-2 main">
               <div className="row">
                 <div className={classes.join(' ')}>
                   <DynamicTitle />
