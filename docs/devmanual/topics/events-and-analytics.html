@@ -291,7 +291,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>ApiKeyDeletedAlert</code>: send when an user admin has deleted a new apikey</li>
 </ul>
 <h2><a href="#audit" name="audit" class="anchor"><span class="anchor-link"></span></a>Audit</h2>
-<p>With Otoroshi, any admin action and any sucpicious/alert action is recorded. These records are stored in Otoroshi’s datastore (only the last n records, defined by the app.events.maxSize config key). All the records can be send through the analytics mechanism (WebHook, Kafka, Elastic) for external and/or further usage. We recommand sending away those records for security reasons.</p>
+<p>With Otoroshi, any admin action and any sucpicious/alert action is recorded. These records are stored in Otoroshi’s datastore (only the last n records, defined by the <code>otoroshi.events.maxSize</code> config key). All the records can be send through the analytics mechanism (WebHook, Kafka, Elastic) for external and/or further usage. We recommand sending away those records for security reasons.</p>
 <p>Otoroshi keep the following list of information for each executed action:</p>
 <ul>
   <li><code>Date</code>: moment of the action</li>

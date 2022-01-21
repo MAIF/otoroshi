@@ -1077,7 +1077,7 @@ This plugin can accept the following configuration
 ```json
 {
   "ServiceMetrics": {
-    "accessKeyValue": "secret", // if not defined, public access. Can be ${config.otoroshi.health.accessKey}
+    "accessKeyValue": "secret", // if not defined, public access. Can be ${config.app.health.accessKey}
     "accessKeyQuery": "access_key"
   }
 }
@@ -1090,7 +1090,7 @@ This plugin can accept the following configuration
 ```json
 {
   "ServiceMetrics" : {
-    "accessKeyValue" : "${config.otoroshi.health.accessKey}",
+    "accessKeyValue" : "${config.app.health.accessKey}",
     "accessKeyQuery" : "access_key"
   }
 }
@@ -2653,7 +2653,7 @@ This plugin can accept the following configuration
 ```json
 {
   "PrometheusEndpoint": {
-    "accessKeyValue": "secret", // if not defined, public access. Can be ${config.otoroshi.health.accessKey}
+    "accessKeyValue": "secret", // if not defined, public access. Can be ${config.app.health.accessKey}
     "accessKeyQuery": "access_key",
     "includeMetrics": false
   }
@@ -2667,7 +2667,7 @@ This plugin can accept the following configuration
 ```json
 {
   "PrometheusEndpoint" : {
-    "accessKeyValue" : "${config.otoroshi.health.accessKey}",
+    "accessKeyValue" : "${config.app.health.accessKey}",
     "accessKeyQuery" : "access_key",
     "includeMetrics" : false
   }
