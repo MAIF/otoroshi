@@ -54,6 +54,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.io.Source
 import scala.util.{Failure, Success}
+import otoroshi.script.plugins.Plugins
 
 case class SidecarConfig(
     serviceId: String,
@@ -880,10 +881,19 @@ class Env(
     maxLogsSize = configuration.getOptionalWithFileSupport[Int]("app.events.maxSize").getOrElse(100),
     otoroshiId =
       configuration.getOptionalWithFileSupport[String]("otoroshi.instance.instanceId").getOrElse(IdGenerator.uuid),
-    scripts = GlobalScripts(
+    plugins = Plugins(
       enabled = true,
-      sinkRefs = Seq("cp:otoroshi.plugins.apikeys.ClientCredentialService"),
-      sinkConfig = Json.obj(
+      refs = Seq(
+        "cp:otoroshi.next.proxy.ProxyEngine",
+        "cp:otoroshi.plugins.apikeys.ClientCredentialService"
+      ),
+      config = Json.obj(
+        "NextGenProxyEngine" -> Json.obj(
+          "enabled" -> true,
+          "debug" -> false,
+          "debug_headers" -> false,
+          "domains" -> Seq("*-next-gen.oto.tools")
+        ),
         "ClientCredentialService" -> Json.obj(
           "domain"         -> "*",
           "expiration"     -> 1.hour.toMillis,
