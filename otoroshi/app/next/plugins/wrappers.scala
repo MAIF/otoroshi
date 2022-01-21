@@ -23,7 +23,7 @@ import otoroshi.next.plugins.OtoroshiChallengeKeys
 class PreRoutingWrapper extends NgPreRouting {
   
   override def name: String = "Pre-routing plugin wrapper"
-  override def description: Option[String] = "Wraps an old pre-routing plugin for the new router. The configuration is the one for the wrapped plugin. If the wrapped is supposed to listen to otoroshi events, then it won't work".some
+  override def description: Option[String] = "Wraps an old pre-routing plugin for the new router. The configuration is the one for the wrapped plugin.".some
   
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val pluginId = ctx.config.select("plugin").as[String]
@@ -35,9 +35,9 @@ class PreRoutingWrapper extends NgPreRouting {
           0,
           ctx.request,
           ctx.route.serviceDescriptor,
-          ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj()),
+          ctx.config, 
           ctx.attrs,
-          ctx.globalConfig, // env.datastores.globalConfigDataStore.latest().plugins.config.select(plugin.configRoot.getOrElse("--")).asOpt[JsValue].getOrElse(Json.obj())
+          ctx.globalConfig, 
         )
         plugin.preRoute(octx)
           .map(_ => Done.right)
@@ -54,19 +54,19 @@ class PreRoutingWrapper extends NgPreRouting {
 class AccessValidatorWrapper extends NgAccessValidator {
 
   override def name: String = "Access validator plugin wrapper"
-  override def description: Option[String] = "Wraps an old access validator plugin for the new router. The configuration is the one for the wrapped plugin. If the wrapped is supposed to listen to otoroshi events, then it won't work".some
+  override def description: Option[String] = "Wraps an old access validator plugin for the new router. The configuration is the one for the wrapped plugin.".some
   
   def newContextToOld(ctx: NgAccessContext, plugin: AccessValidator): AccessContext = {
     AccessContext(
       snowflake = ctx.snowflake,
       index = 0,
       request = ctx.request,
-      config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
+      config = ctx.config, 
       attrs = ctx.attrs,
       descriptor = ctx.route.serviceDescriptor,
       user = ctx.user,
       apikey = ctx.apikey,
-      globalConfig = ctx.globalConfig, // plugin.configRoot.flatMap(r => ctx.globalConfig.select(r).asOpt[JsValue]).getOrElse(ctx.globalConfig).asOpt[JsValue].getOrElse(Json.obj()),
+      globalConfig = ctx.globalConfig, 
     )
   }
 
@@ -88,14 +88,14 @@ class AccessValidatorWrapper extends NgAccessValidator {
 class RequestSinkWrapper extends NgRequestSink {
 
   override def name: String = "Request sink plugin wrapper"
-  override def description: Option[String] = "Wraps an old request sink plugin for the new router. The configuration is the one for the wrapped plugin. If the wrapped is supposed to listen to otoroshi events, then it won't work".some
+  override def description: Option[String] = "Wraps an old request sink plugin for the new router. The configuration is the one for the wrapped plugin.".some
   
   def newContextToOld(ctx: NgRequestSinkContext, plugin: RequestSink): RequestSinkContext = {
     RequestSinkContext(
       snowflake = ctx.snowflake,
       index = 0,
       request = ctx.request,
-      config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
+      config = ctx.config, 
       attrs = ctx.attrs,
       origin = ctx.origin match {
         case NgRequestOrigin.NgErrorHandler => RequestOrigin.ErrorHandler
@@ -131,7 +131,7 @@ class RequestSinkWrapper extends NgRequestSink {
 class RequestTransformerWrapper extends NgRequestTransformer {
 
   override def name: String = "Request transformer plugin wrapper"
-  override def description: Option[String] = "Wraps an old request transformer plugin for the new router. The configuration is the one for the wrapped plugin. If the wrapped is supposed to listen to otoroshi events, then it won't work".some
+  override def description: Option[String] = "Wraps an old request transformer plugin for the new router. The configuration is the one for the wrapped plugin.".some
 
   override def beforeRequest(ctx: NgBeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val pluginId = ctx.config.select("plugin").as[String]
@@ -143,9 +143,9 @@ class RequestTransformerWrapper extends NgRequestTransformer {
           snowflake = ctx.snowflake,
           descriptor = ctx.route.serviceDescriptor,
           request = ctx.request,
-          config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
+          config = ctx.config, 
           attrs = ctx.attrs,
-          globalConfig = ctx.globalConfig, // plugin.configRoot.flatMap(r => ctx.globalConfig.select(r).asOpt[JsValue]).getOrElse(ctx.globalConfig).asOpt[JsValue].getOrElse(Json.obj())
+          globalConfig = ctx.globalConfig, 
         )
         plugin.beforeRequest(octx)
       }
@@ -162,9 +162,9 @@ class RequestTransformerWrapper extends NgRequestTransformer {
           snowflake = ctx.snowflake,
           descriptor = ctx.route.serviceDescriptor,
           request = ctx.request,
-          config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
+          config = ctx.config, 
           attrs = ctx.attrs,
-          globalConfig = ctx.globalConfig, // plugin.configRoot.flatMap(r => ctx.globalConfig.select(r).asOpt[JsValue]).getOrElse(ctx.globalConfig).asOpt[JsValue].getOrElse(Json.obj())
+          globalConfig = ctx.globalConfig, 
         )
         plugin.afterRequest(octx)
       }
@@ -220,9 +220,9 @@ class RequestTransformerWrapper extends NgRequestTransformer {
           snowflake = ctx.snowflake,
           descriptor = ctx.route.serviceDescriptor,
           request = ctx.request,
-          config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
+          config = ctx.config, 
           attrs = ctx.attrs,
-          globalConfig = ctx.globalConfig, // plugin.configRoot.flatMap(r => ctx.globalConfig.select(r).asOpt[JsValue]).getOrElse(ctx.globalConfig).asOpt[JsValue].getOrElse(Json.obj())
+          globalConfig = ctx.globalConfig, 
         )
         val newBody = plugin.transformRequestBodyWithCtx(bctx)
         val octx = TransformerRequestContext(
@@ -268,9 +268,9 @@ class RequestTransformerWrapper extends NgRequestTransformer {
           snowflake = ctx.snowflake,
           descriptor = ctx.route.serviceDescriptor,
           request = ctx.request,
-          config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
+          config = ctx.config, 
           attrs = ctx.attrs,
-          globalConfig = ctx.globalConfig, // plugin.configRoot.flatMap(r => ctx.globalConfig.select(r).asOpt[JsValue]).getOrElse(ctx.globalConfig).asOpt[JsValue].getOrElse(Json.obj())
+          globalConfig = ctx.globalConfig, 
         )
         plugin.transformRequestWithCtx(octx).map {
           case Left(r) => Left(r)
@@ -314,9 +314,9 @@ class RequestTransformerWrapper extends NgRequestTransformer {
           snowflake = ctx.snowflake,
           descriptor = ctx.route.serviceDescriptor,
           request = ctx.request,
-          config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
+          config = ctx.config, 
           attrs = ctx.attrs,
-          globalConfig = ctx.globalConfig, // plugin.configRoot.flatMap(r => ctx.globalConfig.select(r).asOpt[JsValue]).getOrElse(ctx.globalConfig).asOpt[JsValue].getOrElse(Json.obj())
+          globalConfig = ctx.globalConfig, 
         )
         val newBody = plugin.transformResponseBodyWithCtx(bctx)
         val octx = TransformerResponseContext(
@@ -338,9 +338,9 @@ class RequestTransformerWrapper extends NgRequestTransformer {
           snowflake = ctx.snowflake,
           descriptor = ctx.route.serviceDescriptor,
           request = ctx.request,
-          config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
+          config = ctx.config, 
           attrs = ctx.attrs,
-          globalConfig = ctx.globalConfig, // plugin.configRoot.flatMap(r => ctx.globalConfig.select(r).asOpt[JsValue]).getOrElse(ctx.globalConfig).asOpt[JsValue].getOrElse(Json.obj())
+          globalConfig = ctx.globalConfig, 
         )
         plugin.transformResponseWithCtx(octx).map {
           case Left(r) => Left(r)
@@ -383,8 +383,8 @@ class RequestTransformerWrapper extends NgRequestTransformer {
           descriptor = ctx.route.serviceDescriptor,
           apikey = ctx.apikey,
           user = ctx.user,
-          config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
-          globalConfig = ctx.globalConfig, // plugin.configRoot.flatMap(r => ctx.globalConfig.select(r).asOpt[JsValue]).getOrElse(ctx.globalConfig).asOpt[JsValue].getOrElse(Json.obj()),
+          config = ctx.config, 
+          globalConfig = ctx.globalConfig, 
           attrs = ctx.attrs 
         )
         plugin.transformErrorWithCtx(octx).map { result =>
@@ -424,9 +424,9 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
           0,
           ctx.request,
           ctx.route.serviceDescriptor,
-          ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj()),
+          ctx.config, 
           ctx.attrs,
-          ctx.globalConfig, // env.datastores.globalConfigDataStore.latest().plugins.config.select(plugin.configRoot.getOrElse("--")).asOpt[JsValue].getOrElse(Json.obj())
+          ctx.globalConfig, 
         )
         plugin.asInstanceOf[PreRouting].preRoute(octx)
           .map(_ => Done.right)
@@ -449,12 +449,12 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
           snowflake = ctx.snowflake,
           index = 0,
           request = ctx.request,
-          config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
+          config = ctx.config, 
           attrs = ctx.attrs,
           descriptor = ctx.route.serviceDescriptor,
           user = ctx.user,
           apikey = ctx.apikey,
-          globalConfig = ctx.globalConfig, // plugin.configRoot.flatMap(r => ctx.globalConfig.select(r).asOpt[JsValue]).getOrElse(ctx.globalConfig).asOpt[JsValue].getOrElse(Json.obj()),
+          globalConfig = ctx.globalConfig, 
         )
         plugin.asInstanceOf[AccessValidator].access(octx).map {
           case Allowed => NgAccess.NgAllowed
@@ -474,9 +474,9 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
           snowflake = ctx.snowflake,
           descriptor = ctx.route.serviceDescriptor,
           request = ctx.request,
-          config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
+          config = ctx.config, 
           attrs = ctx.attrs,
-          globalConfig = ctx.globalConfig, // plugin.configRoot.flatMap(r => ctx.globalConfig.select(r).asOpt[JsValue]).getOrElse(ctx.globalConfig).asOpt[JsValue].getOrElse(Json.obj())
+          globalConfig = ctx.globalConfig, 
         )
         plugin.asInstanceOf[RequestTransformer].beforeRequest(octx)
       }
@@ -493,9 +493,9 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
           snowflake = ctx.snowflake,
           descriptor = ctx.route.serviceDescriptor,
           request = ctx.request,
-          config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
+          config = ctx.config, 
           attrs = ctx.attrs,
-          globalConfig = ctx.globalConfig, // plugin.configRoot.flatMap(r => ctx.globalConfig.select(r).asOpt[JsValue]).getOrElse(ctx.globalConfig).asOpt[JsValue].getOrElse(Json.obj())
+          globalConfig = ctx.globalConfig, 
         )
         plugin.asInstanceOf[RequestTransformer].afterRequest(octx)
       }
@@ -552,9 +552,9 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
           snowflake = ctx.snowflake,
           descriptor = ctx.route.serviceDescriptor,
           request = ctx.request,
-          config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
+          config = ctx.config, 
           attrs = ctx.attrs,
-          globalConfig = ctx.globalConfig, // plugin.configRoot.flatMap(r => ctx.globalConfig.select(r).asOpt[JsValue]).getOrElse(ctx.globalConfig).asOpt[JsValue].getOrElse(Json.obj())
+          globalConfig = ctx.globalConfig, 
         )
         val newBody = plugin.asInstanceOf[RequestTransformer].transformRequestBodyWithCtx(bctx)
         val octx = TransformerRequestContext(
@@ -600,9 +600,9 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
           snowflake = ctx.snowflake,
           descriptor = ctx.route.serviceDescriptor,
           request = ctx.request,
-          config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
+          config = ctx.config, 
           attrs = ctx.attrs,
-          globalConfig = ctx.globalConfig, // plugin.configRoot.flatMap(r => ctx.globalConfig.select(r).asOpt[JsValue]).getOrElse(ctx.globalConfig).asOpt[JsValue].getOrElse(Json.obj())
+          globalConfig = ctx.globalConfig, 
         )
         plugin.asInstanceOf[RequestTransformer].transformRequestWithCtx(octx).map {
           case Left(r) => Left(r)
@@ -650,8 +650,8 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
           descriptor = ctx.route.serviceDescriptor,
           apikey = ctx.apikey,
           user = ctx.user,
-          config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
-          globalConfig = ctx.globalConfig, // plugin.configRoot.flatMap(r => ctx.globalConfig.select(r).asOpt[JsValue]).getOrElse(ctx.globalConfig).asOpt[JsValue].getOrElse(Json.obj()),
+          config = ctx.config, 
+          globalConfig = ctx.globalConfig, 
           attrs = ctx.attrs 
         )
         plugin.asInstanceOf[RequestTransformer].transformErrorWithCtx(octx).map { result =>
@@ -703,9 +703,9 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
           snowflake = ctx.snowflake,
           descriptor = ctx.route.serviceDescriptor,
           request = ctx.request,
-          config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
+          config = ctx.config, 
           attrs = ctx.attrs,
-          globalConfig = ctx.globalConfig, // plugin.configRoot.flatMap(r => ctx.globalConfig.select(r).asOpt[JsValue]).getOrElse(ctx.globalConfig).asOpt[JsValue].getOrElse(Json.obj())
+          globalConfig = ctx.globalConfig, 
         )
         val newBody = plugin.asInstanceOf[RequestTransformer].transformResponseBodyWithCtx(bctx)
         val octx = TransformerResponseContext(
@@ -727,9 +727,9 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
           snowflake = ctx.snowflake,
           descriptor = ctx.route.serviceDescriptor,
           request = ctx.request,
-          config = ctx.config, // plugin.configRoot.flatMap(r => ctx.config.select(r).asOpt[JsValue]).getOrElse(ctx.config).asOpt[JsValue].getOrElse(Json.obj())
+          config = ctx.config, 
           attrs = ctx.attrs,
-          globalConfig = ctx.globalConfig, // plugin.configRoot.flatMap(r => ctx.globalConfig.select(r).asOpt[JsValue]).getOrElse(ctx.globalConfig).asOpt[JsValue].getOrElse(Json.obj())
+          globalConfig = ctx.globalConfig, 
         )
         plugin.asInstanceOf[RequestTransformer].transformResponseWithCtx(octx).map {
           case Left(r) => Left(r)
