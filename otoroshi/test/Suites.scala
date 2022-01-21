@@ -2,6 +2,7 @@ import java.io.File
 
 import com.typesafe.config.ConfigFactory
 import functional._
+import tools._
 import org.apache.commons.io.FileUtils
 import org.scalatest.{BeforeAndAfterAll, Suite, Suites}
 import play.api.Configuration
@@ -149,4 +150,9 @@ class DevOtoroshiTests
 class Log4ShellTests
     extends Suites(
       new Log4ShellSpec()
+    )
+
+class ConfigCleanerTests
+    extends Suites(
+      new ConfigurationCleanupSpec()
     )
