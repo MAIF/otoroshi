@@ -19,6 +19,7 @@ import otoroshi.next.proxy.ProxyStateLoaderJob
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.storage.DataStores
 import otoroshi.utils.metrics.Metrics
+import otoroshi.utils.syntax.implicits.BetterConfiguration
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
 import play.api.libs.ws.WSClient
@@ -49,32 +50,32 @@ object OtoroshiLoaderHelper {
     implicit val scheduler = components.env.otoroshiScheduler
     implicit val mat       = components.env.otoroshiMaterializer
 
-    val globalWait                      = components.env.configuration.getOptional[Boolean]("app.boot.globalWait").getOrElse(true)
+    val globalWait                      = components.env.configuration.betterGetOptional[Boolean]("app.boot.globalWait").getOrElse(true)
     val waitForTlsInitEnabled           =
-      components.env.configuration.getOptional[Boolean]("app.boot.waitForTlsInit").getOrElse(true)
+      components.env.configuration.betterGetOptional[Boolean]("app.boot.waitForTlsInit").getOrElse(true)
     val waitForPluginsSearch            =
-      components.env.configuration.getOptional[Boolean]("app.boot.waitForPluginsSearch").getOrElse(true)
+      components.env.configuration.betterGetOptional[Boolean]("app.boot.waitForPluginsSearch").getOrElse(true)
     val waitForScriptsCompilation       =
       components.env.scriptingEnabled && components.env.configuration
-        .getOptional[Boolean]("app.boot.waitForScriptsCompilation")
+        .betterGetOptional[Boolean]("app.boot.waitForScriptsCompilation")
         .getOrElse(true)
     val waitForFirstClusterFetchEnabled =
-      components.env.configuration.getOptional[Boolean]("app.boot.waitForFirstClusterFetch").getOrElse(true)
+      components.env.configuration.betterGetOptional[Boolean]("app.boot.waitForFirstClusterFetch").getOrElse(true)
     val waitProxyStateSync =
-      components.env.configuration.getOptional[Boolean]("app.boot.waitProxyStateSync").getOrElse(true)
+      components.env.configuration.betterGetOptional[Boolean]("app.boot.waitProxyStateSync").getOrElse(true)
 
     val globalWaitTimeout: Long                =
-      components.env.configuration.getOptional[Long]("app.boot.waitTimeout").getOrElse(60000)
+      components.env.configuration.betterGetOptional[Long]("app.boot.waitTimeout").getOrElse(60000)
     val waitForPluginsSearchTimeout: Long      =
-      components.env.configuration.getOptional[Long]("app.boot.waitForPluginsSearchTimeout").getOrElse(20000)
+      components.env.configuration.betterGetOptional[Long]("app.boot.waitForPluginsSearchTimeout").getOrElse(20000)
     val waitForScriptsCompilationTimeout: Long =
-      components.env.configuration.getOptional[Long]("app.boot.waitForScriptsCompilationTimeout").getOrElse(30000)
+      components.env.configuration.betterGetOptional[Long]("app.boot.waitForScriptsCompilationTimeout").getOrElse(30000)
     val waitForTlsInitTimeout: Long            =
-      components.env.configuration.getOptional[Long]("app.boot.waitForTlsInitTimeout").getOrElse(10000)
+      components.env.configuration.betterGetOptional[Long]("app.boot.waitForTlsInitTimeout").getOrElse(10000)
     val waitForFirstClusterFetchTimeout: Long  =
-      components.env.configuration.getOptional[Long]("app.boot.waitForFirstClusterFetchTimeout").getOrElse(10000)
+      components.env.configuration.betterGetOptional[Long]("app.boot.waitForFirstClusterFetchTimeout").getOrElse(10000)
     val waitProxyStateSyncTimeout: Long =
-      components.env.configuration.getOptional[Long]("app.boot.waitProxyStateSyncTimeout").getOrElse(10000)
+      components.env.configuration.betterGetOptional[Long]("app.boot.waitProxyStateSyncTimeout").getOrElse(10000)
 
     def timeout(duration: FiniteDuration): Future[Unit] = {
       val promise = Promise[Unit]

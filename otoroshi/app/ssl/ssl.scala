@@ -905,11 +905,11 @@ trait CertificateDataStore extends BasicStore[Cert] {
 
   def hasInitialCerts()(implicit env: Env, ec: ExecutionContext): Boolean = {
     val hasInitialCert  =
-      env.configuration.has("otoroshi.ssl.initialCacert") &&
-      env.configuration.has("otoroshi.ssl.initialCert") &&
-      env.configuration.has("otoroshi.ssl.initialCertKey")
-    val hasInitialCerts = env.configuration.has("otoroshi.ssl.initialCerts")
-    val hasRootCA       = env.configuration.has("otoroshi.ssl.rootCa.cert") && env.configuration.has(
+      env.configuration.betterHas("otoroshi.ssl.initialCacert") &&
+      env.configuration.betterHas("otoroshi.ssl.initialCert") &&
+      env.configuration.betterHas("otoroshi.ssl.initialCertKey")
+    val hasInitialCerts = env.configuration.betterHas("otoroshi.ssl.initialCerts")
+    val hasRootCA       = env.configuration.betterHas("otoroshi.ssl.rootCa.cert") && env.configuration.betterHas(
       "otoroshi.ssl.rootCa.key"
     )
     hasInitialCert || hasInitialCerts || hasRootCA

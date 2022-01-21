@@ -40,7 +40,7 @@ class InMemoryDataStores(
 
   lazy val logger = Logger("otoroshi-datastores")
 
-  lazy val redisStatsItems: Int = configuration.get[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
+  lazy val redisStatsItems: Int = configuration.getOptionalWithFileSupport[Int]("app.inmemory.windowSize").getOrElse(99)
 
   lazy val actorSystem =
     ActorSystem(
@@ -51,8 +51,8 @@ class InMemoryDataStores(
         .getOrElse(ConfigFactory.empty)
     )
   val materializer     = Materializer(actorSystem)
-  val _optimized       = configuration.getOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
-  val _modern          = configuration.getOptional[Boolean]("app.inmemory.modern").getOrElse(false)
+  val _optimized       = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.optimized").getOrElse(false)
+  val _modern          = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.modern").getOrElse(false)
   // lazy val redis       = new SwappableInMemoryRedis(_optimized, env, actorSystem)
   lazy val redis       = if (_modern) {
     new ModernSwappableInMemoryRedis(_optimized, env, actorSystem)

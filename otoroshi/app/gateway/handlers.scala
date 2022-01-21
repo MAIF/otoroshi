@@ -32,7 +32,7 @@ import play.core.WebCommands
 import otoroshi.security.OtoroshiClaim
 import otoroshi.ssl.{KeyManagerCompatibility, SSLSessionJavaHelper}
 import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits.BetterSyntax
+import otoroshi.utils.syntax.implicits.{BetterConfiguration, BetterSyntax}
 
 import java.io.File
 import scala.concurrent.{ExecutionContext, Future}
@@ -427,7 +427,7 @@ class GatewayRequestHandler(
 
   private val devCache                               = Scaffeine().maximumSize(10000).build[String, (String, ByteString)]
   private lazy val devMimetypes: Map[String, String] = env.configuration
-    .getOptional[String]("play.http.fileMimeTypes")
+    .betterGetOptional[String]("play.http.fileMimeTypes")
     .map { types =>
       types
         .split("\\n")

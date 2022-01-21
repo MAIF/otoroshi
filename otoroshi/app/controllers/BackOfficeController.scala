@@ -49,16 +49,16 @@ case class BackofficeFlags(
     _requestTimeout: Option[FiniteDuration] = None
 ) {
   lazy val useAkkaHttpClient: Boolean     = _useAkkaHttpClient
-    .orElse(env.configuration.getOptional[Boolean]("otoroshi.backoffice.flags.useAkkaHttpClient"))
+    .orElse(env.configuration.betterGetOptional[Boolean]("otoroshi.backoffice.flags.useAkkaHttpClient"))
     .getOrElse(false)
   lazy val logUrl: Boolean                =
-    _logUrl.orElse(env.configuration.getOptional[Boolean]("otoroshi.backoffice.flags.logUrl")).getOrElse(false)
+    _logUrl.orElse(env.configuration.betterGetOptional[Boolean]("otoroshi.backoffice.flags.logUrl")).getOrElse(false)
   lazy val logStats: Boolean              =
-    _logStats.orElse(env.configuration.getOptional[Boolean]("otoroshi.backoffice.flags.logStats")).getOrElse(false)
+    _logStats.orElse(env.configuration.betterGetOptional[Boolean]("otoroshi.backoffice.flags.logStats")).getOrElse(false)
   lazy val requestTimeout: FiniteDuration = _requestTimeout
     .orElse(
       env.configuration
-        .getOptional[Long]("otoroshi.backoffice.flags.requestTimeout")
+        .betterGetOptional[Long]("otoroshi.backoffice.flags.requestTimeout")
         .map(v => FiniteDuration(v, TimeUnit.MILLISECONDS))
     )
     .getOrElse(1.minute)

@@ -859,7 +859,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   implicit lazy val mat   = env.otoroshiMaterializer
   implicit lazy val sched = env.otoroshiScheduler
 
-  private val _modern = env.configuration.getOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
+  private val _modern = env.configuration.betterGetOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
 
   private val lastPoll                      = new AtomicReference[DateTime](DateTime.parse("1970-01-01T00:00:00.000"))
   private val pollRef                       = new AtomicReference[Cancellable]()
@@ -1540,8 +1540,8 @@ class SwappableInMemoryDataStores(
   import scala.util.hashing.MurmurHash3
   import akka.stream.Materializer
 
-  lazy val redisStatsItems: Int  = configuration.get[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
-  lazy val experimental: Boolean = configuration.get[Option[Boolean]]("app.inmemory.experimental").getOrElse(false)
+  lazy val redisStatsItems: Int  = configuration.betterGet[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
+  lazy val experimental: Boolean = configuration.betterGet[Option[Boolean]]("app.inmemory.experimental").getOrElse(false)
   lazy val actorSystem           =
     ActorSystem(
       "otoroshi-swapinmemory-system",
@@ -1551,8 +1551,8 @@ class SwappableInMemoryDataStores(
         .getOrElse(ConfigFactory.empty)
     )
   private val materializer       = Materializer(actorSystem)
-  val _optimized                 = configuration.getOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
-  val _modern                    = configuration.getOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
+  val _optimized                 = configuration.betterGetOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
+  val _modern                    = configuration.betterGetOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
   lazy val redis                 = if (_modern) {
     new ModernSwappableInMemoryRedis(_optimized, env, actorSystem)
   } else {

@@ -1015,6 +1015,7 @@ class Env(
           DynamicSSLEngineProvider.logger.warn(s"Using custom SSL protocols: ${p.mkString(", ")}")
       }
     }
+    configuration.betterHas("app.importFrom")
     datastores.globalConfigDataStore
       .isOtoroshiEmpty()
       .andThen {
@@ -1032,7 +1033,7 @@ class Env(
             .getOptionalWithFileSupport[Seq[String]]("app.importFromHeaders")
             .map(headers => headers.toSeq.map(h => h.split(":")).map(h => (h(0).trim, h(1).trim)))
             .getOrElse(Seq.empty[(String, String)])
-          if (configuration.has("app.importFrom")) {
+          if (configuration.betterHas("app.importFrom")) {
             configuration.getOptionalWithFileSupport[String]("app.importFrom") match {
               case Some(url) if url.startsWith("http://") || url.startsWith("https://") => {
                 logger.info(s"Importing from URL: $url")

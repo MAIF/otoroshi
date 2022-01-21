@@ -233,6 +233,9 @@ object implicits {
       }
     }
   }
+  object BetterConfiguration {
+    val logger = Logger("otoroshi-better-configuration")
+  }
   implicit class BetterConfiguration(val configuration: Configuration) extends AnyVal {
 
     import collection.JavaConverters._
@@ -268,9 +271,73 @@ object implicits {
       }
     }
 
+    def betterHas(_path: String): Boolean = {
+      val path = if (_path.startsWith("app.")) {
+        val newPath: String = _path.replaceFirst("app", "otoroshi")
+        val app = configuration.has(_path)
+        val oto = configuration.has(newPath)
+        if (app != oto) {
+          BetterConfiguration.logger.warn(s"configuration key '${_path}' does not match with '${newPath}' on has(). Please report this error to https://github.com/MAIF/otoroshi/issues")
+          _path
+        } else {
+          newPath
+        }
+      } else {
+        _path
+      }
+      configuration.has(path)
+    }
+
+    def betterGet[A](_path: String)(implicit loader: ConfigLoader[A]): A = {
+      val path = if (_path.startsWith("app.")) {
+        val newPath: String = _path.replaceFirst("app", "otoroshi")
+        val app = configuration.get[A](_path)
+        val oto = configuration.get[A](newPath)
+        if (app != oto) {
+          BetterConfiguration.logger.warn(s"configuration key '${_path}' does not match with '${newPath}' on get(). Please report this error to https://github.com/MAIF/otoroshi/issues")
+          _path
+        } else {
+          newPath
+        }
+      } else {
+        _path
+      }
+      configuration.get[A](path)(loader)
+    }
+
+    def betterGetOptional[A](_path: String)(implicit loader: ConfigLoader[A]): Option[A] = {
+      val path = if (_path.startsWith("app.")) {
+        val newPath: String = _path.replaceFirst("app", "otoroshi")
+        val app = configuration.getOptional[A](_path)
+        val oto = configuration.getOptional[A](newPath)
+        if (app != oto) {
+          BetterConfiguration.logger.warn(s"configuration key '${_path}' does not match with '${newPath}' on getOptional(). Please report this error to https://github.com/MAIF/otoroshi/issues")
+          _path
+        } else {
+          newPath
+        }
+      } else {
+        _path
+      }
+      configuration.getOptional[A](path)(loader)
+    }
+
     def getOptionalWithFileSupport[A](
-        path: String
+        _path: String
     )(implicit loader: ConfigLoader[A], classTag: ClassTag[A]): Option[A] = {
+      val path = if (_path.startsWith("app.")) {
+        val newPath: String = _path.replaceFirst("app", "otoroshi")
+        val app = configuration.getOptional[A](_path)
+        val oto = configuration.getOptional[A](newPath)
+        if (app != oto) {
+          BetterConfiguration.logger.warn(s"configuration key '${_path}' does not match with '${newPath}' on getOptionalWithFileSupport(). Please report this error to https://github.com/MAIF/otoroshi/issues")
+          _path
+        } else {
+          newPath
+        }
+      } else {
+        _path
+      }
       Try(configuration.getOptional[A](path)(loader)).toOption.flatten match {
         case None        =>
           Try(configuration.getOptional[String](path)(ConfigLoader.stringLoader)).toOption.flatten match {
