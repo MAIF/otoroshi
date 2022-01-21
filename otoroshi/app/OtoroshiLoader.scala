@@ -52,7 +52,7 @@ package object modules {
     lazy val circuitBreakersHolder: CircuitBreakersHolder = wire[CircuitBreakersHolder]
 
     implicit lazy val env: Env = OtoroshiEnvHolder.set(new Env(
-      configuration = configuration,
+      _configuration = configuration,
       environment = environment,
       lifecycle = applicationLifecycle,
       wsClient = wsClient,

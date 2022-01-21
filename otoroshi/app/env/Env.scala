@@ -64,7 +64,7 @@ case class SidecarConfig(
 )
 
 class Env(
-    val configuration: Configuration,
+    val _configuration: Configuration,
     val environment: Environment,
     val lifecycle: ApplicationLifecycle,
     wsClient: WSClient,
@@ -76,17 +76,25 @@ class Env(
 
   val logger = Logger("otoroshi-env")
 
-  val otoroshiConfig: Configuration = (for {
-    appConfig <- configuration.getOptionalWithFileSupport[Configuration]("app")
-    otoConfig <- configuration.getOptionalWithFileSupport[Configuration]("otoroshi")
+  val merged_configuration: Configuration = (for {
+    appConfig <- _configuration.getOptionalWithFileSupport[Configuration]("app")
+    otoConfig <- _configuration.getOptionalWithFileSupport[Configuration]("otoroshi")
   } yield {
+    val wholeConfigJson: JsObject    =
+      Json.parse(_configuration.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject].-("app").-("otoroshi")
     val appConfigJson: JsObject    =
       Json.parse(appConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
     val otoConfigJson: JsObject    =
       Json.parse(otoConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
-    val finalConfigJson1: JsObject = appConfigJson ++ otoConfigJson
+    // val appKeys = appConfigJson.value.keySet  
+    // val otoKeys = otoConfigJson.value.keySet  
+    // appKeys.filter(key => otoKeys.contains(key)).debugPrintln
+    val mergeConfig: JsObject = appConfigJson.deepMerge(otoConfigJson)
+    val finalConfigJson1: JsObject = wholeConfigJson.deepMerge(Json.obj("otoroshi" -> mergeConfig, "app" -> mergeConfig))
     Configuration(ConfigFactory.parseString(Json.stringify(finalConfigJson1)))
-  }) getOrElse configuration
+  }) getOrElse _configuration
+
+  val configuration = merged_configuration // _configuration
 
   private lazy val xmasStart =
     DateTime.now().withMonthOfYear(12).withDayOfMonth(20).withMillisOfDay(0)

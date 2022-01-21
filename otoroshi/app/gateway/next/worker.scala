@@ -179,7 +179,7 @@ object OtoroshiWorkerTest {
     val wsClient: WSClient = WSClientFactory.ahcClient(configuration, environment.classLoader)(mat)
 
     val env: Env = new Env(
-      configuration = configuration,
+      _configuration = configuration,
       environment = environment,
       lifecycle = lifecycle,
       wsClient = wsClient,
