@@ -49,7 +49,7 @@ For each event, a list of information will be displayed and an additional button
 
 ## Audit
 
-With Otoroshi, any admin action and any sucpicious/alert action is recorded. These records are stored in Otoroshi’s datastore (only the last n records, defined by the app.events.maxSize config key). All the records can be send through the analytics mechanism (WebHook, Kafka, Elastic) for external and/or further usage. We recommand sending away those records for security reasons.
+With Otoroshi, any admin action and any sucpicious/alert action is recorded. These records are stored in Otoroshi’s datastore (only the last n records, defined by the `otoroshi.events.maxSize` config key). All the records can be send through the analytics mechanism (WebHook, Kafka, Elastic) for external and/or further usage. We recommand sending away those records for security reasons.
 
 Otoroshi keep the following list of information for each executed action:
 

@@ -10,7 +10,7 @@ curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5
 
 Once downloading, run Otoroshi.
 ```sh
-java -Dapp.adminPassword=password -jar otoroshi.jar 
+java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
 ```
 
 ## Protect the access to your api with the Otoroshi management of api keys

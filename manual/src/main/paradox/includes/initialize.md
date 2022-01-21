@@ -19,7 +19,7 @@ curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5
 then you can run start Otoroshi :
 
 ```sh
-java -Dapp.adminPassword=password -jar otoroshi.jar 
+java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
 ```
 
 Now you can log into Otoroshi at http://otoroshi.oto.tools:8080 with `admin@otoroshi.io/password`

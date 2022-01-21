@@ -23,7 +23,7 @@ You can test to get the same values than the right part by creating these follow
 curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
 
 # Once downloading, run Otoroshi.
-java -Dapp.adminPassword=password -jar otoroshi.jar 
+java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
 
 # Create a proxy of the mirror.otoroshi.io on http://myservice.oto.tools:8080
 curl -X POST http://otoroshi-api.oto.tools:8080/api/services \

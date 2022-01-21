@@ -56,13 +56,13 @@ docker run -p "8080:8080" -v "$(pwd):/usr/app/otoroshi/conf" maif/otoroshi
 You can also use a volume if you choose to use `filedb` datastore like :
 
 ```sh
-docker run -p "8080:8080" -v "$(pwd)/filedb:/usr/app/otoroshi/filedb" maif/otoroshi -Dapp.storage=file
+docker run -p "8080:8080" -v "$(pwd)/filedb:/usr/app/otoroshi/filedb" maif/otoroshi -Dotoroshi.storage=file
 ```
 
 You can also use a volume if you choose to use exports files :
 
 ```sh
-docker run -p "8080:8080" -v "$(pwd):/usr/app/otoroshi/imports" maif/otoroshi -Dapp.importFrom=/usr/app/otoroshi/imports/export.json
+docker run -p "8080:8080" -v "$(pwd):/usr/app/otoroshi/imports" maif/otoroshi -Dotoroshi.importFrom=/usr/app/otoroshi/imports/export.json
 ```
 
 ## Run examples
@@ -72,7 +72,7 @@ $ java \
   -Xms2G \
   -Xmx8G \
   -Dhttp.port=8080 \
-  -Dapp.importFrom=/home/user/otoroshi.json \
+  -Dotoroshi.importFrom=/home/user/otoroshi.json \
   -Dconfig.file=/home/user/otoroshi.conf \
   -jar ./otoroshi.jar
 

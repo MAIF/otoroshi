@@ -2,7 +2,7 @@
 
 when you start otoroshi for the first time, some basic entities will be created and stored in the datastore in order to make your instance work properly. However it might not be enough for your use case but you do want to bother with restoring a complete otoroshi export.
 
-In order to make state customization easy, otoroshi provides the config. key `app.initialCustomization`, overriden by the env. variable `OTOROSHI_INITIAL_CUSTOMIZATION`
+In order to make state customization easy, otoroshi provides the config. key `otoroshi.initialCustomization`, overriden by the env. variable `OTOROSHI_INITIAL_CUSTOMIZATION`
 
 The expected structure is the following :
 
