@@ -271,13 +271,18 @@ object implicits {
       }
     }
 
-    def betterHas(_path: String): Boolean = {
-      val path = if (_path.startsWith("app.")) {
+    def validateAndComputePath[A](_path: String, f: String => A): String = {      
+      if (_path.startsWith("app.")) {
         val newPath: String = _path.replaceFirst("app", "otoroshi")
-        val app = configuration.has(_path)
-        val oto = configuration.has(newPath)
+        // BetterConfiguration.logger.error(s"You chould change '${_path}' to '${newPath}'")
+        val app = f(_path)
+        val oto = f(newPath)
         if (app != oto) {
-          BetterConfiguration.logger.warn(s"configuration key '${_path}' does not match with '${newPath}' on has(). Please report this error to https://github.com/MAIF/otoroshi/issues")
+          val name = Try {
+            val caller = new Throwable().getStackTrace().tail.head
+            (caller.getClassName + "." + caller.getMethodName())
+          }.getOrElse("--")
+          BetterConfiguration.logger.warn(s"configuration key '${_path}' does not match with '${newPath}' on ${name}. Please report this error to https://github.com/MAIF/otoroshi/issues")
           _path
         } else {
           newPath
@@ -285,59 +290,27 @@ object implicits {
       } else {
         _path
       }
+    }
+
+    def betterHas(_path: String): Boolean = {
+      val path = validateAndComputePath(_path, configuration.has(_))
       configuration.has(path)
     }
 
     def betterGet[A](_path: String)(implicit loader: ConfigLoader[A]): A = {
-      val path = if (_path.startsWith("app.")) {
-        val newPath: String = _path.replaceFirst("app", "otoroshi")
-        val app = configuration.get[A](_path)
-        val oto = configuration.get[A](newPath)
-        if (app != oto) {
-          BetterConfiguration.logger.warn(s"configuration key '${_path}' does not match with '${newPath}' on get(). Please report this error to https://github.com/MAIF/otoroshi/issues")
-          _path
-        } else {
-          newPath
-        }
-      } else {
-        _path
-      }
+      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(loader))
       configuration.get[A](path)(loader)
     }
 
     def betterGetOptional[A](_path: String)(implicit loader: ConfigLoader[A]): Option[A] = {
-      val path = if (_path.startsWith("app.")) {
-        val newPath: String = _path.replaceFirst("app", "otoroshi")
-        val app = configuration.getOptional[A](_path)
-        val oto = configuration.getOptional[A](newPath)
-        if (app != oto) {
-          BetterConfiguration.logger.warn(s"configuration key '${_path}' does not match with '${newPath}' on getOptional(). Please report this error to https://github.com/MAIF/otoroshi/issues")
-          _path
-        } else {
-          newPath
-        }
-      } else {
-        _path
-      }
+      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(loader))
       configuration.getOptional[A](path)(loader)
     }
 
     def getOptionalWithFileSupport[A](
         _path: String
     )(implicit loader: ConfigLoader[A], classTag: ClassTag[A]): Option[A] = {
-      val path = if (_path.startsWith("app.")) {
-        val newPath: String = _path.replaceFirst("app", "otoroshi")
-        val app = configuration.getOptional[A](_path)
-        val oto = configuration.getOptional[A](newPath)
-        if (app != oto) {
-          BetterConfiguration.logger.warn(s"configuration key '${_path}' does not match with '${newPath}' on getOptionalWithFileSupport(). Please report this error to https://github.com/MAIF/otoroshi/issues")
-          _path
-        } else {
-          newPath
-        }
-      } else {
-        _path
-      }
+      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(loader))
       Try(configuration.getOptional[A](path)(loader)).toOption.flatten match {
         case None        =>
           Try(configuration.getOptional[String](path)(ConfigLoader.stringLoader)).toOption.flatten match {
