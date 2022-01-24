@@ -18,7 +18,7 @@ object PlayUtils {
     val akkaServerConfig                         = serverConfig.betterGet[Configuration]("akka")
     val illegalResponseHeaderValueProcessingMode =
       akkaServerConfig.get[String]("illegal-response-header-value-processing-mode")
-
+ 
     val httpConfig   = HttpConfiguration()
     val cookieSigner = new CookieSignerProvider(httpConfig.secret).get
     val resultUtils  = new ServerResultUtils(

@@ -33,11 +33,12 @@ case class DomainAndPath(raw: String) {
   def json: JsValue = JsString(raw)
 }
 
-case class Frontend(domains: Seq[DomainAndPath], headers: Map[String, String], stripPath: Boolean, apikey: ApiKeyRouteMatcher) {
+case class Frontend(domains: Seq[DomainAndPath], headers: Map[String, String], methods: Seq[String], stripPath: Boolean, apikey: ApiKeyRouteMatcher) {
   def json: JsValue = Json.obj(
     "domains" -> JsArray(domains.map(_.json)),
     "strip_path" -> stripPath,
     "headers" -> headers,
+    "methods" -> methods,
     "apikey" -> apikey.gentleJson
   )
 }
@@ -45,11 +46,12 @@ case class Frontend(domains: Seq[DomainAndPath], headers: Map[String, String], s
 object Frontend {
   def readFrom(lookup: JsLookupResult): Frontend = {
     lookup.asOpt[JsObject] match {
-      case None => Frontend(Seq.empty, Map.empty, true, ApiKeyRouteMatcher())
+      case None => Frontend(Seq.empty, Map.empty, Seq.empty, true, ApiKeyRouteMatcher())
       case Some(obj) => Frontend(
         domains = obj.select("domains").asOpt[Seq[String]].map(_.map(DomainAndPath.apply)).getOrElse(Seq.empty),
         stripPath = obj.select("strip_path").asOpt[Boolean].getOrElse(true),
         headers = obj.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        methods = obj.select("methods").asOpt[Seq[String]].getOrElse(Seq.empty),
         apikey = obj.select("apikey").asOpt[JsValue].flatMap(v => ApiKeyRouteMatcher.format.reads(v).asOpt).getOrElse(ApiKeyRouteMatcher())
       )
     }
@@ -100,32 +102,38 @@ case class Route(
     if (enabled) {
       val path = request.thePath
       val domain = request.theDomain
-      val res = frontend.domains
-        .applyOnIf(!skipDomainVerif)(_.filter(d => d.domain == domain || RegexPool(d.domain).matches(domain)))
-        .exists { d =>
-          path.startsWith(d.path) || RegexPool(d.path).matches(path)
-        }
-        .applyOnIf(frontend.headers.nonEmpty) { firstRes =>
-          val headers = request.headers.toSimpleMap.map(t => (t._1.toLowerCase, t._2))
-          val secondRes = frontend.headers.map(t => (t._1.toLowerCase, t._2)).forall {
-            case (key, value) => headers.get(key).contains(value)
+      val method = request.method
+      val methodPasses = if (frontend.methods.isEmpty) true else frontend.methods.contains(method)
+      if (methodPasses) {
+        val res = frontend.domains
+          .applyOnIf(!skipDomainVerif)(_.filter(d => d.domain == domain || RegexPool(d.domain).matches(domain)))
+          .exists { d =>
+            path.startsWith(d.path) || RegexPool(d.path).matches(path)
           }
-          firstRes && secondRes
-        }
-      val matchers = plugins.routeMatcherPlugins(request)(env.otoroshiExecutionContext, env)
-      if (matchers.nonEmpty) {
-        matchers.forall { matcher =>
-          val ctx = NgRouteMatcherContext(
-            snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get,
-            request = request,
-            route = this,
-            config = matcher.instance.config.raw,
-            attrs = attrs,
-          )
-          matcher.plugin.matches(ctx)
+          .applyOnIf(frontend.headers.nonEmpty) { firstRes =>
+            val headers = request.headers.toSimpleMap.map(t => (t._1.toLowerCase, t._2))
+            val secondRes = frontend.headers.map(t => (t._1.toLowerCase, t._2)).forall {
+              case (key, value) => headers.get(key).contains(value)
+            }
+            firstRes && secondRes
+          }
+        val matchers = plugins.routeMatcherPlugins(request)(env.otoroshiExecutionContext, env)
+        if (matchers.nonEmpty) {
+          matchers.forall { matcher =>
+            val ctx = NgRouteMatcherContext(
+              snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get,
+              request = request,
+              route = this,
+              config = matcher.instance.config.raw,
+              attrs = attrs,
+            )
+            matcher.plugin.matches(ctx)
+          }
+        } else {
+          res
         }
       } else {
-        res
+        false
       }
     } else {
       false
@@ -341,6 +349,7 @@ object Route {
     frontend = Frontend(
       domains = Seq(DomainAndPath("fake-next-gen.oto.tools")),
       headers = Map.empty,
+      methods = Seq.empty,
       stripPath = true,
       apikey = ApiKeyRouteMatcher()
     ),
@@ -451,6 +460,7 @@ object Route {
           dap.map(DomainAndPath.apply).distinct
         },
         headers = service.matchingHeaders,
+        methods = Seq.empty, // get from restrictions ???
         stripPath = service.stripPath,
         apikey = service.apiKeyConstraints.routing,
       ),

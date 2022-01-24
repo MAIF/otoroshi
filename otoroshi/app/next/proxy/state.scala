@@ -142,6 +142,7 @@ class ProxyStateLoaderJob extends Job {
           frontend = Frontend(
             domains = Seq(DomainAndPath(s"${idx}-generated-next-gen.oto.tools")),
             headers = Map.empty,
+            methods = Seq.empty,
             stripPath = true,
             apikey = ApiKeyRouteMatcher(),
           ),
@@ -201,6 +202,7 @@ class ProxyStateLoaderJob extends Job {
           frontend = Frontend(
             domains = Seq(DomainAndPath(s"path-generated-next-gen.oto.tools/api/${idx}")),
             headers = Map.empty,
+            methods = Seq.empty,
             stripPath = true,
             apikey = ApiKeyRouteMatcher(),
           ),
@@ -254,6 +256,7 @@ class ProxyStateLoaderJob extends Job {
           frontend = Frontend(
             domains = Seq(DomainAndPath(s"random-generated-next-gen.oto.tools/api/${idx}")),
             headers = Map.empty,
+            methods = Seq.empty,
             stripPath = true,
             apikey = ApiKeyRouteMatcher(),
           ),

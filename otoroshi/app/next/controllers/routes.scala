@@ -160,6 +160,7 @@ class RoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
       frontend = Frontend(
         domains = Seq(DomainAndPath("new-route.oto.tools")),
         headers = Map.empty,
+        methods = Seq.empty,
         stripPath = true,
         apikey = ApiKeyRouteMatcher()
       ),
