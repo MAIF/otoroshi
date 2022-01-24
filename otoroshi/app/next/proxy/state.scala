@@ -11,11 +11,9 @@ import otoroshi.ssl.Cert
 import otoroshi.utils.RegexPool
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
+import play.api.libs.json._
 
-import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import scala.collection.JavaConverters._
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -95,7 +93,6 @@ case class PathTree(routes: scala.collection.mutable.MutableList[Route], tree: T
     "tree" -> JsObject(tree.toMap.mapValues(_.json))
   )
   def find(segments: Seq[String]): Option[Seq[Route]] = {
-    // TODO: handle * segment
     segments.headOption match {
       case None if routes.isEmpty => None
       case None => routes.some
@@ -203,7 +200,7 @@ class ProxyState(env: Env) {
     val s = System.currentTimeMillis()
     domainPathTreeRef.set(DomainPathTree.build(values))
     val d = System.currentTimeMillis() - s
-    logger.info(s"built DomainPathTree of ${values.size} routes in ${d} ms.")
+    logger.debug(s"built DomainPathTree of ${values.size} routes in ${d} ms.")
     // println(routesByDomain.mapValues(_.size))
 
     // route("admin-api-service").map(r => System.identityHashCode(r).debugPrintln)
@@ -441,7 +438,7 @@ class ProxyStateLoaderJob extends Job {
       genRandom <- generateRandomRoutes(env)
       descriptors <- env.datastores.serviceDescriptorDataStore.findAll()
       fakeRoutes = if (env.env == "dev") Seq(Route.fake) else Seq.empty
-      newRoutes = genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d => Route.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)) ++ routes ++ fakeRoutes
+      newRoutes = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d => Route.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)) ++ routes ++ fakeRoutes).filter(_.enabled)
       apikeys <- env.datastores.apiKeyDataStore.findAll()
       certs <- env.datastores.certificatesDataStore.findAll()
       verifiers <- env.datastores.globalJwtVerifierDataStore.findAll()
