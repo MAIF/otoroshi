@@ -85,6 +85,7 @@ class ProxyEngine() extends RequestHandler {
         "enabled" -> true,
         "debug" -> false,
         "debug_headers" -> true,
+        "routing_strategy" -> "tree",
         "domains" -> Json.arr()
       )
     ).some
@@ -131,6 +132,7 @@ class ProxyEngine() extends RequestHandler {
   def handleRequest(request: Request[Source[ByteString, _]], config: JsObject)(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig): Future[Result] = {
     val requestId = IdGenerator.uuid
     val reporting = config.select("reporting").asOpt[Boolean].getOrElse(true)
+    val useTree = config.select("routing_strategy").asOpt[String].contains("tree")
     implicit val report = ExecutionReport(requestId, reporting)
     report.start("start-handling")
     val debug = config.select("debug").asOpt[Boolean].getOrElse(false)
@@ -168,7 +170,7 @@ class ProxyEngine() extends RequestHandler {
     (for {
       _               <- handleConcurrentRequest(request)
       _               =  report.markDoneAndStart("find-route")
-      route           <- findRoute(request, request.body, global_plugins__)
+      route           <- findRoute(useTree, request, request.body, global_plugins__)
       ctxPlugins      = route.contextualPlugins(global_plugins__, request)
       _               = attrs.put(Keys.ContextualPluginsKey -> ctxPlugins)
       _               =  report.markDoneAndStart("tenant-check", Json.obj("found_route" -> route.json).some)
@@ -254,6 +256,7 @@ class ProxyEngine() extends RequestHandler {
   def handleWsRequest(request: RequestHeader, config: JsObject)(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     val requestId = IdGenerator.uuid
     val reporting = config.select("reporting").asOpt[Boolean].getOrElse(true)
+    val useTree = config.select("routing_strategy").asOpt[String].contains("tree")
     implicit val report = ExecutionReport(requestId, reporting)
     report.start("start-handling")
     implicit val mat = env.otoroshiMaterializer
@@ -291,7 +294,7 @@ class ProxyEngine() extends RequestHandler {
     (for {
       _               <- handleConcurrentRequest(request)
       _               =  report.markDoneAndStart("find-route")
-      route           <- findRoute(request, fakeBody, global_plugins__)
+      route           <- findRoute(useTree, request, fakeBody, global_plugins__)
       ctxPlugins      = route.contextualPlugins(global_plugins__, request)
       _               = attrs.put(Keys.ContextualPluginsKey -> ctxPlugins)
       _               =  report.markDoneAndStart("tenant-check", Json.obj("found_route" -> route.json).some)
@@ -426,9 +429,14 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def findRoute(request: RequestHeader, body: Source[ByteString, _], global_plugins: NgPlugins)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Route] = {
-    // env.proxyState.allRoutes().filter(_.enabled).find(r => r.matches(request))
-    env.proxyState.getDomainRoutes(request.theDomain).flatMap(_.find(_.matches(request, attrs,  true))) match {
+  def findRoute(useTree: Boolean, request: RequestHeader, body: Source[ByteString, _], global_plugins: NgPlugins)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Route] = {
+    // TODO: choose a final strategy here ;)
+    val maybeRoute = if (useTree) {
+      env.proxyState.getDomainRoutes(request.theDomain).flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true)))
+    } else {
+      env.proxyState.domainPathTreeFind(request.theDomain, request.thePath).flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true)))
+    }
+    maybeRoute match {
       case Some(route) =>
         attrs.put(Keys.RouteKey -> route)
         FEither.right(route)

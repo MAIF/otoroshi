@@ -118,7 +118,7 @@ case class Route(
             firstRes && secondRes
           }
         val matchers = plugins.routeMatcherPlugins(request)(env.otoroshiExecutionContext, env)
-        if (matchers.nonEmpty) {
+        if (res && matchers.nonEmpty) {
           matchers.forall { matcher =>
             val ctx = NgRouteMatcherContext(
               snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get,

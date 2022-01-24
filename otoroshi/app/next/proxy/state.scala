@@ -10,17 +10,135 @@ import otoroshi.script._
 import otoroshi.ssl.Cert
 import otoroshi.utils.RegexPool
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.Json
+import play.api.Logger
+import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
 
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.collection.JavaConverters._
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
+object DomainPathTree {
+  def empty = DomainPathTree(new TrieMap[String, PathTree](), scala.collection.mutable.MutableList.empty)
+  def build(routes: Seq[Route]): DomainPathTree = {
+    val root = DomainPathTree.empty
+    routes.foreach { route =>
+      route.frontend.domains.foreach { dpath =>
+        if (dpath.domain.contains("*")) {
+          root.wildcards.+=(route)
+        } else {
+          val ptree = root.tree.getOrElseUpdate(dpath.domain, PathTree.empty)
+          ptree.addSubRoutes(dpath.path.split("/").toSeq.filterNot(_.trim.isEmpty), route)
+        }
+      }
+    }
+    // mutate ?
+    root.wildcards.sortWith((r1, r2) => r1.frontend.domains.head.domain.length.compareTo(r2.frontend.domains.head.domain.length) > 0)
+    root
+  }
+}
+
+case class DomainPathTree(tree: TrieMap[String, PathTree], wildcards: scala.collection.mutable.MutableList[Route]) {
+  def json: JsValue = Json.obj(
+    "tree" -> JsObject(tree.toMap.mapValues(_.json)),
+    "wildcards" -> JsArray(wildcards.map(r => JsString(r.name)))
+  )
+  def find(domain: String, path: String): Option[Seq[Route]] = {
+    tree.get(domain) match {
+      case Some(ptree) => ptree.find(path.split("/").filterNot(_.trim.isEmpty))
+      case None => wildcards.filter { route =>
+        RegexPool(route.frontend.domains.head.domain).matches(domain)
+      }.applyOn {
+        case seq if seq.isEmpty => None
+        case seq => seq.some
+      }
+    }
+  }
+}
+
+object PathTree {
+
+  def addSubRoutes(current: PathTree, segments: Seq[String], route: Route): Unit = {
+    if (segments.isEmpty) {
+      current.addRoute(route)
+    } else {
+      if (segments.head == "") {
+        println(route.name + " - " + segments)
+      }
+      val sub = current.tree.getOrElseUpdate(segments.head, PathTree.empty)
+      if (segments.size == 1) {
+        sub.addRoute(route)
+      } else {
+        addSubRoutes(sub, segments.tail, route)
+      }
+    }
+  }
+
+  def empty: PathTree = PathTree(scala.collection.mutable.MutableList.empty, new TrieMap[String, PathTree])
+}
+
+case class PathTree(routes: scala.collection.mutable.MutableList[Route], tree: TrieMap[String, PathTree]) {
+  lazy val isLeaf: Boolean = tree.isEmpty
+  def addRoute(route: Route): PathTree = {
+    routes.+=(route)
+    this
+  }
+  def addSubRoutes(segments: Seq[String], route: Route): Unit = {
+    PathTree.addSubRoutes(this, segments, route)
+  }
+  def json: JsValue = Json.obj(
+    "routes" -> routes.toSeq.map(r => JsString(r.name)),
+    "leaf" -> isLeaf,
+    "tree" -> JsObject(tree.toMap.mapValues(_.json))
+  )
+  def find(segments: Seq[String]): Option[Seq[Route]] = {
+    // TODO: handle * segment
+    segments.headOption match {
+      case None if routes.isEmpty => None
+      case None => routes.some
+      case Some("*") => tree.map {
+        case (_, value) => value
+      }.fold(PathTree.empty) { (p, p1) =>
+        p.tree.++=(p1.tree)
+        p.routes.++=(p1.routes)
+        p
+      }.find(segments.tail) match { // is that right ?
+        case None if routes.isEmpty => None
+        case None => routes.some
+        case s => s
+      }
+      case Some(head) if head.contains("*") => tree.filter {
+        case (key, _) => RegexPool(head).matches(key)
+      }.map {
+        case (_, value) => value
+      }.fold(PathTree.empty) { (p, p1) =>
+        p.tree.++=(p1.tree)
+        p.routes.++=(p1.routes)
+        p
+      }.find(segments.tail) match { // is that right ?
+        case None if routes.isEmpty => None
+        case None => routes.some
+        case s => s
+      }
+      case Some(head) => tree.get(head) match {
+        case None if routes.isEmpty => None
+        case None => routes.some
+        case Some(ptree) => ptree.find(segments.tail) match { // is that right ?
+          case None if routes.isEmpty => None
+          case None => routes.some
+          case s => s
+        }
+      }
+    }
+  }
+}
+
 class ProxyState(env: Env) {
+
+  private val logger = Logger("otoroshi-proxy-state")
 
   private val routes = TrieMap.newBuilder[String, Route]
     .+=(Route.fake.id -> Route.fake)
@@ -33,6 +151,9 @@ class ProxyState(env: Env) {
   private val authModules = new TrieMap[String, AuthModuleConfig]()
   val routesByDomain = new TrieMap[String, Seq[Route]]()
   private val cowRoutesByWildcardDomain = new CopyOnWriteArrayList[Route]()
+  private val domainPathTreeRef = new AtomicReference[DomainPathTree](DomainPathTree.empty)
+
+  def domainPathTreeFind(domain: String, path: String): Option[Seq[Route]] = domainPathTreeRef.get().find(domain, path)
 
   def backend(id: String): Option[Backend] = backends.get(id)
   def target(id: String): Option[NgTarget] = targets.get(id)
@@ -62,6 +183,7 @@ class ProxyState(env: Env) {
   def allAuthModules(): Seq[AuthModuleConfig] = authModules.values.toSeq
 
   def updateRoutes(values: Seq[Route]): Unit = {
+    // TODO: choose a strategy and remove mem duplicates
     routes.++=(values.map(v => (v.id, v))).--=(routes.keySet.toSeq.diff(values.map(_.id)))
     val routesByDomainRaw: Map[String, Seq[Route]] = values
       .filter(_.enabled)
@@ -77,7 +199,11 @@ class ProxyState(env: Env) {
     routesByDomain.++=(all_routesByDomain).--=(routesByDomain.keySet.toSeq.diff(all_routesByDomain.keySet.toSeq))
     cowRoutesByWildcardDomain.clear()
     cowRoutesByWildcardDomain.addAll(routesWithWildcardDomains.asJava)
-    //println(routesByDomain.mapValues(_.size))
+    val s = System.currentTimeMillis()
+    domainPathTreeRef.set(DomainPathTree.build(values))
+    val d = System.currentTimeMillis() - s
+    logger.debug(s"built DomainPathTree of ${values.size} routes in ${d} ms.")
+    // println(routesByDomain.mapValues(_.size))
   }
 
   def updateTargets(values: Seq[StoredNgTarget]): Unit = {
@@ -111,6 +237,8 @@ object ProxyStateLoaderJob {
 
 class ProxyStateLoaderJob extends Job {
 
+  private val fakeRoutesCount = 200000
+
   override def uniqueId: JobId = JobId("io.otoroshi.next.core.jobs.ProxyStateLoaderJob")
 
   override def name: String = "proxy state loader job"
@@ -131,7 +259,7 @@ class ProxyStateLoaderJob extends Job {
   def generateRoutesByDomain(env: Env): Future[Seq[Route]] = {
     import NgPluginHelper.pluginId
     if (env.env == "dev") {
-      (0 until 10000).map { idx =>
+      (0 until fakeRoutesCount).map { idx =>
         Route(
           location = EntityLocation.default,
           id = s"route_generated-domain-${idx}",
@@ -191,7 +319,7 @@ class ProxyStateLoaderJob extends Job {
   def generateRoutesByName(env: Env): Future[Seq[Route]] = {
     import NgPluginHelper.pluginId
     if (env.env == "dev") {
-      (0 until 10000).map { idx =>
+      (0 until fakeRoutesCount).map { idx =>
         Route(
           location = EntityLocation.default,
           id = s"route_generated-path-${idx}",
@@ -250,7 +378,7 @@ class ProxyStateLoaderJob extends Job {
           location = EntityLocation.default,
           id = s"route_generated-random-${idx}",
           name = s"generated_fake_route_random_${idx}",
-          description = s"generated_fake_route_radom_${idx}",
+          description = s"generated_fake_route_random_${idx}",
           tags = Seq.empty,
           metadata = Map.empty,
           enabled = true,
@@ -302,7 +430,7 @@ class ProxyStateLoaderJob extends Job {
     val debug = config.select("debug").asOpt[Boolean].getOrElse(false)
     val debugHeaders = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
     for {
-      routes <- env.datastores.routeDataStore.findAll()
+      routes <- env.datastores.routeDataStore.findAll() // Seq.empty[Route].vfuture //
       genRoutesDomain <- generateRoutesByDomain(env)
       genRoutesPath <- generateRoutesByName(env)
       genRandom <- generateRandomRoutes(env)
