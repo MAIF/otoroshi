@@ -176,7 +176,8 @@ class ProxyState(env: Env) {
     }
   }
 
-  def allRoutes(): Seq[Route] = routes.values.toSeq
+  // def allRoutes(): Seq[Route] = routes.values.toSeq
+
   def allApikeys(): Seq[ApiKey] = apikeys.values.toSeq
   def allJwtVerifiers(): Seq[GlobalJwtVerifier] = jwtVerifiers.values.toSeq
   def allCertificates(): Seq[Cert] = certificates.values.toSeq
