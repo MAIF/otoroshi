@@ -598,16 +598,16 @@ object Route {
               plugin = pluginId[XForwardedHeaders],
             )
           }
-          .applyOnIf(service.publicPatterns.nonEmpty || service.privatePatterns.nonEmpty) { seq =>
-            seq :+ PluginInstance(
-              plugin = pluginId[PublicPrivatePaths],
-              config = PluginInstanceConfig(Json.obj(
-                "private_patterns" -> JsArray(service.privatePatterns.map(JsString.apply)),
-                "public_patterns" -> JsArray(service.publicPatterns.map(JsString.apply)),
-                "strict" -> service.strictlyPrivate
-              ))
-            )
-          }
+          // .applyOnIf(service.publicPatterns.nonEmpty || service.privatePatterns.nonEmpty) { seq =>
+          //   seq :+ PluginInstance(
+          //     plugin = pluginId[PublicPrivatePaths],
+          //     config = PluginInstanceConfig(Json.obj(
+          //       "private_patterns" -> JsArray(service.privatePatterns.map(JsString.apply)),
+          //       "public_patterns" -> JsArray(service.publicPatterns.map(JsString.apply)),
+          //       "strict" -> service.strictlyPrivate
+          //     ))
+          //   )
+          // }
           .applyOnIf(service.jwtVerifier.enabled && service.jwtVerifier.isRef) { seq =>
             val verifier = service.jwtVerifier.asInstanceOf[RefJwtVerifier]
             seq :+ PluginInstance(
@@ -667,7 +667,7 @@ object Route {
               config = PluginInstanceConfig(service.cors.asJson.asObject)
             )
           }
-          .applyOnIf(true) { seq =>
+          .applyOnIf(!service.publicPatterns.contains("/.*")) { seq =>
             seq :+ PluginInstance(
               plugin = pluginId[ApikeyCalls],
               include = service.privatePatterns,

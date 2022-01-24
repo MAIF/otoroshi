@@ -205,7 +205,7 @@ class ProxyEngine() extends RequestHandler {
       result
     }).value.flatMap {
       case Left(error)   =>
-        report.markDoneAndStart("rendering intermediate result").markSuccess()
+        report.markDoneAndStart("rendering-intermediate-result").markSuccess()
         error.asResult()
       case Right(result) =>
         report.markSuccess()
@@ -244,7 +244,7 @@ class ProxyEngine() extends RequestHandler {
       } else Seq.empty
       if (debug) logger.info(report.json.prettify)
       // if (reporting && report.getStep("find-route").flatMap(_.ctx.select("found_route").select("debug_flow").asOpt[Boolean]).getOrElse(false)) {
-      //   Files.writeString(new File("./request-debug.json").toPath, report.json.prettify)
+      //   java.nio.file.Files.writeString(new java.io.File("./request-debug.json").toPath, report.json.prettify)
       // }
       res.withHeaders(addHeaders: _*)
     })
@@ -324,7 +324,7 @@ class ProxyEngine() extends RequestHandler {
       result
     }).value.flatMap {
       case Left(error)   =>
-        report.markDoneAndStart("rendering intermediate result").markSuccess()
+        report.markDoneAndStart("rendering-intermediate-result").markSuccess()
         error.asResult().map(r => Left(r))
       case Right(flow) =>
         report.markSuccess()
