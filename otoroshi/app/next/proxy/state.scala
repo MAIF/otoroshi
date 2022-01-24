@@ -18,6 +18,7 @@ import scala.collection.JavaConverters._
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Failure
 
 class ProxyState(env: Env) {
 
@@ -76,6 +77,7 @@ class ProxyState(env: Env) {
     routesByDomain.++=(all_routesByDomain).--=(routesByDomain.keySet.toSeq.diff(all_routesByDomain.keySet.toSeq))
     cowRoutesByWildcardDomain.clear()
     cowRoutesByWildcardDomain.addAll(routesWithWildcardDomains.asJava)
+    //println(routesByDomain.mapValues(_.size))
   }
 
   def updateTargets(values: Seq[StoredNgTarget]): Unit = {
@@ -344,6 +346,8 @@ class ProxyStateLoaderJob extends Job {
       */
 
     }
-  }
+  }.andThen {
+    case Failure(e) => e.printStackTrace()
+  }.map(_ => ())
 }
 

@@ -259,7 +259,7 @@ case class Route(
       plugins = {
         val possiblePlugins = plugins.slots.filter(slot => slot.plugin.startsWith("cp:otoroshi.next.plugins.wrappers."))
         val refs = possiblePlugins.map(_.config.raw.select("plugin").as[String])
-        val exclusion: Seq[String] = possiblePlugins.map(_.exclude).reduce((a, b) => a.intersect(b))
+        val exclusion: Seq[String] = if (possiblePlugins.isEmpty) Seq.empty else possiblePlugins.map(_.exclude).reduce((a, b) => a.intersect(b))
         val config = possiblePlugins.map(p => (p.config.raw, p.config.raw.value.keySet.-("plugin").head)).map { 
           case (pconfig, key) => pconfig.select(key).asObject
         }.foldLeft(Json.obj())(_ ++ _)
@@ -274,7 +274,7 @@ case class Route(
   }
 
   def transformError(__ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
-    val all_plugins = plugins.transformerPlugins(__ctx.request)
+    val all_plugins = __ctx.attrs.get(Keys.ContextualPluginsKey).map(_.transformerPlugins).getOrElse(plugins.transformerPlugins(__ctx.request))
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[ProxyEngineError, NgPluginHttpResponse]]()
       val report = __ctx.report
@@ -331,6 +331,10 @@ case class Route(
     } else {
       __ctx.otoroshiResponse.asResult.vfuture
     }
+  }
+
+  def contextualPlugins(global_plugins: NgPlugins, request: RequestHeader)(implicit env: Env, ec: ExecutionContext): ContextualPlugins = {
+    ContextualPlugins(plugins, global_plugins, request, env, ec)
   }
 }
 

@@ -141,3 +141,49 @@ object NgPlugins {
     }
   }
 }
+
+case class ContextualPlugins(plugins: NgPlugins, global_plugins: NgPlugins, request: RequestHeader, _env: Env, _ec: ExecutionContext) {
+
+  implicit val env: Env = _env
+  implicit val ec: ExecutionContext = _ec
+
+  lazy val allPlugins = (global_plugins.slots ++ plugins.slots)
+    .filter(_.enabled)
+    .filter(_.matches(request))
+
+  lazy val requestSinkPlugins = allPlugins
+    .map(inst => (inst, inst.getPlugin[NgRequestSink]))
+    .collect {
+      case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+    }
+
+  lazy val transformerPlugins = allPlugins
+    .map(inst => (inst, inst.getPlugin[NgRequestTransformer]))
+    .collect {
+      case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+    }
+
+  lazy val preRoutePlugins = allPlugins
+    .map(inst => (inst, inst.getPlugin[NgPreRouting]))
+    .collect {
+      case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+    }
+
+  lazy val accessValidatorPlugins = allPlugins
+    .map(inst => (inst, inst.getPlugin[NgAccessValidator]))
+    .collect {
+      case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+    }
+
+  lazy val routeMatcherPlugins = allPlugins
+    .map(inst => (inst, inst.getPlugin[NgRouteMatcher]))
+    .collect {
+      case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+    }
+
+  lazy val tunnelHandlerPlugins = allPlugins
+    .map(inst => (inst, inst.getPlugin[NgTunnelHandler]))
+    .collect {
+      case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+    }
+}

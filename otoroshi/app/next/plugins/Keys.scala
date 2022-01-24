@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
 import otoroshi.models.{ApiKey, ApikeyTuple, JwtInjection}
-import otoroshi.next.models.{NgTarget, Backend, Route}
+import otoroshi.next.models.{Backend, ContextualPlugins, NgTarget, Route}
 import otoroshi.next.proxy.ExecutionReport
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.Result
@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.Future
 
 object Keys {
+  val ContextualPluginsKey = TypedKey[ContextualPlugins]("otoroshi.next.core.ContextualPlugins")
   val ReportKey = TypedKey[ExecutionReport]("otoroshi.next.core.Report")
   val RouteKey = TypedKey[Route]("otoroshi.next.core.Route")
   val BackendKey = TypedKey[NgTarget]("otoroshi.next.core.Backend")
