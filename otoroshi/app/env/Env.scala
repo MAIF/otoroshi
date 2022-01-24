@@ -892,7 +892,8 @@ class Env(
           "enabled" -> true,
           "debug" -> false,
           "debug_headers" -> false,
-          "domains" -> Seq("*-next-gen.oto.tools")
+          "domains" -> Seq("*-next-gen.oto.tools"),
+          "routing_strategy" -> "tree"
         ),
         "ClientCredentialService" -> Json.obj(
           "domain"         -> "*",

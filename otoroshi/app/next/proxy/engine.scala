@@ -431,11 +431,12 @@ class ProxyEngine() extends RequestHandler {
 
   def findRoute(useTree: Boolean, request: RequestHeader, body: Source[ByteString, _], global_plugins: NgPlugins)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Route] = {
     // TODO: choose a final strategy here ;)
-    val maybeRoute = if (useTree) {
-      env.proxyState.getDomainRoutes(request.theDomain).flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true)))
-    } else {
-      env.proxyState.domainPathTreeFind(request.theDomain, request.thePath).flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true)))
-    }
+    val maybeRoute = env.proxyState.domainPathTreeFind(request.theDomain, request.thePath).flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true)))
+    // if (useTree) {
+    //   env.proxyState.domainPathTreeFind(request.theDomain, request.thePath).flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true)))
+    // } else {
+    //   env.proxyState.getDomainRoutes(request.theDomain).flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true)))
+    // }
     maybeRoute match {
       case Some(route) =>
         attrs.put(Keys.RouteKey -> route)

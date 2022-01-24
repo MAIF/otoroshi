@@ -149,8 +149,8 @@ class ProxyState(env: Env) {
   private val jwtVerifiers = new TrieMap[String, GlobalJwtVerifier]()
   private val certificates = new TrieMap[String, Cert]()
   private val authModules = new TrieMap[String, AuthModuleConfig]()
-  val routesByDomain = new TrieMap[String, Seq[Route]]()
-  private val cowRoutesByWildcardDomain = new CopyOnWriteArrayList[Route]()
+  // val routesByDomain = new TrieMap[String, Seq[Route]]()
+  // private val cowRoutesByWildcardDomain = new CopyOnWriteArrayList[Route]()
   private val domainPathTreeRef = new AtomicReference[DomainPathTree](DomainPathTree.empty)
 
   def domainPathTreeFind(domain: String, path: String): Option[Seq[Route]] = domainPathTreeRef.get().find(domain, path)
@@ -162,19 +162,19 @@ class ProxyState(env: Env) {
   def jwtVerifier(id: String): Option[GlobalJwtVerifier] = jwtVerifiers.get(id)
   def certificate(id: String): Option[Cert] = certificates.get(id)
   def authModule(id: String): Option[AuthModuleConfig] = authModules.get(id)
-  def getDomainRoutes(domain: String): Option[Seq[Route]] = {
-    routesByDomain.get(domain) match {
-      case s @ Some(_) => s
-      case None => {
-        cowRoutesByWildcardDomain.asScala.filter { route =>
-          RegexPool(route.frontend.domains.head.domain).matches(domain)
-        }.applyOn {
-          case seq if seq.isEmpty => None
-          case seq => seq.some
-        }
-      }
-    }
-  }
+  // def getDomainRoutes(domain: String): Option[Seq[Route]] = {
+  //   routesByDomain.get(domain) match {
+  //     case s @ Some(_) => s
+  //     case None => {
+  //       cowRoutesByWildcardDomain.asScala.filter { route =>
+  //         RegexPool(route.frontend.domains.head.domain).matches(domain)
+  //       }.applyOn {
+  //         case seq if seq.isEmpty => None
+  //         case seq => seq.some
+  //       }
+  //     }
+  //   }
+  // }
 
   // def allRoutes(): Seq[Route] = routes.values.toSeq
 
@@ -186,25 +186,29 @@ class ProxyState(env: Env) {
   def updateRoutes(values: Seq[Route]): Unit = {
     // TODO: choose a strategy and remove mem duplicates
     routes.++=(values.map(v => (v.id, v))).--=(routes.keySet.toSeq.diff(values.map(_.id)))
-    val routesByDomainRaw: Map[String, Seq[Route]] = values
-      .filter(_.enabled)
-      .flatMap(r => r.frontend.domains.map(d => (d.domain, r.copy(frontend = r.frontend.copy(domains = Seq(d))))))
-      .groupBy(_._1)
-      .mapValues(_.map(_._2).sortWith((r1, r2) => r1.frontend.domains.head.path.length.compareTo(r2.frontend.domains.head.path.length) > 0))
-    val (routesByWildcardDomainRaw, all_routesByDomain) = routesByDomainRaw.partition(_._1.contains("*"))
-    val routesWithWildcardDomains = routesByWildcardDomainRaw
-      .values
-      .flatten
-      .toSeq
-      .sortWith((r1, r2) => r1.frontend.domains.head.domain.length.compareTo(r2.frontend.domains.head.domain.length) > 0)
-    routesByDomain.++=(all_routesByDomain).--=(routesByDomain.keySet.toSeq.diff(all_routesByDomain.keySet.toSeq))
-    cowRoutesByWildcardDomain.clear()
-    cowRoutesByWildcardDomain.addAll(routesWithWildcardDomains.asJava)
+    // val routesByDomainRaw: Map[String, Seq[Route]] = values
+    //   .filter(_.enabled)
+    //   .flatMap(r => r.frontend.domains.map(d => (d.domain, r.copy(frontend = r.frontend.copy(domains = Seq(d))))))
+    //   .groupBy(_._1)
+    //   .mapValues(_.map(_._2).sortWith((r1, r2) => r1.frontend.domains.head.path.length.compareTo(r2.frontend.domains.head.path.length) > 0))
+    // val (routesByWildcardDomainRaw, all_routesByDomain) = routesByDomainRaw.partition(_._1.contains("*"))
+    // val routesWithWildcardDomains = routesByWildcardDomainRaw
+    //   .values
+    //   .flatten
+    //   .toSeq
+    //   .sortWith((r1, r2) => r1.frontend.domains.head.domain.length.compareTo(r2.frontend.domains.head.domain.length) > 0)
+    // routesByDomain.++=(all_routesByDomain).--=(routesByDomain.keySet.toSeq.diff(all_routesByDomain.keySet.toSeq))
+    // cowRoutesByWildcardDomain.clear()
+    // cowRoutesByWildcardDomain.addAll(routesWithWildcardDomains.asJava)
     val s = System.currentTimeMillis()
     domainPathTreeRef.set(DomainPathTree.build(values))
     val d = System.currentTimeMillis() - s
-    logger.debug(s"built DomainPathTree of ${values.size} routes in ${d} ms.")
+    logger.info(s"built DomainPathTree of ${values.size} routes in ${d} ms.")
     // println(routesByDomain.mapValues(_.size))
+
+    // route("admin-api-service").map(r => System.identityHashCode(r).debugPrintln)
+    // domainPathTreeFind("otoroshi-api.oto.tools", "/").map(r => System.identityHashCode(r.head).debugPrintln)
+
   }
 
   def updateTargets(values: Seq[StoredNgTarget]): Unit = {
@@ -238,7 +242,7 @@ object ProxyStateLoaderJob {
 
 class ProxyStateLoaderJob extends Job {
 
-  private val fakeRoutesCount = 200000
+  private val fakeRoutesCount = 10000 // 300000
 
   override def uniqueId: JobId = JobId("io.otoroshi.next.core.jobs.ProxyStateLoaderJob")
 
