@@ -39,7 +39,18 @@ class HtmlPatcher extends RequestTransformer {
     """.stripMargin
     )
 
-  private def parseElement(elementStr: String): Element = Jsoup.parseBodyFragment(elementStr).body()
+  private def parseElement(elementStr: String): Option[Element] = {
+    if (elementStr.trim().isEmpty()) {
+      None
+    } else {
+      val body = Jsoup.parseBodyFragment(elementStr).body()
+      if (body.childrenSize() > 0) {
+        body.children().first().some
+      } else {
+        body.some
+      }
+    }
+  }
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
@@ -61,10 +72,12 @@ class HtmlPatcher extends RequestTransformer {
             val config      = ctx.configFor("HtmlPatcher")
             val appendHead  = config.select("appendHead").asOpt[Seq[String]].getOrElse(Seq.empty)
             val appendBody  = config.select("appendBody").asOpt[Seq[String]].getOrElse(Seq.empty)
-            val elementHead = parseElement(appendHead.mkString("\n"))
-            val elementBody = parseElement(appendBody.mkString("\n"))
-            doc.head().insertChildren(-1, elementHead)
-            doc.body().insertChildren(-1, elementBody)
+            parseElement(appendHead.mkString("\n")).map { elementHead =>
+              doc.head().insertChildren(-1, elementHead)
+            }
+            parseElement(appendBody.mkString("\n")).map { elementBody =>
+              doc.body().insertChildren(-1, elementBody)
+            }
             ByteString(doc.toString)
           }
         )
