@@ -260,7 +260,7 @@ case class Route(
         val possiblePlugins = plugins.slots.filter(slot => slot.plugin.startsWith("cp:otoroshi.next.plugins.wrappers."))
         val refs = possiblePlugins.map(_.config.raw.select("plugin").as[String])
         val exclusion: Seq[String] = if (possiblePlugins.isEmpty) Seq.empty else possiblePlugins.map(_.exclude).reduce((a, b) => a.intersect(b))
-        val config = possiblePlugins.map(p => (p.config.raw, p.config.raw.value.keySet.-("plugin").head)).map { 
+        val config = possiblePlugins.flatMap(p => p.config.raw.value.keySet.-("plugin").headOption.map(plug => (p.config.raw, plug))).map {
           case (pconfig, key) => pconfig.select(key).asObject
         }.foldLeft(Json.obj())(_ ++ _)
         Plugins(
