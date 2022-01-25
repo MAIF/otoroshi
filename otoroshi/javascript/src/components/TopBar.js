@@ -482,41 +482,118 @@ export class TopBar extends Component {
   render() {
     const selected = (this.props.params || {}).lineId;
     return (
-      <nav className="navbar navbar-inverse navbar-fixed-top">
-        <div className="container-fluid">
-          <div className="row">
-            <div className="navbar-header col-sm-2">
-              <button
-                id="toggle-sidebar"
-                type="button"
-                className="navbar-toggle collapsed menu"
-                data-toggle="collapse"
-                data-target="#sidebar"
-                aria-expanded="false"
-                aria-controls="sidebar">
-                <span className="sr-only">Toggle sidebar</span>
-                <span>Menu</span>
-              </button>
-
-              <a className="navbar-brand" href="/bo/dashboard" style={{ display: 'flex' }}>
-                {this.brandName()}
-              </a>
+      <nav className="navbar navbar-expand-lg fixed-top">
+        <div className="container-fluid d-flex justify-content-center justify-content-lg-between align-items-end px-0">
+            <div className="d-flex flex-column flex-md-row">
+              <div className="pl-1 pr-2">
+                <button 
+                  id="toggle-sidebar"
+                  className="navbar-toggler" 
+                  type="button" 
+                  data-bs-toggle="collapse" 
+                  data-bs-target="#navbarTogglerDemo01" 
+                  aria-controls="navbarTogglerDemo01" 
+                  aria-expanded="false" 
+                  aria-label="Toggle navigation">
+                  <span className="navbar-toggler-icon">Menu</span>
+                </button>
+                <a className="navbar-brand" href="/bo/dashboard" style={{ display: 'flex' }}>
+                  {this.brandName()}
+                </a>
+              </div>
+              <form id="navbar" className="navbar-form navbar-left">
+              {selected && (
+                <div className="mb-3" style={{ marginRight: 10 }}>
+                  <span
+                    title="Current line"
+                    className="label label-success"
+                    style={{ fontSize: 20, cursor: 'pointer' }}>
+                    {selected}
+                  </span>
+                </div>
+              )}
+              <div className="mb-3" style={{ marginLeft: 10, marginRight: 10 }}>
+                <Async
+                  ref={(r) => (this.selector = r)}
+                  name="service-search"
+                  value="one"
+                  placeholder="Search service, line, etc ..."
+                  loadOptions={this.searchServicesOptions}
+                  openOnFocus={true}
+                  onChange={(i) => i.action()}
+                  arrowRenderer={(a) => {
+                    return (
+                      <span
+                        style={{ display: 'flex', height: 20 }}
+                        title="You can jump directly into the search bar from anywhere just by typing '/'">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
+                          <defs>
+                            <rect id="a" width="19" height="20" rx="3" />
+                          </defs>
+                          <g fill="none" fillRule="evenodd">
+                            <rect stroke="#5F6165" x=".5" y=".5" width="18" height="19" rx="3" />
+                            <path fill="#979A9C" d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z" />
+                          </g>
+                        </svg>
+                      </span>
+                    );
+                  }}
+                  filterOptions={(opts, value, excluded, conf) => {
+                    const [env, searched] = extractEnv(value);
+                    const filteredOpts = !!env ? opts.filter((i) => i.env === env) : opts;
+                    const matched = fuzzy.filter(searched, filteredOpts, {
+                      extract: (i) => i.label,
+                      pre: '<',
+                      post: '>',
+                    });
+                    return matched.map((i) => i.original);
+                  }}
+                  optionRenderer={(p) => {
+                    const env =
+                      p.env && _.isString(p.env)
+                        ? p.env.length > 4
+                          ? p.env.substring(0, 4) + '.'
+                          : p.env
+                        : null;
+                    return (
+                      <div style={{ display: 'flex' }}>
+                        <div
+                          style={{
+                            width: 60,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          }}>
+                          {p.env && _.isString(p.env) && (
+                            <span className={`label ${this.color(p.env)}`}>{env}</span>
+                          )}
+                          {p.env && !_.isString(p.env) && p.env}
+                        </div>
+                        <span>{p.label}</span>
+                      </div>
+                    );
+                  }}
+                  style={{ width: 400 }}
+                />
+              </div>
+            </form>
             </div>
-            <ul className="nav navbar-nav navbar-right">
+
+            <div className="d-flex flex-column flex-md-row mt-1 mt-xl-0">
+              <div className="d-flex justify-content-end align-items-center mt-1 mt-lg-0">
               {window.__apiReadOnly && (
-                <li>
-                  <a style={{ color: '#c44141' }} title="Admin API in read-only mode">
+                <div className="">
+                  <a style={{ color: '#c44141' }} title="Admin API in read-only mode" >
                     <span className="fas fa-lock fa-lg" />
                   </a>
-                </li>
+                </div>
               )}
               {this.props.changePassword && (
-                <li
+                <div
                   onClick={(e) => (window.location = '/bo/dashboard/admins')}
-                  style={{ verticalAlign: 'top' }}>
+                  className="mx-2">
                   <a
                     href="/bo/dashboard/admins"
-                    className="dropdown-toggle"
                     data-toggle="dropdown"
                     role="button"
                     aria-haspopup="true"
@@ -530,9 +607,9 @@ export class TopBar extends Component {
                       <i className="fas fa-exclamation-triangle" />
                     </span>
                   </a>
-                </li>
+                </div>
               )}
-              <li>
+              <div className="mx-2">
                 <a className="prevent-click" href="#">
                   <i
                     id="otoroshi-dark-light-icon"
@@ -540,18 +617,22 @@ export class TopBar extends Component {
                     title="Dark/Light Mode"
                   />
                 </a>
-              </li>
-              <li className="dropdown userManagement">
-                <a
-                  href="#"
-                  className="dropdown-toggle"
-                  data-toggle="dropdown"
-                  role="button"
-                  aria-haspopup="true"
-                  aria-expanded="false">
-                  <i className="fas fa-cog" aria-hidden="true" />
-                </a>
-                <ul className="dropdown-menu">
+              </div>
+              <div className="dropdown">
+  <a className="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+    Dropdown link
+  </a>
+
+  <ul className="dropdown-menu" aria-labelledby="dropdownMenuLink">
+    <li><a className="dropdown-item" href="#">Action</a></li>
+    <li><a className="dropdown-item" href="#">Another action</a></li>
+    <li><a className="dropdown-item" href="#">Something else here</a></li>
+  </ul>
+</div>
+
+              <div className="dropdown mx-2">
+                <i className="fas fa-cog" aria-hidden="true" data-toggle="dropdown" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false"/>
+                <ul className="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton1">
                   {/*<li>
                     <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>
                   </li>*/}
@@ -903,86 +984,10 @@ export class TopBar extends Component {
                     </a>
                   </li>
                 </ul>
-              </li>
-            </ul>
-            <form id="navbar" className="navbar-form navbar-left">
-              {selected && (
-                <div className="mb-3" style={{ marginRight: 10 }}>
-                  <span
-                    title="Current line"
-                    className="label label-success"
-                    style={{ fontSize: 20, cursor: 'pointer' }}>
-                    {selected}
-                  </span>
-                </div>
-              )}
-              <div className="mb-3" style={{ marginLeft: 10, marginRight: 10 }}>
-                <Async
-                  ref={(r) => (this.selector = r)}
-                  name="service-search"
-                  value="one"
-                  placeholder="Search service, line, etc ..."
-                  loadOptions={this.searchServicesOptions}
-                  openOnFocus={true}
-                  onChange={(i) => i.action()}
-                  arrowRenderer={(a) => {
-                    return (
-                      <span
-                        style={{ display: 'flex', height: 20 }}
-                        title="You can jump directly into the search bar from anywhere just by typing '/'">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
-                          <defs>
-                            <rect id="a" width="19" height="20" rx="3" />
-                          </defs>
-                          <g fill="none" fillRule="evenodd">
-                            <rect stroke="#5F6165" x=".5" y=".5" width="18" height="19" rx="3" />
-                            <path fill="#979A9C" d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z" />
-                          </g>
-                        </svg>
-                      </span>
-                    );
-                  }}
-                  filterOptions={(opts, value, excluded, conf) => {
-                    const [env, searched] = extractEnv(value);
-                    const filteredOpts = !!env ? opts.filter((i) => i.env === env) : opts;
-                    const matched = fuzzy.filter(searched, filteredOpts, {
-                      extract: (i) => i.label,
-                      pre: '<',
-                      post: '>',
-                    });
-                    return matched.map((i) => i.original);
-                  }}
-                  optionRenderer={(p) => {
-                    const env =
-                      p.env && _.isString(p.env)
-                        ? p.env.length > 4
-                          ? p.env.substring(0, 4) + '.'
-                          : p.env
-                        : null;
-                    return (
-                      <div style={{ display: 'flex' }}>
-                        <div
-                          style={{
-                            width: 60,
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                          }}>
-                          {p.env && _.isString(p.env) && (
-                            <span className={`label ${this.color(p.env)}`}>{env}</span>
-                          )}
-                          {p.env && !_.isString(p.env) && p.env}
-                        </div>
-                        <span>{p.label}</span>
-                      </div>
-                    );
-                  }}
-                  style={{ width: 400 }}
-                />
               </div>
-            </form>
+            </div>
+            </div>
           </div>
-        </div>
       </nav>
     );
   }
