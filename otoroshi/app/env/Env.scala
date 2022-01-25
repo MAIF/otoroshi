@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory
 import otoroshi.events.{OtoroshiEventsActorSupervizer, StartExporters}
 import otoroshi.jobs.updates.Version
 import otoroshi.models.{EntityLocation, OtoroshiAdminType, SimpleOtoroshiAdmin, Team, TeamAccess, TeamId, Tenant, TenantAccess, TenantId, UserRight, UserRights, WebAuthnOtoroshiAdmin}
-import otoroshi.next.proxy.ProxyState
+import otoroshi.next.proxy.NgProxyState
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.storage.DataStores
@@ -872,7 +872,7 @@ class Env(
     }
     .getOrElse("")
 
-  lazy val proxyState = new ProxyState(this)
+  lazy val proxyState = new NgProxyState(this)
 
   lazy val defaultConfig = GlobalConfig(
     trustXForwarded = initialTrustXForwarded,

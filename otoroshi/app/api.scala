@@ -14,8 +14,8 @@ import otoroshi.controllers._
 import otoroshi.controllers.adminapi._
 import otoroshi.env._
 import otoroshi.gateway._
-import otoroshi.next.controllers.adminapi.{NgBackendsController, NgTargetsController, RoutesController}
-import otoroshi.next.proxy.ProxyStateLoaderJob
+import otoroshi.next.controllers.adminapi.{NgBackendsController, NgTargetsController, NgRoutesController}
+import otoroshi.next.proxy.NgProxyStateLoaderJob
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.storage.DataStores
 import otoroshi.utils.metrics.Metrics
@@ -186,7 +186,7 @@ object OtoroshiLoaderHelper {
             Source
               .tick(1.second, 1.second, ())
               .map { _ =>
-                ProxyStateLoaderJob.firstSync.get()
+                NgProxyStateLoaderJob.firstSync.get()
               }
               .filter(identity)
               .take(1)
@@ -341,7 +341,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val teamsController              = wire[TeamsController]
   lazy val tenantsController            = wire[TenantsController]
   lazy val dataExporterConfigController = wire[DataExporterConfigController]
-  lazy val routesController             = wire[RoutesController]
+  lazy val routesController             = wire[NgRoutesController]
   lazy val targetsController            = wire[NgTargetsController]
   lazy val backendsController           = wire[NgBackendsController]
 

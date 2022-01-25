@@ -8,8 +8,8 @@ import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser}
-import otoroshi.next.models.{NgTarget, PluginInstance, Route}
-import otoroshi.next.proxy.ExecutionReport
+import otoroshi.next.models.{NgTarget, NgPluginInstance, NgRoute}
+import otoroshi.next.proxy.NgExecutionReport
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
 import otoroshi.utils.TypedMap
@@ -210,7 +210,7 @@ object NgCachedConfigContext {
 }
 
 trait NgCachedConfigContext {
-  def route: Route
+  def route: NgRoute
   def config: JsValue
   def cachedConfig[A](plugin: String)(reads: Reads[A]): Option[A] = Try {
     val key = s"${route.id}::${plugin}"
@@ -244,13 +244,13 @@ trait NgCachedConfigContext {
 trait NgPlugin extends StartableAndStoppable with NgNamedPlugin with InternalEventListener
 
 case class NgPreRoutingContext(
-  snowflake: String,
-  request: RequestHeader,
-  route: Route,
-  config: JsValue,
-  globalConfig: JsValue,
-  attrs: TypedMap,
-  report: ExecutionReport,
+                                snowflake: String,
+                                request: RequestHeader,
+                                route: NgRoute,
+                                config: JsValue,
+                                globalConfig: JsValue,
+                                attrs: TypedMap,
+                                report: NgExecutionReport,
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
@@ -263,7 +263,7 @@ case class NgPreRoutingContext(
   )
 }
 
-case class NgPluginWrapper[A <: NgNamedPlugin](instance: PluginInstance, plugin: A)
+case class NgPluginWrapper[A <: NgNamedPlugin](instance: NgPluginInstance, plugin: A)
 
 trait NgPreRoutingError {
   def result: Result
@@ -289,12 +289,12 @@ trait NgPreRouting extends NgPlugin {
 }
 
 case class NgBeforeRequestContext(
-  snowflake: String,
-  route: Route,
-  request: RequestHeader,
-  config: JsValue,
-  attrs: TypedMap,
-  globalConfig: JsValue = Json.obj()
+                                   snowflake: String,
+                                   route: NgRoute,
+                                   request: RequestHeader,
+                                   config: JsValue,
+                                   attrs: TypedMap,
+                                   globalConfig: JsValue = Json.obj()
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
@@ -308,12 +308,12 @@ case class NgBeforeRequestContext(
 }
 
 case class NgAfterRequestContext(
-  snowflake: String,
-  route: Route,
-  request: RequestHeader,
-  config: JsValue,
-  attrs: TypedMap,
-  globalConfig: JsValue = Json.obj()
+                                  snowflake: String,
+                                  route: NgRoute,
+                                  request: RequestHeader,
+                                  config: JsValue,
+                                  attrs: TypedMap,
+                                  globalConfig: JsValue = Json.obj()
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
@@ -330,14 +330,14 @@ case class NgTransformerRequestContext(
                                         rawRequest: NgPluginHttpRequest,
                                         otoroshiRequest: NgPluginHttpRequest,
                                         snowflake: String,
-                                        route: Route,
+                                        route: NgRoute,
                                         apikey: Option[ApiKey],
                                         user: Option[PrivateAppsUser],
                                         request: RequestHeader,
                                         config: JsValue,
                                         attrs: TypedMap,
                                         globalConfig: JsValue = Json.obj(),
-                                        report: ExecutionReport
+                                        report: NgExecutionReport
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
@@ -359,14 +359,14 @@ case class NgTransformerResponseContext(
                                          rawResponse: NgPluginHttpResponse,
                                          otoroshiResponse: NgPluginHttpResponse,
                                          snowflake: String,
-                                         route: Route,
+                                         route: NgRoute,
                                          apikey: Option[ApiKey],
                                          user: Option[PrivateAppsUser],
                                          request: RequestHeader,
                                          config: JsValue,
                                          attrs: TypedMap,
                                          globalConfig: JsValue = Json.obj(),
-                                         report: ExecutionReport
+                                         report: NgExecutionReport
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
@@ -390,13 +390,13 @@ case class NgTransformerErrorContext(
                                       request: RequestHeader,
                                       maybeCauseId: Option[String],
                                       callAttempts: Int,
-                                      route: Route,
+                                      route: NgRoute,
                                       apikey: Option[ApiKey],
                                       user: Option[PrivateAppsUser],
                                       config: JsValue,
                                       globalConfig: JsValue = Json.obj(),
                                       attrs: TypedMap,
-                                      report: ExecutionReport
+                                      report: NgExecutionReport
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
@@ -437,15 +437,15 @@ trait NgRequestTransformer extends NgPlugin {
 }
 
 case class NgAccessContext(
-  snowflake: String,
-  request: RequestHeader,
-  route: Route,
-  user: Option[PrivateAppsUser],
-  apikey: Option[ApiKey],
-  config: JsValue,
-  attrs: TypedMap,
-  globalConfig: JsValue,
-  report: ExecutionReport,
+                            snowflake: String,
+                            request: RequestHeader,
+                            route: NgRoute,
+                            user: Option[PrivateAppsUser],
+                            apikey: Option[ApiKey],
+                            config: JsValue,
+                            attrs: TypedMap,
+                            globalConfig: JsValue,
+                            report: NgExecutionReport,
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
@@ -506,11 +506,11 @@ trait NgRequestSink extends NgNamedPlugin {
 }
 
 case class NgRouteMatcherContext(
-  snowflake: String,
-  request: RequestHeader,
-  route: Route,
-  config: JsValue,
-  attrs: TypedMap,
+                                  snowflake: String,
+                                  request: RequestHeader,
+                                  route: NgRoute,
+                                  config: JsValue,
+                                  attrs: TypedMap,
 ) {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
@@ -527,11 +527,11 @@ trait NgRouteMatcher extends NgNamedPlugin {
 }
 
 case class NgTunnelHandlerContext(
-  snowflake: String,
-  request: RequestHeader,
-  route: Route,
-  config: JsValue,
-  attrs: TypedMap,
+                                   snowflake: String,
+                                   request: RequestHeader,
+                                   route: NgRoute,
+                                   config: JsValue,
+                                   attrs: TypedMap,
 ) {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,

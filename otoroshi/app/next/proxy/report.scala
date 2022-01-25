@@ -7,7 +7,7 @@ import play.api.libs.json._
 
 import java.util.concurrent.TimeUnit
 
-case class ReportPluginSequenceItem(plugin: String, name: String, start: Long, start_ns: Long, stop: Long, stop_ns: Long, in: JsValue, out: JsValue) {
+case class NgReportPluginSequenceItem(plugin: String, name: String, start: Long, start_ns: Long, stop: Long, stop_ns: Long, in: JsValue, out: JsValue) {
   def json: JsValue = Json.obj(
     "plugin" -> plugin,
     "name" -> name,
@@ -24,7 +24,7 @@ case class ReportPluginSequenceItem(plugin: String, name: String, start: Long, s
   )
 }
 
-case class ReportPluginSequence(size: Int, kind: String, start: Long, start_ns: Long, stop: Long, stop_ns: Long, plugins: Seq[ReportPluginSequenceItem]) {
+case class NgReportPluginSequence(size: Int, kind: String, start: Long, start_ns: Long, stop: Long, stop_ns: Long, plugins: Seq[NgReportPluginSequenceItem]) {
   def json: JsValue = Json.obj(
     "size" -> size,
     "kind" -> kind,
@@ -38,28 +38,28 @@ case class ReportPluginSequence(size: Int, kind: String, start: Long, start_ns: 
     "duration_ns" -> (stop_ns - start_ns),
     "plugins" -> JsArray(plugins.map(_.json))
   )
-  def stopSequence(): ReportPluginSequence = {
+  def stopSequence(): NgReportPluginSequence = {
     copy(stop = System.currentTimeMillis(), stop_ns = System.nanoTime())
   }
 }
 
-object ExecutionReport {
-  def apply(id: String, reporting: Boolean): ExecutionReport = new ExecutionReport(id, DateTime.now(), reporting)
+object NgExecutionReport {
+  def apply(id: String, reporting: Boolean): NgExecutionReport = new NgExecutionReport(id, DateTime.now(), reporting)
 }
 
-sealed trait ExecutionReportState {
+sealed trait NgExecutionReportState {
   def name: String
   def json: JsValue = JsString(name)
 }
 
-object ExecutionReportState {
-  case object Created    extends ExecutionReportState { def name: String = "Created"    }
-  case object Running    extends ExecutionReportState { def name: String = "Running"    }
-  case object Successful extends ExecutionReportState { def name: String = "Successful" }
-  case object Failed     extends ExecutionReportState { def name: String = "Failed"     }
+object NgExecutionReportState {
+  case object Created    extends NgExecutionReportState { def name: String = "Created"    }
+  case object Running    extends NgExecutionReportState { def name: String = "Running"    }
+  case object Successful extends NgExecutionReportState { def name: String = "Successful" }
+  case object Failed     extends NgExecutionReportState { def name: String = "Failed"     }
 }
 
-case class ExecutionReportStep(task: String, start: Long, stop: Long, duration: Long, duration_ns: Long, ctx: JsValue = JsNull) {
+case class NgExecutionReportStep(task: String, start: Long, stop: Long, duration: Long, duration_ns: Long, ctx: JsValue = JsNull) {
   def json: JsValue = Json.obj(
     "task" -> task,
     "start" -> start,
@@ -75,7 +75,7 @@ case class ExecutionReportStep(task: String, start: Long, stop: Long, duration: 
   }
 }
 
-class ExecutionReport(val id: String, val creation: DateTime, val reporting: Boolean) {
+class NgExecutionReport(val id: String, val creation: DateTime, val reporting: Boolean) {
 
   // IDEA: move into one big case class with mutable ref if issues are declared ?
   // I know mutability is bad etc but here, i know for sure that concurrency is not an issue
@@ -83,8 +83,8 @@ class ExecutionReport(val id: String, val creation: DateTime, val reporting: Boo
   var lastStart: Long = creation.toDate.getTime
   val start_ns: Long = System.nanoTime()
   var lastStart_ns: Long = start_ns
-  var state: ExecutionReportState = ExecutionReportState.Created
-  var steps: Seq[ExecutionReportStep] = Seq.empty
+  var state: NgExecutionReportState = NgExecutionReportState.Created
+  var steps: Seq[NgExecutionReportStep] = Seq.empty
   var gduration = -1L
   var gduration_ns = -1L
   var overheadIn = -1L
@@ -101,7 +101,7 @@ class ExecutionReport(val id: String, val creation: DateTime, val reporting: Boo
     steps.foreach(_.markDuration())
   }
 
-  def getStep(task: String): Option[ExecutionReportStep] = {
+  def getStep(task: String): Option[NgExecutionReportStep] = {
     steps.find(_.task == task )
   }
 
@@ -118,28 +118,28 @@ class ExecutionReport(val id: String, val creation: DateTime, val reporting: Boo
     "steps" -> JsArray(steps.map(_.json))
   )
 
-  def markOverheadIn(): ExecutionReport = {
+  def markOverheadIn(): NgExecutionReport = {
     if (reporting) {
       overheadIn = System.currentTimeMillis() - creation.getMillis
     }
     this
   }
 
-  def startOverheadOut(): ExecutionReport = {
+  def startOverheadOut(): NgExecutionReport = {
     if (reporting) {
       overheadOutStart = System.currentTimeMillis()
     }
     this
   }
 
-  def markOverheadOut(): ExecutionReport = {
+  def markOverheadOut(): NgExecutionReport = {
     if (reporting) {
       overheadOut = System.currentTimeMillis() - overheadOutStart
     }
     this
   }
 
-  def setContext(context: JsValue): ExecutionReport = {
+  def setContext(context: JsValue): NgExecutionReport = {
     if (reporting) {
       ctx = context
     }
@@ -162,14 +162,14 @@ class ExecutionReport(val id: String, val creation: DateTime, val reporting: Boo
     getOverheadInNow() + getOverheadOutNow()
   }
 
-  def markFailure(message: String): ExecutionReport = {
+  def markFailure(message: String): NgExecutionReport = {
     if (reporting) {
-      state = ExecutionReportState.Failed
+      state = NgExecutionReportState.Failed
       val stop = System.currentTimeMillis()
       val stop_ns = System.nanoTime()
       val duration = stop - lastStart
       val duration_ns = stop_ns - lastStart_ns
-      steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, ctx) :+ ExecutionReportStep("request-failure", stop, stop, 0L, 0L, Json.obj("message" -> message))
+      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, ctx) :+ NgExecutionReportStep("request-failure", stop, stop, 0L, 0L, Json.obj("message" -> message))
       lastStart = stop
       lastStart_ns = stop_ns
       gduration = stop - creation.getMillis
@@ -179,14 +179,14 @@ class ExecutionReport(val id: String, val creation: DateTime, val reporting: Boo
     this
   }
 
-  def markFailure(message: String, error: Throwable): ExecutionReport = {
+  def markFailure(message: String, error: Throwable): NgExecutionReport = {
     if (reporting) {
-      state = ExecutionReportState.Failed
+      state = NgExecutionReportState.Failed
       val stop = System.currentTimeMillis()
       val stop_ns = System.nanoTime()
       val duration = stop - lastStart
       val duration_ns = stop_ns - lastStart_ns
-      steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, ctx) :+ ExecutionReportStep("request-failure", stop, stop, 0L, 0L, Json.obj("message" -> message, "error" -> JsonHelpers.errToJson(error)))
+      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, ctx) :+ NgExecutionReportStep("request-failure", stop, stop, 0L, 0L, Json.obj("message" -> message, "error" -> JsonHelpers.errToJson(error)))
       lastStart = stop
       lastStart_ns = stop_ns
       gduration = stop - creation.getMillis
@@ -196,14 +196,14 @@ class ExecutionReport(val id: String, val creation: DateTime, val reporting: Boo
     this
   }
 
-  def markSuccess(): ExecutionReport = {
+  def markSuccess(): NgExecutionReport = {
     if (reporting) {
-      state = ExecutionReportState.Successful
+      state = NgExecutionReportState.Successful
       val stop = System.currentTimeMillis()
       val stop_ns = System.nanoTime()
       val duration = stop - lastStart
       val duration_ns = stop_ns - lastStart_ns
-      steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, ctx) :+ ExecutionReportStep(s"request-success", stop, stop, 0L, 0L)
+      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, ctx) :+ NgExecutionReportStep(s"request-success", stop, stop, 0L, 0L)
       lastStart = stop
       lastStart_ns = stop_ns
       gduration = stop - creation.getMillis
@@ -213,14 +213,14 @@ class ExecutionReport(val id: String, val creation: DateTime, val reporting: Boo
     this
   }
 
-  def markDoneAndStart(task: String, previousCtx: Option[JsValue] = None): ExecutionReport = {
+  def markDoneAndStart(task: String, previousCtx: Option[JsValue] = None): NgExecutionReport = {
     if (reporting) {
-      state = ExecutionReportState.Running
+      state = NgExecutionReportState.Running
       val stop = System.currentTimeMillis()
       val stop_ns = System.nanoTime()
       val duration = stop - lastStart
       val duration_ns = stop_ns - lastStart_ns
-      steps = steps :+ ExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, previousCtx.getOrElse(ctx))
+      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, previousCtx.getOrElse(ctx))
       lastStart = stop
       lastStart_ns = stop_ns
       currentTask = task
@@ -229,9 +229,9 @@ class ExecutionReport(val id: String, val creation: DateTime, val reporting: Boo
     this
   }
 
-  def start(task: String, context: JsValue = JsNull): ExecutionReport = {
+  def start(task: String, context: JsValue = JsNull): NgExecutionReport = {
     if (reporting) {
-      state = ExecutionReportState.Running
+      state = NgExecutionReportState.Running
       lastStart = System.currentTimeMillis()
       lastStart_ns = System.nanoTime()
       currentTask = task

@@ -7,8 +7,8 @@ import otoroshi.models._
 import otoroshi.next.plugins._
 import otoroshi.next.plugins.wrappers._
 import otoroshi.next.plugins.api._
-import otoroshi.next.proxy.ProxyEngineError.ResultProxyEngineError
-import otoroshi.next.proxy.{ProxyEngineError, ReportPluginSequence, ReportPluginSequenceItem}
+import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
+import otoroshi.next.proxy.{NgProxyEngineError, NgReportPluginSequence, NgReportPluginSequenceItem}
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
@@ -26,39 +26,7 @@ import otoroshi.script.NamedPlugin
 import otoroshi.script.PluginType
 import otoroshi.script.plugins.Plugins
 
-case class DomainAndPath(raw: String) {
-  private lazy val parts = raw.split("\\/")
-  lazy val domain = parts.head
-  lazy val path = if (parts.size == 1) "/" else parts.tail.mkString("/", "/", "")
-  def json: JsValue = JsString(raw)
-}
-
-case class Frontend(domains: Seq[DomainAndPath], headers: Map[String, String], methods: Seq[String], stripPath: Boolean, apikey: ApiKeyRouteMatcher) {
-  def json: JsValue = Json.obj(
-    "domains" -> JsArray(domains.map(_.json)),
-    "strip_path" -> stripPath,
-    "headers" -> headers,
-    "methods" -> methods,
-    "apikey" -> apikey.gentleJson
-  )
-}
-
-object Frontend {
-  def readFrom(lookup: JsLookupResult): Frontend = {
-    lookup.asOpt[JsObject] match {
-      case None => Frontend(Seq.empty, Map.empty, Seq.empty, true, ApiKeyRouteMatcher())
-      case Some(obj) => Frontend(
-        domains = obj.select("domains").asOpt[Seq[String]].map(_.map(DomainAndPath.apply)).getOrElse(Seq.empty),
-        stripPath = obj.select("strip_path").asOpt[Boolean].getOrElse(true),
-        headers = obj.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
-        methods = obj.select("methods").asOpt[Seq[String]].getOrElse(Seq.empty),
-        apikey = obj.select("apikey").asOpt[JsValue].flatMap(v => ApiKeyRouteMatcher.format.reads(v).asOpt).getOrElse(ApiKeyRouteMatcher())
-      )
-    }
-  }
-}
-
-case class Route(
+case class NgRoute(
   location: EntityLocation,
   id: String,
   name: String,
@@ -68,8 +36,8 @@ case class Route(
   enabled: Boolean,
   debugFlow: Boolean,
   groups: Seq[String] = Seq("default"),
-  frontend: Frontend,
-  backend: Backend,
+  frontend: NgFrontend,
+  backend: NgBackend,
   backendRef: Option[String] = None,
   client: ClientConfig,
   healthCheck: HealthCheck,
@@ -276,9 +244,9 @@ case class Route(
   def transformError(__ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     val all_plugins = __ctx.attrs.get(Keys.ContextualPluginsKey).map(_.transformerPlugins).getOrElse(plugins.transformerPlugins(__ctx.request))
     if (all_plugins.nonEmpty) {
-      val promise = Promise[Either[ProxyEngineError, NgPluginHttpResponse]]()
+      val promise = Promise[Either[NgProxyEngineError, NgPluginHttpResponse]]()
       val report = __ctx.report
-      var sequence = ReportPluginSequence(
+      var sequence = NgReportPluginSequence(
         size = all_plugins.size,
         kind = "error-transformer-plugins",
         start = System.currentTimeMillis(),
@@ -287,7 +255,7 @@ case class Route(
         stop_ns = 0L,
         plugins = Seq.empty,
       )
-      def markPluginItem(item: ReportPluginSequenceItem, ctx: NgTransformerErrorContext, debug: Boolean, result: JsValue): Unit = {
+      def markPluginItem(item: NgReportPluginSequenceItem, ctx: NgTransformerErrorContext, debug: Boolean, result: JsValue): Unit = {
         sequence = sequence.copy(
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
@@ -306,12 +274,12 @@ case class Route(
             val ctx = _ctx.copy(config = pluginConfig)
             val debug = debugFlow || wrapper.instance.debug
             val in: JsValue = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
-            val item = ReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+            val item = NgReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
             wrapper.plugin.transformError(ctx).andThen {
               case Failure(exception) =>
                 markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
                 report.setContext(sequence.stopSequence().json)
-                promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during response-transformation plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
+                promise.trySuccess(Left(NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during response-transformation plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
               case Success(resp_next) if plugins.size == 1 =>
                 markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
                 report.setContext(sequence.stopSequence().json)
@@ -333,14 +301,14 @@ case class Route(
     }
   }
 
-  def contextualPlugins(global_plugins: NgPlugins, request: RequestHeader)(implicit env: Env, ec: ExecutionContext): ContextualPlugins = {
-    ContextualPlugins(plugins, global_plugins, request, env, ec)
+  def contextualPlugins(global_plugins: NgPlugins, request: RequestHeader)(implicit env: Env, ec: ExecutionContext): NgContextualPlugins = {
+    NgContextualPlugins(plugins, global_plugins, request, env, ec)
   }
 }
 
-object Route {
+object NgRoute {
 
-  val fake = Route(
+  val fake = NgRoute(
     location = EntityLocation.default,
     id = s"route_${IdGenerator.uuid}",
     name = "Fake route",
@@ -350,15 +318,15 @@ object Route {
     enabled = true,
     debugFlow = true,
     groups = Seq("default"),
-    frontend = Frontend(
-      domains = Seq(DomainAndPath("fake-next-gen.oto.tools")),
+    frontend = NgFrontend(
+      domains = Seq(NgDomainAndPath("fake-next-gen.oto.tools")),
       headers = Map.empty,
       methods = Seq.empty,
       stripPath = true,
       apikey = ApiKeyRouteMatcher()
     ),
     backendRef = None,
-    backend = Backend(
+    backend = NgBackend(
       targets = Seq(NgTarget(
         id = "tls://mirror.otoroshi.io:443",
         hostname = "mirror.otoroshi.io",
@@ -372,23 +340,23 @@ object Route {
     client = ClientConfig(),
     healthCheck = HealthCheck(false, "/"),
     plugins = NgPlugins(Seq(
-      PluginInstance(
+      NgPluginInstance(
         plugin = NgPluginHelper.pluginId[ApikeyCalls]
       ),
-      PluginInstance(
+      NgPluginInstance(
         plugin = NgPluginHelper.pluginId[OverrideHost],
       ),
-      PluginInstance(
+      NgPluginInstance(
         plugin = NgPluginHelper.pluginId[AdditionalHeadersOut],
-        config = PluginInstanceConfig(Json.obj(
+        config = NgPluginInstanceConfig(Json.obj(
           "headers" -> Json.obj(
             "bar" -> "foo"
           )
         ))
       ),
-      PluginInstance(
+      NgPluginInstance(
         plugin = NgPluginHelper.pluginId[AdditionalHeadersOut],
-        config = PluginInstanceConfig(Json.obj(
+        config = NgPluginInstanceConfig(Json.obj(
           "headers" -> Json.obj(
             "bar2" -> "foo2"
           )
@@ -397,12 +365,12 @@ object Route {
     ))
   )
 
-  val fmt = new Format[Route] {
-    override def writes(o: Route): JsValue = o.json
-    override def reads(json: JsValue): JsResult[Route] = Try {
+  val fmt = new Format[NgRoute] {
+    override def writes(o: NgRoute): JsValue = o.json
+    override def reads(json: JsValue): JsResult[NgRoute] = Try {
       val ref = json.select("backend_ref").asOpt[String]
-      val refBackend = ref.flatMap(r => OtoroshiEnvHolder.get().proxyState.backend(r)).getOrElse(Backend(Seq.empty, Seq.empty, "/", RoundRobin))
-      Route(
+      val refBackend = ref.flatMap(r => OtoroshiEnvHolder.get().proxyState.backend(r)).getOrElse(NgBackend(Seq.empty, Seq.empty, "/", RoundRobin))
+      NgRoute(
         location = otoroshi.models.EntityLocation.readFromKey(json),
         id = json.select("id").as[String],
         name = json.select("id").as[String],
@@ -412,9 +380,9 @@ object Route {
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
         debugFlow = json.select("debug_flow").asOpt[Boolean].getOrElse(false),
         groups = json.select("groups").asOpt[Seq[String]].getOrElse(Seq("default")),
-        frontend = Frontend.readFrom(json.select("frontend")),
+        frontend = NgFrontend.readFrom(json.select("frontend")),
         backend = ref match {
-          case None => Backend.readFrom(json.select("backend"))
+          case None => NgBackend.readFrom(json.select("backend"))
           case Some(r) => refBackend
         },
         backendRef = ref,
@@ -428,9 +396,9 @@ object Route {
     }
   }
 
-  def fromServiceDescriptor(service: ServiceDescriptor, debug: Boolean)(implicit ec: ExecutionContext, env: Env): Route = {
+  def fromServiceDescriptor(service: ServiceDescriptor, debug: Boolean)(implicit ec: ExecutionContext, env: Env): NgRoute = {
     import NgPluginHelper.pluginId
-    Route(
+    NgRoute(
       location = service.location,
       id = service.id,
       name = service.name,
@@ -454,14 +422,14 @@ object Route {
       },
       enabled = service.enabled,
       debugFlow = debug,
-      frontend = Frontend(
+      frontend = NgFrontend(
         domains = {
           val dap = if (service.allPaths.isEmpty) {
             service.allHosts.map(h => s"$h${service.matchingRoot.getOrElse("/")}")
           } else {
             service.allPaths.flatMap(path => service.allHosts.map(host => s"$host$path"))
           }
-          dap.map(DomainAndPath.apply).distinct
+          dap.map(NgDomainAndPath.apply).distinct
         },
         headers = service.matchingHeaders,
         methods = Seq.empty, // get from restrictions ???
@@ -469,7 +437,7 @@ object Route {
         apikey = service.apiKeyConstraints.routing,
       ),
       backendRef = None,
-      backend = Backend(
+      backend = NgBackend(
         targets = service.targets.map(NgTarget.fromTarget),
         targetRefs = Seq.empty,
         root = service.root,
@@ -479,122 +447,122 @@ object Route {
       client = service.clientConfig,
       healthCheck = service.healthCheck,
       plugins = NgPlugins(
-        Seq.empty[PluginInstance]
+        Seq.empty[NgPluginInstance]
           .applyOnIf(service.forceHttps) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[ForceHttpsTraffic],
             )
           }
           .applyOnIf(service.overrideHost) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[OverrideHost],
             )
           }
           .applyOnIf(service.headersVerification.nonEmpty) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[HeadersValidation],
-              config = PluginInstanceConfig(Json.obj(
+              config = NgPluginInstanceConfig(Json.obj(
                 "headers" -> JsObject(service.headersVerification.mapValues(JsString.apply))
               ))
             )
           }
           .applyOnIf(service.maintenanceMode) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[MaintenanceMode]
             )
           }
           .applyOnIf(service.buildMode) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[BuildMode]
             )
           }
           .applyOnIf(!service.allowHttp10) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[DisableHttp10]
             )
           }
           .applyOnIf(service.readOnly) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[ReadOnlyCalls]
             )
           }
           .applyOnIf(service.ipFiltering.blacklist.nonEmpty) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[IpAddressBlockList],
-              config = PluginInstanceConfig(Json.obj(
+              config = NgPluginInstanceConfig(Json.obj(
                 "addresses" -> JsArray(service.ipFiltering.blacklist.map(JsString.apply))
               ))
             )
           }
           .applyOnIf(service.ipFiltering.whitelist.nonEmpty) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[IpAddressAllowedList],
-              config = PluginInstanceConfig(Json.obj(
+              config = NgPluginInstanceConfig(Json.obj(
                 "addresses" -> JsArray(service.ipFiltering.whitelist.map(JsString.apply))
               ))
             )
           }
           .applyOnIf(service.redirection.enabled) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[Redirection],
-              config = PluginInstanceConfig(service.redirection.toJson.as[JsObject])
+              config = NgPluginInstanceConfig(service.redirection.toJson.as[JsObject])
             )
           }
           .applyOnIf(service.additionalHeaders.nonEmpty) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[AdditionalHeadersIn],
-              config = PluginInstanceConfig(Json.obj(
+              config = NgPluginInstanceConfig(Json.obj(
                 "headers" -> JsObject(service.additionalHeaders.mapValues(JsString.apply))
               ))
             )
           }
           .applyOnIf(service.additionalHeadersOut.nonEmpty) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[AdditionalHeadersOut],
-              config = PluginInstanceConfig(Json.obj(
+              config = NgPluginInstanceConfig(Json.obj(
                 "headers" -> JsObject(service.additionalHeadersOut.mapValues(JsString.apply))
               ))
             )
           }
           .applyOnIf(service.missingOnlyHeadersIn.nonEmpty) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[MissingHeadersIn],
-              config = PluginInstanceConfig(Json.obj(
+              config = NgPluginInstanceConfig(Json.obj(
                 "headers" -> JsObject(service.missingOnlyHeadersIn.mapValues(JsString.apply))
               ))
             )
           }
           .applyOnIf(service.missingOnlyHeadersOut.nonEmpty) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[MissingHeadersOut],
-              config = PluginInstanceConfig(Json.obj(
+              config = NgPluginInstanceConfig(Json.obj(
                 "headers" -> JsObject(service.missingOnlyHeadersOut.mapValues(JsString.apply))
               ))
             )
           }
           .applyOnIf(service.removeHeadersIn.nonEmpty) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[RemoveHeadersIn],
-              config = PluginInstanceConfig(Json.obj(
+              config = NgPluginInstanceConfig(Json.obj(
                 "headers" -> JsArray(service.removeHeadersIn.map(JsString.apply))
               ))
             )
           }
           .applyOnIf(service.removeHeadersOut.nonEmpty) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[RemoveHeadersOut],
-              config = PluginInstanceConfig(Json.obj(
+              config = NgPluginInstanceConfig(Json.obj(
                 "headers" -> JsArray(service.removeHeadersOut.map(JsString.apply))
               ))
             )
           }
           .applyOnIf(service.sendOtoroshiHeadersBack) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[SendOtoroshiHeadersBack],
             )
           }
           .applyOnIf(service.xForwardedHeaders) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[XForwardedHeaders],
             )
           }
@@ -610,35 +578,35 @@ object Route {
           // }
           .applyOnIf(service.jwtVerifier.enabled && service.jwtVerifier.isRef) { seq =>
             val verifier = service.jwtVerifier.asInstanceOf[RefJwtVerifier]
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[JwtVerification],
               exclude = verifier.excludedPatterns,
-              config = PluginInstanceConfig(Json.obj(
+              config = NgPluginInstanceConfig(Json.obj(
                 "verifiers" -> JsArray(verifier.ids.map(JsString.apply)),
               ))
             )
           }
           .applyOnIf(service.restrictions.enabled) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[RoutingRestrictions],
-              config = PluginInstanceConfig(service.restrictions.json.asObject)
+              config = NgPluginInstanceConfig(service.restrictions.json.asObject)
             )
           }
           .applyOnIf(service.privateApp && service.authConfigRef.isDefined) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[AuthModule],
               exclude = service.securityExcludedPatterns,
-              config = PluginInstanceConfig(Json.obj(
+              config = NgPluginInstanceConfig(Json.obj(
                 "auth_module" -> service.authConfigRef.get,
                 "pass_with_apikey" -> !service.strictlyPrivate
               ))
             )
           }
           .applyOnIf(service.enforceSecureCommunication && service.sendStateChallenge) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[OtoroshiChallenge],
               exclude = service.secComExcludedPatterns,
-              config = PluginInstanceConfig(Json.obj(
+              config = NgPluginInstanceConfig(Json.obj(
                 "version" -> service.secComVersion.str,
                 "ttl" -> service.secComTtl.toSeconds,
                 "request_header_name" -> service.secComHeaders.stateRequestName.getOrElse("Otoroshi-State").json,
@@ -649,10 +617,10 @@ object Route {
             )
           }
           .applyOnIf(service.enforceSecureCommunication && service.sendInfoToken) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[OtoroshiInfos],
               exclude = service.secComExcludedPatterns,
-              config = PluginInstanceConfig(Json.obj(
+              config = NgPluginInstanceConfig(Json.obj(
                 "version" -> service.secComInfoTokenVersion.version,
                 "ttl" -> service.secComTtl.toSeconds,
                 "header_name" -> service.secComHeaders.stateRequestName.getOrElse("Otoroshi-Claim").json,
@@ -661,53 +629,53 @@ object Route {
             )
           }
           .applyOnIf(service.cors.enabled) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[Cors],
               exclude = service.cors.excludedPatterns,
-              config = PluginInstanceConfig(service.cors.asJson.asObject)
+              config = NgPluginInstanceConfig(service.cors.asJson.asObject)
             )
           }
           .applyOnIf(!service.publicPatterns.contains("/.*")) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[ApikeyCalls],
               include = service.privatePatterns,
               exclude = service.publicPatterns,
-              config = PluginInstanceConfig(service.apiKeyConstraints.json.asObject ++ Json.obj(
+              config = NgPluginInstanceConfig(service.apiKeyConstraints.json.asObject ++ Json.obj(
                 "validate" -> !service.detectApiKeySooner,
                 "pass_with_user" -> !service.strictlyPrivate
               ))
             )
           }
           .applyOnIf(service.gzip.enabled) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[GzipResponseCompressor],
               exclude = service.gzip.excludedPatterns,
-              config = PluginInstanceConfig(service.gzip.asJson.asObject)
+              config = NgPluginInstanceConfig(service.gzip.asJson.asObject)
             )
           }
           .applyOnIf(service.canary.enabled) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[CanaryMode],
-              config = PluginInstanceConfig(service.canary.toJson.asObject)
+              config = NgPluginInstanceConfig(service.canary.toJson.asObject)
             )
           }
           .applyOnIf(service.chaosConfig.enabled) { seq =>
-            seq :+ PluginInstance(
+            seq :+ NgPluginInstance(
               plugin = pluginId[SnowMonkeyChaos],
-              config = PluginInstanceConfig(service.chaosConfig.asJson.asObject)
+              config = NgPluginInstanceConfig(service.chaosConfig.asJson.asObject)
             )
           }
           .applyOnIf(service.tcpUdpTunneling) { seq =>
             val udp = service.targets.exists(_.scheme.toLowerCase.contains("udp://"))
             if (udp) {
-              seq :+ PluginInstance(
+              seq :+ NgPluginInstance(
                 plugin = pluginId[UdpTunnel],
-                config = PluginInstanceConfig(Json.obj())
+                config = NgPluginInstanceConfig(Json.obj())
               )
             } else {
-              seq :+ PluginInstance(
+              seq :+ NgPluginInstance(
                 plugin = pluginId[TcpTunnel],
-                config = PluginInstanceConfig(Json.obj())
+                config = NgPluginInstanceConfig(Json.obj())
               )
             }
           }
@@ -718,19 +686,19 @@ object Route {
             .collect {
               case (ref, Right(plugin)) => (ref, plugin)
             }
-            .map { 
+            .map {
               case (ref, plugin) =>
 
-                def makeInst(id: String): Option[PluginInstance] = {
+                def makeInst(id: String): Option[NgPluginInstance] = {
                   val config: JsValue =  plugin.configRoot
                     .flatMap(r => service.plugins.config.select(r).asOpt[JsValue])
                     .orElse(plugin.defaultConfig)
                     .getOrElse(Json.obj())
                   val configName: String = plugin.configRoot.getOrElse("config")
-                  PluginInstance(
-                    plugin = id, 
-                    exclude = service.plugins.excluded, 
-                    config = PluginInstanceConfig(Json.obj(
+                  NgPluginInstance(
+                    plugin = id,
+                    exclude = service.plugins.excluded,
+                    config = NgPluginInstanceConfig(Json.obj(
                       "plugin" -> ref,
                       configName -> config
                     ))
@@ -759,13 +727,13 @@ object Route {
   }
 }
 
-trait RouteDataStore extends BasicStore[Route]
+trait NgRouteDataStore extends BasicStore[NgRoute]
 
-class KvRouteDataStore(redisCli: RedisLike, _env: Env)
-  extends RouteDataStore
-    with RedisLikeStore[Route] {
+class KvNgRouteDataStore(redisCli: RedisLike, _env: Env)
+  extends NgRouteDataStore
+    with RedisLikeStore[NgRoute] {
   override def redisLike(implicit env: Env): RedisLike = redisCli
-  override def fmt: Format[Route]               = Route.fmt
+  override def fmt: Format[NgRoute]               = NgRoute.fmt
   override def key(id: String): Key             = Key.Empty / _env.storageRoot / "routes" / id
-  override def extractId(value: Route): String  = value.id
+  override def extractId(value: NgRoute): String  = value.id
 }

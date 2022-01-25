@@ -14,10 +14,10 @@ import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class RoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
   extends AbstractController(cc)
-    with BulkControllerHelper[Route, JsValue]
-    with CrudControllerHelper[Route, JsValue] {
+    with BulkControllerHelper[NgRoute, JsValue]
+    with CrudControllerHelper[NgRoute, JsValue] {
 
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
@@ -27,19 +27,19 @@ class RoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
   override def buildError(status: Int, message: String): ApiError[JsValue] =
     JsonApiError(status, play.api.libs.json.JsString(message))
 
-  override def extractId(entity: Route): String = entity.id
+  override def extractId(entity: NgRoute): String = entity.id
 
-  override def readEntity(json: JsValue): Either[String, Route] =
-    Route.fmt.reads(json).asEither match {
+  override def readEntity(json: JsValue): Either[String, NgRoute] =
+    NgRoute.fmt.reads(json).asEither match {
       case Left(e)  => Left(e.toString())
       case Right(r) => Right(r)
     }
 
-  override def writeEntity(entity: Route): JsValue = Route.fmt.writes(entity)
+  override def writeEntity(entity: NgRoute): JsValue = NgRoute.fmt.writes(entity)
 
   override def findByIdOps(
     id: String
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[Route]]] = {
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.findById(id).map { opt =>
       Right(
         OptionalEntityAndContext(
@@ -55,7 +55,7 @@ class RoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
 
   override def findAllOps(
     req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[Route]]] = {
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.findAll().map { seq =>
       Right(
         SeqEntityAndContext(
@@ -70,8 +70,8 @@ class RoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
   }
 
   override def createEntityOps(
-    entity: Route
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Route]]] = {
+    entity: NgRoute
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.set(entity).map {
       case true  => {
         Right(
@@ -96,8 +96,8 @@ class RoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
   }
 
   override def updateEntityOps(
-    entity: Route
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Route]]] = {
+    entity: NgRoute
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.set(entity).map {
       case true  => {
         Right(
@@ -123,7 +123,7 @@ class RoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
 
   override def deleteEntityOps(
     id: String
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Route]]] = {
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.delete(id).map {
       case true  => {
         Right(
@@ -147,7 +147,7 @@ class RoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
   }
 
   def initiateRoute() = ApiAction {
-    Ok(Route(
+    Ok(NgRoute(
       location = EntityLocation.default,
       id = s"route_${IdGenerator.uuid}",
       name = "New route",
@@ -157,14 +157,14 @@ class RoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
       enabled = true,
       debugFlow = true,
       groups = Seq("default"),
-      frontend = Frontend(
-        domains = Seq(DomainAndPath("new-route.oto.tools")),
+      frontend = NgFrontend(
+        domains = Seq(NgDomainAndPath("new-route.oto.tools")),
         headers = Map.empty,
         methods = Seq.empty,
         stripPath = true,
         apikey = ApiKeyRouteMatcher()
       ),
-      backend = Backend(
+      backend = NgBackend(
         targets = Seq(NgTarget(
           id = "target_1",
           hostname = "mirror.otoroshi.io",
@@ -178,7 +178,7 @@ class RoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
       client = ClientConfig(),
       healthCheck = HealthCheck(false, "/"),
       plugins = NgPlugins(Seq(
-        PluginInstance(
+        NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost],
         )
       ))

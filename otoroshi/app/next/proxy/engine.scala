@@ -10,10 +10,10 @@ import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway._
 import otoroshi.models._
-import otoroshi.next.models.{ContextualPlugins, NgPlugins, NgTarget, Route, SelectedBackendTarget}
+import otoroshi.next.models.{NgContextualPlugins, NgPlugins, NgTarget, NgRoute, NgSelectedBackendTarget}
 import otoroshi.next.plugins.Keys
 import otoroshi.next.plugins.api._
-import otoroshi.next.proxy.ProxyEngineError._
+import otoroshi.next.proxy.NgProxyEngineError._
 import otoroshi.next.utils.{FEither, JsonHelpers}
 import otoroshi.script.RequestHandler
 import otoroshi.security.IdGenerator
@@ -133,7 +133,7 @@ class ProxyEngine() extends RequestHandler {
     val requestId = IdGenerator.uuid
     val reporting = config.select("reporting").asOpt[Boolean].getOrElse(true)
     val useTree = config.select("routing_strategy").asOpt[String].contains("tree")
-    implicit val report = ExecutionReport(requestId, reporting)
+    implicit val report = NgExecutionReport(requestId, reporting)
     report.start("start-handling")
     val debug = config.select("debug").asOpt[Boolean].getOrElse(false)
     val debugHeaders = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
@@ -189,7 +189,7 @@ class ProxyEngine() extends RequestHandler {
       remQuotas       <- checkGlobalLimits(request, route) // generic.scala (1269)
       _               =  report.markDoneAndStart("choose-backend", Json.obj("remaining_quotas" -> remQuotas.toJson).some)
       result          <- callTarget(snowflake, reqNumber, request, route) {
-        case sb @ SelectedBackendTarget(backend, attempts, alreadyFailed, cbStart) =>
+        case sb @ NgSelectedBackendTarget(backend, attempts, alreadyFailed, cbStart) =>
           report.markDoneAndStart("transform-requests", Json.obj("backend" -> backend.json).some)
           for {
             finalRequest  <- callRequestTransformer(snowflake, request, request.body, route, backend, ctxPlugins)
@@ -234,11 +234,17 @@ class ProxyEngine() extends RequestHandler {
         "x-otoroshi-request-overhead-out" -> report.overheadOut.toString,
         "x-otoroshi-request-duration" -> report.gduration.toString,
         "x-otoroshi-request-call-duration" -> report.getStep("call-backend").map(_.duration).getOrElse(-1L).toString,
-        "x-otoroshi-request-find-route-duration" -> report.getStep("find-route").map(_.duration).getOrElse(-1L).toString,
+        "x-otoroshi-request-find-route-duration" -> {
+          val route = report.getStep("find-route")
+          route
+            .map(_.duration).filter(_ > 0).map(v => s"$v millis")
+            .orElse(route.map(_.duration_ns).map(v => s"$v nanos"))
+            .getOrElse("--")
+        },
         "x-otoroshi-request-state" -> report.state.name,
         "x-otoroshi-request-creation" -> report.creation.toString,
         "x-otoroshi-request-termination" -> report.termination.toString,
-      ).applyOnIf(report.state == ExecutionReportState.Failed) { seq =>
+      ).applyOnIf(report.state == NgExecutionReportState.Failed) { seq =>
         seq :+ (
           "x-otoroshi-request-failure" ->
             report.getStep("request-failure").flatMap(_.ctx.select("error").select("message").asOpt[String]).getOrElse("--")
@@ -257,7 +263,7 @@ class ProxyEngine() extends RequestHandler {
     val requestId = IdGenerator.uuid
     val reporting = config.select("reporting").asOpt[Boolean].getOrElse(true)
     val useTree = config.select("routing_strategy").asOpt[String].contains("tree")
-    implicit val report = ExecutionReport(requestId, reporting)
+    implicit val report = NgExecutionReport(requestId, reporting)
     report.start("start-handling")
     implicit val mat = env.otoroshiMaterializer
 
@@ -313,7 +319,7 @@ class ProxyEngine() extends RequestHandler {
       remQuotas       <- checkGlobalLimits(request, route) // generic.scala (1269)
       _               =  report.markDoneAndStart("choose-backend", Json.obj("remaining_quotas" -> remQuotas.toJson).some)
       result          <- callWsTarget(snowflake, reqNumber, request, route) {
-        case sb @ SelectedBackendTarget(backend, attempts, alreadyFailed, cbStart) =>
+        case sb @ NgSelectedBackendTarget(backend, attempts, alreadyFailed, cbStart) =>
           report.markDoneAndStart("transform-requests", Json.obj("backend" -> backend.json).some)
           for {
             finalRequest  <- callRequestTransformer(snowflake, request, fakeBody, route, backend, ctxPlugins)
@@ -353,7 +359,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def extractTrackingId(snowflake: String, req: RequestHeader, reqNumber: Int, route: Route)(implicit attrs: TypedMap): Unit = {
+  def extractTrackingId(snowflake: String, req: RequestHeader, reqNumber: Int, route: NgRoute)(implicit attrs: TypedMap): Unit = {
     if (route.backend.loadBalancing.needTrackingCookie) {
       val trackingId: String = req.cookies
         .get("otoroshi-tracking")
@@ -363,7 +369,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def handleHighOverhead(req: RequestHeader, route: Option[Route])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+  def handleHighOverhead(req: RequestHeader, route: Option[NgRoute])(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, Done] = {
     val overhead = report.getOverheadNow()
     if (overhead > env.overheadThreshold) {
       HighOverheadAlert(
@@ -381,7 +387,7 @@ class ProxyEngine() extends RequestHandler {
     FEither.right(Done)
   }
 
-  def handleConcurrentRequest(request: RequestHeader)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+  def handleConcurrentRequest(request: RequestHeader)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, Done] = {
     val currentHandledRequests = env.datastores.requestsDataStore.incrementHandledRequests()
     env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", currentHandledRequests)
     if (currentHandledRequests > globalConfig.maxConcurrentRequests) {
@@ -412,24 +418,24 @@ class ProxyEngine() extends RequestHandler {
           Some("errors.cant.process.more.request"),
           attrs = attrs
         )
-        .map(r => Left(ResultProxyEngineError(r))))
+        .map(r => Left(NgResultProxyEngineError(r))))
     } else {
       FEither.right(Done)
     }
   }
 
-  def handleTenantCheck(route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+  def handleTenantCheck(route: NgRoute)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, Done] = {
     if (env.clusterConfig.mode.isWorker
         && env.clusterConfig.worker.tenants.nonEmpty
         && !env.clusterConfig.worker.tenants.contains(route.location.tenant)) {
       report.markFailure(s"this worker cannot serve tenant '${route.location.tenant.value}'")
-      FEither.left(ResultProxyEngineError(Results.NotFound(Json.obj("error" -> "not_found", "error_description" -> "no route found !"))))
+      FEither.left(NgResultProxyEngineError(Results.NotFound(Json.obj("error" -> "not_found", "error_description" -> "no route found !"))))
     } else {
       FEither.right(Done)
     }
   }
 
-  def findRoute(useTree: Boolean, request: RequestHeader, body: Source[ByteString, _], global_plugins: NgPlugins)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Route] = {
+  def findRoute(useTree: Boolean, request: RequestHeader, body: Source[ByteString, _], global_plugins: NgPlugins)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, NgRoute] = {
     // TODO: choose a final strategy here ;)
     val maybeRoute = env.proxyState.domainPathTreeFind(request.theDomain, request.thePath).flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true)))
     // if (useTree) {
@@ -445,10 +451,10 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def callRequestSinkPlugins(request: RequestHeader, body: Source[ByteString, _], global_plugins: NgPlugins)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer):  FEither[ProxyEngineError, Route] = {
-    def failure(): FEither[ProxyEngineError, Route] = {
+  def callRequestSinkPlugins(request: RequestHeader, body: Source[ByteString, _], global_plugins: NgPlugins)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer):  FEither[NgProxyEngineError, NgRoute] = {
+    def failure(): FEither[NgProxyEngineError, NgRoute] = {
       report.markFailure(s"route not found for domain: '${request.theDomain}${request.thePath}'")
-      FEither.left(ResultProxyEngineError(Results.NotFound(Json.obj("error" -> "not_found", "error_description" -> "no route found !"))))
+      FEither.left(NgResultProxyEngineError(Results.NotFound(Json.obj("error" -> "not_found", "error_description" -> "no route found !"))))
     }
     val all_plugins = global_plugins.requestSinkPlugins(request)
     if (all_plugins.nonEmpty) {
@@ -470,7 +476,7 @@ class ProxyEngine() extends RequestHandler {
           case (wrapper, ctx) => wrapper.plugin.matches(ctx)
         }
         .map {
-          case (wrapper, ctx) => FEither.apply[ProxyEngineError, Route](wrapper.plugin.handle(ctx).map(r => Left(ResultProxyEngineError(r))))
+          case (wrapper, ctx) => FEither.apply[NgProxyEngineError, NgRoute](wrapper.plugin.handle(ctx).map(r => Left(NgResultProxyEngineError(r))))
         }
         .getOrElse {
           failure()
@@ -480,20 +486,20 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def checkGlobalMaintenance(route: Route)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+  def checkGlobalMaintenance(route: NgRoute)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, Done] = {
     if (route.id != env.backOfficeServiceId && globalConfig.maintenanceMode) {
       report.markFailure(s"global maintenance activated")
-      FEither.left(ResultProxyEngineError(Results.ServiceUnavailable(Json.obj("error" -> "service_unavailable", "error_description" -> "Service in maintenance mode"))))
+      FEither.left(NgResultProxyEngineError(Results.ServiceUnavailable(Json.obj("error" -> "service_unavailable", "error_description" -> "Service in maintenance mode"))))
     } else {
       FEither.right(Done)
     }
   }
 
-  def callPluginsBeforeRequestCallback(snowflake: String, request: RequestHeader, route: Route, plugins: ContextualPlugins)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+  def callPluginsBeforeRequestCallback(snowflake: String, request: RequestHeader, route: NgRoute, plugins: NgContextualPlugins)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, Done] = {
     val all_plugins = plugins.transformerPluginsWithCallbacks
     if (all_plugins.nonEmpty) {
-      val promise = Promise[Either[ProxyEngineError, Done]]()
-      var sequence = ReportPluginSequence(
+      val promise = Promise[Either[NgProxyEngineError, Done]]()
+      var sequence = NgReportPluginSequence(
         size = all_plugins.size,
         kind = "before-request-plugins",
         start = System.currentTimeMillis(),
@@ -510,7 +516,7 @@ class ProxyEngine() extends RequestHandler {
         globalConfig = globalConfig.plugins.config,
         attrs = attrs,
       )
-      def markPluginItem(item: ReportPluginSequenceItem, ctx: NgBeforeRequestContext, debug: Boolean, result: JsValue): Unit = {
+      def markPluginItem(item: NgReportPluginSequenceItem, ctx: NgBeforeRequestContext, debug: Boolean, result: JsValue): Unit = {
         sequence = sequence.copy(
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
@@ -529,12 +535,12 @@ class ProxyEngine() extends RequestHandler {
             val ctx = _ctx.copy(config = pluginConfig)
             val debug = route.debugFlow || wrapper.instance.debug
             val in: JsValue = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
-            val item = ReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+            val item = NgReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
             wrapper.plugin.beforeRequest(ctx).andThen {
               case Failure(exception) =>
                 markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
                 report.setContext(sequence.stopSequence().json)
-                promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during before-request plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
+                promise.trySuccess(Left(NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during before-request plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
               case Success(_) if plugins.size == 1 =>
                 markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
                 report.setContext(sequence.stopSequence().json)
@@ -553,11 +559,11 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def callPluginsAfterRequestCallback(snowflake: String, request: RequestHeader, route: Route, plugins: ContextualPlugins)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] =  {
+  def callPluginsAfterRequestCallback(snowflake: String, request: RequestHeader, route: NgRoute, plugins: NgContextualPlugins)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, Done] =  {
     val all_plugins = plugins.transformerPluginsWithCallbacks
     if (all_plugins.nonEmpty) {
-      val promise = Promise[Either[ProxyEngineError, Done]]()
-      var sequence = ReportPluginSequence(
+      val promise = Promise[Either[NgProxyEngineError, Done]]()
+      var sequence = NgReportPluginSequence(
         size = all_plugins.size,
         kind = "after-request-plugins",
         start = System.currentTimeMillis(),
@@ -574,7 +580,7 @@ class ProxyEngine() extends RequestHandler {
         globalConfig = globalConfig.plugins.config,
         attrs = attrs,
       )
-      def markPluginItem(item: ReportPluginSequenceItem, ctx: NgAfterRequestContext, debug: Boolean, result: JsValue): Unit = {
+      def markPluginItem(item: NgReportPluginSequenceItem, ctx: NgAfterRequestContext, debug: Boolean, result: JsValue): Unit = {
         sequence = sequence.copy(
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
@@ -593,12 +599,12 @@ class ProxyEngine() extends RequestHandler {
             val ctx = _ctx.copy(config = pluginConfig)
             val debug = route.debugFlow || wrapper.instance.debug
             val in: JsValue = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
-            val item = ReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+            val item = NgReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
             wrapper.plugin.afterRequest(ctx).andThen {
               case Failure(exception) =>
                 markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
                 report.setContext(sequence.stopSequence().json)
-                promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during before-request plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
+                promise.trySuccess(Left(NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during before-request plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
               case Success(_) if plugins.size == 1 =>
                 markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
                 report.setContext(sequence.stopSequence().json)
@@ -617,11 +623,11 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def callPreRoutePlugins(snowflake: String, request: RequestHeader, route: Route, plugins: ContextualPlugins)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+  def callPreRoutePlugins(snowflake: String, request: RequestHeader, route: NgRoute, plugins: NgContextualPlugins)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, Done] = {
     val all_plugins = plugins.preRoutePlugins
     if (all_plugins.nonEmpty) {
-      val promise = Promise[Either[ProxyEngineError, Done]]()
-      var sequence = ReportPluginSequence(
+      val promise = Promise[Either[NgProxyEngineError, Done]]()
+      var sequence = NgReportPluginSequence(
         size = all_plugins.size,
         kind = "pre-route-plugins",
         start = System.currentTimeMillis(),
@@ -640,7 +646,7 @@ class ProxyEngine() extends RequestHandler {
         report = report,
       )
 
-      def markPluginItem(item: ReportPluginSequenceItem, ctx: NgPreRoutingContext, debug: Boolean, result: JsValue): Unit = {
+      def markPluginItem(item: NgReportPluginSequenceItem, ctx: NgPreRoutingContext, debug: Boolean, result: JsValue): Unit = {
         sequence = sequence.copy(
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
@@ -660,17 +666,17 @@ class ProxyEngine() extends RequestHandler {
             val ctx = _ctx.copy(config = pluginConfig)
             val debug = route.debugFlow || wrapper.instance.debug
             val in: JsValue = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
-            val item = ReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+            val item = NgReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
             wrapper.plugin.preRoute(ctx).andThen {
               case Failure(exception) =>
                 markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
                 report.setContext(sequence.stopSequence().json)
-                promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during pre-routing plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
+                promise.trySuccess(Left(NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during pre-routing plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
               case Success(Left(err)) =>
                 val result = err.result
                 markPluginItem(item, ctx, debug, Json.obj("kind" -> "short-circuit", "status" -> result.header.status, "headers" -> result.header.headers))
                 report.setContext(sequence.stopSequence().json)
-                promise.trySuccess(Left(ResultProxyEngineError(result)))
+                promise.trySuccess(Left(NgResultProxyEngineError(result)))
               case Success(Right(_)) if plugins.size == 1 =>
                 markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
                 report.setContext(sequence.stopSequence().json)
@@ -689,11 +695,11 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def callAccessValidatorPlugins(snowflake: String, request: RequestHeader, route: Route, plugins: ContextualPlugins)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+  def callAccessValidatorPlugins(snowflake: String, request: RequestHeader, route: NgRoute, plugins: NgContextualPlugins)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, Done] = {
     val all_plugins = plugins.accessValidatorPlugins
     if (all_plugins.nonEmpty) {
-      val promise = Promise[Either[ProxyEngineError, Done]]()
-      var sequence = ReportPluginSequence(
+      val promise = Promise[Either[NgProxyEngineError, Done]]()
+      var sequence = NgReportPluginSequence(
         size = all_plugins.size,
         kind = "access-validator-plugins",
         start = System.currentTimeMillis(),
@@ -713,7 +719,7 @@ class ProxyEngine() extends RequestHandler {
         user = attrs.get(otoroshi.plugins.Keys.UserKey),
         report = report,
       )
-      def markPluginItem(item: ReportPluginSequenceItem, ctx: NgAccessContext, debug: Boolean, result: JsValue): Unit = {
+      def markPluginItem(item: NgReportPluginSequenceItem, ctx: NgAccessContext, debug: Boolean, result: JsValue): Unit = {
         sequence = sequence.copy(
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
@@ -732,16 +738,16 @@ class ProxyEngine() extends RequestHandler {
             val ctx = _ctx.copy(config = pluginConfig)
             val debug = route.debugFlow || wrapper.instance.debug
             val in: JsValue = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
-            val item = ReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+            val item = NgReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
             wrapper.plugin.access(ctx).andThen {
               case Failure(exception) =>
                 markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
                 report.setContext(sequence.stopSequence().json)
-                promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during pre-routing plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
+                promise.trySuccess(Left(NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during pre-routing plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
               case Success(NgAccess.NgDenied(result)) =>
                 markPluginItem(item, ctx, debug, Json.obj("kind" -> "denied", "status" -> result.header.status))
                 report.setContext(sequence.stopSequence().json)
-                promise.trySuccess(Left(ResultProxyEngineError(result)))
+                promise.trySuccess(Left(NgResultProxyEngineError(result)))
               case Success(NgAccess.NgAllowed) if plugins.size == 1 =>
                 markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
                 report.setContext(sequence.stopSequence().json)
@@ -760,10 +766,10 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def checkGlobalLimits(request: RequestHeader, route: Route) (implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, RemainingQuotas] = {
+  def checkGlobalLimits(request: RequestHeader, route: NgRoute)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, RemainingQuotas] = {
     val remoteAddress = request.theIpAddress
     val isUp = true
-    def errorResult(status: Results.Status, message: String, code: String): Future[Either[ProxyEngineError, RemainingQuotas]] = {
+    def errorResult(status: Results.Status, message: String, code: String): Future[Either[NgProxyEngineError, RemainingQuotas]] = {
       Errors
         .craftResponseResult(
           message,
@@ -776,7 +782,7 @@ class ProxyEngine() extends RequestHandler {
           attrs = attrs,
           maybeRoute = route.some,
         )
-        .map(e => Left(ResultProxyEngineError(e)))
+        .map(e => Left(NgResultProxyEngineError(e)))
     }
     FEither(env.datastores.globalConfigDataStore.quotasValidationFor(remoteAddress).flatMap { r =>
       val (within, secCalls, maybeQuota) = r
@@ -800,7 +806,7 @@ class ProxyEngine() extends RequestHandler {
           val characters: ByteString =
             if (!globalConfig.middleFingers) middleFingers else zeros
           val expected: Long = (gigas / characters.size) + 1L
-          Left(ResultProxyEngineError(Results.Status(200)
+          Left(NgResultProxyEngineError(Results.Status(200)
             .sendEntity(
               HttpEntity.Streamed(
                 Source
@@ -815,7 +821,7 @@ class ProxyEngine() extends RequestHandler {
           attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
             .map(_.updateQuotas())
             .getOrElse(RemainingQuotas().vfuture)
-            .map(rq => Right.apply[ProxyEngineError, RemainingQuotas](rq))
+            .map(rq => Right.apply[NgProxyEngineError, RemainingQuotas](rq))
         } else {
           // fail fast
           errorResult(Results.Forbidden, "The service seems to be down :( come back later", "errors.service.down")
@@ -824,11 +830,11 @@ class ProxyEngine() extends RequestHandler {
     })
   }
 
-  def getBackend(target: Target, route: Route)(implicit env: Env): NgTarget = {
+  def getBackend(target: Target, route: NgRoute)(implicit env: Env): NgTarget = {
     route.backend.allTargets.find(b => b.id == target.tags.head).get
   }
 
-  def callTarget(snowflake: String, reqNumber: Long, request: Request[Source[ByteString, _]], _route: Route)(f: SelectedBackendTarget => FEither[ProxyEngineError, Result])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Result] = {
+  def callTarget(snowflake: String, reqNumber: Long, request: Request[Source[ByteString, _]], _route: NgRoute)(f: NgSelectedBackendTarget => FEither[NgProxyEngineError, Result])(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, Result] = {
     val cbStart            = System.currentTimeMillis()
     val route =  attrs.get(otoroshi.next.plugins.Keys.PossibleBackendsKey).map(b => _route.copy(backend = b)).getOrElse(_route)
     val trackingId = attrs.get(otoroshi.plugins.Keys.RequestTrackingIdKey).getOrElse(IdGenerator.uuid)
@@ -848,7 +854,7 @@ class ProxyEngine() extends RequestHandler {
       def callF(target: Target, attempts: Int, alreadyFailed: AtomicBoolean): Future[Either[Result, Result]] = {
         val backend = getBackend(target, route)
         attrs.put(Keys.BackendKey -> backend)
-        f(SelectedBackendTarget(backend, attempts, alreadyFailed, cbStart)).value.flatMap {
+        f(NgSelectedBackendTarget(backend, attempts, alreadyFailed, cbStart)).value.flatMap {
           case Left(err) => err.asResult().map(Left.apply) // TODO: optimize
           case r @ Right(value) => Right(value).vfuture
         }
@@ -1006,7 +1012,7 @@ class ProxyEngine() extends RequestHandler {
         ) recoverWith {
         case t: Throwable => handleError(t)
       } map {
-        case Left(res) => Left(ResultProxyEngineError(res))
+        case Left(res) => Left(NgResultProxyEngineError(res))
         case Right(value) => Right(value)
       })
     } else {
@@ -1032,11 +1038,11 @@ class ProxyEngine() extends RequestHandler {
       //val target = targets.apply(index.toInt)
       val backend = getBackend(target, route)
       attrs.put(Keys.BackendKey -> backend)
-      f(SelectedBackendTarget(backend, 1, new AtomicBoolean(false), cbStart))
+      f(NgSelectedBackendTarget(backend, 1, new AtomicBoolean(false), cbStart))
     }
   }
 
-  def callWsTarget(snowflake: String, reqNumber: Long, request: RequestHeader, _route: Route)(f: SelectedBackendTarget => FEither[ProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]])(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]] = {
+  def callWsTarget(snowflake: String, reqNumber: Long, request: RequestHeader, _route: NgRoute)(f: NgSelectedBackendTarget => FEither[NgProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]])(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]] = {
     val cbStart            = System.currentTimeMillis()
     val route =  attrs.get(otoroshi.next.plugins.Keys.PossibleBackendsKey).map(b => _route.copy(backend = b)).getOrElse(_route)
     val trackingId = attrs.get(otoroshi.plugins.Keys.RequestTrackingIdKey).getOrElse(IdGenerator.uuid)
@@ -1056,7 +1062,7 @@ class ProxyEngine() extends RequestHandler {
       def callF(target: Target, attempts: Int, alreadyFailed: AtomicBoolean): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
         val backend = getBackend(target, route)
         attrs.put(Keys.BackendKey -> backend)
-        f(SelectedBackendTarget(backend, attempts, alreadyFailed, cbStart)).value.flatMap {
+        f(NgSelectedBackendTarget(backend, attempts, alreadyFailed, cbStart)).value.flatMap {
           case Left(err) => err.asResult().map(Left.apply) // TODO: optimize
           case r @ Right(value) => Right(value).vfuture
         }
@@ -1214,7 +1220,7 @@ class ProxyEngine() extends RequestHandler {
         ) recoverWith {
         case t: Throwable => handleError(t)
       } map {
-        case Left(res) => Left(ResultProxyEngineError(res))
+        case Left(res) => Left(NgResultProxyEngineError(res))
         case Right(value) => Right(value)
       })
     } else {
@@ -1240,11 +1246,11 @@ class ProxyEngine() extends RequestHandler {
       //val target = targets.apply(index.toInt)
       val backend = getBackend(target, route)
       attrs.put(Keys.BackendKey -> backend)
-      f(SelectedBackendTarget(backend, 1, new AtomicBoolean(false), cbStart))
+      f(NgSelectedBackendTarget(backend, 1, new AtomicBoolean(false), cbStart))
     }
   }
 
-  def maybeStrippedUri(req: RequestHeader, rawUri: String, route: Route): String = {
+  def maybeStrippedUri(req: RequestHeader, rawUri: String, route: NgRoute): String = {
     val allPaths = route.frontend.domains.map(_.path)
     val root        = req.relativeUri
     val rootMatched = allPaths match { //rootMatched was this.matchingRoot
@@ -1257,7 +1263,7 @@ class ProxyEngine() extends RequestHandler {
       .getOrElse(rawUri)
   }
 
-  def callRequestTransformer(snowflake: String, request: RequestHeader, body: Source[ByteString, _], route: Route, backend: NgTarget, plugins: ContextualPlugins)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, NgPluginHttpRequest] = {
+  def callRequestTransformer(snowflake: String, request: RequestHeader, body: Source[ByteString, _], route: NgRoute, backend: NgTarget, plugins: NgContextualPlugins)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, NgPluginHttpRequest] = {
     val wsCookiesIn = request.cookies.toSeq.map(c =>
       WSCookieWithSameSite(
         name = c.name,
@@ -1317,8 +1323,8 @@ class ProxyEngine() extends RequestHandler {
 
     val all_plugins = plugins.transformerPlugins
     if (all_plugins.nonEmpty) {
-      val promise = Promise[Either[ProxyEngineError, NgPluginHttpRequest]]()
-      var sequence = ReportPluginSequence(
+      val promise = Promise[Either[NgProxyEngineError, NgPluginHttpRequest]]()
+      var sequence = NgReportPluginSequence(
         size = all_plugins.size,
         kind = "request-transformer-plugins",
         start = System.currentTimeMillis(),
@@ -1340,7 +1346,7 @@ class ProxyEngine() extends RequestHandler {
         attrs = attrs,
         report = report
       )
-      def markPluginItem(item: ReportPluginSequenceItem, ctx: NgTransformerRequestContext, debug: Boolean, result: JsValue): Unit = {
+      def markPluginItem(item: NgReportPluginSequenceItem, ctx: NgTransformerRequestContext, debug: Boolean, result: JsValue): Unit = {
         sequence = sequence.copy(
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
@@ -1359,16 +1365,16 @@ class ProxyEngine() extends RequestHandler {
             val ctx = _ctx.copy(config = pluginConfig)
             val debug = route.debugFlow || wrapper.instance.debug
             val in: JsValue = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
-            val item = ReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+            val item = NgReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
             wrapper.plugin.transformRequest(ctx).andThen {
               case Failure(exception) =>
                 markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
                 report.setContext(sequence.stopSequence().json)
-                promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during request-transformation plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
+                promise.trySuccess(Left(NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during request-transformation plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
               case Success(Left(result)) =>
                 markPluginItem(item, ctx, debug, Json.obj("kind" -> "short-circuit", "status" -> result.header.status, "headers" -> result.header.headers))
                 report.setContext(sequence.stopSequence().json)
-                promise.trySuccess(Left(ResultProxyEngineError(result)))
+                promise.trySuccess(Left(NgResultProxyEngineError(result)))
               case Success(Right(req_next)) if plugins.size == 1 =>
                 markPluginItem(item, ctx.copy(otoroshiRequest = req_next), debug, Json.obj("kind" -> "successful"))
                 report.setContext(sequence.stopSequence().json)
@@ -1387,7 +1393,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def callWsBackend(snowflake: String, rawRequest: RequestHeader, request : NgPluginHttpRequest, route: Route, backend: NgTarget)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]] = {
+  def callWsBackend(snowflake: String, rawRequest: RequestHeader, request : NgPluginHttpRequest, route: NgRoute, backend: NgTarget)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]] = {
     val finalTarget: Target = request.backend.getOrElse(backend).toTarget
     attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> finalTarget)
     val all_tunnel_handlers = route.plugins.tunnelHandlerPlugins(rawRequest)
@@ -1412,7 +1418,7 @@ class ProxyEngine() extends RequestHandler {
              Some("errors.resource.not.found"),
              attrs = attrs,
              maybeRoute = route.some
-           ).map(r => Left(ResultProxyEngineError(r))))
+           ).map(r => Left(NgResultProxyEngineError(r))))
        }
     } else {
       if (route.useAkkaHttpWsClient) {
@@ -1438,7 +1444,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def callBackend(snowflake: String, rawRequest: Request[Source[ByteString, _]], request : NgPluginHttpRequest, route: Route, backend: NgTarget)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, WSResponse] = {
+  def callBackend(snowflake: String, rawRequest: Request[Source[ByteString, _]], request : NgPluginHttpRequest, route: NgRoute, backend: NgTarget)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, WSResponse] = {
     val currentReqHasBody = rawRequest.theHasBody
     val wsCookiesIn = request.cookies
     val finalTarget: Target = request.backend.getOrElse(backend).toTarget
@@ -1495,7 +1501,7 @@ class ProxyEngine() extends RequestHandler {
     })
   }
 
-  def callResponseTransformer(snowflake: String, rawRequest: Request[Source[ByteString, _]], response: WSResponse, quotas: RemainingQuotas, route: Route, backend: NgTarget, plugins: ContextualPlugins)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, NgPluginHttpResponse] = {
+  def callResponseTransformer(snowflake: String, rawRequest: Request[Source[ByteString, _]], response: WSResponse, quotas: RemainingQuotas, route: NgRoute, backend: NgTarget, plugins: NgContextualPlugins)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, NgPluginHttpResponse] = {
 
     val rawResponse = NgPluginHttpResponse(
       status = response.status,
@@ -1512,8 +1518,8 @@ class ProxyEngine() extends RequestHandler {
 
     val all_plugins = plugins.transformerPlugins
     if (all_plugins.nonEmpty) {
-      val promise = Promise[Either[ProxyEngineError, NgPluginHttpResponse]]()
-      var sequence = ReportPluginSequence(
+      val promise = Promise[Either[NgProxyEngineError, NgPluginHttpResponse]]()
+      var sequence = NgReportPluginSequence(
         size = all_plugins.size,
         kind = "response-transformer-plugins",
         start = System.currentTimeMillis(),
@@ -1536,7 +1542,7 @@ class ProxyEngine() extends RequestHandler {
         attrs = attrs,
         report = report
       )
-      def markPluginItem(item: ReportPluginSequenceItem, ctx: NgTransformerResponseContext, debug: Boolean, result: JsValue): Unit = {
+      def markPluginItem(item: NgReportPluginSequenceItem, ctx: NgTransformerResponseContext, debug: Boolean, result: JsValue): Unit = {
         sequence = sequence.copy(
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
@@ -1555,16 +1561,16 @@ class ProxyEngine() extends RequestHandler {
             val ctx = _ctx.copy(config = pluginConfig)
             val debug = route.debugFlow || wrapper.instance.debug
             val in: JsValue = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
-            val item = ReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+            val item = NgReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
             wrapper.plugin.transformResponse(ctx).andThen {
               case Failure(exception) =>
                 markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
                 report.setContext(sequence.stopSequence().json)
-                promise.trySuccess(Left(ResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during response-transformation plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
+                promise.trySuccess(Left(NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during response-transformation plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
               case Success(Left(result)) =>
                 markPluginItem(item, ctx, debug, Json.obj("kind" -> "short-circuit", "status" -> result.header.status, "headers" -> result.header.headers))
                 report.setContext(sequence.stopSequence().json)
-                promise.trySuccess(Left(ResultProxyEngineError(result)))
+                promise.trySuccess(Left(NgResultProxyEngineError(result)))
               case Success(Right(resp_next)) if plugins.size == 1 =>
                 markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
                 report.setContext(sequence.stopSequence().json)
@@ -1583,7 +1589,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def streamResponse(snowflake: String, rawRequest: Request[Source[ByteString, _]], rawResponse: WSResponse, response: NgPluginHttpResponse, route: Route, backend: NgTarget)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Result] = {
+  def streamResponse(snowflake: String, rawRequest: Request[Source[ByteString, _]], rawResponse: WSResponse, response: NgPluginHttpResponse, route: NgRoute, backend: NgTarget)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, Result] = {
     val contentType: Option[String] = response.headers
       .get("Content-Type")
       .orElse(response.headers.get("content-type"))
@@ -1729,7 +1735,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def triggerWsProxyDone(snowflake: String, rawRequest: RequestHeader, request: NgPluginHttpRequest, route: Route, backend: NgTarget, sb: SelectedBackendTarget)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+  def triggerWsProxyDone(snowflake: String, rawRequest: RequestHeader, request: NgPluginHttpRequest, route: NgRoute, backend: NgTarget, sb: NgSelectedBackendTarget)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, Done] = {
     Future {
       val actualDuration: Long = report.getDurationNow()
       val overhead: Long = report.getOverheadNow()
@@ -1850,7 +1856,7 @@ class ProxyEngine() extends RequestHandler {
     FEither.right(Done)
   }
 
-  def triggerProxyDone(snowflake: String, rawRequest: Request[Source[ByteString, _]], rawResponse: WSResponse, request: NgPluginHttpRequest, response: NgPluginHttpResponse, route: Route, backend: NgTarget, sb: SelectedBackendTarget)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
+  def triggerProxyDone(snowflake: String, rawRequest: Request[Source[ByteString, _]], rawResponse: WSResponse, request: NgPluginHttpRequest, response: NgPluginHttpResponse, route: NgRoute, backend: NgTarget, sb: NgSelectedBackendTarget)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, Done] = {
     Future {
       val actualDuration: Long = report.getDurationNow()
       val overhead: Long = report.getOverheadNow()
@@ -1987,7 +1993,7 @@ class ProxyEngine() extends RequestHandler {
   }
 }
 
-case class RequestFlowReport(report: ExecutionReport, route: Route) extends AnalyticEvent {
+case class RequestFlowReport(report: NgExecutionReport, route: NgRoute) extends AnalyticEvent {
 
   override def `@service`: String   = route.name
   override def `@serviceId`: String = route.id

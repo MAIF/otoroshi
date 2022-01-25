@@ -10,23 +10,23 @@ import play.api.mvc.RequestHeader
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
 
-case class PluginInstanceConfig(raw: JsObject = Json.obj()) {
+case class NgPluginInstanceConfig(raw: JsObject = Json.obj()) {
   def json: JsValue = raw
 }
 
-object PluginInstance {
-  def readFrom(obj: JsValue): PluginInstance = {
-    PluginInstance(
+object NgPluginInstance {
+  def readFrom(obj: JsValue): NgPluginInstance = {
+    NgPluginInstance(
       plugin = obj.select("plugin").asString,
       enabled = obj.select("enabled").asOpt[Boolean].getOrElse(true),
       include = obj.select("include").asOpt[Seq[String]].getOrElse(Seq.empty),
       exclude = obj.select("exclude").asOpt[Seq[String]].getOrElse(Seq.empty),
-      config = PluginInstanceConfig(obj.select("config").asOpt[JsObject].getOrElse(Json.obj()))
+      config = NgPluginInstanceConfig(obj.select("config").asOpt[JsObject].getOrElse(Json.obj()))
     )
   }
 }
 
-case class PluginInstance(plugin: String, enabled: Boolean = true, debug: Boolean = false, include: Seq[String] = Seq.empty, exclude: Seq[String] = Seq.empty, config: PluginInstanceConfig = PluginInstanceConfig()) {
+case class NgPluginInstance(plugin: String, enabled: Boolean = true, debug: Boolean = false, include: Seq[String] = Seq.empty, exclude: Seq[String] = Seq.empty, config: NgPluginInstanceConfig = NgPluginInstanceConfig()) {
   def json: JsValue = Json.obj(
     "enabled" -> enabled,
     "debug" -> debug,
@@ -53,11 +53,11 @@ case class PluginInstance(plugin: String, enabled: Boolean = true, debug: Boolea
   }
 }
 
-case class NgPlugins(slots: Seq[PluginInstance]) {
+case class NgPlugins(slots: Seq[NgPluginInstance]) {
 
   def json: JsValue = JsArray(slots.map(_.json))
 
-  def getPluginByClass[A](implicit ct: ClassTag[A]): Option[PluginInstance] = {
+  def getPluginByClass[A](implicit ct: ClassTag[A]): Option[NgPluginInstance] = {
     val name = s"cp:${ct.runtimeClass.getName}"
     slots.find(pi => pi.plugin == name).filter(_.enabled)
   }
@@ -88,6 +88,10 @@ case class NgPlugins(slots: Seq[PluginInstance]) {
       .collect {
         case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
       }
+  }
+
+  def transformerPluginsWithCallbacks(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
+    transformerPlugins(request).filter(_.plugin.usesCallbacks)
   }
 
   def preRoutePlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgPreRouting]] = {
@@ -136,13 +140,13 @@ object NgPlugins {
     lookup.asOpt[JsObject] match {
       case None => NgPlugins(Seq.empty)
       case Some(obj) => NgPlugins(
-        slots = obj.select("slots").asOpt[Seq[JsValue]].map(_.map(PluginInstance.readFrom)).getOrElse(Seq.empty)
+        slots = obj.select("slots").asOpt[Seq[JsValue]].map(_.map(NgPluginInstance.readFrom)).getOrElse(Seq.empty)
       )
     }
   }
 }
 
-case class ContextualPlugins(plugins: NgPlugins, global_plugins: NgPlugins, request: RequestHeader, _env: Env, _ec: ExecutionContext) {
+case class NgContextualPlugins(plugins: NgPlugins, global_plugins: NgPlugins, request: RequestHeader, _env: Env, _ec: ExecutionContext) {
 
   implicit val env: Env = _env
   implicit val ec: ExecutionContext = _ec

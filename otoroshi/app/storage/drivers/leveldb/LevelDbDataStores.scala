@@ -14,7 +14,7 @@ import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import otoroshi.models._
 import otoroshi.models._
-import otoroshi.next.models.{KvRouteDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, RouteDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
+import otoroshi.next.models.{KvNgRouteDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, NgRouteDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
@@ -126,8 +126,8 @@ class LevelDbDataStores(
   private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis, env)
   override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
 
-  private lazy val _routeDataStore = new KvRouteDataStore(redis, env)
-  override def routeDataStore: RouteDataStore = _routeDataStore
+  private lazy val _routeDataStore = new KvNgRouteDataStore(redis, env)
+  override def routeDataStore: NgRouteDataStore = _routeDataStore
 
   private lazy val _targetsDataStore = new KvStoredNgTargetDataStore(redis, env)
   override def targetsDataStore: StoredNgTargetDataStore = _targetsDataStore

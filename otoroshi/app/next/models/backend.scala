@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.{Failure, Success, Try}
 import otoroshi.api.OtoroshiEnvHolder
 
-case class Backend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String, loadBalancing: LoadBalancing) {
+case class NgBackend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String, loadBalancing: LoadBalancing) {
   // I know it's not ideal but we'll go with it for now !
   lazy val allTargets: Seq[NgTarget] = targets ++ targetRefs.map(OtoroshiEnvHolder.get().proxyState.target).collect {
     case Some(backend) => backend
@@ -25,12 +25,12 @@ case class Backend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String
   )
 }
 
-object Backend {
-  def readFrom(lookup: JsLookupResult): Backend = readFromJson(lookup.as[JsValue])
-  def readFromJson(lookup: JsValue): Backend = {
+object NgBackend {
+  def readFrom(lookup: JsLookupResult): NgBackend = readFromJson(lookup.as[JsValue])
+  def readFromJson(lookup: JsValue): NgBackend = {
     lookup.asOpt[JsObject] match {
-      case None => Backend(Seq.empty, Seq.empty, "/", RoundRobin)
-      case Some(obj) => Backend(
+      case None => NgBackend(Seq.empty, Seq.empty, "/", RoundRobin)
+      case Some(obj) => NgBackend(
         targets = obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)).getOrElse(Seq.empty),
         targetRefs = obj.select("target_refs").asOpt[Seq[String]].getOrElse(Seq.empty),
         root = obj.select("root").asOpt[String].getOrElse("/"),
@@ -87,7 +87,7 @@ class KvStoredNgTargetDataStore(redisCli: RedisLike, _env: Env)
   override def extractId(value: StoredNgTarget): String = value.id
 }
 
-case class SelectedBackendTarget(target: NgTarget, attempts: Int, alreadyFailed: AtomicBoolean, cbStart: Long)
+case class NgSelectedBackendTarget(target: NgTarget, attempts: Int, alreadyFailed: AtomicBoolean, cbStart: Long)
 
 case class NgTarget(
   id: String,
@@ -171,7 +171,7 @@ object StoredNgBackend {
         description = json.select("description").asOpt[String].getOrElse(""),
         tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        backend = Backend.readFromJson(json.select("backend").as[JsValue]),
+        backend = NgBackend.readFromJson(json.select("backend").as[JsValue]),
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -181,7 +181,7 @@ object StoredNgBackend {
   }
 }
 
-case class StoredNgBackend(location: EntityLocation, id: String, name: String, description: String, tags: Seq[String], metadata: Map[String, String], backend: Backend) extends EntityLocationSupport {
+case class StoredNgBackend(location: EntityLocation, id: String, name: String, description: String, tags: Seq[String], metadata: Map[String, String], backend: NgBackend) extends EntityLocationSupport {
   override def internalId: String = id
   override def theName: String = name
   override def theDescription: String = description

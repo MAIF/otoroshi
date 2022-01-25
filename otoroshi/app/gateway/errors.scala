@@ -6,7 +6,7 @@ import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.{RemainingQuotas, ServiceDescriptor}
-import otoroshi.next.models.Route
+import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api.{NgTransformerErrorContext, NgPluginHttpResponse}
 import otoroshi.script.Implicits._
 import otoroshi.script.{HttpResponse, TransformerErrorContext}
@@ -40,7 +40,7 @@ object Errors {
       emptyBody: Boolean = false,
       sendEvent: Boolean = true,
       attrs: TypedMap,
-      maybeRoute: Option[Route] = None
+      maybeRoute: Option[NgRoute] = None
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
 
     val errorId = env.snowflakeGenerator.nextIdStr()
