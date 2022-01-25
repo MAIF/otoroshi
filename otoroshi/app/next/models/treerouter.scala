@@ -8,7 +8,6 @@ import play.api.libs.json._
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 
-
 object DomainPathTree {
   def empty = DomainPathTree(new TrieMap[String, PathTree](), scala.collection.mutable.MutableList.empty)
   def build(routes: Seq[NgRoute]): DomainPathTree = {
@@ -98,9 +97,6 @@ case class PathTree(routes: scala.collection.mutable.MutableList[NgRoute], tree:
           // here is one of the worst case where the user wants to use '/api/999' to match calls on '/api/999-foo'
           segmentStartsWithCache.get(head, _ => {
             // println("worst case", head, tree.isEmpty, routes.isEmpty)
-            if (routes.nonEmpty) {
-              println(routes.map(_.name))
-            }
             tree.keySet.toSeq
               .sortWith((r1, r2) => r1.length.compareTo(r2.length) > 0)
               .find {
