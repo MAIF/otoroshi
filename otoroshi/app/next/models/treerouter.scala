@@ -2,10 +2,11 @@ package otoroshi.next.models
 
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
-import otoroshi.models.{ClientConfig, HealthCheck, EntityLocation}
+import otoroshi.models.{ClientConfig, EntityLocation, HealthCheck}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.syntax.implicits._
+import play.api.{ConfigLoader, Mode}
 import play.api.libs.json._
 import play.api.libs.typedmap
 import play.api.mvc.request.{RemoteConnection, RequestTarget}
@@ -13,19 +14,21 @@ import play.api.mvc.{Headers, RequestHeader}
 
 import java.net.{InetAddress, URI}
 import java.security.cert.X509Certificate
+import java.util.concurrent.atomic.AtomicLong
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
-object DomainPathTree {
-  def empty = DomainPathTree(new TrieMap[String, PathTree](), scala.collection.mutable.MutableList.empty)
-  def build(routes: Seq[NgRoute]): DomainPathTree = {
-    val root = DomainPathTree.empty
+object NgTreeRouter {
+  def empty = NgTreeRouter(new TrieMap[String, NgTreeNodePath](), scala.collection.mutable.MutableList.empty)
+  def build(routes: Seq[NgRoute]): NgTreeRouter = {
+    val root = NgTreeRouter.empty
     routes.foreach { route =>
       route.frontend.domains.foreach { dpath =>
         if (dpath.domain.contains("*")) {
           root.wildcards.+=(route)
         } else {
-          val ptree = root.tree.getOrElseUpdate(dpath.domain, PathTree.empty)
+          val ptree = root.tree.getOrElseUpdate(dpath.domain, NgTreeNodePath.empty)
           ptree.addSubRoutes(dpath.path.split("/").toSeq.filterNot(_.trim.isEmpty), route)
         }
       }
@@ -36,7 +39,7 @@ object DomainPathTree {
   }
 }
 
-case class DomainPathTree(tree: TrieMap[String, PathTree], wildcards: scala.collection.mutable.MutableList[NgRoute]) {
+case class NgTreeRouter(tree: TrieMap[String, NgTreeNodePath], wildcards: scala.collection.mutable.MutableList[NgRoute]) {
   def json: JsValue = Json.obj(
     "tree" -> JsObject(tree.toMap.mapValues(_.json)),
     "wildcards" -> JsArray(wildcards.map(r => JsString(r.name)))
@@ -57,13 +60,13 @@ case class DomainPathTree(tree: TrieMap[String, PathTree], wildcards: scala.coll
   }
 }
 
-object PathTree {
+object NgTreeNodePath {
 
-  def addSubRoutes(current: PathTree, segments: Seq[String], route: NgRoute): Unit = {
+  def addSubRoutes(current: NgTreeNodePath, segments: Seq[String], route: NgRoute): Unit = {
     if (segments.isEmpty) {
       current.addRoute(route)
     } else {
-      val sub = current.tree.getOrElseUpdate(segments.head, PathTree.empty)
+      val sub = current.tree.getOrElseUpdate(segments.head, NgTreeNodePath.empty)
       if (segments.size == 1) {
         sub.addRoute(route)
       } else {
@@ -72,25 +75,25 @@ object PathTree {
     }
   }
 
-  def empty: PathTree = PathTree(scala.collection.mutable.MutableList.empty, new TrieMap[String, PathTree])
+  def empty: NgTreeNodePath = NgTreeNodePath(scala.collection.mutable.MutableList.empty, new TrieMap[String, NgTreeNodePath])
 }
 
-case class PathTree(routes: scala.collection.mutable.MutableList[NgRoute], tree: TrieMap[String, PathTree]) {
-  lazy val wildcardCache = Scaffeine().maximumSize(100).expireAfterWrite(10.seconds).build[String, Option[PathTree]]()
+case class NgTreeNodePath(routes: scala.collection.mutable.MutableList[NgRoute], tree: TrieMap[String, NgTreeNodePath]) {
+  lazy val wildcardCache = Scaffeine().maximumSize(100).expireAfterWrite(10.seconds).build[String, Option[NgTreeNodePath]]()
   lazy val segmentStartsWithCache = Scaffeine().maximumSize(100).expireAfterWrite(10.seconds).build[String, Option[Seq[NgRoute]]]()
   lazy val isLeaf: Boolean = tree.isEmpty
-  lazy val wildcardEntry: Option[PathTree] = tree.get("*") // lazy should be good as once built the mutable map is never mutated again
+  lazy val wildcardEntry: Option[NgTreeNodePath] = tree.get("*") // lazy should be good as once built the mutable map is never mutated again
   lazy val hasWildcardKeys: Boolean = wildcardKeys.nonEmpty
   lazy val wildcardKeys: scala.collection.Set[String] = tree.keySet.filter(_.contains("*"))
   lazy val isEmpty = routes.isEmpty && tree.isEmpty
   lazy val treeIsEmpty = tree.isEmpty
-  def wildcardEntriesMatching(segment: String): Option[PathTree] = wildcardCache.get(segment, _ => wildcardKeys.find(str => RegexPool(str).matches(segment)).flatMap(key => tree.get(key)))
-  def addRoute(route: NgRoute): PathTree = {
+  def wildcardEntriesMatching(segment: String): Option[NgTreeNodePath] = wildcardCache.get(segment, _ => wildcardKeys.find(str => RegexPool(str).matches(segment)).flatMap(key => tree.get(key)))
+  def addRoute(route: NgRoute): NgTreeNodePath = {
     routes.+=(route)
     this
   }
   def addSubRoutes(segments: Seq[String], route: NgRoute): Unit = {
-    PathTree.addSubRoutes(this, segments, route)
+    NgTreeNodePath.addSubRoutes(this, segments, route)
   }
   def json: JsValue = Json.obj(
     "routes" -> routes.map(r => JsString(r.name)),
@@ -170,7 +173,7 @@ class NgFakeRequestHeader(domain: String, path: String) extends RequestHeader {
 }
 
 object NgFakeRoute {
-  def route(id: String, dap: String): NgRoute = {
+  def route(id: String): NgRoute = {
     NgRoute(
       location = EntityLocation.default,
       id = id,
@@ -181,12 +184,133 @@ object NgFakeRoute {
       enabled = true,
       debugFlow = false,
       groups = Seq("default"),
-      frontend = NgFrontend.empty.copy(domains = Seq(NgDomainAndPath(dap))),
+      frontend = NgFrontend.empty.copy(domains = Seq(NgDomainAndPath(s"test-tree-router-next-gen.oto.tools/api/${id}"))),
       backend = NgBackend.empty.copy(root = s"/id/${id}", targets = Seq(NgTarget("localhost", "127.0.0.1", 8081, tls = false))),
       backendRef = None,
       client = ClientConfig(),
       healthCheck = HealthCheck(enabled = false, "/"),
       plugins = NgPlugins(Seq.empty)
     )
+  }
+}
+
+class NgFakeApplicationLifecycle() extends play.api.inject.ApplicationLifecycle {
+  override def addStopHook(hook: () => Future[_]): Unit = ()
+  override def stop(): Future[_] = Future.successful(())
+}
+
+object NgTreeRouter_Test {
+
+  def testFindRoute(env: Env): Unit = {
+
+    val routes = (0 to 1000000).map(idx => NgFakeRoute.route(s"$idx"))
+    val router = NgTreeRouter.build(routes)
+    val test_domain = "test-tree-router-next-gen.oto.tools"
+    val counter = new AtomicLong(0L)
+    val sum = new AtomicLong(0L)
+
+    val attrs = TypedMap.empty
+
+    def clear(): Unit= {
+      counter.set(0L)
+      sum.set(0L)
+    }
+
+    def printStats(iteration: String): Unit = {
+      val duration = sum.get().nanos.toMillis
+      val avg = sum.get() / counter.get()
+      println(s"$iteration - duration: ${duration} ms, for ${counter.get()} iterations, avg iteration is: ${avg} nanos")
+    }
+
+    def findRoute(print: Boolean): Unit = {
+      val idx = Math.round(Math.random() * 1000000).toString
+      val path = s"/api/${idx}/foo"
+      val request: RequestHeader = new NgFakeRequestHeader(test_domain, path)
+      val start_ns = System.nanoTime()
+      val f_route = router.findRoute(request, attrs)(env)
+      val duration_ns = System.nanoTime() - start_ns
+      counter.incrementAndGet()
+      sum.addAndGet(duration_ns)
+      if (print) {
+        val found = f_route.isDefined && f_route.map(_.name).contains(idx)
+        println(path, found, duration_ns + " nanos", duration_ns.nanos.toMillis + " ms")
+      }
+    }
+
+    for(idx <- 1 to 100) {
+      for (_ <- 1 to 100000) {
+        findRoute(false)
+      }
+      printStats(s"warmup-${idx}")
+      clear()
+    }
+
+    clear()
+    for(_ <- 1 to 1000000) {
+      findRoute(false)
+    }
+    printStats("run-no-print")
+    clear()
+
+    for(_ <- 1 to 100) {
+      findRoute(true)
+    }
+    printStats("run-print")
+    clear()
+  }
+
+  def testFindRoutes(): Unit = {
+
+    val routes = (0 to 1000000).map(idx => NgFakeRoute.route(s"$idx"))
+    val router = NgTreeRouter.build(routes)
+    val test_domain = "test-tree-router-next-gen.oto.tools"
+    val counter = new AtomicLong(0L)
+    val sum = new AtomicLong(0L)
+
+    def clear(): Unit= {
+      counter.set(0L)
+      sum.set(0L)
+    }
+
+    def printStats(iteration: String): Unit = {
+      val duration = sum.get().nanos.toMillis
+      val avg = sum.get() / counter.get()
+      println(s"$iteration - duration: ${duration} ms, for ${counter.get()} iterations, avg iteration is: ${avg} nanos")
+    }
+
+    def findRoutes(print: Boolean): Unit = {
+      val idx = Math.round(Math.random() * 1000000).toString
+      val path = s"/api/${idx}/foo"
+      val start_ns = System.nanoTime()
+      val f_routes = router.find(test_domain, path)
+      val duration_ns = System.nanoTime() - start_ns
+      counter.incrementAndGet()
+      sum.addAndGet(duration_ns)
+      if (print) {
+        val found = f_routes.isDefined && f_routes.exists(_.size == 1) && f_routes.map(_.head.name).contains(idx)
+        println(path, found, duration_ns + " nanos", duration_ns.nanos.toMillis + " ms")
+      }
+    }
+
+    for(idx <- 1 to 100) {
+      for (_ <- 1 to 100000) {
+        findRoutes(false)
+      }
+      printStats(s"warmup-${idx}")
+      clear()
+    }
+
+    clear()
+    for(_ <- 1 to 1000000) {
+      findRoutes(false)
+    }
+    printStats("run-no-print")
+    clear()
+
+    for(_ <- 1 to 100) {
+      findRoutes(true)
+    }
+    printStats("run-print")
+    clear()
   }
 }

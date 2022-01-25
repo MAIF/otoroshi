@@ -156,3 +156,9 @@ class ConfigCleanerTests
     extends Suites(
       new ConfigurationCleanupSpec()
     )
+
+class NgTreeRouterTests
+  extends Suites(
+    new NgTreeRouterSpec(),
+    new NgTreeRouterWithEnvSpec(Configurations.InMemoryConfiguration)
+  )

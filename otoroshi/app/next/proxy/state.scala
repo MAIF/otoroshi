@@ -33,7 +33,7 @@ class NgProxyState(env: Env) {
   private val authModules = new TrieMap[String, AuthModuleConfig]()
   // val routesByDomain = new TrieMap[String, Seq[Route]]()
   // private val cowRoutesByWildcardDomain = new CopyOnWriteArrayList[Route]()
-  private val domainPathTreeRef = new AtomicReference[DomainPathTree](DomainPathTree.empty)
+  private val domainPathTreeRef = new AtomicReference[NgTreeRouter](NgTreeRouter.empty)
 
   def domainPathTreeFind(domain: String, path: String): Option[Seq[NgRoute]] = domainPathTreeRef.get().find(domain, path)
 
@@ -82,7 +82,7 @@ class NgProxyState(env: Env) {
     // cowRoutesByWildcardDomain.clear()
     // cowRoutesByWildcardDomain.addAll(routesWithWildcardDomains.asJava)
     val s = System.currentTimeMillis()
-    domainPathTreeRef.set(DomainPathTree.build(values))
+    domainPathTreeRef.set(NgTreeRouter.build(values))
     val d = System.currentTimeMillis() - s
     logger.debug(s"built DomainPathTree of ${values.size} routes in ${d} ms.")
     // java.nio.file.Files.writeString(new java.io.File("./tree-router-config.json").toPath, domainPathTreeRef.get().json.prettify)
