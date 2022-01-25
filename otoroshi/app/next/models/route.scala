@@ -220,8 +220,6 @@ case class NgRoute(
       apiKeyConstraints = {
         plugins.getPluginByClass[ApikeyCalls].flatMap { plugin =>
           ApiKeyConstraints.format.reads(plugin.config.raw).asOpt
-        }.map { constraints =>
-          constraints.copy(routing = frontend.apikey)
         }.getOrElse(ApiKeyConstraints())
       },
       plugins = {
@@ -323,7 +321,6 @@ object NgRoute {
       headers = Map.empty,
       methods = Seq.empty,
       stripPath = true,
-      apikey = ApiKeyRouteMatcher()
     ),
     backendRef = None,
     backend = NgBackend(
@@ -434,7 +431,6 @@ object NgRoute {
         headers = service.matchingHeaders,
         methods = Seq.empty, // get from restrictions ???
         stripPath = service.stripPath,
-        apikey = service.apiKeyConstraints.routing,
       ),
       backendRef = None,
       backend = NgBackend(

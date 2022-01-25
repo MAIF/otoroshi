@@ -11,27 +11,25 @@ case class NgDomainAndPath(raw: String) {
   def json: JsValue = JsString(raw)
 }
 
-case class NgFrontend(domains: Seq[NgDomainAndPath], headers: Map[String, String], methods: Seq[String], stripPath: Boolean, apikey: ApiKeyRouteMatcher) {
+case class NgFrontend(domains: Seq[NgDomainAndPath], headers: Map[String, String], methods: Seq[String], stripPath: Boolean) {
   def json: JsValue = Json.obj(
     "domains" -> JsArray(domains.map(_.json)),
     "strip_path" -> stripPath,
     "headers" -> headers,
     "methods" -> methods,
-    "apikey" -> apikey.gentleJson
   )
 }
 
 object NgFrontend {
-  def empty: NgFrontend = NgFrontend(Seq.empty, Map.empty, Seq.empty, stripPath = true, ApiKeyRouteMatcher())
+  def empty: NgFrontend = NgFrontend(Seq.empty, Map.empty, Seq.empty, stripPath = true)
   def readFrom(lookup: JsLookupResult): NgFrontend = {
     lookup.asOpt[JsObject] match {
-      case None => NgFrontend(Seq.empty, Map.empty, Seq.empty, true, ApiKeyRouteMatcher())
+      case None => NgFrontend(Seq.empty, Map.empty, Seq.empty, stripPath = true)
       case Some(obj) => NgFrontend(
         domains = obj.select("domains").asOpt[Seq[String]].map(_.map(NgDomainAndPath.apply)).getOrElse(Seq.empty),
         stripPath = obj.select("strip_path").asOpt[Boolean].getOrElse(true),
         headers = obj.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
         methods = obj.select("methods").asOpt[Seq[String]].getOrElse(Seq.empty),
-        apikey = obj.select("apikey").asOpt[JsValue].flatMap(v => ApiKeyRouteMatcher.format.reads(v).asOpt).getOrElse(ApiKeyRouteMatcher())
       )
     }
   }

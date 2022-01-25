@@ -139,7 +139,6 @@ class NgProxyStateLoaderJob extends Job {
             headers = Map.empty,
             methods = Seq.empty,
             stripPath = true,
-            apikey = ApiKeyRouteMatcher(),
           ),
           backend = NgBackend(
             targets = Seq(NgTarget(
@@ -199,7 +198,6 @@ class NgProxyStateLoaderJob extends Job {
             headers = Map.empty,
             methods = Seq.empty,
             stripPath = true,
-            apikey = ApiKeyRouteMatcher(),
           ),
           backend = NgBackend(
             targets = Seq(NgTarget(
@@ -253,7 +251,6 @@ class NgProxyStateLoaderJob extends Job {
             headers = Map.empty,
             methods = Seq.empty,
             stripPath = true,
-            apikey = ApiKeyRouteMatcher(),
           ),
           backend = NgBackend(
             targets = Seq(NgTarget(
