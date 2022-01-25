@@ -83,16 +83,19 @@
 
 .fa-cog {
   font-size: 1.5em;
-  top: 5px;
-  @media screen and (min-width:768px) {
-    padding-right: 15px;
-  }
+  // top: 5px;
+  // @media screen and (min-width:768px) {
+  //   padding-right: 15px;
+  // }
 }
 
 .fa-lightbulb, .fa-moon, .fa-cog{
   color: #fff;
 }
 
+nav {
+  background-color: $fondNavbar;
+}
 #navbar .Select-control {
   border: 1px solid #ccc;
 }
