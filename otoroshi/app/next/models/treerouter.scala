@@ -1,10 +1,18 @@
 package otoroshi.next.models
 
 import com.github.blemale.scaffeine.Scaffeine
-import otoroshi.utils.RegexPool
+import otoroshi.env.Env
+import otoroshi.models.{ClientConfig, HealthCheck, EntityLocation}
+import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
+import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
+import play.api.libs.typedmap
+import play.api.mvc.request.{RemoteConnection, RequestTarget}
+import play.api.mvc.{Headers, RequestHeader}
 
+import java.net.{InetAddress, URI}
+import java.security.cert.X509Certificate
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 
@@ -33,6 +41,9 @@ case class DomainPathTree(tree: TrieMap[String, PathTree], wildcards: scala.coll
     "tree" -> JsObject(tree.toMap.mapValues(_.json)),
     "wildcards" -> JsArray(wildcards.map(r => JsString(r.name)))
   )
+  def findRoute(request: RequestHeader, attrs: TypedMap)(implicit env: Env): Option[NgRoute] = {
+    find(request.theDomain, request.thePath).flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true)))
+  }
   def find(domain: String, path: String): Option[Seq[NgRoute]] = {
     tree.get(domain) match {
       case Some(ptree) => ptree.find(path.split("/").filterNot(_.trim.isEmpty), path.endsWith("/"))
@@ -82,7 +93,7 @@ case class PathTree(routes: scala.collection.mutable.MutableList[NgRoute], tree:
     PathTree.addSubRoutes(this, segments, route)
   }
   def json: JsValue = Json.obj(
-    "routes" -> routes.toSeq.map(r => JsString(r.name)),
+    "routes" -> routes.map(r => JsString(r.name)),
     "leaf" -> isLeaf,
     "tree" -> JsObject(tree.toMap.mapValues(_.json))
   )
@@ -125,5 +136,57 @@ case class PathTree(routes: scala.collection.mutable.MutableList[NgRoute], tree:
         }
       }
     }
+  }
+}
+
+case object NgFakeRemoteConnection extends RemoteConnection {
+  override def remoteAddress: InetAddress = InetAddress.getLocalHost
+  override def secure: Boolean = false
+  override def clientCertificateChain: Option[Seq[X509Certificate]] = None
+}
+
+case class NgFakeRequestTarget(path: String) extends RequestTarget {
+  private val _uri = new URI(path)
+  private val _query = Map.empty[String, Seq[String]]
+  override def uri: URI = _uri
+  override def uriString: String = path
+  override def queryMap: Map[String, Seq[String]] = _query
+}
+
+class NgFakeRequestHeader(domain: String, path: String) extends RequestHeader {
+
+  private val _attrs = typedmap.TypedMap.empty
+  private val _target = NgFakeRequestTarget(path)
+  private val _connection = NgFakeRemoteConnection
+  private val _headers = Headers("Host" -> domain)
+
+  override def method: String = "GET"
+  override def version: String = "HTTP/1.1"
+
+  override def connection: RemoteConnection = _connection
+  override def target: RequestTarget = _target
+  override def attrs: typedmap.TypedMap = _attrs
+  override def headers: Headers = _headers
+}
+
+object NgFakeRoute {
+  def route(id: String, dap: String): NgRoute = {
+    NgRoute(
+      location = EntityLocation.default,
+      id = id,
+      name = id,
+      description = id,
+      tags = Seq.empty,
+      metadata = Map.empty,
+      enabled = true,
+      debugFlow = false,
+      groups = Seq("default"),
+      frontend = NgFrontend.empty.copy(domains = Seq(NgDomainAndPath(dap))),
+      backend = NgBackend.empty.copy(root = s"/id/${id}", targets = Seq(NgTarget("localhost", "127.0.0.1", 8081, tls = false))),
+      backendRef = None,
+      client = ClientConfig(),
+      healthCheck = HealthCheck(enabled = false, "/"),
+      plugins = NgPlugins(Seq.empty)
+    )
   }
 }

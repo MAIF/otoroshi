@@ -22,6 +22,7 @@ case class NgFrontend(domains: Seq[NgDomainAndPath], headers: Map[String, String
 }
 
 object NgFrontend {
+  def empty: NgFrontend = NgFrontend(Seq.empty, Map.empty, Seq.empty, stripPath = true, ApiKeyRouteMatcher())
   def readFrom(lookup: JsLookupResult): NgFrontend = {
     lookup.asOpt[JsObject] match {
       case None => NgFrontend(Seq.empty, Map.empty, Seq.empty, true, ApiKeyRouteMatcher())

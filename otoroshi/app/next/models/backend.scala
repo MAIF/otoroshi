@@ -26,6 +26,7 @@ case class NgBackend(targets: Seq[NgTarget], targetRefs: Seq[String], root: Stri
 }
 
 object NgBackend {
+  def empty: NgBackend = NgBackend(Seq.empty, Seq.empty, "/", RoundRobin)
   def readFrom(lookup: JsLookupResult): NgBackend = readFromJson(lookup.as[JsValue])
   def readFromJson(lookup: JsValue): NgBackend = {
     lookup.asOpt[JsObject] match {
