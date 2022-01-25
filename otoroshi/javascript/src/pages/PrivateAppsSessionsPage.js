@@ -32,7 +32,7 @@ export class PrivateAppsSessionsPage extends Component {
       cell: (v, item) => (
         <button
           type="button"
-          className="btn btn-success btn-xs"
+          className="btn btn-success btn-sm"
           onClick={(e) =>
             window.newAlert(
               <pre style={{ height: 300 }}>{JSON.stringify(item.profile, null, 2)}</pre>,
@@ -51,7 +51,7 @@ export class PrivateAppsSessionsPage extends Component {
       cell: (v, item) => (
         <button
           type="button"
-          className="btn btn-success btn-xs"
+          className="btn btn-success btn-sm"
           onClick={(e) =>
             window.newAlert(
               <pre style={{ height: 300 }}>{JSON.stringify(item.otoroshiData, null, 2)}</pre>,
@@ -70,7 +70,7 @@ export class PrivateAppsSessionsPage extends Component {
       cell: (v, item) => (
         <button
           type="button"
-          className="btn btn-success btn-xs"
+          className="btn btn-success btn-sm"
           onClick={(e) =>
             window.newAlert(
               <pre style={{ height: 300 }}>{JSON.stringify(item.token, null, 2)}</pre>,
@@ -96,7 +96,7 @@ export class PrivateAppsSessionsPage extends Component {
           <button
             key={item.randomId}
             type="button"
-            className="btn btn-danger btn-xs"
+            className="btn btn-danger btn-sm"
             onClick={(e) => this.discardSession(e, item.randomId, table)}>
             <i className="fas fa-fire" /> Discard Session
           </button>

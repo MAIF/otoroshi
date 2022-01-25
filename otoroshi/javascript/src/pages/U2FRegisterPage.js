@@ -164,13 +164,13 @@ export class U2FRegisterPage extends Component {
           <>
             <button
               type="button"
-              className="btn btn-success btn-xs"
+              className="btn btn-success btn-sm"
               onClick={(e) => this.updateOtherUser(item)}>
               <i className="fas fa-edit" /> Edit User
             </button>
             <button
               type="button"
-              className="btn btn-danger btn-xs"
+              className="btn btn-danger btn-sm"
               onClick={(e) =>
                 this.discardAdmin(
                   e,

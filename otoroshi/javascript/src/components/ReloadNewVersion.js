@@ -63,7 +63,7 @@ export class ReloadNewVersion extends Component {
               seconds.
               <button
                 type="button"
-                className="btn btn-danger btn-xs"
+                className="btn btn-danger btn-sm"
                 style={{ marginLeft: 10 }}
                 title="Login now !!!"
                 onClick={(e) => window.location.reload()}>
@@ -78,7 +78,7 @@ export class ReloadNewVersion extends Component {
       <div className="topbar-popup">
         <button
           type="button"
-          className="btn btn-xs"
+          className="btn btn-sm"
           style={{ alignSelf: 'flex-end', marginTop: 5 }}
           onClick={(e) => {
             e.preventDefault();

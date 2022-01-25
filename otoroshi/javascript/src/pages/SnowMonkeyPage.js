@@ -92,7 +92,7 @@ export class SnowMonkeyPage extends Component {
         return (
           <button
             type="button"
-            className="btn btn-success btn-xs"
+            className="btn btn-success btn-sm"
             onClick={(e) =>
               (window.location = `/bo/dashboard/lines/prod/services/${item.descriptorId}`)
             }>

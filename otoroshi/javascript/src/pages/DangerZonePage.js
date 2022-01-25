@@ -1713,7 +1713,7 @@ export class Migration extends Component {
   render() {
     return (
       <button
-        className="btn btn-danger btn-xs btn-sm"
+        className="btn btn-danger btn-sm btn-sm"
         type="button"
         onClick={this.migrate}
         style={this.props.style}>

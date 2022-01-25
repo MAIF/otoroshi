@@ -80,7 +80,7 @@ const ResetSecret = ({ changeValue }) => (
     <div className="col-sm-10">
       <button
         type="button"
-        className="btn btn-danger btn-xs"
+        className="btn btn-danger btn-sm"
         onClick={(e) => changeValue('clientSecret', 'apks_' + faker.random.alphaNumeric(64))}>
         <i className="fas fa-sync" /> Reset secret
       </button>
@@ -105,7 +105,7 @@ class ResetQuotas extends Component {
       <div className="mb-3">
         <label className="col-sm-2 control-label" />
         <div className="col-sm-10">
-          <button type="button" className="btn btn-danger btn-xs" onClick={this.resetQuotas}>
+          <button type="button" className="btn btn-danger btn-sm" onClick={this.resetQuotas}>
             <i className="fas fa-sync" /> Reset quotas consumption
           </button>
         </div>
@@ -130,7 +130,7 @@ class CopyCredentials extends Component {
           />
           <button
             type="button"
-            className="btn btn-success btn-xs"
+            className="btn btn-success btn-sm"
             onClick={(e) => {
               this.clipboard.select();
               document.execCommand('Copy');

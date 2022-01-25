@@ -84,11 +84,11 @@ class BackOfficeAppContainer extends Component {
 
   componentDidMount() {
     this.props.history.listen(() => {
-      document.getElementById('sidebar').setAttribute('class', 'col-sm-2 sidebar collapse');
+      //document.getElementById('sidebar').setAttribute('class', 'col-sm-2 sidebar collapse');
       // document.getElementById('navbar').setAttribute('class', 'navbar-collapse collapse');
-      document
-        .getElementById('toggle-sidebar')
-        .setAttribute('class', 'navbar-toggler menu collapsed');
+      //document
+      //  .getElementById('toggle-sidebar')
+      //  .setAttribute('class', 'navbar-toggler menu collapsed');
       // document.getElementById('toggle-navigation').setAttribute('class', 'navbar-toggle collapsed');
     });
     BackOfficeServices.env().then((env) => {
@@ -140,7 +140,7 @@ class BackOfficeAppContainer extends Component {
         ]}
         <div className="container-fluid">
           <div className="row">
-            <div className="col-sm-2 sidebar" id="sidebar">
+            <div className="col-sm-2 sidebar" id="collapseSidebar">
               <div className="sidebar-container">
                 <div className="sidebar-content">
                   <GlobalTenantSelector />

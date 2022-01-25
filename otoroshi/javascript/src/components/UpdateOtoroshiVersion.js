@@ -17,7 +17,7 @@ export class UpdateOtoroshiVersion extends Component {
         <div className="topbar-popup">
           <button
             type="button"
-            className="btn btn-xs"
+            className="btn btn-sm"
             style={{ alignSelf: 'flex-end', marginTop: 5 }}
             onClick={(e) => {
               e.preventDefault();

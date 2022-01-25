@@ -143,7 +143,7 @@ class Target extends Component {
               return (
                 <button
                   type="button"
-                  className="btn btn-primary btn-xs"
+                  className="btn btn-primary btn-sm"
                   style={{ marginLeft: 5, height: 32, marginTop: 1 }}
                   onClick={(e) => this.setState({ showMore: !this.state.showMore })}>
                   <i className="fas fa-eye" /> Show more
@@ -527,7 +527,7 @@ class CanaryCampaign extends Component {
               {this.state.campaign.canaryUsers} canary / {this.state.campaign.standardUsers}{' '}
               standard)
             </span>
-            <button type="button" className="btn btn-danger btn-xs" onClick={this.reset}>
+            <button type="button" className="btn btn-danger btn-sm" onClick={this.reset}>
               <i className="fas fa-trash" /> Reset campaign
             </button>
           </div>
@@ -585,7 +585,7 @@ class CleverSelector extends Component {
       );
     }
     return (
-      <button type="button" className="btn btn-xs btn-success" onClick={this.show}>
+      <button type="button" className="btn btn-sm btn-success" onClick={this.show}>
         <i className="fas fa-plus-circle" /> Select a target from CleverCloud
       </button>
     );
@@ -1224,14 +1224,14 @@ export class ServicePage extends Component {
             <div className="col-sm-10">
               <button
                 type="button"
-                className="btn btn-success pull-right btn-xs"
+                className="btn btn-success pull-right btn-sm"
                 {...createTooltip('You can create a new group to host this descriptor')}
                 onClick={this.createNewGroup}>
                 <i className="fas fa-plus" /> Create a new group
               </button>
               <button
                 type="button"
-                className="btn btn-success pull-right btn-xs"
+                className="btn btn-success pull-right btn-sm"
                 style={{ marginRight: 5 }}
                 {...createTooltip(
                   'You can create a new group with an auto generated name to host this descriptor'
@@ -1425,7 +1425,7 @@ export class ServicePage extends Component {
                   <label className="col-xs-12 col-sm-2 control-label" />
                   <div className="col-sm-10">
                     <button
-                      className="btn btn-xs btn-info"
+                      className="btn btn-sm btn-info"
                       type="button"
                       onClick={(e) => {
                         e.preventDefault();
@@ -1439,7 +1439,7 @@ export class ServicePage extends Component {
                       <button
                         type="button"
                         onClick={this.createLetsEncrypt}
-                        className="btn btn-xs btn-info">
+                        className="btn btn-sm btn-info">
                         <i className="fas fa-plus-circle" /> Create Let's Encrypt cert.
                       </button>
                     )}
@@ -1447,7 +1447,7 @@ export class ServicePage extends Component {
                       <button
                         type="button"
                         onClick={this.createCert}
-                        className="btn btn-xs btn-info">
+                        className="btn btn-sm btn-info">
                         <i className="fas fa-plus-circle" /> Create certificate
                       </button>
                     )}
@@ -2841,7 +2841,7 @@ export class ServicePage extends Component {
                 <div className="col-sm-10">
                   <button
                     type="button"
-                    className="btn btn-danger btn-xs"
+                    className="btn btn-danger btn-sm"
                     onClick={this.resetCircuitBreaker}
                     {...createTooltip('Reset current setting to use the new one')}>
                     Reset Circuit Breakers
@@ -2915,7 +2915,7 @@ export class ServicePage extends Component {
                   style={{ marginBottom: 5 }}
                   onClick={(e) => this.addSecurityHeader('X-Frame-Options', 'DENY')}
                   disabled={this.computeIfButtonDisabled('X-Frame-Options')}
-                  className="btn btn-xs btn-success">
+                  className="btn btn-sm btn-success">
                   X-Frame-Options
                 </button>
                 <button
@@ -2923,7 +2923,7 @@ export class ServicePage extends Component {
                   style={{ marginBottom: 5 }}
                   onClick={(e) => this.addSecurityHeader('X-XSS-Protection', '1; mode=block')}
                   disabled={this.computeIfButtonDisabled('X-XSS-Protection')}
-                  className="btn btn-xs btn-success">
+                  className="btn btn-sm btn-success">
                   X-XSS-Protection
                 </button>
                 <button
@@ -2931,7 +2931,7 @@ export class ServicePage extends Component {
                   style={{ marginBottom: 5 }}
                   onClick={(e) => this.addSecurityHeader('X-Content-Type-Options', 'nosniff')}
                   disabled={this.computeIfButtonDisabled('X-Content-Type-Options')}
-                  className="btn btn-xs btn-success">
+                  className="btn btn-sm btn-success">
                   X-Content-Type-Options
                 </button>
                 <button
@@ -2941,7 +2941,7 @@ export class ServicePage extends Component {
                     this.addSecurityHeader('X-Permitted-Cross-Domain-Policies', 'master-only')
                   }
                   disabled={this.computeIfButtonDisabled('X-Permitted-Cross-Domain-Policies')}
-                  className="btn btn-xs btn-success">
+                  className="btn btn-sm btn-success">
                   X-Permitted-Cross-Domain-Policies
                 </button>
                 <button
@@ -2954,7 +2954,7 @@ export class ServicePage extends Component {
                     )
                   }
                   disabled={this.computeIfButtonDisabled('Referrer-Policy')}
-                  className="btn btn-xs btn-success">
+                  className="btn btn-sm btn-success">
                   Referrer-Policy
                 </button>
                 <button
@@ -2964,7 +2964,7 @@ export class ServicePage extends Component {
                     this.addSecurityHeader('Content-Security-Policy', "default-src 'self'")
                   }
                   disabled={this.computeIfButtonDisabled('Content-Security-Policy')}
-                  className="btn btn-xs btn-success">
+                  className="btn btn-sm btn-success">
                   Content-Security-Policy
                 </button>
                 <button
@@ -2977,7 +2977,7 @@ export class ServicePage extends Component {
                     )
                   }
                   disabled={this.computeIfButtonDisabled('Strict-Transport-Security')}
-                  className="btn btn-xs btn-success">
+                  className="btn btn-sm btn-success">
                   Strict-Transport-Security
                 </button>
                 <button
@@ -2990,7 +2990,7 @@ export class ServicePage extends Component {
                     )
                   }
                   disabled={this.computeIfButtonDisabled('Public-Key-Pins')}
-                  className="btn btn-xs btn-success">
+                  className="btn btn-sm btn-success">
                   Public-Key-Pins
                 </button>
               </div>
@@ -3009,7 +3009,7 @@ export class ServicePage extends Component {
                     this.addSecurityHeader('Permissions-Policy', 'interest-cohort=()')
                   }
                   disabled={this.computeIfButtonDisabled('Permissions-Policy')}
-                  className="btn btn-xs btn-success">
+                  className="btn btn-sm btn-success">
                   opt-out from Google FLoC
                 </button>
               </div>
@@ -3134,7 +3134,7 @@ export class ServicePage extends Component {
               <div className="col-sm-10" style={{ paddingTop: 5 }}>
                 <button
                   type="button"
-                  className="btn btn-success btn-xs"
+                  className="btn btn-success btn-sm"
                   onClick={this.canaryToStandard}>
                   <i className="fab fa-twitter" /> Use canary targets as standard targets
                 </button>
@@ -3588,13 +3588,13 @@ export class PublicUiButton extends Component {
     const isAlreadyPublic = this.props.value.filter((p) => p === '/.*').length > 0;
     if (isAlreadyPublic) {
       return (
-        <button type="button" disabled className="btn btn-success btn-xs">
+        <button type="button" disabled className="btn btn-success btn-sm">
           <i className="fas fa-unlock" /> Service is already a 'public ui' ...
         </button>
       );
     } else {
       return (
-        <button type="button" className="btn btn-success btn-xs" onClick={this.makePublic}>
+        <button type="button" className="btn btn-success btn-sm" onClick={this.makePublic}>
           <i className="fas fa-unlock" /> Make service a 'public ui'
         </button>
       );
@@ -3613,7 +3613,7 @@ export class PrivateApiButton extends Component {
     const isAlreadyPrivateApi = this.props.value.filter((p) => p === '/api/.*').length > 0;
     if (isAlreadyPrivateApi) {
       return (
-        <button type="button" disabled className="btn btn-danger btn-xs" style={{ marginLeft: 5 }}>
+        <button type="button" disabled className="btn btn-danger btn-sm" style={{ marginLeft: 5 }}>
           <i className="fas fa-lock" /> Service is already a 'private api' ...
         </button>
       );
@@ -3621,7 +3621,7 @@ export class PrivateApiButton extends Component {
       return (
         <button
           type="button"
-          className="btn btn-danger btn-xs"
+          className="btn btn-danger btn-sm"
           style={{ marginLeft: 5 }}
           onClick={this.makePublic}>
           <i className="fas fa-lock" /> Make service a 'private api'
@@ -3657,7 +3657,7 @@ export class Migration extends Component {
   render() {
     return (
       <button
-        className="btn btn-danger btn-xs btn-sm"
+        className="btn btn-danger btn-sm btn-sm"
         type="button"
         onClick={this.migrate}
         style={this.props.style}>
