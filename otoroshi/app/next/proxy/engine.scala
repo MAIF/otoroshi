@@ -490,7 +490,7 @@ class ProxyEngine() extends RequestHandler {
   }
 
   def callPluginsBeforeRequestCallback(snowflake: String, request: RequestHeader, route: Route, plugins: ContextualPlugins)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] = {
-    val all_plugins = plugins.transformerPlugins
+    val all_plugins = plugins.transformerPluginsWithCallbacks
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[ProxyEngineError, Done]]()
       var sequence = ReportPluginSequence(
@@ -521,7 +521,7 @@ class ProxyEngine() extends RequestHandler {
           )
         )
       }
-      def next(plugins: Seq[PluginWrapper[NgRequestTransformer]]): Unit = {
+      def next(plugins: Seq[NgPluginWrapper[NgRequestTransformer]]): Unit = {
         plugins.headOption match {
           case None => promise.trySuccess(Right(Done))
           case Some(wrapper) => {
@@ -554,7 +554,7 @@ class ProxyEngine() extends RequestHandler {
   }
 
   def callPluginsAfterRequestCallback(snowflake: String, request: RequestHeader, route: Route, plugins: ContextualPlugins)(implicit ec: ExecutionContext, env: Env, report: ExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[ProxyEngineError, Done] =  {
-    val all_plugins = plugins.transformerPlugins
+    val all_plugins = plugins.transformerPluginsWithCallbacks
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[ProxyEngineError, Done]]()
       var sequence = ReportPluginSequence(
@@ -585,7 +585,7 @@ class ProxyEngine() extends RequestHandler {
           )
         )
       }
-      def next(plugins: Seq[PluginWrapper[NgRequestTransformer]]): Unit = {
+      def next(plugins: Seq[NgPluginWrapper[NgRequestTransformer]]): Unit = {
         plugins.headOption match {
           case None => promise.trySuccess(Right(Done))
           case Some(wrapper) => {
@@ -652,7 +652,7 @@ class ProxyEngine() extends RequestHandler {
         )
       }
 
-      def next(plugins: Seq[PluginWrapper[NgPreRouting]]): Unit = {
+      def next(plugins: Seq[NgPluginWrapper[NgPreRouting]]): Unit = {
         plugins.headOption match {
           case None => promise.trySuccess(Right(Done))
           case Some(wrapper) => {
@@ -724,7 +724,7 @@ class ProxyEngine() extends RequestHandler {
           )
         )
       }
-      def next(plugins: Seq[PluginWrapper[NgAccessValidator]]): Unit = {
+      def next(plugins: Seq[NgPluginWrapper[NgAccessValidator]]): Unit = {
         plugins.headOption match {
           case None => promise.trySuccess(Right(Done))
           case Some(wrapper) => {
@@ -1351,7 +1351,7 @@ class ProxyEngine() extends RequestHandler {
           )
         )
       }
-      def next(_ctx: NgTransformerRequestContext, plugins: Seq[PluginWrapper[NgRequestTransformer]]): Unit = {
+      def next(_ctx: NgTransformerRequestContext, plugins: Seq[NgPluginWrapper[NgRequestTransformer]]): Unit = {
         plugins.headOption match {
           case None => promise.trySuccess(Right(_ctx.otoroshiRequest))
           case Some(wrapper) => {
@@ -1547,7 +1547,7 @@ class ProxyEngine() extends RequestHandler {
           )
         )
       }
-      def next(_ctx: NgTransformerResponseContext, plugins: Seq[PluginWrapper[NgRequestTransformer]]): Unit = {
+      def next(_ctx: NgTransformerResponseContext, plugins: Seq[NgPluginWrapper[NgRequestTransformer]]): Unit = {
         plugins.headOption match {
           case None => promise.trySuccess(Right(_ctx.otoroshiResponse))
           case Some(wrapper) => {

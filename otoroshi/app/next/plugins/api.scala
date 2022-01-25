@@ -202,23 +202,23 @@ trait NgNamedPlugin extends NamedPlugin { self =>
     }
 }
 
-object CachedConfigContext {
+object NgCachedConfigContext {
   private val cache: Cache[String, Any] = Scaffeine()
     .expireAfterWrite(5.seconds)
     .maximumSize(1000)
     .build()
 }
 
-trait CachedConfigContext {
+trait NgCachedConfigContext {
   def route: Route
   def config: JsValue
   def cachedConfig[A](plugin: String)(reads: Reads[A]): Option[A] = Try {
     val key = s"${route.id}::${plugin}"
-    CachedConfigContext.cache.getIfPresent(key) match {
+    NgCachedConfigContext.cache.getIfPresent(key) match {
       case None => reads.reads(config) match {
         case JsError(_) => None
         case JsSuccess(value, _) =>
-          CachedConfigContext.cache.put(key, value)
+          NgCachedConfigContext.cache.put(key, value)
           Some(value)
       }
       case Some(v) => Some(v.asInstanceOf[A])
@@ -227,11 +227,11 @@ trait CachedConfigContext {
 
   def cachedConfigFn[A](plugin: String)(reads: JsValue => Option[A]): Option[A] =Try {
     val key = s"${route.id}::${plugin}"
-    CachedConfigContext.cache.getIfPresent(key) match {
+    NgCachedConfigContext.cache.getIfPresent(key) match {
       case None => reads(config) match {
         case None => None
         case s @ Some(value) =>
-          CachedConfigContext.cache.put(key, value)
+          NgCachedConfigContext.cache.put(key, value)
           s
       }
       case Some(v) => Some(v.asInstanceOf[A])
@@ -251,7 +251,7 @@ case class NgPreRoutingContext(
   globalConfig: JsValue,
   attrs: TypedMap,
   report: ExecutionReport,
-) extends CachedConfigContext {
+) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     // "route" -> route.json,
@@ -263,7 +263,7 @@ case class NgPreRoutingContext(
   )
 }
 
-case class PluginWrapper[A <: NgNamedPlugin](instance: PluginInstance, plugin: A)
+case class NgPluginWrapper[A <: NgNamedPlugin](instance: PluginInstance, plugin: A)
 
 trait NgPreRoutingError {
   def result: Result
@@ -295,7 +295,7 @@ case class NgBeforeRequestContext(
   config: JsValue,
   attrs: TypedMap,
   globalConfig: JsValue = Json.obj()
-) extends CachedConfigContext {
+) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     // "route" -> route.json,
@@ -314,7 +314,7 @@ case class NgAfterRequestContext(
   config: JsValue,
   attrs: TypedMap,
   globalConfig: JsValue = Json.obj()
-) extends CachedConfigContext {
+) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     // "route" -> route.json,
@@ -338,7 +338,7 @@ case class NgTransformerRequestContext(
                                         attrs: TypedMap,
                                         globalConfig: JsValue = Json.obj(),
                                         report: ExecutionReport
-) extends CachedConfigContext {
+) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     "raw_request" -> rawRequest.json,
@@ -367,7 +367,7 @@ case class NgTransformerResponseContext(
                                          attrs: TypedMap,
                                          globalConfig: JsValue = Json.obj(),
                                          report: ExecutionReport
-) extends CachedConfigContext {
+) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     "raw_response" -> rawResponse.json,
@@ -397,7 +397,7 @@ case class NgTransformerErrorContext(
                                       globalConfig: JsValue = Json.obj(),
                                       attrs: TypedMap,
                                       report: ExecutionReport
-) extends CachedConfigContext {
+) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     "maybe_cause_id" -> maybeCauseId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -416,6 +416,8 @@ case class NgTransformerErrorContext(
 }
 
 trait NgRequestTransformer extends NgPlugin {
+
+  def usesCallbacks: Boolean = true
 
   def beforeRequest(ctx: NgBeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = ().vfuture
 
@@ -444,7 +446,7 @@ case class NgAccessContext(
   attrs: TypedMap,
   globalConfig: JsValue,
   report: ExecutionReport,
-) extends CachedConfigContext {
+) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     "apikey" -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],

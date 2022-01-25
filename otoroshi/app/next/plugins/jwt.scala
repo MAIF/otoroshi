@@ -36,9 +36,11 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
   private val configReads: Reads[JwtVerificationConfig] = JwtVerificationConfig.format
 
   override def core: Boolean = true
+  override def usesCallbacks: Boolean = false
   override def name: String = "Jwt verifiers"
   override def description: Option[String] = "This plugin verifies the current request with one or more jwt verifier".some
   override def defaultConfig: Option[JsObject] = JwtVerificationConfig().json.asObject.some
+
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     // val verifiers = ctx.config.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty)
     val JwtVerificationConfig(verifiers) = ctx.cachedConfig(internalName)(configReads).getOrElse(JwtVerificationConfig())

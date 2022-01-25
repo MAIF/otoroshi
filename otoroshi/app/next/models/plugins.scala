@@ -62,71 +62,71 @@ case class NgPlugins(slots: Seq[PluginInstance]) {
     slots.find(pi => pi.plugin == name).filter(_.enabled)
   }
 
-  def allPlugins()(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgNamedPlugin]] = {
+  def allPlugins()(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgNamedPlugin]] = {
     slots
       .map(inst => (inst, inst.getPlugin[NgNamedPlugin]))
       .collect {
-        case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+        case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
       }
   }
 
-  def requestSinkPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgRequestSink]] = {
+  def requestSinkPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestSink]] = {
     slots
       .filter(_.enabled)
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgRequestSink]))
       .collect {
-        case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+        case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
       }
   }
 
-  def transformerPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgRequestTransformer]] = {
+  def transformerPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
     slots
       .filter(_.enabled)
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgRequestTransformer]))
       .collect {
-        case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+        case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
       }
   }
 
-  def preRoutePlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgPreRouting]] = {
+  def preRoutePlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgPreRouting]] = {
     slots
       .filter(_.enabled)
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgPreRouting]))
       .collect {
-        case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+        case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
       } //.debug(seq => println(s"found ${seq.size} pre-route plugins"))
   }
 
-  def accessValidatorPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgAccessValidator]] = {
+  def accessValidatorPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgAccessValidator]] = {
     slots
       .filter(_.enabled)
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgAccessValidator]))
       .collect {
-        case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+        case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
       } //.debug(seq => println(s"found ${seq.size} access-validator plugins"))
   }
 
-  def routeMatcherPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgRouteMatcher]] = {
+  def routeMatcherPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRouteMatcher]] = {
     slots
       .filter(_.enabled)
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgRouteMatcher]))
       .collect {
-        case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+        case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
       }
   }
 
-  def tunnelHandlerPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[PluginWrapper[NgTunnelHandler]] = {
+  def tunnelHandlerPlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgTunnelHandler]] = {
     slots
       .filter(_.enabled)
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgTunnelHandler]))
       .collect {
-        case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+        case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
       }
   }
 }
@@ -154,36 +154,38 @@ case class ContextualPlugins(plugins: NgPlugins, global_plugins: NgPlugins, requ
   lazy val requestSinkPlugins = allPlugins
     .map(inst => (inst, inst.getPlugin[NgRequestSink]))
     .collect {
-      case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+      case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
     }
 
   lazy val transformerPlugins = allPlugins
     .map(inst => (inst, inst.getPlugin[NgRequestTransformer]))
     .collect {
-      case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+      case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
     }
+
+  lazy val transformerPluginsWithCallbacks = transformerPlugins.filter(_.plugin.usesCallbacks)
 
   lazy val preRoutePlugins = allPlugins
     .map(inst => (inst, inst.getPlugin[NgPreRouting]))
     .collect {
-      case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+      case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
     }
 
   lazy val accessValidatorPlugins = allPlugins
     .map(inst => (inst, inst.getPlugin[NgAccessValidator]))
     .collect {
-      case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+      case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
     }
 
   lazy val routeMatcherPlugins = allPlugins
     .map(inst => (inst, inst.getPlugin[NgRouteMatcher]))
     .collect {
-      case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+      case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
     }
 
   lazy val tunnelHandlerPlugins = allPlugins
     .map(inst => (inst, inst.getPlugin[NgTunnelHandler]))
     .collect {
-      case (inst, Some(plugin)) => PluginWrapper(inst, plugin)
+      case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
     }
 }

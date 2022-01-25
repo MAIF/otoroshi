@@ -130,6 +130,7 @@ class RequestSinkWrapper extends NgRequestSink {
 
 class RequestTransformerWrapper extends NgRequestTransformer {
 
+  override def usesCallbacks: Boolean = true
   override def name: String = "Request transformer plugin wrapper"
   override def description: Option[String] = "Wraps an old request transformer plugin for the new router. The configuration is the one for the wrapped plugin.".some
 

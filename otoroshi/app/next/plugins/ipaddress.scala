@@ -36,11 +36,14 @@ object IpAddressesConfig {
 }
 
 class IpAddressAllowedList extends NgAccessValidator {
+
   private val configReads: Reads[IpAddressesConfig] = IpAddressesConfig.format
+
   override def core: Boolean = true
   override def name: String = "IP allowed list"
   override def description: Option[String] = "This plugin verifies the current request ip address is in the allowed list".some
   override def defaultConfig: Option[JsObject] = IpAddressesConfig().json.asObject.some
+
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val remoteAddress = ctx.request.theIpAddress
     // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
@@ -76,11 +79,14 @@ class IpAddressAllowedList extends NgAccessValidator {
 }
 
 class IpAddressBlockList extends NgAccessValidator {
+
   private val configReads: Reads[IpAddressesConfig] = IpAddressesConfig.format
+
   override def core: Boolean = true
   override def name: String = "IP block list"
   override def description: Option[String] = "This plugin verifies the current request ip address is not in the blocked list".some
   override def defaultConfig: Option[JsObject] = IpAddressesConfig().json.asObject.some
+
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val remoteAddress = ctx.request.theIpAddress
     // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
@@ -136,11 +142,15 @@ object EndlessHttpResponseConfig {
 }
 
 class EndlessHttpResponse extends NgRequestTransformer {
+
   private val configReads: Reads[EndlessHttpResponseConfig] = EndlessHttpResponseConfig.format
+
   override def core: Boolean = true
+  override def usesCallbacks: Boolean = false
   override def name: String = "Endless HTTP responses"
   override def description: Option[String] = "This plugin returns 128 Gb of 0 to the ip addresses is in the list".some
   override def defaultConfig: Option[JsObject] = EndlessHttpResponseConfig().json.asObject.some
+
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val remoteAddress = ctx.request.theIpAddress
     // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)

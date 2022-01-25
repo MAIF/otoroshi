@@ -10,9 +10,11 @@ import play.api.mvc.Results
 import scala.concurrent.{ExecutionContext, Future}
 
 class MaintenanceMode extends NgPreRouting {
+
   override def core: Boolean = true
   override def name: String = "Maintenance mode"
   override def description: Option[String] = "This plugin displays a maintenance page".some
+
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     Errors
       .craftResponseResult(
@@ -30,9 +32,11 @@ class MaintenanceMode extends NgPreRouting {
 }
 
 class BuildMode extends NgPreRouting {
+
   override def core: Boolean = true
   override def name: String = "Build mode"
   override def description: Option[String] = "This plugin displays a build page".some
+
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     Errors
       .craftResponseResult(

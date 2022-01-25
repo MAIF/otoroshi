@@ -20,13 +20,14 @@ object SnowMonkeyChaos {
 
 class SnowMonkeyChaos extends NgRequestTransformer {
 
+  private val snowMonkeyRef = Scaffeine().maximumSize(1).build[String, SnowMonkey]()
   private val configReads: Reads[ChaosConfig] = ChaosConfig._fmt
+
   override def core: Boolean = true
+  override def usesCallbacks: Boolean = false
   override def name: String = "Snow Monkey Chaos"
   override def description: Option[String] = "This plugin introduce some chaos into you life".some
   override def defaultConfig: Option[JsObject] = ChaosConfig().asJson.asObject.-("enabled").some
-
-  private val snowMonkeyRef = Scaffeine().maximumSize(1).build[String, SnowMonkey]()
 
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     // val config = ctx.cachedConfig(internalName)(configReads).getOrElse(ChaosConfig(enabled = true))

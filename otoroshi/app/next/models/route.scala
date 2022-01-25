@@ -298,7 +298,7 @@ case class Route(
           )
         )
       }
-      def next(_ctx: NgTransformerErrorContext, plugins: Seq[PluginWrapper[NgRequestTransformer]]): Unit = {
+      def next(_ctx: NgTransformerErrorContext, plugins: Seq[NgPluginWrapper[NgRequestTransformer]]): Unit = {
         plugins.headOption match {
           case None => promise.trySuccess(Right(_ctx.otoroshiResponse))
           case Some(wrapper) => {

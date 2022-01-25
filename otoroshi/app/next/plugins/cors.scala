@@ -14,11 +14,15 @@ import play.api.mvc.{Result, Results}
 import scala.concurrent.{ExecutionContext, Future}
 
 class Cors extends NgRequestTransformer with NgPreRouting {
+
   private val configReads: Reads[CorsSettings] = CorsSettings.format
+
   override def core: Boolean = true
+  override def usesCallbacks: Boolean = false
   override def name: String = "CORS"
   override def description: Option[String] = "This plugin applies CORS rules".some
   override def defaultConfig: Option[JsObject] = CorsSettings(enabled = true).asJson.asObject.-("enabled").some
+
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val req = ctx.request
     // val cors = CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true)
