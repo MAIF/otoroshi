@@ -88,7 +88,7 @@ class BackOfficeAppContainer extends Component {
       // document.getElementById('navbar').setAttribute('class', 'navbar-collapse collapse');
       document
         .getElementById('toggle-sidebar')
-        .setAttribute('class', 'navbar-toggle menu collapsed');
+        .setAttribute('class', 'navbar-toggler menu collapsed');
       // document.getElementById('toggle-navigation').setAttribute('class', 'navbar-toggle collapsed');
     });
     BackOfficeServices.env().then((env) => {
