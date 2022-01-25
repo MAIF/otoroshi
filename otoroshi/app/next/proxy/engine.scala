@@ -853,7 +853,7 @@ class ProxyEngine() extends RequestHandler {
         val backend = getBackend(target, route)
         attrs.put(Keys.BackendKey -> backend)
         f(NgSelectedBackendTarget(backend, attempts, alreadyFailed, cbStart)).value.flatMap {
-          case Left(err) => err.asResult().map(Left.apply) // TODO: optimize
+          case Left(err) => err.asResult().map(Left.apply)
           case r @ Right(value) => Right(value).vfuture
         }
       }
@@ -1061,7 +1061,7 @@ class ProxyEngine() extends RequestHandler {
         val backend = getBackend(target, route)
         attrs.put(Keys.BackendKey -> backend)
         f(NgSelectedBackendTarget(backend, attempts, alreadyFailed, cbStart)).value.flatMap {
-          case Left(err) => err.asResult().map(Left.apply) // TODO: optimize
+          case Left(err) => err.asResult().map(Left.apply)
           case r @ Right(value) => Right(value).vfuture
         }
       }
