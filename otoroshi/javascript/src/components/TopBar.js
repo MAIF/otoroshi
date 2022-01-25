@@ -483,18 +483,17 @@ export class TopBar extends Component {
     const selected = (this.props.params || {}).lineId;
     return (
       <nav className="navbar navbar-expand-lg fixed-top">
-        <div className="container-fluid d-flex justify-content-center justify-content-lg-between align-items-end px-0">
+        <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
             <div className="d-flex flex-column flex-md-row">
               <div className="pl-1 pr-2">
-                <button 
-                  id="toggle-sidebar"
-                  className="navbar-toggler" 
+             
+              <button 
+                  className="btn btn-primary navbar-toggler" 
                   type="button" 
                   data-bs-toggle="collapse" 
-                  data-bs-target="#navbarTogglerDemo01" 
-                  aria-controls="navbarTogglerDemo01" 
-                  aria-expanded="false" 
-                  aria-label="Toggle navigation">
+                  data-bs-target="#collapseSidebar" 
+                  aria-controls="collapseSidebar" 
+                  aria-expanded="false" >
                   <span className="navbar-toggler-icon">Menu</span>
                 </button>
                 <a className="navbar-brand" href="/bo/dashboard" style={{ display: 'flex' }}>
@@ -512,7 +511,7 @@ export class TopBar extends Component {
                   </span>
                 </div>
               )}
-              <div className="mb-3" style={{ marginLeft: 10, marginRight: 10 }}>
+              <div className="mx-3">
                 <Async
                   ref={(r) => (this.selector = r)}
                   name="service-search"
@@ -618,165 +617,153 @@ export class TopBar extends Component {
                   />
                 </a>
               </div>
-              <div className="dropdown">
-  <a className="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
-    Dropdown link
-  </a>
-
-  <ul className="dropdown-menu" aria-labelledby="dropdownMenuLink">
-    <li><a className="dropdown-item" href="#">Action</a></li>
-    <li><a className="dropdown-item" href="#">Another action</a></li>
-    <li><a className="dropdown-item" href="#">Something else here</a></li>
-  </ul>
-</div>
-
               <div className="dropdown mx-2">
-                <i className="fas fa-cog" aria-hidden="true" data-toggle="dropdown" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false"/>
-                <ul className="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton1">
+                <i className="fas fa-cog" role="button" id="dropdownMenuParams" data-bs-toggle="dropdown" aria-expanded="false"/>
+                <ul className="dropdown-menu  dropdown-menu-lg-end" aria-labelledby="dropdownMenuParams">
                   {/*<li>
                     <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>
                   </li>*/}
                   <li>
-                    <a href="#" className="logo-xs">
+                    <a href="#" className="dropdown-item logo-xs">
                       <img src="/assets/images/otoroshi-logo-inverse.png" width="16" /> version{' '}
                       {window.__currentVersion}
                     </a>
                   </li>
                   <li>
-                    <a href="/docs/index.html" target="_blank">
+                    <a href="/docs/index.html" target="_blank" className="dropdown-item">
                       <span className="fas fa-book" /> User manual
                     </a>
                   </li>
-                  <li role="separator" className="divider" />
+                  <li className="dropdown-divider" />
                   <li>
                     {window.__otoroshi__env__latest.userAdmin && (
-                      <a href="/bo/dashboard/organizations">
+                      <a href="/bo/dashboard/organizations" className="dropdown-item">
                         <span className="fas fa-folder-open" /> Organizations
                       </a>
                     )}
                     {window.__user.tenantAdmin && (
-                      <a href="/bo/dashboard/teams">
+                      <a href="/bo/dashboard/teams" className="dropdown-item">
                         <span className="fas fa-folder-open" /> Teams
                       </a>
                     )}
-                    <a href="/bo/dashboard/groups">
+                    <a href="/bo/dashboard/groups" className="dropdown-item">
                       <span className="fas fa-folder-open" /> Service groups
                     </a>
 
                     {window.__otoroshi__env__latest.userAdmin && (
-                      <a href="/bo/dashboard/clever">
+                      <a href="/bo/dashboard/clever" className="dropdown-item">
                         <span className="fas fa-list-alt" /> Clever apps
                       </a>
                     )}
                   </li>
-                  <li role="separator" className="divider" />
+                  <li className="dropdown-divider" />
                   <li>
-                    <a href="/bo/dashboard/resources-loader">
+                    <a href="/bo/dashboard/resources-loader" className="dropdown-item">
                       <span className="fas fa-hammer" /> Resources Loader
                     </a>
                   </li>
-                  <li role="separator" className="divider" />
+                  <li className="dropdown-divider" />
                   <li>
-                    <a href="/bo/dashboard/jwt-verifiers">
+                    <a href="/bo/dashboard/jwt-verifiers" className="dropdown-item">
                       <span className="fas fa-key" /> Jwt Verifiers
                     </a>
-                    <a href="/bo/dashboard/auth-configs">
+                    <a href="/bo/dashboard/auth-configs" className="dropdown-item">
                       <span className="fas fa-lock" /> Authentication configs
                     </a>
-                    <a href="/bo/dashboard/certificates">
+                    <a href="/bo/dashboard/certificates" className="dropdown-item">
                       <span className="fas fa-certificate" /> SSL/TLS Certificates
                     </a>
-                    <a className="hide" href="/bo/dashboard/validation-authorities">
+                    <a className="hide dropdown-item" href="/bo/dashboard/validation-authorities">
                       <span className="fas fa-gavel" /> Validation authorities
                     </a>
                     {this.state.env.scriptingEnabled === true && (
-                      <a href="/bo/dashboard/plugins">
+                      <a href="/bo/dashboard/plugins" className="dropdown-item">
                         <span className="fas fa-book-dead" /> Plugins
                       </a>
                     )}
                   </li>
-                  <li role="separator" className="divider" />
+                  <li className="dropdown-divider" />
                   {window.__otoroshi__env__latest.userAdmin &&
                     this.state.env.clusterRole === 'Leader' && (
                       <li>
-                        <a href="/bo/dashboard/cluster">
+                        <a href="/bo/dashboard/cluster" className="dropdown-item">
                           <span className="fas fa-network-wired" /> Cluster view
                         </a>
                       </li>
                     )}
                   {window.__otoroshi__env__latest.userAdmin &&
                     this.state.env.clusterRole === 'Leader' && (
-                      <li role="separator" className="divider" />
+                      <li className="dropdown-divider" />
                     )}
                   {(window.__otoroshi__env__latest.userAdmin || window.__user.tenantAdmin) && (
                     <>
                       {window.__otoroshi__env__latest.userAdmin && (
                         <>
                           <li>
-                            <a href="/bo/dashboard/stats">
+                            <a href="/bo/dashboard/stats" className="dropdown-item">
                               <i className="fas fa-signal" /> Analytics
                             </a>
                           </li>
                           <li>
-                            <a href="/bo/dashboard/status">
+                            <a href="/bo/dashboard/status" className="dropdown-item">
                               <i className="fas fa-heart" /> Status
                             </a>
                           </li>
                           <li>
-                            <a href="/bo/dashboard/events">
+                            <a href="/bo/dashboard/events" className="dropdown-item">
                               <i className="fas fa-list" /> Events log
                             </a>
                           </li>
                           <li className="hide">
-                            <a href="/bo/dashboard/top10">
+                            <a href="/bo/dashboard/top10" className="dropdown-item">
                               <span className="fas fa-fire" /> Top 10 services
                             </a>
                           </li>
                           <li className="hide">
-                            <a href="/bo/dashboard/map">
+                            <a href="/bo/dashboard/map" className="dropdown-item">
                               <span className="fas fa-globe" /> Services map
                             </a>
                           </li>
                           <li role="separator" className="divider hide" />
                           <li className="hide">
-                            <a href="/bo/dashboard/loggers">
+                            <a href="/bo/dashboard/loggers" className="dropdown-item">
                               <span className="fas fa-book" /> Loggers level
                             </a>
                           </li>
                           <li>
-                            <a href="/bo/dashboard/audit">
+                            <a href="/bo/dashboard/audit" className="dropdown-item">
                               <span className="fas fa-list" /> Audit log
                             </a>
                           </li>
                           <li>
-                            <a href="/bo/dashboard/alerts">
+                            <a href="/bo/dashboard/alerts" className="dropdown-item">
                               <span className="fas fa-list" /> Alerts log
                             </a>
                           </li>
                         </>
                       )}
                       <li>
-                        <a href="/bo/dashboard/exporters">
+                        <a href="/bo/dashboard/exporters" className="dropdown-item">
                           <span className="fas fa-paper-plane" /> Exporters
                         </a>
                       </li>
-                      <li role="separator" className="divider" />
+                      <li className="dropdown-divider" />
                     </>
                   )}
                   {window.__user.tenantAdmin && (
                     <>
                       <li>
-                        <a href="/bo/dashboard/admins">
+                        <a href="/bo/dashboard/admins" className="dropdown-item">
                           <span className="fas fa-user" /> Admins
                         </a>
                       </li>
                       <li>
-                        <a href="/bo/dashboard/sessions/admin">
+                        <a href="/bo/dashboard/sessions/admin" className="dropdown-item">
                           <span className="fas fa-user" /> Admins sessions
                         </a>
                       </li>
                       <li>
-                        <a href="/bo/dashboard/sessions/private">
+                        <a href="/bo/dashboard/sessions/private" className="dropdown-item">
                           <span className="fas fa-lock" /> Priv. apps sessions
                         </a>
                       </li>
@@ -784,9 +771,9 @@ export class TopBar extends Component {
                   )}
                   {window.__otoroshi__env__latest.userAdmin && (
                     <>
-                      <li role="separator" className="divider" />
+                      <li className="dropdown-divider" />
                       <li>
-                        <a href="/bo/dashboard/snowmonkey">
+                        <a href="/bo/dashboard/snowmonkey" className="dropdown-item">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="monkeyMenu"
@@ -957,9 +944,9 @@ export class TopBar extends Component {
                   )}
                   {window.__otoroshi__env__latest.userAdmin && this.state.env.providerDashboardUrl && (
                     <>
-                      <li role="separator" className="divider" />
+                      <li className="dropdown-divider" />
                       <li>
-                        <a href="/bo/dashboard/provider">
+                        <a href="/bo/dashboard/provider" className="dropdown-item">
                           <img src="/assets/images/otoroshi-logo-inverse.png" width="16" />{' '}
                           {this.state.env.providerDashboardTitle}
                         </a>
@@ -968,17 +955,17 @@ export class TopBar extends Component {
                   )}
                   {window.__otoroshi__env__latest.userAdmin && (
                     <>
-                      <li role="separator" className="divider" />
+                      <li className="dropdown-divider" />
                       <li>
-                        <a href="/bo/dashboard/dangerzone">
+                        <a href="/bo/dashboard/dangerzone" className="dropdown-item">
                           <span className="fas fa-exclamation-triangle" /> Danger Zone
                         </a>
                       </li>
                     </>
                   )}
-                  <li role="separator" className="divider" />
+                  <li className="dropdown-divider" />
                   <li>
-                    <a href="/backoffice/auth0/logout" className="link-logout">
+                    <a href="/backoffice/auth0/logout" className="link-logout dropdown-item">
                       <span className="fas fa-power-off" />
                       <span className="topbar-userName"> {window.__userid} </span>
                     </a>
