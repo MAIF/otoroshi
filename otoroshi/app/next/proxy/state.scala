@@ -8,9 +8,11 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{AdditionalHeadersOut, OverrideHost}
 import otoroshi.script._
 import otoroshi.ssl.Cert
+import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
+import play.api.mvc.RequestHeader
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.collection.concurrent.TrieMap
@@ -31,11 +33,15 @@ class NgProxyState(env: Env) {
   private val jwtVerifiers = new TrieMap[String, GlobalJwtVerifier]()
   private val certificates = new TrieMap[String, Cert]()
   private val authModules = new TrieMap[String, AuthModuleConfig]()
-  // val routesByDomain = new TrieMap[String, Seq[Route]]()
-  // private val cowRoutesByWildcardDomain = new CopyOnWriteArrayList[Route]()
+  private val routesByDomain = new TrieMap[String, Seq[NgRoute]]()
   private val domainPathTreeRef = new AtomicReference[NgTreeRouter](NgTreeRouter.empty)
 
-  def domainPathTreeFind(domain: String, path: String): Option[Seq[NgRoute]] = domainPathTreeRef.get().find(domain, path)
+  def findRoutes(domain: String, path: String): Option[Seq[NgRoute]] = domainPathTreeRef.get().find(domain, path)
+  def findRoute(request: RequestHeader, attrs: TypedMap): Option[NgRoute] = domainPathTreeRef.get().findRoute(request, attrs)(env)
+  def getDomainRoutes(domain: String): Option[Seq[NgRoute]] = routesByDomain.get(domain) match {
+    case s @ Some(_) => s
+    case None => domainPathTreeRef.get().findWildcard(domain)
+  }
 
   def backend(id: String): Option[NgBackend] = backends.get(id)
   def target(id: String): Option[NgTarget] = targets.get(id)
@@ -44,47 +50,24 @@ class NgProxyState(env: Env) {
   def jwtVerifier(id: String): Option[GlobalJwtVerifier] = jwtVerifiers.get(id)
   def certificate(id: String): Option[Cert] = certificates.get(id)
   def authModule(id: String): Option[AuthModuleConfig] = authModules.get(id)
-  // def getDomainRoutes(domain: String): Option[Seq[Route]] = {
-  //   routesByDomain.get(domain) match {
-  //     case s @ Some(_) => s
-  //     case None => {
-  //       cowRoutesByWildcardDomain.asScala.filter { route =>
-  //         RegexPool(route.frontend.domains.head.domain).matches(domain)
-  //       }.applyOn {
-  //         case seq if seq.isEmpty => None
-  //         case seq => seq.some
-  //       }
-  //     }
-  //   }
-  // }
 
-  // def allRoutes(): Seq[Route] = routes.values.toSeq
   def allApikeys(): Seq[ApiKey] = apikeys.values.toSeq
   def allJwtVerifiers(): Seq[GlobalJwtVerifier] = jwtVerifiers.values.toSeq
   def allCertificates(): Seq[Cert] = certificates.values.toSeq
   def allAuthModules(): Seq[AuthModuleConfig] = authModules.values.toSeq
 
   def updateRoutes(values: Seq[NgRoute]): Unit = {
-    // TODO: choose a strategy and remove mem duplicates
     routes.++=(values.map(v => (v.id, v))).--=(routes.keySet.toSeq.diff(values.map(_.id)))
-    // val routesByDomainRaw: Map[String, Seq[Route]] = values
-    //   .filter(_.enabled)
-    //   .flatMap(r => r.frontend.domains.map(d => (d.domain, r.copy(frontend = r.frontend.copy(domains = Seq(d))))))
-    //   .groupBy(_._1)
-    //   .mapValues(_.map(_._2).sortWith((r1, r2) => r1.frontend.domains.head.path.length.compareTo(r2.frontend.domains.head.path.length) > 0))
-    // val (routesByWildcardDomainRaw, all_routesByDomain) = routesByDomainRaw.partition(_._1.contains("*"))
-    // val routesWithWildcardDomains = routesByWildcardDomainRaw
-    //   .values
-    //   .flatten
-    //   .toSeq
-    //   .sortWith((r1, r2) => r1.frontend.domains.head.domain.length.compareTo(r2.frontend.domains.head.domain.length) > 0)
-    // routesByDomain.++=(all_routesByDomain).--=(routesByDomain.keySet.toSeq.diff(all_routesByDomain.keySet.toSeq))
-    // cowRoutesByWildcardDomain.clear()
-    // cowRoutesByWildcardDomain.addAll(routesWithWildcardDomains.asJava)
+    val routesByDomainRaw: Map[String, Seq[NgRoute]] = values
+      .flatMap(r => r.frontend.domains.map(d => NgRouteDomainAndPathWrapper(r, d.domain, d.path)))
+      .filterNot(_.domain.contains("*"))
+      .groupBy(_.domain)
+      .mapValues(_.sortWith((r1, r2) => r1.path.length.compareTo(r2.path.length) > 0).map(_.route))
+    routesByDomain.++=(routesByDomainRaw).--=(routesByDomain.keySet.toSeq.diff(routesByDomainRaw.keySet.toSeq))
     val s = System.currentTimeMillis()
     domainPathTreeRef.set(NgTreeRouter.build(values))
     val d = System.currentTimeMillis() - s
-    logger.debug(s"built DomainPathTree of ${values.size} routes in ${d} ms.")
+    logger.debug(s"built TreeRouter(${values.size} routes) in ${d} ms.")
     // java.nio.file.Files.writeString(new java.io.File("./tree-router-config.json").toPath, domainPathTreeRef.get().json.prettify)
   }
 
