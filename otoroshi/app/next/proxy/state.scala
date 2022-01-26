@@ -36,8 +36,8 @@ class NgProxyState(env: Env) {
   private val routesByDomain = new TrieMap[String, Seq[NgRoute]]()
   private val domainPathTreeRef = new AtomicReference[NgTreeRouter](NgTreeRouter.empty)
 
-  def findRoutes(domain: String, path: String): Option[Seq[NgRoute]] = domainPathTreeRef.get().find(domain, path)
-  def findRoute(request: RequestHeader, attrs: TypedMap): Option[NgRoute] = domainPathTreeRef.get().findRoute(request, attrs)(env)
+  def findRoutes(domain: String, path: String): Option[Seq[NgRoute]] = domainPathTreeRef.get().find(domain, path).map(_.routes)
+  def findRoute(request: RequestHeader, attrs: TypedMap): Option[NgMatchedRoute] = domainPathTreeRef.get().findRoute(request, attrs)(env)
   def getDomainRoutes(domain: String): Option[Seq[NgRoute]] = routesByDomain.get(domain) match {
     case s @ Some(_) => s
     case None => domainPathTreeRef.get().findWildcard(domain)

@@ -16,6 +16,14 @@ class NgTreeRouterSpec extends WordSpec with MustMatchers with OptionValues with
   }
 }
 
+class NgTreeRouterPathParamsSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
+  "NgTreeRouter" should {
+    "be able to use path params" in {
+      NgTreeRouter_Test.testPathParams()
+    }
+  }
+}
+
 class NgTreeRouterWithEnvSpec(configurationSpec: => Configuration) extends OtoroshiSpec {
 
   override def getTestConfiguration(configuration: Configuration) = {

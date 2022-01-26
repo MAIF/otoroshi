@@ -10,7 +10,7 @@ import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway._
 import otoroshi.models._
-import otoroshi.next.models.{NgContextualPlugins, NgPlugins, NgTarget, NgRoute, NgSelectedBackendTarget}
+import otoroshi.next.models.{NgContextualPlugins, NgMatchedRoute, NgPlugins, NgRoute, NgSelectedBackendTarget, NgTarget}
 import otoroshi.next.plugins.Keys
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError._
@@ -436,15 +436,18 @@ class ProxyEngine() extends RequestHandler {
   }
 
   def findRoute(useTree: Boolean, request: RequestHeader, body: Source[ByteString, _], global_plugins: NgPlugins)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, NgRoute] = {
-    val maybeRoute = if (useTree) {
+    val maybeRoute: Option[NgMatchedRoute] = if (useTree) {
       env.proxyState.findRoute(request, attrs)
     } else {
-      env.proxyState.getDomainRoutes(request.theDomain).flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true)))
+      env.proxyState.getDomainRoutes(request.theDomain)
+        .flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true)))
+        .map(r => NgMatchedRoute(r))
     }
     maybeRoute match {
       case Some(route) =>
-        attrs.put(Keys.RouteKey -> route)
-        FEither.right(route)
+        attrs.put(Keys.RouteKey -> route.route)
+        attrs.put(Keys.MatchedRouteKey -> route)
+        FEither.right(route.route)
       case None => callRequestSinkPlugins(request, body, global_plugins)
     }
   }
@@ -1336,18 +1339,26 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def maybeStrippedUri(req: RequestHeader, rawUri: String, route: NgRoute): String = {
-    val allPaths = route.frontend.domains.map(_.path)
-    val root        = req.relativeUri
-    val rootMatched = allPaths match { //rootMatched was this.matchingRoot
-      case ps if ps.isEmpty => None
-      case ps               => ps.find(p => root.startsWith(p))
+  def maybeStrippedUri(req: RequestHeader, rawUri: String, route: NgRoute, attrs: TypedMap): String = {
+    if (route.frontend.stripPath) {
+      attrs.get(Keys.MatchedRouteKey) match {
+        case Some(mroute) => rawUri.replaceFirst(mroute.path, "") // handles wildcard
+        case None => {
+          val allPaths = route.frontend.domains.map(_.path)
+          val root = req.relativeUri
+          val rootMatched = allPaths match { //rootMatched was this.matchingRoot
+            case ps if ps.isEmpty => None
+            case ps => ps.find(p => root.startsWith(p))
+          }
+          rootMatched
+            .filter(m => route.frontend.stripPath && root.startsWith(m))
+            .map(m => root.replaceFirst(m.replace(".", "\\."), ""))
+            .getOrElse(rawUri)
+        }
+      }
+    } else {
+      rawUri
     }
-    // TODO: try to work with wildcard path ?
-    rootMatched
-      .filter(m => route.frontend.stripPath && root.startsWith(m))
-      .map(m => root.replaceFirst(m.replace(".", "\\."), ""))
-      .getOrElse(rawUri)
   }
 
   def callRequestTransformer(snowflake: String, request: RequestHeader, body: Source[ByteString, _], route: NgRoute, backend: NgTarget, plugins: NgContextualPlugins)(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport, globalConfig: GlobalConfig, attrs: TypedMap, mat: Materializer): FEither[NgProxyEngineError, NgPluginHttpRequest] = {
@@ -1366,7 +1377,7 @@ class ProxyEngine() extends RequestHandler {
     val target = backend.toTarget
     val root   = route.backend.root
     val rawUri = request.relativeUri.substring(1)
-    val uri    = maybeStrippedUri(request, rawUri, route)
+    val uri    = maybeStrippedUri(request, rawUri, route, attrs)
 
     val lazySource = Source.single(ByteString.empty).flatMapConcat { _ =>
       attrs.get(Keys.BodyAlreadyConsumedKey).foreach(_.compareAndSet(false, true))
