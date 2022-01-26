@@ -6,6 +6,7 @@ import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import org.joda.time.DateTime
+import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway._
@@ -440,7 +441,7 @@ class ProxyEngine() extends RequestHandler {
       env.proxyState.findRoute(request, attrs)
     } else {
       env.proxyState.getDomainRoutes(request.theDomain)
-        .flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true)))
+        .flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true, skipPathVerif = false)))
         .map(r => NgMatchedRoute(r))
     }
     maybeRoute match {
@@ -1342,7 +1343,9 @@ class ProxyEngine() extends RequestHandler {
   def maybeStrippedUri(req: RequestHeader, rawUri: String, route: NgRoute, attrs: TypedMap): String = {
     if (route.frontend.stripPath) {
       attrs.get(Keys.MatchedRouteKey) match {
-        case Some(mroute) => rawUri.replaceFirst(mroute.path, "") // handles wildcard
+        case Some(mroute) =>
+          val mpath = mroute.path.substring(1)
+          rawUri.replaceFirst(mpath, "") // handles wildcard
         case None => {
           val allPaths = route.frontend.domains.map(_.path)
           val root = req.relativeUri
@@ -1377,8 +1380,19 @@ class ProxyEngine() extends RequestHandler {
     val target = backend.toTarget
     val root   = route.backend.root
     val rawUri = request.relativeUri.substring(1)
-    val uri    = maybeStrippedUri(request, rawUri, route, attrs)
-
+    val uri = maybeStrippedUri(request, rawUri, route, attrs)
+    // val uri    = TargetExpressionLanguage(
+    //   maybeStrippedUri(request, rawUri, route, attrs),
+    //   request.some,
+    //   route.serviceDescriptor.some,
+    //   attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+    //   attrs.get(otoroshi.plugins.Keys.UserKey),
+    //   attrs.get(otoroshi.plugins.Keys.ElCtxKey).get,
+    //   attrs,
+    //   env
+    // )
+    // println(attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey).map(_.pathParams))
+    // println(uri)
     val lazySource = Source.single(ByteString.empty).flatMapConcat { _ =>
       attrs.get(Keys.BodyAlreadyConsumedKey).foreach(_.compareAndSet(false, true))
       body
@@ -1408,8 +1422,18 @@ class ProxyEngine() extends RequestHandler {
       body = lazySource,
       backend = None
     )
+    val targetUrl = TargetExpressionLanguage(
+      s"${target.scheme}://${target.host}$root$uri",
+      request.some,
+      route.serviceDescriptor.some,
+      attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+      attrs.get(otoroshi.plugins.Keys.UserKey),
+      attrs.get(otoroshi.plugins.Keys.ElCtxKey).get,
+      attrs,
+      env
+    )
     val otoroshiRequest = NgPluginHttpRequest(
-      url = s"${target.scheme}://${target.host}$root$uri",
+      url = targetUrl,
       method = request.method,
       headers = request.headers.toSimpleMap,
       cookies = wsCookiesIn,

@@ -66,7 +66,7 @@ case class NgRoute(
     "plugins" -> plugins.json
   )
 
-  def matches(request: RequestHeader, attrs: TypedMap, skipDomainVerif: Boolean)(implicit env: Env): Boolean = {
+  def matches(request: RequestHeader, attrs: TypedMap, skipDomainVerif: Boolean, skipPathVerif: Boolean)(implicit env: Env): Boolean = {
     if (enabled) {
       val path = request.thePath
       val domain = request.theDomain
@@ -75,8 +75,15 @@ case class NgRoute(
       if (methodPasses) {
         val res = frontend.domains
           .applyOnIf(!skipDomainVerif)(_.filter(d => d.domain == domain || RegexPool(d.domain).matches(domain)))
-          .exists { d =>
-            path.startsWith(d.path) || RegexPool(d.path).matches(path)
+          .applyOn { seq =>
+            if (skipPathVerif) {
+              true
+            } else {
+              seq.exists { d =>
+                path.startsWith(d.path) || RegexPool(d.path).matches(path)
+                true
+              }
+            }
           }
           .applyOnIf(frontend.headers.nonEmpty) { firstRes =>
             val headers = request.headers.toSimpleMap.map(t => (t._1.toLowerCase, t._2))

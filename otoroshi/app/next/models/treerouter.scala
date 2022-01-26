@@ -61,7 +61,7 @@ case class NgTreeRouter(tree: TrieMap[String, NgTreeNodePath], wildcards: scala.
 
   def findRoute(request: RequestHeader, attrs: TypedMap)(implicit env: Env): Option[NgMatchedRoute] = {
     find(request.theDomain, request.thePath)
-      .flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true)))
+      .flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true, skipPathVerif = true)))
   }
 
   def find(domain: String, path: String): Option[NgMatchedRoutes] = {
