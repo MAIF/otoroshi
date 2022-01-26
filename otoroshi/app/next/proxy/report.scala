@@ -2,7 +2,10 @@ package otoroshi.next.proxy
 
 import org.joda.time.DateTime
 import otoroshi.env.Env
+import otoroshi.events.AnalyticEvent
+import otoroshi.next.models.NgRoute
 import otoroshi.next.utils.JsonHelpers
+import otoroshi.security.IdGenerator
 import play.api.libs.json._
 
 import java.util.concurrent.TimeUnit
@@ -239,4 +242,30 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
     }
     this
   }
+}
+
+case class RequestFlowReport(report: NgExecutionReport, route: NgRoute) extends AnalyticEvent {
+
+  override def `@service`: String   = route.name
+  override def `@serviceId`: String = route.id
+  def `@id`: String = IdGenerator.uuid
+  def `@timestamp`: org.joda.time.DateTime = timestamp
+  def `@type`: String = "RequestFlowReport"
+  override def fromOrigin: Option[String]    = None
+  override def fromUserAgent: Option[String] = None
+
+  val timestamp = DateTime.now()
+
+  override def toJson(implicit env: Env): JsValue =
+    Json.obj(
+      "@id"          -> `@id`,
+      "@timestamp"   -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(timestamp),
+      "@type"        -> "RequestFlowReport",
+      "@product"     -> "otoroshi",
+      "@serviceId"   -> `@serviceId`,
+      "@service"     -> `@service`,
+      "@env"         -> "prod",
+      "route"        -> route.json,
+      "report"       -> report.json
+    )
 }

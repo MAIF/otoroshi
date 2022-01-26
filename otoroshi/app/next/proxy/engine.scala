@@ -1344,8 +1344,12 @@ class ProxyEngine() extends RequestHandler {
     if (route.frontend.stripPath) {
       attrs.get(Keys.MatchedRouteKey) match {
         case Some(mroute) =>
-          val mpath = mroute.path.substring(1)
-          rawUri.replaceFirst(mpath, "") // handles wildcard
+          if (mroute.path.nonEmpty) {
+            val mpath = mroute.path.substring(1)
+            rawUri.replaceFirst(mpath, "") // handles wildcard
+          } else {
+            rawUri
+          }
         case None => {
           val allPaths = route.frontend.domains.map(_.path)
           val root = req.relativeUri
@@ -2161,30 +2165,4 @@ class ProxyEngine() extends RequestHandler {
     }(env.analyticsExecutionContext)
     FEither.right(Done)
   }
-}
-
-case class RequestFlowReport(report: NgExecutionReport, route: NgRoute) extends AnalyticEvent {
-
-  override def `@service`: String   = route.name
-  override def `@serviceId`: String = route.id
-  def `@id`: String = IdGenerator.uuid
-  def `@timestamp`: org.joda.time.DateTime = timestamp
-  def `@type`: String = "RequestFlowReport"
-  override def fromOrigin: Option[String]    = None
-  override def fromUserAgent: Option[String] = None
-
-  val timestamp = DateTime.now()
-
-  override def toJson(implicit env: Env): JsValue =
-    Json.obj(
-      "@id"          -> `@id`,
-      "@timestamp"   -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(timestamp),
-      "@type"        -> "RequestFlowReport",
-      "@product"     -> "otoroshi",
-      "@serviceId"   -> `@serviceId`,
-      "@service"     -> `@service`,
-      "@env"         -> "prod",
-      "route"        -> route.json,
-      "report"       -> report.json
-    )
 }
