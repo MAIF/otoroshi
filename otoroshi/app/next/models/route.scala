@@ -9,7 +9,7 @@ import otoroshi.next.plugins.wrappers._
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
 import otoroshi.next.proxy.{NgProxyEngineError, NgReportPluginSequence, NgReportPluginSequenceItem}
-import otoroshi.next.utils.JsonHelpers
+import otoroshi.next.utils.{FEither, JsonHelpers}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.gzip.GzipConfig
@@ -87,15 +87,26 @@ case class NgRoute(
           }
         val matchers = plugins.routeMatcherPlugins(request)(env.otoroshiExecutionContext, env)
         if (res && matchers.nonEmpty) {
-          matchers.forall { matcher =>
-            val ctx = NgRouteMatcherContext(
+          if (matchers.size == 1) {
+            val matcher = matchers.head
+            matcher.plugin.matches(NgRouteMatcherContext(
               snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get,
               request = request,
               route = this,
               config = matcher.instance.config.raw,
               attrs = attrs,
-            )
-            matcher.plugin.matches(ctx)
+            ))
+          } else {
+            matchers.forall { matcher =>
+              val ctx = NgRouteMatcherContext(
+                snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get,
+                request = request,
+                route = this,
+                config = matcher.instance.config.raw,
+                attrs = attrs,
+              )
+              matcher.plugin.matches(ctx)
+            }
           }
         } else {
           res
@@ -219,7 +230,7 @@ case class NgRoute(
       gzip = plugins.getPluginByClass[GzipResponseCompressor].flatMap(p => GzipConfig._fmt.reads(p.config.raw).asOpt.map(_.copy(enabled = true, excludedPatterns = p.exclude))).getOrElse(GzipConfig(enabled = true)),
       apiKeyConstraints = {
         plugins.getPluginByClass[ApikeyCalls].flatMap { plugin =>
-          ApiKeyConstraints.format.reads(plugin.config.raw).asOpt
+          NgApikeyCallsConfig.format.reads(plugin.config.raw).asOpt.map(_.legacy)
         }.getOrElse(ApiKeyConstraints())
       },
       plugins = {
@@ -242,13 +253,12 @@ case class NgRoute(
   def transformError(__ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     val all_plugins = __ctx.attrs.get(Keys.ContextualPluginsKey).map(_.transformerPluginsThatTransformsError).getOrElse(plugins.transformerPluginsThatTransformsError(__ctx.request))
     if (all_plugins.nonEmpty) {
-      val promise = Promise[Either[NgProxyEngineError, NgPluginHttpResponse]]()
       val report = __ctx.report
       var sequence = NgReportPluginSequence(
         size = all_plugins.size,
         kind = "error-transformer-plugins",
         start = System.currentTimeMillis(),
-        stop = 0L ,
+        stop = 0L,
         start_ns = System.nanoTime(),
         stop_ns = 0L,
         plugins = Seq.empty,
@@ -264,35 +274,55 @@ case class NgRoute(
           )
         )
       }
-      def next(_ctx: NgTransformerErrorContext, plugins: Seq[NgPluginWrapper[NgRequestTransformer]]): Unit = {
-        plugins.headOption match {
-          case None => promise.trySuccess(Right(_ctx.otoroshiResponse))
-          case Some(wrapper) => {
-            val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
-            val ctx = _ctx.copy(config = pluginConfig)
-            val debug = debugFlow || wrapper.instance.debug
-            val in: JsValue = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
-            val item = NgReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
-            wrapper.plugin.transformError(ctx).andThen {
-              case Failure(exception) =>
-                markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
-                report.setContext(sequence.stopSequence().json)
-                promise.trySuccess(Left(NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during response-transformation plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
-              case Success(resp_next) if plugins.size == 1 =>
-                markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
-                report.setContext(sequence.stopSequence().json)
-                promise.trySuccess(Right(resp_next))
-              case Success(resp_next) =>
-                markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
-                next(_ctx.copy(otoroshiResponse = resp_next), plugins.tail)
+      if (all_plugins.size == 1) {
+        val wrapper = all_plugins.head
+        val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
+        val ctx = __ctx.copy(config = pluginConfig)
+        val debug = debugFlow || wrapper.instance.debug
+        val in: JsValue = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
+        val item = NgReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+        wrapper.plugin.transformError(ctx).transform {
+          case Failure(exception) =>
+            markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
+            report.setContext(sequence.stopSequence().json)
+            Success(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during response-transformation plugins phase", "error" -> JsonHelpers.errToJson(exception))))
+          case Success(resp_next) =>
+            markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
+            report.setContext(sequence.stopSequence().json)
+            Success(resp_next.asResult)
+        }
+      } else {
+        val promise = Promise[Either[NgProxyEngineError, NgPluginHttpResponse]]()
+        def next(_ctx: NgTransformerErrorContext, plugins: Seq[NgPluginWrapper[NgRequestTransformer]]): Unit = {
+          plugins.headOption match {
+            case None => promise.trySuccess(Right(_ctx.otoroshiResponse))
+            case Some(wrapper) => {
+              val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
+              val ctx = _ctx.copy(config = pluginConfig)
+              val debug = debugFlow || wrapper.instance.debug
+              val in: JsValue = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
+              val item = NgReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+              wrapper.plugin.transformError(ctx).andThen {
+                case Failure(exception) =>
+                  markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
+                  report.setContext(sequence.stopSequence().json)
+                  promise.trySuccess(Left(NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during response-transformation plugins phase", "error" -> JsonHelpers.errToJson(exception))))))
+                case Success(resp_next) if plugins.size == 1 =>
+                  markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
+                  report.setContext(sequence.stopSequence().json)
+                  promise.trySuccess(Right(resp_next))
+                case Success(resp_next) =>
+                  markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
+                  next(_ctx.copy(otoroshiResponse = resp_next), plugins.tail)
+              }
             }
           }
         }
-      }
-      next(__ctx, all_plugins)
-      promise.future.flatMap {
-        case Left(err) => err.asResult()
-        case Right(res) => res.asResult.vfuture
+        next(__ctx, all_plugins)
+        promise.future.flatMap {
+          case Left(err) => err.asResult()
+          case Right(res) => res.asResult.vfuture
+        }
       }
     } else {
       __ctx.otoroshiResponse.asResult.vfuture
@@ -639,7 +669,7 @@ object NgRoute {
               config = NgPluginInstanceConfig(service.apiKeyConstraints.json.asObject ++ Json.obj(
                 "validate" -> !service.detectApiKeySooner,
                 "pass_with_user" -> !service.strictlyPrivate
-              ))
+              )) // TODO: use new config
             )
           }
           .applyOnIf(service.gzip.enabled) { seq =>
