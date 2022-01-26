@@ -53,8 +53,10 @@ document.addEventListener("DOMContentLoaded", function () {
           { expression: "${req.protocol}", description: "the protocol of the request" },
           { expression: "${req.headers.<header>:'<default value>'}", description: "get specific header of the request" },
           { expression: "${req.headers.<header>}", description: "get specific header of the request or get `no-header-<header>` as value" },
-          { expression: "${req.query.<query param>:'<default value>}", description: "get specific query param of the request" },
-          { expression: "${req.query.<query param>}", description: "get specific query param of the request or get `no-query-<query param>` as value" },
+          { expression: "${req.query.<query param>:'<default value>'}", description: "get specific query param of the request" },
+          { expression: "${req.query.<query param>}", description: "get specific query param of the request or get `no-path-param-<path param>` as value" },
+          { expression: "${req.pathparams.<path param>:'<default value>'}", description: "get specific path param of the request" },
+          { expression: "${req.pathparams.<path param>}", description: "get specific path param of the request or get `no-path-param-<path param>` as value" },
         ],
         values: [
           { expression: "${req.fullUrl}", description: "http://api.oto.tools:8080/api/?foo=bar" },
@@ -68,6 +70,8 @@ document.addEventListener("DOMContentLoaded", function () {
           { expression: "${req.headers.foo}", description: "bar" },
           { expression: "${req.query.foob:default value}", description: "default value" },
           { expression: "${req.query.foo}", description: "bar" },
+          { expression: "${req.pathparams.foob:'default value'}", description: "default value" },
+          { expression: "${req.pathparams.foo}", description: "bar" },
         ]
       },
       {

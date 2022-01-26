@@ -6872,8 +6872,8 @@
     "/api/experimental/routes/{id}" : {
       "patch" : {
         "tags" : [ "experimental" ],
-        "summary" : "Updates (using json-patch) a specific Route using its id",
-        "operationId" : "otoroshi.next.controllers.adminapi.RoutesController.patchEntityAction",
+        "summary" : "Updates (using json-patch) a specific NgRoute using its id",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.patchEntityAction",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -6922,7 +6922,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.next.models.Route"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
                 }
               }
             }
@@ -6934,7 +6934,7 @@
           "content" : {
             "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/otoroshi.next.models.Route"
+                "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
               }
             }
           }
@@ -6942,8 +6942,8 @@
       },
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "Find a specific Route using its id",
-        "operationId" : "otoroshi.next.controllers.adminapi.RoutesController.findEntityByIdAction",
+        "summary" : "Find a specific NgRoute using its id",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.findEntityByIdAction",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -6992,7 +6992,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.next.models.Route"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
                 }
               }
             }
@@ -7001,8 +7001,8 @@
       },
       "delete" : {
         "tags" : [ "experimental" ],
-        "summary" : "Deletes a specific Route using its id",
-        "operationId" : "otoroshi.next.controllers.adminapi.RoutesController.deleteEntityAction",
+        "summary" : "Deletes a specific NgRoute using its id",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.deleteEntityAction",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -7051,7 +7051,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.next.models.Route"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
                 }
               }
             }
@@ -7060,8 +7060,8 @@
       },
       "put" : {
         "tags" : [ "experimental" ],
-        "summary" : "Updates a specific Route using its id",
-        "operationId" : "otoroshi.next.controllers.adminapi.RoutesController.updateEntityAction",
+        "summary" : "Updates a specific NgRoute using its id",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.updateEntityAction",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -7110,7 +7110,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.next.models.Route"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
                 }
               }
             }
@@ -7122,7 +7122,7 @@
           "content" : {
             "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/otoroshi.next.models.Route"
+                "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
               }
             }
           }
@@ -7201,8 +7201,8 @@
     "/api/experimental/routes" : {
       "post" : {
         "tags" : [ "experimental" ],
-        "summary" : "Creates a Route",
-        "operationId" : "otoroshi.next.controllers.adminapi.RoutesController.createAction",
+        "summary" : "Creates a NgRoute",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.createAction",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -7243,7 +7243,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.next.models.Route"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
                 }
               }
             }
@@ -7255,7 +7255,7 @@
           "content" : {
             "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/otoroshi.next.models.Route"
+                "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
               }
             }
           }
@@ -7263,8 +7263,8 @@
       },
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "Find all possible Routes entities",
-        "operationId" : "otoroshi.next.controllers.adminapi.RoutesController.findAllEntitiesAction",
+        "summary" : "Find all possible NgRoutes entities",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.findAllEntitiesAction",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -7307,7 +7307,7 @@
                 "schema" : {
                   "type" : "array",
                   "items" : {
-                    "$ref" : "#/components/schemas/otoroshi.next.models.Route"
+                    "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
                   }
                 }
               }
@@ -10635,7 +10635,7 @@
       "get" : {
         "tags" : [ "experimental" ],
         "summary" : "???",
-        "operationId" : "otoroshi.next.controllers.adminapi.RoutesController.initiateRoute",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.initiateRoute",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -13727,8 +13727,8 @@
     "/api/experimental/routes/_bulk" : {
       "patch" : {
         "tags" : [ "experimental" ],
-        "summary" : "Update (using json-patch) multiple Routes at the same time",
-        "operationId" : "otoroshi.next.controllers.adminapi.RoutesController.bulkPatchAction",
+        "summary" : "Update (using json-patch) multiple NgRoutes at the same time",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.bulkPatchAction",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -13789,8 +13789,8 @@
       },
       "post" : {
         "tags" : [ "experimental" ],
-        "summary" : "Create multiple Routes at the same time",
-        "operationId" : "otoroshi.next.controllers.adminapi.RoutesController.bulkCreateAction",
+        "summary" : "Create multiple NgRoutes at the same time",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.bulkCreateAction",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -13845,7 +13845,7 @@
               "schema" : {
                 "type" : "array",
                 "items" : {
-                  "$ref" : "#/components/schemas/otoroshi.next.models.Route"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
                 }
               }
             }
@@ -13854,8 +13854,8 @@
       },
       "delete" : {
         "tags" : [ "experimental" ],
-        "summary" : "Delete multiple Routes at the same time",
-        "operationId" : "otoroshi.next.controllers.adminapi.RoutesController.bulkDeleteAction",
+        "summary" : "Delete multiple NgRoutes at the same time",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.bulkDeleteAction",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -13905,8 +13905,8 @@
       },
       "put" : {
         "tags" : [ "experimental" ],
-        "summary" : "Update multiple Routes at the same time",
-        "operationId" : "otoroshi.next.controllers.adminapi.RoutesController.bulkUpdateAction",
+        "summary" : "Update multiple NgRoutes at the same time",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.bulkUpdateAction",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -13961,7 +13961,7 @@
               "schema" : {
                 "type" : "array",
                 "items" : {
-                  "$ref" : "#/components/schemas/otoroshi.next.models.Route"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
                 }
               }
             }
@@ -17543,42 +17543,6 @@
           "$ref" : "#/components/schemas/otoroshi.events.AuditEvent"
         }
       },
-      "otoroshi.next.models.PluginInstance" : {
-        "description" : "???",
-        "type" : "object",
-        "properties" : {
-          "debug" : {
-            "description" : "???",
-            "type" : "boolean"
-          },
-          "config" : {
-            "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.next.models.PluginInstanceConfig"
-          },
-          "plugin" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "exclude" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "???"
-          },
-          "include" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "???"
-          },
-          "enabled" : {
-            "description" : "???",
-            "type" : "boolean"
-          }
-        }
-      },
       "otoroshi.models.ServiceDescriptor" : {
         "description" : "The otoroshi model for a service (handles routing)",
         "type" : "object",
@@ -18249,6 +18213,85 @@
           }
         }
       },
+      "otoroshi.next.models.NgRoute" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "debugFlow" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "enabled" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "name" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "id" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "metadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "healthCheck" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.models.HealthCheck"
+          },
+          "frontend" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.next.models.NgFrontend"
+          },
+          "_loc" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "client" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.models.ClientConfig"
+          },
+          "backendRef" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
+          },
+          "plugins" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.next.models.NgPlugins"
+          },
+          "description" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "backend" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.next.models.NgBackend"
+          }
+        }
+      },
       "otoroshi.auth.SAMLSignatureAlgorithm" : {
         "description" : "Algorithm to sign SAML requests",
         "type" : "object",
@@ -18536,6 +18579,37 @@
           "$ref" : "#/components/schemas/otoroshi.events.HealthCheckEvent"
         }
       },
+      "otoroshi.next.models.NgFrontend" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "domains" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.next.models.NgDomainAndPath"
+            },
+            "description" : "???"
+          },
+          "headers" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "methods" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "stripPath" : {
+            "description" : "???",
+            "type" : "boolean"
+          }
+        }
+      },
       "otoroshi.models.OutageStrategy" : {
         "type" : "string",
         "enum" : [ "AllServicesPerGroup", "OneServicePerGroup" ]
@@ -18816,6 +18890,16 @@
               "description" : "pem encoded X509 certificate"
             } ],
             "description" : "Ca cert (PEM encoded)"
+          }
+        }
+      },
+      "otoroshi.next.models.NgDomainAndPath" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "raw" : {
+            "description" : "???",
+            "type" : "string"
           }
         }
       },
@@ -19134,16 +19218,6 @@
           "enabled" : {
             "description" : "Verifier enabled",
             "type" : "boolean"
-          }
-        }
-      },
-      "otoroshi.next.models.PluginInstanceConfig" : {
-        "description" : "???",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "???",
-            "type" : "object"
           }
         }
       },
@@ -19470,7 +19544,7 @@
           },
           "backend" : {
             "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.next.models.Backend"
+            "$ref" : "#/components/schemas/otoroshi.next.models.NgBackend"
           },
           "name" : {
             "description" : "???",
@@ -19562,6 +19636,16 @@
           "csr" : {
             "description" : "CSR (PEM encoded)",
             "type" : "string"
+          }
+        }
+      },
+      "otoroshi.next.models.NgPluginInstanceConfig" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "raw" : {
+            "description" : "???",
+            "type" : "object"
           }
         }
       },
@@ -19756,7 +19840,7 @@
           "slots" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/otoroshi.next.models.PluginInstance"
+              "$ref" : "#/components/schemas/otoroshi.next.models.NgPluginInstance"
             },
             "description" : "???"
           }
@@ -19950,34 +20034,6 @@
           "scheme" : {
             "description" : "The protocol used for communication. Can be http or https",
             "type" : "string"
-          }
-        }
-      },
-      "otoroshi.next.models.Frontend" : {
-        "description" : "???",
-        "type" : "object",
-        "properties" : {
-          "domains" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.next.models.DomainAndPath"
-            },
-            "description" : "???"
-          },
-          "headers" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "???"
-          },
-          "stripPath" : {
-            "description" : "???",
-            "type" : "boolean"
-          },
-          "apikey" : {
-            "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.models.ApiKeyRouteMatcher"
           }
         }
       },
@@ -20299,6 +20355,42 @@
           }
         }
       },
+      "otoroshi.next.models.NgPluginInstance" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "debug" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "config" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.next.models.NgPluginInstanceConfig"
+          },
+          "exclude" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "include" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "plugin" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "enabled" : {
+            "description" : "???",
+            "type" : "boolean"
+          }
+        }
+      },
       "WebAuthnRegistrationStartBody" : {
         "type" : "object",
         "description" : ""
@@ -20603,16 +20695,6 @@
           }
         }
       },
-      "otoroshi.next.models.DomainAndPath" : {
-        "description" : "???",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "???",
-            "type" : "string"
-          }
-        }
-      },
       "otoroshi.utils.mailer.SendgridSettings" : {
         "description" : "Settings for the sendgrid mailer",
         "type" : "object",
@@ -20697,6 +20779,34 @@
           }
         }
       },
+      "otoroshi.next.models.NgBackend" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "root" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "loadBalancing" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.models.LoadBalancing"
+          },
+          "targetRefs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "targets" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.next.models.NgTarget"
+            },
+            "description" : "???"
+          }
+        }
+      },
       "OutagesList" : {
         "type" : "array",
         "items" : {
@@ -20728,34 +20838,6 @@
           "config" : {
             "description" : "pre-routing plugins configuration",
             "type" : "object"
-          }
-        }
-      },
-      "otoroshi.next.models.Backend" : {
-        "description" : "???",
-        "type" : "object",
-        "properties" : {
-          "targets" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.next.models.NgTarget"
-            },
-            "description" : "???"
-          },
-          "targetRefs" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "???"
-          },
-          "loadBalancing" : {
-            "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.models.LoadBalancing"
-          },
-          "root" : {
-            "description" : "???",
-            "type" : "string"
           }
         }
       },
@@ -21235,85 +21317,6 @@
           "timeout" : {
             "description" : "Timeout when fetching JWKS",
             "type" : "number"
-          }
-        }
-      },
-      "otoroshi.next.models.Route" : {
-        "description" : "???",
-        "type" : "object",
-        "properties" : {
-          "metadata" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "???"
-          },
-          "enabled" : {
-            "description" : "???",
-            "type" : "boolean"
-          },
-          "backendRef" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string"
-            } ],
-            "description" : "???"
-          },
-          "healthCheck" : {
-            "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.models.HealthCheck"
-          },
-          "groups" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "???"
-          },
-          "id" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "tags" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "???"
-          },
-          "name" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "_loc" : {
-            "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
-          },
-          "debugFlow" : {
-            "description" : "???",
-            "type" : "boolean"
-          },
-          "description" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "plugins" : {
-            "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgPlugins"
-          },
-          "backend" : {
-            "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.next.models.Backend"
-          },
-          "client" : {
-            "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.models.ClientConfig"
-          },
-          "frontend" : {
-            "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.next.models.Frontend"
           }
         }
       },
