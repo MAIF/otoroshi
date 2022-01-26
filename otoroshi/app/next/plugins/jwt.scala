@@ -37,6 +37,9 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = true
+  override def transformsResponse: Boolean = false
+  override def transformsError: Boolean = false
   override def name: String = "Jwt verifiers"
   override def description: Option[String] = "This plugin verifies the current request with one or more jwt verifier".some
   override def defaultConfig: Option[JsObject] = JwtVerificationConfig().json.asObject.some

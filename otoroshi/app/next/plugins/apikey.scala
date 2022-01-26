@@ -25,6 +25,9 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = true
+  override def transformsResponse: Boolean = false
+  override def transformsError: Boolean = false
   override def name: String = "Apikeys"
   override def description: Option[String] = "This plugin expects to find an apikey to allow the request to pass".some
   override def defaultConfig: Option[JsObject] = ApiKeyConstraints().json.asObject.some

@@ -54,6 +54,9 @@ class OverrideHost extends NgRequestTransformer {
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = true
+  override def transformsResponse: Boolean = false
+  override def transformsError: Boolean = false
   override def name: String = "Override host header"
   override def description: Option[String] = "This plugin override the current Host header with the Host of the backend target".some
 
@@ -111,6 +114,9 @@ class AdditionalHeadersOut extends NgRequestTransformer {
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = false
+  override def transformsResponse: Boolean = true
+  override def transformsError: Boolean = false
   override def name: String = "Additional headers out"
   override def description: Option[String] = "This plugin adds headers in the otoroshi response".some
   override def defaultConfig: Option[JsObject] = HeaderValuesConfig().json.asObject.some
@@ -138,6 +144,9 @@ class AdditionalHeadersIn extends NgRequestTransformer {
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = true
+  override def transformsResponse: Boolean = false
+  override def transformsError: Boolean = false
   override def name: String = "Additional headers in"
   override def description: Option[String] = "This plugin adds headers in the incoming otoroshi request".some
   override def defaultConfig: Option[JsObject] = HeaderValuesConfig().json.asObject.some
@@ -165,6 +174,9 @@ class MissingHeadersIn extends NgRequestTransformer {
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = true
+  override def transformsResponse: Boolean = false
+  override def transformsError: Boolean = false
   override def name: String = "Missing headers in"
   override def description: Option[String] = "This plugin adds headers (if missing) in the incoming otoroshi request".some
   override def defaultConfig: Option[JsObject] = HeaderValuesConfig().json.asObject.some
@@ -194,6 +206,9 @@ class MissingHeadersOut extends NgRequestTransformer {
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = false
+  override def transformsResponse: Boolean = true
+  override def transformsError: Boolean = false
   override def name: String = "Missing headers out"
   override def description: Option[String] = "This plugin adds headers (if missing) in the otoroshi response".some
   override def defaultConfig: Option[JsObject] = HeaderValuesConfig().json.asObject.some
@@ -223,6 +238,9 @@ class RemoveHeadersOut extends NgRequestTransformer {
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = false
+  override def transformsResponse: Boolean = true
+  override def transformsError: Boolean = false
   override def name: String = "Remove headers out"
   override def description: Option[String] = "This plugin removes headers in the otoroshi response".some
   override def defaultConfig: Option[JsObject] = HeaderNamesConfig().json.asObject.some
@@ -241,6 +259,9 @@ class RemoveHeadersIn extends NgRequestTransformer {
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = true
+  override def transformsResponse: Boolean = false
+  override def transformsError: Boolean = false
   override def name: String = "Remove headers in"
   override def description: Option[String] = "This plugin removes headers in the incoming otoroshi request".some
   override def defaultConfig: Option[JsObject] = HeaderNamesConfig().json.asObject.some
@@ -259,6 +280,9 @@ class SendOtoroshiHeadersBack extends NgRequestTransformer {
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = false
+  override def transformsResponse: Boolean = true
+  override def transformsError: Boolean = false
   override def name: String = "Send otoroshi headers back"
   override def description: Option[String] = "This plugin adds response header containing useful informations about the current call".some
 
@@ -315,6 +339,9 @@ class XForwardedHeaders extends NgRequestTransformer {
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = true
+  override def transformsResponse: Boolean = false
+  override def transformsError: Boolean = false
   override def name: String = "X-Forwarded-* headers"
   override def description: Option[String] = "This plugin adds all the X-Forwarder-* headers to the request for the backend target".some
 

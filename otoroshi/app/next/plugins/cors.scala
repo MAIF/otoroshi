@@ -19,6 +19,9 @@ class Cors extends NgRequestTransformer with NgPreRouting {
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = false
+  override def transformsResponse: Boolean = true
+  override def transformsError: Boolean = false
   override def name: String = "CORS"
   override def description: Option[String] = "This plugin applies CORS rules".some
   override def defaultConfig: Option[JsObject] = CorsSettings(enabled = true).asJson.asObject.-("enabled").some

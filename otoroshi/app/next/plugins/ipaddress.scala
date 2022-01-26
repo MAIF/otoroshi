@@ -143,10 +143,14 @@ object EndlessHttpResponseConfig {
 
 class EndlessHttpResponse extends NgRequestTransformer {
 
+  // TODO: should be a pre-route to be faster in the pipeline
   private val configReads: Reads[EndlessHttpResponseConfig] = EndlessHttpResponseConfig.format
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = true
+  override def transformsResponse: Boolean = false
+  override def transformsError: Boolean = false
   override def name: String = "Endless HTTP responses"
   override def description: Option[String] = "This plugin returns 128 Gb of 0 to the ip addresses is in the list".some
   override def defaultConfig: Option[JsObject] = EndlessHttpResponseConfig().json.asObject.some

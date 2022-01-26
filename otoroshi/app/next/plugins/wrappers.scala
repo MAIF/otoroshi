@@ -131,6 +131,9 @@ class RequestSinkWrapper extends NgRequestSink {
 class RequestTransformerWrapper extends NgRequestTransformer {
 
   override def usesCallbacks: Boolean = true
+  override def transformsRequest: Boolean = true
+  override def transformsResponse: Boolean = true
+  override def transformsError: Boolean = true
   override def name: String = "Request transformer plugin wrapper"
   override def description: Option[String] = "Wraps an old request transformer plugin for the new router. The configuration is the one for the wrapped plugin.".some
 
@@ -413,6 +416,11 @@ class RequestTransformerWrapper extends NgRequestTransformer {
 }
 
 class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgRequestTransformer {
+
+  override def usesCallbacks: Boolean = true
+  override def transformsRequest: Boolean = true
+  override def transformsResponse: Boolean = true
+  override def transformsError: Boolean = true
 
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError,Done]] = {
     val pluginId = ctx.config.select("plugin").as[String]

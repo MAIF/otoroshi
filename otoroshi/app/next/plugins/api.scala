@@ -418,6 +418,9 @@ case class NgTransformerErrorContext(
 trait NgRequestTransformer extends NgPlugin {
 
   def usesCallbacks: Boolean = true
+  def transformsRequest: Boolean = true
+  def transformsResponse: Boolean = true
+  def transformsError: Boolean = true
 
   def beforeRequest(ctx: NgBeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = ().vfuture
 

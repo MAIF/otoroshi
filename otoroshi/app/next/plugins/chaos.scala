@@ -25,6 +25,9 @@ class SnowMonkeyChaos extends NgRequestTransformer {
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = true
+  override def transformsResponse: Boolean = true
+  override def transformsError: Boolean = false
   override def name: String = "Snow Monkey Chaos"
   override def description: Option[String] = "This plugin introduce some chaos into you life".some
   override def defaultConfig: Option[JsObject] = ChaosConfig().asJson.asObject.-("enabled").some

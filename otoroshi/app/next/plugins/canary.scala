@@ -23,6 +23,9 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
   private val configReads: Reads[Canary] = Canary.format
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = false
+  override def transformsResponse: Boolean = true
+  override def transformsError: Boolean = false
   override def name: String = "Canary mode"
   override def description: Option[String] = "This plugin can split a portion of the traffic to canary backends".some
   override def defaultConfig: Option[JsObject] = Canary().toJson.asObject.-("enabled")some

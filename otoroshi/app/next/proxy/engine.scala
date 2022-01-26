@@ -1255,6 +1255,7 @@ class ProxyEngine() extends RequestHandler {
       case ps if ps.isEmpty => None
       case ps               => ps.find(p => root.startsWith(p))
     }
+    // TODO: try to work with wildcard path ?
     rootMatched
       .filter(m => route.frontend.stripPath && root.startsWith(m))
       .map(m => root.replaceFirst(m.replace(".", "\\."), ""))
@@ -1319,7 +1320,7 @@ class ProxyEngine() extends RequestHandler {
       backend = backend.some
     )
 
-    val all_plugins = plugins.transformerPlugins
+    val all_plugins = plugins.transformerPluginsThatTransformsRequest
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[NgProxyEngineError, NgPluginHttpRequest]]()
       var sequence = NgReportPluginSequence(
@@ -1514,7 +1515,7 @@ class ProxyEngine() extends RequestHandler {
       body = response.bodyAsSource
     )
 
-    val all_plugins = plugins.transformerPlugins
+    val all_plugins = plugins.transformerPluginsThatTransformsResponse
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[NgProxyEngineError, NgPluginHttpResponse]]()
       var sequence = NgReportPluginSequence(

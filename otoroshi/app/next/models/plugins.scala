@@ -94,6 +94,18 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) {
     transformerPlugins(request).filter(_.plugin.usesCallbacks)
   }
 
+  def transformerPluginsThatTransformsRequest(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
+    transformerPlugins(request).filter(_.plugin.transformsRequest)
+  }
+
+  def transformerPluginsThatTransformsResponse(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
+    transformerPlugins(request).filter(_.plugin.transformsResponse)
+  }
+
+  def transformerPluginsThatTransformsError(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
+    transformerPlugins(request).filter(_.plugin.transformsError)
+  }
+
   def preRoutePlugins(request: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgPreRouting]] = {
     slots
       .filter(_.enabled)
@@ -168,6 +180,9 @@ case class NgContextualPlugins(plugins: NgPlugins, global_plugins: NgPlugins, re
     }
 
   lazy val transformerPluginsWithCallbacks = transformerPlugins.filter(_.plugin.usesCallbacks)
+  lazy val transformerPluginsThatTransformsRequest = transformerPlugins.filter(_.plugin.transformsRequest)
+  lazy val transformerPluginsThatTransformsResponse = transformerPlugins.filter(_.plugin.transformsResponse)
+  lazy val transformerPluginsThatTransformsError = transformerPlugins.filter(_.plugin.transformsError)
 
   lazy val preRoutePlugins = allPlugins
     .map(inst => (inst, inst.getPlugin[NgPreRouting]))

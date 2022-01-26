@@ -240,7 +240,7 @@ case class NgRoute(
   }
 
   def transformError(__ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
-    val all_plugins = __ctx.attrs.get(Keys.ContextualPluginsKey).map(_.transformerPlugins).getOrElse(plugins.transformerPlugins(__ctx.request))
+    val all_plugins = __ctx.attrs.get(Keys.ContextualPluginsKey).map(_.transformerPluginsThatTransformsError).getOrElse(plugins.transformerPluginsThatTransformsError(__ctx.request))
     if (all_plugins.nonEmpty) {
       val promise = Promise[Either[NgProxyEngineError, NgPluginHttpResponse]]()
       val report = __ctx.report

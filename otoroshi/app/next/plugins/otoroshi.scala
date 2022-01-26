@@ -69,6 +69,9 @@ class OtoroshiChallenge extends NgRequestTransformer {
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = true
+  override def transformsResponse: Boolean = true
+  override def transformsError: Boolean = false
   override def name: String = "Otoroshi challenge token"
   override def description: Option[String] = "This plugin adds a jwt challenge token to the request to a backend and expects a response with a matching token".some
   override def defaultConfig: Option[JsObject] = OtoroshiChallengeConfig(Json.obj()).json.asObject.some
@@ -299,6 +302,9 @@ class OtoroshiInfos extends NgRequestTransformer {
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = true
+  override def transformsResponse: Boolean = false
+  override def transformsError: Boolean = false
   override def name: String = "Otoroshi info. token"
   override def description: Option[String] = "This plugin adds a jwt info. token to the request to a backend".some
   override def defaultConfig: Option[JsObject] = OtoroshiInfoConfig(Json.obj()).json.asObject.some

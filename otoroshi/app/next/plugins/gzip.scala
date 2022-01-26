@@ -16,6 +16,9 @@ class GzipResponseCompressor extends NgRequestTransformer {
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = false
+  override def transformsResponse: Boolean = true
+  override def transformsError: Boolean = false
   override def name: String = "Gzip compression"
   override def description: Option[String] = "This plugin can compress responses using gzip".some
   override def defaultConfig: Option[JsObject] = GzipConfig().asJson.asObject.-("enabled").-("excludedPatterns").some
