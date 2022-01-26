@@ -92,8 +92,7 @@ case class NgTreeNodePath(routes: scala.collection.mutable.MutableList[NgRoute],
   lazy val wildcardEntry: Option[NgTreeNodePath] = tree.get("*") // lazy should be good as once built the mutable map is never mutated again
   lazy val hasWildcardKeys: Boolean = wildcardKeys.nonEmpty
   lazy val wildcardKeys: scala.collection.Set[String] = tree.keySet.filter(_.contains("*"))
-  lazy val isEmpty = routes.isEmpty && tree.isEmpty
-  lazy val treeIsEmpty = tree.isEmpty
+  lazy val isEmpty = routes.isEmpty && isLeaf
   def wildcardEntriesMatching(segment: String): Option[NgTreeNodePath] = wildcardCache.get(segment, _ => wildcardKeys.find(str => RegexPool(str).matches(segment)).flatMap(key => tree.get(key)))
   def addRoute(route: NgRoute): NgTreeNodePath = {
     routes.+=(route)
@@ -139,8 +138,8 @@ case class NgTreeNodePath(routes: scala.collection.mutable.MutableList[NgRoute],
         }
         case Some(ptree) if ptree.isEmpty && routes.isEmpty => None
         case Some(ptree) if ptree.isEmpty && routes.nonEmpty => routes.some
-        case Some(ptree) if ptree.treeIsEmpty && ptree.routes.isEmpty => None
-        case Some(ptree) if ptree.treeIsEmpty && ptree.routes.nonEmpty => ptree.routes.some
+        case Some(ptree) if ptree.isLeaf && ptree.routes.isEmpty => None
+        case Some(ptree) if ptree.isLeaf && ptree.routes.nonEmpty => ptree.routes.some
         case Some(ptree) => ptree.find(segments.tail, endsWithSlash) match { // is that right ?
           case None if routes.isEmpty => None
           case None => routes.some
