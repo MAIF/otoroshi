@@ -66,7 +66,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
       case None if config.validate && !pass => {
         // Here are 2 + 12 datastore calls to handle quotas
-        val routeId = ctx.route.metadata.get("original_route_id").getOrElse(ctx.route.id) // handling route groups
+        val routeId = ctx.route.originalRouteId.getOrElse(ctx.route.id) // handling route groups
         ApiKeyHelper.passWithApiKeyFromCache(ctx.request, config.legacy, ctx.attrs, routeId).map {
           case Left(result) => NgAccess.NgDenied(result)
           case Right(apikey) =>

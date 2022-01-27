@@ -159,6 +159,7 @@ class ConfigCleanerTests
 
 class NgTreeRouterTests
   extends Suites(
+    new NgTreeRouterOpenapiWithEnvSpec(Configurations.InMemoryConfiguration),
     // new NgTreeRouterWildcardSpec(),
     // new NgTreeRouterRealLifeSpec(),
     // new NgTreeRouterPathParamsSpec(),

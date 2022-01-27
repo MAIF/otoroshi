@@ -61,11 +61,42 @@ class NgTreeRouterWithEnvSpec(configurationSpec: => Configuration) extends Otoro
 
     "find route fast" in {
       NgTreeRouter_Test.testFindRoute(otoroshiComponents.env)
-      
-      // import otoroshi.utils.syntax.implicits._
-      // NgRoutesComposition.fromOpenApi("api.oto.tools", "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json")(otoroshiComponents.env.otoroshiExecutionContext, otoroshiComponents.env).map { route =>
-      //   java.nio.file.Files.writeString(new java.io.File("./routescomp-debug.json").toPath(), route.json.prettify)
-      // }.futureValue
+    }
+
+    "shutdown" in {
+      stopAll()
+    }
+  }
+}
+
+class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extends OtoroshiSpec {
+
+  override def getTestConfiguration(configuration: Configuration) = {
+    Configuration(
+      ConfigFactory
+        .parseString("{}")
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
+  }
+
+  "NgTreeRouter" should {
+
+    "warm up" in {
+      startOtoroshi()
+      getOtoroshiServices().andThen { case Failure(e) =>
+        e.printStackTrace()
+      }.futureValue // WARM UP
+    }
+
+    "find route fast" in {
+      import otoroshi.utils.syntax.implicits._
+      NgRoutesComposition.fromOpenApi("api.oto.tools", "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json")(otoroshiComponents.env.otoroshiExecutionContext, otoroshiComponents.env).map { route =>
+        val router = NgTreeRouter.build(route.toRoutes)
+
+        router.find("api.oto.tools", "/api/services").map(_.routes.map(_.name)).debugPrintln
+        
+        // java.nio.file.Files.writeString(new java.io.File("./routescomp-debug.json").toPath(), route.json.prettify)
+      }.futureValue
     }
 
     "shutdown" in {

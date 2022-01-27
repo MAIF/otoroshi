@@ -90,23 +90,23 @@ case class NgRoutesComposition(
     if (enabled) {
       routes.zipWithIndex.map {
         case (route, idx) =>
-        NgRoute(
-          location = location,
-          id = id + "-" + idx,
-          name = name,
-          description = description,
-          tags = tags,
-          metadata = metadata,
-          enabled = enabled,
-          debugFlow = debugFlow,
-          groups = groups,
-          frontend = route.frontend,
-          backend = route.backend,
-          backendRef = route.backendRef,
-          client = client,
-          healthCheck = HealthCheck(false, "/"),
-          plugins = plugins
-        )
+          NgRoute(
+            location = location,
+            id = id + "-" + idx,
+            name = name + " - " + route.frontend.methods.mkString(", ") + " - " + route.frontend.domains.map(_.path).mkString(", "),
+            description = description,
+            tags = tags,
+            metadata = metadata ++ Map("otoroshi-core-original-route-id" -> id),
+            enabled = enabled,
+            debugFlow = debugFlow,
+            groups = groups,
+            frontend = route.frontend,
+            backend = route.backend,
+            backendRef = route.backendRef,
+            client = client,
+            healthCheck = HealthCheck(false, "/"),
+            plugins = plugins
+          )
       }
     } else {
       Seq.empty
@@ -163,28 +163,26 @@ object NgRoutesComposition {
         )
       }
       val paths = json.select("paths").asOpt[JsObject].getOrElse(Json.obj())
-      val routes: Seq[NgMinimalRoute] = paths.value.toSeq.flatMap { 
-        case (path, obj) => obj.as[JsObject].value.toSeq.map {
-          case (method, definition) => {
-            val cleanPath = path.replace("{", ":").replace("}", "")
-            NgMinimalRoute(
-              frontend = NgFrontend(
-                domains = Seq(NgDomainAndPath(s"${domain}${cleanPath}")),
-                headers = Map.empty,
-                methods = Seq(method),
-                stripPath = false,
-                strict = true,
-              ),
-              backend = NgBackend(
-                targets = targets,
-                targetRefs = Seq.empty,
-                root = "/",
-                rewrite = false,
-                loadBalancing = RoundRobin
-              )
+      val routes: Seq[NgMinimalRoute] = paths.value.toSeq.map { 
+        case (path, obj) => 
+          val cleanPath = path.replace("{", ":").replace("}", "")
+          val methods = obj.as[JsObject].value.toSeq.map(_._1.toUpperCase())
+          NgMinimalRoute(
+            frontend = NgFrontend(
+              domains = Seq(NgDomainAndPath(s"${domain}${cleanPath}")),
+              headers = Map.empty,
+              methods = methods,
+              stripPath = false,
+              strict = true,
+            ),
+            backend = NgBackend(
+              targets = targets,
+              targetRefs = Seq.empty,
+              root = "/",
+              rewrite = false,
+              loadBalancing = RoundRobin
             )
-          }
-        }
+          )          
       } 
       NgRoutesComposition(
         location = EntityLocation.default,
