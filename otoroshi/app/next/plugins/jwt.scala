@@ -13,7 +13,7 @@ import play.api.mvc.Result
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-case class JwtVerificationConfig(verifiers: Seq[String] = Seq.empty) {
+case class JwtVerificationConfig(verifiers: Seq[String] = Seq.empty) extends AnyVal {
   def json: JsValue = JwtVerificationConfig.format.writes(this)
 }
 

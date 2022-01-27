@@ -14,7 +14,7 @@ import play.api.mvc.{Result, Results}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class HeaderNamesConfig(names: Seq[String] = Seq.empty) {
+case class HeaderNamesConfig(names: Seq[String] = Seq.empty) extends AnyVal {
   def json: JsValue = HeaderNamesConfig.format.writes(this)
 }
 
@@ -32,7 +32,7 @@ object HeaderNamesConfig {
   }
 }
 
-case class HeaderValuesConfig(headers: Map[String, String] = Map.empty) {
+case class HeaderValuesConfig(headers: Map[String, String] = Map.empty) extends AnyVal {
   def json: JsValue = HeaderValuesConfig.format.writes(this)
 }
 

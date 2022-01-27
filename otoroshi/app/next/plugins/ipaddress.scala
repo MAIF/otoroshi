@@ -17,7 +17,7 @@ import play.api.mvc.{Result, Results}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class IpAddressesConfig(addresses: Seq[String] = Seq.empty) {
+case class IpAddressesConfig(addresses: Seq[String] = Seq.empty) extends AnyVal {
   def json: JsValue = IpAddressesConfig.format.writes(this)
 }
 

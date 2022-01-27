@@ -10,7 +10,7 @@ import play.api.mvc.RequestHeader
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
 
-case class NgPluginInstanceConfig(raw: JsObject = Json.obj()) {
+case class NgPluginInstanceConfig(raw: JsObject = Json.obj()) extends AnyVal {
   def json: JsValue = raw
 }
 
@@ -53,7 +53,7 @@ case class NgPluginInstance(plugin: String, enabled: Boolean = true, debug: Bool
   }
 }
 
-case class NgPlugins(slots: Seq[NgPluginInstance]) {
+case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
   def json: JsValue = JsArray(slots.map(_.json))
 

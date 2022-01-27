@@ -13,7 +13,7 @@ import play.api.mvc.Results
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class NgAuthModuleConfig(module: Option[String] = None) {
+case class NgAuthModuleConfig(module: Option[String] = None) extends AnyVal {
   def json: JsValue = NgAuthModuleConfig.format.writes(this)
 }
 
