@@ -3,7 +3,7 @@ package functional
 import com.typesafe.config.ConfigFactory
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{MustMatchers, OptionValues, WordSpec}
-import otoroshi.next.models.NgTreeRouter_Test
+import otoroshi.next.models._
 import play.api.Configuration
 
 import scala.util.Failure
@@ -61,6 +61,11 @@ class NgTreeRouterWithEnvSpec(configurationSpec: => Configuration) extends Otoro
 
     "find route fast" in {
       NgTreeRouter_Test.testFindRoute(otoroshiComponents.env)
+      
+      // import otoroshi.utils.syntax.implicits._
+      // NgRoutesComposition.fromOpenApi("api.oto.tools", "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json")(otoroshiComponents.env.otoroshiExecutionContext, otoroshiComponents.env).map { route =>
+      //   java.nio.file.Files.writeString(new java.io.File("./routescomp-debug.json").toPath(), route.json.prettify)
+      // }.futureValue
     }
 
     "shutdown" in {

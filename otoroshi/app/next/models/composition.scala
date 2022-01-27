@@ -1,13 +1,21 @@
 package otoroshi.next.models
 
-import otoroshi.models._
-import play.api.libs.json._
-import otoroshi.storage._
-import otoroshi.env._
-import scala.util._
-
-import otoroshi.utils.syntax.implicits._
+import akka.http.scaladsl.util.FastFuture
 import otoroshi.api.OtoroshiEnvHolder
+import otoroshi.env._
+import otoroshi.models._
+import otoroshi.security.IdGenerator
+import otoroshi.storage._
+import otoroshi.utils.syntax.implicits._
+import play.api.libs.json._
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util._
+import otoroshi.next.plugins.api.NgPluginHelper
+import otoroshi.next.plugins.OverrideHost
+import otoroshi.next.plugins.ApikeyCalls
+import akka.http.scaladsl.model.Uri
 
 case class NgMinimalRoute(
   frontend: NgFrontend,
@@ -129,6 +137,78 @@ object NgRoutesComposition {
       case Success(route) => JsSuccess(route)
     }
   }
+
+  def fromOpenApi(domain: String, openapi: String)(implicit ec: ExecutionContext, env: Env): Future[NgRoutesComposition] = {
+    val codef: Future[String] = if (openapi.startsWith("http://") || openapi.startsWith("https://")) {
+      env.Ws.url(openapi).get().map(_.body)
+    } else {
+      FastFuture.successful(openapi)
+    } 
+    codef.map { code =>
+      val json = Json.parse(code)
+      val name = json.select("info").select("title").as[String]
+      val description = json.select("info").select("description").asOpt[String].getOrElse("")
+      val version = json.select("info").select("version").asOpt[String].getOrElse("")
+      val targets = json.select("servers").as[Seq[JsObject]].map { server =>
+        val serverUrl = server.select("url").asString
+        val serverUri = Uri(serverUrl)
+        val serverDomain = serverUri.authority.host.toString()
+        val tls = serverUri.scheme.toLowerCase().contains("https")
+        val port = if (serverUri.authority.port == 0) (if (tls) 443 else 80) else serverUri.authority.port
+        NgTarget(
+          id = serverUrl,
+          hostname = serverDomain,
+          port = port,
+          tls = tls
+        )
+      }
+      val paths = json.select("paths").asOpt[JsObject].getOrElse(Json.obj())
+      val routes: Seq[NgMinimalRoute] = paths.value.toSeq.flatMap { 
+        case (path, obj) => obj.as[JsObject].value.toSeq.map {
+          case (method, definition) => {
+            val cleanPath = path.replace("{", ":").replace("}", "")
+            NgMinimalRoute(
+              frontend = NgFrontend(
+                domains = Seq(NgDomainAndPath(s"${domain}${cleanPath}")),
+                headers = Map.empty,
+                methods = Seq(method),
+                stripPath = false,
+                strict = true,
+              ),
+              backend = NgBackend(
+                targets = targets,
+                targetRefs = Seq.empty,
+                root = "/",
+                rewrite = false,
+                loadBalancing = RoundRobin
+              )
+            )
+          }
+        }
+      } 
+      NgRoutesComposition(
+        location = EntityLocation.default,
+        id = "routes-comp_" + IdGenerator.uuid,
+        name = name,
+        description = description,
+        tags = Seq("env:prod"),
+        metadata = Map("version" -> version),
+        enabled = true,
+        debugFlow = false,
+        groups = Seq("default"),
+        routes = routes,
+        client = ClientConfig(),
+        plugins = NgPlugins(Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost],
+          ),
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[ApikeyCalls],
+          )
+        ))
+      )
+    }
+  } 
 }
 
 trait NgRoutesCompositionDataStore extends BasicStore[NgRoutesComposition]
