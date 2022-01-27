@@ -98,7 +98,6 @@ case class NgRoute(
             } else {
               seq.exists { d =>
                 path.startsWith(d.path) || RegexPool(d.path).matches(path)
-                true
               }
             }
           }
