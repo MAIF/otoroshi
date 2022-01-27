@@ -16,6 +16,7 @@ import java.security.cert.X509Certificate
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
+import org.checkerframework.checker.regex.qual.Regex
 
 case class NgMatchedRoutes(routes: Seq[NgRoute], path: String = "", pathParams: scala.collection.mutable.HashMap[String, String] = scala.collection.mutable.HashMap.empty) {
   def find(f: (NgRoute, scala.collection.mutable.HashMap[String, String]) => Boolean): Option[NgMatchedRoute] = {
@@ -105,6 +106,8 @@ case class NgTreeNodePath(routes: scala.collection.mutable.MutableList[NgRoute],
   lazy val wildcardKeys: scala.collection.Set[String] = tree.keySet.filter(_.contains("*"))
   lazy val hasNamedKeys: Boolean = namedKeys.nonEmpty
   lazy val namedKeys: scala.collection.Set[String] = tree.keySet.filter(_.startsWith(":"))
+  lazy val hasRegexKeys: Boolean = regexKeys.nonEmpty
+  lazy val regexKeys: scala.collection.Set[String] = tree.keySet.filter(v => v.startsWith("$") && v.endsWith(">"))
   lazy val isEmpty = routes.isEmpty && isLeaf
   def wildcardEntriesMatching(segment: String): Option[NgTreeNodePath] = wildcardCache.get(segment, _ => wildcardKeys.find(str => RegexPool(str).matches(segment)).flatMap(key => tree.get(key)))
   def addRoute(route: NgRoute): NgTreeNodePath = {
@@ -125,15 +128,22 @@ case class NgTreeNodePath(routes: scala.collection.mutable.MutableList[NgRoute],
       case None => NgMatchedRoutes(routes, path, pathParams).some
       case Some(head) => {
         val mptree = tree.get(head)
-          .applyOnWithPredicate(opt => if (opt.isEmpty) hasNamedKeys    else false) { _ =>
+          .applyOnWithPredicate(opt => if (opt.isEmpty) (hasNamedKeys || hasRegexKeys) else false) { _ =>
             // here is how to solve the case where the user do something like
             // - /api/contracts/:contract-id/items
             // - /api/contracts/:contract/fifou
             namedKeys.map(nk => pathParams.+=(nk.replaceFirst(":", "") -> head))
-            namedKeys.map(k => tree.get(k))
+            val nroute = namedKeys.map(k => tree.get(k))
               .collect { case Some(ptree) => ptree }
               .fold(NgTreeNodePath.empty)((a, b) => a.copy(routes = a.routes ++ b.routes, tree = a.tree ++ b.tree))
-              .some
+            // handling regex path params like /api/contracts/$id<[0-9]+>/items
+            val matchingRegexKeys = regexKeys.map(k => k.split("<").tail.mkString("<").init).filter(reg => RegexPool.regex(reg).matches(head))
+            matchingRegexKeys.map(nk => pathParams.+=(nk.substring(1).split("<").head -> head))
+            val rroute = matchingRegexKeys.map(k => tree.get(k))
+              .collect { case Some(ptree) => ptree }
+              .fold(NgTreeNodePath.empty)((a, b) => a.copy(routes = a.routes ++ b.routes, tree = a.tree ++ b.tree))
+            // merge the tree
+            NgTreeNodePath.empty.copy(routes = nroute.routes ++ rroute.routes, tree = nroute.tree ++ rroute.tree).some
           }
           .applyOnWithPredicate(opt => if (opt.isEmpty) hasWildcardKeys else false)(opt => opt.orElse(wildcardEntriesMatching(head)).orElse(wildcardEntry))
         mptree match {
