@@ -39,10 +39,9 @@ object NgTreeRouter {
       route.frontend.domains.foreach { dpath =>
         if (dpath.domain.contains("*")) {
           root.wildcards.+=(NgRouteDomainAndPathWrapper(route, dpath.domain, dpath.path))
-        } else {
-          val ptree = root.tree.getOrElseUpdate(dpath.domain, NgTreeNodePath.empty)
-          ptree.addSubRoutes(dpath.path.split("/").toSeq.filterNot(_.trim.isEmpty), route)
         }
+        val ptree = root.tree.getOrElseUpdate(dpath.domain, NgTreeNodePath.empty)
+        ptree.addSubRoutes(dpath.path.split("/").toSeq.filterNot(_.trim.isEmpty), route)
       }
     }
     root.wildcards.sortWith((r1, r2) => r1.domain.length.compareTo(r2.domain.length) > 0)
@@ -67,17 +66,15 @@ case class NgTreeRouter(tree: TrieMap[String, NgTreeNodePath], wildcards: scala.
   def find(domain: String, path: String): Option[NgMatchedRoutes] = {
     tree.get(domain) match {
       case Some(ptree) => ptree.find(path.split("/").filterNot(_.trim.isEmpty), path.endsWith("/"), "", scala.collection.mutable.HashMap.empty)
-      case None => findWildcard(domain).map(routes => NgMatchedRoutes(routes, "/", scala.collection.mutable.HashMap.empty)) // TODO: make NgMatchedRoutes mecanisms work here too
+      case None => findWildcard(domain)
     }
   }
 
-  def findWildcard(domain: String): Option[Seq[NgRoute]] = {
-    wildcards.filter { route =>
+  def findWildcard(domain: String): Option[NgMatchedRoutes] = {
+    wildcards.find { route =>
       RegexPool(route.domain).matches(domain)
-    }.map(_.route).applyOn {
-      case seq if seq.isEmpty => None
-      case seq => seq.some
     }
+    .flatMap(route => find(route.domain, route.path))
   }
 }
 
@@ -232,6 +229,29 @@ object NgTreeRouter_Test {
         plugins = NgPlugins(Seq.empty)
       )
     }
+    def routeFromPath(rpath: String): NgRoute = {
+      val id = rpath
+      val parts = rpath.split("/").toSeq
+      val domain = parts.head
+      val path = parts.tail.mkString("/", "/", "")
+      NgRoute(
+        location = EntityLocation.default,
+        id = id,
+        name = id,
+        description = id,
+        tags = Seq.empty,
+        metadata = Map.empty,
+        enabled = true,
+        debugFlow = false,
+        groups = Seq("default"),
+        frontend = NgFrontend.empty.copy(domains = Seq(NgDomainAndPath(rpath)), stripPath = false),
+        backend = NgBackend.empty.copy(root = s"/", targets = Seq(NgTarget("localhost", "127.0.0.1", 8081, tls = false))),
+        backendRef = None,
+        client = ClientConfig(),
+        healthCheck = HealthCheck(enabled = false, "/"),
+        plugins = NgPlugins(Seq.empty)
+      )
+    }
   }
 
   def testFindRoute(env: Env): Unit = {
@@ -364,5 +384,65 @@ object NgTreeRouter_Test {
       println(mroute.path)
       println(mroute.pathParams)
     }
+  }
+
+  def testRealLifeRouter(): Unit = {
+    val routesStr = Json.parse(java.nio.file.Files.readString(new java.io.File("../test-resources/paths.json").toPath())).as[Seq[String]]
+    val routes = routesStr.map(path => NgFakeRoute.routeFromPath(path))
+    val router = NgTreeRouter.build(routes)
+
+    val counter = new AtomicLong(0L)
+    val sum = new AtomicLong(0L)
+
+    def clear(): Unit= {
+      counter.set(0L)
+      sum.set(0L)
+    }
+
+    def printStats(iteration: String): Unit = {
+      val duration = sum.get().nanos.toMillis
+      val avg = sum.get() / counter.get()
+      println(s"$iteration - duration: ${duration} ms, for ${counter.get()} iterations, avg iteration is: ${avg} nanos")
+    }
+
+    def run(print: Boolean): Unit = {
+      routesStr.foreach { rpath =>
+        val parts = rpath.split("/").toSeq
+        val domain = parts.head
+        val path = parts.tail.mkString("/", "/", "")
+        val start_ns = System.nanoTime()
+        val f_routes = router.find(domain, path)
+        val duration_ns = System.nanoTime() - start_ns
+        counter.incrementAndGet()
+        sum.addAndGet(duration_ns)
+        if (print) {
+          val found = f_routes.isDefined && f_routes.exists(_.routes.size == 1) && f_routes.map(_.routes.head.name).contains(rpath)
+          println(path, found, duration_ns + " nanos", duration_ns.nanos.toMillis + " ms")
+        }
+      }
+    }
+    for(idx <- 1 to 100) {
+      run(false)
+      printStats(s"warmup-${idx}")
+      clear()
+    }
+
+    run(true)
+    printStats(s"run")
+    clear()
+  }
+
+  def testWildcardDomainsRouter(): Unit = {
+    val routes = Seq(NgFakeRoute.routeFromPath("*-wildcard-next-gen.oto.tools/api"))
+    val router = NgTreeRouter.build(routes)
+
+    println(router.json.prettify)
+
+    router.find("foo-ildcard-next-gen.oto.tools", "/api").map(_.routes.map(_.name)).debugPrintln
+    router.find("foo-wildcard-next-gen.oto.tools", "/api").map(_.routes.map(_.name)).debugPrintln
+    router.find("foo1-wildcard-next-gen.oto.tools", "/api").map(_.routes.map(_.name)).debugPrintln
+    router.find("foo2-wildcard-next-gen.oto.tools", "/api").map(_.routes.map(_.name)).debugPrintln
+    router.find("foo-bar-wildcard-next-gen.oto.tools", "/api").map(_.routes.map(_.name)).debugPrintln
+    router.find("foo-bar-quix-wildcard-next-gen.oto.tools", "/api").map(_.routes.map(_.name)).debugPrintln
   }
 }

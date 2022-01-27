@@ -24,6 +24,22 @@ class NgTreeRouterPathParamsSpec extends WordSpec with MustMatchers with OptionV
   }
 }
 
+class NgTreeRouterRealLifeSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
+  "NgTreeRouter" should {
+    "be able to handle real life" in {
+      NgTreeRouter_Test.testRealLifeRouter()
+    }
+  }
+}
+
+class NgTreeRouterWildcardSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
+  "NgTreeRouter" should {
+    "be able to handle wildcard domains" in {
+      NgTreeRouter_Test.testWildcardDomainsRouter()
+    }
+  }
+}
+
 class NgTreeRouterWithEnvSpec(configurationSpec: => Configuration) extends OtoroshiSpec {
 
   override def getTestConfiguration(configuration: Configuration) = {

@@ -455,7 +455,7 @@ object NgRoute {
       id = service.id,
       name = service.name,
       description = service.description,
-      tags = service.tags,
+      tags = service.tags ++ Seq(s"env:${service.env}"),
       metadata = service.metadata.applyOnIf(service.useAkkaHttpClient) { meta =>
         meta ++ Map("otoroshi-core-use-akka-http-client" -> "true")
       }.applyOnIf(service.useNewWSClient) { meta =>
