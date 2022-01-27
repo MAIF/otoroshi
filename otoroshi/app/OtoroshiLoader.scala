@@ -10,7 +10,7 @@ import otoroshi.controllers.adminapi._
 import otoroshi.env.Env
 import otoroshi.gateway._
 import otoroshi.loader.modules._
-import otoroshi.next.controllers.adminapi.{NgBackendsController, NgTargetsController, NgRoutesController}
+import otoroshi.next.controllers.adminapi._
 import play.api.ApplicationLoader.Context
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.libs.ws.ahc.AhcWSComponents
@@ -112,6 +112,7 @@ package object modules {
     lazy val tenantsController            = wire[TenantsController]
     lazy val dataExporterConfigController = wire[DataExporterConfigController]
     lazy val routesController             = wire[NgRoutesController]
+    lazy val routesCompositionController  = wire[NgRoutesCompositionsController]
     lazy val targetsController            = wire[NgTargetsController]
     lazy val backendsController           = wire[NgBackendsController]
 

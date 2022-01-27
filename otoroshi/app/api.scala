@@ -14,7 +14,7 @@ import otoroshi.controllers._
 import otoroshi.controllers.adminapi._
 import otoroshi.env._
 import otoroshi.gateway._
-import otoroshi.next.controllers.adminapi.{NgBackendsController, NgTargetsController, NgRoutesController}
+import otoroshi.next.controllers.adminapi._
 import otoroshi.next.proxy.NgProxyStateLoaderJob
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.storage.DataStores
@@ -342,6 +342,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val tenantsController            = wire[TenantsController]
   lazy val dataExporterConfigController = wire[DataExporterConfigController]
   lazy val routesController             = wire[NgRoutesController]
+  lazy val routesCompositionController  = wire[NgRoutesCompositionsController]
   lazy val targetsController            = wire[NgTargetsController]
   lazy val backendsController           = wire[NgBackendsController]
 

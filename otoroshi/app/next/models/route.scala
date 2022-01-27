@@ -149,6 +149,7 @@ case class NgRoute(
   lazy val issueCertificate: Boolean = metadata.get("otoroshi-core-issue-certificate").contains("true")
   lazy val issueCertificateCA: Option[String] = metadata.get("otoroshi-core-issue-certificate-ca").filter(_.nonEmpty)
   lazy val openapiUrl: Option[String] = metadata.get("otoroshi-core-openapi-url").filter(_.nonEmpty)
+  lazy val originalRouteId: Option[String] = metadata.get("otoroshi-core-original-route-id").filter(_.nonEmpty)
 
   lazy val serviceDescriptor: ServiceDescriptor = {
     ServiceDescriptor(

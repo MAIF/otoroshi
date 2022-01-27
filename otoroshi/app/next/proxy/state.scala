@@ -299,12 +299,13 @@ class NgProxyStateLoaderJob extends Job {
     val debugHeaders = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
     for {
       routes <- env.datastores.routeDataStore.findAll() // Seq.empty[Route].vfuture //
+      routescomp <- env.datastores.routesCompositionDataStore.findAll() // Seq.empty[Route].vfuture //
       genRoutesDomain <- generateRoutesByDomain(env)
       genRoutesPath <- generateRoutesByName(env)
       genRandom <- generateRandomRoutes(env)
       descriptors <- env.datastores.serviceDescriptorDataStore.findAll()
       fakeRoutes = if (env.env == "dev") Seq(NgRoute.fake) else Seq.empty
-      newRoutes = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d => NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)) ++ routes ++ fakeRoutes).filter(_.enabled)
+      newRoutes = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d => NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes).filter(_.enabled)
       apikeys <- env.datastores.apiKeyDataStore.findAll()
       certs <- env.datastores.certificatesDataStore.findAll()
       verifiers <- env.datastores.globalJwtVerifierDataStore.findAll()
