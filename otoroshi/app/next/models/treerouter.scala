@@ -18,8 +18,8 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 
 case class NgMatchedRoutes(routes: Seq[NgRoute], path: String = "", pathParams: scala.collection.mutable.HashMap[String, String] = scala.collection.mutable.HashMap.empty) {
-  def find(f: NgRoute => Boolean): Option[NgMatchedRoute] = {
-    routes.find(f).map { r =>
+  def find(f: (NgRoute, scala.collection.mutable.HashMap[String, String]) => Boolean): Option[NgMatchedRoute] = {
+    routes.find(r => f(r, pathParams)).map { r =>
       // TODO: find a solution to cleanup the map from non desirable path params names
       // for request on /api/contracts/123/foo/foo on router like
       //   - /api/contracts/:id/foo/bar
@@ -61,7 +61,7 @@ case class NgTreeRouter(tree: TrieMap[String, NgTreeNodePath], wildcards: scala.
 
   def findRoute(request: RequestHeader, attrs: TypedMap)(implicit env: Env): Option[NgMatchedRoute] = {
     find(request.theDomain, request.thePath)
-      .flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true, skipPathVerif = true)))
+      .flatMap(_.find((r, pathParams) => r.matches(request, attrs, pathParams, skipDomainVerif = true, skipPathVerif = true)))
   }
 
   def find(domain: String, path: String): Option[NgMatchedRoutes] = {

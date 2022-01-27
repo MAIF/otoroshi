@@ -441,7 +441,7 @@ class ProxyEngine() extends RequestHandler {
       env.proxyState.findRoute(request, attrs)
     } else {
       env.proxyState.getDomainRoutes(request.theDomain)
-        .flatMap(_.find(_.matches(request, attrs, skipDomainVerif = true, skipPathVerif = false)))
+        .flatMap(_.find(_.matches(request, attrs, scala.collection.mutable.HashMap.empty, skipDomainVerif = true, skipPathVerif = false)))
         .map(r => NgMatchedRoute(r))
     }
     maybeRoute match {
@@ -1385,18 +1385,6 @@ class ProxyEngine() extends RequestHandler {
     val root   = route.backend.root
     val rawUri = request.relativeUri.substring(1)
     val uri = maybeStrippedUri(request, rawUri, route, attrs)
-    // val uri    = TargetExpressionLanguage(
-    //   maybeStrippedUri(request, rawUri, route, attrs),
-    //   request.some,
-    //   route.serviceDescriptor.some,
-    //   attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
-    //   attrs.get(otoroshi.plugins.Keys.UserKey),
-    //   attrs.get(otoroshi.plugins.Keys.ElCtxKey).get,
-    //   attrs,
-    //   env
-    // )
-    // println(attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey).map(_.pathParams))
-    // println(uri)
     val lazySource = Source.single(ByteString.empty).flatMapConcat { _ =>
       attrs.get(Keys.BodyAlreadyConsumedKey).foreach(_.compareAndSet(false, true))
       body
@@ -1426,8 +1414,9 @@ class ProxyEngine() extends RequestHandler {
       body = lazySource,
       backend = None
     )
+    val targetUrlRaw = if (route.backend.rewrite) s"${target.scheme}://${target.host}$root" else s"${target.scheme}://${target.host}$root$uri"
     val targetUrl = TargetExpressionLanguage(
-      s"${target.scheme}://${target.host}$root$uri",
+      targetUrlRaw,
       request.some,
       route.serviceDescriptor.some,
       attrs.get(otoroshi.plugins.Keys.ApiKeyKey),

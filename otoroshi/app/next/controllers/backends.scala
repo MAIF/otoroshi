@@ -152,7 +152,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
       description = "A new backend",
       tags = Seq.empty,
       metadata = Map.empty,
-      backend = NgBackend(Seq.empty, Seq.empty, "/", RoundRobin)
+      backend = NgBackend.empty
     ).json)
   }
 }

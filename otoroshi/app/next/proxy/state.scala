@@ -139,6 +139,7 @@ class NgProxyStateLoaderJob extends Job {
             headers = Map.empty,
             methods = Seq.empty,
             stripPath = true,
+            strict = false,
           ),
           backend = NgBackend(
             targets = Seq(NgTarget(
@@ -149,6 +150,7 @@ class NgProxyStateLoaderJob extends Job {
             )),
             targetRefs = Seq.empty,
             root = s"/gen-${idx}",
+            rewrite = false,
             loadBalancing = RoundRobin
           ),
           client = ClientConfig(),
@@ -198,6 +200,7 @@ class NgProxyStateLoaderJob extends Job {
             headers = Map.empty,
             methods = Seq.empty,
             stripPath = true,
+            strict = false,
           ),
           backend = NgBackend(
             targets = Seq(NgTarget(
@@ -208,6 +211,7 @@ class NgProxyStateLoaderJob extends Job {
             )),
             targetRefs = Seq.empty,
             root = s"/path-${idx}",
+            rewrite = false,
             loadBalancing = RoundRobin
           ),
           client = ClientConfig(),
@@ -251,6 +255,7 @@ class NgProxyStateLoaderJob extends Job {
             headers = Map.empty,
             methods = Seq.empty,
             stripPath = true,
+            strict = false,
           ),
           backend = NgBackend(
             targets = Seq(NgTarget(
@@ -261,6 +266,7 @@ class NgProxyStateLoaderJob extends Job {
             )),
             targetRefs = Seq.empty,
             root = s"/path-${idx}",
+            rewrite = false,
             loadBalancing = RoundRobin
           ),
           client = ClientConfig(),

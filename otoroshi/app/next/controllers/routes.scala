@@ -162,6 +162,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
         headers = Map.empty,
         methods = Seq.empty,
         stripPath = true,
+        strict = false,
       ),
       backend = NgBackend(
         targets = Seq(NgTarget(
@@ -172,6 +173,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
         )),
         targetRefs = Seq.empty,
         root = "/",
+        rewrite = false,
         loadBalancing = RoundRobin
       ),
       client = ClientConfig(),

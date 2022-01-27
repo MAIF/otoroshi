@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.{Failure, Success, Try}
 import otoroshi.api.OtoroshiEnvHolder
 
-case class NgBackend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String, loadBalancing: LoadBalancing) {
+case class NgBackend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String, rewrite: Boolean, loadBalancing: LoadBalancing) {
   // I know it's not ideal but we'll go with it for now !
   lazy val allTargets: Seq[NgTarget] = targets ++ targetRefs.map(OtoroshiEnvHolder.get().proxyState.target).collect {
     case Some(backend) => backend
@@ -21,20 +21,22 @@ case class NgBackend(targets: Seq[NgTarget], targetRefs: Seq[String], root: Stri
     "targets" -> JsArray(targets.map(_.json)),
     "target_refs" -> JsArray(targetRefs.map(JsString.apply)),
     "root" -> root,
+    "rewrite" -> rewrite,
     "load_balancing" -> loadBalancing.toJson
   )
 }
 
 object NgBackend {
-  def empty: NgBackend = NgBackend(Seq.empty, Seq.empty, "/", RoundRobin)
+  def empty: NgBackend = NgBackend(Seq.empty, Seq.empty, "/", false, RoundRobin)
   def readFrom(lookup: JsLookupResult): NgBackend = readFromJson(lookup.as[JsValue])
   def readFromJson(lookup: JsValue): NgBackend = {
     lookup.asOpt[JsObject] match {
-      case None => NgBackend(Seq.empty, Seq.empty, "/", RoundRobin)
+      case None => empty
       case Some(obj) => NgBackend(
         targets = obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)).getOrElse(Seq.empty),
         targetRefs = obj.select("target_refs").asOpt[Seq[String]].getOrElse(Seq.empty),
         root = obj.select("root").asOpt[String].getOrElse("/"),
+        rewrite = obj.select("rewrite").asOpt[Boolean].getOrElse(false),
         loadBalancing = LoadBalancing.format.reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj())).getOrElse(RoundRobin)
       )
     }

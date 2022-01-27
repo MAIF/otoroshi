@@ -66,7 +66,7 @@ case class NgRoute(
     "plugins" -> plugins.json
   )
 
-  def matches(request: RequestHeader, attrs: TypedMap, skipDomainVerif: Boolean, skipPathVerif: Boolean)(implicit env: Env): Boolean = {
+  def matches(request: RequestHeader, attrs: TypedMap, pathParams: scala.collection.mutable.HashMap[String, String], skipDomainVerif: Boolean, skipPathVerif: Boolean)(implicit env: Env): Boolean = {
     if (enabled) {
       val path = request.thePath
       val domain = request.theDomain
@@ -76,7 +76,24 @@ case class NgRoute(
         val res = frontend.domains
           .applyOnIf(!skipDomainVerif)(_.filter(d => d.domain == domain || RegexPool(d.domain).matches(domain)))
           .applyOn { seq =>
-            if (skipPathVerif) {
+            if (frontend.strict) {
+              val paths = frontend.domains.map(_.path).map { path =>
+                if (path.contains(":")) {
+                  var finalPath = path
+                  pathParams.map {
+                    case (key, value) => 
+                      finalPath = finalPath.replace(s":$key", value)
+                  } 
+                  finalPath
+                } else if (path.contains("*")) {
+                  // TODO: make it work with * paths
+                  path
+                } else {
+                  path
+                }
+              }
+              paths.exists(p => p == request.thePath)
+            } else if (skipPathVerif) {
               true
             } else {
               seq.exists { d =>
@@ -358,6 +375,7 @@ object NgRoute {
       headers = Map.empty,
       methods = Seq.empty,
       stripPath = true,
+      strict = false,
     ),
     backendRef = None,
     backend = NgBackend(
@@ -369,6 +387,7 @@ object NgRoute {
       )),
       targetRefs = Seq.empty,
       root = "/",
+      rewrite = false,
       loadBalancing = RoundRobin
     ),
     client = ClientConfig(),
@@ -403,7 +422,7 @@ object NgRoute {
     override def writes(o: NgRoute): JsValue = o.json
     override def reads(json: JsValue): JsResult[NgRoute] = Try {
       val ref = json.select("backend_ref").asOpt[String]
-      val refBackend = ref.flatMap(r => OtoroshiEnvHolder.get().proxyState.backend(r)).getOrElse(NgBackend(Seq.empty, Seq.empty, "/", RoundRobin))
+      val refBackend = ref.flatMap(r => OtoroshiEnvHolder.get().proxyState.backend(r)).getOrElse(NgBackend.empty)
       NgRoute(
         location = otoroshi.models.EntityLocation.readFromKey(json),
         id = json.select("id").as[String],
@@ -468,12 +487,14 @@ object NgRoute {
         headers = service.matchingHeaders,
         methods = Seq.empty, // get from restrictions ???
         stripPath = service.stripPath,
+        strict = false,
       ),
       backendRef = None,
       backend = NgBackend(
         targets = service.targets.map(NgTarget.fromTarget),
         targetRefs = Seq.empty,
         root = service.root,
+        rewrite = false,
         loadBalancing = service.targetsLoadBalancing
       ),
       groups = service.groups,
