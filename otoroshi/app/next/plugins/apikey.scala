@@ -366,10 +366,10 @@ object NgApikeyExtractors {
     override def writes(o: NgApikeyExtractors): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractors] = JsonHelpers.reader {
       NgApikeyExtractors(
-        basic = (json \ "basic").as(NgApikeyExtractorBasic.format),
-        customHeaders = (json \ "custom_headers").as(NgApikeyExtractorCustomHeaders.format),
-        clientId = (json \ "client_id").as(NgApikeyExtractorClientId.format),
-        jwt = (json \ "jwt").as(NgApikeyExtractorJwt.format),
+        basic = (json \ "basic").asOpt(NgApikeyExtractorBasic.format).getOrElse(NgApikeyExtractorBasic()),
+        customHeaders = (json \ "custom_headers").asOpt(NgApikeyExtractorCustomHeaders.format).getOrElse(NgApikeyExtractorCustomHeaders()),
+        clientId = (json \ "client_id").asOpt(NgApikeyExtractorClientId.format).getOrElse(NgApikeyExtractorClientId()),
+        jwt = (json \ "jwt").asOpt(NgApikeyExtractorJwt.format).getOrElse(NgApikeyExtractorJwt()),
       )
     }
   }
@@ -403,8 +403,8 @@ object NgApikeyCallsConfig {
     override def writes(o: NgApikeyCallsConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyCallsConfig] = Try {
       NgApikeyCallsConfig(
-        extractors = (json \ "extractors").as(NgApikeyExtractors.format),
-        routing = (json \ "routing").as(NgApikeyMatcher.format),
+        extractors = (json \ "extractors").asOpt(NgApikeyExtractors.format).getOrElse(NgApikeyExtractors()),
+        routing = (json \ "routing").asOpt(NgApikeyMatcher.format).getOrElse(NgApikeyMatcher()),
         validate = (json \ "validate").asOpt[Boolean].getOrElse(true),
         passWithUser = (json \ "pass_with_user").asOpt[Boolean].getOrElse(false),
         wipeBackendRequest = (json \ "wipe_backend_request").asOpt[Boolean].getOrElse(true),

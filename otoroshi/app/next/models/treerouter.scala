@@ -203,14 +203,14 @@ object NgTreeRouter_Test {
     override def queryMap: Map[String, Seq[String]] = _query
   }
 
-  class NgFakeRequestHeader(domain: String, path: String) extends RequestHeader {
+  class NgFakeRequestHeader(domain: String, path: String, _method: String = "GET") extends RequestHeader {
 
     private val _attrs = typedmap.TypedMap.empty
     private val _target = NgFakeRequestTarget(path)
     private val _connection = NgFakeRemoteConnection
     private val _headers = Headers("Host" -> domain)
 
-    override def method: String = "GET"
+    override def method: String = _method
     override def version: String = "HTTP/1.1"
 
     override def connection: RemoteConnection = _connection
