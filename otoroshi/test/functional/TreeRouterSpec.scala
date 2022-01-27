@@ -96,12 +96,12 @@ class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extend
         val attrs = TypedMap.empty.put(otoroshi.plugins.Keys.SnowFlakeKey -> "1")
         implicit val env = otoroshiComponents.env
 
-        router.find("api.oto.tools", "/api/services").map(_.routes.map(_.name)).debugPrintln
-        router.find("api.oto.tools", "/api/apikeys/123/foo").map(_.routes.map(_.name)).debugPrintln
+        router.find("api.oto.tools", "/api/services").map(_.routes.map(_.name)).debugPrintln.exists(_.size == 1).mustBe(true)
+        router.find("api.oto.tools", "/api/apikeys/123/foo").map(_.routes.map(_.name)).debugPrintln.exists(_.size == 1).mustBe(true)
 
-        router.findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/services"), attrs).map(_.route.name).debugPrintln
-        router.findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/apikeys/123/foo"), attrs).map(_.route.name).debugPrintln
-        router.findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/apikeys/123"), attrs).map(_.route.name).debugPrintln
+        router.findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/services"), attrs).map(_.route.name).debugPrintln.isDefined.mustBe(true)
+        router.findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/apikeys/123/foo"), attrs).map(_.route.name).debugPrintln.isDefined.mustBe(false)
+        router.findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/apikeys/123"), attrs).map(_.route.name).debugPrintln.isDefined.mustBe(true)
         
         // java.nio.file.Files.writeString(new java.io.File("./routescomp-debug.json").toPath(), route.json.prettify)
       }.futureValue
