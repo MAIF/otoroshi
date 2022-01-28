@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.Future
 
 object Keys {
+  val MatchedRoutesKey = TypedKey[Seq[String]]("otoroshi.next.core.MatchedRoutes")
   val ContextualPluginsKey = TypedKey[NgContextualPlugins]("otoroshi.next.core.ContextualPlugins")
   val ReportKey = TypedKey[NgExecutionReport]("otoroshi.next.core.Report")
   val MatchedRouteKey = TypedKey[NgMatchedRoute]("otoroshi.next.core.NgMatchedRoute")

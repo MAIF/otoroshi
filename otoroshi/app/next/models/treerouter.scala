@@ -61,7 +61,11 @@ case class NgTreeRouter(tree: TrieMap[String, NgTreeNodePath], wildcards: scala.
 
   def findRoute(request: RequestHeader, attrs: TypedMap)(implicit env: Env): Option[NgMatchedRoute] = {
     find(request.theDomain, request.thePath)
-      .flatMap(_.find((r, matchedPath, pathParams, noMoreSegments) => r.matches(request, attrs, matchedPath, pathParams, noMoreSegments = noMoreSegments, skipDomainVerif = true, skipPathVerif = true)))
+      .flatMap { routes =>
+        val routeIds = routes.routes.map(_.id)
+        attrs.put(otoroshi.next.plugins.Keys.MatchedRoutesKey -> routeIds)
+        routes.find((r, matchedPath, pathParams, noMoreSegments) => r.matches(request, attrs, matchedPath, pathParams, noMoreSegments = noMoreSegments, skipDomainVerif = true, skipPathVerif = true))
+      } 
   }
 
   def find(domain: String, path: String): Option[NgMatchedRoutes] = {

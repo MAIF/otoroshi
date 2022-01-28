@@ -172,7 +172,7 @@ class ProxyEngine() extends RequestHandler {
       _               <- handleConcurrentRequest(request)
       _               =  report.markDoneAndStart("find-route")
       route           <- findRoute(useTree, request, request.body, global_plugins__)
-      _               =  report.markDoneAndStart("compute-plugins", Json.obj("found_route" -> route.json).some)
+      _               =  report.markDoneAndStart("compute-plugins")
       ctxPlugins      = route.contextualPlugins(global_plugins__, request).seffectOn(_.allPlugins)
       _               = attrs.put(Keys.ContextualPluginsKey -> ctxPlugins)
       _               =  report.markDoneAndStart("tenant-check", Json.obj("disabled_plugins" -> ctxPlugins.disabledPlugins.map(p => JsString(p.plugin)), "filtered_plugins" -> ctxPlugins.filteredPlugins.map(p => JsString(p.plugin))).some)
@@ -297,7 +297,7 @@ class ProxyEngine() extends RequestHandler {
       _               <- handleConcurrentRequest(request)
       _               =  report.markDoneAndStart("find-route")
       route           <- findRoute(useTree, request, fakeBody, global_plugins__)
-      _               =  report.markDoneAndStart("compute-plugins", Json.obj("found_route" -> route.json).some)
+      _               =  report.markDoneAndStart("compute-plugins")
       ctxPlugins      = route.contextualPlugins(global_plugins__, request).seffectOn(_.allPlugins)
       _               = attrs.put(Keys.ContextualPluginsKey -> ctxPlugins)
       _               =  report.markDoneAndStart("tenant-check", Json.obj("disabled_plugins" -> ctxPlugins.disabledPlugins.map(p => JsString(p.plugin)), "filtered_plugins" -> ctxPlugins.filteredPlugins.map(p => JsString(p.plugin))).some)
@@ -444,6 +444,14 @@ class ProxyEngine() extends RequestHandler {
       case Some(route) =>
         attrs.put(Keys.RouteKey -> route.route)
         attrs.put(Keys.MatchedRouteKey -> route)
+        val rts: Seq[String] = attrs.get(Keys.MatchedRoutesKey).getOrElse(Seq.empty[String])
+        report.setContext(Json.obj(
+          "found_route" -> route.route.json, 
+          "matched_path" -> route.path,
+          "exact" -> route.noMoreSegments,
+          "params" -> route.pathParams,
+          "matched_routes" -> rts
+        ))
         FEither.right(route.route)
       case None => callRequestSinkPlugins(request, body, global_plugins)
     }
