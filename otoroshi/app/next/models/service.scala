@@ -50,8 +50,7 @@ object NgMinimalRoute {
   }
 }
 
-// TODO: how to handle healthcheck
-case class NgRoutesComposition(
+case class NgService(
   location: EntityLocation,
   id: String,
   name: String,
@@ -113,11 +112,11 @@ case class NgRoutesComposition(
   }
 }
 
-object NgRoutesComposition {
-  val fmt = new Format[NgRoutesComposition] {
-    override def writes(o: NgRoutesComposition): JsValue = o.json
-    override def reads(json: JsValue): JsResult[NgRoutesComposition] = Try {
-      NgRoutesComposition(
+object NgService {
+  val fmt = new Format[NgService] {
+    override def writes(o: NgService): JsValue = o.json
+    override def reads(json: JsValue): JsResult[NgService] = Try {
+      NgService(
         location = otoroshi.models.EntityLocation.readFromKey(json),
         id = json.select("id").as[String],
         name = json.select("id").as[String],
@@ -137,12 +136,12 @@ object NgRoutesComposition {
     }
   }
 
-  def fromOpenApi(domain: String, openapi: String)(implicit ec: ExecutionContext, env: Env): Future[NgRoutesComposition] = {
+  def fromOpenApi(domain: String, openapi: String)(implicit ec: ExecutionContext, env: Env): Future[NgService] = {
     val codef: Future[String] = if (openapi.startsWith("http://") || openapi.startsWith("https://")) {
       env.Ws.url(openapi).get().map(_.body)
     } else {
       FastFuture.successful(openapi)
-    } 
+    }
     codef.map { code =>
       val json = Json.parse(code)
       val name = json.select("info").select("title").as[String]
@@ -162,8 +161,8 @@ object NgRoutesComposition {
         )
       }
       val paths = json.select("paths").asOpt[JsObject].getOrElse(Json.obj())
-      val routes: Seq[NgMinimalRoute] = paths.value.toSeq.map { 
-        case (path, obj) => 
+      val routes: Seq[NgMinimalRoute] = paths.value.toSeq.map {
+        case (path, obj) =>
           val cleanPath = path.replace("{", ":").replace("}", "")
           val methods = obj.as[JsObject].value.toSeq.map(_._1.toUpperCase())
           NgMinimalRoute(
@@ -181,11 +180,11 @@ object NgRoutesComposition {
               rewrite = false,
               loadBalancing = RoundRobin
             )
-          )          
-      } 
-      NgRoutesComposition(
+          )
+      }
+      NgService(
         location = EntityLocation.default,
-        id = "routes-comp_" + IdGenerator.uuid,
+        id = "ng-service_" + IdGenerator.uuid,
         name = name,
         description = description,
         tags = Seq("env:prod"),
@@ -205,17 +204,17 @@ object NgRoutesComposition {
         ))
       )
     }
-  } 
+  }
 }
 
-trait NgRoutesCompositionDataStore extends BasicStore[NgRoutesComposition]
+trait NgServiceDataStore extends BasicStore[NgService]
 
-class KvNgRoutesCompositionDataStore(redisCli: RedisLike, _env: Env)
-  extends NgRoutesCompositionDataStore
-    with RedisLikeStore[NgRoutesComposition] {
+class KvNgServiceDataStore(redisCli: RedisLike, _env: Env)
+  extends NgServiceDataStore
+    with RedisLikeStore[NgService] {
   override def redisLike(implicit env: Env): RedisLike = redisCli
-  override def fmt: Format[NgRoutesComposition]               = NgRoutesComposition.fmt
-  override def key(id: String): Key             = Key.Empty / _env.storageRoot / "routes-comps" / id
-  override def extractId(value: NgRoutesComposition): String  = value.id
+  override def fmt: Format[NgService]               = NgService.fmt
+  override def key(id: String): Key             = Key.Empty / _env.storageRoot / "ngservices" / id
+  override def extractId(value: NgService): String  = value.id
 }
 

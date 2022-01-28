@@ -426,7 +426,7 @@ PATCH   /api/data-exporter-configs/:id                      otoroshi.controllers
 GET     /api/data-exporter-configs                          otoroshi.controllers.adminapi.DataExporterConfigController.findAllEntitiesAction()
 POST    /api/data-exporter-configs                          otoroshi.controllers.adminapi.DataExporterConfigController.createAction()
 
-## Routes
+## NgRoutes
 GET     /api/experimental/routes/_template                  otoroshi.next.controllers.adminapi.NgRoutesController.initiateRoute()
 POST    /api/experimental/routes/_bulk                      otoroshi.next.controllers.adminapi.NgRoutesController.bulkCreateAction()
 PUT     /api/experimental/routes/_bulk                      otoroshi.next.controllers.adminapi.NgRoutesController.bulkUpdateAction()
@@ -439,18 +439,18 @@ PATCH   /api/experimental/routes/:id                        otoroshi.next.contro
 GET     /api/experimental/routes                            otoroshi.next.controllers.adminapi.NgRoutesController.findAllEntitiesAction()
 POST    /api/experimental/routes                            otoroshi.next.controllers.adminapi.NgRoutesController.createAction()
 
-## Routes
-GET     /api/experimental/routes-comps/_template            otoroshi.next.controllers.adminapi.NgRoutesCompositionsController.initiateRoutesComposition()
-POST    /api/experimental/routes-comps/_bulk                otoroshi.next.controllers.adminapi.NgRoutesCompositionsController.bulkCreateAction()
-PUT     /api/experimental/routes-comps/_bulk                otoroshi.next.controllers.adminapi.NgRoutesCompositionsController.bulkUpdateAction()
-PATCH   /api/experimental/routes-comps/_bulk                otoroshi.next.controllers.adminapi.NgRoutesCompositionsController.bulkPatchAction()
-DELETE  /api/experimental/routes-comps/_bulk                otoroshi.next.controllers.adminapi.NgRoutesCompositionsController.bulkDeleteAction()
-GET     /api/experimental/routes-comps/:id                  otoroshi.next.controllers.adminapi.NgRoutesCompositionsController.findEntityByIdAction(id)
-DELETE  /api/experimental/routes-comps/:id                  otoroshi.next.controllers.adminapi.NgRoutesCompositionsController.deleteEntityAction(id)
-PUT     /api/experimental/routes-comps/:id                  otoroshi.next.controllers.adminapi.NgRoutesCompositionsController.updateEntityAction(id)
-PATCH   /api/experimental/routes-comps/:id                  otoroshi.next.controllers.adminapi.NgRoutesCompositionsController.patchEntityAction(id)
-GET     /api/experimental/routes-comps                      otoroshi.next.controllers.adminapi.NgRoutesCompositionsController.findAllEntitiesAction()
-POST    /api/experimental/routes-comps                      otoroshi.next.controllers.adminapi.NgRoutesCompositionsController.createAction()
+## NgServices
+GET     /api/experimental/services/_template            otoroshi.next.controllers.adminapi.NgServicesController.initiateService()
+POST    /api/experimental/services/_bulk                otoroshi.next.controllers.adminapi.NgServicesController.bulkCreateAction()
+PUT     /api/experimental/services/_bulk                otoroshi.next.controllers.adminapi.NgServicesController.bulkUpdateAction()
+PATCH   /api/experimental/services/_bulk                otoroshi.next.controllers.adminapi.NgServicesController.bulkPatchAction()
+DELETE  /api/experimental/services/_bulk                otoroshi.next.controllers.adminapi.NgServicesController.bulkDeleteAction()
+GET     /api/experimental/services/:id                  otoroshi.next.controllers.adminapi.NgServicesController.findEntityByIdAction(id)
+DELETE  /api/experimental/services/:id                  otoroshi.next.controllers.adminapi.NgServicesController.deleteEntityAction(id)
+PUT     /api/experimental/services/:id                  otoroshi.next.controllers.adminapi.NgServicesController.updateEntityAction(id)
+PATCH   /api/experimental/services/:id                  otoroshi.next.controllers.adminapi.NgServicesController.patchEntityAction(id)
+GET     /api/experimental/services                      otoroshi.next.controllers.adminapi.NgServicesController.findAllEntitiesAction()
+POST    /api/experimental/services                      otoroshi.next.controllers.adminapi.NgServicesController.createAction()
 
 ## Targets
 GET     /api/experimental/targets/_template                otoroshi.next.controllers.adminapi.NgTargetsController.initiateStoredNgTarget()

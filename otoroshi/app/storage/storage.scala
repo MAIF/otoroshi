@@ -12,7 +12,7 @@ import otoroshi.events._
 import otoroshi.gateway.RequestsDataStore
 import otoroshi.models._
 import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
-import otoroshi.next.models.{NgRouteDataStore, NgRoutesCompositionDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
+import otoroshi.next.models.{NgRouteDataStore, NgServiceDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
 import otoroshi.script.ScriptDataStore
 import otoroshi.storage.stores._
 import otoroshi.tcp.TcpServiceDataStore
@@ -64,7 +64,7 @@ trait DataStores {
   def teamDataStore: TeamDataStore
   def dataExporterConfigDataStore: DataExporterConfigDataStore
   def routeDataStore: NgRouteDataStore
-  def routesCompositionDataStore: NgRoutesCompositionDataStore
+  def servicesDataStore: NgServiceDataStore
   def targetsDataStore: StoredNgTargetDataStore
   def backendsDataStore: StoredNgBackendDataStore
   ////

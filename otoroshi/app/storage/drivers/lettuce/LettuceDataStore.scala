@@ -19,7 +19,7 @@ import io.lettuce.core.resource.{ClientResources, DefaultClientResources}
 import io.lettuce.core.{AbstractRedisClient, ReadFrom, RedisClient, RedisURI}
 import otoroshi.models._
 import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
-import otoroshi.next.models.{KvNgRouteDataStore, KvNgRoutesCompositionDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, NgRouteDataStore, NgRoutesCompositionDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
+import otoroshi.next.models.{KvNgRouteDataStore, KvNgServiceDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, NgRouteDataStore, NgServiceDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage._
 import otoroshi.storage.stores._
@@ -218,8 +218,8 @@ class LettuceDataStores(
   private lazy val _routeDataStore = new KvNgRouteDataStore(redis, env)
   override def routeDataStore: NgRouteDataStore = _routeDataStore
 
-  private lazy val _routesCompositionDataStore = new KvNgRoutesCompositionDataStore(redis, env)
-  override def routesCompositionDataStore: NgRoutesCompositionDataStore = _routesCompositionDataStore
+  private lazy val _routesCompositionDataStore = new KvNgServiceDataStore(redis, env)
+  override def servicesDataStore: NgServiceDataStore = _routesCompositionDataStore
 
   private lazy val _targetsDataStore = new KvStoredNgTargetDataStore(redis, env)
   override def targetsDataStore: StoredNgTargetDataStore = _targetsDataStore

@@ -296,7 +296,7 @@ class NgProxyStateLoaderJob extends Job {
     val debugHeaders = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
     for {
       routes <- env.datastores.routeDataStore.findAll() // Seq.empty[Route].vfuture //
-      routescomp <- env.datastores.routesCompositionDataStore.findAll() // Seq.empty[Route].vfuture //
+      routescomp <- env.datastores.servicesDataStore.findAll() // Seq.empty[Route].vfuture //
       genRoutesDomain <- generateRoutesByDomain(env)
       genRoutesPath <- generateRoutesByName(env)
       genRandom <- generateRandomRoutes(env)
@@ -309,7 +309,7 @@ class NgProxyStateLoaderJob extends Job {
       modules <- env.datastores.authConfigsDataStore.findAll()
       targets <- env.datastores.targetsDataStore.findAll()
       backends <- env.datastores.backendsDataStore.findAll()
-      croutes <- NgRoutesComposition.fromOpenApi("oto-api-next-gen.oto.tools", "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json")
+      croutes <- NgService.fromOpenApi("oto-api-next-gen.oto.tools", "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json")
         .map(route => route.toRoutes.map(r => r.copy(
           backend = r.backend.copy(targets = r.backend.targets.map(t => t.copy(port = 9999, tls = false))),
           plugins = NgPlugins(Seq(

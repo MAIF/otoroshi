@@ -91,7 +91,7 @@ class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extend
 
     "find route fast" in {
       import otoroshi.utils.syntax.implicits._
-      NgRoutesComposition.fromOpenApi("api.oto.tools", "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json")(otoroshiComponents.env.otoroshiExecutionContext, otoroshiComponents.env).map { route =>
+      NgService.fromOpenApi("api.oto.tools", "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json")(otoroshiComponents.env.otoroshiExecutionContext, otoroshiComponents.env).map { route =>
         val router = NgTreeRouter.build(route.toRoutes.debug(r => println(r.size)))
         val attrs = TypedMap.empty.put(otoroshi.plugins.Keys.SnowFlakeKey -> "1")
         implicit val env = otoroshiComponents.env

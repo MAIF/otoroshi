@@ -112,7 +112,7 @@ package object modules {
     lazy val tenantsController            = wire[TenantsController]
     lazy val dataExporterConfigController = wire[DataExporterConfigController]
     lazy val routesController             = wire[NgRoutesController]
-    lazy val routesCompositionController  = wire[NgRoutesCompositionsController]
+    lazy val ngServicesController         = wire[NgServicesController]
     lazy val targetsController            = wire[NgTargetsController]
     lazy val backendsController           = wire[NgBackendsController]
 

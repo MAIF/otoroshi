@@ -28,7 +28,7 @@ import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.jobs.updates.Version
 import otoroshi.models.{SimpleAdminDataStore, TenantId, WebAuthnAdminDataStore}
-import otoroshi.next.models.{KvNgRouteDataStore, KvNgRoutesCompositionDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, NgRouteDataStore, NgRoutesCompositionDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
+import otoroshi.next.models.{KvNgRouteDataStore, KvNgServiceDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, NgRouteDataStore, NgServiceDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage._
 import otoroshi.storage.drivers.inmemory._
@@ -1740,8 +1740,8 @@ class SwappableInMemoryDataStores(
   private lazy val _routeDataStore = new KvNgRouteDataStore(redis, env)
   override def routeDataStore: NgRouteDataStore = _routeDataStore
 
-  private lazy val _routesCompositionDataStore = new KvNgRoutesCompositionDataStore(redis, env)
-  override def routesCompositionDataStore: NgRoutesCompositionDataStore = _routesCompositionDataStore
+  private lazy val _routesCompositionDataStore = new KvNgServiceDataStore(redis, env)
+  override def servicesDataStore: NgServiceDataStore = _routesCompositionDataStore
 
   private lazy val _targetsDataStore = new KvStoredNgTargetDataStore(redis, env)
   override def targetsDataStore: StoredNgTargetDataStore = _targetsDataStore
