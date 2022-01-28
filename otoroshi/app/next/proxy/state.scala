@@ -309,24 +309,26 @@ class NgProxyStateLoaderJob extends Job {
       modules <- env.datastores.authConfigsDataStore.findAll()
       targets <- env.datastores.targetsDataStore.findAll()
       backends <- env.datastores.backendsDataStore.findAll()
-      croutes <- NgService.fromOpenApi("oto-api-next-gen.oto.tools", "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json")
-        .map(route => route.toRoutes.map(r => r.copy(
-          backend = r.backend.copy(targets = r.backend.targets.map(t => t.copy(port = 9999, tls = false))),
-          plugins = NgPlugins(Seq(
-            NgPluginInstance(
-              plugin = NgPluginHelper.pluginId[OverrideHost],
-            ),
-            NgPluginInstance(
-              plugin = NgPluginHelper.pluginId[AdditionalHeadersIn],
-              config = NgPluginInstanceConfig(Json.obj(
-                "headers" -> Json.obj(
-                  "Otoroshi-Client-Id" -> "admin-api-apikey-id",
-                  "Otoroshi-Client-Secret" -> "admin-api-apikey-secret",
-                )
-              ))
-            )
-          ))
-        )))
+      croutes <- if (env.env == "dev") {
+        NgService.fromOpenApi("oto-api-next-gen.oto.tools", "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json")
+          .map(route => route.toRoutes.map(r => r.copy(
+            backend = r.backend.copy(targets = r.backend.targets.map(t => t.copy(port = 9999, tls = false))),
+            plugins = NgPlugins(Seq(
+              NgPluginInstance(
+                plugin = NgPluginHelper.pluginId[OverrideHost],
+              ),
+              NgPluginInstance(
+                plugin = NgPluginHelper.pluginId[AdditionalHeadersIn],
+                config = NgPluginInstanceConfig(Json.obj(
+                  "headers" -> Json.obj(
+                    "Otoroshi-Client-Id" -> "admin-api-apikey-id",
+                    "Otoroshi-Client-Secret" -> "admin-api-apikey-secret",
+                  )
+                ))
+              )
+            ))
+          ))) 
+        } else Seq.empty[NgRoute].vfuture
     } yield {
       env.proxyState.updateRoutes(newRoutes ++ croutes)
       // env.proxyState.updateRoutes(newRoutes)
