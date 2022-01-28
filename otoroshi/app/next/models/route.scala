@@ -66,7 +66,7 @@ case class NgRoute(
     "plugins" -> plugins.json
   )
 
-  def matches(request: RequestHeader, attrs: TypedMap, pathParams: scala.collection.mutable.HashMap[String, String], skipDomainVerif: Boolean, skipPathVerif: Boolean)(implicit env: Env): Boolean = {
+  def matches(request: RequestHeader, attrs: TypedMap, matchedPath: String, pathParams: scala.collection.mutable.HashMap[String, String], skipDomainVerif: Boolean, noMoreSegments: Boolean, skipPathVerif: Boolean)(implicit env: Env): Boolean = {
     if (enabled) {
       val path = request.thePath
       val domain = request.theDomain
@@ -77,22 +77,22 @@ case class NgRoute(
           .applyOnIf(!skipDomainVerif)(_.filter(d => d.domain == domain || RegexPool(d.domain).matches(domain)))
           .applyOn { seq =>
             if (frontend.exact) {
-              val paths = frontend.domains.map(_.path).map { path =>
-                if (path.contains(":")) {
-                  var finalPath = path
-                  pathParams.map {
-                    case (key, value) => 
-                      finalPath = finalPath.replace(s":$key", value)
-                  } 
-                  finalPath
-                } else if (path.contains("*")) {
-                  // TODO: make it work with * paths
-                  path
-                } else {
-                  path
-                }
-              }
-              paths.exists(p => p == request.thePath)
+              noMoreSegments
+              // val paths = frontend.domains.map(_.path).map { path =>
+              //   if (path.contains(":")) {
+              //     var finalPath = path
+              //     pathParams.map {
+              //       case (key, value) => 
+              //         finalPath = finalPath.replace(s":$key", value)
+              //     } 
+              //     finalPath
+              //   } else if (path.contains("*")) {
+              //     path
+              //   } else {
+              //     path
+              //   }
+              // }
+              // paths.exists(p => p == request.thePath)
             } else if (skipPathVerif) {
               true
             } else {

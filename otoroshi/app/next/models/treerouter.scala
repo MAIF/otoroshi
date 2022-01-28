@@ -18,19 +18,19 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import org.checkerframework.checker.regex.qual.Regex
 
-case class NgMatchedRoutes(routes: Seq[NgRoute], path: String = "", pathParams: scala.collection.mutable.HashMap[String, String] = scala.collection.mutable.HashMap.empty) {
-  def find(f: (NgRoute, scala.collection.mutable.HashMap[String, String]) => Boolean): Option[NgMatchedRoute] = {
-    routes.find(r => f(r, pathParams)).map { r =>
+case class NgMatchedRoutes(routes: Seq[NgRoute], path: String = "", pathParams: scala.collection.mutable.HashMap[String, String] = scala.collection.mutable.HashMap.empty, noMoreSegments: Boolean) {
+  def find(f: (NgRoute, String, scala.collection.mutable.HashMap[String, String], Boolean) => Boolean): Option[NgMatchedRoute] = {
+    routes.find(r => f(r, path, pathParams, noMoreSegments)).map { r =>
       // TODO: find a solution to cleanup the map from non desirable path params names
       // for request on /api/contracts/123/foo/foo on router like
       //   - /api/contracts/:id/foo/bar
       //   - /api/contracts/:cid/foo/foo
       // we want only Map(cid -> 123) and not Map(cid -> 123, id -> 123)
-      NgMatchedRoute(r, path, pathParams)
+      NgMatchedRoute(r, path, pathParams, noMoreSegments)
     }
   }
 }
-case class NgMatchedRoute(route: NgRoute, path: String = "", pathParams: scala.collection.mutable.HashMap[String, String] = scala.collection.mutable.HashMap.empty)
+case class NgMatchedRoute(route: NgRoute, path: String = "", pathParams: scala.collection.mutable.HashMap[String, String] = scala.collection.mutable.HashMap.empty, noMoreSegments: Boolean = false)
 
 object NgTreeRouter {
   def empty = NgTreeRouter(new TrieMap[String, NgTreeNodePath](), scala.collection.mutable.MutableList.empty)
@@ -61,7 +61,7 @@ case class NgTreeRouter(tree: TrieMap[String, NgTreeNodePath], wildcards: scala.
 
   def findRoute(request: RequestHeader, attrs: TypedMap)(implicit env: Env): Option[NgMatchedRoute] = {
     find(request.theDomain, request.thePath)
-      .flatMap(_.find((r, pathParams) => r.matches(request, attrs, pathParams, skipDomainVerif = true, skipPathVerif = true)))
+      .flatMap(_.find((r, matchedPath, pathParams, noMoreSegments) => r.matches(request, attrs, matchedPath, pathParams, noMoreSegments = noMoreSegments, skipDomainVerif = true, skipPathVerif = true)))
   }
 
   def find(domain: String, path: String): Option[NgMatchedRoutes] = {
@@ -125,7 +125,7 @@ case class NgTreeNodePath(routes: scala.collection.mutable.MutableList[NgRoute],
   def find(segments: Seq[String], endsWithSlash: Boolean, path: String, pathParams: scala.collection.mutable.HashMap[String, String]): Option[NgMatchedRoutes] = {
     segments.headOption match {
       case None if routes.isEmpty => None
-      case None => NgMatchedRoutes(routes, path, pathParams).some
+      case None => NgMatchedRoutes(routes, path, pathParams, noMoreSegments = true).some
       case Some(head) => {
         val mptree = tree.get(head)
           .applyOnWithPredicate(opt => if (opt.isEmpty) (hasNamedKeys || hasRegexKeys) else false) { _ =>
@@ -148,7 +148,7 @@ case class NgTreeNodePath(routes: scala.collection.mutable.MutableList[NgRoute],
           .applyOnWithPredicate(opt => if (opt.isEmpty) hasWildcardKeys else false)(opt => opt.orElse(wildcardEntriesMatching(head)).orElse(wildcardEntry))
         mptree match {
           case None if endsWithSlash && routes.isEmpty => None
-          case None if endsWithSlash && routes.nonEmpty => NgMatchedRoutes(routes, s"$path/$head", pathParams).some
+          case None if endsWithSlash && routes.nonEmpty => NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.isEmpty).some
           case None if !endsWithSlash => {
             // here is one of the worst case scenario where the user wants to use '/api/999' to match calls on '/api/999-foo'
             segmentStartsWithCache.get(head, _ => {
@@ -163,22 +163,22 @@ case class NgTreeNodePath(routes: scala.collection.mutable.MutableList[NgRoute],
                 .flatMap(key => tree.get(key))
               mSubTree match {
                 case None if routes.isEmpty => None
-                case None => NgMatchedRoutes(routes, s"$path/$head", pathParams).some
+                case None => NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = false).some
                 case Some(ptree) => ptree.find(segments.tail, endsWithSlash, s"$path/$head", pathParams) match {
                   case None if routes.isEmpty => None
-                  case None => NgMatchedRoutes(routes, s"$path/$head", pathParams).some
+                  case None => NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = false).some
                   case s => s
                 }
               }
             })
           }
           case Some(ptree) if ptree.isEmpty && routes.isEmpty => None
-          case Some(ptree) if ptree.isEmpty && routes.nonEmpty => NgMatchedRoutes(routes, s"$path/$head", pathParams).some
+          case Some(ptree) if ptree.isEmpty && routes.nonEmpty => NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.isEmpty).some
           case Some(ptree) if ptree.isLeaf && ptree.routes.isEmpty => None
-          case Some(ptree) if ptree.isLeaf && ptree.routes.nonEmpty => NgMatchedRoutes(ptree.routes, s"$path/$head", pathParams).some
+          case Some(ptree) if ptree.isLeaf && ptree.routes.nonEmpty => NgMatchedRoutes(ptree.routes, s"$path/$head", pathParams, noMoreSegments = segments.isEmpty).some
           case Some(ptree) => ptree.find(segments.tail, endsWithSlash, s"$path/$head", pathParams) match {
             case None if routes.isEmpty => None
-            case None => NgMatchedRoutes(routes, s"$path/$head", pathParams).some
+            case None => NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.isEmpty).some
             case s => s
           }
         }

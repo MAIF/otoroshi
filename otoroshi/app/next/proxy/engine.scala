@@ -441,7 +441,7 @@ class ProxyEngine() extends RequestHandler {
       env.proxyState.findRoute(request, attrs)
     } else {
       env.proxyState.getDomainRoutes(request.theDomain)
-        .flatMap(_.find(_.matches(request, attrs, scala.collection.mutable.HashMap.empty, skipDomainVerif = true, skipPathVerif = false)))
+        .flatMap(_.find(_.matches(request, attrs, "/", scala.collection.mutable.HashMap.empty, noMoreSegments = false, skipDomainVerif = true, skipPathVerif = false)))
         .map(r => NgMatchedRoute(r))
     }
     maybeRoute match {
