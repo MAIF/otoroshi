@@ -8,8 +8,41 @@ import otoroshi.next.utils.JsonHelpers
 import otoroshi.security.IdGenerator
 import play.api.libs.json._
 
+import otoroshi.utils.syntax.implicits._
+
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
+
+object DurationHelper {
+  
+  private lazy val df = {
+    val dff = new java.text.DecimalFormat("#.###")
+    dff.setRoundingMode(java.math.RoundingMode.CEILING)
+    dff
+  }
+
+  def formatMillis(value: Long): String = {
+    df.format(value.toDouble / 1000000.0).replace(",", ".")
+  }
+
+  def formatMicros(value: Long): String = {
+    df.format(value.toDouble / 1000.0).replace(",", ".")
+  }
+
+  def nanoDurationToString(d_ns: Long): String = {
+    if (d_ns < 1000000) {
+      s"${formatMicros(d_ns)} micros"
+    } else if (d_ns < 1000) {
+      s"${d_ns} nanos"
+    } else {
+      if (d_ns > 1000000000) {
+        d_ns.nanos.toHumanReadable
+      } else {
+        s"${formatMillis(d_ns)} millis"
+      }
+    }
+  }
+}
 
 case class NgReportPluginSequenceItem(plugin: String, name: String, start: Long, start_ns: Long, stop: Long, stop_ns: Long, in: JsValue, out: JsValue) {
   def json: JsValue = Json.obj(
@@ -75,13 +108,7 @@ case class NgExecutionReportStep(task: String, start: Long, stop: Long, duration
     "ctx" -> ctx
   )
   def duration: Long = duration_ns.nanos.toMillis
-  def durationStr: String = {
-    if (duration_ns < 1000000) {
-      duration_ns + " nanos"
-    } else {
-      duration + " millis"
-    }
-  }
+  def durationStr: String = DurationHelper.nanoDurationToString(duration_ns)
   def markDuration()(implicit env: Env): Unit = {
     env.metrics.timerUpdate("ng-report-request-step-" + task, duration_ns, TimeUnit.NANOSECONDS)
   }
@@ -191,38 +218,10 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
   def overheadOut: Long = overheadOut_ns.nanos.toMillis
   /////////////////////////////////////////////////////
 
-  def gdurationStr: String = {
-    if (gduration_ns < 1000000) {
-      gduration_ns + " nanos"
-    } else {
-      gduration + " millis"
-    }
-  }
-
-  def overheadInStr: String = {
-    if (overheadIn_ns < 1000000) {
-      overheadIn_ns + " nanos"
-    } else {
-      overheadIn + " millis"
-    }
-  }
-
-  def overheadOutStr: String = {
-    if (overheadOut_ns < 1000000) {
-      overheadOut_ns + " nanos"
-    } else {
-      overheadOut + " millis"
-    }
-  }
-
-  def overheadStr: String = {
-    val overhead_ns = overheadIn_ns + overheadOut_ns
-    if (overhead_ns < 1000000) {
-      overhead_ns + " nanos"
-    } else {
-      getOverheadNow() + " millis"
-    }
-  }
+  def gdurationStr: String = DurationHelper.nanoDurationToString(gduration_ns)
+  def overheadInStr: String = DurationHelper.nanoDurationToString(overheadIn_ns)
+  def overheadOutStr: String = DurationHelper.nanoDurationToString(overheadOut_ns)
+  def overheadStr: String = DurationHelper.nanoDurationToString(overheadIn_ns + overheadOut_ns)
 
   def markFailure(message: String): NgExecutionReport = {
     if (reporting) {

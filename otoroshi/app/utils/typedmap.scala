@@ -38,7 +38,7 @@ final class ConcurrentMutableTypedMap(m: TrieMap[TypedKey[_], Any]) extends Type
       case ((key, value: Long), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value))
       case ((key, value: JsValue), idx) => (key.displayName.getOrElse(s"key-${idx}"), value)
       case ((key, value: Jsonable), idx) => (key.displayName.getOrElse(s"key-${idx}"), value.json)
-      case ((key, value: Map[String, String]), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsObject(value.mapValues(v => JsString(v.toString))))
+      case ((key, value: Map[_, _]), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsObject(value.map { case (k, v) => (k.toString, JsString(v.toString)) } ))
       case ((key, value), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsString(value.toString))
     })
   }

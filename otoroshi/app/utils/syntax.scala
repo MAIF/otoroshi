@@ -20,6 +20,9 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.Duration
+import io.kubernetes.client.proto.Meta.Time
 
 object implicits {
   implicit class BetterSyntax[A](private val obj: A)                   extends AnyVal {
@@ -343,6 +346,29 @@ object implicits {
         value
       } else {
         initValue
+      }
+    }
+  }
+  implicit class BetterDuration(val duration: Duration) extends AnyVal {
+    final def toHumanReadable: String = {
+      val units = Seq(TimeUnit.DAYS, TimeUnit.HOURS, TimeUnit.MINUTES, TimeUnit.SECONDS, TimeUnit.MILLISECONDS, TimeUnit.MICROSECONDS, TimeUnit.NANOSECONDS)
+      val timeStrings = units
+        .foldLeft((Seq.empty[String], duration.toNanos))({ case ((humanReadable, rest), unit) =>
+          val name = unit.toString().toLowerCase()
+          val result = unit.convert(rest, TimeUnit.NANOSECONDS)
+          val diff = rest - TimeUnit.NANOSECONDS.convert(result, unit)
+          val str = result match {
+            case 0    => humanReadable
+            case 1    => humanReadable :+ s"1 ${name.init}" // Drop last 's'
+            case more => humanReadable :+ s"$more $name"
+          }
+          (str, diff)
+        })
+        ._1
+      timeStrings.size match {
+        case 0 => ""
+        case 1 => timeStrings.head
+        case _ => timeStrings.init.mkString(", ") + " and " + timeStrings.last
       }
     }
   }
