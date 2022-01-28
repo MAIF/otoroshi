@@ -173,7 +173,7 @@ object NgRoutesComposition {
               headers = Map.empty,
               methods = methods,
               stripPath = false,
-              strict = true,
+              exact = true,
             ),
             backend = NgBackend(
               targets = targets,

@@ -76,7 +76,7 @@ case class NgRoute(
         val res = frontend.domains
           .applyOnIf(!skipDomainVerif)(_.filter(d => d.domain == domain || RegexPool(d.domain).matches(domain)))
           .applyOn { seq =>
-            if (frontend.strict) {
+            if (frontend.exact) {
               val paths = frontend.domains.map(_.path).map { path =>
                 if (path.contains(":")) {
                   var finalPath = path
@@ -375,7 +375,7 @@ object NgRoute {
       headers = Map.empty,
       methods = Seq.empty,
       stripPath = true,
-      strict = false,
+      exact = false,
     ),
     backendRef = None,
     backend = NgBackend(
@@ -487,7 +487,7 @@ object NgRoute {
         headers = service.matchingHeaders,
         methods = Seq.empty, // get from restrictions ???
         stripPath = service.stripPath,
-        strict = false,
+        exact = false,
       ),
       backendRef = None,
       backend = NgBackend(

@@ -11,25 +11,25 @@ case class NgDomainAndPath(raw: String) {
   def json: JsValue = JsString(raw)
 }
 
-case class NgFrontend(domains: Seq[NgDomainAndPath], headers: Map[String, String], methods: Seq[String], stripPath: Boolean, strict: Boolean) {
+case class NgFrontend(domains: Seq[NgDomainAndPath], headers: Map[String, String], methods: Seq[String], stripPath: Boolean, exact: Boolean) {
   def json: JsValue = Json.obj(
     "domains" -> JsArray(domains.map(_.json)),
     "strip_path" -> stripPath,
-    "strict" -> strict,
+    "exact" -> exact,
     "headers" -> headers,
     "methods" -> methods,
   )
 }
 
 object NgFrontend {
-  def empty: NgFrontend = NgFrontend(Seq.empty, Map.empty, Seq.empty, stripPath = true, strict = false)
+  def empty: NgFrontend = NgFrontend(Seq.empty, Map.empty, Seq.empty, stripPath = true, exact = false)
   def readFrom(lookup: JsLookupResult): NgFrontend = {
     lookup.asOpt[JsObject] match {
       case None => empty
       case Some(obj) => NgFrontend(
         domains = obj.select("domains").asOpt[Seq[String]].map(_.map(NgDomainAndPath.apply)).getOrElse(Seq.empty),
         stripPath = obj.select("strip_path").asOpt[Boolean].getOrElse(true),
-        strict = obj.select("strict").asOpt[Boolean].getOrElse(false),
+        exact = obj.select("exact").asOpt[Boolean].getOrElse(false),
         headers = obj.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
         methods = obj.select("methods").asOpt[Seq[String]].getOrElse(Seq.empty),
       )

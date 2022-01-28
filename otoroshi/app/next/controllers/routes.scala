@@ -162,7 +162,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
         headers = Map.empty,
         methods = Seq.empty,
         stripPath = true,
-        strict = false,
+        exact = false,
       ),
       backend = NgBackend(
         targets = Seq(NgTarget(

@@ -139,7 +139,7 @@ class NgProxyStateLoaderJob extends Job {
             headers = Map.empty,
             methods = Seq.empty,
             stripPath = true,
-            strict = false,
+            exact = false,
           ),
           backend = NgBackend(
             targets = Seq(NgTarget(
@@ -200,7 +200,7 @@ class NgProxyStateLoaderJob extends Job {
             headers = Map.empty,
             methods = Seq.empty,
             stripPath = true,
-            strict = false,
+            exact = false,
           ),
           backend = NgBackend(
             targets = Seq(NgTarget(
@@ -255,7 +255,7 @@ class NgProxyStateLoaderJob extends Job {
             headers = Map.empty,
             methods = Seq.empty,
             stripPath = true,
-            strict = false,
+            exact = false,
           ),
           backend = NgBackend(
             targets = Seq(NgTarget(
