@@ -286,11 +286,13 @@ case class NgRoute(
         plugins = Seq.empty,
       )
       def markPluginItem(item: NgReportPluginSequenceItem, ctx: NgTransformerErrorContext, debug: Boolean, result: JsValue): Unit = {
+        val nottrig: Seq[String] = __ctx.attrs.get(Keys.ContextualPluginsKey).map(_.tpwoErrors.map(_.instance.plugin)).getOrElse(Seq.empty[String])
         sequence = sequence.copy(
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
             stop_ns = System.nanoTime(),
             out = Json.obj(
+              "not_triggered" -> nottrig,
               "result" -> result,
             ).applyOnIf(debug)(_ ++ Json.obj("ctx" -> ctx.json))
           )

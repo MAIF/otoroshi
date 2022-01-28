@@ -2,6 +2,7 @@ package otoroshi.utils
 
 import play.api.libs.json.{JsBoolean, JsNumber, JsObject, JsString, JsValue}
 import play.api.libs.typedmap.{TypedEntry, TypedKey}
+import otoroshi.utils.json._
 
 import scala.collection.concurrent.TrieMap
 
@@ -36,6 +37,8 @@ final class ConcurrentMutableTypedMap(m: TrieMap[TypedKey[_], Any]) extends Type
       case ((key, value: Double), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value))
       case ((key, value: Long), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value))
       case ((key, value: JsValue), idx) => (key.displayName.getOrElse(s"key-${idx}"), value)
+      case ((key, value: Jsonable), idx) => (key.displayName.getOrElse(s"key-${idx}"), value.json)
+      case ((key, value: Map[String, String]), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsObject(value.mapValues(v => JsString(v.toString))))
       case ((key, value), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsString(value.toString))
     })
   }

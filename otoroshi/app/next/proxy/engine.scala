@@ -172,9 +172,10 @@ class ProxyEngine() extends RequestHandler {
       _               <- handleConcurrentRequest(request)
       _               =  report.markDoneAndStart("find-route")
       route           <- findRoute(useTree, request, request.body, global_plugins__)
-      ctxPlugins      = route.contextualPlugins(global_plugins__, request)
+      _               =  report.markDoneAndStart("compute-plugins", Json.obj("found_route" -> route.json).some)
+      ctxPlugins      = route.contextualPlugins(global_plugins__, request).seffectOn(_.allPlugins)
       _               = attrs.put(Keys.ContextualPluginsKey -> ctxPlugins)
-      _               =  report.markDoneAndStart("tenant-check", Json.obj("found_route" -> route.json).some)
+      _               =  report.markDoneAndStart("tenant-check", Json.obj("disabled_plugins" -> ctxPlugins.disabledPlugins.map(p => JsString(p.plugin)), "filtered_plugins" -> ctxPlugins.filteredPlugins.map(p => JsString(p.plugin))).some)
       _               <- handleTenantCheck(route)
       _               =  report.markDoneAndStart("check-global-maintenance")
       _               <- checkGlobalMaintenance(route)
@@ -296,9 +297,10 @@ class ProxyEngine() extends RequestHandler {
       _               <- handleConcurrentRequest(request)
       _               =  report.markDoneAndStart("find-route")
       route           <- findRoute(useTree, request, fakeBody, global_plugins__)
-      ctxPlugins      = route.contextualPlugins(global_plugins__, request)
+      _               =  report.markDoneAndStart("compute-plugins", Json.obj("found_route" -> route.json).some)
+      ctxPlugins      = route.contextualPlugins(global_plugins__, request).seffectOn(_.allPlugins)
       _               = attrs.put(Keys.ContextualPluginsKey -> ctxPlugins)
-      _               =  report.markDoneAndStart("tenant-check", Json.obj("found_route" -> route.json).some)
+      _               =  report.markDoneAndStart("tenant-check", Json.obj("disabled_plugins" -> ctxPlugins.disabledPlugins.map(p => JsString(p.plugin)), "filtered_plugins" -> ctxPlugins.filteredPlugins.map(p => JsString(p.plugin))).some)
       _               <- handleTenantCheck(route)
       _               =  report.markDoneAndStart("check-global-maintenance")
       _               <- checkGlobalMaintenance(route)
@@ -517,6 +519,7 @@ class ProxyEngine() extends RequestHandler {
             stop = System.currentTimeMillis(),
             stop_ns = System.nanoTime(),
             out = Json.obj(
+              "not_triggered" -> plugins.tpwoCallbacks.map(_.instance.plugin),
               "result" -> result,
             ).applyOnIf(debug)(_ ++ Json.obj("ctx" -> ctx.json))
           )
@@ -602,6 +605,7 @@ class ProxyEngine() extends RequestHandler {
             stop = System.currentTimeMillis(),
             stop_ns = System.nanoTime(),
             out = Json.obj(
+              "not_triggered" -> plugins.tpwoCallbacks.map(_.instance.plugin),
               "result" -> result,
             ).applyOnIf(debug)(_ ++ Json.obj("ctx" -> ctx.json))
           )
@@ -1460,6 +1464,7 @@ class ProxyEngine() extends RequestHandler {
             stop = System.currentTimeMillis(),
             stop_ns = System.nanoTime(),
             out = Json.obj(
+              "not_triggered" -> plugins.tpwoRequest.map(_.instance.plugin),
               "result" -> result,
             ).applyOnIf(debug)(_ ++ Json.obj("ctx" -> ctx.json))
           )
@@ -1680,6 +1685,7 @@ class ProxyEngine() extends RequestHandler {
             stop = System.currentTimeMillis(),
             stop_ns = System.nanoTime(),
             out = Json.obj(
+              "not_triggered" -> plugins.tpwoResponse.map(_.instance.plugin),
               "result" -> result,
             ).applyOnIf(debug)(_ ++ Json.obj("ctx" -> ctx.json))
           )

@@ -163,9 +163,11 @@ case class NgContextualPlugins(plugins: NgPlugins, global_plugins: NgPlugins, re
   implicit val env: Env = _env
   implicit val ec: ExecutionContext = _ec
 
-  lazy val allPlugins = (global_plugins.slots ++ plugins.slots)
-    .filter(_.enabled)
-    .filter(_.matches(request))
+  lazy val (enabledPlugins, disabledPlugins) = (global_plugins.slots ++ plugins.slots)
+    .partition(_.enabled)
+
+  lazy val (allPlugins, filteredPlugins) = enabledPlugins
+    .partition(_.matches(request))
 
   lazy val requestSinkPlugins = allPlugins
     .map(inst => (inst, inst.getPlugin[NgRequestSink]))
@@ -179,10 +181,10 @@ case class NgContextualPlugins(plugins: NgPlugins, global_plugins: NgPlugins, re
       case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
     }
 
-  lazy val transformerPluginsWithCallbacks = transformerPlugins.filter(_.plugin.usesCallbacks)
-  lazy val transformerPluginsThatTransformsRequest = transformerPlugins.filter(_.plugin.transformsRequest)
-  lazy val transformerPluginsThatTransformsResponse = transformerPlugins.filter(_.plugin.transformsResponse)
-  lazy val transformerPluginsThatTransformsError = transformerPlugins.filter(_.plugin.transformsError)
+  lazy val (transformerPluginsWithCallbacks, tpwoCallbacks) = transformerPlugins.partition(_.plugin.usesCallbacks)
+  lazy val (transformerPluginsThatTransformsRequest, tpwoRequest) = transformerPlugins.partition(_.plugin.transformsRequest)
+  lazy val (transformerPluginsThatTransformsResponse, tpwoResponse) = transformerPlugins.partition(_.plugin.transformsResponse)
+  lazy val (transformerPluginsThatTransformsError, tpwoErrors) = transformerPlugins.partition(_.plugin.transformsError)
 
   lazy val preRoutePlugins = allPlugins
     .map(inst => (inst, inst.getPlugin[NgPreRouting]))

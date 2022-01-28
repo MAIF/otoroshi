@@ -190,7 +190,7 @@ object NgService {
         tags = Seq("env:prod"),
         metadata = Map("version" -> version),
         enabled = true,
-        debugFlow = false,
+        debugFlow = true,
         groups = Seq("default"),
         routes = routes,
         client = ClientConfig(),
