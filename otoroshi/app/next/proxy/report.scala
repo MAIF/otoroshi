@@ -75,6 +75,13 @@ case class NgExecutionReportStep(task: String, start: Long, stop: Long, duration
     "ctx" -> ctx
   )
   def duration: Long = duration_ns.nanos.toMillis
+  def durationStr: String = {
+    if (duration_ns < 1000000) {
+      duration_ns + " nanos"
+    } else {
+      duration + " millis"
+    }
+  }
   def markDuration()(implicit env: Env): Unit = {
     env.metrics.timerUpdate("ng-report-request-step-" + task, duration_ns, TimeUnit.NANOSECONDS)
   }
@@ -170,7 +177,7 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
   }
 
   def getOverheadNsNow(): Long = {
-    getOverheadInNsNow() + getOverheadOutNsNow()
+    overheadIn_ns + overheadOut_ns
   }
 
   /////////////////////////////////////////////////////
@@ -183,6 +190,39 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
   def overheadIn: Long = overheadIn_ns.nanos.toMillis
   def overheadOut: Long = overheadOut_ns.nanos.toMillis
   /////////////////////////////////////////////////////
+
+  def gdurationStr: String = {
+    if (gduration_ns < 1000000) {
+      gduration_ns + " nanos"
+    } else {
+      gduration + " millis"
+    }
+  }
+
+  def overheadInStr: String = {
+    if (overheadIn_ns < 1000000) {
+      overheadIn_ns + " nanos"
+    } else {
+      overheadIn + " millis"
+    }
+  }
+
+  def overheadOutStr: String = {
+    if (overheadOut_ns < 1000000) {
+      overheadOut_ns + " nanos"
+    } else {
+      overheadOut + " millis"
+    }
+  }
+
+  def overheadStr: String = {
+    val overhead_ns = overheadIn_ns + overheadOut_ns
+    if (overhead_ns < 1000000) {
+      overhead_ns + " nanos"
+    } else {
+      getOverheadNow() + " millis"
+    }
+  }
 
   def markFailure(message: String): NgExecutionReport = {
     if (reporting) {

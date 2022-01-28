@@ -230,18 +230,12 @@ class ProxyEngine() extends RequestHandler {
         }
     }.applyOnIf(/*env.env == "dev" && */(debug || debugHeaders))(_.map { res =>
       val addHeaders = if (reporting && debugHeaders) Seq(
-        "x-otoroshi-request-overhead" -> (report.overheadIn + report.overheadOut).toString,
-        "x-otoroshi-request-overhead-in" -> report.overheadIn.toString,
-        "x-otoroshi-request-overhead-out" -> report.overheadOut.toString,
-        "x-otoroshi-request-duration" -> report.gduration.toString,
-        "x-otoroshi-request-call-duration" -> report.getStep("call-backend").map(_.duration).getOrElse(-1L).toString,
-        "x-otoroshi-request-find-route-duration" -> {
-          val route = report.getStep("find-route")
-          route
-            .map(_.duration).filter(_ > 0).map(v => s"$v millis")
-            .orElse(route.map(_.duration_ns).map(v => s"$v nanos"))
-            .getOrElse("--")
-        },
+        "x-otoroshi-request-overhead" -> report.overheadStr,
+        "x-otoroshi-request-overhead-in" -> report.overheadInStr,
+        "x-otoroshi-request-overhead-out" -> report.overheadOutStr,
+        "x-otoroshi-request-duration" -> report.gdurationStr,
+        "x-otoroshi-request-call-duration" -> report.getStep("call-backend").map(_.durationStr).getOrElse("--"),
+        "x-otoroshi-request-find-route-duration" -> report.getStep("find-route").map(_.durationStr).getOrElse("--"),
         "x-otoroshi-request-state" -> report.state.name,
         "x-otoroshi-request-creation" -> report.creation.toString,
         "x-otoroshi-request-termination" -> report.termination.toString,
