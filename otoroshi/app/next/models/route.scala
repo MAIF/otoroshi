@@ -40,7 +40,6 @@ case class NgRoute(
   backend: NgBackend,
   backendRef: Option[String] = None,
   client: ClientConfig,
-  healthCheck: HealthCheck,
   plugins: NgPlugins
 ) extends EntityLocationSupport {
 
@@ -62,7 +61,6 @@ case class NgRoute(
     "backend" -> backend.json,
     "backend_ref" -> backendRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "client" -> client.toJson,
-    "health_check" -> healthCheck.toJson,
     "plugins" -> plugins.json
   )
 
@@ -169,7 +167,7 @@ case class NgRoute(
       paths = frontend.domains.map(_.path),
       stripPath = frontend.stripPath,
       clientConfig = client,
-      healthCheck = healthCheck,
+      healthCheck = backend.healthCheck.getOrElse(HealthCheck.empty),
       matchingHeaders = frontend.headers,
       handleLegacyDomain = false,
       targetsLoadBalancing = backend.loadBalancing,
@@ -388,10 +386,10 @@ object NgRoute {
       targetRefs = Seq.empty,
       root = "/",
       rewrite = false,
-      loadBalancing = RoundRobin
+      loadBalancing = RoundRobin,
+      healthCheck = None,
     ),
     client = ClientConfig(),
-    healthCheck = HealthCheck(false, "/"),
     plugins = NgPlugins(Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[ApikeyCalls]
@@ -439,7 +437,6 @@ object NgRoute {
           case Some(r) => refBackend
         },
         backendRef = ref,
-        healthCheck = (json \ "health_check").asOpt(HealthCheck.format).getOrElse(HealthCheck(false, "/")),
         client = (json \ "client").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
         plugins = NgPlugins.readFrom(json.select("plugins")),
       )
@@ -495,11 +492,11 @@ object NgRoute {
         targetRefs = Seq.empty,
         root = service.root,
         rewrite = false,
-        loadBalancing = service.targetsLoadBalancing
+        loadBalancing = service.targetsLoadBalancing,
+        healthCheck = if (service.healthCheck.enabled) service.healthCheck.some else None,
       ),
       groups = service.groups,
       client = service.clientConfig,
-      healthCheck = service.healthCheck,
       plugins = NgPlugins(
         Seq.empty[NgPluginInstance]
           .applyOnIf(service.forceHttps) { seq =>

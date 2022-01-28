@@ -154,7 +154,6 @@ class NgProxyStateLoaderJob extends Job {
             loadBalancing = RoundRobin
           ),
           client = ClientConfig(),
-          healthCheck = HealthCheck(false, "/"),
           plugins = NgPlugins(Seq(
             NgPluginInstance(
               plugin = pluginId[OverrideHost],
@@ -215,7 +214,6 @@ class NgProxyStateLoaderJob extends Job {
             loadBalancing = RoundRobin
           ),
           client = ClientConfig(),
-          healthCheck = HealthCheck(false, "/"),
           plugins = NgPlugins(Seq(
             NgPluginInstance(
               plugin = pluginId[OverrideHost],
@@ -270,7 +268,6 @@ class NgProxyStateLoaderJob extends Job {
             loadBalancing = RoundRobin
           ),
           client = ClientConfig(),
-          healthCheck = HealthCheck(false, "/"),
           plugins = NgPlugins(Seq(
             NgPluginInstance(
               plugin = pluginId[OverrideHost],

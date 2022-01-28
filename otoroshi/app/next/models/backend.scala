@@ -5,14 +5,14 @@ import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits.BetterJsValue
+import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.{Failure, Success, Try}
 import otoroshi.api.OtoroshiEnvHolder
 
-case class NgBackend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String, rewrite: Boolean, loadBalancing: LoadBalancing) {
+case class NgBackend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String, rewrite: Boolean, loadBalancing: LoadBalancing, healthCheck: Option[HealthCheck] = None) {
   // I know it's not ideal but we'll go with it for now !
   lazy val allTargets: Seq[NgTarget] = targets ++ targetRefs.map(OtoroshiEnvHolder.get().proxyState.target).collect {
     case Some(backend) => backend
@@ -22,12 +22,15 @@ case class NgBackend(targets: Seq[NgTarget], targetRefs: Seq[String], root: Stri
     "target_refs" -> JsArray(targetRefs.map(JsString.apply)),
     "root" -> root,
     "rewrite" -> rewrite,
-    "load_balancing" -> loadBalancing.toJson
+    "load_balancing" -> loadBalancing.toJson,
   )
+  .applyOnWithOpt(healthCheck) {
+    case (obj, hc) => obj ++ Json.obj("health_check" -> hc.toJson)
+  }
 }
 
 object NgBackend {
-  def empty: NgBackend = NgBackend(Seq.empty, Seq.empty, "/", false, RoundRobin)
+  def empty: NgBackend = NgBackend(Seq.empty, Seq.empty, "/", false, RoundRobin, None)
   def readFrom(lookup: JsLookupResult): NgBackend = readFromJson(lookup.as[JsValue])
   def readFromJson(lookup: JsValue): NgBackend = {
     lookup.asOpt[JsObject] match {
@@ -37,7 +40,8 @@ object NgBackend {
         targetRefs = obj.select("target_refs").asOpt[Seq[String]].getOrElse(Seq.empty),
         root = obj.select("root").asOpt[String].getOrElse("/"),
         rewrite = obj.select("rewrite").asOpt[Boolean].getOrElse(false),
-        loadBalancing = LoadBalancing.format.reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj())).getOrElse(RoundRobin)
+        loadBalancing = LoadBalancing.format.reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj())).getOrElse(RoundRobin),
+        healthCheck = obj.select("health_check").asOpt(HealthCheck.format),
       )
     }
   }

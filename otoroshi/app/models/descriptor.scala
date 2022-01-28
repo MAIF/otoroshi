@@ -638,6 +638,7 @@ case class HealthCheck(enabled: Boolean, url: String) {
 
 object HealthCheck {
   implicit val format = Json.format[HealthCheck]
+  val empty = HealthCheck(false, "/")
 }
 
 case class CustomTimeouts(

@@ -235,7 +235,6 @@ object NgTreeRouter_Test {
         backend = NgBackend.empty.copy(root = s"/id/${id}", targets = Seq(NgTarget("localhost", "127.0.0.1", 8081, tls = false))),
         backendRef = None,
         client = ClientConfig(),
-        healthCheck = HealthCheck(enabled = false, "/"),
         plugins = NgPlugins(Seq.empty)
       )
     }
@@ -258,7 +257,6 @@ object NgTreeRouter_Test {
         backend = NgBackend.empty.copy(root = s"/", targets = Seq(NgTarget("localhost", "127.0.0.1", 8081, tls = false))),
         backendRef = None,
         client = ClientConfig(),
-        healthCheck = HealthCheck(enabled = false, "/"),
         plugins = NgPlugins(Seq.empty)
       )
     }

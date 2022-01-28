@@ -104,7 +104,6 @@ case class NgRoutesComposition(
             backend = route.backend,
             backendRef = route.backendRef,
             client = client,
-            healthCheck = HealthCheck(false, "/"),
             plugins = plugins
           )
       }
