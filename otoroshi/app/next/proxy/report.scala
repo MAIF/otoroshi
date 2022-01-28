@@ -9,6 +9,7 @@ import otoroshi.security.IdGenerator
 import play.api.libs.json._
 
 import java.util.concurrent.TimeUnit
+import scala.concurrent.duration._
 
 case class NgReportPluginSequenceItem(plugin: String, name: String, start: Long, start_ns: Long, stop: Long, stop_ns: Long, in: JsValue, out: JsValue) {
   def json: JsValue = Json.obj(
@@ -37,7 +38,7 @@ case class NgReportPluginSequence(size: Int, kind: String, start: Long, start_ns
     "stop" -> stop,
     "stop_ns" -> stop_ns,
     "stop_fmt" -> new DateTime(stop).toString(),
-    "duration" -> (stop - start),
+    "duration" -> (stop_ns - start_ns).nanos.toMillis,
     "duration_ns" -> (stop_ns - start_ns),
     "plugins" -> JsArray(plugins.map(_.json))
   )
@@ -62,19 +63,20 @@ object NgExecutionReportState {
   case object Failed     extends NgExecutionReportState { def name: String = "Failed"     }
 }
 
-case class NgExecutionReportStep(task: String, start: Long, stop: Long, duration: Long, duration_ns: Long, ctx: JsValue = JsNull) {
+case class NgExecutionReportStep(task: String, start: Long, stop: Long, duration_ns: Long, ctx: JsValue = JsNull) {
   def json: JsValue = Json.obj(
     "task" -> task,
     "start" -> start,
     "start_fmt" -> new DateTime(start).toString(),
     "stop" -> stop,
     "stop_fmt" -> new DateTime(stop).toString(),
-    "duration" -> duration,
+    "duration" -> duration_ns.nano.toMillis,
     "duration_ns" -> duration_ns,
     "ctx" -> ctx
   )
+  def duration: Long = duration_ns.nanos.toMillis
   def markDuration()(implicit env: Env): Unit = {
-    env.metrics.timerUpdate("ng-report-request-step-" + task, duration, TimeUnit.NANOSECONDS)
+    env.metrics.timerUpdate("ng-report-request-step-" + task, duration_ns, TimeUnit.NANOSECONDS)
   }
 }
 
@@ -88,19 +90,19 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
   var lastStart_ns: Long = start_ns
   var state: NgExecutionReportState = NgExecutionReportState.Created
   var steps: Seq[NgExecutionReportStep] = Seq.empty
-  var gduration = -1L
+  // var gduration = -1L
   var gduration_ns = -1L
-  var overheadIn = -1L
-  var overheadOut = -1L
-  var overheadOutStart = creation.toDate.getTime
+  var overheadIn_ns = -1L
+  var overheadOut_ns = -1L
+  var overheadOutStart_ns = start_ns // creation.toDate.getTime
   var termination = creation
   var ctx: JsValue = JsNull
 
   def markDurations()(implicit env: Env): Unit = {
     env.metrics.timerUpdate("ng-report-request-duration", gduration_ns, TimeUnit.NANOSECONDS)
-    env.metrics.timerUpdate("ng-report-request-overhead", overheadIn + overheadOut, TimeUnit.MILLISECONDS)
-    env.metrics.timerUpdate("ng-report-request-overhead-in", overheadIn, TimeUnit.MILLISECONDS)
-    env.metrics.timerUpdate("ng-report-request-overhead-out", overheadOut, TimeUnit.MILLISECONDS)
+    env.metrics.timerUpdate("ng-report-request-overhead", overheadIn_ns + overheadOut_ns, TimeUnit.NANOSECONDS)
+    env.metrics.timerUpdate("ng-report-request-overhead-in", overheadIn_ns, TimeUnit.NANOSECONDS)
+    env.metrics.timerUpdate("ng-report-request-overhead-out", overheadOut_ns, TimeUnit.NANOSECONDS)
     steps.foreach(_.markDuration())
   }
 
@@ -112,32 +114,38 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
     "id" -> id,
     "creation" -> creation.toString(),
     "termination" -> termination.toString(),
-    "duration" -> gduration,
+    "duration" -> gduration_ns.nano.toMillis,
     "duration_ns" -> gduration_ns,
-    "overhead" -> (overheadIn + overheadOut),
-    "overhead_in" -> overheadIn,
-    "overhead_out" -> overheadOut,
+    "overhead" -> (overheadIn_ns + overheadOut_ns).nanos.toMillis,
+    "overhead_ns" -> (overheadIn_ns + overheadOut_ns),
+    "overhead_in" -> overheadIn_ns.nanos.toMillis,
+    "overhead_in_ns" -> overheadIn_ns,
+    "overhead_out" -> overheadOut_ns.nanos.toMillis,
+    "overhead_out_ns" -> overheadOut_ns,
     "state" -> state.json,
     "steps" -> JsArray(steps.map(_.json))
   )
 
   def markOverheadIn(): NgExecutionReport = {
     if (reporting) {
-      overheadIn = System.currentTimeMillis() - creation.getMillis
+      // overheadIn = System.currentTimeMillis() - creation.getMillis
+      overheadIn_ns = System.nanoTime() - start_ns
     }
     this
   }
 
   def startOverheadOut(): NgExecutionReport = {
     if (reporting) {
-      overheadOutStart = System.currentTimeMillis()
+      // overheadOutStart = System.currentTimeMillis()
+      overheadOutStart_ns = System.nanoTime()
     }
     this
   }
 
   def markOverheadOut(): NgExecutionReport = {
     if (reporting) {
-      overheadOut = System.currentTimeMillis() - overheadOutStart
+      // overheadOut = System.currentTimeMillis() - overheadOutStart
+      overheadOut_ns = System.nanoTime() - overheadOutStart_ns
     }
     this
   }
@@ -153,29 +161,38 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
     System.currentTimeMillis() - creation.getMillis
   }
 
-  def getOverheadInNow(): Long = {
-    overheadIn
+  def getOverheadInNsNow(): Long = {
+    overheadIn_ns
   }
 
-  def getOverheadOutNow(): Long = {
-    overheadOut
+  def getOverheadOutNsNow(): Long = {
+    overheadOut_ns
   }
 
-  def getOverheadNow(): Long = {
-    getOverheadInNow() + getOverheadOutNow()
+  def getOverheadNsNow(): Long = {
+    getOverheadInNsNow() + getOverheadOutNsNow()
   }
+
+  /////////////////////////////////////////////////////
+  // compat functions                                //
+  /////////////////////////////////////////////////////
+  def getOverheadInNow(): Long = overheadIn_ns.nanos.toMillis
+  def getOverheadOutNow(): Long = overheadOut_ns.nanos.toMillis
+  def getOverheadNow(): Long =(overheadIn_ns + overheadOut_ns).nanos.toMillis
+  def gduration: Long = gduration_ns.nanos.toMillis
+  def overheadIn: Long = overheadIn_ns.nanos.toMillis
+  def overheadOut: Long = overheadOut_ns.nanos.toMillis
+  /////////////////////////////////////////////////////
 
   def markFailure(message: String): NgExecutionReport = {
     if (reporting) {
       state = NgExecutionReportState.Failed
       val stop = System.currentTimeMillis()
       val stop_ns = System.nanoTime()
-      val duration = stop - lastStart
       val duration_ns = stop_ns - lastStart_ns
-      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, ctx) :+ NgExecutionReportStep("request-failure", stop, stop, 0L, 0L, Json.obj("message" -> message))
+      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration_ns, ctx) :+ NgExecutionReportStep("request-failure", stop, stop, 0L, Json.obj("message" -> message))
       lastStart = stop
       lastStart_ns = stop_ns
-      gduration = stop - creation.getMillis
       gduration_ns = stop_ns - start_ns
       termination = new DateTime(stop)
     }
@@ -187,12 +204,10 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
       state = NgExecutionReportState.Failed
       val stop = System.currentTimeMillis()
       val stop_ns = System.nanoTime()
-      val duration = stop - lastStart
       val duration_ns = stop_ns - lastStart_ns
-      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, ctx) :+ NgExecutionReportStep("request-failure", stop, stop, 0L, 0L, Json.obj("message" -> message, "error" -> JsonHelpers.errToJson(error)))
+      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration_ns, ctx) :+ NgExecutionReportStep("request-failure", stop, stop, 0L, Json.obj("message" -> message, "error" -> JsonHelpers.errToJson(error)))
       lastStart = stop
       lastStart_ns = stop_ns
-      gduration = stop - creation.getMillis
       gduration_ns = stop_ns - start_ns
       termination = new DateTime(stop)
     }
@@ -204,12 +219,10 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
       state = NgExecutionReportState.Successful
       val stop = System.currentTimeMillis()
       val stop_ns = System.nanoTime()
-      val duration = stop - lastStart
       val duration_ns = stop_ns - lastStart_ns
-      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, ctx) :+ NgExecutionReportStep(s"request-success", stop, stop, 0L, 0L)
+      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration_ns, ctx) :+ NgExecutionReportStep(s"request-success", stop, stop, 0L)
       lastStart = stop
       lastStart_ns = stop_ns
-      gduration = stop - creation.getMillis
       gduration_ns = stop_ns - start_ns
       termination = new DateTime(stop)
     }
@@ -221,9 +234,8 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
       state = NgExecutionReportState.Running
       val stop = System.currentTimeMillis()
       val stop_ns = System.nanoTime()
-      val duration = stop - lastStart
       val duration_ns = stop_ns - lastStart_ns
-      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration, duration_ns, previousCtx.getOrElse(ctx))
+      steps = steps :+ NgExecutionReportStep(currentTask, lastStart, stop, duration_ns, previousCtx.getOrElse(ctx))
       lastStart = stop
       lastStart_ns = stop_ns
       currentTask = task
