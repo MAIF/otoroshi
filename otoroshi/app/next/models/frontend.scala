@@ -1,6 +1,5 @@
 package otoroshi.next.models
 
-import otoroshi.models.ApiKeyRouteMatcher
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 

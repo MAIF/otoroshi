@@ -2,7 +2,7 @@ package otoroshi.next.models
 
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
-import otoroshi.models.{ClientConfig, EntityLocation, HealthCheck}
+import otoroshi.models.{ClientConfig, EntityLocation}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{RegexPool, TypedMap}
@@ -16,7 +16,6 @@ import java.security.cert.X509Certificate
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
-import org.checkerframework.checker.regex.qual.Regex
 
 case class NgMatchedRoutes(routes: Seq[NgRoute], path: String = "", pathParams: scala.collection.mutable.HashMap[String, String] = scala.collection.mutable.HashMap.empty, noMoreSegments: Boolean) {
   def find(f: (NgRoute, String, scala.collection.mutable.HashMap[String, String], Boolean) => Boolean): Option[NgMatchedRoute] = {

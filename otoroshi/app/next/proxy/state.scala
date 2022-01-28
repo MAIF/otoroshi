@@ -328,11 +328,10 @@ class NgProxyStateLoaderJob extends Job {
                 ))
               )
             ))
-          ))) 
+          )))
         } else Seq.empty[NgRoute].vfuture
     } yield {
       env.proxyState.updateRoutes(newRoutes ++ croutes)
-      // env.proxyState.updateRoutes(newRoutes)
       env.proxyState.updateTargets(targets)
       env.proxyState.updateBackends(backends)
       env.proxyState.updateApikeys(apikeys)
