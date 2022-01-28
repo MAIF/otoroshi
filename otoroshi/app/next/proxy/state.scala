@@ -295,8 +295,8 @@ class NgProxyStateLoaderJob extends Job {
     val debug = config.select("debug").asOpt[Boolean].getOrElse(false)
     val debugHeaders = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
     for {
-      routes <- env.datastores.routeDataStore.findAll() // Seq.empty[Route].vfuture //
-      routescomp <- env.datastores.servicesDataStore.findAll() // Seq.empty[Route].vfuture //
+      routes <- env.datastores.routeDataStore.findAll() 
+      routescomp <- env.datastores.servicesDataStore.findAll() 
       genRoutesDomain <- generateRoutesByDomain(env)
       genRoutesPath <- generateRoutesByName(env)
       genRandom <- generateRandomRoutes(env)
