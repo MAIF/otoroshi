@@ -692,10 +692,10 @@ object NgRoute {
               plugin = pluginId[ApikeyCalls],
               include = service.privatePatterns,
               exclude = service.publicPatterns,
-              config = NgPluginInstanceConfig(service.apiKeyConstraints.json.asObject ++ Json.obj(
-                "validate" -> !service.detectApiKeySooner,
-                "pass_with_user" -> !service.strictlyPrivate
-              )) // TODO: use new config
+              config = NgPluginInstanceConfig(NgApikeyCallsConfig.fromLegacy(service.apiKeyConstraints).copy(
+                validate = !service.detectApiKeySooner,
+                passWithUser = !service.strictlyPrivate
+              ).json.asObject)
             )
           }
           .applyOnIf(service.gzip.enabled) { seq =>

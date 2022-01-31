@@ -38,9 +38,9 @@ case class NgPluginInstance(plugin: String, enabled: Boolean = true, debug: Bool
   def matches(request: RequestHeader): Boolean = {
     val uri = request.thePath
     if (!(include.isEmpty && exclude.isEmpty)) {
-      !exclude.exists(p => otoroshi.utils.RegexPool.regex(p).matches(uri)) && include.exists(p =>
-        otoroshi.utils.RegexPool.regex(p).matches(uri)
-      )
+      val canpass = if (include.isEmpty) true else include.exists(p => otoroshi.utils.RegexPool.regex(p).matches(uri))
+      val cannotpass = if (exclude.isEmpty) false else exclude.exists(p => otoroshi.utils.RegexPool.regex(p).matches(uri))
+      canpass && !cannotpass
     } else {
       true
     }

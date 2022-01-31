@@ -1,7 +1,32 @@
 const http = require('http')
 
 const keep = ['name', 'mean', 'min', 'max', '--', 'p50', 'p999', 'count'];
-const filter = ['ng-report-request-overhead-in', 'ng-report-request-step-call-backend', 'ng-report-request-overhead-out', 'ng-report-request-overhead']
+
+const filter = [
+  'ng-report-request-overhead-in', 
+  'ng-report-request-step-call-backend', 
+  'ng-report-request-overhead-out', 
+  'ng-report-request-overhead', 
+  '--', 
+  'ng-report-request-step-start-handling',
+  'ng-report-request-step-check-concurrent-requests',
+  'ng-report-request-step-find-route',
+  'ng-report-request-step-compute-plugins',
+  'ng-report-request-step-tenant-check',
+  'ng-report-request-step-extract-tracking-id',
+  'ng-report-request-step-check-global-maintenance',
+  'ng-report-request-step-call-before-request-callbacks',
+  'ng-report-request-step-call-pre-route-plugins',
+  'ng-report-request-step-call-access-validator-plugins',
+  'ng-report-request-step-enforce-global-limits',
+  'ng-report-request-step-choose-backend',
+  'ng-report-request-step-transform-request',
+  'ng-report-request-step-call-backend', 
+  'ng-report-request-step-transform-response',
+  'ng-report-request-step-stream-response',
+  'ng-report-request-step-trigger-analytics',
+  'ng-report-request-duration',
+]
 
 function fetchMetrics() {
   return new Promise((success, failure) => {
@@ -28,8 +53,12 @@ function fetchMetrics() {
 }
 
 fetchMetrics().then(body => {
-  const array = body.map(r => ({...r, name: r.name.replace(' {}', '')}))
-  const finalArray = (filter.length === 0) ? array : filter.map(name => array.filter(n => n.name === name)[0])
+  const pluginKeys = body.map(r => r.name.replace(" {}", "")).filter(r => r.indexOf("plugin-cp") > -1); 
+  const array = body.map(r => {
+    return ({...r, name: r.name.replace(' {}', '')})
+  });
+  const allFilters = [ ...filter, '--', ...pluginKeys ];
+  const finalArray = (allFilters.length === 0) ? array : allFilters.map(name => array.filter(n => n.name === name)[0] || {})
   const table = finalArray.map(row => {
     const res = {};   
     keep.map(n => {

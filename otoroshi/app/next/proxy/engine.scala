@@ -192,7 +192,7 @@ class ProxyEngine() extends RequestHandler {
       _               =  report.markDoneAndStart("choose-backend", Json.obj("remaining_quotas" -> remQuotas.toJson).some)
       result          <- callTarget(snowflake, reqNumber, request, route) {
         case sb @ NgSelectedBackendTarget(backend, attempts, alreadyFailed, cbStart) =>
-          report.markDoneAndStart("transform-requests", Json.obj("backend" -> backend.json).some)
+          report.markDoneAndStart("transform-request", Json.obj("backend" -> backend.json).some)
           for {
             finalRequest  <- callRequestTransformer(snowflake, request, request.body, route, backend, ctxPlugins)
             _             =  report.markDoneAndStart("call-backend")

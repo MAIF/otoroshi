@@ -52,7 +52,7 @@ case class NgReportPluginSequenceItem(plugin: String, name: String, start: Long,
     "start_fmt" -> new DateTime(start).toString(),
     "stop" -> stop,
     "stop_fmt" -> new DateTime(stop).toString(),
-    "duration" -> (stop - start),
+    "duration" -> (stop_ns - start_ns).nanos.toMillis,
     "duration_ns" -> (stop_ns - start_ns),
     "execution_debug" -> Json.obj(
       "in" -> in,
@@ -66,10 +66,8 @@ case class NgReportPluginSequence(size: Int, kind: String, start: Long, start_ns
     "size" -> size,
     "kind" -> kind,
     "start" -> start,
-    "start_ns" -> start_ns,
     "start_fmt" -> new DateTime(start).toString(),
     "stop" -> stop,
-    "stop_ns" -> stop_ns,
     "stop_fmt" -> new DateTime(stop).toString(),
     "duration" -> (stop_ns - start_ns).nanos.toMillis,
     "duration_ns" -> (stop_ns - start_ns),
@@ -132,11 +130,25 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
   var termination = creation
   var ctx: JsValue = JsNull
 
+  def markPluginSeq(name: String, env: Env): Unit = {
+    getStep(name).flatMap(_.ctx.select("plugins").asOpt[JsArray]).map(_.value.map { plugin =>
+      val pluginId = plugin.select("plugin").asString
+      val duration = plugin.select("duration_ns").asLong
+      env.metrics.timerUpdate(s"ng-report-${name}-plugin-${pluginId}", duration, TimeUnit.NANOSECONDS)
+    })
+  }
+
   def markDurations()(implicit env: Env): Unit = {
     env.metrics.timerUpdate("ng-report-request-duration", gduration_ns, TimeUnit.NANOSECONDS)
     env.metrics.timerUpdate("ng-report-request-overhead", overheadIn_ns + overheadOut_ns, TimeUnit.NANOSECONDS)
     env.metrics.timerUpdate("ng-report-request-overhead-in", overheadIn_ns, TimeUnit.NANOSECONDS)
     env.metrics.timerUpdate("ng-report-request-overhead-out", overheadOut_ns, TimeUnit.NANOSECONDS)
+    markPluginSeq("call-before-request-callbacks", env)
+    markPluginSeq("call-pre-route-plugins", env)
+    markPluginSeq("call-access-validator-plugins", env)
+    markPluginSeq("transform-request", env)
+    markPluginSeq("transform-response", env)
+    markPluginSeq("call-after-request-callbacks", env)
     steps.foreach(_.markDuration())
   }
 
