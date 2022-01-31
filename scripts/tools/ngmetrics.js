@@ -1,7 +1,7 @@
 const http = require('http')
 
 const keep = ['name', 'mean', 'min', 'max', '--', 'p50', 'p999', 'count'];
-const filter = ['ng-report-request-step-call-backend', 'ng-report-request-overhead', 'ng-report-request-overhead-in', 'ng-report-request-overhead-out']
+const filter = ['ng-report-request-overhead-in', 'ng-report-request-step-call-backend', 'ng-report-request-overhead-out', 'ng-report-request-overhead']
 
 function fetchMetrics() {
   return new Promise((success, failure) => {
@@ -28,7 +28,9 @@ function fetchMetrics() {
 }
 
 fetchMetrics().then(body => {
-  const table = body.map(r => ({...r, name: r.name.replace(' {}', '')})).filter(r => filter.includes(r.name)).map(row => {
+  const array = body.map(r => ({...r, name: r.name.replace(' {}', '')}))
+  const finalArray = (filter.length === 0) ? array : filter.map(name => array.filter(n => n.name === name)[0])
+  const table = finalArray.map(row => {
     const res = {};   
     keep.map(n => {
       let value = String(row[n] || '');
