@@ -1,9 +1,5 @@
 package otoroshi.models
 
-import java.nio.charset.StandardCharsets
-import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
 import com.auth0.jwt.JWT
@@ -11,30 +7,33 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.InvalidClaimException
 import com.auth0.jwt.impl.PublicClaims
 import com.auth0.jwt.interfaces.{DecodedJWT, Verification}
+import com.github.blemale.scaffeine.Scaffeine
 import com.nimbusds.jose.jwk.{ECKey, JWK, KeyType, RSAKey}
+import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import otoroshi.el.{GlobalExpressionLanguage, JwtExpressionLanguage}
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, Retry}
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
-import org.opensaml.security.credential.criteria.impl.EvaluableX509CertSelectorCredentialCriterion
-import otoroshi.el.{GlobalExpressionLanguage, JwtExpressionLanguage}
+import otoroshi.security.IdGenerator
+import otoroshi.ssl.{DynamicSSLEngineProvider, PemUtils}
+import otoroshi.storage.BasicStore
+import otoroshi.utils
+import otoroshi.utils.http.MtlsConfig
+import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
-import otoroshi.security.IdGenerator
-import otoroshi.ssl.{DynamicSSLEngineProvider, PemUtils}
-import otoroshi.storage.BasicStore
-import otoroshi.utils.{RegexPool, TypedMap}
-import otoroshi.utils
-import otoroshi.utils.http.Implicits.logger
-import otoroshi.utils.http.MtlsConfig
 
+import java.nio.charset.StandardCharsets
+import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
-import otoroshi.utils.syntax.implicits._
 
 trait AsJson {
   def asJson: JsValue
@@ -147,6 +146,8 @@ sealed trait AlgoSettings extends AsJson {
 
   def keyId: Option[String]
 
+  def isAsync: Boolean
+
   def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm]
 
   def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
@@ -223,6 +224,8 @@ case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) ex
 
   def keyId: Option[String] = None
 
+  def isAsync: Boolean = false
+
   override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] =
     size match {
       case 256 if base64 => Some(Algorithm.HMAC256(ApacheBase64.decodeBase64(transformValue(secret))))
@@ -258,6 +261,8 @@ object RSAlgoSettings                                                           
 case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings             {
 
   def keyId: Option[String] = None
+
+  def isAsync: Boolean = false
 
   def getPublicKey(value: String): RSAPublicKey = {
     val publicBytes = ApacheBase64.decodeBase64(
@@ -334,6 +339,8 @@ object ESAlgoSettings                                                           
 case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings             {
 
   def keyId: Option[String] = None
+
+  def isAsync: Boolean = false
 
   def getPublicKey(value: String): ECPublicKey = {
     val publicBytes = ApacheBase64.decodeBase64(
@@ -436,6 +443,8 @@ case class JWKSAlgoSettings(
 
   def keyId: Option[String] = None
 
+  def isAsync: Boolean = true // ASYNCVERIFIER
+
   def algoFromJwk(alg: String, jwk: JWK): Option[Algorithm] = {
     jwk match {
       case rsaKey: RSAKey =>
@@ -510,8 +519,6 @@ case class JWKSAlgoSettings(
 
   override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
 
-    import otoroshi.utils.http.Implicits._
-
     mode match {
       case InputMode(alg, Some(kid)) => {
         JWKSAlgoSettings.cache.get(url) match {
@@ -567,31 +574,24 @@ case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings    
 
   def keyId: Option[String] = certId.some
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
-    Await.result(asAlgorithmF(mode)(env, env.otoroshiExecutionContext), 10.seconds)
-  }
+  def isAsync: Boolean = false
 
-  override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
-    env.datastores.certificatesDataStore
-      .findById(certId)
-      .map {
-        case s @ Some(_) => s
-        case None        =>
-          DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
+  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+    DynamicSSLEngineProvider.certificates.get(certId)
+      .orElse {
+        DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
       }
-      .map { c =>
-        c.flatMap { cert =>
-          val keyPair = cert.cryptoKeyPair
-          (keyPair.getPublic, keyPair.getPrivate) match {
-            case (pk: RSAPublicKey, pkk: RSAPrivateKey) =>
-              size match {
-                case 256 => Some(Algorithm.RSA256(pk, pkk))
-                case 384 => Some(Algorithm.RSA384(pk, pkk))
-                case 512 => Some(Algorithm.RSA512(pk, pkk))
-                case _   => None
-              }
-            case _                                      => None
-          }
+      .flatMap { cert =>
+        val keyPair = cert.cryptoKeyPair
+        (keyPair.getPublic, keyPair.getPrivate) match {
+          case (pk: RSAPublicKey, pkk: RSAPrivateKey) =>
+            size match {
+              case 256 => Some(Algorithm.RSA256(pk, pkk))
+              case 384 => Some(Algorithm.RSA384(pk, pkk))
+              case 512 => Some(Algorithm.RSA512(pk, pkk))
+              case _   => None
+            }
+          case _                                      => None
         }
       }
   }
@@ -623,31 +623,24 @@ case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings     
 
   def keyId: Option[String] = certId.some
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
-    Await.result(asAlgorithmF(mode)(env, env.otoroshiExecutionContext), 10.seconds)
-  }
+  def isAsync: Boolean = false
 
-  override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
-    env.datastores.certificatesDataStore
-      .findById(certId)
-      .map {
-        case s @ Some(_) => s
-        case None        =>
-          DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
+  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+    DynamicSSLEngineProvider.certificates.get(certId)
+      .orElse {
+        DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
       }
-      .map { c =>
-        c.flatMap { cert =>
-          val keyPair = cert.cryptoKeyPair
-          (keyPair.getPublic, keyPair.getPrivate) match {
-            case (pk: ECPublicKey, pkk: ECPrivateKey) =>
-              size match {
-                case 256 => Some(Algorithm.ECDSA256(pk, pkk))
-                case 384 => Some(Algorithm.ECDSA384(pk, pkk))
-                case 512 => Some(Algorithm.ECDSA512(pk, pkk))
-                case _   => None
-              }
-            case _                                    => None
-          }
+      .flatMap { cert =>
+        val keyPair = cert.cryptoKeyPair
+        (keyPair.getPublic, keyPair.getPrivate) match {
+          case (pk: ECPublicKey, pkk: ECPrivateKey) =>
+            size match {
+              case 256 => Some(Algorithm.ECDSA256(pk, pkk))
+              case 384 => Some(Algorithm.ECDSA384(pk, pkk))
+              case 512 => Some(Algorithm.ECDSA512(pk, pkk))
+              case _   => None
+            }
+          case _                                    => None
         }
       }
   }
@@ -679,11 +672,9 @@ case class KidAlgoSettings(onlyExposedCerts: Boolean) extends AlgoSettings {
 
   def keyId: Option[String] = None
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
-    Await.result(asAlgorithmF(mode)(env, env.otoroshiExecutionContext), 10.seconds)
-  }
+  def isAsync: Boolean = false
 
-  override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
+  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
     mode match {
       case InputMode(typ, Some(kid)) => {
         val certs   = DynamicSSLEngineProvider.certificates
@@ -711,9 +702,9 @@ case class KidAlgoSettings(onlyExposedCerts: Boolean) extends AlgoSettings {
               }
             case _                                      => None
           }
-        }.future
+        }
       }
-      case _                         => None.future
+      case _                         => None
     }
   }
 
@@ -1026,6 +1017,7 @@ sealed trait JwtVerifier extends AsJson {
     }
   }
 
+  // TODO: sync/async version based on in/out algs ?
   private[models] def internalVerify[A](
       request: RequestHeader,
       descOpt: Option[ServiceDescriptor],
@@ -1036,13 +1028,10 @@ sealed trait JwtVerifier extends AsJson {
       sendEvent: Boolean
   )(
       f: JwtInjection => Future[A]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = env.metrics.withTimerAsync("ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-timer") {
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = env.metrics.withTimerAsync("ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-internal") {
 
     import Implicits._
 
-    // TODO: remove meters
-    val prefix = "ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification"
-    var start_ns = System.nanoTime()
     source.token(request) match {
       case None        =>
         strategy match {
@@ -1141,9 +1130,9 @@ sealed trait JwtVerifier extends AsJson {
       //     .left[A]
       // case None if !strict => f(JwtInjection()).right[Result]
       case Some(token) =>
-        env.metrics.timerUpdate(s"${prefix}-extraction", System.nanoTime() - start_ns, TimeUnit.NANOSECONDS)
-        start_ns = System.nanoTime()
-        val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(token.split("\\.")(0)))).getOrElse(Json.obj())
+        val tokenParts = token.split("\\.")
+        val signature = tokenParts.last
+        val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(tokenParts(0)))).getOrElse(Json.obj())
         val kid         = (tokenHeader \ "kid").asOpt[String]
         val alg         = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
         algoSettings.asAlgorithmF(InputMode(alg, kid)) flatMap {
@@ -1159,14 +1148,12 @@ sealed trait JwtVerifier extends AsJson {
               )
               .left[A]
           case Some(algorithm) => {
-            env.metrics.timerUpdate(s"${prefix}-alg-in", System.nanoTime() - start_ns, TimeUnit.NANOSECONDS)
-            start_ns = System.nanoTime()
             val verification = strategy.verificationSettings.asVerification(algorithm)
-            Try(verification.build().verify(token)) match {
+            val key = s"${this.asInstanceOf[GlobalJwtVerifier].id}-${signature}"
+            val verificationResult = JwtVerifier.signatureCache.get(key, _ => Try(verification.build().verify(token)))
+            verificationResult match {
               case Failure(e)            =>
                 // logger.error("Bad JWT token", e)
-                env.metrics.timerUpdate(s"${prefix}-verification-bad", System.nanoTime() - start_ns, TimeUnit.NANOSECONDS)
-                start_ns = System.nanoTime()
                 Errors
                   .craftResponseResult(
                     "error.bad.token",
@@ -1179,8 +1166,6 @@ sealed trait JwtVerifier extends AsJson {
                   )
                   .left[A]
               case Success(decodedToken) =>
-                env.metrics.timerUpdate(s"${prefix}-verification", System.nanoTime() - start_ns, TimeUnit.NANOSECONDS)
-                start_ns = System.nanoTime()
                 strategy match {
                   case s @ DefaultToken(true, _, _)           => {
                     Errors
@@ -1204,8 +1189,6 @@ sealed trait JwtVerifier extends AsJson {
                     val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
                     attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> jsonToken)
                     attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> jsonToken)
-                    env.metrics.timerUpdate(s"${prefix}-passthrough", System.nanoTime() - start_ns, TimeUnit.NANOSECONDS)
-                    start_ns = System.nanoTime()
                     f(JwtInjection(decodedToken.some)).right[Result]
                   case s @ Sign(_, aSettings)                 =>
                     aSettings.asAlgorithmF(OutputMode) flatMap {
@@ -1222,8 +1205,6 @@ sealed trait JwtVerifier extends AsJson {
                           )
                           .left[A]
                       case Some(outputAlgorithm) => {
-                        env.metrics.timerUpdate(s"${prefix}-alg-out", System.nanoTime() - start_ns, TimeUnit.NANOSECONDS)
-                        start_ns = System.nanoTime()
                         val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
                         val newToken  = sign(
                           jsonToken,
@@ -1232,8 +1213,6 @@ sealed trait JwtVerifier extends AsJson {
                         )
                         attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> jsonToken)
                         attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> jsonToken)
-                        env.metrics.timerUpdate(s"${prefix}-sign", System.nanoTime() - start_ns, TimeUnit.NANOSECONDS)
-                        start_ns = System.nanoTime()
                         f(source.asJwtInjection(decodedToken, newToken)).right[Result]
                       }
                     }
@@ -1252,8 +1231,6 @@ sealed trait JwtVerifier extends AsJson {
                           )
                           .left[A]
                       case Some(outputAlgorithm) => {
-                        env.metrics.timerUpdate(s"${prefix}-alg-out", System.nanoTime() - start_ns, TimeUnit.NANOSECONDS)
-                        start_ns = System.nanoTime()
                         val jsonToken                    = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
                         val context: Map[String, String] = jsonToken.value.toSeq.collect {
                           case (key, JsString(str))     => (key, str)
@@ -1302,12 +1279,9 @@ sealed trait JwtVerifier extends AsJson {
                             .filterNot(f => tSettings.mappingSettings.remove.contains(f._1))
                             .toMap
                         )
-                        env.metrics.timerUpdate(s"${prefix}-forge", System.nanoTime() - start_ns, TimeUnit.NANOSECONDS)
-                        start_ns = System.nanoTime()
                         val newToken                     = sign(newJsonToken, outputAlgorithm, aSettings.keyId)
                         attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> jsonToken)
                         attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> newJsonToken)
-                        env.metrics.timerUpdate(s"${prefix}-sign", System.nanoTime() - start_ns, TimeUnit.NANOSECONDS)
                         source match {
                           case _: InQueryParam =>
                             f(tSettings.location.asJwtInjection(decodedToken, newToken)).right[Result]
@@ -1490,6 +1464,7 @@ case class RefJwtVerifier(
     }
   }
 
+  // TODO: sync/async version based on in/out algs ?
   def verifyFromCache(
     request: RequestHeader,
     desc: Option[ServiceDescriptor],
@@ -1497,54 +1472,65 @@ case class RefJwtVerifier(
     user: Option[PrivateAppsUser],
     elContext: Map[String, String],
     attrs: TypedMap
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, JwtInjection]] = env.metrics.withTimerAsync(s"ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-all") {
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, JwtInjection]] = {
     ids match {
       case s if s.isEmpty => JwtInjection().right.future
       case _ => {
         val promise = Promise[Either[Result, JwtInjection]]
-        // TODO: cache if rejected on requestId#verifierId
-        // TODO: cache verification on requestId#verifierId
         def dequeueNext(all: Seq[String], last: Either[Result, JwtInjection]): Unit = {
           all.headOption match {
             case None => promise.trySuccess(last)
             case Some(ref) =>
-              env.metrics.withTimerAsync(s"ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-single") {
-                env.proxyState.jwtVerifier(ref) match {
-                case Some(verifier) =>
-                    verifier
-                      .internalVerify(request, desc, apikey, user, elContext, attrs, all.size == 1)(injection => injection.right.future)
-                      .map {
-                        case Left(result) if all.size == 1 => promise.trySuccess(Left(result))
-                        case Left(result) => dequeueNext(all.tail, Left(result))
-                        case Right(result) =>
-                          result match {
-                            case Left(result) if all.size == 1 => promise.trySuccess(Left(result))
-                            case Left(result) => dequeueNext(all.tail, Left(result))
-                            case Right(flow) =>
-                              // the first that passes win !
-                              promise.trySuccess(Right(flow))
+              val key = s"${request.id}-${ref}-queue"
+              JwtVerifier.verificationCache.getIfPresent(key) match {
+                case Some(JwtVerificationResult.FailedJwtVerificationResult(result)) => dequeueNext(all.tail, Left(result)) // weird use case where same verifier is used and fails
+                case _ => env.metrics.withTimerAsync(s"ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-single") {
+                    env.proxyState.jwtVerifier(ref) match {
+                      case Some(verifier) =>
+                        verifier
+                          .internalVerify(request, desc, apikey, user, elContext, attrs, all.size == 1)(injection => injection.right.future)
+                          .map {
+                            case Left(result) if all.size == 1 =>
+                              JwtVerifier.verificationCache.put(key, JwtVerificationResult.FailedJwtVerificationResult(result))
+                              promise.trySuccess(Left(result))
+                            case Left(result) =>
+                              JwtVerifier.verificationCache.put(key, JwtVerificationResult.FailedJwtVerificationResult(result))
+                              dequeueNext(all.tail, Left(result))
+                            case Right(result) =>
+                              result match {
+                                case Left(result) if all.size == 1 =>
+                                  JwtVerifier.verificationCache.put(key, JwtVerificationResult.FailedJwtVerificationResult(result))
+                                  promise.trySuccess(Left(result))
+                                case Left(result) =>
+                                  JwtVerifier.verificationCache.put(key, JwtVerificationResult.FailedJwtVerificationResult(result))
+                                  dequeueNext(all.tail, Left(result))
+                                case Right(flow) =>
+                                  // the first that passes win !
+                                  promise.trySuccess(Right(flow))
+                              }
                           }
-                      }
-                      .andThen { case Failure(e) => promise.tryFailure(e) }
+                          .andThen { case Failure(e) => promise.tryFailure(e) }
 
-                    case None => {
-                      Errors
-                        .craftResponseResult(
-                          s"error.bad.globaljwtverifier.id",
-                          Results.InternalServerError,
-                          request,
-                          desc,
-                          None,
-                          attrs = attrs
-                        )
-                        .map { result =>
-                          if (all.size == 1) {
-                            promise.trySuccess(Left(result))
-                          } else {
-                            dequeueNext(all.tail, Left(result))
+                      case None => {
+                        Errors
+                          .craftResponseResult(
+                            s"error.bad.globaljwtverifier.id",
+                            Results.InternalServerError,
+                            request,
+                            desc,
+                            None,
+                            attrs = attrs
+                          )
+                          .map { result =>
+                            JwtVerifier.verificationCache.put(key, JwtVerificationResult.FailedJwtVerificationResult(result))
+                            if (all.size == 1) {
+                              promise.trySuccess(Left(result))
+                            } else {
+                              dequeueNext(all.tail, Left(result))
+                            }
                           }
-                        }
-                        .andThen { case Failure(e) => promise.tryFailure(e) }
+                          .andThen { case Failure(e) => promise.tryFailure(e) }
+                      }
                     }
                   }
               }
@@ -1703,7 +1689,22 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
     } get
 }
 
+sealed trait JwtVerificationResult
+object JwtVerificationResult {
+  case class FailedJwtVerificationResult(result: Result) extends JwtVerificationResult
+}
+
 object JwtVerifier extends FromJson[JwtVerifier] {
+
+  val verificationCache = Scaffeine()
+    .expireAfterWrite(5.seconds)
+    .maximumSize(500)
+    .build[String, JwtVerificationResult]()
+
+  val signatureCache = Scaffeine()
+    .expireAfterWrite(5.seconds)
+    .maximumSize(500)
+    .build[String, Try[DecodedJWT]]()
 
   val fmt = new Format[JwtVerifier] {
     override def writes(o: JwtVerifier): JsValue             = o.asJson

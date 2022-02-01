@@ -1,6 +1,6 @@
 const http = require('http')
 
-const keep = ['name', 'mean', 'min', 'max', '--', 'p50', 'p999', 'count'];
+const keep = ['name', 'mean', 'min', 'max', 'count'] //, '--', 'p50', 'p999', 'count'];
 
 const filter = [
   'ng-report-request-overhead-in', 
