@@ -1309,7 +1309,7 @@ export class DangerZonePage extends Component {
         <div className="row">
           <div className="mb-3 btnsService">
             <div className="col-md-10">
-              <div className="btn-group pull-right">
+              <div className="btn-group float-end">
                 <button
                   title="Add item"
                   className="btn btn-success"

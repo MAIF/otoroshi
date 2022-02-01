@@ -143,10 +143,9 @@ class Target extends Component {
               return (
                 <button
                   type="button"
-                  className="btn btn-primary btn-sm"
-                  style={{ marginLeft: 5, height: 32, marginTop: 1 }}
+                  className="btn btn-primary btn-sm ml-3"
                   onClick={(e) => this.setState({ showMore: !this.state.showMore })}>
-                  <i className="fas fa-eye" /> Show more
+                  <i className="fas fa-eye" />
                 </button>
               );
             }
@@ -1219,19 +1218,19 @@ export class ServicePage extends Component {
             transformer={(a) => ({ value: a.id, label: a.name })}
             help="Each service descriptor is attached to a group. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group."
           />
-          <div className="mb-3">
-            <label className="col-xs-12 col-sm-2 control-label" />
-            <div className="col-sm-10">
+          <div className="row mb-3">
+            <label className="col-xs-12 col-sm-2 col-form-label" />
+            <div className="col-sm-10 d-flex justify-content-end">
               <button
                 type="button"
-                className="btn btn-success pull-right btn-sm"
+                className="btn btn-success btn-sm"
                 {...createTooltip('You can create a new group to host this descriptor')}
                 onClick={this.createNewGroup}>
                 <i className="fas fa-plus" /> Create a new group
               </button>
               <button
                 type="button"
-                className="btn btn-success pull-right btn-sm"
+                className="btn btn-success btn-sm"
                 style={{ marginRight: 5 }}
                 {...createTooltip(
                   'You can create a new group with an auto generated name to host this descriptor'
@@ -1421,8 +1420,8 @@ export class ServicePage extends Component {
                     onChange={(e) => this.changeTheValue('matchingRoot', e)}
                   />
                 )}
-                <div className="mb-3">
-                  <label className="col-xs-12 col-sm-2 control-label" />
+                <div className="row mb-3">
+                  <label className="col-xs-12 col-sm-2 col-form-label" />
                   <div className="col-sm-10">
                     <button
                       className="btn btn-sm btn-info"
@@ -3546,7 +3545,7 @@ export class TemplateInput extends Component {
           <div className="col-sm-2">
             <button
               type="button"
-              className="btn btn-success pull-right"
+              className="btn btn-success float-end"
               style={{ marginLeft: 5 }}
               title="Save template"
               onClick={this.saveTemplate}>
@@ -3554,7 +3553,7 @@ export class TemplateInput extends Component {
             </button>
             <button
               type="button"
-              className="btn btn-danger pull-right"
+              className="btn btn-danger float-end"
               title="Delete template"
               onClick={this.deleteTemplate}>
               <i className="fas fa-trash" />
