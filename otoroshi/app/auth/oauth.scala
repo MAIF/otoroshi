@@ -293,7 +293,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         // s"${authConfig.id}-desc"                                          -> descriptor.id,
         "hash"                                                            -> hash,
         s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
-          routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
+          routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
         )
       ): _*
     ).asFuture
@@ -365,7 +365,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       sessionParams ++ Map(
         "hash"                    -> hash,
         "bo-redirect-after-login" -> redirect.getOrElse(
-          routes.BackOfficeController.dashboard().absoluteURL(env.exposedRootSchemeIsHttps)
+          routes.BackOfficeController.dashboard.absoluteURL(env.exposedRootSchemeIsHttps)
         )
       ): _*
     ).asFuture

@@ -81,7 +81,7 @@ libraryDependencies ++= Seq(
   "com.github.gphat"                %% "censorinus"                  % "2.1.16",
   "com.typesafe.akka"               %% "akka-stream-kafka"           % "2.0.7",
   "com.lightbend.akka"              %% "akka-stream-alpakka-s3"      % "2.0.2",
-  "com.typesafe.akka"               %% "akka-http-xml"               % "10.1.13",
+  "com.typesafe.akka"               %% "akka-http-xml"               % "10.1.15",
   "com.spotify.metrics"              % "semantic-metrics-core"       % "1.1.7",
 //  "io.dropwizard.metrics"    % "metrics-jvm"                 % metricsVersion,    // Apache 2.0
   "io.dropwizard.metrics"            % "metrics-jmx"                 % metricsVersion, // Apache 2.0
