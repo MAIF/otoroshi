@@ -11,6 +11,7 @@ import otoroshi.utils.controllers._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
+import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -183,5 +184,16 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
         )
       ))
     ).json)
+  }
+
+  def domainsAndCertificates() = ApiAction { ctx =>
+    val routes = env.proxyState.allRoutes()
+    val domains = routes.flatMap(_.frontend.domains).map(_.domain)
+    val certs = env.proxyState.allCertificates()
+    val map = domains.map { domain =>
+      val certsForDomain = certs.filter(c => c.matchesDomain(domain))
+      Json.obj(domain -> JsArray(certsForDomain.map(_.id.json)))
+    }.fold(Json.obj())(_ ++ _)
+    Ok(Json.obj("certificates" -> JsArray(certs.map(_.json)), "domains" -> map))
   }
 }

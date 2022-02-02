@@ -427,6 +427,7 @@ GET     /api/data-exporter-configs                          otoroshi.controllers
 POST    /api/data-exporter-configs                          otoroshi.controllers.adminapi.DataExporterConfigController.createAction()
 
 ## NgRoutes
+GET     /api/experimental/routes/_domains_and_certs         otoroshi.next.controllers.adminapi.NgRoutesController.domainsAndCertificates()
 GET     /api/experimental/routes/_template                  otoroshi.next.controllers.adminapi.NgRoutesController.initiateRoute()
 POST    /api/experimental/routes/_bulk                      otoroshi.next.controllers.adminapi.NgRoutesController.bulkCreateAction()
 PUT     /api/experimental/routes/_bulk                      otoroshi.next.controllers.adminapi.NgRoutesController.bulkUpdateAction()
