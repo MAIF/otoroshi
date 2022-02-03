@@ -7,6 +7,7 @@ import otoroshi.next.models._
 import otoroshi.next.plugins.OverrideHost
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
+import otoroshi.ssl.{Cert, RawCertificate}
 import otoroshi.utils.controllers._
 import play.api.Logger
 import play.api.libs.json._
@@ -187,13 +188,36 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   def domainsAndCertificates() = ApiAction { ctx =>
+
+    import otoroshi.ssl.SSLImplicits._
+
     val routes = env.proxyState.allRoutes()
-    val domains = routes.flatMap(_.frontend.domains).map(_.domain)
+    val domains = routes.flatMap(_.frontend.domains).map(_.domain).distinct
     val certs = env.proxyState.allCertificates()
-    val map = domains.map { domain =>
+    val jsonDomains = domains.map { domain =>
       val certsForDomain = certs.filter(c => c.matchesDomain(domain))
       Json.obj(domain -> JsArray(certsForDomain.map(_.id.json)))
     }.fold(Json.obj())(_ ++ _)
-    Ok(Json.obj("certificates" -> JsArray(certs.map(_.json)), "domains" -> map))
+    def certToJson(cert: Cert): Option[JsValue] = {
+      RawCertificate.fromChainAndKey(cert.chain, cert.privateKey) match {
+        case None => None
+        case Some(rcert) => {
+          val ecs: Seq[String] = rcert.certificatesChain.map(_.encoded)
+          Json.obj(
+            "id" -> cert.id,
+            "chain" -> ecs,
+            "key" -> rcert.cryptoKeyPair.getPrivate.encoded,
+            "domains" -> domains.filter(d => cert.matchesDomain(d)).distinct,
+          ).some
+        }
+      }
+    }
+    val jsonCerts = JsArray(certs.filter(_.isUsable).filterNot(_.ca).filterNot(_.keypair).filterNot(_.client).flatMap(certToJson))
+    val jsonTrustedCerts = JsArray(env.datastores.globalConfigDataStore.latest().tlsSettings.trustedCAsServer.flatMap(id => env.proxyState.certificate(id)).flatMap(certToJson))
+    Ok(Json.obj(
+      "trusted_certificates" -> jsonTrustedCerts,
+      "certificates" -> jsonCerts,
+      "domains" -> jsonDomains
+    ).debugPrintln)
   }
 }
