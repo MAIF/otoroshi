@@ -943,7 +943,7 @@ export class NewCertificateForm extends Component {
       return (
         <>
           <div className="modal-body">
-            <form className="form-horizontal" style={{ overflowY: 'auto' }}>
+            <form className="form-horizontal">
               <BooleanInput
                 label="Let's Encrypt"
                 value={this.state.letsEncrypt}
@@ -976,7 +976,7 @@ export class NewCertificateForm extends Component {
     return (
       <>
         <div className="modal-body">
-          <form className="form-horizontal" style={{ overflowY: 'auto', maxHeight: '80vh' }}>
+          <form className="form-horizontal" style={{maxHeight: '80vh' }}>
             <SelectInput
               label="Issuer"
               value={this.state.caRef}
