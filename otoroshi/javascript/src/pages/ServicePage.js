@@ -515,13 +515,13 @@ class CanaryCampaign extends Component {
 
   render() {
     return (
-      <div className="mb-3">
-        <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+      <div className="row mb-3">
+        <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 col-form-label">
           Campaign stats <Help text="Stats about users target in the current canary campaign" />
         </label>
         {this.state.campaign && (
-          <div className="col-sm-10" style={{ paddingTop: 5 }}>
-            <span style={{ marginRight: 10 }}>
+          <div className="col-sm-10 pt-1">
+            <span className="me-3">
               {this.state.campaign.canaryUsers + this.state.campaign.standardUsers} users (
               {this.state.campaign.canaryUsers} canary / {this.state.campaign.standardUsers}{' '}
               standard)
@@ -1751,8 +1751,8 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={false}
             label="URL Patterns">
-            <div className="mb-3">
-              <label className="col-xs-12 col-sm-2 control-label" />
+            <div className="row mb-3">
+              <label className="col-xs-12 col-sm-2 col-form-label" />
               <div className="col-sm-10">
                 <PublicUiButton
                   value={this.state.service.publicPatterns}
@@ -1949,8 +1949,8 @@ export class ServicePage extends Component {
               transformer={(a) => ({ value: a.id, label: a.name })}
               help="..."
             />
-            <div className="mb-3">
-              <label className="col-xs-12 col-sm-2 control-label" />
+            <div className="row mb-3">
+              <label className="col-xs-12 col-sm-2 col-form-label" />
               <div className="col-sm-10">
                 {!this.state.service.authConfigRef && (
                   <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
@@ -1983,8 +1983,8 @@ export class ServicePage extends Component {
               help="Strict mode enabled"
               onChange={(v) => this.changeTheValue('strictlyPrivate', v)}
             />
-            <div className="mb-3">
-              <label className="col-xs-12 col-sm-2 control-label" />
+            <div className="row mb-3">
+              <label className="col-xs-12 col-sm-2 col-form-label" />
               <div className="col-sm-10">
                 <p className="sub-container sub-container__bg-color">
                   When an app. enforces user authentication (ex. privateApp), it can be nice to
@@ -2434,11 +2434,11 @@ export class ServicePage extends Component {
                   help="Is JWT verification enabled for this service"
                   onChange={(v) => this.changeTheValue('jwtVerifier.enabled', v)}
                 />
-                <div className="mb-3">
-                  <label className="col-xs-12 col-sm-2 control-label" />
+                <div className="row mb-3">
+                  <label className="col-xs-12 col-sm-2 col-form-label" />
                   <div className="col-sm-10">
                     {this.state.service.jwtVerifier.ids.length === 0 && (
-                      <a href={`/bo/dashboard/jwt-verifiers/add`} className="btn btn-primary">
+                      <a href={`/bo/dashboard/jwt-verifiers/add`} className="btn btn-primary btn-sm">
                         <i className="fas fa-plus" /> Create a new Jwt Verifier config
                       </a>
                     )}
@@ -2518,7 +2518,7 @@ export class ServicePage extends Component {
               help="By default, when pre-routing is enabled, everything is verified. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
               onChange={(v) => this.changeTheValue('preRouting.excludedPatterns', v)}
             />
-            <div className="mb-3">
+            <div className="row mb-3">
               <Suspense fallback={<div>loading ...</div>}>
                 <CodeInput
                   label="Configuration"
@@ -2902,50 +2902,45 @@ export class ServicePage extends Component {
               help="Remove headers in the client response (from Otoroshi to client)."
               onChange={(v) => this.changeTheValue('removeHeadersOut', v)}
             />
-            <div className="mb-3">
+            <div className="row mb-3">
               <label
                 htmlFor={`input-${this.props.label}`}
-                className="col-xs-12 col-sm-2 control-label">
+                className="col-xs-12 col-sm-2 col-form-label">
                 Security headers
               </label>
               <div className="col-sm-10">
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) => this.addSecurityHeader('X-Frame-Options', 'DENY')}
                   disabled={this.computeIfButtonDisabled('X-Frame-Options')}
-                  className="btn btn-sm btn-success">
+                  className="btn btn-sm btn-success mb-2">
                   X-Frame-Options
                 </button>
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) => this.addSecurityHeader('X-XSS-Protection', '1; mode=block')}
                   disabled={this.computeIfButtonDisabled('X-XSS-Protection')}
-                  className="btn btn-sm btn-success">
+                  className="btn btn-sm btn-success mb-2">
                   X-XSS-Protection
                 </button>
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) => this.addSecurityHeader('X-Content-Type-Options', 'nosniff')}
                   disabled={this.computeIfButtonDisabled('X-Content-Type-Options')}
-                  className="btn btn-sm btn-success">
+                  className="btn btn-sm btn-success mb-2">
                   X-Content-Type-Options
                 </button>
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) =>
                     this.addSecurityHeader('X-Permitted-Cross-Domain-Policies', 'master-only')
                   }
                   disabled={this.computeIfButtonDisabled('X-Permitted-Cross-Domain-Policies')}
-                  className="btn btn-sm btn-success">
+                  className="btn btn-sm btn-success mb-2">
                   X-Permitted-Cross-Domain-Policies
                 </button>
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) =>
                     this.addSecurityHeader(
                       'Referrer-Policy',
@@ -2953,22 +2948,20 @@ export class ServicePage extends Component {
                     )
                   }
                   disabled={this.computeIfButtonDisabled('Referrer-Policy')}
-                  className="btn btn-sm btn-success">
+                  className="btn btn-sm btn-success mb-2">
                   Referrer-Policy
                 </button>
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) =>
                     this.addSecurityHeader('Content-Security-Policy', "default-src 'self'")
                   }
                   disabled={this.computeIfButtonDisabled('Content-Security-Policy')}
-                  className="btn btn-sm btn-success">
+                  className="btn btn-sm btn-success mb-2">
                   Content-Security-Policy
                 </button>
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) =>
                     this.addSecurityHeader(
                       'Strict-Transport-Security',
@@ -2976,12 +2969,11 @@ export class ServicePage extends Component {
                     )
                   }
                   disabled={this.computeIfButtonDisabled('Strict-Transport-Security')}
-                  className="btn btn-sm btn-success">
+                  className="btn btn-sm btn-success mb-2">
                   Strict-Transport-Security
                 </button>
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) =>
                     this.addSecurityHeader(
                       'Public-Key-Pins',
@@ -2989,26 +2981,25 @@ export class ServicePage extends Component {
                     )
                   }
                   disabled={this.computeIfButtonDisabled('Public-Key-Pins')}
-                  className="btn btn-sm btn-success">
+                  className="btn btn-sm btn-success mb-2">
                   Public-Key-Pins
                 </button>
               </div>
             </div>
-            <div className="mb-3">
+            <div className="row mb-3">
               <label
                 htmlFor={`input-${this.props.label}`}
-                className="col-xs-12 col-sm-2 control-label">
+                className="col-xs-12 col-sm-2 col-form-label">
                 Utility headers
               </label>
               <div className="col-sm-10">
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) =>
                     this.addSecurityHeader('Permissions-Policy', 'interest-cohort=()')
                   }
                   disabled={this.computeIfButtonDisabled('Permissions-Policy')}
-                  className="btn btn-sm btn-success">
+                  className="btn btn-sm btn-success mb-2">
                   opt-out from Google FLoC
                 </button>
               </div>
@@ -3125,12 +3116,12 @@ export class ServicePage extends Component {
               onChange={(e) => this.changeTheValue('canary.root', e)}
             />
             <CanaryCampaign serviceId={this.state.service.id} />
-            <div className="mb-3">
+            <div className="row mb-3">
               <label
                 htmlFor={`input-${this.props.label}`}
-                className="col-xs-12 col-sm-2 control-label"
+                className="col-xs-12 col-sm-2 col-form-label"
               />
-              <div className="col-sm-10" style={{ paddingTop: 5 }}>
+              <div className="col-sm-10 pt-1">
                 <button
                   type="button"
                   className="btn btn-success btn-sm"
@@ -3194,8 +3185,8 @@ export class ServicePage extends Component {
             label="Custom errors template">
             {!this.state.neverSaved && <TemplateInput service={this.state.service} />}
             {this.state.neverSaved && (
-              <div className="mb-3">
-                <label className="col-xs-12 col-sm-2 control-label" />
+              <div className="row mb-3">
+                <label className="col-xs-12 col-sm-2 col-form-label" />
                 <div className="col-sm-10">
                   <p className="sub-container sub-container__bg-color">
                     Custom error templates are not available on a service descriptor that hasn't
@@ -3320,8 +3311,8 @@ export class ServicePage extends Component {
 export class Message extends Component {
   render() {
     return (
-      <div className="mb-3">
-        <label className="col-xs-12 col-sm-2 control-label" />
+      <div className="row mb-3">
+        <label className="col-xs-12 col-sm-2 col-form-label" />
         <div className="col-sm-10">
           <div className="sub-container sub-container__bg-color">
             <p style={{ textAlign: 'justify', marginBottom: 0 }}>{this.props.message}</p>
@@ -3523,8 +3514,8 @@ export class TemplateInput extends Component {
   render() {
     if (!this.state.template) {
       return (
-        <div className="mb-3">
-          <label className="col-xs-12 col-sm-2 control-label" />
+        <div className="row mb-3">
+          <label className="col-xs-12 col-sm-2 col-form-label" />
           <div className="col-sm-10">
             <button type="button" className="btn btn-success" onClick={this.createTemplate}>
               Create custom error template
@@ -3535,8 +3526,8 @@ export class TemplateInput extends Component {
     }
     return (
       <div>
-        <div className="mb-3">
-          <label className="col-xs-12 col-sm-2 control-label" />
+        <div className="row mb-3">
+          <label className="col-xs-12 col-sm-2 col-form-label" />
           <div className="col-sm-8">
             <p style={{ padding: 10, borderRadius: 5, backgroundColor: '#494948' }}>
               {this.message}
@@ -3560,8 +3551,8 @@ export class TemplateInput extends Component {
             </button>
           </div>
         </div>
-        <div className="mb-3">
-          <label className="col-xs-12 col-sm-2 control-label" />
+        <div className="row mb-3">
+          <label className="col-xs-12 col-sm-2 col-form-label" />
           <div className="col-sm-10" />
         </div>
         <Form

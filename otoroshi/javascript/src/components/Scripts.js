@@ -120,24 +120,15 @@ class PluginsDescription extends Component {
             this.findNode(
               script,
               <div
-                className="mb-3"
+                className="row mb-3"
                 style={{
-                  marginLeft: 10,
                   marginRight: 50,
                 }}>
-                <label className="col-xs-12 col-sm-2 control-label" />
+                <label className="col-form-label" />
                 {!this.state.display[script.id] && (
                   <div
-                    style={{
-                      marginTop: 10,
-                      padding: 10,
-                      borderRadius: 5,
-                      width: '100%',
-                      display: 'flex',
-                      flexDirection: 'row',
-                      justifyContent: 'flex-end',
-                      height: 45,
-                    }}>
+                    className="d-flex justify-content-end"
+                    >
                     {script.id.indexOf('cp:otoroshi.') === 0 && (
                       <a
                         className="btn btn-sm btn-info"
@@ -168,7 +159,7 @@ class PluginsDescription extends Component {
                   </div>
                 )}
                 {false && !this.state.display[script.id] && (
-                  <div className="col-sm-10">
+                  <div className="col-sm-12">
                     <div
                       className="plugin-doc"
                       style={{
@@ -191,7 +182,7 @@ class PluginsDescription extends Component {
                   </div>
                 )}
                 {this.state.display[script.id] && (
-                  <div className="col-sm-10">
+                  <div className="col-sm-12">
                     <div
                       className="plugin-doc"
                       style={{
@@ -325,8 +316,8 @@ export class Scripts extends Component {
           config={this.props.config}
           onChangeConfig={this.props.onChangeConfig}
         />
-        <div className="mb-3">
-          <label className="col-xs-12 col-sm-2 control-label" />
+        <div className="row mb-3">
+          <label className="col-xs-12 col-sm-2 col-form-label" />
           <div className="col-sm-10">
             {this.props.refs && this.props.refs.length === 0 && (
               <a href={`/bo/dashboard/plugins/add`} className="btn btn-sm btn-primary">

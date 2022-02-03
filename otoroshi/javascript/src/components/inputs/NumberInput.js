@@ -22,14 +22,14 @@ export class NumberInput extends Component {
 
   render() {
     return (
-      <div className="mb-3">
-        <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+      <div className="row mb-3">
+        <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 col-form-label">
           {this.props.label} <Help text={this.props.help} />
         </label>
         <div className="col-sm-10">
           {(this.props.prefix || this.props.suffix) && (
             <div className="input-group">
-              {this.props.prefix && <div className="input-group-addon">{this.props.prefix}</div>}
+              {this.props.prefix && <span className="input-group-text">{this.props.prefix}</span>}
               <input
                 type="number"
                 step={this.props.step}
@@ -42,7 +42,7 @@ export class NumberInput extends Component {
                 value={this.props.value}
                 onChange={this.onChange}
               />
-              {this.props.suffix && <div className="input-group-addon">{this.props.suffix}</div>}
+              {this.props.suffix && <span className="input-group-text">{this.props.suffix}</span>}
             </div>
           )}
           {!(this.props.prefix || this.props.suffix) && (
@@ -78,15 +78,15 @@ export class VerticalNumberInput extends Component {
 
   render() {
     return (
-      <div className="mb-3">
+      <div className="row mb-3">
         <div className="col-xs-12">
-          <label htmlFor={`input-${this.props.label}`} className="control-label">
+          <label htmlFor={`input-${this.props.label}`} className="col-form-label">
             {this.props.label} <Help text={this.props.help} />
           </label>
           <div>
             {(this.props.prefix || this.props.suffix) && (
               <div className="input-group">
-                {this.props.prefix && <div className="input-group-addon">{this.props.prefix}</div>}
+                {this.props.prefix && <span className="input-group-text">{this.props.prefix}</span>}
                 <input
                   type="number"
                   step={this.props.step}
@@ -99,7 +99,7 @@ export class VerticalNumberInput extends Component {
                   value={this.props.value}
                   onChange={this.onChange}
                 />
-                {this.props.suffix && <div className="input-group-addon">{this.props.suffix}</div>}
+                {this.props.suffix && <span className="input-group-text">{this.props.suffix}</span>}
               </div>
             )}
             {!(this.props.prefix || this.props.suffix) && (
