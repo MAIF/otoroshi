@@ -218,6 +218,6 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       "trusted_certificates" -> jsonTrustedCerts,
       "certificates" -> jsonCerts,
       "domains" -> jsonDomains
-    ).debugPrintln)
+    ))
   }
 }
