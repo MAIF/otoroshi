@@ -427,7 +427,6 @@ GET     /api/data-exporter-configs                          otoroshi.controllers
 POST    /api/data-exporter-configs                          otoroshi.controllers.adminapi.DataExporterConfigController.createAction()
 
 ## NgRoutes
-GET     /api/experimental/routes/_domains_and_certs         otoroshi.next.controllers.adminapi.NgRoutesController.domainsAndCertificates()
 GET     /api/experimental/routes/_template                  otoroshi.next.controllers.adminapi.NgRoutesController.initiateRoute()
 POST    /api/experimental/routes/_bulk                      otoroshi.next.controllers.adminapi.NgRoutesController.bulkCreateAction()
 PUT     /api/experimental/routes/_bulk                      otoroshi.next.controllers.adminapi.NgRoutesController.bulkUpdateAction()
@@ -485,6 +484,8 @@ GET     /api/stats                                            otoroshi.controlle
 GET     /api/events                                           otoroshi.controllers.adminapi.AnalyticsController.filterableEvents(from: Option[String], to: Option[String])
 GET     /api/events/_template                                 otoroshi.controllers.adminapi.TemplatesController.templateSpec(eventType: String)
 POST    /api/status                                           otoroshi.controllers.adminapi.AnalyticsController.servicesStatus(from: Option[String], to: Option[String])
+
+GET     /api/experimental/certificates/_by_domain           otoroshi.next.controllers.adminapi.NgRoutesController.domainsAndCertificates()
 
 GET     /api/admin-sessions                                   otoroshi.controllers.adminapi.UsersController.sessions()
 DELETE  /api/admin-sessions/:id                               otoroshi.controllers.adminapi.UsersController.discardSession(id)
