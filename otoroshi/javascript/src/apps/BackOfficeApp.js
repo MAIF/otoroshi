@@ -40,6 +40,7 @@ import { ApiKeyStatsPage } from '../pages/ApiKeyStatsPage';
 import { TcpServicesPage } from '../pages/TcpServicesPage';
 import { ProvidersDashboardPage } from '../pages/ProvidersDashboardPage';
 import { ResourceLoaderPage } from '../pages/ResourceLoaderPage';
+import RouteDesignerPage from '../pages/RouteDesigner';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -64,6 +65,10 @@ class BackOfficeAppContainer extends Component {
       catchedError: null,
       env: null,
     };
+
+    this.fullPageForRoutes = [
+      /^(?:\/lines\b)(?:\/[\w]+)(\/routes\/[\w])/
+    ].map(r => new RegExp(r))
   }
 
   addService = (e) => {
@@ -123,6 +128,10 @@ class BackOfficeAppContainer extends Component {
   };
 
   render() {
+    const { pathname } = this.props.location
+
+    const isFullPage = this.fullPageForRoutes.find(reg => pathname.match(reg))
+
     const classes = ['backoffice-container'];
     if (
       this.props.children &&
@@ -140,7 +149,7 @@ class BackOfficeAppContainer extends Component {
         ]}
         <div className="container-fluid">
           <div className="row">
-            <div className="col-sm-2 sidebar" id="sidebar">
+            <div className={`${(isFullPage ? 'col-sm-0' : 'col-sm-2')} sidebar`} id="sidebar">
               <div className="sidebar-container">
                 <div className="sidebar-content">
                   <GlobalTenantSelector />
@@ -180,7 +189,7 @@ class BackOfficeAppContainer extends Component {
                 </div>
               </div>
             </div>
-            <div className="col-sm-10 col-sm-offset-2 main">
+            <div className={`${(isFullPage ? 'col-sm-12' : 'col-sm-10 col-sm-offset-2')} main`}>
               <div className="row">
                 <div className={classes.join(' ')}>
                   <DynamicTitle />
@@ -237,6 +246,14 @@ class BackOfficeAppContainer extends Component {
                           component={(props) =>
                             this.decorate(ServiceApiKeysPage, { ...props, env: this.state.env })
                           }
+                        />
+                        <Route
+                          path="/lines/:lineId/routes"
+                          component={(props) => <RouteDesignerPage
+                            globalEnv={this.state.env}
+                            setTitle={(t) => DynamicTitle.setContent(t)}
+                            getTitle={() => DynamicTitle.getContent()}
+                            {...props} />}
                         />
                         <Route
                           path="/apikeys/:taction/:titem"
@@ -478,7 +495,6 @@ class BackOfficeAppContainer extends Component {
                           path="/provider"
                           component={(props) => this.decorate(ProvidersDashboardPage, props)}
                         />
-
                         <Route
                           path="/admins"
                           component={(props) =>

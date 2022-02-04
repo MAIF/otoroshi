@@ -1759,3 +1759,16 @@ export function createResources(resources) {
     }),
   }).then((r) => r.json());
 }
+
+
+// NgRoutes
+
+export function findRoutes() {
+  return fetch('/bo/api/proxy/api/experimental/routes', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
+}
