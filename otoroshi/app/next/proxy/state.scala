@@ -52,6 +52,7 @@ class NgProxyState(env: Env) {
   def certificate(id: String): Option[Cert] = certificates.get(id)
   def authModule(id: String): Option[AuthModuleConfig] = authModules.get(id)
 
+  def allRoutes(): Seq[NgRoute] = routes.values.toSeq
   def allApikeys(): Seq[ApiKey] = apikeys.values.toSeq
   def allJwtVerifiers(): Seq[GlobalJwtVerifier] = jwtVerifiers.values.toSeq
   def allCertificates(): Seq[Cert] = certificates.values.toSeq
@@ -103,7 +104,7 @@ object NgProxyStateLoaderJob {
 
 class NgProxyStateLoaderJob extends Job {
 
-  private val fakeRoutesCount = 10000 // 300000
+  private val fakeRoutesCount = 10 //10000 // 300000
 
   override def uniqueId: JobId = JobId("io.otoroshi.next.core.jobs.NgProxyStateLoaderJob")
 

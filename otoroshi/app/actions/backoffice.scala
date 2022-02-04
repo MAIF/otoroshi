@@ -133,7 +133,7 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
       def callAction() = {
         // val redirectTo = env.rootScheme + env.backOfficeHost + otoroshi.controllers.routes.Auth0Controller.backOfficeLogin(Some(s"${env.rootScheme}${request.host}${request.relativeUri}")).url
         val redirectTo =
-          env.rootScheme + request.theHost + otoroshi.controllers.routes.BackOfficeController.index().url
+          env.rootScheme + request.theHost + otoroshi.controllers.routes.BackOfficeController.index.url
         request.session.get("bousr").map { id =>
           env.datastores.backOfficeUserDataStore.findById(id).flatMap {
             case Some(user) => {

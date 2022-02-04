@@ -485,6 +485,8 @@ GET     /api/events                                           otoroshi.controlle
 GET     /api/events/_template                                 otoroshi.controllers.adminapi.TemplatesController.templateSpec(eventType: String)
 POST    /api/status                                           otoroshi.controllers.adminapi.AnalyticsController.servicesStatus(from: Option[String], to: Option[String])
 
+GET     /api/experimental/certificates/_by_domain           otoroshi.next.controllers.adminapi.NgRoutesController.domainsAndCertificates()
+
 GET     /api/admin-sessions                                   otoroshi.controllers.adminapi.UsersController.sessions()
 DELETE  /api/admin-sessions/:id                               otoroshi.controllers.adminapi.UsersController.discardSession(id)
 DELETE  /api/admin-sessions                                   otoroshi.controllers.adminapi.UsersController.discardAllSessions()

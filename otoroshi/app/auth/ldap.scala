@@ -687,7 +687,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             .withHeaders("WWW-Authenticate" -> s"""Basic realm="${authConfig.cookieSuffix(descriptor)}"""")
             .addingToSession(
               s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
-                routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
+                routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
               )
             )
             .future
@@ -715,7 +715,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
           )
           .addingToSession(
             s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
-              routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
+              routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
             )
           )
           .future
@@ -786,7 +786,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             .withHeaders("WWW-Authenticate" -> "otoroshi-admin-realm")
             .addingToSession(
               "bo-redirect-after-login" -> redirect.getOrElse(
-                routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
+                routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
               )
             )
             .future
@@ -811,7 +811,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
           .Ok(otoroshi.views.html.oto.login(s"/backoffice/auth0/callback?hash=$hash", "POST", token, false, env))
           .addingToSession(
             "bo-redirect-after-login" -> redirect.getOrElse(
-              routes.BackOfficeController.dashboard().absoluteURL(env.exposedRootSchemeIsHttps)
+              routes.BackOfficeController.dashboard.absoluteURL(env.exposedRootSchemeIsHttps)
             )
           )
           .future

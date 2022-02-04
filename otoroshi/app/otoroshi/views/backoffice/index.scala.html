@@ -7,7 +7,7 @@
         <h1><span>おとろし</span></h1>
         @for(user <- userOpt) {
             <p class="connectOK">
-                <a class="btn" href="@otoroshi.controllers.routes.BackOfficeController.dashboard()" role="button">
+                <a class="btn" href="@otoroshi.controllers.routes.BackOfficeController.dashboard" role="button">
                     <i class="fas fa-tachometer-alt"></i> Dashboard for @user.name
                 </a>
                 <a class="btn" href="@otoroshi.controllers.routes.AuthController.backOfficeLogout()" role="button">

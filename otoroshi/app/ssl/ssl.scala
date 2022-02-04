@@ -62,6 +62,7 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 import otoroshi.utils.syntax.implicits._
 
+import java.nio.file.Files
 import java.util
 import java.util.function.BiFunction
 
@@ -282,6 +283,7 @@ case class Cert(
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.certificatesDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.certificatesDataStore.exists(this)
   def toJson                                            = Cert.toJson(this)
+  lazy val isUsable = notRevoked && notExpired && isValid
   lazy val certificatesRaw: Seq[String]                 = Try {
     cleanChain
       .split(PemHeaders.BeginCertificate)
@@ -2639,8 +2641,10 @@ object SSLImplicits {
       s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndCertificate}\n"
   }
   implicit class EnhancedX509Certificate(val cert: X509Certificate)                      extends AnyVal {
+    def encoded: String = Base64.getEncoder.encodeToString(cert.getEncoded)
+    def encodedAndPadded: String = encoded.grouped(64).mkString("\n")
     def asPem: String               =
-      s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndCertificate}\n"
+      s"${PemHeaders.BeginCertificate}\n${encodedAndPadded}\n${PemHeaders.EndCertificate}\n"
     def altNames: Seq[String]       = CertInfo.getSubjectAlternativeNames(cert, logger).asScala.toSeq
     def rawDomain: Option[String] = {
       Option(DN(cert.getSubjectDN.getName).stringify)
@@ -2680,6 +2684,8 @@ object SSLImplicits {
       s"${PemHeaders.BeginPublicKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPublicKey}\n"
   }
   implicit class EnhancedPrivateKey(val key: PrivateKey)                                 extends AnyVal {
+    def encoded: String = Base64.getEncoder.encodeToString(key.getEncoded)
+    def encodedAndPadded: String = encoded.grouped(64).mkString("\n")
     def asPem: String =
       s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPrivateKey}\n"
   }
@@ -2717,3 +2723,97 @@ case class NoCertificateFoundException(hostname: String)
 case class NoHostFoundException()     extends RuntimeException(s"No hostname or aliases found !") with NoStackTrace
 case class NoAliasesFoundException()  extends RuntimeException(s"No aliases found in SSLContext !") with NoStackTrace
 case class NoHostnameFoundException() extends RuntimeException(s"No hostname found in SSLContext !") with NoStackTrace
+
+case class RawCertificate(pemChain: List[String], pemPrivateKey: String, password: Option[String] = None, ca: Boolean = false, client: Boolean = false) {
+
+  import SSLImplicits._
+
+  def matchesDomain(dom: String): Boolean = sans.exists(d => RegexPool.apply(d).matches(dom))
+
+  lazy val cryptoKeyPair: KeyPair = {
+    val privkey = DynamicSSLEngineProvider.readPrivateKeyUniversal(domain, pemPrivateKey, password).right.get
+    val pubkey: PublicKey = certificate.get.getPublicKey
+    new KeyPair(pubkey, privkey)
+  }
+  lazy val certificatesChain: List[X509Certificate] = {
+    pemChain.flatMap(str => DynamicSSLEngineProvider.readCertificateChain("", str))
+  }
+  lazy val certificate: Option[X509Certificate] = certificatesChain.headOption
+  lazy val certificatesChainArray: Array[X509Certificate] = certificatesChain.toArray
+  lazy val from: DateTime = new DateTime(certificate.get.getNotBefore)
+  lazy val to: DateTime = new DateTime(certificate.get.getNotAfter)
+  lazy val name: String = certificate.get.getSubjectDN.toString
+  lazy val domain: String = certificate.get.domain
+  lazy val serial: String = certificate.get.getSerialNumber.toString()
+  lazy val sans: List[String] = certificate.get.domains.toList
+  lazy val cleanChain: String = {
+    pemChain
+      .map(c => s"${PemHeaders.BeginCertificate}\n$c${PemHeaders.EndCertificate}")
+      .flatMap(_.split("\\n"))
+      .filterNot(_.trim.isEmpty)
+      .mkString("\n")
+  }
+}
+
+object RawCertificate {
+  def fromBundle(bundle: String): Option[RawCertificate] = Try {
+
+    var started = false
+    var chain = List.empty[String]
+    var pkey = ""
+    var current = ""
+
+    bundle.split("\\n").foreach { raw =>
+      raw.trim match {
+        case line if !started && line.startsWith(PemHeaders.BeginCertificate) => {
+          started = true
+          current = line
+        }
+        case line if started && line.startsWith(PemHeaders.EndCertificate) => {
+          started = false
+          chain = chain :+ (current + "\n" + line)
+        }
+        case line if !started && line.startsWith(PemHeaders.BeginPrivateKey) => {
+          started = true
+          current = line
+        }
+        case line if started && line.startsWith(PemHeaders.EndPrivateKey) => {
+          started = false
+          pkey = (current + "\n" + line)
+        }
+        case line if !started && line.startsWith(PemHeaders.BeginPrivateRSAKey) => {
+          started = true
+          current = line
+        }
+        case line if started && line.startsWith(PemHeaders.EndPrivateRSAKey) => {
+          started = false
+          pkey = (current + "\n" + line)
+        }
+        case line if !started && line.startsWith(PemHeaders.BeginPrivateECKey) => {
+          started = true
+          current = line
+        }
+        case line if started && line.startsWith(PemHeaders.EndPrivateECKey) => {
+          started = false
+          pkey = (current + "\n" + line)
+        }
+        case line if !started && line.isEmpty => ()
+        case line if started && line.isEmpty => ()
+        case line if started => current = current + "\n" + line
+        case _ => ()
+      }
+    }
+    RawCertificate(chain, pkey)
+  }.toOption
+
+  def fromChainAndKey(chain: String, pkey: String): Option[RawCertificate] = fromBundle(pkey + "\n\n" + chain)
+
+  def fromChainAndKeyFiles(chainFile: File, pkeyFile: File): Option[RawCertificate] = fromChainAndKey(Files.readString(chainFile.toPath), Files.readString(pkeyFile.toPath))
+  def fromBundleFile(file: File): Option[RawCertificate] = fromBundle(Files.readString(file.toPath))
+
+  def fromChainAndKeyFilesPath(chainPath: String, pkeyPath: String): Option[RawCertificate] = fromChainAndKeyFiles(new File(chainPath), new File(pkeyPath))
+  def fromBundleFilePath(path: String): Option[RawCertificate] = fromBundleFile(new File(path))
+
+  def from(path: String): Option[RawCertificate] = fromBundleFile(new File(path))
+  def from(file: File): Option[RawCertificate] = fromBundleFile(file)
+}
