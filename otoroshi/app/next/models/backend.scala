@@ -2,7 +2,7 @@ package otoroshi.next.models
 
 import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.{ClientConfig, _}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.{Failure, Success, Try}
 import otoroshi.api.OtoroshiEnvHolder
 
-case class NgBackend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String, rewrite: Boolean, loadBalancing: LoadBalancing, healthCheck: Option[HealthCheck] = None) {
+case class NgBackend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String, rewrite: Boolean, loadBalancing: LoadBalancing, healthCheck: Option[HealthCheck] = None, client: ClientConfig) {
   // I know it's not ideal but we'll go with it for now !
   lazy val allTargets: Seq[NgTarget] = targets ++ targetRefs.map(OtoroshiEnvHolder.get().proxyState.target).collect {
     case Some(backend) => backend
@@ -23,14 +23,25 @@ case class NgBackend(targets: Seq[NgTarget], targetRefs: Seq[String], root: Stri
     "root" -> root,
     "rewrite" -> rewrite,
     "load_balancing" -> loadBalancing.toJson,
+    "client" -> client.toJson,
   )
   .applyOnWithOpt(healthCheck) {
     case (obj, hc) => obj ++ Json.obj("health_check" -> hc.toJson)
   }
+
+  lazy val minimalBackend: NgMinimalBackend = {
+    NgMinimalBackend(
+      targets = targets,
+      targetRefs = targetRefs,
+      root = root,
+      rewrite = rewrite,
+      loadBalancing = loadBalancing
+    )
+  }
 }
 
 object NgBackend {
-  def empty: NgBackend = NgBackend(Seq.empty, Seq.empty, "/", false, RoundRobin, None)
+  def empty: NgBackend = NgBackend(Seq.empty, Seq.empty, "/", false, RoundRobin, None, ClientConfig())
   def readFrom(lookup: JsLookupResult): NgBackend = readFromJson(lookup.as[JsValue])
   def readFromJson(lookup: JsValue): NgBackend = {
     lookup.asOpt[JsObject] match {
@@ -42,6 +53,49 @@ object NgBackend {
         rewrite = obj.select("rewrite").asOpt[Boolean].getOrElse(false),
         loadBalancing = LoadBalancing.format.reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj())).getOrElse(RoundRobin),
         healthCheck = obj.select("health_check").asOpt(HealthCheck.format),
+        client = obj.select("client").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
+      )
+    }
+  }
+}
+
+case class NgMinimalBackend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String, rewrite: Boolean, loadBalancing: LoadBalancing) {
+  // I know it's not ideal but we'll go with it for now !
+  lazy val allTargets: Seq[NgTarget] = targets ++ targetRefs.map(OtoroshiEnvHolder.get().proxyState.target).collect {
+    case Some(backend) => backend
+  }.distinct
+  def json: JsValue = Json.obj(
+    "targets" -> JsArray(targets.map(_.json)),
+    "target_refs" -> JsArray(targetRefs.map(JsString.apply)),
+    "root" -> root,
+    "rewrite" -> rewrite,
+    "load_balancing" -> loadBalancing.toJson,
+  )
+  def toBackend(client: ClientConfig, healthCheck: Option[HealthCheck]) = {
+    NgBackend(
+      targets = targets,
+      targetRefs = targetRefs,
+      root = root,
+      rewrite = rewrite,
+      loadBalancing = loadBalancing,
+      client = client,
+      healthCheck = healthCheck,
+    )
+  }
+}
+
+object NgMinimalBackend {
+  def empty: NgMinimalBackend = NgMinimalBackend(Seq.empty, Seq.empty, "/", false, RoundRobin)
+  def readFrom(lookup: JsLookupResult): NgMinimalBackend = readFromJson(lookup.as[JsValue])
+  def readFromJson(lookup: JsValue): NgMinimalBackend = {
+    lookup.asOpt[JsObject] match {
+      case None => empty
+      case Some(obj) => NgMinimalBackend(
+        targets = obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)).getOrElse(Seq.empty),
+        targetRefs = obj.select("target_refs").asOpt[Seq[String]].getOrElse(Seq.empty),
+        root = obj.select("root").asOpt[String].getOrElse("/"),
+        rewrite = obj.select("rewrite").asOpt[Boolean].getOrElse(false),
+        loadBalancing = LoadBalancing.format.reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj())).getOrElse(RoundRobin),
       )
     }
   }

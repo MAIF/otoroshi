@@ -67,6 +67,7 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
           root = config.root,
           rewrite = false,
           loadBalancing = ctx.route.backend.loadBalancing,
+          client = ctx.route.backend.client,
         )
         ctx.attrs.put(otoroshi.next.plugins.Keys.PossibleBackendsKey -> backends)
         Right(Done)

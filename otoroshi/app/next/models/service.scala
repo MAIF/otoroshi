@@ -19,7 +19,7 @@ import akka.http.scaladsl.model.Uri
 
 case class NgMinimalRoute(
   frontend: NgFrontend,
-  backend: NgBackend,
+  backend: NgMinimalBackend,
   backendRef: Option[String] = None
 ) {
   def json: JsValue = Json.obj(
@@ -38,8 +38,8 @@ object NgMinimalRoute {
       NgMinimalRoute(
         frontend = NgFrontend.readFrom(json.select("frontend")),
         backend = ref match {
-          case None => NgBackend.readFrom(json.select("backend"))
-          case Some(r) => refBackend
+          case None => NgMinimalBackend.readFrom(json.select("backend"))
+          case Some(r) => refBackend.minimalBackend
         },
         backendRef = ref,
       )
@@ -100,9 +100,8 @@ case class NgService(
             debugFlow = debugFlow,
             groups = groups,
             frontend = route.frontend,
-            backend = route.backend,
+            backend = route.backend.toBackend(client, None),
             backendRef = route.backendRef,
-            client = client,
             plugins = plugins
           )
       }
@@ -173,7 +172,7 @@ object NgService {
               stripPath = false,
               exact = true,
             ),
-            backend = NgBackend(
+            backend = NgMinimalBackend(
               targets = targets,
               targetRefs = Seq.empty,
               root = "/",

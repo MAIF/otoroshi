@@ -38,7 +38,7 @@ case class NgRoute(
   frontend: NgFrontend,
   backend: NgBackend,
   backendRef: Option[String] = None,
-  client: ClientConfig,
+  // client: ClientConfig,
   plugins: NgPlugins
 ) extends EntityLocationSupport {
 
@@ -59,7 +59,7 @@ case class NgRoute(
     "frontend" -> frontend.json,
     "backend" -> backend.json,
     "backend_ref" -> backendRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "client" -> client.toJson,
+    // "client" -> client.toJson,
     "plugins" -> plugins.json
   )
 
@@ -165,7 +165,7 @@ case class NgRoute(
       hosts = frontend.domains.map(_.domain),
       paths = frontend.domains.map(_.path),
       stripPath = frontend.stripPath,
-      clientConfig = client,
+      clientConfig = backend.client, // TODO: maybe backendref too
       healthCheck = backend.healthCheck.getOrElse(HealthCheck.empty),
       matchingHeaders = frontend.headers,
       handleLegacyDomain = false,
@@ -389,8 +389,8 @@ object NgRoute {
       rewrite = false,
       loadBalancing = RoundRobin,
       healthCheck = None,
+      client = ClientConfig(),
     ),
-    client = ClientConfig(),
     plugins = NgPlugins(Seq(
       NgPluginInstance(
         plugin = NgPluginHelper.pluginId[ApikeyCalls]
@@ -438,7 +438,7 @@ object NgRoute {
           case Some(r) => refBackend
         },
         backendRef = ref,
-        client = (json \ "client").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
+        // client = (json \ "client").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
         plugins = NgPlugins.readFrom(json.select("plugins")),
       )
     } match {
@@ -495,9 +495,9 @@ object NgRoute {
         rewrite = false,
         loadBalancing = service.targetsLoadBalancing,
         healthCheck = if (service.healthCheck.enabled) service.healthCheck.some else None,
+        client = service.clientConfig,
       ),
       groups = service.groups,
-      client = service.clientConfig,
       plugins = NgPlugins(
         Seq.empty[NgPluginInstance]
           .applyOnIf(service.forceHttps) { seq =>

@@ -176,9 +176,9 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
         targetRefs = Seq.empty,
         root = "/",
         rewrite = false,
-        loadBalancing = RoundRobin
+        loadBalancing = RoundRobin,
+        client = ClientConfig(),
       ),
-      client = ClientConfig(),
       plugins = NgPlugins(Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost],

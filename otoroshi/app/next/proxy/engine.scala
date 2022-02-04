@@ -937,12 +937,12 @@ class ProxyEngine() extends RequestHandler {
     val bodyAlreadyConsumed = new AtomicBoolean(false)
     attrs.put(Keys.BodyAlreadyConsumedKey -> bodyAlreadyConsumed)
     if (
-      globalConfig.useCircuitBreakers && route.client.useCircuitBreaker
+      globalConfig.useCircuitBreakers && route.backend.client.useCircuitBreaker
     ) {
       val counter            = new AtomicInteger(0)
       val relUri             = request.relativeUri
       val cachedPath: String =
-        route.client
+        route.backend.client
           .timeouts(relUri)
           .map(_ => relUri)
           .getOrElse("")
@@ -1095,7 +1095,7 @@ class ProxyEngine() extends RequestHandler {
           route.name,
           route.backend.allTargets.map(_.toTarget),
           route.backend.loadBalancing,
-          route.client,
+          route.backend.client,
           reqNumber.toString,
           trackingId,
           request.relativeUri,
@@ -1145,12 +1145,12 @@ class ProxyEngine() extends RequestHandler {
     val bodyAlreadyConsumed = new AtomicBoolean(false)
     attrs.put(Keys.BodyAlreadyConsumedKey -> bodyAlreadyConsumed)
     if (
-      globalConfig.useCircuitBreakers && route.client.useCircuitBreaker
+      globalConfig.useCircuitBreakers && route.backend.client.useCircuitBreaker
     ) {
       val counter            = new AtomicInteger(0)
       val relUri             = request.relativeUri
       val cachedPath: String =
-        route.client
+        route.backend.client
           .timeouts(relUri)
           .map(_ => relUri)
           .getOrElse("")
@@ -1303,7 +1303,7 @@ class ProxyEngine() extends RequestHandler {
           route.name,
           route.backend.allTargets.map(_.toTarget),
           route.backend.loadBalancing,
-          route.client,
+          route.backend.client,
           reqNumber.toString,
           trackingId,
           request.relativeUri,
@@ -1595,7 +1595,7 @@ class ProxyEngine() extends RequestHandler {
     val wsCookiesIn = request.cookies
     val finalTarget: Target = request.backend.getOrElse(backend).toTarget
     attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> finalTarget)
-    val clientConfig = route.client
+    val clientConfig = route.backend.client
     val clientReq = route.useAkkaHttpClient match {
       case _ if finalTarget.mtlsConfig.mtls =>
         env.gatewayClient.akkaUrlWithTarget(
@@ -1617,7 +1617,7 @@ class ProxyEngine() extends RequestHandler {
         )
     }
     val host = request.headers.get("Host").orElse(request.headers.get("host")).getOrElse(rawRequest.theHost)
-    val extractedTimeout = route.client.extractTimeout(rawRequest.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
+    val extractedTimeout = route.backend.client.extractTimeout(rawRequest.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
     val builder          = clientReq
       .withRequestTimeout(extractedTimeout)
       .withFailureIndicator(fakeFailureIndicator)
@@ -1626,7 +1626,7 @@ class ProxyEngine() extends RequestHandler {
       .withCookies(wsCookiesIn: _*)
       .withFollowRedirects(false)
       .withMaybeProxyServer(
-        route.client.proxy.orElse(globalConfig.proxies.services)
+        route.backend.client.proxy.orElse(globalConfig.proxies.services)
       )
 
     val counterIn = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get

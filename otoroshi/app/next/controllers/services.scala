@@ -157,6 +157,7 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
       enabled = true,
       debugFlow = true,
       groups = Seq("default"),
+      client = ClientConfig(),
       routes = Seq(NgMinimalRoute(
         frontend = NgFrontend(
           domains = Seq(NgDomainAndPath("new-route.oto.tools")),
@@ -165,7 +166,7 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
           stripPath = true,
           exact = false,
         ),
-        backend = NgBackend(
+        backend = NgMinimalBackend(
           targets = Seq(NgTarget(
             id = "target_1",
             hostname = "mirror.otoroshi.io",
@@ -175,10 +176,9 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
           targetRefs = Seq.empty,
           root = "/",
           rewrite = false,
-          loadBalancing = RoundRobin
+          loadBalancing = RoundRobin,
         )
       )),
-      client = ClientConfig(),
       plugins = NgPlugins(Seq(
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[OverrideHost],

@@ -57,8 +57,8 @@ class TcpTunnel extends NgTunnelHandler {
           Tcp()(env.otoroshiActorSystem)
             .outgoingConnection(
               remoteAddress = remoteAddress,
-              connectTimeout = ctx.route.client.connectionTimeout.millis,
-              idleTimeout = ctx.route.client.idleTimeout.millis
+              connectTimeout = ctx.route.backend.client.connectionTimeout.millis,
+              idleTimeout = ctx.route.backend.client.idleTimeout.millis
             )
             .map(bs => BinaryMessage(bs))
         )

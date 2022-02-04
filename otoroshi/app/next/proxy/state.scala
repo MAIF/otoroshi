@@ -153,9 +153,9 @@ class NgProxyStateLoaderJob extends Job {
             targetRefs = Seq.empty,
             root = s"/gen-${idx}",
             rewrite = false,
-            loadBalancing = RoundRobin
+            loadBalancing = RoundRobin,
+            client = ClientConfig(),
           ),
-          client = ClientConfig(),
           plugins = NgPlugins(Seq(
             NgPluginInstance(
               plugin = pluginId[OverrideHost],
@@ -213,9 +213,9 @@ class NgProxyStateLoaderJob extends Job {
             targetRefs = Seq.empty,
             root = s"/path-${idx}",
             rewrite = false,
-            loadBalancing = RoundRobin
+            loadBalancing = RoundRobin,
+            client = ClientConfig(),
           ),
-          client = ClientConfig(),
           plugins = NgPlugins(Seq(
             NgPluginInstance(
               plugin = pluginId[OverrideHost],
@@ -267,9 +267,9 @@ class NgProxyStateLoaderJob extends Job {
             targetRefs = Seq.empty,
             root = s"/path-${idx}",
             rewrite = false,
-            loadBalancing = RoundRobin
+            loadBalancing = RoundRobin,
+            client = ClientConfig(),
           ),
-          client = ClientConfig(),
           plugins = NgPlugins(Seq(
             NgPluginInstance(
               plugin = pluginId[OverrideHost],
