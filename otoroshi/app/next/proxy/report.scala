@@ -134,7 +134,7 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
     getStep(name).flatMap(_.ctx.select("plugins").asOpt[JsArray]).map(_.value.map { plugin =>
       val pluginId = plugin.select("plugin").asString
       val duration = plugin.select("duration_ns").asLong
-      env.metrics.timerUpdate(s"ng-report-${name}-plugin-${pluginId}", duration, TimeUnit.NANOSECONDS)
+      env.metrics.timerUpdate(s"ng-report-${name}-${pluginId}", duration, TimeUnit.NANOSECONDS)
     })
   }
 

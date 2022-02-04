@@ -18,6 +18,7 @@ import otoroshi.models._
 import org.joda.time.DateTime
 import otoroshi.models.{DataExporterConfig, Exporter, ExporterRef, FileSettings}
 import otoroshi.script._
+import otoroshi.security.IdGenerator
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
@@ -147,6 +148,12 @@ trait CustomDataExporter extends NamedPlugin with StartableAndStoppable {
 
 object DataExporter {
 
+  case class RetryEvent(val raw: JsValue) extends OtoroshiEvent {
+    override def `@id`: String = raw.select("@id").asOpt[String].getOrElse(IdGenerator.uuid)
+    override def `@timestamp`: DateTime = raw.select("@timestamp").asOpt[String].map(DateTime.parse).getOrElse(DateTime.now())
+    override def toJson(implicit _env: Env): JsValue = raw
+  }
+
   abstract class DefaultDataExporter(originalConfig: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
       extends DataExporter {
 
@@ -177,7 +184,24 @@ object DataExporter {
         .map(event => project(event))
         .groupedWithin(configUnsafe.groupSize, configUnsafe.groupDuration)
         .filterNot(_.isEmpty)
-        .mapAsync(configUnsafe.sendWorkers)(events => send(events))
+        .mapAsync(configUnsafe.sendWorkers) { events =>
+          val f: Future[ExportResult] = Try(send(events).recover {
+            case e: Throwable =>
+              val message = s"error while sending events on ${this.getClass.getName}"
+              logger.error(message, e)
+              withQueue { queue => events.foreach(e => queue.offer(RetryEvent(e))) }
+              ExportResult.ExportResultFailure(s"$message: ${e.getMessage}")
+          }) match {
+            case Failure(e) =>
+              val message = s"error while sending events on ${this.getClass.getName}"
+              logger.error(message, e)
+              withQueue { queue => events.foreach(e => queue.offer(RetryEvent(e))) }
+              ExportResult.ExportResultFailure(s"$message: ${e.getMessage}").vfuture
+            case Success(f) =>
+              f
+          }
+          f
+        }
 
       val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)
 
@@ -267,7 +291,6 @@ object DataExporter {
       }
     }
   }
-
 }
 
 object Exporters {
