@@ -5,7 +5,6 @@ import Routes from './Routes'
 
 export default (props) => {
     const history = useHistory()
-    const params = useParams()
     const match = useRouteMatch()
 
     useEffect(() => {
@@ -33,9 +32,7 @@ export default (props) => {
                 return <div className='row'>
                     <Sidebar />
                     <div className='col-sm-11' style={{ paddingLeft: 0 }}>
-                        <Designer {...props} lineId={params.lineId}
-                            onCreation={p.routeId === 'new'}
-                        />
+                        <Designer {...props} onCreation={p.routeId === 'new'} />
                     </div>
                 </div>
             }} />

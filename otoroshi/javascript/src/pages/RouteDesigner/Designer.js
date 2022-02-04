@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import { useParams, useHistory, useLocation } from 'react-router'
+import { useParams } from 'react-router'
 import * as BackOfficeServices from '../../services/BackOfficeServices'
 
 import { Form } from '@maif/react-forms'
 import deepSet from 'set-value'
-import { createTooltip } from '../../tooltips'
 
 import { COMPONENTS } from './Schema'
 
@@ -96,12 +95,13 @@ const ElementsStack = ({ elements, ...props }) => {
     </div>
 }
 
-const SearchBar = ({ search, setSearch }) => {
+const SearchBar = ({ handleSearch }) => {
     return <div className="group">
         <div className="group-header">
             <i className="fas fa-search group-icon" />
             <div style={{ paddingLeft: '12px', width: '100%' }}>
-                <input type="text" value={search}
+                <input
+                    type="text"
                     style={{
                         border: 0,
                         padding: '6px 0px 6px 12px',
@@ -109,16 +109,14 @@ const SearchBar = ({ search, setSearch }) => {
                         outline: 'none',
                         borderRadius: '4px'
                     }}
-                    onChange={e => {
-                        setSearch(e.target.value)
-                    }}
+                    onChange={e => handleSearch(e.target.value)}
                     placeholder="Search elements" />
             </div>
         </div>
     </div>
 }
 
-const EditView = ({ selectedNode, setSelectedNode, service, changeValues, removeNode }) => {
+const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNode, components }) => {
     if (!selectedNode)
         return <div style={{
             backgroundColor: "rgb(73, 73, 73)",
@@ -132,7 +130,7 @@ const EditView = ({ selectedNode, setSelectedNode, service, changeValues, remove
 
     const { props, id, parent } = selectedNode
 
-    const group = COMPONENTS.find(element => element.group === parent || element.id === id)
+    const group = components.find(element => element.group === parent || element.id === id)
 
     const close = () => setSelectedNode(undefined)
 
@@ -181,10 +179,10 @@ const EditView = ({ selectedNode, setSelectedNode, service, changeValues, remove
                 padding: '12px'
             }}>
                 <Form
+                    value={route}
                     schema={props.schema}
-                    value={service}
                     flow={props.flow}
-                    onChange={item => {
+                    onSubmit={item => {
                         try {
                             changeValues(props.flow.map(field => ({ name: field, value: read(item, field) })))
                             close()
@@ -192,15 +190,11 @@ const EditView = ({ selectedNode, setSelectedNode, service, changeValues, remove
                             console.log(err)
                         }
                     }}
-                    footer={({ reset, valid }) => (
-                        <div className="d-flex flex-row justify-content-end">
-                            <button className="btn btn-success ml-1"
-                                style={{ backgroundColor: "#f9b000", borderColor: '#f9b000' }}
-                                onClick={valid}>
-                                Save
-                            </button>
-                        </div>
-                    )}
+                    footer={({ valid }) => <button className="btn btn-success btn-block"
+                        style={{ backgroundColor: "#f9b000", borderColor: '#f9b000', marginTop: '12px' }}
+                        onClick={valid}>
+                        Update configuration
+                    </button>}
                 />
                 {!selectedNode.default && <RemoveComponent mt={2} />}
             </div>}
@@ -208,108 +202,90 @@ const EditView = ({ selectedNode, setSelectedNode, service, changeValues, remove
 }
 
 export default ({ lineId, onCreation }) => {
-    const [service, setService] = useState()
-    const [originalService, setOriginalService] = useState()
-    const [templateService, setTemplateService] = useState()
-    const [changed, setChanged] = useState(false)
-
-    const history = useHistory()
-    const location = useLocation()
-
-    const [nodes, setNodes] = useState([])
-
-    const [elements, setElements] = useState([])
-    const [filteredElements, setFilteredElements] = useState([])
-
-    const [selectedNode, setSelectedNode] = useState()
-
     const { routeId } = useParams()
 
-    const [search, setSearch] = useState("")
+    const [nodes, setNodes] = useState([])
+    const [elements, setElements] = useState([])
+    const [filteredElements, setFilteredElements] = useState([])
+    const [selectedNode, setSelectedNode] = useState()
+    const [components, setComponents] = useState([])
 
-    function filterDefaultElements() {
-        Promise.all(COMPONENTS.map(element => element.resources ? element.resources() : Promise.resolve()))
-            .then(res => res.map((r, i) => ({
-                ...COMPONENTS[i],
-                elements: (COMPONENTS[i].resources ? r : COMPONENTS[i].elements).map(el => ({
-                    ...el,
-                    parent: COMPONENTS[i].group
-                }))
-            })))
-            .then(elts => elts.map(elt => ({
-                ...elt,
-                elements: elt.elements
-                    .filter(f => {
-                        if (f.configSchema || f.default || f.switch)
-                            return true
-                        if (!f.props)
-                            return false
-                        return Object.keys(f.props.schema || []).length > 0
-                    })
-            })))
-            .then(elts => {
-                const { nodes, elements } = elts.reduce((acc, element) => {
-                    if (element.default) {
-                        return {
-                            ...acc,
-                            nodes: [...acc.nodes, element]
-                        }
-                    }
+    const [route, setRoute] = useState()
 
-                    if (element.group) {
-                        return {
-                            elements: [
-                                ...acc.elements,
-                                {
-                                    ...element,
-                                    elements: element.elements.filter(f => !f.default)
-                                }
-                            ],
-                            nodes: [...acc.nodes, ...element.elements.filter(f => f.default)]
-                        }
-                    }
+    function filterDefaultElements(components) {
+        const groupedElements = components.map((r, i) => ({
+            ...components[i],
+            elements: components[i].elements.map(el => ({
+                ...el,
+                parent: components[i].group
+            }))
+        }))
 
-                    return {
-                        ...acc,
-                        elements: [...acc.elements, element]
-                    }
-                }, {
-                    nodes: [], elements: []
+        const elementsWithSchema = groupedElements.map(elt => ({
+            ...elt,
+            elements: elt.elements
+                .filter(f => {
+                    if (f.configSchema || f.default || f.switch)
+                        return true
+                    if (!f.props)
+                        return false
+                    return Object.keys(f.props.schema || []).length > 0
                 })
+        }))
 
-                setNodes(nodes)
-                setElements(elements)
-                setFilteredElements(elements)
-            })
+        const { nodes, elements } = elementsWithSchema.reduce((acc, element) => {
+            if (element.default) {
+                return {
+                    ...acc,
+                    nodes: [...acc.nodes, element]
+                }
+            }
+
+            if (element.group) {
+                return {
+                    elements: [
+                        ...acc.elements,
+                        {
+                            ...element,
+                            elements: element.elements.filter(f => !f.default)
+                        }
+                    ],
+                    nodes: [...acc.nodes, ...element.elements.filter(f => f.default)]
+                }
+            }
+
+            return {
+                ...acc,
+                elements: [...acc.elements, element]
+            }
+        }, {
+            nodes: [], elements: []
+        })
+
+        console.log(nodes, elements)
+        setNodes(nodes)
+        setElements(elements)
+        setFilteredElements(elements)
     }
 
     useEffect(() => {
-        BackOfficeServices.createNewService()
-            .then(setTemplateService)
+        const components = COMPONENTS({
+            tenant: '',
+            teams: '',
+            onChange: (field, newValue) => { }
+        });
 
-        BackOfficeServices.fetchService(lineId, routeId)
-            .then(res => {
-                const s = COMPONENTS.reduce((updatedService, element) => {
-                    const service = element.preProcess ?
-                        element.preProcess(updatedService, preProcessAction) :
-                        updatedService
+        console.log(components)
+        setComponents(components)
 
-                    return element.elements.reduce((updatedService, element) => {
-                        return element.preProcess ? element.preProcess(updatedService, preProcessAction) : updatedService
-                    }, service)
-                }, res)
+        if (onCreation)
+            BackOfficeServices.getRouteTemplate().then(setRoute)
+        else
+            BackOfficeServices.fetchRoute(routeId)
+                .then(setRoute(r))
 
-                console.log(s)
-
-                setService(s)
-                setOriginalService(s)
-                filterDefaultElements()
-            })
+        filterDefaultElements(components)
     }, [])
-
-    useEffect(() => {
-        handleSearch(search)
-    }, [search, elements])
 
     const allowDrop = e => e.preventDefault()
     const onDrag = (e, element) => e.dataTransfer.setData("newElement", JSON.stringify(element))
@@ -326,10 +302,10 @@ export default ({ lineId, onCreation }) => {
 
         setNodes(nodes.filter(node => node.id !== id))
 
-        // TODO - reset service with original value
+        // TODO - reset route with original value
 
-        setService({
-            ...service,
+        setRoute({
+            ...route,
             [node.property]: templateService[node.property]
         })
 
@@ -337,7 +313,7 @@ export default ({ lineId, onCreation }) => {
             setElements([
                 ...elements,
                 {
-                    ...COMPONENTS.find(e => e.id === node.parent),
+                    ...components.find(e => e.id === node.parent),
                     parent: node.parent
                 }
             ])
@@ -347,7 +323,7 @@ export default ({ lineId, onCreation }) => {
                 elements: element.group === node.parent ? [
                     ...element.elements,
                     {
-                        ...COMPONENTS.find(e => e.group === node.parent).elements.find(elt => elt.id === node.id),
+                        ...components.find(e => e.group === node.parent).elements.find(elt => elt.id === node.id),
                         parent: element.group
                     }
                 ] : element.elements
@@ -417,7 +393,7 @@ export default ({ lineId, onCreation }) => {
 
     const NodeElement = ({ element, setSelectedNode, hideLink, selectedNode }) => {
         const { id, parent } = element
-        const group = COMPONENTS.find(element => element.group === parent || element.id === id)
+        const group = components.find(element => element.group === parent || element.id === id)
         const highlighted = !selectedNode || selectedNode.id === id
 
         return <>
@@ -464,7 +440,7 @@ export default ({ lineId, onCreation }) => {
                 setSelectedNode={setSelectedNode} />
 
         const { id, parent } = values[0]
-        const group = COMPONENTS.find(element => element.group === parent || element.id === id)
+        const group = components.find(element => element.group === parent || element.id === id)
 
         return <>
             <Dot clickable={true} style={{
@@ -539,20 +515,17 @@ export default ({ lineId, onCreation }) => {
     }
 
     const changeValues = ops => {
-        const newService = ops.reduce((newService, { name, value }) => {
-            return deepSet(_.cloneDeep(newService), name, value)
-        }, service)
-        setService(newService)
-        setChanged(shallowDiffers(originalService, newService))
+        const newRoute = ops.reduce((newRoute, { name, value }) => {
+            return deepSet(_.cloneDeep(newRoute), name, value)
+        }, route)
+        setRoute(newRoute)
     }
 
     const saveChanges = () => {
-        // TODO - check if the service is new
-        BackOfficeServices.updateService(service.id, service)
-            .then(newService => {
-                setChanged(false)
-                setService(newService)
-                setOriginalService(newService)
+        // TODO - check if the route is new
+        BackOfficeServices.updateService(route.id, route)
+            .then(newRoute => {
+                setRoute(newRoute)
             })
     }
 
@@ -568,11 +541,9 @@ export default ({ lineId, onCreation }) => {
                 zIndex: 1000
             }}>
             <i className="far fa-paper-plane" style={{ paddingRight: '6px' }} />
-            <span>Update service</span>
+            <span>Update route</span>
         </button>
     )
-
-    console.log(service)
 
     return (
         <div className="route-designer" onClick={() => setSelectedNode(undefined)}>
@@ -598,14 +569,14 @@ export default ({ lineId, onCreation }) => {
                             </div>
                         </div>
                     </div>
-                    <SearchBar search={search} setSearch={setSearch} />
+                    <SearchBar handleSearch={handleSearch} />
                     <ElementsStack elements={filteredElements} onDrag={onDrag} addNode={addNode} />
                 </div>
             </div>
             <div className="col-sm-8">
                 <div className="row">
                     <div className="col-sm-4">
-                        <Tab text="Stream" />
+                        <Tab text="Route" />
                         <div className="main-view">
                             <Dot icon="arrow-down" flat={true} />
                             <Link highlighted={!selectedNode} />
@@ -709,7 +680,8 @@ export default ({ lineId, onCreation }) => {
                             setSelectedNode={setSelectedNode}
                             changeValues={changeValues}
                             removeNode={removeNode}
-                            service={service} />
+                            route={route}
+                            components={components} />
                     </div>
                 </div>
             </div>

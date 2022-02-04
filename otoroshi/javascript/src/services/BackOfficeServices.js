@@ -174,8 +174,8 @@ export function allServices(env, group) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-    ? `/bo/api/proxy/api/services?filter.groups=${group}`
-    : `/bo/api/proxy/api/services`;
+      ? `/bo/api/proxy/api/services?filter.groups=${group}`
+      : `/bo/api/proxy/api/services`;
   return fetch(url, {
     method: 'GET',
     credentials: 'include',
@@ -1763,12 +1763,15 @@ export function createResources(resources) {
 
 // NgRoutes
 
-export function findRoutes() {
-  return fetch('/bo/api/proxy/api/experimental/routes', {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
-}
+const fetchWrapper = url => fetch(`/bo/api/proxy/api/experimental${url}`, {
+  method: 'GET',
+  credentials: 'include',
+  headers: {
+    Accept: 'application/json',
+  }
+})
+  .then(r => r.json())
+
+export const findRoutes = () => fetchWrapper('/routes')
+export const fetchRoute = routeId => fetchWrapper(`/routes/${routeId}`)
+export const getRouteTemplate = () => fetchWrapper('/routes/_template')

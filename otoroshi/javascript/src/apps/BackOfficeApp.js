@@ -67,7 +67,7 @@ class BackOfficeAppContainer extends Component {
     };
 
     this.fullPageForRoutes = [
-      /^(?:\/lines\b)(?:\/[\w]+)(\/routes\/[\w])/
+      /^(\/routes\/[\w])/
     ].map(r => new RegExp(r))
   }
 
@@ -248,7 +248,7 @@ class BackOfficeAppContainer extends Component {
                           }
                         />
                         <Route
-                          path="/lines/:lineId/routes"
+                          path="/routes"
                           component={(props) => <RouteDesignerPage
                             globalEnv={this.state.env}
                             setTitle={(t) => DynamicTitle.setContent(t)}
