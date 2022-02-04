@@ -10,6 +10,7 @@ import com.auth0.jwt.interfaces.{DecodedJWT, Verification}
 import com.github.blemale.scaffeine.Scaffeine
 import com.nimbusds.jose.jwk.{ECKey, JWK, KeyType, RSAKey}
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.el.{GlobalExpressionLanguage, JwtExpressionLanguage}
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, Retry}
@@ -443,7 +444,14 @@ case class JWKSAlgoSettings(
 
   def keyId: Option[String] = None
 
-  def isAsync: Boolean = true // ASYNCVERIFIER
+  def isAsync: Boolean = {
+    JWKSAlgoSettings.cache.get(url) match {
+      case Some((stop, keys, false)) if stop > System.currentTimeMillis()  => false
+      case Some((stop, keys, false)) if stop <= System.currentTimeMillis() => true
+      case Some((_, keys, true))                                           => false
+      case None                                                            => true
+    }
+  }
 
   def algoFromJwk(alg: String, jwk: JWK): Option[Algorithm] = {
     jwk match {
@@ -956,6 +964,13 @@ sealed trait JwtVerifier extends AsJson {
   def strategy: VerifierStrategy
   def asGlobal: GlobalJwtVerifier = this.asInstanceOf[GlobalJwtVerifier]
 
+  def isAsync: Boolean = algoSettings.isAsync && (strategy match {
+    case DefaultToken(_, _, _) => false
+    case PassThrough(_) => false
+    case Sign(_, algoSettings) => algoSettings.isAsync
+    case Transform(_, _, algoSettings) => algoSettings.isAsync
+  })
+
   private def sign(token: JsObject, algorithm: Algorithm, kid: Option[String]): String = {
     val headerJson     = Json
       .obj("alg" -> algorithm.getName, "typ" -> "JWT")
@@ -1017,8 +1032,301 @@ sealed trait JwtVerifier extends AsJson {
     }
   }
 
-  // TODO: sync/async version based on in/out algs ?
   private[models] def internalVerify[A](
+    request: RequestHeader,
+    descOpt: Option[ServiceDescriptor],
+    apikey: Option[ApiKey],
+    user: Option[PrivateAppsUser],
+    elContext: Map[String, String],
+    attrs: TypedMap,
+    sendEvent: Boolean
+  )(
+    f: JwtInjection => Future[A]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+    if (isAsync) {
+      internalVerifyAsync(request, descOpt, apikey, user, elContext, attrs, sendEvent)(f)
+    } else {
+      internalVerifySync(request, descOpt, apikey, user, elContext, attrs, sendEvent) match {
+        case Left(result) => result.left.vfuture
+        case Right(injection) => f(injection).map(a => a.right)
+      }
+    }
+  }
+
+  private[models] def internalVerifySync[A](
+    request: RequestHeader,
+    descOpt: Option[ServiceDescriptor],
+    apikey: Option[ApiKey],
+    user: Option[PrivateAppsUser],
+    elContext: Map[String, String],
+    attrs: TypedMap,
+    sendEvent: Boolean
+  )(implicit ec: ExecutionContext, env: Env): Either[Result, JwtInjection] = env.metrics.withTimer("ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-int-sync") {
+
+    import Implicits._
+
+    source.token(request) match {
+      case None        =>
+        strategy match {
+          case DefaultToken(true, newToken, _) => {
+            // it's okay to use algoSettings here as it's the default token, so it's not used as an input but as output algo
+            algoSettings.asAlgorithm(OutputMode) match {
+              case None                  =>
+                Errors
+                  .craftResponseResultSync(
+                    "error.bad.output.algorithm.name",
+                    Results.BadRequest,
+                    request,
+                    descOpt,
+                    None,
+                    attrs = attrs,
+                    sendEvent = sendEvent
+                  )
+                  .left[JwtInjection]
+              case Some(outputAlgorithm) => {
+                val moreCtx           = Map(
+                  "jti" -> IdGenerator.uuid,
+                  "iat" -> s"${Math.floor(System.currentTimeMillis() / 1000L).toLong}",
+                  "nbf" -> s"${Math.floor(System.currentTimeMillis() / 1000L).toLong}",
+                  "iss" -> "Otoroshi",
+                  "exp" -> s"${Math.floor((System.currentTimeMillis() + 60000L) / 1000L).toLong}",
+                  "sub" -> apikey.map(_.clientName).orElse(user.map(_.email)).getOrElse("anonymous"),
+                  "aud" -> "backend"
+                )
+                val interpolatedToken = JwtExpressionLanguage
+                  .fromJson(
+                    newToken,
+                    Some(request),
+                    descOpt,
+                    apikey,
+                    user,
+                    elContext ++ moreCtx,
+                    attrs = attrs,
+                    env
+                  )
+                  .as[JsObject]
+                val correctedToken    = interpolatedToken
+                  .applyOnIf(interpolatedToken.select("nbf").asOpt[String].isDefined) { obj =>
+                    Try(interpolatedToken.select("nbf").asString.toLong) match {
+                      case Failure(e)   => obj
+                      case Success(lng) => obj ++ Json.obj("nbf" -> lng)
+                    }
+                  }
+                  .applyOnIf(interpolatedToken.select("iat").asOpt[String].isDefined) { obj =>
+                    Try(interpolatedToken.select("iat").asString.toLong) match {
+                      case Failure(e)   => obj
+                      case Success(lng) => obj ++ Json.obj("iat" -> lng)
+                    }
+                  }
+                  .applyOnIf(interpolatedToken.select("exp").asOpt[String].isDefined) { obj =>
+                    Try(interpolatedToken.select("exp").asString.toLong) match {
+                      case Failure(e)   => obj
+                      case Success(lng) => obj ++ Json.obj("exp" -> lng)
+                    }
+                  }
+                // it's okay to use algoSettings here as it's the default token, so it's not used as an input but as output algo
+                val signedToken       = sign(correctedToken, outputAlgorithm, algoSettings.keyId)
+                val decodedToken      = JWT.decode(signedToken)
+                attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> correctedToken)
+                attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> correctedToken)
+                source.asJwtInjection(decodedToken, signedToken).right
+              }
+            }
+          }
+          case DefaultToken(false, _, _)       => {
+            JwtInjection().right
+          }
+          case _ if strict                     => {
+            Errors
+              .craftResponseResultSync(
+                "error.expected.token.not.found",
+                Results.BadRequest,
+                request,
+                descOpt,
+                None,
+                attrs = attrs,
+                sendEvent = sendEvent
+              )
+              .left[JwtInjection]
+          }
+          case _ if !strict                    => JwtInjection().right[Result]
+        }
+      case Some(token) =>
+        val tokenParts = token.split("\\.")
+        val signature = tokenParts.last
+        val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(tokenParts(0)))).getOrElse(Json.obj())
+        val kid         = (tokenHeader \ "kid").asOpt[String]
+        val alg         = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
+        algoSettings.asAlgorithm(InputMode(alg, kid)) match {
+          case None            =>
+            Errors
+              .craftResponseResultSync(
+                "error.bad.input.algorithm.name",
+                Results.BadRequest,
+                request,
+                descOpt,
+                None,
+                attrs = attrs
+              )
+              .left[JwtInjection]
+          case Some(algorithm) => {
+            val verification = strategy.verificationSettings.asVerification(algorithm)
+            val key = s"${this.asInstanceOf[GlobalJwtVerifier].id}-${signature}"
+            val verificationResult = JwtVerifier.signatureCache.get(key, _ => Try(verification.build().verify(token)))
+            verificationResult match {
+              case Failure(e)            =>
+                // logger.error("Bad JWT token", e)
+                Errors
+                  .craftResponseResultSync(
+                    "error.bad.token",
+                    Results.BadRequest,
+                    request,
+                    descOpt,
+                    None,
+                    attrs = attrs,
+                    sendEvent = sendEvent
+                  )
+                  .left[JwtInjection]
+              case Success(decodedToken) =>
+                strategy match {
+                  case s @ DefaultToken(true, _, _)           => {
+                    Errors
+                      .craftResponseResultSync(
+                        "error.token.already.present",
+                        Results.BadRequest,
+                        request,
+                        descOpt,
+                        None,
+                        attrs = attrs,
+                        sendEvent = sendEvent
+                      )
+                      .left[JwtInjection]
+                  }
+                  case s @ DefaultToken(false, _, _)          =>
+                    val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
+                    attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> jsonToken)
+                    attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> jsonToken)
+                    JwtInjection(decodedToken.some).right[Result]
+                  case s @ PassThrough(_)                     =>
+                    val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
+                    attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> jsonToken)
+                    attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> jsonToken)
+                    JwtInjection(decodedToken.some).right[Result]
+                  case s @ Sign(_, aSettings)                 =>
+                    aSettings.asAlgorithm(OutputMode) match {
+                      case None                  =>
+                        Errors
+                          .craftResponseResultSync(
+                            "error.bad.output.algorithm.name",
+                            Results.BadRequest,
+                            request,
+                            descOpt,
+                            None,
+                            attrs = attrs,
+                            sendEvent = sendEvent
+                          )
+                          .left[JwtInjection]
+                      case Some(outputAlgorithm) => {
+                        val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
+                        val newToken  = sign(
+                          jsonToken,
+                          outputAlgorithm,
+                          aSettings.keyId
+                        )
+                        attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> jsonToken)
+                        attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> jsonToken)
+                        source.asJwtInjection(decodedToken, newToken).right[Result]
+                      }
+                    }
+                  case s @ Transform(_, tSettings, aSettings) =>
+                    aSettings.asAlgorithm(OutputMode) match {
+                      case None                  =>
+                        Errors
+                          .craftResponseResultSync(
+                            "error.bad.output.algorithm.name",
+                            Results.BadRequest,
+                            request,
+                            descOpt,
+                            None,
+                            attrs = attrs,
+                            sendEvent = sendEvent
+                          )
+                          .left[JwtInjection]
+                      case Some(outputAlgorithm) => {
+                        val jsonToken                    = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
+                        val context: Map[String, String] = jsonToken.value.toSeq.collect {
+                          case (key, JsString(str))     => (key, str)
+                          case (key, JsBoolean(bool))   => (key, bool.toString)
+                          case (key, JsNumber(nbr))     => (key, nbr.toString())
+                          case (key, arr @ JsArray(_))  => (key, Json.stringify(arr))
+                          case (key, obj @ JsObject(_)) => (key, Json.stringify(obj))
+                          case (key, JsNull)            => (key, "null")
+                        } toMap
+                        val evaluatedValues: JsObject    =
+                          JwtExpressionLanguage
+                            .fromJson(
+                              tSettings.mappingSettings.values,
+                              Some(request),
+                              descOpt,
+                              apikey,
+                              user,
+                              context,
+                              attrs,
+                              env
+                            )
+                            .as[JsObject]
+                        val newJsonToken: JsObject       = JsObject(
+                          (tSettings.mappingSettings.map
+                            .filter(a => (jsonToken \ a._1).isDefined)
+                            .foldLeft(jsonToken)((a, b) =>
+                              a.+(
+                                b._2,
+                                JwtExpressionLanguage.fromJson(
+                                  (a \ b._1).as[JsValue],
+                                  Some(request),
+                                  descOpt,
+                                  apikey,
+                                  user,
+                                  context,
+                                  attrs,
+                                  env
+                                )
+                              ).-(b._1)
+                            ) ++ evaluatedValues).fields
+                            .filterNot {
+                              case (_, JsNull)           => true
+                              case (_, JsString("null")) => true
+                              case _                     => false
+                            }
+                            .filterNot(f => tSettings.mappingSettings.remove.contains(f._1))
+                            .toMap
+                        )
+                        val newToken                     = sign(newJsonToken, outputAlgorithm, aSettings.keyId)
+                        attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> jsonToken)
+                        attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> newJsonToken)
+                        source match {
+                          case _: InQueryParam =>
+                            tSettings.location.asJwtInjection(decodedToken, newToken).right[Result]
+                          case InHeader(n, _)  =>
+                            val inj = tSettings.location.asJwtInjection(decodedToken, newToken)
+                            tSettings.location match {
+                              case InHeader(nn, _) if nn == n => inj.right[Result]
+                              case _                          => inj.copy(removeHeaders = Seq(n)).right[Result]
+                            }
+                          case InCookie(n)     =>
+                            tSettings.location.asJwtInjection(decodedToken, newToken).copy(removeCookies = Seq(n))
+                              .right[Result]
+                        }
+                      }
+                    }
+                }
+            }
+          }
+        }
+    }
+  }
+
+  private[models] def internalVerifyAsync[A](
       request: RequestHeader,
       descOpt: Option[ServiceDescriptor],
       apikey: Option[ApiKey],
@@ -1028,7 +1336,7 @@ sealed trait JwtVerifier extends AsJson {
       sendEvent: Boolean
   )(
       f: JwtInjection => Future[A]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = env.metrics.withTimerAsync("ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-internal") {
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = env.metrics.withTimerAsync("ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-int-async") {
 
     import Implicits._
 
@@ -1356,6 +1664,12 @@ case class RefJwtVerifier(
 
   private def id: Option[String] = ids.headOption
 
+  def verifiersSync(implicit env: Env): Seq[GlobalJwtVerifier] = ids.flatMap(env.proxyState.jwtVerifier)
+
+  override def isAsync: Boolean = {
+    verifiersSync(OtoroshiEnvHolder.get()).forall(_.isAsync)
+  }
+
   override def verify(
       request: RequestHeader,
       desc: ServiceDescriptor,
@@ -1464,7 +1778,6 @@ case class RefJwtVerifier(
     }
   }
 
-  // TODO: sync/async version based on in/out algs ?
   def verifyFromCache(
     request: RequestHeader,
     desc: Option[ServiceDescriptor],
@@ -1484,7 +1797,7 @@ case class RefJwtVerifier(
               val key = s"${request.id}-${ref}-queue"
               JwtVerifier.verificationCache.getIfPresent(key) match {
                 case Some(JwtVerificationResult.FailedJwtVerificationResult(result)) => dequeueNext(all.tail, Left(result)) // weird use case where same verifier is used and fails
-                case _ => env.metrics.withTimerAsync(s"ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-single") {
+                case _ => env.metrics.withTimerAsync(s"ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-single-async") {
                     env.proxyState.jwtVerifier(ref) match {
                       case Some(verifier) =>
                         verifier
@@ -1538,6 +1851,65 @@ case class RefJwtVerifier(
         }
         dequeueNext(ids, Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.missing.globaljwtverifier.id"))))
         promise.future
+      }
+    }
+  }
+
+  def verifyFromCacheSync(
+   request: RequestHeader,
+   desc: Option[ServiceDescriptor],
+   apikey: Option[ApiKey],
+   user: Option[PrivateAppsUser],
+   elContext: Map[String, String],
+   attrs: TypedMap
+ )(implicit ec: ExecutionContext, env: Env): Either[Result, JwtInjection] = {
+    ids match {
+      case s if s.isEmpty => JwtInjection().right
+      case _ => {
+
+        def dequeueNext(all: Seq[String], last: Either[Result, JwtInjection]): Either[Result, JwtInjection] = {
+          all.headOption match {
+            case None => last
+            case Some(ref) =>
+              val key = s"${request.id}-${ref}-queue"
+              JwtVerifier.verificationCache.getIfPresent(key) match {
+                case Some(JwtVerificationResult.FailedJwtVerificationResult(result)) => dequeueNext(all.tail, Left(result)) // weird use case where same verifier is used and fails
+                case _ => env.metrics.withTimer(s"ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-single-sync") {
+                  env.proxyState.jwtVerifier(ref) match {
+                    case Some(verifier) => verifier.internalVerifySync(request, desc, apikey, user, elContext, attrs, all.size == 1) match {
+                      case Left(result) if all.size == 1 =>
+                        JwtVerifier.verificationCache.put(key, JwtVerificationResult.FailedJwtVerificationResult(result))
+                        Left(result)
+                      case Left(result) =>
+                        JwtVerifier.verificationCache.put(key, JwtVerificationResult.FailedJwtVerificationResult(result))
+                        dequeueNext(all.tail, Left(result))
+                      case Right(result) =>
+                        Right(result)
+                    }
+                    case None => {
+                      val result = Errors
+                        .craftResponseResultSync(
+                          s"error.bad.globaljwtverifier.id",
+                          Results.InternalServerError,
+                          request,
+                          desc,
+                          None,
+                          attrs = attrs
+                        )
+                        JwtVerifier.verificationCache.put(key, JwtVerificationResult.FailedJwtVerificationResult(result))
+                        if (all.size == 1) {
+                          Left(result)
+                        } else {
+                          dequeueNext(all.tail, Left(result))
+                        }
+                    }
+                  }
+                }
+              }
+          }
+        }
+
+        dequeueNext(ids, Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.missing.globaljwtverifier.id"))))
       }
     }
   }

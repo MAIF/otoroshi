@@ -49,21 +49,37 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
     val JwtVerificationConfig(verifiers) = ctx.cachedConfig(internalName)(configReads).getOrElse(JwtVerificationConfig())
     if (verifiers.nonEmpty) {
       val verifier = RefJwtVerifier(verifiers, true, Seq.empty)
-      val promise = Promise[NgAccess]()
-      verifier.verifyFromCache(
-        request = ctx.request,
-        desc = ctx.route.serviceDescriptor.some,
-        apikey = ctx.apikey,
-        user = ctx.user,
-        elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-        attrs = ctx.attrs
-      ).map {
-        case Left(result) => promise.trySuccess(NgAccess.NgDenied(result))
-        case Right(injection) =>
-          ctx.attrs.put(JwtInjectionKey -> injection)
-          promise.trySuccess(NgAccess.NgAllowed)
+      if (verifier.isAsync) {
+        val promise = Promise[NgAccess]()
+        verifier.verifyFromCache(
+          request = ctx.request,
+          desc = ctx.route.serviceDescriptor.some,
+          apikey = ctx.apikey,
+          user = ctx.user,
+          elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+          attrs = ctx.attrs
+        ).map {
+          case Left(result) => promise.trySuccess(NgAccess.NgDenied(result))
+          case Right(injection) =>
+            ctx.attrs.put(JwtInjectionKey -> injection)
+            promise.trySuccess(NgAccess.NgAllowed)
+        }
+        promise.future
+      } else {
+        verifier.verifyFromCacheSync(
+          request = ctx.request,
+          desc = ctx.route.serviceDescriptor.some,
+          apikey = ctx.apikey,
+          user = ctx.user,
+          elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+          attrs = ctx.attrs
+        ) match {
+          case Left(result) => NgAccess.NgDenied(result).vfuture
+          case Right(injection) =>
+            ctx.attrs.put(JwtInjectionKey -> injection)
+            NgAccess.NgAllowed.vfuture
+        }
       }
-      promise.future
     } else {
       NgAccess.NgAllowed.vfuture
     }
