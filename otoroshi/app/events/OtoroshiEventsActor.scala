@@ -179,9 +179,9 @@ object DataExporter {
       val stream = Source
         .queue[OtoroshiEvent](configUnsafe.bufferSize, OverflowStrategy.dropHead)
         .filter(_ => configOpt.exists(_.enabled))
-        .mapAsync(configUnsafe.jsonWorkers)(event => event.toEnrichedJson)
-        .filter(event => accept(event))
-        .map(event => project(event))
+        .mapAsync(configUnsafe.jsonWorkers)(event => event.toEnrichedJson) // TODO: try/catch
+        .filter(event => accept(event)) // TODO: try/catch
+        .map(event => project(event)) // TODO: try/catch
         .groupedWithin(configUnsafe.groupSize, configUnsafe.groupDuration)
         .filterNot(_.isEmpty)
         .mapAsync(configUnsafe.sendWorkers) { events =>
