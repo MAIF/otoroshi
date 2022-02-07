@@ -184,7 +184,7 @@ export class GlobalAnalyticsPage extends Component {
             </div>
             <div className="col-md-6">
               <RoundChart
-                series={data.statusesPiechart && data.statusesPiechart.series}
+                series={data && data.statusesPiechart && data.statusesPiechart.series}
                 title="Http statuses"
                 size={200}
               />
@@ -195,7 +195,7 @@ export class GlobalAnalyticsPage extends Component {
           <div className="row">
             <div className="col-md-12">
               <Histogram
-                series={data.statusesHistogram && data.statusesHistogram.series}
+                series={data && data.statusesHistogram && data.statusesHistogram.series}
                 title="Http statuses"
               />
             </div>
@@ -203,7 +203,7 @@ export class GlobalAnalyticsPage extends Component {
           <div className="row">
             <div className="col-md-12">
               <Histogram
-                series={data.durationStats && data.durationStats.series}
+                series={data && data.durationStats && data.durationStats.series}
                 title="Duration"
                 unit=" millis."
               />
@@ -212,7 +212,7 @@ export class GlobalAnalyticsPage extends Component {
           <div className="row">
             <div className="col-md-12">
               <Histogram
-                series={data.durationPercentiles && data.durationPercentiles.series}
+                series={data && data.durationPercentiles && data.durationPercentiles.series}
                 title="Duration percentiles"
                 unit=" millis."
               />
@@ -221,7 +221,7 @@ export class GlobalAnalyticsPage extends Component {
           <div className="row">
             <div className="col-md-12">
               <Histogram
-                series={data.overheadStats && data.overheadStats.series}
+                series={data && data.overheadStats && data.overheadStats.series}
                 title="Overhead"
                 unit=" millis."
               />
@@ -230,7 +230,7 @@ export class GlobalAnalyticsPage extends Component {
           <div className="row">
             <div className="col-md-12">
               <Histogram
-                series={data.overheadPercentiles && data.overheadPercentiles.series}
+                series={data && data.overheadPercentiles && data.overheadPercentiles.series}
                 title="Overhead percentiles"
                 unit=" millis."
               />
@@ -239,7 +239,7 @@ export class GlobalAnalyticsPage extends Component {
           <div className="row">
             <div className="col-md-12">
               <Histogram
-                series={data.dataInStats && data.dataInStats.series}
+                series={data && data.dataInStats && data.dataInStats.series}
                 title="Data In"
                 unit=" bytes"
               />
@@ -248,7 +248,7 @@ export class GlobalAnalyticsPage extends Component {
           <div className="row">
             <div className="col-md-12">
               <Histogram
-                series={data.dataOutStats && data.dataOutStats.series}
+                series={data && data.dataOutStats && data.dataOutStats.series}
                 title="Data In"
                 unit=" bytes"
               />
@@ -257,7 +257,7 @@ export class GlobalAnalyticsPage extends Component {
           <div className="row">
             <div className="col-md-12">
               <RoundChart
-                series={data.productPiechart && data.productPiechart.series}
+                series={data && data.productPiechart && data.productPiechart.series}
                 title="Hits by product"
                 size={500}
               />
@@ -266,7 +266,7 @@ export class GlobalAnalyticsPage extends Component {
           <div className="row">
             <div className="col-md-12">
               <RoundChart
-                series={data.servicePiechart && data.servicePiechart.series}
+                series={data && data.servicePiechart && data.servicePiechart.series}
                 title="Hits by service"
                 size={500}
               />
@@ -275,7 +275,7 @@ export class GlobalAnalyticsPage extends Component {
           <div className="row">
             <div className="col-md-12">
               <RoundChart
-                series={data.apiKeyPiechart && data.apiKeyPiechart.series}
+                series={data && data.apiKeyPiechart && data.apiKeyPiechart.series}
                 title="Hits by apikey"
                 size={500}
               />
@@ -284,7 +284,7 @@ export class GlobalAnalyticsPage extends Component {
           <div className="row">
             <div className="col-md-12">
               <RoundChart
-                series={data.userPiechart && data.userPiechart.series}
+                series={data && data.userPiechart && data.userPiechart.series}
                 title="Hits by user"
                 size={500}
               />

@@ -21,6 +21,18 @@ import scala.concurrent.duration.DurationLong
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
+object QueryResponse {
+  val empty: QueryResponse = QueryResponse(Json.obj())
+}
+
+case class QueryResponse(resp: JsValue) {
+  lazy val hitSizeOpt: Option[Int] = (resp \ "hits" \ "total").asOpt[Int].orElse((resp \ "hits" \ "total" \ "value").asOpt[Int])
+  lazy val hitSize: Int = hitSizeOpt.getOrElse(0)
+  lazy val isEmpty: Boolean = hitSize <= 0
+  lazy val nonEmpty: Boolean = !isEmpty
+  lazy val hits: Seq[JsValue] = (resp \ "hits" \ "hits").as[Seq[JsValue]]
+}
+
 object ElasticTemplates {
   val indexTemplate_v6 =
     """{
@@ -476,7 +488,7 @@ object ElasticUtils {
   ): Future[Either[JsValue, Long]] = {
     config.index match {
       case None        => {
-        url(urlFromPath(s"/_search?size=0", config), config, env)
+        url(urlFromPath(s"/_search?size=0", config).debugPrintln, config, env)
           .get()
           .map { resp =>
             if (resp.status == 200) {
@@ -487,7 +499,7 @@ object ElasticUtils {
           }
       }
       case Some(index) => {
-        url(urlFromPath(s"/${index}/_search?size=0", config), config, env)
+        url(urlFromPath(s"/${index}/_search?size=0", config).debugPrintln, config, env)
           .get()
           .map { resp =>
             if (resp.status == 200) {
@@ -641,18 +653,28 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] = {
-    query(
-      Json.obj(
-        "size"  -> 0,
-        "query" -> Json.obj(
-          "bool" -> filters(filterable, from, to)
+    for {
+      noraw <- query(
+        Json.obj(
+          "size"  -> 0,
+          "query" -> Json.obj(
+            "bool" -> filters(filterable, from, to, raw = false)
+          )
         )
       )
-    ).map { resp =>
+      raw <- if (noraw.isEmpty) query(
+        Json.obj(
+          "size"  -> 0,
+          "query" -> Json.obj(
+            "bool" -> filters(filterable, from, to, raw = true)
+          )
+        )
+      ) else QueryResponse.empty.vfuture
+    } yield {
       Json.obj(
-        "count" -> (resp \ "hits" \ "total").asOpt[Int].orElse((resp \ "hits" \ "total" \ "value").asOpt[Int])
-      )
-    }.map(Some.apply)
+        "count" -> noraw.hitSizeOpt.orElse(raw.hitSizeOpt)
+      ).some
+    }
   }
 
   override def events(
@@ -668,37 +690,44 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       ec: ExecutionContext
   ): Future[Option[JsValue]] = {
     val pageFrom = (page - 1) * size
-    query(
-      Json.obj(
-        "size"  -> size,
-        "from"  -> pageFrom,
-        "query" -> Json.obj(
-          "bool" -> filters(filterable, from, to) /*Json.obj(
-            "minimum_should_match" -> 1,
-            "should" -> (
-              service.map(s => Json.obj("term" -> Json.obj("@serviceId"     -> s.id))).toSeq ++
-              service.map(s => Json.obj("term" -> Json.obj("@serviceId.raw" -> s.id))).toSeq
-            ),
-            "must" -> (
-              dateFilters(from, to) ++
-              gatewayEventFilters
+    for {
+      noraw <- query(
+        Json.obj(
+          "size"  -> size,
+          "from"  -> pageFrom,
+          "query" -> Json.obj(
+            "bool" -> filters(filterable, from, to, raw = false)
+          ),
+          "sort"  -> Json.obj(
+            "@timestamp" -> Json.obj(
+              "order" -> order
             )
-          )*/
-        ),
-        "sort"  -> Json.obj(
-          "@timestamp" -> Json.obj(
-            "order" -> order
           )
         )
       )
-    ).map { res =>
-      val events: Seq[JsValue] = (res \ "hits" \ "hits").as[Seq[JsValue]].map { j =>
+      raw <- if (noraw.isEmpty) query(
+        Json.obj(
+          "size"  -> size,
+          "from"  -> pageFrom,
+          "query" -> Json.obj(
+            "bool" -> filters(filterable, from, to, raw = true)
+          ),
+          "sort"  -> Json.obj(
+            "@timestamp" -> Json.obj(
+              "order" -> order
+            )
+          )
+        )
+      ) else QueryResponse.empty.vfuture
+    } yield {
+      val hits = if (noraw.isEmpty) raw.hits else noraw.hits
+      val events: Seq[JsValue] = hits.map { j =>
         (j \ "_source").as[JsValue]
       }
       Json.obj(
         "events" -> events
-      )
-    }.map(Some.apply)
+      ).some
+    }
   }
 
   override def fetchDataIn(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
@@ -736,40 +765,74 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       implicit
       env: Env,
       ec: ExecutionContext
-  ): Future[Option[JsValue]] =
-    query(
-      Json.obj(
-        "size"  -> 0,
-        "query" -> Json.obj {
-          "bool" -> filters(filterable, from, to)
-        },
-        "aggs"  -> Json.obj(
-          "codes" -> Json.obj(
-            "aggs"  -> Json.obj(
-              "codesOverTime" -> Json.obj(
-                "date_histogram" -> Json.obj(
-                  "interval" -> "hour",
-                  "field"    -> "@timestamp"
+  ): Future[Option[JsValue]] = {
+    for {
+      noraw <- query(
+        Json.obj(
+          "size"  -> 0,
+          "query" -> Json.obj {
+            "bool" -> filters(filterable, from, to, raw = false)
+          },
+          "aggs"  -> Json.obj(
+            "codes" -> Json.obj(
+              "aggs"  -> Json.obj(
+                "codesOverTime" -> Json.obj(
+                  "date_histogram" -> Json.obj(
+                    "interval" -> "hour",
+                    "field"    -> "@timestamp"
+                  )
                 )
-              )
-            ),
-            "range" -> Json.obj(
-              "ranges" -> Json.arr(
-                Json.obj("from" -> 100, "to" -> 199, "key" -> "1**"),
-                Json.obj("from" -> 200, "to" -> 299, "key" -> "2**"),
-                Json.obj("from" -> 300, "to" -> 399, "key" -> "3**"),
-                Json.obj("from" -> 400, "to" -> 499, "key" -> "4**"),
-                Json.obj("from" -> 500, "to" -> 599, "key" -> "5**")
               ),
-              "field"  -> "status",
-              "keyed"  -> true
+              "range" -> Json.obj(
+                "ranges" -> Json.arr(
+                  Json.obj("from" -> 100, "to" -> 199, "key" -> "1**"),
+                  Json.obj("from" -> 200, "to" -> 299, "key" -> "2**"),
+                  Json.obj("from" -> 300, "to" -> 399, "key" -> "3**"),
+                  Json.obj("from" -> 400, "to" -> 499, "key" -> "4**"),
+                  Json.obj("from" -> 500, "to" -> 599, "key" -> "5**")
+                ),
+                "field"  -> "status",
+                "keyed"  -> true
+              )
             )
           )
         )
       )
-    ).map { res =>
-      val buckets: JsObject = (res \ "aggregations" \ "codes" \ "buckets").asOpt[JsObject].getOrElse(Json.obj())
-      val series            = buckets.value
+      raw <- if (noraw.isEmpty) query(
+        Json.obj(
+          "size"  -> 0,
+          "query" -> Json.obj {
+            "bool" -> filters(filterable, from, to, raw = true)
+          },
+          "aggs"  -> Json.obj(
+            "codes" -> Json.obj(
+              "aggs"  -> Json.obj(
+                "codesOverTime" -> Json.obj(
+                  "date_histogram" -> Json.obj(
+                    "interval" -> "hour",
+                    "field"    -> "@timestamp"
+                  )
+                )
+              ),
+              "range" -> Json.obj(
+                "ranges" -> Json.arr(
+                  Json.obj("from" -> 100, "to" -> 199, "key" -> "1**"),
+                  Json.obj("from" -> 200, "to" -> 299, "key" -> "2**"),
+                  Json.obj("from" -> 300, "to" -> 399, "key" -> "3**"),
+                  Json.obj("from" -> 400, "to" -> 499, "key" -> "4**"),
+                  Json.obj("from" -> 500, "to" -> 599, "key" -> "5**")
+                ),
+                "field"  -> "status",
+                "keyed"  -> true
+              )
+            )
+          )
+        )
+      ) else QueryResponse.empty.vfuture
+    } yield {
+        val res = if (noraw.isEmpty) raw.resp else noraw.resp
+        val buckets: JsObject = (res \ "aggregations" \ "codes" \ "buckets").asOpt[JsObject].getOrElse(Json.obj())
+        val series            = buckets.value
         .map { case (k, v) =>
           Json.obj(
             "name"  -> k,
@@ -787,8 +850,9 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       Json.obj(
         "chart" -> Json.obj("type" -> "areaspline"),
         "series" -> series
-      )
-    }.map(Some.apply)
+      ).some
+    }
+  }
 
   override def fetchDataInStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
       implicit
@@ -860,6 +924,11 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
           "term" -> Json.obj(
             "identity.identityType.raw" -> "APIKEY"
           )
+        ),
+        Json.obj(
+          "term" -> Json.obj(
+            "identity.identityType" -> "APIKEY"
+          )
         )
       )
     ).map(Some.apply)
@@ -903,9 +972,8 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   ): Future[Option[JsValue]] =
     statsHistogram("overhead", filterable, from, to).map(Some.apply)
 
-  private def query(query: JsObject)(implicit ec: ExecutionContext): Future[JsValue] = {
+  private def query(query: JsObject, debug: Boolean = false)(implicit ec: ExecutionContext): Future[QueryResponse] = {
     val builder = env.MtlsWs.url(searchUri, config.mtlsConfig)
-
     logger.debug(s"Query to Elasticsearch: $searchUri")
     logger.debug(s"Query to Elasticsearch: ${Json.prettyPrint(query)}")
 
@@ -917,7 +985,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       .post(query)
       .flatMap { resp =>
         resp.status match {
-          case 200 => FastFuture.successful(resp.json)
+          case 200 => FastFuture.successful(QueryResponse(resp.json))
           case _   =>
             FastFuture.failed(
               new RuntimeException(s"Error during es request: \n * ${resp.body}, \nquery was \n * $query")
@@ -932,29 +1000,55 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       mayBeFrom: Option[DateTime],
       mayBeTo: Option[DateTime]
   )(implicit ec: ExecutionContext): Future[JsObject] = {
-    query(
-      Json.obj(
-        "size"  -> 0,
-        "query" -> Json.obj(
-          "bool" -> filters(filterable, mayBeFrom, mayBeTo)
-        ),
-        "aggs"  -> Json.obj(
-          "stats" -> Json.obj(
-            "date_histogram" -> Json.obj(
-              "field"    -> "@timestamp",
-              "interval" -> calcInterval(mayBeFrom, mayBeTo)
-            ),
-            "aggs"           -> Json.obj(
-              "stats" -> Json.obj(
-                "extended_stats" -> Json.obj(
-                  "field" -> field
+    for {
+      noraw <- query(
+        Json.obj(
+          "size"  -> 0,
+          "query" -> Json.obj(
+            "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = false)
+          ),
+          "aggs"  -> Json.obj(
+            "stats" -> Json.obj(
+              "date_histogram" -> Json.obj(
+                "field"    -> "@timestamp",
+                "interval" -> calcInterval(mayBeFrom, mayBeTo)
+              ),
+              "aggs"           -> Json.obj(
+                "stats" -> Json.obj(
+                  "extended_stats" -> Json.obj(
+                    "field" -> field
+                  )
                 )
               )
             )
           )
         )
       )
-    ).map { res =>
+      raw <- if (noraw.isEmpty) query(
+        Json.obj(
+          "size"  -> 0,
+          "query" -> Json.obj(
+            "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = true)
+          ),
+          "aggs"  -> Json.obj(
+            "stats" -> Json.obj(
+              "date_histogram" -> Json.obj(
+                "field"    -> "@timestamp",
+                "interval" -> calcInterval(mayBeFrom, mayBeTo)
+              ),
+              "aggs"           -> Json.obj(
+                "stats" -> Json.obj(
+                  "extended_stats" -> Json.obj(
+                    "field" -> field
+                  )
+                )
+              )
+            )
+          )
+        )
+      ) else QueryResponse.empty.vfuture
+    } yield {
+      val res = if (noraw.isEmpty) raw.resp else noraw.resp
       val bucket = (res \ "aggregations" \ "stats" \ "buckets").asOpt[JsValue].getOrElse(JsNull)
       Json.obj(
         "chart"  -> Json.obj("type" -> "chart"),
@@ -975,29 +1069,55 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       mayBeFrom: Option[DateTime],
       mayBeTo: Option[DateTime]
   )(implicit ec: ExecutionContext): Future[JsObject] = {
-    query(
-      Json.obj(
-        "size"  -> 0,
-        "query" -> Json.obj(
-          "bool" -> filters(filterable, mayBeFrom, mayBeTo)
-        ),
-        "aggs"  -> Json.obj(
-          "stats" -> Json.obj(
-            "date_histogram" -> Json.obj(
-              "field"    -> "@timestamp",
-              "interval" -> calcInterval(mayBeFrom, mayBeTo)
-            ),
-            "aggs"           -> Json.obj(
-              "stats" -> Json.obj(
-                "percentiles" -> Json.obj(
-                  "field" -> field
+    for {
+      noraw <- query(
+        Json.obj(
+          "size"  -> 0,
+          "query" -> Json.obj(
+            "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = false)
+          ),
+          "aggs"  -> Json.obj(
+            "stats" -> Json.obj(
+              "date_histogram" -> Json.obj(
+                "field"    -> "@timestamp",
+                "interval" -> calcInterval(mayBeFrom, mayBeTo)
+              ),
+              "aggs"           -> Json.obj(
+                "stats" -> Json.obj(
+                  "percentiles" -> Json.obj(
+                    "field" -> field
+                  )
                 )
               )
             )
           )
         )
       )
-    ).map { res =>
+      raw <- if (noraw.isEmpty) query(
+        Json.obj(
+          "size"  -> 0,
+          "query" -> Json.obj(
+            "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = true)
+          ),
+          "aggs"  -> Json.obj(
+            "stats" -> Json.obj(
+              "date_histogram" -> Json.obj(
+                "field"    -> "@timestamp",
+                "interval" -> calcInterval(mayBeFrom, mayBeTo)
+              ),
+              "aggs"           -> Json.obj(
+                "stats" -> Json.obj(
+                  "percentiles" -> Json.obj(
+                    "field" -> field
+                  )
+                )
+              )
+            )
+          )
+        )
+      ) else QueryResponse.empty.vfuture
+    } yield {
+      val res = if (noraw.isEmpty) raw.resp else noraw.resp
       val bucket = (res \ "aggregations" \ "stats" \ "buckets").asOpt[JsValue].getOrElse(JsNull)
       Json.obj(
         "chart"  -> Json.obj("type" -> "areaspline"),
@@ -1033,7 +1153,6 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
     } else {
       "minute"
     }
-
   }
 
   private def extractSerie(
@@ -1085,21 +1204,39 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       mayBeFrom: Option[DateTime],
       mayBeTo: Option[DateTime]
   )(implicit ec: ExecutionContext): Future[JsObject] = {
-    query(
-      Json.obj(
-        "size"  -> 0,
-        "query" -> Json.obj(
-          "bool" -> filters(filterable, mayBeFrom, mayBeTo)
-        ),
-        "aggs"  -> Json.obj {
-          operation -> Json.obj(
+    for {
+      noraw <- query(
+        Json.obj(
+          "size"  -> 0,
+          "query" -> Json.obj(
+            "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = false)
+          ),
+          "aggs"  -> Json.obj {
             operation -> Json.obj(
-              "field" -> field
+              operation -> Json.obj(
+                "field" -> field
+              )
             )
-          )
-        }
+          }
+        )
       )
-    ).map { res =>
+      raw <- if (noraw.isEmpty) query(
+        Json.obj(
+          "size"  -> 0,
+          "query" -> Json.obj(
+            "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = true)
+          ),
+          "aggs"  -> Json.obj {
+            operation -> Json.obj(
+              operation -> Json.obj(
+                "field" -> field
+              )
+            )
+          }
+        )
+      ) else QueryResponse.empty.vfuture
+    } yield {
+      val res = if (noraw.isEmpty) raw.resp else noraw.resp
       Json.obj(
         field -> (res \ "aggregations" \ operation \ "value").asOpt[JsValue]
       )
@@ -1117,25 +1254,47 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       env: Env,
       ec: ExecutionContext
   ): Future[JsValue] = {
-    query(
-      Json.obj(
-        "size"  -> 0,
-        "query" -> Json.obj(
-          "bool" -> filters(filterable, from, to, additionalMust = additionalFilters)
-        ),
-        "aggs"  -> Json.obj(
-          "codes" -> Json.obj(
-            "terms" -> Json.obj(
-              "field" -> field,
-              "order" -> Json.obj(
-                "_term" -> "asc"
-              ),
-              "size"  -> size
+    for {
+      noraw <- query(
+        Json.obj(
+          "size"  -> 0,
+          "query" -> Json.obj(
+            "bool" -> filters(filterable, from, to, additionalMust = additionalFilters, raw = false)
+          ),
+          "aggs"  -> Json.obj(
+            "codes" -> Json.obj(
+              "terms" -> Json.obj(
+                "field" -> field,
+                "order" -> Json.obj(
+                  "_term" -> "asc"
+                ),
+                "size"  -> size
+              )
             )
           )
         )
       )
-    ).map { json =>
+      raw <- if (noraw.isEmpty) query(
+        Json.obj(
+          "size"  -> 0,
+          "query" -> Json.obj(
+            "bool" -> filters(filterable, from, to, additionalMust = additionalFilters, raw = true)
+          ),
+          "aggs"  -> Json.obj(
+            "codes" -> Json.obj(
+              "terms" -> Json.obj(
+                "field" -> field,
+                "order" -> Json.obj(
+                  "_term" -> "asc"
+                ),
+                "size"  -> size
+              )
+            )
+          )
+        )
+      ) else QueryResponse.empty.vfuture
+    } yield {
+      val json = if (noraw.isEmpty) raw.resp else noraw.resp
       val pie = (json \ "aggregations" \ "codes" \ "buckets")
         .asOpt[Seq[JsObject]]
         .getOrElse(Seq.empty)
@@ -1192,9 +1351,12 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       mayBeFrom: Option[DateTime],
       mayBeTo: Option[DateTime],
       additionalMust: Seq[JsObject] = Seq.empty,
-      additionalShould: Seq[JsObject] = Seq.empty,
-      eventFilter: Seq[JsObject] = gatewayEventFilters
+      // additionalShould: Seq[JsObject] = Seq.empty,
+      eventFilter: Seq[JsObject] = gatewayEventFilters,
+      raw: Boolean
   ): JsObject = {
+
+    val additionalShould: Seq[JsObject] = Seq.empty
 
     // val serviceQuery = service.map { s =>
     //   Json.obj(
@@ -1209,21 +1371,58 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
 
     filterable match {
       case None                                       => {
-        Json.obj(
-          "must" -> (
-            dateFilters(mayBeFrom, mayBeTo) ++
-            eventFilter ++
-            additionalMust
-          )
-        )
+        val eventFilterJson = JsArray(eventFilter.map(e => Json.obj("bool" -> Json.obj("should" -> Json.arr(e), "minimum_should_match" -> 1))))
+        val additionalMustJson = JsArray(additionalMust.map(e => Json.obj("bool" -> Json.obj("must" -> Json.arr(e)))))
+        val gatewayEvent = Json.arr(Json.parse(
+          """{
+            |  "bool": {
+            |    "should": [
+            |      {
+            |        "match_phrase": {
+            |          "@type": "GatewayEvent"
+            |        }
+            |      }
+            |    ],
+            |    "minimum_should_match": 1
+            |  }
+            |}""".stripMargin))
+        val filters = eventFilterJson ++ additionalMustJson ++ gatewayEvent
+        Json.parse(
+          s"""{
+             |  "must": [],
+             |  "filter": [
+             |    {
+             |      "bool": {
+             |        "filter": ${filters.stringify}
+             |      }
+             |    },
+             |    {
+             |      "range": {
+             |        "@timestamp": {
+             |          "gte": "${mayBeFrom.getOrElse(DateTime.now()).toString()}",
+             |          "lte": "${mayBeTo.getOrElse(DateTime.now()).toString()}",
+             |          "format": "strict_date_optional_time"
+             |        }
+             |      }
+             |    }
+             |  ],
+             |  "should": [],
+             |  "must_not": []
+             |}
+             |""".stripMargin).asObject
+        // Json.obj(
+        //   "must" -> (
+        //     dateFilters(mayBeFrom, mayBeTo) ++
+        //     eventFilter ++
+        //     additionalMust
+        //   )
+        // )
       }
       case Some(ServiceGroupFilterable(group))        => {
         Json.obj(
-          "minimum_should_match" -> 1,
           "should"               -> (
             Seq(
-              Json.obj("term" -> Json.obj("descriptor.groups" -> group.id)),
-              Json.obj("term" -> Json.obj("descriptor.groups.raw" -> group.id))
+              if (!raw) Json.obj("term" -> Json.obj("descriptor.groups" -> group.id)) else Json.obj("term" -> Json.obj("descriptor.groups.raw" -> group.id))
             ) ++
             additionalShould
           ),
@@ -1232,33 +1431,89 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
             eventFilter ++
             additionalMust
           )
-        )
+        ).applyOnIf(additionalShould.nonEmpty) { obj =>
+          obj ++ Json.obj("minimum_should_match" -> 1)
+        }
       }
       case Some(ApiKeyFilterable(apiKey))             => {
-        Json.obj(
-          "minimum_should_match" -> 1,
-          "should"               -> (
-            Seq(
-              // Json.obj("term" -> Json.obj("identity.identityType.raw"     -> "APIKEY")),
-              Json.obj("term" -> Json.obj("identity.identity" -> apiKey.clientId)),
-              Json.obj("term" -> Json.obj("identity.identity.raw" -> apiKey.clientId))
-            ) ++
-            additionalShould
-          ),
-          "must"                 -> (
-            dateFilters(mayBeFrom, mayBeTo) ++
-            eventFilter ++
-            additionalMust
-          )
-        )
+        val eventFilterStr = if (eventFilter.isEmpty) "" else eventFilter.map(e => Json.obj("bool" -> Json.obj("should" -> Json.arr(e), "minimum_should_match" -> 1))).map(_.stringify).mkString("", ",", ",")
+        val additionalMustStr = if (additionalMust.isEmpty) "" else additionalMust.map(e => Json.obj("bool" -> Json.obj("must" -> Json.arr(e)))).map(_.stringify).mkString("", ",", ",")
+        Json.parse(
+          s"""{
+            |  "must": [],
+            |  "filter": [
+            |    {
+            |      "bool": {
+            |        "filter": [
+            |          {
+            |            "bool": {
+            |              "should": [
+            |                {
+            |                  "match_phrase": {
+            |                    "@type": "GatewayEvent"
+            |                  }
+            |                }
+            |              ],
+            |              "minimum_should_match": 1
+            |            }
+            |          },${eventFilterStr}${additionalMustStr}
+            |          {
+            |            "bool": {
+            |              "should": [
+            |                {
+            |                  "match_phrase": {
+            |                    "identity.identity": "${apiKey.clientId}"
+            |                  }
+            |                },
+            |                {
+            |                  "match_phrase": {
+            |                    "identity.identity.raw": "${apiKey.clientId}"
+            |                  }
+            |                }
+            |              ],
+            |              "minimum_should_match": 1
+            |            }
+            |          }
+            |        ]
+            |      }
+            |    },
+            |    {
+            |      "range": {
+            |        "@timestamp": {
+            |          "gte": "${mayBeFrom.getOrElse(DateTime.now()).toString()}",
+            |          "lte": "${mayBeTo.getOrElse(DateTime.now()).toString()}",
+            |          "format": "strict_date_optional_time"
+            |        }
+            |      }
+            |    }
+            |  ],
+            |  "should": [],
+            |  "must_not": []
+            |}
+            |""".stripMargin).asObject
+        // Json.obj(
+        //   "should"               -> (
+        //     Seq(
+        //       // Json.obj("term" -> Json.obj("identity.identityType.raw"     -> "APIKEY")),
+        //       if (!raw) Json.obj("term" -> Json.obj("identity.identity" -> apiKey.clientId)) else Json.obj("term" -> Json.obj("identity.identity.raw" -> apiKey.clientId))
+        //       // if (raw) Json.obj("term" -> Json.obj("identity.identity.raw" -> apiKey.clientId)) else Json.obj("term" -> Json.obj("identity.identity" -> apiKey.clientId))
+        //     ) ++
+        //     additionalShould
+        //   ),
+        //   "must"                 -> (
+        //     dateFilters(mayBeFrom, mayBeTo) ++
+        //     eventFilter ++
+        //     additionalMust
+        //   )
+        // ).applyOnIf(additionalShould.nonEmpty) { obj =>
+        //   obj ++ Json.obj("minimum_should_match" -> 1)
+        // }
       }
       case Some(ServiceDescriptorFilterable(service)) => {
         Json.obj(
-          "minimum_should_match" -> 1,
           "should"               -> (
             Seq(
-              Json.obj("term" -> Json.obj("@serviceId" -> service.id)),
-              Json.obj("term" -> Json.obj("@serviceId.raw" -> service.id))
+              if (!raw) Json.obj("term" -> Json.obj("@serviceId" -> service.id)) else Json.obj("term" -> Json.obj("@serviceId.raw" -> service.id))
             ) ++
             additionalShould
           ),
@@ -1267,7 +1522,9 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
             eventFilter ++
             additionalMust
           )
-        )
+        ).applyOnIf(additionalShould.nonEmpty) { obj =>
+          obj ++ Json.obj("minimum_should_match" -> 1)
+        }
       }
     }
   }
@@ -1289,36 +1546,39 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
           "max" -> to.getOrElse(DateTime.now).getMillis
         )
       }
-    query(
-      Json.obj(
-        "query" -> Json.obj(
-          "bool" -> filters(
-            None,
-            from,
-            to,
-            eventFilter = healthCheckEventFilters,
-            additionalMust =
-              Seq(Json.obj("terms" -> Json.obj("@serviceId" -> JsArray(servicesDescriptors.map(d => JsString(d.id))))))
-          )
-        ),
-        "aggs"  -> Json.obj(
-          "services" -> Json.obj(
-            "terms" -> Json.obj(
-              "field" -> "@serviceId"
-            ),
-            "aggs"  -> Json.obj(
-              "date" -> Json.obj(
-                "date_histogram" -> Json.obj(
-                  "field"           -> "@timestamp",
-                  "interval"        -> "day",
-                  "format"          -> "yyyy-MM-dd",
-                  "min_doc_count"   -> 0,
-                  "extended_bounds" -> extendedBounds
-                ),
-                "aggs"           -> Json.obj(
-                  "status" -> Json.obj(
-                    "terms" -> Json.obj(
-                      "field" -> "health"
+    for {
+      noraw <- query(
+        Json.obj(
+          "query" -> Json.obj(
+            "bool" -> filters(
+              None,
+              from,
+              to,
+              raw = false,
+              eventFilter = healthCheckEventFilters,
+              additionalMust =
+                Seq(Json.obj("terms" -> Json.obj("@serviceId" -> JsArray(servicesDescriptors.map(d => JsString(d.id))))))
+            )
+          ),
+          "aggs"  -> Json.obj(
+            "services" -> Json.obj(
+              "terms" -> Json.obj(
+                "field" -> "@serviceId"
+              ),
+              "aggs"  -> Json.obj(
+                "date" -> Json.obj(
+                  "date_histogram" -> Json.obj(
+                    "field"           -> "@timestamp",
+                    "interval"        -> "day",
+                    "format"          -> "yyyy-MM-dd",
+                    "min_doc_count"   -> 0,
+                    "extended_bounds" -> extendedBounds
+                  ),
+                  "aggs"           -> Json.obj(
+                    "status" -> Json.obj(
+                      "terms" -> Json.obj(
+                        "field" -> "health"
+                      )
                     )
                   )
                 )
@@ -1327,51 +1587,91 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
           )
         )
       )
-    )
-      .map { json =>
-        (json \ "aggregations" \ "services" \ "buckets")
-          .asOpt[JsArray]
-          .map { services =>
-            JsArray(services.value.map(service => {
-              val id           = (service \ "key").as[String]
-              val total_period = (service \ "doc_count").as[Float]
-              val dates        = (service \ "date" \ "buckets")
-                .as[JsArray]
-                .value
-                .map(date => {
-                  val timestamp = (date \ "key").as[Float]
-                  val hrDate    = (date \ "key_as_string").as[String]
-                  val total_day = (date \ "doc_count").as[Float]
-                  val status    = (date \ "status" \ "buckets")
-                    .as[JsArray]
-                    .value
-                    .map(h => {
-                      val value      = (h \ "key").as[String]
-                      val count      = (h \ "doc_count").as[Float]
-                      val percentage = (count / total_day) * 100
-                      Json.obj("health" -> value, "total" -> count, "percentage" -> percentage)
-                    })
-
-                  Json.obj(
-                    "date"         -> timestamp,
-                    "dateAsString" -> hrDate,
-                    "total"        -> total_day,
-                    "status"       -> JsArray(status)
+      raw <- if (noraw.isEmpty) query(
+        Json.obj(
+          "query" -> Json.obj(
+            "bool" -> filters(
+              None,
+              from,
+              to,
+              raw = true,
+              eventFilter = healthCheckEventFilters,
+              additionalMust =
+                Seq(Json.obj("terms" -> Json.obj("@serviceId" -> JsArray(servicesDescriptors.map(d => JsString(d.id))))))
+            )
+          ),
+          "aggs"  -> Json.obj(
+            "services" -> Json.obj(
+              "terms" -> Json.obj(
+                "field" -> "@serviceId"
+              ),
+              "aggs"  -> Json.obj(
+                "date" -> Json.obj(
+                  "date_histogram" -> Json.obj(
+                    "field"           -> "@timestamp",
+                    "interval"        -> "day",
+                    "format"          -> "yyyy-MM-dd",
+                    "min_doc_count"   -> 0,
+                    "extended_bounds" -> extendedBounds
+                  ),
+                  "aggs"           -> Json.obj(
+                    "status" -> Json.obj(
+                      "terms" -> Json.obj(
+                        "field" -> "health"
+                      )
+                    )
                   )
-                })
-
-              val name = servicesDescriptors.find(_.id == id).map(_.name).getOrElse("UNKNOWN")
-              val env  = servicesDescriptors.find(_.id == id).map(_.env).getOrElse("prod")
-              Json.obj(
-                "descriptor" -> id,
-                "service"    -> name,
-                "line"       -> env,
-                "total"      -> total_period,
-                "dates"      -> JsArray(dates)
+                )
               )
-            }))
-          }
-      }
+            )
+          )
+        )
+      ) else QueryResponse.empty.vfuture
+    } yield {
+      val json = if (noraw.isEmpty) raw.resp else noraw.resp
+      (json \ "aggregations" \ "services" \ "buckets")
+        .asOpt[JsArray]
+        .map { services =>
+          JsArray(services.value.map(service => {
+            val id           = (service \ "key").as[String]
+            val total_period = (service \ "doc_count").as[Float]
+            val dates        = (service \ "date" \ "buckets")
+              .as[JsArray]
+              .value
+              .map(date => {
+                val timestamp = (date \ "key").as[Float]
+                val hrDate    = (date \ "key_as_string").as[String]
+                val total_day = (date \ "doc_count").as[Float]
+                val status    = (date \ "status" \ "buckets")
+                  .as[JsArray]
+                  .value
+                  .map(h => {
+                    val value      = (h \ "key").as[String]
+                    val count      = (h \ "doc_count").as[Float]
+                    val percentage = (count / total_day) * 100
+                    Json.obj("health" -> value, "total" -> count, "percentage" -> percentage)
+                  })
+
+                Json.obj(
+                  "date"         -> timestamp,
+                  "dateAsString" -> hrDate,
+                  "total"        -> total_day,
+                  "status"       -> JsArray(status)
+                )
+              })
+
+            val name = servicesDescriptors.find(_.id == id).map(_.name).getOrElse("UNKNOWN")
+            val env  = servicesDescriptors.find(_.id == id).map(_.env).getOrElse("prod")
+            Json.obj(
+              "descriptor" -> id,
+              "service"    -> name,
+              "line"       -> env,
+              "total"      -> total_period,
+              "dates"      -> JsArray(dates)
+            )
+          }))
+        }
+    }
   }
 
   override def fetchServiceResponseTime(
@@ -1391,51 +1691,85 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
           "max" -> to.getOrElse(DateTime.now).getMillis
         )
       }
-
-    query(
-      Json.obj(
-        "query" -> Json.obj(
-          "bool" -> filters(
-            None,
-            from,
-            to,
-            eventFilter = healthCheckEventFilters,
-            additionalMust =
-              Seq(Json.obj("term" -> Json.obj("@serviceId" -> Json.obj("value" -> servicesDescriptor.id))))
-          )
-        ),
-        "aggs"  -> Json.obj(
-          "dates" -> Json.obj(
-            "date_histogram" -> Json.obj(
-              "field"           -> "@timestamp",
-              "interval"        -> "hour",
-              "format"          -> "yyyy-MM-dd",
-              "min_doc_count"   -> 0,
-              "extended_bounds" -> extendedBounds
-            ),
-            "aggs"           -> Json.obj(
-              "duration" -> Json.obj(
-                "avg" -> Json.obj(
-                  "field" -> "duration"
+    for {
+      noraw <- query(
+        Json.obj(
+          "query" -> Json.obj(
+            "bool" -> filters(
+              None,
+              from,
+              to,
+              raw = false,
+              eventFilter = healthCheckEventFilters,
+              additionalMust =
+                Seq(Json.obj("term" -> Json.obj("@serviceId" -> Json.obj("value" -> servicesDescriptor.id))))
+            )
+          ),
+          "aggs"  -> Json.obj(
+            "dates" -> Json.obj(
+              "date_histogram" -> Json.obj(
+                "field"           -> "@timestamp",
+                "interval"        -> "hour",
+                "format"          -> "yyyy-MM-dd",
+                "min_doc_count"   -> 0,
+                "extended_bounds" -> extendedBounds
+              ),
+              "aggs"           -> Json.obj(
+                "duration" -> Json.obj(
+                  "avg" -> Json.obj(
+                    "field" -> "duration"
+                  )
                 )
               )
             )
           )
         )
       )
-    )
-      .map { json =>
-        (json \ "aggregations" \ "dates" \ "buckets")
-          .asOpt[JsArray]
-          .map(_.value)
-          .map(dates =>
-            JsArray(dates.map(date => {
-              val timestamp = (date \ "key").as[Float]
-              val duration  = (date \ "duration" \ "value").asOpt[Float]
-
-              Json.obj("timestamp" -> timestamp, "duration" -> duration)
-            }))
+      raw <- if (noraw.isEmpty) query(
+        Json.obj(
+          "query" -> Json.obj(
+            "bool" -> filters(
+              None,
+              from,
+              to,
+              raw = true,
+              eventFilter = healthCheckEventFilters,
+              additionalMust =
+                Seq(Json.obj("term" -> Json.obj("@serviceId" -> Json.obj("value" -> servicesDescriptor.id))))
+            )
+          ),
+          "aggs"  -> Json.obj(
+            "dates" -> Json.obj(
+              "date_histogram" -> Json.obj(
+                "field"           -> "@timestamp",
+                "interval"        -> "hour",
+                "format"          -> "yyyy-MM-dd",
+                "min_doc_count"   -> 0,
+                "extended_bounds" -> extendedBounds
+              ),
+              "aggs"           -> Json.obj(
+                "duration" -> Json.obj(
+                  "avg" -> Json.obj(
+                    "field" -> "duration"
+                  )
+                )
+              )
+            )
           )
-      }
+        )
+      ) else QueryResponse.empty.vfuture
+    } yield {
+      val json = if (noraw.isEmpty) raw.resp else noraw.resp
+      (json \ "aggregations" \ "dates" \ "buckets")
+        .asOpt[JsArray]
+        .map(_.value)
+        .map(dates =>
+          JsArray(dates.map(date => {
+            val timestamp = (date \ "key").as[Float]
+            val duration  = (date \ "duration" \ "value").asOpt[Float]
+            Json.obj("timestamp" -> timestamp, "duration" -> duration)
+          }))
+        )
+    }
   }
 }

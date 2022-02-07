@@ -185,22 +185,20 @@ object DataExporter {
         .groupedWithin(configUnsafe.groupSize, configUnsafe.groupDuration)
         .filterNot(_.isEmpty)
         .mapAsync(configUnsafe.sendWorkers) { events =>
-          val f: Future[ExportResult] = Try(send(events).recover {
+          Try(send(events).recover {
             case e: Throwable =>
-              val message = s"error while sending events on ${this.getClass.getName}"
+              val message = s"error while sending events on ${id} of kind ${this.getClass.getName}"
               logger.error(message, e)
               withQueue { queue => events.foreach(e => queue.offer(RetryEvent(e))) }
               ExportResult.ExportResultFailure(s"$message: ${e.getMessage}")
           }) match {
             case Failure(e) =>
-              val message = s"error while sending events on ${this.getClass.getName}"
+              val message = s"error while sending events on ${id} of kind ${this.getClass.getName}"
               logger.error(message, e)
               withQueue { queue => events.foreach(e => queue.offer(RetryEvent(e))) }
               ExportResult.ExportResultFailure(s"$message: ${e.getMessage}").vfuture
-            case Success(f) =>
-              f
+            case Success(f) => f
           }
-          f
         }
 
       val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)

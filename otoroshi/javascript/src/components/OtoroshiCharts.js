@@ -287,7 +287,7 @@ export class OtoroshiCharts extends Component {
                 size={500}
               />
             </div>
-          </div>,
+          </div>
         ]}
       </div>
     );
