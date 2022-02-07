@@ -201,7 +201,7 @@ const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNo
     </div>
 }
 
-export default ({ lineId, onCreation }) => {
+export default ({ lineId, value }) => {
     const { routeId } = useParams()
 
     const [nodes, setNodes] = useState([])
@@ -210,7 +210,7 @@ export default ({ lineId, onCreation }) => {
     const [selectedNode, setSelectedNode] = useState()
     const [components, setComponents] = useState([])
 
-    const [route, setRoute] = useState()
+    const [route, setRoute] = useState(value)
 
     function filterDefaultElements(components) {
         const groupedElements = components.map((r, i) => ({
@@ -262,27 +262,21 @@ export default ({ lineId, onCreation }) => {
             nodes: [], elements: []
         })
 
-        console.log(nodes, elements)
+        // console.log(nodes, elements)
         setNodes(nodes)
         setElements(elements)
         setFilteredElements(elements)
     }
 
     useEffect(() => {
-        const components = COMPONENTS({
-            tenant: '',
-            teams: '',
-            onChange: (field, newValue) => { }
-        });
+        const components = COMPONENTS;
 
-        console.log(components)
+        // console.log(components)
         setComponents(components)
 
-        if (onCreation)
-            BackOfficeServices.getRouteTemplate().then(setRoute)
-        else
-            BackOfficeServices.fetchRoute(routeId)
-                .then(setRoute(r))
+
+        BackOfficeServices.fetchRoute(routeId)
+            .then(setRoute)
 
         filterDefaultElements(components)
     }, [])
@@ -536,8 +530,8 @@ export default ({ lineId, onCreation }) => {
             onClick={saveChanges}
             style={{
                 position: 'absolute',
-                top: '-62px',
-                right: '4px',
+                bottom: '12px',
+                right: '12px',
                 zIndex: 1000
             }}>
             <i className="far fa-paper-plane" style={{ paddingRight: '6px' }} />

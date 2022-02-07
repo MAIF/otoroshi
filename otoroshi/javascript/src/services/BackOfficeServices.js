@@ -1763,15 +1763,20 @@ export function createResources(resources) {
 
 // NgRoutes
 
-const fetchWrapper = url => fetch(`/bo/api/proxy/api/experimental${url}`, {
-  method: 'GET',
+const fetchWrapper = (url, method = 'GET', body) => fetch(`/bo/api/proxy/api/experimental${url}`, {
+  method,
   credentials: 'include',
   headers: {
     Accept: 'application/json',
-  }
+    'Content-Type': 'application/json'
+  },
+  body: body ? JSON.stringify(body) : undefined
 })
   .then(r => r.json())
 
 export const findRoutes = () => fetchWrapper('/routes')
+export const createRoute = route => fetchWrapper('/routes', 'POST', route)
+export const updateRoute = route => fetchWrapper(`/routes/${route.id}`, 'PUT', route)
 export const fetchRoute = routeId => fetchWrapper(`/routes/${routeId}`)
+export const removeRoute = route => fetchWrapper(`/routes/${route.id}`, 'DELETE')
 export const getRouteTemplate = () => fetchWrapper('/routes/_template')

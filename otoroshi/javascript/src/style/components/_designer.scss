@@ -145,3 +145,46 @@
     width: 2px;
     background-color: #f9b000;
 }
+
+.designer-sidebar {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.tab {
+    margin: 6px 0;
+    background: none;
+    color: #fff;
+    border: none;
+    background-color: rgb(73, 73, 72);
+    border-radius: 8px;
+    height: 42px;
+    width: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tab-selected i {
+    color: #f9b000;
+}
+
+.designer-form {
+    display: flex;
+    flex-direction: column;
+    max-width: 50%;
+    background: #494948;
+    padding: 12px;
+    border-radius: 4px;
+    min-height: calc(100vh - 85px);
+}
+
+.designer-form input {
+    font-size: 14px;
+}
+
+.designer-form form {
+    flex: 1;
+}

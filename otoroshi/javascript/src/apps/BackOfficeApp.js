@@ -67,7 +67,7 @@ class BackOfficeAppContainer extends Component {
     };
 
     this.fullPageForRoutes = [
-      /^(\/routes\/[\w])/
+      /^(\/routes\/[\w]*)/
     ].map(r => new RegExp(r))
   }
 
@@ -89,7 +89,7 @@ class BackOfficeAppContainer extends Component {
 
   componentDidMount() {
     this.props.history.listen(() => {
-      document.getElementById('sidebar').setAttribute('class', 'col-sm-2 sidebar collapse');
+      // document.getElementById('sidebar').setAttribute('class', 'col-sm-2 sidebar collapse');
       // document.getElementById('navbar').setAttribute('class', 'navbar-collapse collapse');
       document
         .getElementById('toggle-sidebar')
@@ -130,7 +130,12 @@ class BackOfficeAppContainer extends Component {
   render() {
     const { pathname } = this.props.location
 
-    const isFullPage = this.fullPageForRoutes.find(reg => pathname.match(reg))
+    const isFullPage = this.fullPageForRoutes.some(reg => {
+      const m = pathname.match(reg)
+      return m && m.length > 0
+    })
+
+    const classNameSidebar = isFullPage ? 'col-sm-0 sidebar' : 'col-sm-2 sidebar'
 
     const classes = ['backoffice-container'];
     if (
@@ -149,7 +154,7 @@ class BackOfficeAppContainer extends Component {
         ]}
         <div className="container-fluid">
           <div className="row">
-            <div className={`${(isFullPage ? 'col-sm-0' : 'col-sm-2')} sidebar`} id="sidebar">
+            <div className={classNameSidebar} id="sidebar">
               <div className="sidebar-container">
                 <div className="sidebar-content">
                   <GlobalTenantSelector />
@@ -189,10 +194,10 @@ class BackOfficeAppContainer extends Component {
                 </div>
               </div>
             </div>
-            <div className={`${(isFullPage ? 'col-sm-12' : 'col-sm-10 col-sm-offset-2')} main`}>
+            <div className={`${(isFullPage ? 'col-sm-12' : 'col-sm-10 col-sm-offset-2 main')}`}>
               <div className="row">
                 <div className={classes.join(' ')}>
-                  <DynamicTitle />
+                  {isFullPage ? null : <DynamicTitle />}
                   <div className="row" style={{ marginTop: 1 }}>
                     {!this.state.catchedError && (
                       <Switch>
