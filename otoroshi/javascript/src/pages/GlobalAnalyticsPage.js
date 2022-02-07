@@ -254,15 +254,15 @@ export class GlobalAnalyticsPage extends Component {
               />
             </div>
           </div>,
-          <div className="row">
-            <div className="col-md-12">
-              <RoundChart
-                series={data && data.productPiechart && data.productPiechart.series}
-                title="Hits by product"
-                size={500}
-              />
-            </div>
-          </div>,
+          // <div className="row">
+          //   <div className="col-md-12">
+          //     <RoundChart
+          //       series={data && data.productPiechart && data.productPiechart.series}
+          //       title="Hits by product"
+          //       size={500}
+          //     />
+          //   </div>
+          // </div>,
           <div className="row">
             <div className="col-md-12">
               <RoundChart
@@ -272,24 +272,24 @@ export class GlobalAnalyticsPage extends Component {
               />
             </div>
           </div>,
-          <div className="row">
-            <div className="col-md-12">
-              <RoundChart
-                series={data && data.apiKeyPiechart && data.apiKeyPiechart.series}
-                title="Hits by apikey"
-                size={500}
-              />
-            </div>
-          </div>,
-          <div className="row">
-            <div className="col-md-12">
-              <RoundChart
-                series={data && data.userPiechart && data.userPiechart.series}
-                title="Hits by user"
-                size={500}
-              />
-            </div>
-          </div>,
+          // <div className="row">
+          //   <div className="col-md-12">
+          //     <RoundChart
+          //       series={data && data.apiKeyPiechart && data.apiKeyPiechart.series}
+          //       title="Hits by apikey"
+          //       size={500}
+          //     />
+          //   </div>
+          // </div>,
+          // <div className="row">
+          //   <div className="col-md-12">
+          //     <RoundChart
+          //       series={data && data.userPiechart && data.userPiechart.series}
+          //       title="Hits by user"
+          //       size={500}
+          //     />
+          //   </div>
+          // </div>,
         ]}
       </div>
     );
