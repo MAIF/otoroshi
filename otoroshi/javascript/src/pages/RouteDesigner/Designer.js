@@ -68,7 +68,7 @@ const Group = ({ group, icon, elements, onDrag, addNode }) => {
                     }}>
                     <i className="fas fa-plus" />
                 </div>
-                <span className="group-size">{elements.length}</span>
+                <span className="group-size">{elements?.length}</span>
             </div>
         </div>
         {open && <>
@@ -79,9 +79,9 @@ const Group = ({ group, icon, elements, onDrag, addNode }) => {
 
 const ElementsStack = ({ elements, ...props }) => {
     return <div className="">
-        {elements.map((element, i) => {
+        {elements?.map((element, i) => {
             if (element.group) {
-                if (element.elements.find(e => !e.default))
+                if (element.elements?.find(e => !e.default))
                     return <Group {...element} key={element.group} {...props} />
                 return null
             }
@@ -179,12 +179,15 @@ const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNo
                 padding: '12px'
             }}>
                 <Form
-                    value={route}
+                    value={route[selectedNode.field]}
                     schema={props.schema}
                     flow={props.flow}
                     onSubmit={item => {
                         try {
-                            changeValues(props.flow.map(field => ({ name: field, value: read(item, field) })))
+                            changeValues(props.flow.map(field => {
+                                const fieldName = `${selectedNode.field ? `${selectedNode.field}.` : ''}${field}`
+                                return { name: fieldName, value: read(item, field) }
+                            }))
                             close()
                         } catch (err) {
                             console.log(err)
@@ -204,6 +207,8 @@ const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNo
 export default ({ lineId, value }) => {
     const { routeId } = useParams()
 
+    const [plugins, setPlugins] = useState()
+
     const [nodes, setNodes] = useState([])
     const [elements, setElements] = useState([])
     const [filteredElements, setFilteredElements] = useState([])
@@ -215,7 +220,7 @@ export default ({ lineId, value }) => {
     function filterDefaultElements(components) {
         const groupedElements = components.map((r, i) => ({
             ...components[i],
-            elements: components[i].elements.map(el => ({
+            elements: components[i].elements?.map(el => ({
                 ...el,
                 parent: components[i].group
             }))
@@ -224,7 +229,7 @@ export default ({ lineId, value }) => {
         const elementsWithSchema = groupedElements.map(elt => ({
             ...elt,
             elements: elt.elements
-                .filter(f => {
+                ?.filter(f => {
                     if (f.configSchema || f.default || f.switch)
                         return true
                     if (!f.props)
@@ -247,10 +252,10 @@ export default ({ lineId, value }) => {
                         ...acc.elements,
                         {
                             ...element,
-                            elements: element.elements.filter(f => !f.default)
+                            elements: element.elements?.filter(f => !f.default)
                         }
                     ],
-                    nodes: [...acc.nodes, ...element.elements.filter(f => f.default)]
+                    nodes: [...acc.nodes, ...element.elements?.filter(f => f.default)]
                 }
             }
 
@@ -269,16 +274,17 @@ export default ({ lineId, value }) => {
     }
 
     useEffect(() => {
-        const components = COMPONENTS;
-
-        // console.log(components)
-        setComponents(components)
-
-
         BackOfficeServices.fetchRoute(routeId)
             .then(setRoute)
 
-        filterDefaultElements(components)
+        BackOfficeServices.getPlugins()
+            .then(cpts => cpts.filter(c => c.id && c.id.startsWith('cp:otoroshi.next.plugins')))
+            .then(components => {
+                console.log(components)
+                setPlugins(components)
+                setComponents(COMPONENTS)
+                filterDefaultElements(COMPONENTS)
+            })
     }, [])
 
     const allowDrop = e => e.preventDefault()
@@ -312,12 +318,12 @@ export default ({ lineId, value }) => {
                 }
             ])
         else
-            setElements(elements.map(element => ({
+            setElements(elements?.map(element => ({
                 ...element,
                 elements: element.group === node.parent ? [
                     ...element.elements,
                     {
-                        ...components.find(e => e.group === node.parent).elements.find(elt => elt.id === node.id),
+                        ...components.find(e => e.group === node.parent).elements?.find(elt => elt.id === node.id),
                         parent: element.group
                     }
                 ] : element.elements
@@ -328,9 +334,9 @@ export default ({ lineId, value }) => {
         if ((onFlow === "onOutputStream" && node.onOutputStream) ||
             (onFlow === 'onTargetStream' && node.onTargetStream) ||
             onFlow === 'onInFlow' && (!node.onOutputStream && !node.onTargetStream)) {
-            setElements(elements.map(n => ({
+            setElements(elements?.map(n => ({
                 ...n,
-                elements: n.elements.filter(element => element.id !== node.id)
+                elements: n.elements?.filter(element => element.id !== node.id)
             })))
 
             setNodes([
@@ -492,7 +498,7 @@ export default ({ lineId, value }) => {
                     if (element.group)
                         return {
                             ...element,
-                            elements: element.elements.filter(f => f.id.toLowerCase().includes(search.toLowerCase()))
+                            elements: element.elements?.filter(f => f.id.toLowerCase().includes(search.toLowerCase()))
                         }
                     else if (element.id.toLowerCase().includes(search.toLowerCase()))
                         return element
@@ -502,22 +508,17 @@ export default ({ lineId, value }) => {
         )
     }
 
-    const shallowDiffers = (a, b) => {
-        for (let i in a) if (!(i in b)) return true
-        for (let i in b) if (a[i] !== b[i]) return true
-        return false
-    }
-
     const changeValues = ops => {
         const newRoute = ops.reduce((newRoute, { name, value }) => {
             return deepSet(_.cloneDeep(newRoute), name, value)
         }, route)
-        setRoute(newRoute)
+        BackOfficeServices.updateRoute(newRoute)
+            .then(() => setRoute(newRoute))
     }
 
     const saveChanges = () => {
         // TODO - check if the route is new
-        BackOfficeServices.updateService(route.id, route)
+        BackOfficeServices.updateRoute(route.id, route)
             .then(newRoute => {
                 setRoute(newRoute)
             })
@@ -531,8 +532,7 @@ export default ({ lineId, value }) => {
             style={{
                 position: 'absolute',
                 bottom: '12px',
-                right: '12px',
-                zIndex: 1000
+                right: '12px'
             }}>
             <i className="far fa-paper-plane" style={{ paddingRight: '6px' }} />
             <span>Update route</span>
@@ -540,7 +540,7 @@ export default ({ lineId, value }) => {
     )
 
     return (
-        <div className="route-designer" onClick={() => setSelectedNode(undefined)}>
+        <div className="h-100" onClick={() => setSelectedNode(undefined)}>
             <SaveButton />
             <div className="col-sm-4" style={{ paddingLeft: 0 }}>
                 <Tab text="Components" />
@@ -568,7 +568,7 @@ export default ({ lineId, value }) => {
                 </div>
             </div>
             <div className="col-sm-8">
-                <div className="row">
+                <div className="row h-100">
                     <div className="col-sm-4">
                         <Tab text="Route" />
                         <div className="main-view">

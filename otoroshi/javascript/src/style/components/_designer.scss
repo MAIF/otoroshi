@@ -1,5 +1,6 @@
-.route-designer {
+.h-100 {
     display: flex;
+    min-height: calc(100vh - 85px);
 }
 
 .d-flex {
@@ -186,5 +187,9 @@
 }
 
 .designer-form form {
+    flex: 1;
+}
+
+.flex-grow-1 {
     flex: 1;
 }

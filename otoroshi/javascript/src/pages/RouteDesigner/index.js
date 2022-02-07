@@ -68,7 +68,7 @@ export default (props) => {
                             .then(setValue)
                 }, [p.routeId])
 
-                return <div style={{ padding: '6px' }}>
+                return <div style={{ padding: '7px 15px 0 0' }}>
                     <Sidebar isCreation={isCreation} />
                     <div className='col-sm-11' style={{ paddingLeft: 0 }}>
                         {
