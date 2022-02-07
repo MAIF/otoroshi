@@ -26,6 +26,8 @@ object QueryResponse {
 }
 
 case class QueryResponse(resp: JsValue) {
+  lazy val countOpt: Option[Int] = (resp \ "count").asOpt[Int].orElse((resp \ "count" \ "value").asOpt[Int])
+  lazy val count: Int = countOpt.getOrElse(0)
   lazy val hitSizeOpt: Option[Int] = (resp \ "hits" \ "total").asOpt[Int].orElse((resp \ "hits" \ "total" \ "value").asOpt[Int])
   lazy val hitSize: Int = hitSizeOpt.getOrElse(0)
   lazy val isEmpty: Boolean = hitSize <= 0
@@ -629,6 +631,8 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   private val index: String                     = config.index.getOrElse("otoroshi-events")
   private val searchUri                         =
     if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_search") else urlFromPath(s"/$index/_search")
+  private val countUri                         =
+    if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_count") else urlFromPath(s"/$index/_count")
   private implicit val mat                      = Materializer(system)
 
   lazy val logger = Logger("otoroshi-analytics-reads-elastic")
@@ -649,30 +653,65 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   def getElasticVersion()(implicit ec: ExecutionContext): Future[ElasticVersion] =
     ElasticUtils.getElasticVersion(config, env)
 
+  private def query(query: JsObject, debug: Boolean = false)(implicit ec: ExecutionContext): Future[QueryResponse] = {
+    val builder = env.MtlsWs.url(searchUri, config.mtlsConfig)
+    logger.debug(s"Query to Elasticsearch: $searchUri")
+    logger.debug(s"Query to Elasticsearch: ${Json.prettyPrint(query)}")
+
+    authHeader()
+      .fold(builder) { h =>
+        builder.withHttpHeaders("Authorization" -> h)
+      }
+      .addHttpHeaders(config.headers.toSeq: _*)
+      .post(query)
+      .flatMap { resp =>
+        resp.status match {
+          case 200 => FastFuture.successful(QueryResponse(resp.json))
+          case _   =>
+            FastFuture.failed(
+              new RuntimeException(s"Error during es request: \n * ${resp.body}, \nquery was \n * $query")
+            )
+        }
+      }
+  }
+
+  private def count(query: JsObject, debug: Boolean = false)(implicit ec: ExecutionContext): Future[QueryResponse] = {
+    val builder = env.MtlsWs.url(countUri, config.mtlsConfig)
+    logger.debug(s"Query to Elasticsearch: $countUri")
+    logger.debug(s"Query to Elasticsearch: ${Json.prettyPrint(query)}")
+
+    authHeader()
+      .fold(builder) { h =>
+        builder.withHttpHeaders("Authorization" -> h)
+      }
+      .addHttpHeaders(config.headers.toSeq: _*)
+      .post(query)
+      .flatMap { resp =>
+        resp.status match {
+          case 200 => FastFuture.successful(QueryResponse(resp.json))
+          case _   =>
+            FastFuture.failed(
+              new RuntimeException(s"Error during es request: \n * ${resp.body}, \nquery was \n * $query")
+            )
+        }
+      }
+  }
+
   override def fetchHits(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] = {
     for {
-      noraw <- query(
+      res <- count(
         Json.obj(
-          "size"  -> 0,
           "query" -> Json.obj(
             "bool" -> filters(filterable, from, to, raw = false)
           )
         )
       )
-      raw <- if (noraw.isEmpty) query(
-        Json.obj(
-          "size"  -> 0,
-          "query" -> Json.obj(
-            "bool" -> filters(filterable, from, to, raw = true)
-          )
-        )
-      ) else QueryResponse.empty.vfuture
     } yield {
       Json.obj(
-        "count" -> noraw.hitSizeOpt.orElse(raw.hitSizeOpt)
+        "count" -> res.count
       ).some
     }
   }
@@ -971,28 +1010,6 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     statsHistogram("overhead", filterable, from, to).map(Some.apply)
-
-  private def query(query: JsObject, debug: Boolean = false)(implicit ec: ExecutionContext): Future[QueryResponse] = {
-    val builder = env.MtlsWs.url(searchUri, config.mtlsConfig)
-    logger.debug(s"Query to Elasticsearch: $searchUri")
-    logger.debug(s"Query to Elasticsearch: ${Json.prettyPrint(query)}")
-
-    authHeader()
-      .fold(builder) { h =>
-        builder.withHttpHeaders("Authorization" -> h)
-      }
-      .addHttpHeaders(config.headers.toSeq: _*)
-      .post(query)
-      .flatMap { resp =>
-        resp.status match {
-          case 200 => FastFuture.successful(QueryResponse(resp.json))
-          case _   =>
-            FastFuture.failed(
-              new RuntimeException(s"Error during es request: \n * ${resp.body}, \nquery was \n * $query")
-            )
-        }
-      }
-  }
 
   private def statsHistogram(
       field: String,
