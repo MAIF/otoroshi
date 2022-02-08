@@ -16,13 +16,13 @@ use crate::certs::{OtoroshiCert, OtoroshiCerts};
 use crate::opts::AppConfig;
 
 async fn load_otoroshi_certs(oto_url_base: String, host: String, client_id: String, client_sec: String) -> Option<OtoroshiCerts> {
-  info!("loading otoroshi certificates from - {} - {}", oto_url_base, host);
+  trace!("loading otoroshi certificates from - {} - {}", oto_url_base, host);
   let client = Client::new();
   let uri: String = format!("{}/api/experimental/certificates/_by_domain", oto_url_base);
   let req: Request<hyper::Body> = Request::builder()
       .method(Method::GET)
       .uri(uri)
-      .header("host", host)
+      .header("host", host.clone())
       .header("accept", "application/json")
       .header("Otoroshi-Client-Id", client_id)
       .header("Otoroshi-Client-Secret", client_sec)
@@ -37,6 +37,7 @@ async fn load_otoroshi_certs(oto_url_base: String, host: String, client_id: Stri
       let payload: Value = serde_json::from_str(body_str).unwrap(); 
       let certificates_json: &Vec<Value> = payload.get("certificates").unwrap().as_array().unwrap();
       let tusted_certificates_json: &Vec<Value> = payload.get("trusted_certificates").unwrap().as_array().unwrap();
+      info!("loading otoroshi certificates from - {} - {} - {} certificates - {} trusted certificates", oto_url_base, host, certificates_json.len(), tusted_certificates_json.len());
       let mut certificates: Vec<OtoroshiCert> = Vec::new();
       let mut trusted_certificates: Vec<OtoroshiCert> = Vec::new();
       for cert in certificates_json {
@@ -66,6 +67,7 @@ async fn load_otoroshi_certs(oto_url_base: String, host: String, client_id: Stri
           trusted_certificates: trusted_certificates
       })
   } else {
+      error!("bad status - {} - {:?}", status, body_bytes);
       None
   }
 }
