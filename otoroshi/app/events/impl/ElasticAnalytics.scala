@@ -488,30 +488,20 @@ object ElasticUtils {
   def checkSearch(config: ElasticAnalyticsConfig, env: Env)(implicit
       ec: ExecutionContext
   ): Future[Either[JsValue, Long]] = {
-    config.index match {
-      case None        => {
-        url(urlFromPath(s"/_search?size=0", config).debugPrintln, config, env)
-          .get()
-          .map { resp =>
-            if (resp.status == 200) {
-              Right((resp.json \ "hits" \ "total" \ "value").asOpt[Long].getOrElse(0L))
-            } else {
-              Left(resp.json)
-            }
-          }
-      }
-      case Some(index) => {
-        url(urlFromPath(s"/${index}/_search?size=0", config).debugPrintln, config, env)
-          .get()
-          .map { resp =>
-            if (resp.status == 200) {
-              Right((resp.json \ "hits" \ "total" \ "value").asOpt[Long].getOrElse(0L))
-            } else {
-              Left(resp.json)
-            }
-          }
-      }
+    val countUrl = config.index match {
+      case None => urlFromPath(s"/_count", config)
+      case Some(index) if config.indexSettings.clientSide => urlFromPath(s"/${index}*/_count", config)
+      case Some(index) => urlFromPath(s"/${index}/_count", config)
     }
+    url(countUrl, config, env)
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          Right((resp.json \ "count").asOpt[Long].getOrElse(0L))
+        } else {
+          Left(resp.json)
+        }
+      }
   }
 }
 
@@ -1390,43 +1380,40 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       case None                                       => {
         val eventFilterJson = JsArray(eventFilter.map(e => Json.obj("bool" -> Json.obj("should" -> Json.arr(e), "minimum_should_match" -> 1))))
         val additionalMustJson = JsArray(additionalMust.map(e => Json.obj("bool" -> Json.obj("must" -> Json.arr(e)))))
-        val gatewayEvent = Json.arr(Json.parse(
-          """{
-            |  "bool": {
-            |    "should": [
-            |      {
-            |        "match_phrase": {
-            |          "@type": "GatewayEvent"
-            |        }
-            |      }
-            |    ],
-            |    "minimum_should_match": 1
-            |  }
-            |}""".stripMargin))
+        val gatewayEvent = Json.arr(Json.obj(
+          "bool" -> Json.obj(
+            "should" -> Json.arr(
+              Json.obj(
+                "match_phrase" -> Json.obj(
+                  "@type" -> "GatewayEvent"
+                )
+              )
+            ),
+            "minimum_should_match" -> 1
+          )
+        ))
         val filters = eventFilterJson ++ additionalMustJson ++ gatewayEvent
-        Json.parse(
-          s"""{
-             |  "must": [],
-             |  "filter": [
-             |    {
-             |      "bool": {
-             |        "filter": ${filters.stringify}
-             |      }
-             |    },
-             |    {
-             |      "range": {
-             |        "@timestamp": {
-             |          "gte": "${mayBeFrom.getOrElse(DateTime.now()).toString()}",
-             |          "lte": "${mayBeTo.getOrElse(DateTime.now()).toString()}",
-             |          "format": "strict_date_optional_time"
-             |        }
-             |      }
-             |    }
-             |  ],
-             |  "should": [],
-             |  "must_not": []
-             |}
-             |""".stripMargin).asObject
+        Json.obj(
+          "must" -> Json.arr(),
+          "must_not" -> Json.arr(),
+          "should" -> Json.arr(),
+          "filter" -> Json.arr(
+            Json.obj(
+              "bool" -> Json.obj(
+                "filter" -> filters
+              )
+            ),
+            Json.obj(
+              "range" -> Json.obj(
+                "@timestamp" -> Json.obj(
+                  "gte" -> mayBeFrom.getOrElse(DateTime.now()).toString(),
+                  "lte" -> mayBeTo.getOrElse(DateTime.now()).toString(),
+                  "format" -> "strict_date_optional_time"
+                )
+              )
+            )
+          )
+        )
         // Json.obj(
         //   "must" -> (
         //     dateFilters(mayBeFrom, mayBeTo) ++
@@ -1453,61 +1440,56 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         }
       }
       case Some(ApiKeyFilterable(apiKey))             => {
-        val eventFilterStr = if (eventFilter.isEmpty) "" else eventFilter.map(e => Json.obj("bool" -> Json.obj("should" -> Json.arr(e), "minimum_should_match" -> 1))).map(_.stringify).mkString("", ",", ",")
-        val additionalMustStr = if (additionalMust.isEmpty) "" else additionalMust.map(e => Json.obj("bool" -> Json.obj("must" -> Json.arr(e)))).map(_.stringify).mkString("", ",", ",")
-        Json.parse(
-          s"""{
-            |  "must": [],
-            |  "filter": [
-            |    {
-            |      "bool": {
-            |        "filter": [
-            |          {
-            |            "bool": {
-            |              "should": [
-            |                {
-            |                  "match_phrase": {
-            |                    "@type": "GatewayEvent"
-            |                  }
-            |                }
-            |              ],
-            |              "minimum_should_match": 1
-            |            }
-            |          },${eventFilterStr}${additionalMustStr}
-            |          {
-            |            "bool": {
-            |              "should": [
-            |                {
-            |                  "match_phrase": {
-            |                    "identity.identity": "${apiKey.clientId}"
-            |                  }
-            |                },
-            |                {
-            |                  "match_phrase": {
-            |                    "identity.identity.raw": "${apiKey.clientId}"
-            |                  }
-            |                }
-            |              ],
-            |              "minimum_should_match": 1
-            |            }
-            |          }
-            |        ]
-            |      }
-            |    },
-            |    {
-            |      "range": {
-            |        "@timestamp": {
-            |          "gte": "${mayBeFrom.getOrElse(DateTime.now()).toString()}",
-            |          "lte": "${mayBeTo.getOrElse(DateTime.now()).toString()}",
-            |          "format": "strict_date_optional_time"
-            |        }
-            |      }
-            |    }
-            |  ],
-            |  "should": [],
-            |  "must_not": []
-            |}
-            |""".stripMargin).asObject
+        val eventFilterArr = if (eventFilter.isEmpty) Json.arr() else JsArray(eventFilter.map(e => Json.obj("bool" -> Json.obj("should" -> Json.arr(e), "minimum_should_match" -> 1))))
+        val additionalMustArr = if (additionalMust.isEmpty) Json.arr() else JsArray(additionalMust.map(e => Json.obj("bool" -> Json.obj("must" -> Json.arr(e)))))
+        val filters = Json.arr(Json.obj(
+          "bool" -> Json.obj(
+            "should" -> Json.arr(
+              Json.obj(
+                "match_phrase" -> Json.obj(
+                  "@type" -> "GatewayEvent"
+                )
+              )
+            ),
+            "minimum_should_match" -> 1
+          )
+        )) ++ eventFilterArr ++ additionalMustArr ++ Json.arr(Json.obj(
+          "bool" -> Json.obj(
+            "should" -> Json.arr(
+              Json.obj(
+                "match_phrase" -> Json.obj(
+                  "identity.identity" -> apiKey.clientId
+                )
+              ),
+              Json.obj(
+                "match_phrase" -> Json.obj(
+                  "identity.identity.raw" -> apiKey.clientId
+                )
+              )
+            ),
+            "minimum_should_match" -> 1
+        )))
+        Json.obj(
+          "must" -> Json.arr(),
+          "must_not" -> Json.arr(),
+          "should" -> Json.arr(),
+          "filter" -> Json.arr(
+            Json.obj(
+              "bool" -> Json.obj(
+                "filter" -> filters
+              )
+            ),
+            Json.obj(
+              "range" -> Json.obj(
+                "@timestamp" -> Json.obj(
+                  "gte" -> mayBeFrom.getOrElse(DateTime.now()).toString(),
+                  "lte" -> mayBeTo.getOrElse(DateTime.now()).toString(),
+                  "format" -> "strict_date_optional_time"
+                )
+              )
+            )
+          )
+        )
         // Json.obj(
         //   "should"               -> (
         //     Seq(
