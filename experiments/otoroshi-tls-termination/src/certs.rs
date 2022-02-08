@@ -4,7 +4,8 @@ use base64;
 pub struct OtoroshiCert {
   pub chain: Vec<String>,
   pub key: String,
-  pub domains: Vec<String>
+  pub domains: Vec<String>,
+  pub sans: Vec<String>,
 }
 
 impl OtoroshiCert {
@@ -25,4 +26,6 @@ impl OtoroshiCert {
 pub struct OtoroshiCerts {
   pub certificates: Vec<OtoroshiCert>,
   pub trusted_certificates: Vec<OtoroshiCert>,
+  pub d_domain: Option<String>,
+  pub random: bool,
 }

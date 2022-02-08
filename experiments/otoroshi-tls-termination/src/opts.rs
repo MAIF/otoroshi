@@ -6,6 +6,7 @@ pub struct AppConfig {
     pub cid: String,
     pub csec: String,
     pub mtls: bool,
+    pub client_auth_mandatory: bool,
     pub workers: usize,
     pub auto_refresh: bool,
     pub refresh_every_sec: u64,
@@ -38,6 +39,9 @@ pub struct Opts {
     /// enable mTLS want mode
     #[clap(long)]
     pub mtls: bool,
+    /// enforce mTLS need mode
+    #[clap(long)]
+    pub client_auth_mandatory: bool,
     /// pass the whole client certificate chain to otoroshi through a header
     #[clap(long)]
     pub whole_chain: bool,
@@ -81,6 +85,7 @@ impl Opts {
       server_addr: server_addr,
       oto_url_base: oto_url_base,
       whole_chain: self.whole_chain,
+      client_auth_mandatory: self.client_auth_mandatory,
     }
   }
   pub fn as_config_debug(&self) -> AppConfig {
@@ -99,6 +104,7 @@ impl Opts {
       server_addr: server_addr,
       oto_url_base: oto_url_base,
       whole_chain: self.whole_chain,
+      client_auth_mandatory: self.client_auth_mandatory,
     }
   }
 }
@@ -117,6 +123,7 @@ fn get_app_desc() -> ArgMatches {
       .arg(arg!(--workers <VALUE> "the number of workers. Default is 1").required(false))
       .arg(arg!(--refresh_every <VALUE> "refresh certificats every n seconds. Default is 30").required(false))
       .arg(arg!(--mtls "enable mTLS want mode. Default is disabled").required(false))
+      .arg(arg!(--mtls_mandatory "enable mTLS need mode. Default is disabled").required(false))
       .arg(arg!(--whole_chain "pass the whole client certificate chain to otoroshi through a header. Default is disabled").required(false))
       .arg(arg!(--no_refresh "disable auto refresh").required(false))
       .get_matches()
@@ -134,6 +141,7 @@ fn get_app_config() -> AppConfig {
   let refresh_every: u64 = matches.value_of_t("refresh_every").unwrap_or(30);
   let oto_url: Option<String> = matches.value_of("oto-url").map(|s| s.to_string());
   let mtls = matches.is_present("mtls");
+  let mtls_mandatory = matches.is_present("mtls_mandatory");
   let whole_chain = matches.is_present("whole_chain");
   let no_refresh = matches.is_present("no_refresh");
   let listen_addr = format!("0.0.0.0:{}", port_in);
@@ -150,7 +158,8 @@ fn get_app_config() -> AppConfig {
       listen_addr: listen_addr,
       server_addr: server_addr,
       oto_url_base: oto_url_base,
-      whole_chain: whole_chain
+      whole_chain: whole_chain,
+      client_auth_mandatory: mtls_mandatory,
   };
   // dbg!(cfg.clone());
   cfg

@@ -51,6 +51,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     if app_config.mtls {
         info!(" - mTLS is enabled")
     } 
+    if app_config.client_auth_mandatory {
+        info!(" - client authentication is mandatory")
+    } 
     if app_config.auto_refresh {
         info!(" - auto refresh is enabled (every {}s)", app_config.refresh_every_sec)
     }

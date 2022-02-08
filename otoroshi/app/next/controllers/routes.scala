@@ -208,6 +208,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
             "chain" -> ecs,
             "key" -> rcert.cryptoKeyPair.getPrivate.encoded,
             "domains" -> domains.filter(d => cert.matchesDomain(d)).distinct,
+            "sans" -> cert.allDomains
           ).some
         }
       }
@@ -217,7 +218,8 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     Ok(Json.obj(
       "trusted_certificates" -> jsonTrustedCerts,
       "certificates" -> jsonCerts,
-      "domains" -> jsonDomains
+      "domains" -> jsonDomains,
+      "tls_settings" -> env.datastores.globalConfigDataStore.latest().tlsSettings.json
     ))
   }
 }

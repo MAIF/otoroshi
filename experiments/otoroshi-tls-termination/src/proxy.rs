@@ -21,7 +21,7 @@ async fn transfer(inbound: tokio_rustls::server::TlsStream<TcpStream>, proxy_add
             let certs = certs_opt.unwrap();
             let encoded_certs: Vec<String> = certs.iter().map(|c| base64::encode(c)).collect();
             if whole_chain {
-                let encoded_certs_str = encoded_certs.join("|");
+                let encoded_certs_str = encoded_certs.join("; ");
                 crate::io::copy(&mut ri, &mut wo, &encoded_certs_str[..]).await?;
             } else {
                 let encoded_certs_str = encoded_certs.get(0).unwrap();
