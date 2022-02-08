@@ -93,7 +93,6 @@ impl CustomResolvesServerCertUsingSni {
     pub fn add(&mut self, name: &str, ck: rustls::sign::CertifiedKey) {
         if name.starts_with("*.") {
             let domain = &name[name.len() - (name.len() - 2)..];
-            println!("domain: {}", domain);
             self.wildcards.insert(domain.into(), Arc::new(ck));
         } else {
             self.by_name.insert(name.into(), Arc::new(ck));
