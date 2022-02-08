@@ -3,6 +3,8 @@
 a TCP proxy with TLS termination. `otoroshi_tls_termination` is supposed to run next to otoroshi and forwards HTTP/TLS traffic to the local HTTP port (127.0.0.1:8080). `otoroshi_tls_termination` uses otoroshi api to get its certificates and configure its own rustls context periodically.
 
 ```sh
+$ otoroshi_tls_termination -h
+
 otoroshi_tls_termination 0.1.0
 Handles otoroshi TLS termination
 
