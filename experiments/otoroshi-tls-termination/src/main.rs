@@ -2,11 +2,14 @@
 
 #[macro_use]
 extern crate log;
+#[macro_use]
+mod macros;
 
 pub mod certs;
 pub mod opts;
 pub mod tls;
 pub mod proxy;
+pub mod io;
 
 use std::error::Error;
 use clap::Parser;

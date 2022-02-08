@@ -13,7 +13,8 @@ async fn transfer(inbound: tokio_rustls::server::TlsStream<TcpStream>, proxy_add
     let (mut ri, mut wi) = split(inbound); // TODO: find a way to pass client cert to oto
     let (mut ro, mut wo) = outbound.split();
     let client_to_server = async {
-        io::copy(&mut ri, &mut wo).await?;
+        // io::copy(&mut ri, &mut wo).await?;
+        crate::io::copy(&mut ri, &mut wo).await?;
         wo.shutdown().await
     };
     let server_to_client = async {

@@ -7,12 +7,12 @@ edition = "2021"
 tokio = { version = "1", features = ["full"] }
 futures = { version = "0.3", features = ["thread-pool"] }
 tokio-rustls = { version = "0.23.2", features = ["dangerous_configuration"] }
+tokio-util = "0.6.9"
 rustls-pemfile = "0.2.1"
 serde_json = "1.0.76"
 base64 = "0.13.0"
 clap = { version = "3.0.13", features = ["derive"] }
 hyper = { version = "0.14", features = ["full"] }
-tokio-cron-scheduler = "0.3.1"
 chrono = "0.4"
 socket2 = { version = "0.4.4", features = ["all"] }
 moka = { version = "0.7", features = ["future"] }

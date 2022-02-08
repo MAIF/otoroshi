@@ -194,16 +194,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cron"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "628a3464535cee4e75af89e8c293bab926deaddfa166553b75029066c846be3f"
-dependencies = [
- "chrono",
- "nom",
-]
-
-[[package]]
 name = "crossbeam-channel"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -675,15 +665,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nom"
-version = "4.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c349f68f25f596b9f44cf0e7c69752a5c633b0550c3ff849518bfba0233774a"
-dependencies = [
- "memchr",
-]
-
-[[package]]
 name = "ntapi"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -752,8 +733,8 @@ dependencies = [
  "serde_json",
  "socket2",
  "tokio",
- "tokio-cron-scheduler",
  "tokio-rustls",
+ "tokio-util",
 ]
 
 [[package]]
@@ -1221,18 +1202,6 @@ dependencies = [
  "signal-hook-registry",
  "tokio-macros",
  "winapi",
-]
-
-[[package]]
-name = "tokio-cron-scheduler"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f16e49c5ca6199f6af561fd72370f29888a99859d7628263bfb6f88dc7d1463"
-dependencies = [
- "chrono",
- "cron",
- "tokio",
- "uuid",
 ]
 
 [[package]]
