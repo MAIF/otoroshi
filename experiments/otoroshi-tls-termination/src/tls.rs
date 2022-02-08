@@ -112,7 +112,23 @@ impl rustls::server::ResolvesServerCert for CustomResolvesServerCertUsingSni {
                         Some(arc) => Some(arc),
                         None => {
                             match &self.default_domain {
-                                Some(d_domain) => self.by_name.get(d_domain).map(Arc::clone),
+                                Some(d_domain) => match self.by_name.get(d_domain).map(Arc::clone) {
+                                    Some(arc) => Some(arc),
+                                    None => {
+                                        let parts: Vec<&str> = d_domain.split(".").collect();
+                                        let domain = &parts[1..].join(".");
+                                        match self.wildcards.get(domain).map(Arc::clone) {
+                                            Some(arc) => Some(arc),
+                                            None => {
+                                                if self.random_if_not_found {
+                                                    self.by_name.values().nth(0).map(Arc::clone)
+                                                } else {
+                                                    None
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
                                 None => {
                                     if self.random_if_not_found {
                                         self.by_name.values().nth(0).map(Arc::clone)
