@@ -8,6 +8,7 @@ pub struct AppConfig {
     pub mtls: bool,
     pub workers: usize,
     pub auto_refresh: bool,
+    pub refresh_every_sec: u64,
     pub listen_addr: String,
     pub server_addr: String, 
     pub oto_url_base: String,
@@ -42,6 +43,9 @@ pub struct Opts {
     /// disable auto refresh
     #[clap(long)]
     pub no_refresh: bool,
+    /// fetch otoroshi certificates every n seconds
+    #[clap(long, default_value = "30")]
+    pub refresh_every: u64,
     /// the input TCP port
     #[clap(long, default_value = "8443")]
     pub input: usize,
@@ -64,6 +68,7 @@ impl Opts {
       csec: self.csec.clone(),
       mtls: self.mtls,
       auto_refresh: !self.no_refresh,
+      refresh_every_sec: self.refresh_every,
       workers: self.workers,
       listen_addr: listen_addr,
       server_addr: server_addr,
@@ -80,6 +85,7 @@ impl Opts {
       csec: self.csec.clone(),
       mtls: self.mtls,
       auto_refresh: !self.no_refresh,
+      refresh_every_sec: self.refresh_every,
       workers: self.workers,
       listen_addr: listen_addr,
       server_addr: server_addr,
@@ -113,6 +119,7 @@ fn get_app_config() -> AppConfig {
   let cid: String = matches.value_of_t("cid").unwrap_or("admin-api-apikey-id".to_string());
   let csec: String = matches.value_of_t("csec").unwrap_or("admin-api-apikey-secret".to_string());
   let workers: usize = matches.value_of_t("workers").unwrap_or(1);
+  let refresh_every: u64 = matches.value_of_t("refresh_every").unwrap_or(30);
   let mtls = matches.is_present("mtls");
   let no_refresh = matches.is_present("no_refresh");
   let listen_addr = format!("0.0.0.0:{}", port_in);
@@ -124,6 +131,7 @@ fn get_app_config() -> AppConfig {
       csec: csec,
       mtls: mtls,
       auto_refresh: !no_refresh,
+      refresh_every_sec: !refresh_every,
       workers: workers,
       listen_addr: listen_addr,
       server_addr: server_addr,

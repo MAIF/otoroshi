@@ -157,7 +157,7 @@ impl Tls {
 
     pub async fn update(&self) {
 
-        let AppConfig { host, cid, csec, mtls, listen_addr: _, server_addr: _, oto_url_base, auto_refresh:_, workers: _ } = self.app_config.clone();
+        let AppConfig { host, cid, csec, mtls, listen_addr: _, server_addr: _, oto_url_base, auto_refresh:_, workers: _, refresh_every_sec: _ } = self.app_config.clone();
 
         let mut resolver = CustomResolvesServerCertUsingSni::new(); // rustls::server::ResolvesServerCertUsingSni::new();
         let mut root = rustls::RootCertStore::empty(); 

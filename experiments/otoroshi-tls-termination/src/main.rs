@@ -49,7 +49,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         info!(" - mTLS is enabled")
     } 
     if app_config.auto_refresh {
-        info!("- auto refresh is enabled")
+        info!("- auto refresh is enabled (every {}s)", app_config.refresh_every_sec)
     }
     info!("");
     if cfg!(debug_assertions) {
@@ -61,7 +61,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     if app_config.auto_refresh {
         tokio::spawn(async move {
             loop {
-                std::thread::sleep(std::time::Duration::from_secs(10));
+                std::thread::sleep(std::time::Duration::from_secs(app_config.refresh_every_sec));
                 tls.update().await;
             }
         });
