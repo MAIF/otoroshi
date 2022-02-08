@@ -270,7 +270,7 @@ class CompilationTools extends Component {
 
   render() {
     return (
-      <div className="mb-3">
+      <div className="row mb-3">
         <label className="col-xs-12 col-sm-2 control-label" />
         <div className="col-sm-10">
           <button
