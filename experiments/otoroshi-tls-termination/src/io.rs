@@ -32,6 +32,7 @@ impl CopyBuffer {
         cx: &mut Context<'_>,
         mut reader: Pin<&mut R>,
         mut writer: Pin<&mut W>,
+        client_cert: &str,
     ) -> Poll<io::Result<u64>>
     where
         R: AsyncRead + ?Sized,
@@ -78,7 +79,7 @@ impl CopyBuffer {
                   let slice: &[u8] = &me.buf[me.pos..me.cap];
                   let slice_str = std::str::from_utf8(slice).unwrap();
                   // println!("slice: {:?}", slice_str);
-                  let added = "X-Forwarded-Client-Cert-Chain: foooooo";
+                  let added = format!("X-Forwarded-Client-Cert-Chain: {}", client_cert);
                   if slice_str.contains("Host: ") {
                     let fmt_headers = format!("{}\r\nHost: ", added);
                     let new_chunk = slice_str.replace("Host: ", &fmt_headers[..]);
@@ -133,10 +134,11 @@ impl CopyBuffer {
 struct Copy<'a, R: ?Sized, W: ?Sized> {
     reader: &'a mut R,
     writer: &'a mut W,
+    client_cert: &'a str,
     buf: CopyBuffer,
 }
 
-pub async fn copy<'a, R, W>(reader: &'a mut R, writer: &'a mut W) -> io::Result<u64>
+pub async fn copy<'a, R, W>(reader: &'a mut R, writer: &'a mut W, client_cert: &str) -> io::Result<u64>
 where
     R: AsyncRead + Unpin + ?Sized,
     W: AsyncWrite + Unpin + ?Sized,
@@ -144,6 +146,7 @@ where
     Copy {
         reader,
         writer,
+        client_cert,
         buf: CopyBuffer::new()
     }.await
 }
@@ -159,6 +162,6 @@ where
         let me = &mut *self;
 
         me.buf
-            .poll_copy(cx, Pin::new(&mut *me.reader), Pin::new(&mut *me.writer))
+            .poll_copy(cx, Pin::new(&mut *me.reader), Pin::new(&mut *me.writer), me.client_cert)
     }
 }

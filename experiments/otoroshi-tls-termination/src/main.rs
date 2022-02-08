@@ -52,7 +52,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         info!(" - mTLS is enabled")
     } 
     if app_config.auto_refresh {
-        info!("- auto refresh is enabled (every {}s)", app_config.refresh_every_sec)
+        info!(" - auto refresh is enabled (every {}s)", app_config.refresh_every_sec)
     }
     info!("");
     if cfg!(debug_assertions) {

@@ -4,17 +4,32 @@ use futures::FutureExt;
 use std::error::Error;
 use tokio::io::{split, AsyncWriteExt};
 use socket2::{Socket, Domain, Type};
+use tokio_rustls::rustls::Certificate;
+use base64;
 
 use crate::opts::AppConfig;
 use crate::tls::Tls;
 
-async fn transfer(inbound: tokio_rustls::server::TlsStream<TcpStream>, proxy_addr: String) -> Result<(), Box<dyn Error>> {
+async fn transfer(inbound: tokio_rustls::server::TlsStream<TcpStream>, proxy_addr: String, mtls: bool, whole_chain: bool) -> Result<(), Box<dyn Error>> {
     let mut outbound = TcpStream::connect(proxy_addr).await?; // TODO: reuse connection ?
-    let (mut ri, mut wi) = split(inbound); // TODO: find a way to pass client cert to oto
+    let (_, server_conn) = inbound.get_ref();
+    let certs_opt: Option<Vec<Certificate>> = server_conn.peer_certificates().map(|c| c.to_vec());
+    let (mut ri, mut wi) = split(inbound);
     let (mut ro, mut wo) = outbound.split();
     let client_to_server = async {
-        // io::copy(&mut ri, &mut wo).await?;
-        crate::io::copy(&mut ri, &mut wo).await?;
+        if mtls && certs_opt.is_some() {
+            let certs = certs_opt.unwrap();
+            let encoded_certs: Vec<String> = certs.iter().map(|c| base64::encode(c)).collect();
+            if whole_chain {
+                let encoded_certs_str = encoded_certs.join("|");
+                crate::io::copy(&mut ri, &mut wo, &encoded_certs_str[..]).await?;
+            } else {
+                let encoded_certs_str = encoded_certs.get(0).unwrap();
+                crate::io::copy(&mut ri, &mut wo, &encoded_certs_str[..]).await?;
+            }
+        } else {
+            io::copy(&mut ri, &mut wo).await?;
+        }
         wo.shutdown().await
     };
     let server_to_client = async {
@@ -50,7 +65,7 @@ async fn tls_proxy(name: String, tls: &Tls, app_config: AppConfig) -> Result<(),
                     Ok(stream) => {
                         trace!("[{}] handling request", name);
                         let named = name.clone();
-                        let transfer = transfer(stream, server_addr.clone()).map(move |r| {
+                        let transfer = transfer(stream, server_addr.clone(), app_config.mtls, app_config.whole_chain).map(move |r| {
                             if let Err(e) = r {
                                 error!("[{}] failed to transfer; error= {:?}", named, e);
                             }
