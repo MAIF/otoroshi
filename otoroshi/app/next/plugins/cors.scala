@@ -8,15 +8,28 @@ import otoroshi.gateway.Errors
 import otoroshi.models.CorsSettings
 import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.{JsObject, Reads}
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class Cors extends NgRequestTransformer with NgPreRouting {
-  // TODO: add name and config
+
+  private val configReads: Reads[CorsSettings] = CorsSettings.format
+
+  override def core: Boolean = true
+  override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = false
+  override def transformsResponse: Boolean = true
+  override def transformsError: Boolean = false
+  override def name: String = "CORS"
+  override def description: Option[String] = "This plugin applies CORS rules".some
+  override def defaultConfig: Option[JsObject] = CorsSettings(enabled = true).asJson.asObject.-("enabled").some
+
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val req = ctx.request
-    val cors = CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true)
+    // val cors = CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true)
+    val cors = ctx.cachedConfig(internalName)(configReads).getOrElse(CorsSettings(enabled = true))
     if (req.method == "OPTIONS" && req.headers.get("Access-Control-Request-Method").isDefined) {
       // handle cors preflight request
       if (cors.enabled && cors.shouldNotPass(req)) {
@@ -24,9 +37,10 @@ class Cors extends NgRequestTransformer with NgPreRouting {
           "Cors error",
           Results.NotFound,
           ctx.request,
-          ctx.route.serviceDescriptor.some,
+          None,
           "errors.cors.error".some,
-          attrs = ctx.attrs
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some,
         ).map(r => Left(NgPreRoutingErrorWithResult(r)))
       } else {
         NgPreRoutingErrorWithResult(Results
@@ -40,7 +54,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
     }
   }
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, PluginHttpResponse]] = {
+  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val req = ctx.request
     val cors = CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true, excludedPatterns = Seq.empty)
     val corsHeaders = cors

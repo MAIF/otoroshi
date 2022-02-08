@@ -21,7 +21,7 @@ import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
 import io.vertx.sqlclient.{PoolOptions, Row}
 import otoroshi.models._
 import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
-import otoroshi.next.models.{KvRouteDataStore, RouteDataStore}
+import otoroshi.next.models.{KvNgRouteDataStore, KvNgServiceDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, NgRouteDataStore, NgServiceDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage.stores._
 import otoroshi.storage.{RedisLike, _}
@@ -135,78 +135,78 @@ class ReactivePgDataStores(
         .getOrElse(ConfigFactory.empty)
     )
 
-  private lazy val connectOptions = if (configuration.has("app.pg.uri")) {
-    val opts = PgConnectOptions.fromUri(configuration.get[String]("app.pg.uri"))
+  private lazy val connectOptions = if (configuration.betterHas("app.pg.uri")) {
+    val opts = PgConnectOptions.fromUri(configuration.betterGet[String]("app.pg.uri"))
 
     opts
   } else {
-    val ssl        = configuration.getOptional[Configuration]("app.pg.ssl").getOrElse(Configuration.empty)
-    val sslEnabled = ssl.getOptional[Boolean]("enabled").getOrElse(false)
+    val ssl        = configuration.betterGetOptional[Configuration]("app.pg.ssl").getOrElse(Configuration.empty)
+    val sslEnabled = ssl.betterGetOptional[Boolean]("enabled").getOrElse(false)
     new PgConnectOptions()
-      .applyOnWithOpt(configuration.getOptional[Int]("connect-timeout"))((p, v) => p.setConnectTimeout(v))
-      .applyOnWithOpt(configuration.getOptional[Int]("idle-timeout"))((p, v) => p.setIdleTimeout(v))
-      .applyOnWithOpt(configuration.getOptional[Boolean]("log-activity"))((p, v) => p.setLogActivity(v))
-      .applyOnWithOpt(configuration.getOptional[Int]("pipelining-limit"))((p, v) => p.setPipeliningLimit(v))
-      .setPort(configuration.getOptional[Int]("app.pg.port").getOrElse(5432))
-      .setHost(configuration.getOptional[String]("app.pg.host").getOrElse("localhost"))
-      .setDatabase(configuration.getOptional[String]("app.pg.database").getOrElse("otoroshi"))
-      .setUser(configuration.getOptional[String]("app.pg.user").getOrElse("otoroshi"))
-      .setPassword(configuration.getOptional[String]("app.pg.password").getOrElse("otoroshi"))
+      .applyOnWithOpt(configuration.betterGetOptional[Int]("connect-timeout"))((p, v) => p.setConnectTimeout(v))
+      .applyOnWithOpt(configuration.betterGetOptional[Int]("idle-timeout"))((p, v) => p.setIdleTimeout(v))
+      .applyOnWithOpt(configuration.betterGetOptional[Boolean]("log-activity"))((p, v) => p.setLogActivity(v))
+      .applyOnWithOpt(configuration.betterGetOptional[Int]("pipelining-limit"))((p, v) => p.setPipeliningLimit(v))
+      .setPort(configuration.getOptionalWithFileSupport[Int]("app.pg.port").getOrElse(5432))
+      .setHost(configuration.getOptionalWithFileSupport[String]("app.pg.host").getOrElse("localhost"))
+      .setDatabase(configuration.getOptionalWithFileSupport[String]("app.pg.database").getOrElse("otoroshi"))
+      .setUser(configuration.getOptionalWithFileSupport[String]("app.pg.user").getOrElse("otoroshi"))
+      .setPassword(configuration.getOptionalWithFileSupport[String]("app.pg.password").getOrElse("otoroshi"))
       .applyOnIf(sslEnabled) { pgopt =>
-        val mode              = SslMode.of(ssl.getOptional[String]("mode").getOrElse("verify_ca"))
+        val mode              = SslMode.of(ssl.betterGetOptional[String]("mode").getOrElse("verify_ca"))
         val pemTrustOptions   = new PemTrustOptions()
         val pemKeyCertOptions = new PemKeyCertOptions()
         pgopt.setSslMode(mode)
-        pgopt.applyOnWithOpt(ssl.getOptional[Int]("ssl-handshake-timeout"))((p, v) => p.setSslHandshakeTimeout(v))
-        ssl.getOptional[Seq[String]]("trusted-certs-path").map { pathes =>
+        pgopt.applyOnWithOpt(ssl.betterGetOptional[Int]("ssl-handshake-timeout"))((p, v) => p.setSslHandshakeTimeout(v))
+        ssl.betterGetOptional[Seq[String]]("trusted-certs-path").map { pathes =>
           pathes.map(p => pemTrustOptions.addCertPath(p))
           pgopt.setPemTrustOptions(pemTrustOptions)
         }
-        ssl.getOptional[String]("trusted-cert-path").map { path =>
+        ssl.betterGetOptional[String]("trusted-cert-path").map { path =>
           pemTrustOptions.addCertPath(path)
           pgopt.setPemTrustOptions(pemTrustOptions)
         }
-        ssl.getOptional[Seq[String]]("trusted-certs").map { certs =>
+        ssl.betterGetOptional[Seq[String]]("trusted-certs").map { certs =>
           certs.map(p => pemTrustOptions.addCertValue(Buffer.buffer(p)))
           pgopt.setPemTrustOptions(pemTrustOptions)
         }
-        ssl.getOptional[String]("trusted-cert").map { path =>
+        ssl.betterGetOptional[String]("trusted-cert").map { path =>
           pemTrustOptions.addCertValue(Buffer.buffer(path))
           pgopt.setPemTrustOptions(pemTrustOptions)
         }
-        ssl.getOptional[Seq[String]]("client-certs-path").map { pathes =>
+        ssl.betterGetOptional[Seq[String]]("client-certs-path").map { pathes =>
           pathes.map(p => pemKeyCertOptions.addCertPath(p))
           pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
-        ssl.getOptional[Seq[String]]("client-certs").map { certs =>
+        ssl.betterGetOptional[Seq[String]]("client-certs").map { certs =>
           certs.map(p => pemKeyCertOptions.addCertValue(Buffer.buffer(p)))
           pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
-        ssl.getOptional[String]("client-cert-path").map { path =>
+        ssl.betterGetOptional[String]("client-cert-path").map { path =>
           pemKeyCertOptions.addCertPath(path)
           pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
-        ssl.getOptional[String]("client-cert").map { path =>
+        ssl.betterGetOptional[String]("client-cert").map { path =>
           pemKeyCertOptions.addCertValue(Buffer.buffer(path))
           pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
-        ssl.getOptional[Seq[String]]("client-keys-path").map { pathes =>
+        ssl.betterGetOptional[Seq[String]]("client-keys-path").map { pathes =>
           pathes.map(p => pemKeyCertOptions.addKeyPath(p))
           pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
-        ssl.getOptional[Seq[String]]("client-keys").map { certs =>
+        ssl.betterGetOptional[Seq[String]]("client-keys").map { certs =>
           certs.map(p => pemKeyCertOptions.addKeyValue(Buffer.buffer(p)))
           pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
-        ssl.getOptional[String]("client-key-path").map { path =>
+        ssl.betterGetOptional[String]("client-key-path").map { path =>
           pemKeyCertOptions.addKeyPath(path)
           pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
-        ssl.getOptional[String]("client-key").map { path =>
+        ssl.betterGetOptional[String]("client-key").map { path =>
           pemKeyCertOptions.addKeyValue(Buffer.buffer(path))
           pgopt.setPemKeyCertOptions(pemKeyCertOptions)
         }
-        ssl.getOptional[Boolean]("trust-all").map { v =>
+        ssl.betterGetOptional[Boolean]("trust-all").map { v =>
           pgopt.setTrustAll(v)
         }
         pgopt
@@ -214,11 +214,11 @@ class ReactivePgDataStores(
   }
 
   private lazy val poolOptions = new PoolOptions()
-    .setMaxSize(configuration.getOptional[Int]("app.pg.poolSize").getOrElse(100))
+    .setMaxSize(configuration.getOptionalWithFileSupport[Int]("app.pg.poolSize").getOrElse(100))
 
-  private lazy val testMode       = configuration.getOptional[Boolean]("app.pg.testMode").getOrElse(false)
-  private lazy val schema         = configuration.getOptional[String]("app.pg.schema").getOrElse("otoroshi")
-  private lazy val table          = configuration.getOptional[String]("app.pg.table").getOrElse("entities")
+  private lazy val testMode       = configuration.getOptionalWithFileSupport[Boolean]("app.pg.testMode").getOrElse(false)
+  private lazy val schema         = configuration.getOptionalWithFileSupport[String]("app.pg.schema").getOrElse("otoroshi")
+  private lazy val table          = configuration.getOptionalWithFileSupport[String]("app.pg.table").getOrElse("entities")
   private lazy val schemaDotTable = s"$schema.$table"
   private lazy val client         = PgPool.pool(connectOptions, poolOptions)
 
@@ -227,8 +227,8 @@ class ReactivePgDataStores(
     reactivePgActorSystem,
     env,
     schemaDotTable,
-    _optimized = configuration.getOptional[Boolean]("app.pg.optimized").getOrElse(true),
-    avoidJsonPath = configuration.getOptional[Boolean]("app.pg.avoidJsonPath").getOrElse(false)
+    _optimized = configuration.getOptionalWithFileSupport[Boolean]("app.pg.optimized").getOrElse(true),
+    avoidJsonPath = configuration.getOptionalWithFileSupport[Boolean]("app.pg.avoidJsonPath").getOrElse(false)
   )
 
   private val cancel = new AtomicReference[Cancellable]()
@@ -382,8 +382,17 @@ class ReactivePgDataStores(
   private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis, env)
   override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
 
-  private lazy val _routeDataStore = new KvRouteDataStore(redis, env)
-  override def routeDataStore: RouteDataStore = _routeDataStore
+  private lazy val _routeDataStore = new KvNgRouteDataStore(redis, env)
+  override def routeDataStore: NgRouteDataStore = _routeDataStore
+
+  private lazy val _routesCompositionDataStore = new KvNgServiceDataStore(redis, env)
+  override def servicesDataStore: NgServiceDataStore = _routesCompositionDataStore
+
+  private lazy val _targetsDataStore = new KvStoredNgTargetDataStore(redis, env)
+  override def targetsDataStore: StoredNgTargetDataStore = _targetsDataStore
+
+  private lazy val _backendsDataStore = new KvStoredNgBackendDataStore(redis, env)
+  override def backendsDataStore: StoredNgBackendDataStore = _backendsDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore
@@ -567,7 +576,7 @@ class ReactivePgRedis(
 
   private implicit val logger = Logger("otoroshi-reactive-pg-kv")
 
-  private val debugQueries = env.configuration.getOptional[Boolean]("app.pg.logQueries").getOrElse(false)
+  private val debugQueries = env.configuration.betterGetOptional[Boolean]("app.pg.logQueries").getOrElse(false)
 
   private def queryRaw[A](query: String, params: Seq[AnyRef] = Seq.empty, debug: Boolean = false)(
       f: Seq[Row] => A

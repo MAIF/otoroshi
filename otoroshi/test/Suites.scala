@@ -2,6 +2,7 @@ import java.io.File
 
 import com.typesafe.config.ConfigFactory
 import functional._
+import tools._
 import org.apache.commons.io.FileUtils
 import org.scalatest.{BeforeAndAfterAll, Suite, Suites}
 import play.api.Configuration
@@ -150,3 +151,18 @@ class Log4ShellTests
     extends Suites(
       new Log4ShellSpec()
     )
+
+class ConfigCleanerTests
+    extends Suites(
+      new ConfigurationCleanupSpec()
+    )
+
+class NgTreeRouterTests
+  extends Suites(
+    new NgTreeRouterOpenapiWithEnvSpec(Configurations.InMemoryConfiguration),
+    // new NgTreeRouterWildcardSpec(),
+    // new NgTreeRouterRealLifeSpec(),
+    // new NgTreeRouterPathParamsSpec(),
+    // new NgTreeRouterSpec(),
+    // new NgTreeRouterWithEnvSpec(Configurations.InMemoryConfiguration)
+  )

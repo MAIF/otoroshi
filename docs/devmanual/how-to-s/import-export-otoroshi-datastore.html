@@ -256,7 +256,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
 </code></pre>
 <p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code> Now you are almost ready to run Otoroshi for the first time, we want run it with an initial data.</p>
-<p>To do that, you need to add the <strong>app.importFrom</strong> setting to the Otoroshi configuration (of <code>$APP_IMPORT_FROM</code> env). It can be a file path or a URL. The content of the initial datastore can look something like the following.</p>
+<p>To do that, you need to add the <strong>otoroshi.importFrom</strong> setting to the Otoroshi configuration (of <code>$APP_IMPORT_FROM</code> env). It can be a file path or a URL. The content of the initial datastore can look something like the following.</p>
 <pre class="prettyprint"><code class="language-json">{
   &quot;label&quot;: &quot;Otoroshi initial datastore&quot;,
   &quot;admins&quot;: [],
@@ -516,7 +516,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       &quot;secComSettings&quot;: {
         &quot;type&quot;: &quot;HSAlgoSettings&quot;,
         &quot;size&quot;: 512,
-        &quot;secret&quot;: &quot;${config.app.claim.sharedKey}&quot;,
+        &quot;secret&quot;: &quot;secret&quot;,
         &quot;base64&quot;: false
       },
       &quot;secComUseSameAlgo&quot;: true,
@@ -661,8 +661,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <p>Run an Otoroshi with the previous file as parameter.</p>
 <pre class="prettyprint"><code class="language-sh">java \
-  -Dapp.adminPassword=password \
-  -Dapp.importFrom=./initial-state.json \
+  -Dotoroshi.adminPassword=password \
+  -Dotoroshi.importFrom=./initial-state.json \
   -jar otoroshi.jar 
 </code></pre>
 <p>This should display</p>
@@ -1062,7 +1062,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       &quot;secComSettings&quot; : {
         &quot;type&quot; : &quot;HSAlgoSettings&quot;,
         &quot;size&quot; : 512,
-        &quot;secret&quot; : &quot;${config.app.claim.sharedKey}&quot;,
+        &quot;secret&quot; : &quot;secret&quot;,
         &quot;base64&quot; : false
       },
       &quot;secComUseSameAlgo&quot; : true,

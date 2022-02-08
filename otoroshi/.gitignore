@@ -23,3 +23,6 @@ target
 companion.scala
 companion.txt
 /request-debug.json
+*.diff
+/tree-router-config.json
+/routescomp-debug.json

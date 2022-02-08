@@ -120,7 +120,7 @@ class InitialCertsJob extends Job {
   }
 
   def runWithNewPki()(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val disableWildcardGen = !env.configuration.getOptional[Boolean]("otoroshi.ssl.genWildcardCert").getOrElse(true)
+    val disableWildcardGen = !env.configuration.betterGetOptional[Boolean]("otoroshi.ssl.genWildcardCert").getOrElse(true)
     for {
       cRoot         <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA)
       cIntermediate <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA)

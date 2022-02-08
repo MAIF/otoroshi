@@ -87,6 +87,7 @@ trait NamedPlugin { self =>
   def deprecated: Boolean           = false
   def core: Boolean                 = false
   def pluginType: PluginType
+  def internalName: String          = self.getClass.getName
   def name: String                  = self.getClass.getName
   def description: Option[String]   = None
   def documentation: Option[String] = None

@@ -9,8 +9,13 @@ import play.api.mvc.Results
 import scala.concurrent.{ExecutionContext, Future}
 
 class ReadOnlyCalls extends NgAccessValidator {
-  // TODO: add name and config
+
   private val methods = Seq("get", "head", "options")
+
+  override def core: Boolean = true
+  override def name: String = "Read only requests"
+  override def description: Option[String] = "This plugin verifies the current request only reads data".some
+
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val method = ctx.request.method.toLowerCase
     if (!methods.contains(method)) {
@@ -19,9 +24,10 @@ class ReadOnlyCalls extends NgAccessValidator {
           s"Method not allowed",
           Results.MethodNotAllowed,
           ctx.request,
-          ctx.route.serviceDescriptor.some,
+          None,
           Some("errors.method.not.allowed"),
-          attrs = ctx.attrs
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some,
         ).map(r => NgAccess.NgDenied(r))
     } else {
       NgAccess.NgAllowed.vfuture
@@ -30,7 +36,11 @@ class ReadOnlyCalls extends NgAccessValidator {
 }
 
 class AllowHttpMethods extends NgAccessValidator {
-  // TODO: add name and config
+
+  override def core: Boolean = true
+  override def name: String = "Allowed HTTP methods"
+  override def description: Option[String] = "This plugin verifies the current request only uses allowed http methods".some
+
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val method = ctx.request.method.toLowerCase
     val allowed_methods = ctx.config.select("allowed").asOpt[Seq[String]].getOrElse(Seq.empty).map(_.toLowerCase)
@@ -41,9 +51,10 @@ class AllowHttpMethods extends NgAccessValidator {
           s"Method not allowed",
           Results.MethodNotAllowed,
           ctx.request,
-          ctx.route.serviceDescriptor.some,
+          None,
           Some("errors.method.not.allowed"),
-          attrs = ctx.attrs
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some,
         ).map(r => NgAccess.NgDenied(r))
     } else {
       NgAccess.NgAllowed.vfuture

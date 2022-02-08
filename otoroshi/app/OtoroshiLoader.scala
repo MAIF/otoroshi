@@ -1,28 +1,24 @@
 package otoroshi.loader
 
-import otoroshi.actions._
-import akka.stream.scaladsl.{Sink, Source}
-import otoroshi.cluster.ClusterMode
 import com.softwaremill.macwire._
+import controllers.{Assets, AssetsComponents}
+import otoroshi.actions._
+import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
+import otoroshi.api.{OtoroshiEnvHolder, OtoroshiLoaderHelper}
 import otoroshi.controllers._
 import otoroshi.controllers.adminapi._
 import otoroshi.env.Env
 import otoroshi.gateway._
 import otoroshi.loader.modules._
-import otoroshi.api.OtoroshiLoaderHelper
-import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
+import otoroshi.next.controllers.adminapi._
 import play.api.ApplicationLoader.Context
-import controllers.{Assets, AssetsComponents}
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.EssentialFilter
 import play.api.routing.Router
+import play.api.{Application, ApplicationLoader, BuiltInComponentsFromContext, LoggerConfigurator}
 import play.filters.HttpFiltersComponents
 import router.Routes
-import otoroshi.ssl.DynamicSSLEngineProvider
-import play.api.{Application, ApplicationLoader, BuiltInComponentsFromContext, LoggerConfigurator}
-
-import scala.concurrent.{Await, Future}
 
 class OtoroshiLoader extends ApplicationLoader {
 
@@ -55,8 +51,8 @@ package object modules {
 
     lazy val circuitBreakersHolder: CircuitBreakersHolder = wire[CircuitBreakersHolder]
 
-    implicit lazy val env: Env = new Env(
-      configuration = configuration,
+    implicit lazy val env: Env = OtoroshiEnvHolder.set(new Env(
+      _configuration = configuration,
       environment = environment,
       lifecycle = applicationLifecycle,
       wsClient = wsClient,
@@ -64,7 +60,7 @@ package object modules {
       getHttpPort = getHttpPort,
       getHttpsPort = getHttpsPort,
       testing = testing
-    )
+    ))
 
     lazy val reverseProxyAction: ReverseProxyAction = wire[ReverseProxyAction]
     lazy val httpHandler: HttpHandler               = wire[HttpHandler]
@@ -115,6 +111,10 @@ package object modules {
     lazy val teamsController              = wire[TeamsController]
     lazy val tenantsController            = wire[TenantsController]
     lazy val dataExporterConfigController = wire[DataExporterConfigController]
+    lazy val routesController             = wire[NgRoutesController]
+    lazy val ngServicesController         = wire[NgServicesController]
+    lazy val targetsController            = wire[NgTargetsController]
+    lazy val backendsController           = wire[NgBackendsController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

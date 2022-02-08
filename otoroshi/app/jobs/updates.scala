@@ -81,6 +81,7 @@ class SoftwareUpdatesJobs extends Job {
             }
         }
         .andThen { case Failure(e) =>
+          e.printStackTrace()
           logger.error(s"Unable to check new otoroshi version: ${e.getMessage}")
         }
     } else {

@@ -10,6 +10,7 @@ import play.api.mvc.RequestHeader
 import scala.util.Try
 import otoroshi.utils.http.RequestImplicits._
 import kaleidoscope._
+import otoroshi.next.plugins.Keys
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
 import otoroshi.utils.syntax.implicits._
 
@@ -34,6 +35,7 @@ object GlobalExpressionLanguage {
       case v if v.contains("${") =>
         val userAgentDetails = attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey)
         val geolocDetails    = attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey)
+        val matchedRoute     = attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)
         Try {
           expressionReplacer.replaceOn(value) {
             case "date"                                                             => DateTime.now().toString()
@@ -69,6 +71,10 @@ object GlobalExpressionLanguage {
               req.get.getQueryString(field).getOrElse(defaultValue)
             case r"req.query.$field@(.*)" if req.isDefined                      =>
               req.get.getQueryString(field).getOrElse(s"no-query-$field")
+            case r"req.pathparams.$field@(.*):$defaultValue@(.*)" if matchedRoute.isDefined   =>
+              matchedRoute.get.pathParams.get(field).getOrElse(defaultValue)
+            case r"req.pathparams.$field@(.*)" if matchedRoute.isDefined                      =>
+              matchedRoute.get.pathParams.get(field).getOrElse(s"no-path-param-$field")
 
             case "apikey.name" if apiKey.isDefined                              => apiKey.get.clientName
             case "apikey.id" if apiKey.isDefined                                => apiKey.get.clientId

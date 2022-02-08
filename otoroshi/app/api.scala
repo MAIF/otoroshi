@@ -1,22 +1,25 @@
 package otoroshi.api
 
-import otoroshi.actions._
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
-import otoroshi.cluster.ClusterMode
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers.{Assets, AssetsComponents}
+import otoroshi.actions._
+import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
+import otoroshi.cluster.ClusterMode
 import otoroshi.controllers._
-import otoroshi.controllers.adminapi.{ApiKeysFromGroupController, _}
+import otoroshi.controllers.adminapi._
 import otoroshi.env._
 import otoroshi.gateway._
-import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
-import otoroshi.next.proxy.ProxyStateLoaderJob
+import otoroshi.next.controllers.adminapi._
+import otoroshi.next.proxy.NgProxyStateLoaderJob
+import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.storage.DataStores
 import otoroshi.utils.metrics.Metrics
+import otoroshi.utils.syntax.implicits.BetterConfiguration
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
 import play.api.libs.ws.WSClient
@@ -27,10 +30,9 @@ import play.api.{BuiltInComponents, Configuration, Logger, LoggerConfigurator}
 import play.core.server.{AkkaHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
-import otoroshi.ssl.DynamicSSLEngineProvider
 
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
-import scala.concurrent.duration._
 
 object OtoroshiLoaderHelper {
 
@@ -48,32 +50,32 @@ object OtoroshiLoaderHelper {
     implicit val scheduler = components.env.otoroshiScheduler
     implicit val mat       = components.env.otoroshiMaterializer
 
-    val globalWait                      = components.env.configuration.getOptional[Boolean]("app.boot.globalWait").getOrElse(true)
+    val globalWait                      = components.env.configuration.betterGetOptional[Boolean]("app.boot.globalWait").getOrElse(true)
     val waitForTlsInitEnabled           =
-      components.env.configuration.getOptional[Boolean]("app.boot.waitForTlsInit").getOrElse(true)
+      components.env.configuration.betterGetOptional[Boolean]("app.boot.waitForTlsInit").getOrElse(true)
     val waitForPluginsSearch            =
-      components.env.configuration.getOptional[Boolean]("app.boot.waitForPluginsSearch").getOrElse(true)
+      components.env.configuration.betterGetOptional[Boolean]("app.boot.waitForPluginsSearch").getOrElse(true)
     val waitForScriptsCompilation       =
       components.env.scriptingEnabled && components.env.configuration
-        .getOptional[Boolean]("app.boot.waitForScriptsCompilation")
+        .betterGetOptional[Boolean]("app.boot.waitForScriptsCompilation")
         .getOrElse(true)
     val waitForFirstClusterFetchEnabled =
-      components.env.configuration.getOptional[Boolean]("app.boot.waitForFirstClusterFetch").getOrElse(true)
+      components.env.configuration.betterGetOptional[Boolean]("app.boot.waitForFirstClusterFetch").getOrElse(true)
     val waitProxyStateSync =
-      components.env.configuration.getOptional[Boolean]("app.boot.waitProxyStateSync").getOrElse(true)
+      components.env.configuration.betterGetOptional[Boolean]("app.boot.waitProxyStateSync").getOrElse(true)
 
     val globalWaitTimeout: Long                =
-      components.env.configuration.getOptional[Long]("app.boot.waitTimeout").getOrElse(60000)
+      components.env.configuration.betterGetOptional[Long]("app.boot.waitTimeout").getOrElse(60000)
     val waitForPluginsSearchTimeout: Long      =
-      components.env.configuration.getOptional[Long]("app.boot.waitForPluginsSearchTimeout").getOrElse(20000)
+      components.env.configuration.betterGetOptional[Long]("app.boot.waitForPluginsSearchTimeout").getOrElse(20000)
     val waitForScriptsCompilationTimeout: Long =
-      components.env.configuration.getOptional[Long]("app.boot.waitForScriptsCompilationTimeout").getOrElse(30000)
+      components.env.configuration.betterGetOptional[Long]("app.boot.waitForScriptsCompilationTimeout").getOrElse(30000)
     val waitForTlsInitTimeout: Long            =
-      components.env.configuration.getOptional[Long]("app.boot.waitForTlsInitTimeout").getOrElse(10000)
+      components.env.configuration.betterGetOptional[Long]("app.boot.waitForTlsInitTimeout").getOrElse(10000)
     val waitForFirstClusterFetchTimeout: Long  =
-      components.env.configuration.getOptional[Long]("app.boot.waitForFirstClusterFetchTimeout").getOrElse(10000)
+      components.env.configuration.betterGetOptional[Long]("app.boot.waitForFirstClusterFetchTimeout").getOrElse(10000)
     val waitProxyStateSyncTimeout: Long =
-      components.env.configuration.getOptional[Long]("app.boot.waitProxyStateSyncTimeout").getOrElse(10000)
+      components.env.configuration.betterGetOptional[Long]("app.boot.waitProxyStateSyncTimeout").getOrElse(10000)
 
     def timeout(duration: FiniteDuration): Future[Unit] = {
       val promise = Promise[Unit]
@@ -184,7 +186,7 @@ object OtoroshiLoaderHelper {
             Source
               .tick(1.second, 1.second, ())
               .map { _ =>
-                ProxyStateLoaderJob.firstSync.get()
+                NgProxyStateLoaderJob.firstSync.get()
               }
               .filter(identity)
               .take(1)
@@ -213,6 +215,15 @@ object OtoroshiLoaderHelper {
       ()
     }
   }
+}
+
+object OtoroshiEnvHolder {
+  private val ref = new AtomicReference[Env]()
+  def set(env: Env): Env = {
+    ref.set(env)
+    env
+  }
+  def get(): Env = ref.get()
 }
 
 class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfig, _configuration: Config)
@@ -265,8 +276,8 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
 
   lazy val circuitBreakersHolder: CircuitBreakersHolder = wire[CircuitBreakersHolder]
 
-  implicit lazy val env: Env = new Env(
-    configuration = configuration,
+  implicit lazy val env: Env = OtoroshiEnvHolder.set(new Env(
+    _configuration = configuration,
     environment = environment,
     lifecycle = applicationLifecycle,
     wsClient = wsClient,
@@ -274,7 +285,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
     getHttpPort = None,
     getHttpsPort = None,
     testing = false
-  )
+  ))
 
   override lazy val httpFilters: Seq[EssentialFilter] = Seq()
 
@@ -330,6 +341,10 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val teamsController              = wire[TeamsController]
   lazy val tenantsController            = wire[TenantsController]
   lazy val dataExporterConfigController = wire[DataExporterConfigController]
+  lazy val routesController             = wire[NgRoutesController]
+  lazy val ngServicesController         = wire[NgServicesController]
+  lazy val targetsController            = wire[NgTargetsController]
+  lazy val backendsController           = wire[NgBackendsController]
 
   override lazy val assets: Assets = wire[Assets]
 

@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.{FileIO, Source}
+import akka.stream.scaladsl.{FileIO, Flow, Source}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.auth.{AuthModuleConfig, SamlAuthModuleConfig, SessionCookieValues}
@@ -32,7 +32,7 @@ import play.core.WebCommands
 import otoroshi.security.OtoroshiClaim
 import otoroshi.ssl.{KeyManagerCompatibility, SSLSessionJavaHelper}
 import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits.BetterSyntax
+import otoroshi.utils.syntax.implicits.{BetterConfiguration, BetterSyntax}
 
 import java.io.File
 import scala.concurrent.{ExecutionContext, Future}
@@ -66,6 +66,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
     }
     val snowflake     = env.snowflakeGenerator.nextIdStr()
     val attrs         = TypedMap.empty
+    // TODO: call NgRequestSinks
     RequestSink.maybeSinkRequest(
       snowflake,
       request,
@@ -99,6 +100,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
     }
     val snowflake     = env.snowflakeGenerator.nextIdStr()
     val attrs         = TypedMap.empty
+    // TODO: call NgRequestSinks
     RequestSink.maybeSinkRequest(
       snowflake,
       request,
@@ -377,9 +379,9 @@ class GatewayRequestHandler(
 
   @inline
   def reverseProxyCall(request: RequestHeader, config: Option[GlobalConfig]): Option[Handler] = {
+    val exists = env.metrics.withTimer("handle-search-handler")(config.exists(_.plugins.canHandleRequest(request)))
     request.headers.get("Sec-WebSocket-Version") match {
       case None    => {
-        val exists = env.metrics.withTimer("handle-search-handler")(config.exists(_.plugins.canHandleRequest(request)))
         if (exists) {
           Some(actionBuilder.async(sourceBodyParser) { zeRequest =>
             config.get.plugins.handleRequest(
@@ -406,16 +408,26 @@ class GatewayRequestHandler(
           )
         }
       }
-      case Some(_) =>
-        Some(
-          webSocketHandler.forwardCall(reverseProxyAction, snowMonkey, headersInFiltered, headersOutFiltered)
-        )
+      case Some(_) => {
+        if (exists) {
+          Some(WebSocket.acceptOrResult[play.api.http.websocket.Message, play.api.http.websocket.Message] { zeRequest =>
+            config.get.plugins.handleWsRequest(
+              zeRequest,
+              r => webSocketHandler.forwardCallRaw(r, reverseProxyAction, snowMonkey, headersInFiltered, headersOutFiltered)
+            )
+          })
+        } else {
+          Some(
+            webSocketHandler.forwardCall(reverseProxyAction, snowMonkey, headersInFiltered, headersOutFiltered)
+          )
+        }
+      }
     }
   }
 
   private val devCache                               = Scaffeine().maximumSize(10000).build[String, (String, ByteString)]
   private lazy val devMimetypes: Map[String, String] = env.configuration
-    .getOptional[String]("play.http.fileMimeTypes")
+    .betterGetOptional[String]("play.http.fileMimeTypes")
     .map { types =>
       types
         .split("\\n")

@@ -18,11 +18,11 @@ those routes are also available on any hostname leading to otoroshi with a twist
 
 ## Endpoints security
 
-The two endpoints are exposed publicly on the Otoroshi admin api. But you can remove the corresponding public pattern and query the endpoints using standard apikeys. If you don't want to use apikeys but don't want to expose the endpoints publicly, you can defined two config. variables (`app.health.accessKey` or `HEALTH_ACCESS_KEY` and `otoroshi.metrics.accessKey` or `OTOROSHI_METRICS_ACCESS_KEY`) that will hold an access key for the endpoints. Then you can call the endpoints with an `access_key` query param with the value defined in the config. If you don't defined `otoroshi.metrics.accessKey` but define `app.health.accessKey`, `otoroshi.metrics.accessKey` will have the value of `app.health.accessKey`.
+The two endpoints are exposed publicly on the Otoroshi admin api. But you can remove the corresponding public pattern and query the endpoints using standard apikeys. If you don't want to use apikeys but don't want to expose the endpoints publicly, you can defined two config. variables (`otoroshi.health.accessKey` or `HEALTH_ACCESS_KEY` and `otoroshi.metrics.accessKey` or `OTOROSHI_METRICS_ACCESS_KEY`) that will hold an access key for the endpoints. Then you can call the endpoints with an `access_key` query param with the value defined in the config. If you don't defined `otoroshi.metrics.accessKey` but define `otoroshi.health.accessKey`, `otoroshi.metrics.accessKey` will have the value of `otoroshi.health.accessKey`.
  
 ## Examples
 
-let say `app.health.accessKey` has value `MILpkVv6f2kG9Xmnc4mFIYRU4rTxHVGkxvB0hkQLZwEaZgE2hgbOXiRsN1DBnbtY`
+let say `otoroshi.health.accessKey` has value `MILpkVv6f2kG9Xmnc4mFIYRU4rTxHVGkxvB0hkQLZwEaZgE2hgbOXiRsN1DBnbtY`
 
 ```sh
 $ curl http://otoroshi-api.oto.tools:8080/health\?access_key\=MILpkVv6f2kG9Xmnc4mFIYRU4rTxHVGkxvB0hkQLZwEaZgE2hgbOXiRsN1DBnbtY

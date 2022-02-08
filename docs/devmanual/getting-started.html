@@ -258,7 +258,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
 </code></pre>
 <p>Once downloading, run Otoroshi.</p>
-<pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -jar otoroshi.jar 
+<pre class="prettyprint"><code class="language-sh">java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
 </code></pre>
 <h2><a href="#protect-the-access-to-your-api-with-the-otoroshi-management-of-api-keys" name="protect-the-access-to-your-api-with-the-otoroshi-management-of-api-keys" class="anchor"><span class="anchor-link"></span></a>Protect the access to your api with the Otoroshi management of api keys</h2>
 <p>Create a service, exposed on <code>http://myapi.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>.</p>

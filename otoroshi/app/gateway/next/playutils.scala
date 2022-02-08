@@ -1,6 +1,7 @@
 package play.core.server.otoroshi
 
 import akka.http.scaladsl.settings.ParserSettings
+import otoroshi.utils.syntax.implicits.BetterConfiguration
 import play.api.Configuration
 import play.api.http.HttpConfiguration
 import play.api.libs.crypto.CookieSignerProvider
@@ -13,11 +14,11 @@ object PlayUtils {
       configuration: Configuration
   ): AkkaModelConversion = {
 
-    val serverConfig                             = configuration.get[Configuration]("play.server")
-    val akkaServerConfig                         = serverConfig.get[Configuration]("akka")
+    val serverConfig                             = configuration.betterGet[Configuration]("play.server")
+    val akkaServerConfig                         = serverConfig.betterGet[Configuration]("akka")
     val illegalResponseHeaderValueProcessingMode =
       akkaServerConfig.get[String]("illegal-response-header-value-processing-mode")
-
+ 
     val httpConfig   = HttpConfiguration()
     val cookieSigner = new CookieSignerProvider(httpConfig.secret).get
     val resultUtils  = new ServerResultUtils(

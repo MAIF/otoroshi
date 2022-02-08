@@ -71,7 +71,7 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
     val hash       = env.sign(s"${samlConfig.id}:::backoffice")
     val relayState = URLEncoder.encode(
       s"hash=$hash&desc=${descriptor.id}&redirect_uri=${redirect.getOrElse(
-        routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
+        routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
       )}",
       "UTF-8"
     )

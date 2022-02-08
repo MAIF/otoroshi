@@ -40,6 +40,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits.BetterSyntax
+import otoroshi.utils.infotoken.InfoTokenHelper
 
 case class ServiceDescriptorQuery(
     subdomain: String,
@@ -637,6 +638,7 @@ case class HealthCheck(enabled: Boolean, url: String) {
 
 object HealthCheck {
   implicit val format = Json.format[HealthCheck]
+  val empty = HealthCheck(false, "/")
 }
 
 case class CustomTimeouts(
@@ -1804,96 +1806,7 @@ case class ServiceDescriptor(
   )(implicit
       env: Env
   ): OtoroshiClaim = {
-    import otoroshi.ssl.SSLImplicits._
-    val clientCertChain = requestHeader
-      .flatMap(_.clientCertificateChain)
-      .map(chain =>
-        JsArray(
-          chain.map(c => c.asJson)
-        )
-      )
-    secComInfoTokenVersion match {
-      case SecComInfoTokenVersion.Legacy => {
-        OtoroshiClaim(
-          iss = issuer.getOrElse(env.Headers.OtoroshiIssuer),
-          sub = sub.getOrElse(
-            paUsr
-              .filter(_ => this.privateApp)
-              .map(k => s"pa:${k.email}")
-              .orElse(apiKey.map(k => s"apikey:${k.clientId}"))
-              .getOrElse("--")
-          ),
-          aud = this.name,
-          exp = DateTime.now().plus(this.secComTtl.toMillis).toDate.getTime,
-          iat = DateTime.now().toDate.getTime,
-          jti = IdGenerator.uuid
-        ).withClaim("email", paUsr.map(_.email))
-          .withClaim("name", paUsr.map(_.name).orElse(apiKey.map(_.clientName)))
-          .withClaim("picture", paUsr.flatMap(_.picture))
-          .withClaim("user_id", paUsr.flatMap(_.userId).orElse(apiKey.map(_.clientId)))
-          .withClaim("given_name", paUsr.flatMap(_.field("given_name")))
-          .withClaim("family_name", paUsr.flatMap(_.field("family_name")))
-          .withClaim("gender", paUsr.flatMap(_.field("gender")))
-          .withClaim("locale", paUsr.flatMap(_.field("locale")))
-          .withClaim("nickname", paUsr.flatMap(_.field("nickname")))
-          .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadataJson)))
-          .withJsArrayClaim("clientCertChain", clientCertChain)
-          .withClaim(
-            "metadata",
-            paUsr
-              .flatMap(_.otoroshiData)
-              .orElse(apiKey.map(_.metadataJson))
-              .map(m => Json.stringify(Json.toJson(m)))
-          )
-          .withClaim("tags", apiKey.map(a => Json.stringify(JsArray(a.tags.map(JsString.apply)))))
-          .withClaim("user", paUsr.map(u => Json.stringify(u.asJsonCleaned)))
-          .withClaim("apikey", apiKey.map(ak => Json.stringify(ak.lightJson)))
-        //    Json.stringify(
-        //      Json.obj(
-        //        "clientId"   -> ak.clientId,
-        //        "clientName" -> ak.clientName,
-        //        "metadata"   -> ak.metadata,
-        //        "tags"       -> ak.tags
-        //      )
-        //  )
-        // ))
-        // .serialize(this.secComSettings)(env)
-      }
-      case SecComInfoTokenVersion.Latest => {
-        OtoroshiClaim(
-          iss = issuer.getOrElse(env.Headers.OtoroshiIssuer),
-          sub = sub.getOrElse(
-            paUsr
-              .filter(_ => this.privateApp)
-              .map(k => k.email)
-              .orElse(apiKey.map(k => k.clientName))
-              .getOrElse("public")
-          ),
-          aud = this.name,
-          exp = DateTime.now().plus(this.secComTtl.toMillis).toDate.getTime,
-          iat = DateTime.now().toDate.getTime,
-          jti = IdGenerator.uuid
-        ).withClaim(
-          "access_type",
-          (apiKey, paUsr) match {
-            case (Some(_), Some(_)) => "both" // should never happen
-            case (None, Some(_))    => "user"
-            case (Some(_), None)    => "apikey"
-            case (None, None)       => "public"
-          }
-        ).withJsObjectClaim("user", paUsr.map(_.asJsonCleaned.as[JsObject]))
-          .withJsObjectClaim("apikey", apiKey.map(ak => ak.lightJson))
-        // Json.obj(
-        //    "clientId"   -> ak.clientId,
-        //    "clientName" -> ak.clientName,
-        //    "metadata"   -> ak.metadata,
-        //    "tags"       -> ak.tags
-        // )
-        // ))
-        // .withJsArrayClaim("clientCertChain", clientCertChain)
-        // .serialize(this.secComSettings)(env)
-      }
-    }
+    InfoTokenHelper.generateInfoToken(name, secComInfoTokenVersion, secComTtl, apiKey, paUsr, requestHeader, issuer, sub)(env)
   }
 
   import otoroshi.utils.http.RequestImplicits._

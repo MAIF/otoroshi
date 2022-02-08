@@ -71,6 +71,20 @@ class WebSocketHandler()(implicit env: Env) {
     }
   }
 
+  def forwardCallRaw(
+     req: RequestHeader,
+     reverseProxyAction: ReverseProxyAction,
+     snowMonkey: SnowMonkey,
+     headersInFiltered: Seq[String],
+     headersOutFiltered: Seq[String]
+   ) = {
+    reverseProxyAction.async[WSFlow](
+      ReverseProxyActionContext(req, Source.empty, snowMonkey, logger),
+      true,
+      c => actuallyCallDownstream(c, headersInFiltered, headersOutFiltered)
+    )
+  }
+
   def actuallyCallDownstream(
       ctx: ActualCallContext,
       headersInFiltered: Seq[String],

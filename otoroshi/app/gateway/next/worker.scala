@@ -46,8 +46,8 @@ class OtoroshiWorker(interface: String, router: OtoroshiRequestHandler, errorHan
 
   private val conversion             = play.core.server.otoroshi.PlayUtils.conversion(env.configuration)
   private val http                   = Http()
-  private val cipherSuites           = env.configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11")
-  private val protocols              = env.configuration.getOptional[Seq[String]]("otoroshi.ssl.protocolsJDK11")
+  private val cipherSuites           = env.configuration.betterGetOptional[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11")
+  private val protocols              = env.configuration.betterGetOptional[Seq[String]]("otoroshi.ssl.protocolsJDK11")
   private val clientAuth: ClientAuth = env.configuration
     .getOptionalWithFileSupport[String]("otoroshi.ssl.fromOutside.clientAuth")
     .flatMap(ClientAuth.apply)
@@ -179,7 +179,7 @@ object OtoroshiWorkerTest {
     val wsClient: WSClient = WSClientFactory.ahcClient(configuration, environment.classLoader)(mat)
 
     val env: Env = new Env(
-      configuration = configuration,
+      _configuration = configuration,
       environment = environment,
       lifecycle = lifecycle,
       wsClient = wsClient,

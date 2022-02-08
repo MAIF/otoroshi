@@ -266,28 +266,28 @@ export class OtoroshiCharts extends Component {
               </div>
             </div>
           ),
-          (this.state.data.type === 'Service' || this.state.data.type === 'Group') && (
-            <div className="row">
-              <div className="col-md-12">
-                <RoundChart
-                  series={data.apiKeyPiechart && data.apiKeyPiechart.series}
-                  title="Hits by apikey"
-                  unit=" hits"
-                  size={500}
-                />
-              </div>
-            </div>
-          ),
-          <div className="row">
-            <div className="col-md-12">
-              <RoundChart
-                series={data.userPiechart && data.userPiechart.series}
-                title="Hits by user"
-                unit=" hits"
-                size={500}
-              />
-            </div>
-          </div>,
+          // (this.state.data.type === 'Service' || this.state.data.type === 'Group') && (
+          //   <div className="row">
+          //     <div className="col-md-12">
+          //       <RoundChart
+          //         series={data.apiKeyPiechart && data.apiKeyPiechart.series}
+          //         title="Hits by apikey"
+          //         unit=" hits"
+          //         size={500}
+          //       />
+          //     </div>
+          //   </div>
+          // ),
+          // <div className="row">
+          //   <div className="col-md-12">
+          //     <RoundChart
+          //       series={data.userPiechart && data.userPiechart.series}
+          //       title="Hits by user"
+          //       unit=" hits"
+          //       size={500}
+          //     />
+          //   </div>
+          // </div>
         ]}
       </div>
     );

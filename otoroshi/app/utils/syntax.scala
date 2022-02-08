@@ -20,6 +20,9 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.Duration
+import io.kubernetes.client.proto.Meta.Time
 
 object implicits {
   implicit class BetterSyntax[A](private val obj: A)                   extends AnyVal {
@@ -233,6 +236,9 @@ object implicits {
       }
     }
   }
+  object BetterConfiguration {
+    val logger = Logger("otoroshi-better-configuration")
+  }
   implicit class BetterConfiguration(val configuration: Configuration) extends AnyVal {
 
     import collection.JavaConverters._
@@ -268,9 +274,46 @@ object implicits {
       }
     }
 
+    def validateAndComputePath[A](_path: String, f: String => A): String = {      
+      if (_path.startsWith("app.")) {
+        val newPath: String = _path.replaceFirst("app", "otoroshi")
+        // BetterConfiguration.logger.error(s"You chould change '${_path}' to '${newPath}'")
+        val app = f(_path)
+        val oto = f(newPath)
+        if (app != oto) {
+          val name = Try {
+            val caller = new Throwable().getStackTrace().tail.head
+            (caller.getClassName + "." + caller.getMethodName())
+          }.getOrElse("--")
+          BetterConfiguration.logger.warn(s"configuration key '${_path}' does not match with '${newPath}' on ${name}. Please report this error to https://github.com/MAIF/otoroshi/issues")
+          _path
+        } else {
+          newPath
+        }
+      } else {
+        _path
+      }
+    }
+
+    def betterHas(_path: String): Boolean = {
+      val path = validateAndComputePath(_path, configuration.has(_))
+      configuration.has(path)
+    }
+
+    def betterGet[A](_path: String)(implicit loader: ConfigLoader[A]): A = {
+      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(loader))
+      configuration.get[A](path)(loader)
+    }
+
+    def betterGetOptional[A](_path: String)(implicit loader: ConfigLoader[A]): Option[A] = {
+      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(loader))
+      configuration.getOptional[A](path)(loader)
+    }
+
     def getOptionalWithFileSupport[A](
-        path: String
+        _path: String
     )(implicit loader: ConfigLoader[A], classTag: ClassTag[A]): Option[A] = {
+      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(loader))
       Try(configuration.getOptional[A](path)(loader)).toOption.flatten match {
         case None        =>
           Try(configuration.getOptional[String](path)(ConfigLoader.stringLoader)).toOption.flatten match {
@@ -303,6 +346,29 @@ object implicits {
         value
       } else {
         initValue
+      }
+    }
+  }
+  implicit class BetterDuration(val duration: Duration) extends AnyVal {
+    final def toHumanReadable: String = {
+      val units = Seq(TimeUnit.DAYS, TimeUnit.HOURS, TimeUnit.MINUTES, TimeUnit.SECONDS, TimeUnit.MILLISECONDS, TimeUnit.MICROSECONDS, TimeUnit.NANOSECONDS)
+      val timeStrings = units
+        .foldLeft((Seq.empty[String], duration.toNanos))({ case ((humanReadable, rest), unit) =>
+          val name = unit.toString().toLowerCase()
+          val result = unit.convert(rest, TimeUnit.NANOSECONDS)
+          val diff = rest - TimeUnit.NANOSECONDS.convert(result, unit)
+          val str = result match {
+            case 0    => humanReadable
+            case 1    => humanReadable :+ s"1 ${name.init}" // Drop last 's'
+            case more => humanReadable :+ s"$more $name"
+          }
+          (str, diff)
+        })
+        ._1
+      timeStrings.size match {
+        case 0 => ""
+        case 1 => timeStrings.head
+        case _ => timeStrings.init.mkString(", ") + " and " + timeStrings.last
       }
     }
   }

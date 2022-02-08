@@ -273,7 +273,7 @@ class AuthController(
 
                 val redirectTo = params.getOrElse(
                   "redirect_uri",
-                  routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
+                  routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
                 )
 
                 val url  = new java.net.URL(redirectTo)
@@ -287,7 +287,7 @@ class AuthController(
                 ctx.request.session
                   .get(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}")
                   .getOrElse(
-                    routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
+                    routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
                   ) match {
                   case "urn:ietf:wg:oauth:2.0:oob" =>
                     val redirection =
@@ -428,7 +428,7 @@ class AuthController(
       env.datastores.globalConfigDataStore.singleton().flatMap {
         case config if !(config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty) => {
           config.backOfficeAuthRef match {
-            case None        => FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index()))
+            case None        => FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index))
             case Some(aconf) => {
               env.datastores.authConfigsDataStore.findById(aconf).flatMap {
                 case None        =>
@@ -440,7 +440,7 @@ class AuthController(
           }
         }
         case config if config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty    =>
-          FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index()))
+          FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index))
       }
     }
 
@@ -453,7 +453,7 @@ class AuthController(
         case true  =>
           ctx.user.delete().map { _ =>
             Alerts.send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua))
-            val userRedirect = redirect.getOrElse(routes.BackOfficeController.index().url)
+            val userRedirect = redirect.getOrElse(routes.BackOfficeController.index.url)
             Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
           }
         case false => {
@@ -463,7 +463,7 @@ class AuthController(
                 ctx.user.delete().map { _ =>
                   Alerts
                     .send(AdminLoggedOutAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, ctx.from, ctx.ua))
-                  val userRedirect = redirect.getOrElse(routes.BackOfficeController.index().url)
+                  val userRedirect = redirect.getOrElse(routes.BackOfficeController.index.url)
                   Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
                 }
               }
@@ -496,7 +496,7 @@ class AuthController(
                                   ctx.ua
                                 )
                               )
-                              val userRedirect = redirect.getOrElse(routes.BackOfficeController.index().url)
+                              val userRedirect = redirect.getOrElse(routes.BackOfficeController.index.url)
                               Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
                             }
                           case Some(logoutUrl) =>
@@ -550,7 +550,7 @@ class AuthController(
                 .get("bo-redirect-after-login")
                 .getOrElse(
                   routes.BackOfficeController
-                    .index()
+                    .index
                     .absoluteURL(env.exposedRootSchemeIsHttps)
                 )
             ).removingFromSession("bo-redirect-after-login")
@@ -563,7 +563,7 @@ class AuthController(
         case None    => {
           env.datastores.globalConfigDataStore.singleton().flatMap {
             case config if config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty    =>
-              FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index()))
+              FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index))
             case config if !(config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty) => {
 
               config.backOfficeAuthRef match {

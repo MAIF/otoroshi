@@ -1,25 +1,156 @@
 package otoroshi.next.models
 
 import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
-import otoroshi.models.{AlwaysMatch, LoadBalancing, RoundRobin, Target, TargetPredicate}
+import otoroshi.env.Env
+import otoroshi.models.{ClientConfig, _}
+import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits.BetterJsValue
-import play.api.libs.json.{JsArray, JsLookupResult, JsNull, JsObject, JsString, JsValue, Json}
+import otoroshi.utils.syntax.implicits._
+import play.api.libs.json._
 
-/*
-case class Backend(id: String, name: String, description: String, tags: Seq[String], metadata: Map[String, String], location: EntityLocation) extends EntityLocationSupport {
+import java.util.concurrent.atomic.AtomicBoolean
+import scala.util.{Failure, Success, Try}
+import otoroshi.api.OtoroshiEnvHolder
 
+case class NgBackend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String, rewrite: Boolean, loadBalancing: LoadBalancing, healthCheck: Option[HealthCheck] = None, client: ClientConfig) {
+  // I know it's not ideal but we'll go with it for now !
+  lazy val allTargets: Seq[NgTarget] = targets ++ targetRefs.map(OtoroshiEnvHolder.get().proxyState.target).collect {
+    case Some(backend) => backend
+  }.distinct
+  def json: JsValue = Json.obj(
+    "targets" -> JsArray(targets.map(_.json)),
+    "target_refs" -> JsArray(targetRefs.map(JsString.apply)),
+    "root" -> root,
+    "rewrite" -> rewrite,
+    "load_balancing" -> loadBalancing.toJson,
+    "client" -> client.toJson,
+  )
+  .applyOnWithOpt(healthCheck) {
+    case (obj, hc) => obj ++ Json.obj("health_check" -> hc.toJson)
+  }
+
+  lazy val minimalBackend: NgMinimalBackend = {
+    NgMinimalBackend(
+      targets = targets,
+      targetRefs = targetRefs,
+      root = root,
+      rewrite = rewrite,
+      loadBalancing = loadBalancing
+    )
+  }
+}
+
+object NgBackend {
+  def empty: NgBackend = NgBackend(Seq.empty, Seq.empty, "/", false, RoundRobin, None, ClientConfig())
+  def readFrom(lookup: JsLookupResult): NgBackend = readFromJson(lookup.as[JsValue])
+  def readFromJson(lookup: JsValue): NgBackend = {
+    lookup.asOpt[JsObject] match {
+      case None => empty
+      case Some(obj) => NgBackend(
+        targets = obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)).getOrElse(Seq.empty),
+        targetRefs = obj.select("target_refs").asOpt[Seq[String]].getOrElse(Seq.empty),
+        root = obj.select("root").asOpt[String].getOrElse("/"),
+        rewrite = obj.select("rewrite").asOpt[Boolean].getOrElse(false),
+        loadBalancing = LoadBalancing.format.reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj())).getOrElse(RoundRobin),
+        healthCheck = obj.select("health_check").asOpt(HealthCheck.format),
+        client = obj.select("client").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
+      )
+    }
+  }
+}
+
+case class NgMinimalBackend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String, rewrite: Boolean, loadBalancing: LoadBalancing) {
+  // I know it's not ideal but we'll go with it for now !
+  lazy val allTargets: Seq[NgTarget] = targets ++ targetRefs.map(OtoroshiEnvHolder.get().proxyState.target).collect {
+    case Some(backend) => backend
+  }.distinct
+  def json: JsValue = Json.obj(
+    "targets" -> JsArray(targets.map(_.json)),
+    "target_refs" -> JsArray(targetRefs.map(JsString.apply)),
+    "root" -> root,
+    "rewrite" -> rewrite,
+    "load_balancing" -> loadBalancing.toJson,
+  )
+  def toBackend(client: ClientConfig, healthCheck: Option[HealthCheck]) = {
+    NgBackend(
+      targets = targets,
+      targetRefs = targetRefs,
+      root = root,
+      rewrite = rewrite,
+      loadBalancing = loadBalancing,
+      client = client,
+      healthCheck = healthCheck,
+    )
+  }
+}
+
+object NgMinimalBackend {
+  def empty: NgMinimalBackend = NgMinimalBackend(Seq.empty, Seq.empty, "/", false, RoundRobin)
+  def readFrom(lookup: JsLookupResult): NgMinimalBackend = readFromJson(lookup.as[JsValue])
+  def readFromJson(lookup: JsValue): NgMinimalBackend = {
+    lookup.asOpt[JsObject] match {
+      case None => empty
+      case Some(obj) => NgMinimalBackend(
+        targets = obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)).getOrElse(Seq.empty),
+        targetRefs = obj.select("target_refs").asOpt[Seq[String]].getOrElse(Seq.empty),
+        root = obj.select("root").asOpt[String].getOrElse("/"),
+        rewrite = obj.select("rewrite").asOpt[Boolean].getOrElse(false),
+        loadBalancing = LoadBalancing.format.reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj())).getOrElse(RoundRobin),
+      )
+    }
+  }
+}
+
+object StoredNgTarget {
+  val format = new Format[StoredNgTarget] {
+    override def reads(json: JsValue): JsResult[StoredNgTarget] = Try {
+      StoredNgTarget(
+        location = otoroshi.models.EntityLocation.readFromKey(json),
+        id = json.select("id").as[String],
+        name = json.select("id").as[String],
+        description = json.select("description").asOpt[String].getOrElse(""),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+        target = NgTarget.readFrom(json.select("target").as[JsValue]),
+      )
+    } match {
+      case Failure(exception) => JsError(exception.getMessage)
+      case Success(route) => JsSuccess(route)
+    }
+    override def writes(o: StoredNgTarget): JsValue = o.json
+  }
+}
+
+case class StoredNgTarget(location: EntityLocation, id: String, name: String, description: String, tags: Seq[String], metadata: Map[String, String], target: NgTarget) extends EntityLocationSupport {
   override def internalId: String = id
   override def theName: String = name
   override def theDescription: String = description
   override def theTags: Seq[String] = tags
   override def theMetadata: Map[String, String] = metadata
-  override def json: JsValue = ???
+  override def json: JsValue = location.jsonWithKey ++ Json.obj(
+    "id" -> id,
+    "name" -> name,
+    "description" -> description,
+    "tags" -> tags,
+    "metadata" -> metadata,
+    "target" -> target.json,
+  )
 }
-*/
 
-// TODO: handle 2 kind of backend, one inline, one that reference a stored backend
-case class Backend(
+trait StoredNgTargetDataStore extends BasicStore[StoredNgTarget]
+
+class KvStoredNgTargetDataStore(redisCli: RedisLike, _env: Env)
+  extends StoredNgTargetDataStore
+    with RedisLikeStore[StoredNgTarget] {
+  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def fmt: Format[StoredNgTarget]              = StoredNgTarget.format
+  override def key(id: String): Key                    = Key.Empty / _env.storageRoot / "targets" / id
+  override def extractId(value: StoredNgTarget): String = value.id
+}
+
+case class NgSelectedBackendTarget(target: NgTarget, attempts: Int, alreadyFailed: AtomicBoolean, cbStart: Long)
+
+case class NgTarget(
   id: String,
   hostname: String,
   port: Int,
@@ -58,9 +189,9 @@ case class Backend(
   )
 }
 
-object Backend {
-  def fromTarget(target: Target): Backend = {
-    Backend(
+object NgTarget {
+  def fromTarget(target: Target): NgTarget = {
+    NgTarget(
       id = target.tags.headOption.getOrElse(target.host),
       hostname = target.theHost,
       port = target.thePort,
@@ -72,8 +203,8 @@ object Backend {
       tlsConfig = target.mtlsConfig,
     )
   }
-  def readFrom(obj: JsValue): Backend = {
-    Backend(
+  def readFrom(obj: JsValue): NgTarget = {
+    NgTarget(
       id = obj.select("id").as[String],
       hostname = obj.select("hostname").as[String],
       port = obj.select("port").as[Int],
@@ -89,4 +220,51 @@ object Backend {
       ipAddress = (obj \ "ipAddress").asOpt[String].filterNot(_.trim.isEmpty),
     )
   }
+}
+
+object StoredNgBackend {
+  val format = new Format[StoredNgBackend] {
+    override def reads(json: JsValue): JsResult[StoredNgBackend] = Try {
+      StoredNgBackend(
+        location = otoroshi.models.EntityLocation.readFromKey(json),
+        id = json.select("id").as[String],
+        name = json.select("id").as[String],
+        description = json.select("description").asOpt[String].getOrElse(""),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+        backend = NgBackend.readFromJson(json.select("backend").as[JsValue]),
+      )
+    } match {
+      case Failure(exception) => JsError(exception.getMessage)
+      case Success(route) => JsSuccess(route)
+    }
+    override def writes(o: StoredNgBackend): JsValue = o.json
+  }
+}
+
+case class StoredNgBackend(location: EntityLocation, id: String, name: String, description: String, tags: Seq[String], metadata: Map[String, String], backend: NgBackend) extends EntityLocationSupport {
+  override def internalId: String = id
+  override def theName: String = name
+  override def theDescription: String = description
+  override def theTags: Seq[String] = tags
+  override def theMetadata: Map[String, String] = metadata
+  override def json: JsValue = location.jsonWithKey ++ Json.obj(
+    "id" -> id,
+    "name" -> name,
+    "description" -> description,
+    "tags" -> tags,
+    "metadata" -> metadata,
+    "backend" -> backend.json,
+  )
+}
+
+trait StoredNgBackendDataStore extends BasicStore[StoredNgBackend]
+
+class KvStoredNgBackendDataStore(redisCli: RedisLike, _env: Env)
+  extends StoredNgBackendDataStore
+    with RedisLikeStore[StoredNgBackend] {
+  override def redisLike(implicit env: Env): RedisLike   = redisCli
+  override def fmt: Format[StoredNgBackend]              = StoredNgBackend.format
+  override def key(id: String): Key                      = Key.Empty / _env.storageRoot / "backends" / id
+  override def extractId(value: StoredNgBackend): String = value.id
 }

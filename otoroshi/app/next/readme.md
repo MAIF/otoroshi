@@ -1,18 +1,22 @@
 # next-gen proxy engine
 
-## TODO
+## Tasks
 
+- [x] remove apikey stuff from request before the forward
+- [x] tricky plugins
+- [x] handle ws
 - [x] Loader Job to keep all route in memory
-- [ ] Loader Job to keep all apikeys in memory
-- [ ] Loader Job to keep all certificates in memory
-- [ ] Loader Job to keep all auth. modules in memory
-- [ ] Loader Job to keep all jwt verifiers in memory
+- [x] Loader Job to keep all apikeys in memory
+- [x] Loader Job to keep all certificates in memory
+- [x] Loader Job to keep all auth. modules in memory
+- [x] Loader Job to keep all jwt verifiers in memory
 - [x] Some kind of reporting mecanism to keep track of everything (useful for debug)
 
 ## new entities
 
 - [x] Route
-- [ ] Backend
+- [x] Backend
+- [x] Target
 
 ## needed plugins
 
@@ -32,11 +36,11 @@
 - [x] otoroshi state plugin (transformer)
 - [x] otoroshi claim plugin (transformer)
 - [x] CORS (transformer)
-- [ ] tricky plugins
-  - [ ] gzip (transformer)
-  - [ ] tcp/udp tunneling (?? - if possible, implies support for WS)
-  - [ ] snow monkey (transformer)
-  - [ ] canary (??)
+- [x] tricky plugins
+  - [x] gzip (transformer)
+  - [x] tcp/udp tunneling (?? - if possible, implies support for WS)
+  - [x] snow monkey (transformer)
+  - [x] canary (??)
 - [x] headers related plugins
   - [x] add headers in (transformer)
   - [x] add headers out (transformer)
@@ -62,3 +66,4 @@
 
 - [x] sidecar (handled with kube stuff now)
 - [x] local redirection
+- [x] detect apikeys sooner

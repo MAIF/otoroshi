@@ -1,14 +1,22 @@
 package otoroshi.next.utils
 
-import otoroshi.env.Env
 import otoroshi.utils.http.DN
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import play.api.libs.json.{JsArray, JsNull, JsValue, Json}
+import play.api.libs.json._
 import play.api.mvc.RequestHeader
 
 import java.security.cert.X509Certificate
+import scala.util.{Failure, Success, Try}
 
 object JsonHelpers {
+
+  def reader[A](f: => A): JsResult[A] = Try {
+    f
+  } match {
+    case Failure(err) => JsError(err.getMessage)
+    case Success(value) => JsSuccess(value)
+  }
+
   def clientCertChainToJson(chain: Option[Seq[X509Certificate]]): JsValue = chain match {
     case None => JsNull
     case Some(seq) => {

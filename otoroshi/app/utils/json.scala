@@ -20,3 +20,7 @@ object JsonPatchHelpers {
     patch.apply(document).get
   }
 }
+
+trait Jsonable {
+  def json: JsValue
+}

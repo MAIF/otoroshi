@@ -275,7 +275,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
                 s"desc"                                                           -> descriptor.id,
                 "hash"                                                            -> hash,
                 s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
-                  routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
+                  routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
                 )
               )
           } else
@@ -338,7 +338,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
             "oauth_token_secret"      -> parameters("oauth_token_secret"),
             "hash"                    -> hash,
             "bo-redirect-after-login" -> redirect.getOrElse(
-              routes.BackOfficeController.dashboard().absoluteURL(env.exposedRootSchemeIsHttps)
+              routes.BackOfficeController.dashboard.absoluteURL(env.exposedRootSchemeIsHttps)
             )
           )
         } else

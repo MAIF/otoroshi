@@ -319,7 +319,7 @@ ENTRYPOINT [ &quot;sh&quot;, &quot;-c&quot;, &quot;java $JAVA_OPTS -Djava.securi
 <p>Once your Redis Cluster is created, it would look like the image below.</p><div class="centered-img">
 <img src="../imgs/deploy-elb-9.png" /></div>
 <p>For applications in the same security group as your cluster, redis cluster is accessible via the <strong>Primary Endpoint</strong>. Don&rsquo;t worry the default security group is fine, you don&rsquo;t need any configuration to access the cluster from Otoroshi.</p>
-<p>To make Otoroshi use the created cluster, you can either use Envs <code>APP_STORAGE=redis</code>, <code>REDIS_HOST</code> and <code>REDIS_PORT</code>, or set <code>app.storage=redis</code>, <code>app.redis.host</code> and <code>app.redis.port</code> in your otoroshi.conf.</p>
+<p>To make Otoroshi use the created cluster, you can either use Envs <code>APP_STORAGE=redis</code>, <code>REDIS_HOST</code> and <code>REDIS_PORT</code>, or set <code>otoroshi.storage=redis</code>, <code>otoroshi.redis.host</code> and <code>otoroshi.redis.port</code> in your otoroshi.conf.</p>
 <h2><a href="#create-ssl-certificate-and-configure-your-domain" name="create-ssl-certificate-and-configure-your-domain" class="anchor"><span class="anchor-link"></span></a>Create SSL certificate and configure your domain</h2>
 <p>Otoroshi has now a datastore, but not yet ready for use. </p>
 <p>In order to get it ready you need to :</p>

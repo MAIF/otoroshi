@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory
 import otoroshi.events.{OtoroshiEventsActorSupervizer, StartExporters}
 import otoroshi.jobs.updates.Version
 import otoroshi.models.{EntityLocation, OtoroshiAdminType, SimpleOtoroshiAdmin, Team, TeamAccess, TeamId, Tenant, TenantAccess, TenantId, UserRight, UserRights, WebAuthnOtoroshiAdmin}
-import otoroshi.next.proxy.ProxyState
+import otoroshi.next.proxy.NgProxyState
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.storage.DataStores
@@ -54,6 +54,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.io.Source
 import scala.util.{Failure, Success}
+import otoroshi.script.plugins.Plugins
 
 case class SidecarConfig(
     serviceId: String,
@@ -64,7 +65,7 @@ case class SidecarConfig(
 )
 
 class Env(
-    val configuration: Configuration,
+    val _configuration: Configuration,
     val environment: Environment,
     val lifecycle: ApplicationLifecycle,
     wsClient: WSClient,
@@ -76,17 +77,25 @@ class Env(
 
   val logger = Logger("otoroshi-env")
 
-  val otoroshiConfig: Configuration = (for {
-    appConfig <- configuration.getOptionalWithFileSupport[Configuration]("app")
-    otoConfig <- configuration.getOptionalWithFileSupport[Configuration]("otoroshi")
+  val merged_configuration: Configuration = (for {
+    appConfig <- _configuration.getOptionalWithFileSupport[Configuration]("app")
+    otoConfig <- _configuration.getOptionalWithFileSupport[Configuration]("otoroshi")
   } yield {
+    val wholeConfigJson: JsObject    =
+      Json.parse(_configuration.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject].-("app").-("otoroshi")
     val appConfigJson: JsObject    =
       Json.parse(appConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
     val otoConfigJson: JsObject    =
       Json.parse(otoConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
-    val finalConfigJson1: JsObject = appConfigJson ++ otoConfigJson
+    // val appKeys = appConfigJson.value.keySet  
+    // val otoKeys = otoConfigJson.value.keySet  
+    // appKeys.filter(key => otoKeys.contains(key)).debugPrintln
+    val mergeConfig: JsObject = appConfigJson.deepMerge(otoConfigJson)
+    val finalConfigJson1: JsObject = wholeConfigJson.deepMerge(Json.obj("otoroshi" -> mergeConfig, "app" -> mergeConfig))
     Configuration(ConfigFactory.parseString(Json.stringify(finalConfigJson1)))
-  }) getOrElse configuration
+  }) getOrElse _configuration
+
+  val configuration = merged_configuration // _configuration
 
   private lazy val xmasStart =
     DateTime.now().withMonthOfYear(12).withDayOfMonth(20).withMillisOfDay(0)
@@ -863,7 +872,7 @@ class Env(
     }
     .getOrElse("")
 
-  lazy val proxyState = new ProxyState(this)
+  lazy val proxyState = new NgProxyState(this)
 
   lazy val defaultConfig = GlobalConfig(
     trustXForwarded = initialTrustXForwarded,
@@ -872,10 +881,20 @@ class Env(
     maxLogsSize = configuration.getOptionalWithFileSupport[Int]("app.events.maxSize").getOrElse(100),
     otoroshiId =
       configuration.getOptionalWithFileSupport[String]("otoroshi.instance.instanceId").getOrElse(IdGenerator.uuid),
-    scripts = GlobalScripts(
+    plugins = Plugins(
       enabled = true,
-      sinkRefs = Seq("cp:otoroshi.plugins.apikeys.ClientCredentialService"),
-      sinkConfig = Json.obj(
+      refs = Seq(
+        "cp:otoroshi.next.proxy.ProxyEngine",
+        "cp:otoroshi.plugins.apikeys.ClientCredentialService"
+      ),
+      config = Json.obj(
+        "NextGenProxyEngine" -> Json.obj(
+          "enabled" -> true,
+          "debug" -> false,
+          "debug_headers" -> false,
+          "domains" -> Seq("*-next-gen.oto.tools"),
+          "routing_strategy" -> "tree"
+        ),
         "ClientCredentialService" -> Json.obj(
           "domain"         -> "*",
           "expiration"     -> 1.hour.toMillis,
@@ -1007,6 +1026,7 @@ class Env(
           DynamicSSLEngineProvider.logger.warn(s"Using custom SSL protocols: ${p.mkString(", ")}")
       }
     }
+    configuration.betterHas("app.importFrom")
     datastores.globalConfigDataStore
       .isOtoroshiEmpty()
       .andThen {
@@ -1024,7 +1044,7 @@ class Env(
             .getOptionalWithFileSupport[Seq[String]]("app.importFromHeaders")
             .map(headers => headers.toSeq.map(h => h.split(":")).map(h => (h(0).trim, h(1).trim)))
             .getOrElse(Seq.empty[(String, String)])
-          if (configuration.has("app.importFrom")) {
+          if (configuration.betterHas("app.importFrom")) {
             configuration.getOptionalWithFileSupport[String]("app.importFrom") match {
               case Some(url) if url.startsWith("http://") || url.startsWith("https://") => {
                 logger.info(s"Importing from URL: $url")

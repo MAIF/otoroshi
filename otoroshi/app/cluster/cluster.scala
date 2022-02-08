@@ -28,7 +28,7 @@ import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.jobs.updates.Version
 import otoroshi.models.{SimpleAdminDataStore, TenantId, WebAuthnAdminDataStore}
-import otoroshi.next.models.{KvRouteDataStore, RouteDataStore}
+import otoroshi.next.models.{KvNgRouteDataStore, KvNgServiceDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, NgRouteDataStore, NgServiceDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage._
 import otoroshi.storage.drivers.inmemory._
@@ -859,7 +859,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   implicit lazy val mat   = env.otoroshiMaterializer
   implicit lazy val sched = env.otoroshiScheduler
 
-  private val _modern = env.configuration.getOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
+  private val _modern = env.configuration.betterGetOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
 
   private val lastPoll                      = new AtomicReference[DateTime](DateTime.parse("1970-01-01T00:00:00.000"))
   private val pollRef                       = new AtomicReference[Cancellable]()
@@ -1540,8 +1540,8 @@ class SwappableInMemoryDataStores(
   import scala.util.hashing.MurmurHash3
   import akka.stream.Materializer
 
-  lazy val redisStatsItems: Int  = configuration.get[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
-  lazy val experimental: Boolean = configuration.get[Option[Boolean]]("app.inmemory.experimental").getOrElse(false)
+  lazy val redisStatsItems: Int  = configuration.betterGet[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
+  lazy val experimental: Boolean = configuration.betterGet[Option[Boolean]]("app.inmemory.experimental").getOrElse(false)
   lazy val actorSystem           =
     ActorSystem(
       "otoroshi-swapinmemory-system",
@@ -1551,8 +1551,8 @@ class SwappableInMemoryDataStores(
         .getOrElse(ConfigFactory.empty)
     )
   private val materializer       = Materializer(actorSystem)
-  val _optimized                 = configuration.getOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
-  val _modern                    = configuration.getOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
+  val _optimized                 = configuration.betterGetOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
+  val _modern                    = configuration.betterGetOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
   lazy val redis                 = if (_modern) {
     new ModernSwappableInMemoryRedis(_optimized, env, actorSystem)
   } else {
@@ -1737,8 +1737,17 @@ class SwappableInMemoryDataStores(
   private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis, env)
   override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
 
-  private lazy val _routeDataStore = new KvRouteDataStore(redis, env)
-  override def routeDataStore: RouteDataStore = _routeDataStore
+  private lazy val _routeDataStore = new KvNgRouteDataStore(redis, env)
+  override def routeDataStore: NgRouteDataStore = _routeDataStore
+
+  private lazy val _routesCompositionDataStore = new KvNgServiceDataStore(redis, env)
+  override def servicesDataStore: NgServiceDataStore = _routesCompositionDataStore
+
+  private lazy val _targetsDataStore = new KvStoredNgTargetDataStore(redis, env)
+  override def targetsDataStore: StoredNgTargetDataStore = _targetsDataStore
+
+  private lazy val _backendsDataStore = new KvStoredNgBackendDataStore(redis, env)
+  override def backendsDataStore: StoredNgBackendDataStore = _backendsDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

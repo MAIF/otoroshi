@@ -9,7 +9,11 @@ import play.api.mvc.Results
 import scala.concurrent.{ExecutionContext, Future}
 
 class DisableHttp10 extends NgAccessValidator {
-  // TODO: add name and config
+
+  override def core: Boolean = true
+  override def name: String = "Disable HTTP/1.0"
+  override def description: Option[String] = "This plugin forbids HTTP/1.0 requests".some
+
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     if (ctx.request.version == "HTTP/1.0") {
       Errors
@@ -17,11 +21,12 @@ class DisableHttp10 extends NgAccessValidator {
           "HTTP/1.0 not allowed",
           Results.ServiceUnavailable,
           ctx.request,
-          ctx.route.serviceDescriptor.some,
+          None,
           Some("errors.http.1_0.not.allowed"),
-          duration = ctx.report.getDurationNow(), // TODO: checks if it's the rights move
-          overhead = ctx.report.getOverheadInNow(), // TODO: checks if it's the rights move
-          attrs = ctx.attrs
+          duration = ctx.report.getDurationNow(),
+          overhead = ctx.report.getOverheadInNow(),
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some,
         ).map(r => NgAccess.NgDenied(r))
     } else {
       NgAccess.NgAllowed.vfuture

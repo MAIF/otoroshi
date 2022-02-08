@@ -219,9 +219,9 @@ Download the latest version of the Otoroshi jar and run it like
 
 ```sh
  java \
-  -Dapp.adminPassword=password \
+  -Dotoroshi.adminPassword=password \
   -Dotoroshi.ssl.fromOutside.clientAuth=Want \
-  -jar -Dapp.storage=file otoroshi.jar
+  -jar -Dotoroshi.storage=file otoroshi.jar
 
 [info] otoroshi-env - Admin API exposed on http://otoroshi-api.oto.tools:8080
 [info] otoroshi-env - Admin UI  exposed on http://otoroshi.oto.tools:8080
