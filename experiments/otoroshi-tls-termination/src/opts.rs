@@ -55,13 +55,16 @@ pub struct Opts {
     /// the otoroshi ip address
     #[clap(long, default_value = "127.0.0.1")]
     pub ip: String,
+    /// the otoroshi url to fetch certs
+    #[clap(long)]
+    pub oto_url: Option<String>
 }
 
 impl Opts {
   pub fn as_config(&self) -> AppConfig {
     let listen_addr = format!("0.0.0.0:{}", self.input);
     let server_addr = format!("{}:{}", self.ip, self.output);
-    let oto_url_base = format!("http://{}", server_addr);
+    let oto_url_base = self.oto_url.clone().unwrap_or(format!("http://{}", server_addr));
     AppConfig {
       host: self.host.clone(),
       cid: self.cid.clone(),
@@ -78,7 +81,7 @@ impl Opts {
   pub fn as_config_debug(&self) -> AppConfig {
     let listen_addr = format!("0.0.0.0:{}", self.input);
     let server_addr = format!("{}:{}", self.ip, "9999");
-    let oto_url_base = format!("http://{}", server_addr);
+    let oto_url_base = self.oto_url.clone().unwrap_or(format!("http://{}", server_addr));
     AppConfig {
       host: self.host.clone(),
       cid: self.cid.clone(),
@@ -102,9 +105,11 @@ fn get_app_desc() -> ArgMatches {
       .arg(arg!(--output <VALUE> "the output TCP port. Default is 8080").required(false).validator(|s| s.parse::<i64>()))
       .arg(arg!(--ip <VALUE> "the otoroshi ip address. Default is 127.0.0.1").required(false))
       .arg(arg!(--host <VALUE> "the otoroshi api hostname. Default is otoroshi-api.oto.tools").required(false))
+      .arg(arg!(--oto-url <VALUE> "the otoroshi url to fetch certificates from").required(false))
       .arg(arg!(--cid <VALUE> "the otoroshi client-id. Default is admin-api-apikey-id").required(false))
       .arg(arg!(--csec <VALUE> "the otoroshi client-secret. Default is admin-api-apikey-secret").required(false))
       .arg(arg!(--workers <VALUE> "the number of workers. Default is 1").required(false))
+      .arg(arg!(--refresh_every <VALUE> "refresh certificats every n seconds. Default is 30").required(false))
       .arg(arg!(--mtls "enable mTLS want mode. Default is disabled").required(false))
       .arg(arg!(--no_refresh "disable auto refresh").required(false))
       .get_matches()
@@ -120,11 +125,12 @@ fn get_app_config() -> AppConfig {
   let csec: String = matches.value_of_t("csec").unwrap_or("admin-api-apikey-secret".to_string());
   let workers: usize = matches.value_of_t("workers").unwrap_or(1);
   let refresh_every: u64 = matches.value_of_t("refresh_every").unwrap_or(30);
+  let oto_url: Option<String> = matches.value_of("oto-url").map(|s| s.to_string());
   let mtls = matches.is_present("mtls");
   let no_refresh = matches.is_present("no_refresh");
   let listen_addr = format!("0.0.0.0:{}", port_in);
   let server_addr = format!("{}:{}", ip, port_out);
-  let oto_url_base = format!("http://{}", server_addr);
+  let oto_url_base = oto_url.clone().unwrap_or(format!("http://{}", server_addr));
   let cfg = AppConfig {
       host: host,
       cid: cid,
