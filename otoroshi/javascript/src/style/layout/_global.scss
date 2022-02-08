@@ -20,8 +20,9 @@ a:hover {
 }
 .page-header {
   margin-top: 32px;
-  border-bottom-color: $primaryColor;
-  margin-left: 25px
+  margin-left: 25px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid $primaryColor;
 }
 
 .placeholders {
