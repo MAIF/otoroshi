@@ -24,8 +24,6 @@ if (!window.Symbol) {
 window.$ = $;
 window.jQuery = $;
 
-require('bootstrap/dist/js/bootstrap.min');
-
 function setupOutdatedBrowser() {
   browserUpdate({
     // test: true,
