@@ -184,7 +184,7 @@ class BackOfficeAppContainer extends Component {
               <div className="row">
                 <div className={classes.join(' ')}>
                   <DynamicTitle />
-                  <div className="row" style={{ marginTop: 1 }}>
+                  <div className="row" style={{ marginTop: 10 }}>
                     {!this.state.catchedError && (
                       <Switch>
                         <Route
@@ -518,7 +518,7 @@ class BackOfficeAppContainer extends Component {
                           </button>
                           <button
                             type="button"
-                            className="btn btn-danger"
+                            className="btn btn-danger ms-2"
                             onClick={(e) => window.location.reload()}>
                             <i className="fas fa-redo" /> reload
                           </button>
