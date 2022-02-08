@@ -1,11 +1,9 @@
 use tokio_rustls::rustls::{self};
 use tokio_rustls::TlsAcceptor;
 use std::sync::{Arc};
-// use serde_json::{Value};
 use hyper::{Method, Request, Client};
 use moka::future::{Cache, CacheBuilder};
 
-//use crate::certs::{OtoroshiCert, OtoroshiCerts, TlsSettings};
 use crate::certs::OtoroshiCerts;
 use crate::opts::AppConfig;
 
@@ -38,50 +36,6 @@ async fn load_otoroshi_certs(oto_url_base: String, host: String, client_id: Stri
             None
           }
       }
-     // let payload: Value = serde_json::from_str(body_str).unwrap(); 
-      // let certificates_json: &Vec<Value> = payload.get("certificates").unwrap().as_array().unwrap();
-      // let tusted_certificates_json: &Vec<Value> = payload.get("trusted_certificates").unwrap().as_array().unwrap();
-      // let tls_settings = payload.get("tls_settings").unwrap().as_object().unwrap();
-      // let d_domain = tls_settings.get("defaultDomain").unwrap().as_str().map(|s| s.to_string());
-      // let random = tls_settings.get("randomIfNotFound").unwrap().as_bool().unwrap_or(false);
-      // let trusted_ca_server = tls_settings.get("trustedCAsServer").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
-      // info!("loading otoroshi certificates from - {} - {} - {} certificates - {} trusted certificates", oto_url_base, host, certificates_json.len(), tusted_certificates_json.len());
-      // let mut certificates: Vec<OtoroshiCert> = Vec::new();
-      // let mut trusted_certificates: Vec<OtoroshiCert> = Vec::new();
-      // for cert in certificates_json {
-      //     let domains: Vec<String> = cert.get("domains").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
-      //     let sans: Vec<String> = cert.get("sans").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
-      //     let chain: Vec<String> = cert.get("chain").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
-      //     let key: String = cert.get("key").unwrap().as_str().unwrap().to_string();
-      //     let cert = OtoroshiCert {
-      //         chain: chain,
-      //         key: key,
-      //         domains: domains,
-      //         sans: sans,
-      //     };
-      //     certificates.push(cert);
-      // }
-      // for cert in tusted_certificates_json {
-      //     let domains: Vec<String> = cert.get("domains").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
-      //     let chain: Vec<String> = cert.get("chain").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
-      //     let key: String = cert.get("key").unwrap().as_str().unwrap().to_string();
-      //     let cert = OtoroshiCert {
-      //         chain: chain,
-      //         key: key,
-      //         domains: domains,
-      //         sans: Vec::new()
-      //     };
-      //     trusted_certificates.push(cert);
-      // }
-      // Some(OtoroshiCerts {
-      //     certificates,
-      //     trusted_certificates,
-      //     tls_settings: TlsSettings {
-      //       defaultDomain: d_domain,
-      //       randomIfNotFound: random,
-      //       trustedCAsServer: trusted_ca_server
-      //     }
-      // })
   } else {
       error!("bad status - {} - {:?}", status, body_bytes);
       None
@@ -253,6 +207,51 @@ impl Tls {
 }
 
 
+// let payload: serde_json::Value = serde_json::from_str(body_str).unwrap(); 
+// let certificates_json: &Vec<Value> = payload.get("certificates").unwrap().as_array().unwrap();
+// let tusted_certificates_json: &Vec<Value> = payload.get("trusted_certificates").unwrap().as_array().unwrap();
+// let tls_settings = payload.get("tls_settings").unwrap().as_object().unwrap();
+// let d_domain = tls_settings.get("defaultDomain").unwrap().as_str().map(|s| s.to_string());
+// let random = tls_settings.get("randomIfNotFound").unwrap().as_bool().unwrap_or(false);
+// let trusted_ca_server = tls_settings.get("trustedCAsServer").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
+// info!("loading otoroshi certificates from - {} - {} - {} certificates - {} trusted certificates", oto_url_base, host, certificates_json.len(), tusted_certificates_json.len());
+// let mut certificates: Vec<OtoroshiCert> = Vec::new();
+// let mut trusted_certificates: Vec<OtoroshiCert> = Vec::new();
+// for cert in certificates_json {
+//     let domains: Vec<String> = cert.get("domains").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
+//     let sans: Vec<String> = cert.get("sans").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
+//     let chain: Vec<String> = cert.get("chain").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
+//     let key: String = cert.get("key").unwrap().as_str().unwrap().to_string();
+//     let cert = crate::certs::OtoroshiCert {
+//         chain: chain,
+//         key: key,
+//         domains: domains,
+//         sans: sans,
+//     };
+//     certificates.push(cert);
+// }
+// for cert in tusted_certificates_json {
+//     let domains: Vec<String> = cert.get("domains").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
+//     let chain: Vec<String> = cert.get("chain").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
+//     let key: String = cert.get("key").unwrap().as_str().unwrap().to_string();
+//     let cert = crate::certs::OtoroshiCert {
+//         chain: chain,
+//         key: key,
+//         domains: domains,
+//         sans: Vec::new()
+//     };
+//     trusted_certificates.push(cert);
+// }
+// Some(crate::certs::OtoroshiCerts {
+//     certificates,
+//     trusted_certificates,
+//     tls_settings: crate::certs::TlsSettings {
+//       defaultDomain: d_domain,
+//       randomIfNotFound: random,
+//       trustedCAsServer: trusted_ca_server
+//     }
+// })
+//
 // use rustls::RootCertStore;
 // use rustls::server::AllowAnyAuthenticatedClient;
 // use rustls::DistinguishedNames;
