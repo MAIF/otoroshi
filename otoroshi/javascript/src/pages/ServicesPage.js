@@ -252,11 +252,10 @@ export class ServicesPage extends Component {
           itemUrl={(i) => `/bo/dashboard/lines/${i.env}/services/${i.id}`}
           injectTopBar={() => (
             <>
-              <div className="btn-group" style={{ marginRight: 5 }}>
+              <div className="btn-group input-group-btn">
                 <button
                   type="button"
                   onClick={this.addService}
-                  style={{ marginRight: 0 }}
                   className="btn btn-primary">
                   <i className="fas fa-plus-circle" /> Create new service
                 </button>

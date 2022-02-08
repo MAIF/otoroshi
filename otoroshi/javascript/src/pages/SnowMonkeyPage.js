@@ -173,7 +173,7 @@ export class SnowMonkeyPage extends Component {
       <div>
         <div className="row">
           <div className="mb-3 btnsService">
-            <div className="col-xs-12 col-sm-10 displayGroupBtn">
+            <div className="displayGroupBtn">
               <button
                 type="button"
                 className={`btn btn-${this.state.started ? 'danger' : 'success'}`}

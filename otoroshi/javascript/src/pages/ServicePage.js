@@ -1111,7 +1111,7 @@ export class ServicePage extends Component {
       <div>
         <form className="form-horizontal">
           <div className="mb-3 btnsService">
-            <div className="col-xs-12 col-sm-10 displayGroupBtn">
+            <div className="displayGroupBtn">
               <button
                 className="btn btn-danger"
                 type="button"
