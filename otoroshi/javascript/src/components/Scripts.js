@@ -318,7 +318,7 @@ export class Scripts extends Component {
         />
         <div className="row mb-3">
           <label className="col-xs-12 col-sm-2 col-form-label" />
-          <div className="col-sm-10">
+          <div className="col-sm-10 input-group-btn">
             {this.props.refs && this.props.refs.length === 0 && (
               <a href={`/bo/dashboard/plugins/add`} className="btn btn-sm btn-primary">
                 <i className="fas fa-plus" /> Create a new plugin.

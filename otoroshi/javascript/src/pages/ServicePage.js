@@ -1220,7 +1220,7 @@ export class ServicePage extends Component {
           />
           <div className="row mb-3">
             <label className="col-xs-12 col-sm-2 col-form-label" />
-            <div className="col-sm-10 d-flex justify-content-end">
+            <div className="col-sm-10 d-flex justify-content-end input-group-btn">
               <button
                 type="button"
                 className="btn btn-success btn-sm"
@@ -1422,7 +1422,7 @@ export class ServicePage extends Component {
                 )}
                 <div className="row mb-3">
                   <label className="col-xs-12 col-sm-2 col-form-label" />
-                  <div className="col-sm-10">
+                  <div className="col-sm-10 input-group-btn">
                     <button
                       className="btn btn-sm btn-info"
                       type="button"
@@ -1951,7 +1951,7 @@ export class ServicePage extends Component {
             />
             <div className="row mb-3">
               <label className="col-xs-12 col-sm-2 col-form-label" />
-              <div className="col-sm-10">
+              <div className="col-sm-10 input-group-btn">
                 {!this.state.service.authConfigRef && (
                   <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
                     <i className="fas fa-plus" /> Create a new auth. config.
@@ -2908,7 +2908,7 @@ export class ServicePage extends Component {
                 className="col-xs-12 col-sm-2 col-form-label">
                 Security headers
               </label>
-              <div className="col-sm-10">
+              <div className="col-sm-10 input-group-btn">
                 <button
                   type="button"
                   onClick={(e) => this.addSecurityHeader('X-Frame-Options', 'DENY')}

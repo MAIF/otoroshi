@@ -101,7 +101,7 @@ export class Location extends Component {
         />
         <div className="row mb-3">
           <label className="col-xs-12 col-sm-2 col-form-label"></label>
-          <div className="col-sm-10 d-flex justify-content-end">
+          <div className="col-sm-10 d-flex justify-content-end input-group-btn">
             {window.__user.superAdmin && (
               <a className="btn btn-sm btn-info" href="/bo/dashboard/organizations">
                 <i className="fas fa-edit"></i> Manage organizations
