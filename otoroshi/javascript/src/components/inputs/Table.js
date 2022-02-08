@@ -495,16 +495,16 @@ export class Table extends Component {
               />
             )}
             <hr />
-            <div className="form-buttons float-end">
+            <div className="float-end">
               <button type="button" className="btn btn-danger" onClick={this.closeAddForm}>
                 Cancel
               </button>
               {this.props.stayAfterSave && (
-                <button type="button" className="btn btn-primary" onClick={this.createItemAndStay}>
+                <button type="button" className="btn btn-primary ms-2" onClick={this.createItemAndStay}>
                   <i className="fas fa-hdd" /> Create and stay on this {this.props.itemName}
                 </button>
               )}
-              <button type="button" className="btn btn-primary" onClick={this.createItem}>
+              <button type="button" className="btn btn-primary ms-2" onClick={this.createItem}>
                 <i className="fas fa-hdd" /> Create {this.props.itemName}
               </button>
             </div>
@@ -535,7 +535,7 @@ export class Table extends Component {
               />
             )}
             <hr />
-            <div className="form-buttons float-end">
+            <div className="float-end">
               {this.props.export && (
                 <>
                   <button
@@ -548,7 +548,7 @@ export class Table extends Component {
                   <button
                     onClick={this.exportYaml}
                     type="button"
-                    className="btn btn-info"
+                    className="btn btn-info ms-2"
                     title="Export as yaml">
                     <i className="glyphicon glyphicon-export" /> YAML
                   </button>
