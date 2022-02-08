@@ -1,11 +1,12 @@
 use tokio_rustls::rustls::{self};
 use tokio_rustls::TlsAcceptor;
 use std::sync::{Arc};
-use serde_json::{Value};
+// use serde_json::{Value};
 use hyper::{Method, Request, Client};
 use moka::future::{Cache, CacheBuilder};
 
-use crate::certs::{OtoroshiCert, OtoroshiCerts};
+//use crate::certs::{OtoroshiCert, OtoroshiCerts, TlsSettings};
+use crate::certs::OtoroshiCerts;
 use crate::opts::AppConfig;
 
 async fn load_otoroshi_certs(oto_url_base: String, host: String, client_id: String, client_sec: String) -> Option<OtoroshiCerts> {
@@ -27,46 +28,60 @@ async fn load_otoroshi_certs(oto_url_base: String, host: String, client_id: Stri
   let body_str = std::str::from_utf8(&body_bytes).unwrap();
   if status.as_str() == "200" {
       trace!("status: {} - {:?}k", status, body_bytes.len() / 1024);
-      let payload: Value = serde_json::from_str(body_str).unwrap(); 
-      let certificates_json: &Vec<Value> = payload.get("certificates").unwrap().as_array().unwrap();
-      let tusted_certificates_json: &Vec<Value> = payload.get("trusted_certificates").unwrap().as_array().unwrap();
-      let tls_settings = payload.get("tls_settings").unwrap().as_object().unwrap();
-      let d_domain = tls_settings.get("defaultDomain").unwrap().as_str().map(|s| s.to_string());
-      let random = tls_settings.get("randomIfNotFound").unwrap().as_bool().unwrap_or(false);
-      info!("loading otoroshi certificates from - {} - {} - {} certificates - {} trusted certificates", oto_url_base, host, certificates_json.len(), tusted_certificates_json.len());
-      let mut certificates: Vec<OtoroshiCert> = Vec::new();
-      let mut trusted_certificates: Vec<OtoroshiCert> = Vec::new();
-      for cert in certificates_json {
-          let domains: Vec<String> = cert.get("domains").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
-          let sans: Vec<String> = cert.get("sans").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
-          let chain: Vec<String> = cert.get("chain").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
-          let key: String = cert.get("key").unwrap().as_str().unwrap().to_string();
-          let cert = OtoroshiCert {
-              chain: chain,
-              key: key,
-              domains: domains,
-              sans: sans,
-          };
-          certificates.push(cert);
+      match serde_json::from_str::<OtoroshiCerts>(body_str) {
+          Ok(certs) => {
+            info!("loading otoroshi certificates from - {} - {} - {} certificates - {} trusted certificates", oto_url_base, host, certs.certificates.len(), certs.trusted_certificates.len());
+            Some(certs)
+          }
+          Err(err) => {
+            error!("error while loading otoroshi certificates: {:?}", err);
+            None
+          }
       }
-      for cert in tusted_certificates_json {
-          let domains: Vec<String> = cert.get("domains").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
-          let chain: Vec<String> = cert.get("chain").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
-          let key: String = cert.get("key").unwrap().as_str().unwrap().to_string();
-          let cert = OtoroshiCert {
-              chain: chain,
-              key: key,
-              domains: domains,
-              sans: Vec::new()
-          };
-          trusted_certificates.push(cert);
-      }
-      Some(OtoroshiCerts {
-          certificates,
-          trusted_certificates,
-          d_domain,
-          random
-      })
+     // let payload: Value = serde_json::from_str(body_str).unwrap(); 
+      // let certificates_json: &Vec<Value> = payload.get("certificates").unwrap().as_array().unwrap();
+      // let tusted_certificates_json: &Vec<Value> = payload.get("trusted_certificates").unwrap().as_array().unwrap();
+      // let tls_settings = payload.get("tls_settings").unwrap().as_object().unwrap();
+      // let d_domain = tls_settings.get("defaultDomain").unwrap().as_str().map(|s| s.to_string());
+      // let random = tls_settings.get("randomIfNotFound").unwrap().as_bool().unwrap_or(false);
+      // let trusted_ca_server = tls_settings.get("trustedCAsServer").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
+      // info!("loading otoroshi certificates from - {} - {} - {} certificates - {} trusted certificates", oto_url_base, host, certificates_json.len(), tusted_certificates_json.len());
+      // let mut certificates: Vec<OtoroshiCert> = Vec::new();
+      // let mut trusted_certificates: Vec<OtoroshiCert> = Vec::new();
+      // for cert in certificates_json {
+      //     let domains: Vec<String> = cert.get("domains").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
+      //     let sans: Vec<String> = cert.get("sans").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
+      //     let chain: Vec<String> = cert.get("chain").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
+      //     let key: String = cert.get("key").unwrap().as_str().unwrap().to_string();
+      //     let cert = OtoroshiCert {
+      //         chain: chain,
+      //         key: key,
+      //         domains: domains,
+      //         sans: sans,
+      //     };
+      //     certificates.push(cert);
+      // }
+      // for cert in tusted_certificates_json {
+      //     let domains: Vec<String> = cert.get("domains").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
+      //     let chain: Vec<String> = cert.get("chain").unwrap().as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
+      //     let key: String = cert.get("key").unwrap().as_str().unwrap().to_string();
+      //     let cert = OtoroshiCert {
+      //         chain: chain,
+      //         key: key,
+      //         domains: domains,
+      //         sans: Vec::new()
+      //     };
+      //     trusted_certificates.push(cert);
+      // }
+      // Some(OtoroshiCerts {
+      //     certificates,
+      //     trusted_certificates,
+      //     tls_settings: TlsSettings {
+      //       defaultDomain: d_domain,
+      //       randomIfNotFound: random,
+      //       trustedCAsServer: trusted_ca_server
+      //     }
+      // })
   } else {
       error!("bad status - {} - {:?}", status, body_bytes);
       None
@@ -179,7 +194,7 @@ impl Tls {
         let resolver: CustomResolvesServerCertUsingSni = match load_otoroshi_certs(oto_url_base, host, cid, csec).await {
             None => CustomResolvesServerCertUsingSni::new(None, false),
             Some(certs) => {
-                let mut resolver = CustomResolvesServerCertUsingSni::new(certs.d_domain, certs.random);
+                let mut resolver = CustomResolvesServerCertUsingSni::new(certs.tls_settings.default_domain, certs.tls_settings.random_if_not_found);
                 for cert in certs.certificates {
                     match cert.cert_key() {
                         None => (),
