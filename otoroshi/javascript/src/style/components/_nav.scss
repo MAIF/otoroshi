@@ -60,3 +60,7 @@
     color: #fff;
   }
 }
+
+.nav-link:focus{
+  color: $primaryColor;
+}
