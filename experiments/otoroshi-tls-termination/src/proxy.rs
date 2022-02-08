@@ -8,10 +8,9 @@ use socket2::{Socket, Domain, Type};
 use crate::opts::AppConfig;
 use crate::tls::Tls;
 
-// TODO: find a way to pass client cert to oto
 async fn transfer(inbound: tokio_rustls::server::TlsStream<TcpStream>, proxy_addr: String) -> Result<(), Box<dyn Error>> {
     let mut outbound = TcpStream::connect(proxy_addr).await?; // TODO: reuse connection ?
-    let (mut ri, mut wi) = split(inbound);
+    let (mut ri, mut wi) = split(inbound); // TODO: find a way to pass client cert to oto
     let (mut ro, mut wo) = outbound.split();
     let client_to_server = async {
         io::copy(&mut ri, &mut wo).await?;
@@ -68,7 +67,7 @@ pub struct Proxy {}
 impl Proxy { 
   pub async fn create(name: String, tls: &Tls, app_config: AppConfig) -> Result<(), Box<dyn Error>> {
     if cfg!(debug_assertions) {
-        info!("creating proxy worker '{}'", name);
+        debug!("creating proxy worker '{}'", name);
     }
     tls_proxy(name, tls, app_config).await
   }
