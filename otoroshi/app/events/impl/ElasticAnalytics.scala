@@ -1376,44 +1376,49 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
     // gatewayEventFilters ++
     // serviceQuery.toSeq
 
-    filterable match {
-      case None                                       => {
-        val eventFilterJson = JsArray(eventFilter.map(e => Json.obj("bool" -> Json.obj("should" -> Json.arr(e), "minimum_should_match" -> 1))))
-        val additionalMustJson = JsArray(additionalMust.map(e => Json.obj("bool" -> Json.obj("must" -> Json.arr(e)))))
-        val gatewayEvent = Json.arr(Json.obj(
-          "bool" -> Json.obj(
-            "should" -> Json.arr(
-              Json.obj(
-                "match_phrase" -> Json.obj(
-                  "@type" -> "GatewayEvent"
-                )
-              )
-            ),
-            "minimum_should_match" -> 1
+    val eventFilterArr = if (eventFilter.isEmpty) Json.arr() else JsArray(eventFilter.map(e => Json.obj("bool" -> Json.obj("should" -> Json.arr(e), "minimum_should_match" -> 1))))
+    val additionalMustArr = if (additionalMust.isEmpty) Json.arr() else JsArray(additionalMust.map(e => Json.obj("bool" -> Json.obj("must" -> Json.arr(e)))))
+    val gatewayEvent = Json.arr(Json.obj(
+      "bool" -> Json.obj(
+        "should" -> Json.arr(
+          Json.obj(
+            "match_phrase" -> Json.obj(
+              "@type" -> "GatewayEvent"
+            )
           )
-        ))
-        val filters = eventFilterJson ++ additionalMustJson ++ gatewayEvent
-        Json.obj(
-          "must" -> Json.arr(),
-          "must_not" -> Json.arr(),
-          "should" -> Json.arr(),
-          "filter" -> Json.arr(
-            Json.obj(
-              "bool" -> Json.obj(
-                "filter" -> filters
-              )
-            ),
-            Json.obj(
-              "range" -> Json.obj(
-                "@timestamp" -> Json.obj(
-                  "gte" -> mayBeFrom.getOrElse(DateTime.now()).toString(),
-                  "lte" -> mayBeTo.getOrElse(DateTime.now()).toString(),
-                  "format" -> "strict_date_optional_time"
-                )
+        ),
+        "minimum_should_match" -> 1
+      )
+    ))
+    val basicFilters = eventFilterArr ++ additionalMustArr /* ++ gatewayEvent */
+
+    def basicQuery(filters: JsArray): JsObject = {
+      Json.obj(
+        "must" -> Json.arr(),
+        "must_not" -> Json.arr(),
+        "should" -> Json.arr(),
+        "filter" -> Json.arr(
+          Json.obj(
+            "bool" -> Json.obj(
+              "filter" -> filters
+            )
+          ),
+          Json.obj(
+            "range" -> Json.obj(
+              "@timestamp" -> Json.obj(
+                "gte" -> mayBeFrom.getOrElse(DateTime.now()).toString(),
+                "lte" -> mayBeTo.getOrElse(DateTime.now()).toString(),
+                "format" -> "strict_date_optional_time"
               )
             )
           )
         )
+      )
+    }
+
+    filterable match {
+      case None                                       => {
+        basicQuery(basicFilters)
         // Json.obj(
         //   "must" -> (
         //     dateFilters(mayBeFrom, mayBeTo) ++
@@ -1423,25 +1428,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         // )
       }
       case Some(ServiceGroupFilterable(group))        => {
-        Json.obj(
-          "should"               -> (
-            Seq(
-              if (!raw) Json.obj("term" -> Json.obj("descriptor.groups" -> group.id)) else Json.obj("term" -> Json.obj("descriptor.groups.raw" -> group.id))
-            ) ++
-            additionalShould
-          ),
-          "must"                 -> (
-            dateFilters(mayBeFrom, mayBeTo) ++
-            eventFilter ++
-            additionalMust
-          )
-        ).applyOnIf(additionalShould.nonEmpty) { obj =>
-          obj ++ Json.obj("minimum_should_match" -> 1)
-        }
-      }
-      case Some(ApiKeyFilterable(apiKey))             => {
-        val eventFilterArr = if (eventFilter.isEmpty) Json.arr() else JsArray(eventFilter.map(e => Json.obj("bool" -> Json.obj("should" -> Json.arr(e), "minimum_should_match" -> 1))))
-        val additionalMustArr = if (additionalMust.isEmpty) Json.arr() else JsArray(additionalMust.map(e => Json.obj("bool" -> Json.obj("must" -> Json.arr(e)))))
+
         val filters = Json.arr(Json.obj(
           "bool" -> Json.obj(
             "should" -> Json.arr(
@@ -1453,7 +1440,54 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
             ),
             "minimum_should_match" -> 1
           )
-        )) ++ eventFilterArr ++ additionalMustArr ++ Json.arr(Json.obj(
+        )) ++ Json.arr(Json.obj(
+          "bool" -> Json.obj(
+            "should" -> Json.arr(
+              Json.obj(
+                "match_phrase" -> Json.obj(
+                  "descriptor.groups" -> group.id
+                )
+              ),
+              Json.obj(
+                "match_phrase" -> Json.obj(
+                  "descriptor.groups.raw" -> group.id
+                )
+              )
+            ),
+            "minimum_should_match" -> 1
+          )))
+
+        basicQuery(filters)
+
+        // Json.obj(
+        //   "should"               -> (
+        //     Seq(
+        //       if (!raw) Json.obj("term" -> Json.obj("descriptor.groups" -> group.id)) else Json.obj("term" -> Json.obj("descriptor.groups.raw" -> group.id))
+        //     ) ++
+        //     additionalShould
+        //   ),
+        //   "must"                 -> (
+        //     dateFilters(mayBeFrom, mayBeTo) ++
+        //     eventFilter ++
+        //     additionalMust
+        //   )
+        // ).applyOnIf(additionalShould.nonEmpty) { obj =>
+        //   obj ++ Json.obj("minimum_should_match" -> 1)
+        // }
+      }
+      case Some(ApiKeyFilterable(apiKey))             => {
+        val filters = Json.arr(Json.obj(
+          "bool" -> Json.obj(
+            "should" -> Json.arr(
+              Json.obj(
+                "match_phrase" -> Json.obj(
+                  "@type" -> "GatewayEvent"
+                )
+              )
+            ),
+            "minimum_should_match" -> 1
+          )
+        )) ++ Json.arr(Json.obj(
           "bool" -> Json.obj(
             "should" -> Json.arr(
               Json.obj(
@@ -1469,27 +1503,9 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
             ),
             "minimum_should_match" -> 1
         )))
-        Json.obj(
-          "must" -> Json.arr(),
-          "must_not" -> Json.arr(),
-          "should" -> Json.arr(),
-          "filter" -> Json.arr(
-            Json.obj(
-              "bool" -> Json.obj(
-                "filter" -> filters
-              )
-            ),
-            Json.obj(
-              "range" -> Json.obj(
-                "@timestamp" -> Json.obj(
-                  "gte" -> mayBeFrom.getOrElse(DateTime.now()).toString(),
-                  "lte" -> mayBeTo.getOrElse(DateTime.now()).toString(),
-                  "format" -> "strict_date_optional_time"
-                )
-              )
-            )
-          )
-        )
+
+        basicQuery(filters)
+
         // Json.obj(
         //   "should"               -> (
         //     Seq(
@@ -1509,21 +1525,52 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         // }
       }
       case Some(ServiceDescriptorFilterable(service)) => {
-        Json.obj(
-          "should"               -> (
-            Seq(
-              if (!raw) Json.obj("term" -> Json.obj("@serviceId" -> service.id)) else Json.obj("term" -> Json.obj("@serviceId.raw" -> service.id))
-            ) ++
-            additionalShould
-          ),
-          "must"                 -> (
-            dateFilters(mayBeFrom, mayBeTo) ++
-            eventFilter ++
-            additionalMust
+
+        val filters = Json.arr(Json.obj(
+          "bool" -> Json.obj(
+            "should" -> Json.arr(
+              Json.obj(
+                "match_phrase" -> Json.obj(
+                  "@type" -> "GatewayEvent"
+                )
+              )
+            ),
+            "minimum_should_match" -> 1
           )
-        ).applyOnIf(additionalShould.nonEmpty) { obj =>
-          obj ++ Json.obj("minimum_should_match" -> 1)
-        }
+        )) ++ Json.arr(Json.obj(
+          "bool" -> Json.obj(
+            "should" -> Json.arr(
+              Json.obj(
+                "match_phrase" -> Json.obj(
+                  "@serviceId" -> service.id
+                )
+              ),
+              Json.obj(
+                "match_phrase" -> Json.obj(
+                  "@serviceId.raw" -> service.id
+                )
+              )
+            ),
+            "minimum_should_match" -> 1
+          )))
+
+        basicQuery(filters)
+
+        // Json.obj(
+        //   "should"               -> (
+        //     Seq(
+        //       if (!raw) Json.obj("term" -> Json.obj("@serviceId" -> service.id)) else Json.obj("term" -> Json.obj("@serviceId.raw" -> service.id))
+        //     ) ++
+        //     additionalShould
+        //   ),
+        //   "must"                 -> (
+        //     dateFilters(mayBeFrom, mayBeTo) ++
+        //     eventFilter ++
+        //     additionalMust
+        //   )
+        // ).applyOnIf(additionalShould.nonEmpty) { obj =>
+        //   obj ++ Json.obj("minimum_should_match" -> 1)
+        // }
       }
     }
   }
