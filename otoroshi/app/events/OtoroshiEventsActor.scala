@@ -179,9 +179,9 @@ object DataExporter {
       val stream = Source
         .queue[OtoroshiEvent](configUnsafe.bufferSize, OverflowStrategy.dropHead)
         .filter(_ => configOpt.exists(_.enabled))
-        .mapAsync(configUnsafe.jsonWorkers)(event => event.toEnrichedJson) // TODO: try/catch
-        .filter(event => accept(event)) // TODO: try/catch
-        .map(event => project(event)) // TODO: try/catch
+        .mapAsync(configUnsafe.jsonWorkers)(event => event.toEnrichedJson)
+        .filter(event => accept(event))
+        .map(event => project(event))
         .groupedWithin(configUnsafe.groupSize, configUnsafe.groupDuration)
         .filterNot(_.isEmpty)
         .mapAsync(configUnsafe.sendWorkers) { events =>
@@ -250,19 +250,31 @@ object DataExporter {
     }
 
     def accept(event: JsValue): Boolean = {
-      (configUnsafe.filtering.include.isEmpty || configUnsafe.filtering.include.exists(i =>
-        otoroshi.utils.Match.matches(event, i)
-      )) &&
-      (configUnsafe.filtering.exclude.isEmpty || configUnsafe.filtering.exclude.exists(i =>
-        !otoroshi.utils.Match.matches(event, i)
-      ))
+      try {
+        (configUnsafe.filtering.include.isEmpty || configUnsafe.filtering.include.exists(i =>
+          otoroshi.utils.Match.matches(event, i)
+        )) &&
+          (configUnsafe.filtering.exclude.isEmpty || configUnsafe.filtering.exclude.exists(i =>
+            !otoroshi.utils.Match.matches(event, i)
+          ))
+      } catch {
+        case t: Throwable =>
+          logger.error("error while accepting event", t)
+          false
+      }
     }
 
     def project(event: JsValue): JsValue = {
-      if (configUnsafe.projection.value.isEmpty) {
-        event
-      } else {
-        otoroshi.utils.Projection.project(event, configUnsafe.projection, identity)
+      try {
+        if (configUnsafe.projection.value.isEmpty) {
+          event
+        } else {
+          otoroshi.utils.Projection.project(event, configUnsafe.projection, identity)
+        }
+      } catch {
+        case t: Throwable =>
+          logger.error("error while projecting event", t)
+          event
       }
     }
 
