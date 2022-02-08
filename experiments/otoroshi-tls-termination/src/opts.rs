@@ -113,7 +113,7 @@ fn get_app_desc() -> ArgMatches {
 fn get_app_config() -> AppConfig {
   let matches = get_app_desc();
   let port_in: usize = matches.value_of_t("input").unwrap_or(8443);
-  let port_out: usize = matches.value_of_t("output").unwrap_or(9999); // 8080
+  let port_out: usize = matches.value_of_t("output").unwrap_or(8080);
   let ip: String = matches.value_of_t("ip").unwrap_or("127.0.0.1".to_string());
   let host: String = matches.value_of_t("host").unwrap_or("otoroshi-api.oto.tools".to_string());
   let cid: String = matches.value_of_t("cid").unwrap_or("admin-api-apikey-id".to_string());
