@@ -19,14 +19,16 @@ class GzipResponseCompressor extends NgRequestTransformer {
   override def transformsRequest: Boolean = false
   override def transformsResponse: Boolean = true
   override def transformsError: Boolean = false
+  override def isTransformRequestAsync: Boolean = true
+  override def isTransformResponseAsync: Boolean = false
   override def name: String = "Gzip compression"
   override def description: Option[String] = "This plugin can compress responses using gzip".some
   override def defaultConfig: Option[JsObject] = GzipConfig().asJson.asObject.-("enabled").-("excludedPatterns").some
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  override def transformResponseSync(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(GzipConfig(enabled = true))
     def transform(result: Result): Future[Result] = config.handleResult(ctx.request, result)
     ctx.attrs.put(otoroshi.next.plugins.Keys.ResultTransformerKey -> transform)
-    ctx.otoroshiResponse.right.vfuture
+    ctx.otoroshiResponse.right
   }
 }

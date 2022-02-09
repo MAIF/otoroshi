@@ -14,6 +14,7 @@ class MaintenanceMode extends NgPreRouting {
   override def core: Boolean = true
   override def name: String = "Maintenance mode"
   override def description: Option[String] = "This plugin displays a maintenance page".some
+  override def isPreRouteAsync: Boolean = true
 
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     Errors
@@ -36,6 +37,7 @@ class BuildMode extends NgPreRouting {
   override def core: Boolean = true
   override def name: String = "Build mode"
   override def description: Option[String] = "This plugin displays a build page".some
+  override def isPreRouteAsync: Boolean = true
 
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     Errors

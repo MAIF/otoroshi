@@ -66,7 +66,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
     slots
       .map(inst => (inst, inst.getPlugin[NgNamedPlugin]))
       .collect {
-        case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
+        case (inst, Some(plugin)) => NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
   }
 
@@ -76,7 +76,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgRequestSink]))
       .collect {
-        case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
+        case (inst, Some(plugin)) => NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
   }
 
@@ -86,7 +86,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgRequestTransformer]))
       .collect {
-        case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
+        case (inst, Some(plugin)) => NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
   }
 
@@ -112,7 +112,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgPreRouting]))
       .collect {
-        case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
+        case (inst, Some(plugin)) => NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
   }
 
@@ -122,7 +122,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgAccessValidator]))
       .collect {
-        case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
+        case (inst, Some(plugin)) => NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
   }
 
@@ -132,7 +132,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgRouteMatcher]))
       .collect {
-        case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
+        case (inst, Some(plugin)) => NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
   }
 
@@ -142,7 +142,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgTunnelHandler]))
       .collect {
-        case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
+        case (inst, Some(plugin)) => NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
   }
 }
@@ -172,41 +172,137 @@ case class NgContextualPlugins(plugins: NgPlugins, global_plugins: NgPlugins, re
   lazy val requestSinkPlugins = allPlugins
     .map(inst => (inst, inst.getPlugin[NgRequestSink]))
     .collect {
-      case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
+      case (inst, Some(plugin)) => NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
     }
 
   lazy val transformerPlugins = allPlugins
     .map(inst => (inst, inst.getPlugin[NgRequestTransformer]))
     .collect {
-      case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
+      case (inst, Some(plugin)) => NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
     }
 
   lazy val (transformerPluginsWithCallbacks, tpwoCallbacks) = transformerPlugins.partition(_.plugin.usesCallbacks)
-  lazy val (transformerPluginsThatTransformsRequest, tpwoRequest) = transformerPlugins.partition(_.plugin.transformsRequest)
-  lazy val (transformerPluginsThatTransformsResponse, tpwoResponse) = transformerPlugins.partition(_.plugin.transformsResponse)
+  lazy val (transformerPluginsThatTransformsRequest, tpwoRequest) = {
+    val (plugs, b) = transformerPlugins.partition(_.plugin.transformsRequest)
+    if (_env.nextPluginsMerge && plugs.size > 1) {
+      val new_plugins = plugs.foldLeft((true, Seq.empty[NgPluginWrapper[NgRequestTransformer]])) {
+        case ((latestAsync, coll), plug) => {
+          if (plug.plugin.isTransformRequestAsync) {
+            (true, coll :+ plug)
+          } else {
+            if (!latestAsync) {
+              coll.last match {
+                case wrap @ NgPluginWrapper.NgSimplePluginWrapper(_, _) => (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(Seq(wrap, plug)))
+                case NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(plugins) => (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper( plugins :+ plug))
+                case _ => (true, coll :+ plug)
+              }
+            } else {
+              (false, coll :+ plug)
+            }
+          }
+        }
+      }._2
+      (new_plugins, b)
+    } else {
+      (plugs, b)
+    }
+  }
+  lazy val (transformerPluginsThatTransformsResponse, tpwoResponse) = {
+    val (plugs, b) = transformerPlugins.partition(_.plugin.transformsResponse)
+    if (_env.nextPluginsMerge && plugs.size > 1) {
+      val new_plugins = plugs.foldLeft((true, Seq.empty[NgPluginWrapper[NgRequestTransformer]])) {
+        case ((latestAsync, coll), plug) => {
+          if (plug.plugin.isTransformResponseAsync) {
+            (true, coll :+ plug)
+          } else {
+            if (!latestAsync) {
+              coll.last match {
+                case wrap @ NgPluginWrapper.NgSimplePluginWrapper(_, _) => (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(Seq(wrap, plug)))
+                case NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(plugins) => (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper( plugins :+ plug))
+                case _ => (true, coll :+ plug)
+              }
+            } else {
+              (false, coll :+ plug)
+            }
+          }
+        }
+      }._2
+      (new_plugins, b)
+    } else {
+      (plugs, b)
+    }
+  }
   lazy val (transformerPluginsThatTransformsError, tpwoErrors) = transformerPlugins.partition(_.plugin.transformsError)
 
-  lazy val preRoutePlugins = allPlugins
-    .map(inst => (inst, inst.getPlugin[NgPreRouting]))
-    .collect {
-      case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
+  lazy val preRoutePlugins = {
+    val plugs = allPlugins
+      .map(inst => (inst, inst.getPlugin[NgPreRouting]))
+      .collect {
+        case (inst, Some(plugin)) => NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+      }
+    if (_env.nextPluginsMerge && plugs.size > 1) {
+      val new_plugins = plugs.foldLeft((true, Seq.empty[NgPluginWrapper[NgPreRouting]])) {
+        case ((latestAsync, coll), plug) => {
+          if (plug.plugin.isPreRouteAsync) {
+            (true, coll :+ plug)
+          } else {
+            if (!latestAsync) {
+              coll.last match {
+                case wrap @ NgPluginWrapper.NgSimplePluginWrapper(_, _) => (false, coll.init :+ NgPluginWrapper.NgMergedPreRoutingPluginWrapper(Seq(wrap, plug)))
+                case NgPluginWrapper.NgMergedPreRoutingPluginWrapper(plugins) => (false, coll.init :+ NgPluginWrapper.NgMergedPreRoutingPluginWrapper( plugins :+ plug))
+                case _ => (true, coll :+ plug)
+              }
+            } else {
+              (false, coll :+ plug)
+            }
+          }
+        }
+      }._2
+      new_plugins
+    } else {
+      plugs
     }
+  }
 
-  lazy val accessValidatorPlugins = allPlugins
-    .map(inst => (inst, inst.getPlugin[NgAccessValidator]))
-    .collect {
-      case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
+  lazy val accessValidatorPlugins = {
+    val plugs = allPlugins
+      .map(inst => (inst, inst.getPlugin[NgAccessValidator]))
+      .collect {
+        case (inst, Some(plugin)) => NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+      }
+    if (_env.nextPluginsMerge && plugs.size > 1) {
+      val new_plugins = plugs.foldLeft((true, Seq.empty[NgPluginWrapper[NgAccessValidator]])) {
+        case ((latestAsync, coll), plug) => {
+          if (plug.plugin.isAccessAsync) {
+            (true, coll :+ plug)
+          } else {
+            if (!latestAsync) {
+              coll.last match {
+                case wrap @ NgPluginWrapper.NgSimplePluginWrapper(_, _) => (false, coll.init :+ NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(Seq(wrap, plug)))
+                case NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(plugins) => (false, coll.init :+ NgPluginWrapper.NgMergedAccessValidatorPluginWrapper( plugins :+ plug))
+                case _ => (true, coll :+ plug)
+              }
+            } else {
+              (false, coll :+ plug)
+            }
+          }
+        }
+      }._2
+      new_plugins
+    } else {
+      plugs
     }
+  }
 
   lazy val routeMatcherPlugins = allPlugins
     .map(inst => (inst, inst.getPlugin[NgRouteMatcher]))
     .collect {
-      case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
+      case (inst, Some(plugin)) => NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
     }
 
   lazy val tunnelHandlerPlugins = allPlugins
     .map(inst => (inst, inst.getPlugin[NgTunnelHandler]))
     .collect {
-      case (inst, Some(plugin)) => NgPluginWrapper(inst, plugin)
+      case (inst, Some(plugin)) => NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
     }
 }

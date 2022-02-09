@@ -15,6 +15,7 @@ class ReadOnlyCalls extends NgAccessValidator {
   override def core: Boolean = true
   override def name: String = "Read only requests"
   override def description: Option[String] = "This plugin verifies the current request only reads data".some
+  override def isAccessAsync: Boolean = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val method = ctx.request.method.toLowerCase
@@ -40,6 +41,7 @@ class AllowHttpMethods extends NgAccessValidator {
   override def core: Boolean = true
   override def name: String = "Allowed HTTP methods"
   override def description: Option[String] = "This plugin verifies the current request only uses allowed http methods".some
+  override def isAccessAsync: Boolean = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val method = ctx.request.method.toLowerCase

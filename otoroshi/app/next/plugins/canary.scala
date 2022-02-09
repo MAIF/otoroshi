@@ -28,7 +28,11 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
   override def transformsError: Boolean = false
   override def name: String = "Canary mode"
   override def description: Option[String] = "This plugin can split a portion of the traffic to canary backends".some
-  override def defaultConfig: Option[JsObject] = Canary().toJson.asObject.-("enabled")some
+  override def defaultConfig: Option[JsObject] = Canary().toJson.asObject.-("enabled").some
+
+  override def isPreRouteAsync: Boolean = true
+  override def isTransformRequestAsync: Boolean = true
+  override def isTransformResponseAsync: Boolean = false
 
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(Canary(enabled = true))
@@ -74,9 +78,9 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
     }
   }
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  override def transformResponseSync(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     ctx.attrs.get(otoroshi.plugins.Keys.RequestCanaryIdKey) match {
-      case None => ctx.otoroshiResponse.right.vfuture
+      case None => ctx.otoroshiResponse.right
       case Some(canaryId) => {
         val cookie = DefaultWSCookie(
           name = "otoroshi-canary",
@@ -86,7 +90,7 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
           domain = ctx.request.theDomain.some,
           httpOnly = false
         )
-        ctx.otoroshiResponse.copy(cookies = ctx.otoroshiResponse.cookies ++ Seq(cookie)).right.vfuture
+        ctx.otoroshiResponse.copy(cookies = ctx.otoroshiResponse.cookies ++ Seq(cookie)).right
       }
     }
   }

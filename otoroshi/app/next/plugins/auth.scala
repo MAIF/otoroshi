@@ -41,6 +41,8 @@ class AuthModule extends NgAccessValidator {
   override def description: Option[String] = "This plugin applies an authentication module".some
   override def defaultConfig: Option[JsObject] = NgAuthModuleConfig().json.asObject.some
 
+  override def isAccessAsync: Boolean = true
+
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val req = ctx.request
     val descriptor = ctx.route.serviceDescriptor

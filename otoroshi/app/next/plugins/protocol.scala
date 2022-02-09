@@ -13,6 +13,7 @@ class DisableHttp10 extends NgAccessValidator {
   override def core: Boolean = true
   override def name: String = "Disable HTTP/1.0"
   override def description: Option[String] = "This plugin forbids HTTP/1.0 requests".some
+  override def isAccessAsync: Boolean = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     if (ctx.request.version == "HTTP/1.0") {

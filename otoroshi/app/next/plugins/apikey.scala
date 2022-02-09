@@ -28,6 +28,9 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = false
   override def transformsError: Boolean = false
+  override def isTransformRequestAsync: Boolean = false
+  override def isTransformResponseAsync: Boolean = false
+  override def isAccessAsync: Boolean = true
   override def name: String = "Apikeys"
   override def description: Option[String] = "This plugin expects to find an apikey to allow the request to pass".some
   override def defaultConfig: Option[JsObject] = NgApikeyCallsConfig().json.asObject.some
@@ -78,26 +81,26 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
     }
   }
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result,NgPluginHttpRequest]] = {
+  override def transformRequestSync(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result,NgPluginHttpRequest] = {
     val config = configCache.get(ctx.route.id, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
     if (config.wipeBackendRequest) {
       ctx.attrs.get(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey) match {
         case Some(ApikeyTuple(_, _, _, Some(location))) => {
           location.kind match {
-            case ApikeyLocationKind.Header => ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers.filterNot(_._1.toLowerCase() == location.name.toLowerCase())).right.vfuture
+            case ApikeyLocationKind.Header => ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers.filterNot(_._1.toLowerCase() == location.name.toLowerCase())).right
             case ApikeyLocationKind.Query => {
               val uri = ctx.otoroshiRequest.uri
               val newQuery = uri.rawQueryString.map(_ => uri.query().filterNot(_._1 == location.name).toString())
               val newUrl = uri.copy(rawQueryString = newQuery).toString()
-              ctx.otoroshiRequest.copy(url = newUrl).right.vfuture
+              ctx.otoroshiRequest.copy(url = newUrl).right
             }
-            case ApikeyLocationKind.Cookie => ctx.otoroshiRequest.copy(cookies = ctx.otoroshiRequest.cookies.filterNot(_.name == location.name)).right.vfuture
+            case ApikeyLocationKind.Cookie => ctx.otoroshiRequest.copy(cookies = ctx.otoroshiRequest.cookies.filterNot(_.name == location.name)).right
           }
         }
-        case _ => ctx.otoroshiRequest.right.vfuture
+        case _ => ctx.otoroshiRequest.right
       }
     } else {
-      ctx.otoroshiRequest.right.vfuture
+      ctx.otoroshiRequest.right
     }
   }
 }

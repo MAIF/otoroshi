@@ -21,6 +21,7 @@ class TcpTunnel extends NgTunnelHandler {
   override def core: Boolean = true
   override def name: String = "TCP Tunnel"
   override def description: Option[String] = "This plugin creates TCP tunnels through otoroshi".some
+  override def isAccessAsync: Boolean = true
 
   override def handle(ctx: NgTunnelHandlerContext)(implicit env: Env, ec: ExecutionContext): Flow[Message, Message, _] = {
     val target                          = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).get
@@ -71,6 +72,7 @@ class UdpTunnel extends NgTunnelHandler {
   override def core: Boolean = true
   override def name: String = "UDP Tunnel"
   override def description: Option[String] = "This plugin creates UDP tunnels through otoroshi".some
+  override def isAccessAsync: Boolean = true
 
   override def handle(ctx: NgTunnelHandlerContext)(implicit env: Env, ec: ExecutionContext): Flow[Message, Message, _] = {
     import akka.stream.scaladsl.{Flow, GraphDSL, UnzipWith, ZipWith}

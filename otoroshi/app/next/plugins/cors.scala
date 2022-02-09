@@ -21,6 +21,9 @@ class Cors extends NgRequestTransformer with NgPreRouting {
   override def usesCallbacks: Boolean = false
   override def transformsRequest: Boolean = false
   override def transformsResponse: Boolean = true
+  override def isTransformRequestAsync: Boolean = true
+  override def isTransformResponseAsync: Boolean = false
+  override def isPreRouteAsync: Boolean = true
   override def transformsError: Boolean = false
   override def name: String = "CORS"
   override def description: Option[String] = "This plugin applies CORS rules".some
@@ -54,7 +57,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
     }
   }
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  override def transformResponseSync(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val req = ctx.request
     val cors = CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true, excludedPatterns = Seq.empty)
     val corsHeaders = cors
@@ -72,6 +75,6 @@ class Cors extends NgRequestTransformer with NgPreRouting {
         ))
       )
       .filterNot(h => h._2 == "null")
-    ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ corsHeaders).right.vfuture
+    ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ corsHeaders).right
   }
 }

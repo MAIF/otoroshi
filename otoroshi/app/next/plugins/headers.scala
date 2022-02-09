@@ -57,17 +57,19 @@ class OverrideHost extends NgRequestTransformer {
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = false
   override def transformsError: Boolean = false
+  override def isTransformRequestAsync: Boolean = false
+  override def isTransformResponseAsync: Boolean = true
   override def name: String = "Override host header"
   override def description: Option[String] = "This plugin override the current Host header with the Host of the backend target".some
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  override def transformRequestSync(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     ctx.attrs.get(Keys.BackendKey) match {
-      case None => Right(ctx.otoroshiRequest).vfuture
+      case None => Right(ctx.otoroshiRequest)
       case Some(backend) =>
         val host = backend.hostname
         val headers = ctx.otoroshiRequest.headers.-("Host").-("host").+("Host" -> host)
         val request = ctx.otoroshiRequest.copy(headers = headers)
-        Right(request).vfuture
+        Right(request)
     }
   }
 }
@@ -80,6 +82,7 @@ class HeadersValidation extends NgAccessValidator {
   override def name: String = "Headers validation"
   override def description: Option[String] = "This plugin validates the values of incoming request headers".some
   override def defaultConfig: Option[JsObject] = HeaderValuesConfig().json.asObject.some
+  override def isAccessAsync: Boolean = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val validationHeaders = ctx.cachedConfig(internalName)(configReads).getOrElse(HeaderValuesConfig()).headers.map {
@@ -117,11 +120,13 @@ class AdditionalHeadersOut extends NgRequestTransformer {
   override def transformsRequest: Boolean = false
   override def transformsResponse: Boolean = true
   override def transformsError: Boolean = false
+  override def isTransformRequestAsync: Boolean = true
+  override def isTransformResponseAsync: Boolean = false
   override def name: String = "Additional headers out"
   override def description: Option[String] = "This plugin adds headers in the otoroshi response".some
   override def defaultConfig: Option[JsObject] = HeaderValuesConfig().json.asObject.some
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  override def transformResponseSync(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val additionalHeaders = ctx.cachedConfig(internalName)(configReads).getOrElse(HeaderValuesConfig()).headers.mapValues { value =>
       HeadersExpressionLanguage(
         value,
@@ -134,7 +139,7 @@ class AdditionalHeadersOut extends NgRequestTransformer {
         env
       )
     }
-    Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders)).vfuture
+    Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders))
   }
 }
 
@@ -147,11 +152,13 @@ class AdditionalHeadersIn extends NgRequestTransformer {
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = false
   override def transformsError: Boolean = false
+  override def isTransformRequestAsync: Boolean = false
+  override def isTransformResponseAsync: Boolean = true
   override def name: String = "Additional headers in"
   override def description: Option[String] = "This plugin adds headers in the incoming otoroshi request".some
   override def defaultConfig: Option[JsObject] = HeaderValuesConfig().json.asObject.some
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  override def transformRequestSync(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val additionalHeaders = ctx.cachedConfig(internalName)(configReads).getOrElse(HeaderValuesConfig()).headers.mapValues { value =>
       HeadersExpressionLanguage(
         value,
@@ -164,7 +171,7 @@ class AdditionalHeadersIn extends NgRequestTransformer {
         env
       )
     }
-    Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders)).vfuture
+    Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders))
   }
 }
 
@@ -177,11 +184,13 @@ class MissingHeadersIn extends NgRequestTransformer {
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = false
   override def transformsError: Boolean = false
+  override def isTransformRequestAsync: Boolean = false
+  override def isTransformResponseAsync: Boolean = true
   override def name: String = "Missing headers in"
   override def description: Option[String] = "This plugin adds headers (if missing) in the incoming otoroshi request".some
   override def defaultConfig: Option[JsObject] = HeaderValuesConfig().json.asObject.some
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  override def transformRequestSync(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val additionalHeaders = ctx.cachedConfig(internalName)(configReads).getOrElse(HeaderValuesConfig()).headers.filter {
       case (key, _) => !ctx.otoroshiRequest.headers.contains(key) && !ctx.otoroshiRequest.headers.contains(key.toLowerCase)
     }.mapValues { value =>
@@ -196,7 +205,7 @@ class MissingHeadersIn extends NgRequestTransformer {
         env
       )
     }
-    Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders)).vfuture
+    Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders))
   }
 }
 
@@ -209,11 +218,13 @@ class MissingHeadersOut extends NgRequestTransformer {
   override def transformsRequest: Boolean = false
   override def transformsResponse: Boolean = true
   override def transformsError: Boolean = false
+  override def isTransformRequestAsync: Boolean = true
+  override def isTransformResponseAsync: Boolean = false
   override def name: String = "Missing headers out"
   override def description: Option[String] = "This plugin adds headers (if missing) in the otoroshi response".some
   override def defaultConfig: Option[JsObject] = HeaderValuesConfig().json.asObject.some
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  override def transformResponseSync(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val additionalHeaders = ctx.cachedConfig(internalName)(configReads).getOrElse(HeaderValuesConfig()).headers.filter {
       case (key, _) => !ctx.otoroshiResponse.headers.contains(key) && !ctx.otoroshiResponse.headers.contains(key.toLowerCase)
     }.mapValues { value =>
@@ -228,7 +239,7 @@ class MissingHeadersOut extends NgRequestTransformer {
         env
       )
     }
-    Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders)).vfuture
+    Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders))
   }
 }
 
@@ -241,15 +252,17 @@ class RemoveHeadersOut extends NgRequestTransformer {
   override def transformsRequest: Boolean = false
   override def transformsResponse: Boolean = true
   override def transformsError: Boolean = false
+  override def isTransformRequestAsync: Boolean = true
+  override def isTransformResponseAsync: Boolean = false
   override def name: String = "Remove headers out"
   override def description: Option[String] = "This plugin removes headers in the otoroshi response".some
   override def defaultConfig: Option[JsObject] = HeaderNamesConfig().json.asObject.some
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  override def transformResponseSync(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val headers = ctx.cachedConfig(internalName)(configReads).getOrElse(HeaderNamesConfig()).names.map(_.toLowerCase)
     Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers.filterNot {
       case (key, _) => headers.contains(key.toLowerCase)
-    })).vfuture
+    }))
   }
 }
 
@@ -262,15 +275,17 @@ class RemoveHeadersIn extends NgRequestTransformer {
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = false
   override def transformsError: Boolean = false
+  override def isTransformRequestAsync: Boolean = false
+  override def isTransformResponseAsync: Boolean = true
   override def name: String = "Remove headers in"
   override def description: Option[String] = "This plugin removes headers in the incoming otoroshi request".some
   override def defaultConfig: Option[JsObject] = HeaderNamesConfig().json.asObject.some
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  override def transformRequestSync(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val headers = ctx.cachedConfig(internalName)(configReads).getOrElse(HeaderNamesConfig()).names.map(_.toLowerCase)
     Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers.filterNot {
       case (key, _) => headers.contains(key.toLowerCase)
-    })).vfuture
+    }))
   }
 }
 
@@ -283,10 +298,12 @@ class SendOtoroshiHeadersBack extends NgRequestTransformer {
   override def transformsRequest: Boolean = false
   override def transformsResponse: Boolean = true
   override def transformsError: Boolean = false
+  override def isTransformRequestAsync: Boolean = true
+  override def isTransformResponseAsync: Boolean = false
   override def name: String = "Send otoroshi headers back"
   override def description: Option[String] = "This plugin adds response header containing useful informations about the current call".some
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  override def transformResponseSync(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val headers = ctx.otoroshiResponse.headers.toSeq
     val snowflake = ctx.attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get
     val requestTimestamp = ctx.attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).get.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
@@ -331,7 +348,7 @@ class SendOtoroshiHeadersBack extends NgRequestTransformer {
             .toString
         )
       )
-    Right(ctx.otoroshiResponse.copy(headers = newHeaders.toMap)).vfuture
+    Right(ctx.otoroshiResponse.copy(headers = newHeaders.toMap))
   }
 }
 
@@ -342,10 +359,12 @@ class XForwardedHeaders extends NgRequestTransformer {
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = false
   override def transformsError: Boolean = false
+  override def isTransformRequestAsync: Boolean = false
+  override def isTransformResponseAsync: Boolean = true
   override def name: String = "X-Forwarded-* headers"
   override def description: Option[String] = "This plugin adds all the X-Forwarder-* headers to the request for the backend target".some
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  override def transformRequestSync(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val request = ctx.request
     val additionalHeaders = if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
       val xForwardedFor   = request.headers
@@ -371,6 +390,6 @@ class XForwardedHeaders extends NgRequestTransformer {
     } else {
       Seq.empty[(String, String)]
     }
-    Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders.toMap)).vfuture
+    Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders.toMap))
   }
 }

@@ -71,12 +71,14 @@ class OtoroshiChallenge extends NgRequestTransformer {
   override def usesCallbacks: Boolean = false
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = true
+  override def isTransformRequestAsync: Boolean = false
+  override def isTransformResponseAsync: Boolean = true
   override def transformsError: Boolean = false
   override def name: String = "Otoroshi challenge token"
   override def description: Option[String] = "This plugin adds a jwt challenge token to the request to a backend and expects a response with a matching token".some
   override def defaultConfig: Option[JsObject] = OtoroshiChallengeConfig(Json.obj()).json.asObject.some
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  override def transformRequestSync(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config = ctx.cachedConfigFn(internalName)(json => OtoroshiChallengeConfig(json).some).getOrElse(OtoroshiChallengeConfig(ctx.config))
     val jti                    = IdGenerator.uuid
     val stateValue             = IdGenerator.extendedToken(128)
@@ -102,7 +104,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
     ctx.attrs.put(OtoroshiChallengeKeys.StateTokenKey -> stateToken)
     ctx.attrs.put(OtoroshiChallengeKeys.ConfigKey -> config)
     val stateRequestHeaderName = config.requestHeaderName.getOrElse(env.Headers.OtoroshiState)
-    ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ Map(stateRequestHeaderName -> stateToken)).right.vfuture
+    ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ Map(stateRequestHeaderName -> stateToken)).right
   }
 
   override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
@@ -305,11 +307,13 @@ class OtoroshiInfos extends NgRequestTransformer {
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = false
   override def transformsError: Boolean = false
+  override def isTransformRequestAsync: Boolean = false
+  override def isTransformResponseAsync: Boolean = true
   override def name: String = "Otoroshi info. token"
   override def description: Option[String] = "This plugin adds a jwt info. token to the request to a backend".some
   override def defaultConfig: Option[JsObject] = OtoroshiInfoConfig(Json.obj()).json.asObject.some
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  override def transformRequestSync(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config = ctx.cachedConfigFn(internalName)(json => OtoroshiInfoConfig(json).some).getOrElse(OtoroshiInfoConfig(ctx.config))
     val claim = InfoTokenHelper.generateInfoToken(ctx.route.name, config.secComVersion, config.secComTtl, ctx.apikey, ctx.user, ctx.request.some)
     logger.trace(s"Claim is : $claim")
@@ -317,6 +321,6 @@ class OtoroshiInfos extends NgRequestTransformer {
     ctx.attrs.put(otoroshi.plugins.Keys.OtoTokenKey -> claim.payload)
     val serialized = claim.serialize(config.algo)
     val headerName = config.headerName.getOrElse(env.Headers.OtoroshiClaim)
-    ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ Map(headerName -> serialized)).right.vfuture
+    ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ Map(headerName -> serialized)).right
   }
 }

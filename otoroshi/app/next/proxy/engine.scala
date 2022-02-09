@@ -685,15 +685,6 @@ class ProxyEngine() extends RequestHandler {
         stop_ns = 0L,
         plugins = Seq.empty,
       )
-      val _ctx = NgPreRoutingContext(
-        snowflake = snowflake,
-        request = request,
-        route = route,
-        config = Json.obj(),
-        globalConfig = globalConfig.plugins.config,
-        attrs = attrs,
-        report = report,
-      )
       def markPluginItem(item: NgReportPluginSequenceItem, ctx: NgPreRoutingContext, debug: Boolean, result: JsValue): Unit = {
         sequence = sequence.copy(
           plugins = sequence.plugins :+ item.copy(
@@ -705,6 +696,17 @@ class ProxyEngine() extends RequestHandler {
           )
         )
       }
+      val _ctx = NgPreRoutingContext(
+        snowflake = snowflake,
+        request = request,
+        route = route,
+        config = Json.obj(),
+        globalConfig = globalConfig.plugins.config,
+        attrs = attrs,
+        report = report,
+        sequence = sequence,
+        markPluginItem = markPluginItem,
+      )
       if (all_plugins.size == 1) {
         val wrapper = all_plugins.head
         val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
@@ -780,17 +782,6 @@ class ProxyEngine() extends RequestHandler {
         stop_ns = 0L,
         plugins = Seq.empty,
       )
-      val _ctx = NgAccessContext(
-        snowflake = snowflake,
-        request = request,
-        route = route,
-        config = Json.obj(),
-        globalConfig = globalConfig.plugins.config,
-        attrs = attrs,
-        apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
-        user = attrs.get(otoroshi.plugins.Keys.UserKey),
-        report = report,
-      )
       def markPluginItem(item: NgReportPluginSequenceItem, ctx: NgAccessContext, debug: Boolean, result: JsValue): Unit = {
         sequence = sequence.copy(
           plugins = sequence.plugins :+ item.copy(
@@ -802,6 +793,19 @@ class ProxyEngine() extends RequestHandler {
           )
         )
       }
+      val _ctx = NgAccessContext(
+        snowflake = snowflake,
+        request = request,
+        route = route,
+        config = Json.obj(),
+        globalConfig = globalConfig.plugins.config,
+        attrs = attrs,
+        apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+        user = attrs.get(otoroshi.plugins.Keys.UserKey),
+        report = report,
+        sequence = sequence,
+        markPluginItem = markPluginItem,
+      )
       if (all_plugins.size == 1) {
         val wrapper = all_plugins.head
         val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
@@ -1453,19 +1457,6 @@ class ProxyEngine() extends RequestHandler {
         stop_ns = 0L,
         plugins = Seq.empty,
       )
-      val __ctx = NgTransformerRequestContext(
-        snowflake = snowflake,
-        request = request,
-        rawRequest = rawRequest,
-        otoroshiRequest = otoroshiRequest,
-        apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
-        user = attrs.get(otoroshi.plugins.Keys.UserKey),
-        route = route,
-        config = Json.obj(),
-        globalConfig = globalConfig.plugins.config,
-        attrs = attrs,
-        report = report
-      )
       def markPluginItem(item: NgReportPluginSequenceItem, ctx: NgTransformerRequestContext, debug: Boolean, result: JsValue): Unit = {
         sequence = sequence.copy(
           plugins = sequence.plugins :+ item.copy(
@@ -1478,6 +1469,21 @@ class ProxyEngine() extends RequestHandler {
           )
         )
       }
+      val __ctx = NgTransformerRequestContext(
+        snowflake = snowflake,
+        request = request,
+        rawRequest = rawRequest,
+        otoroshiRequest = otoroshiRequest,
+        apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+        user = attrs.get(otoroshi.plugins.Keys.UserKey),
+        route = route,
+        config = Json.obj(),
+        globalConfig = globalConfig.plugins.config,
+        attrs = attrs,
+        report = report,
+        sequence = sequence,
+        markPluginItem = markPluginItem
+      )
       if (all_plugins.size == 1) {
         val wrapper = all_plugins.head
         val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
@@ -1673,20 +1679,6 @@ class ProxyEngine() extends RequestHandler {
         stop_ns = 0L,
         plugins = Seq.empty,
       )
-      val __ctx = NgTransformerResponseContext(
-        snowflake = snowflake,
-        request = rawRequest,
-        response = response,
-        rawResponse = rawResponse,
-        otoroshiResponse = otoroshiResponse,
-        apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
-        user = attrs.get(otoroshi.plugins.Keys.UserKey),
-        route = route,
-        config = Json.obj(),
-        globalConfig = globalConfig.plugins.config,
-        attrs = attrs,
-        report = report
-      )
       def markPluginItem(item: NgReportPluginSequenceItem, ctx: NgTransformerResponseContext, debug: Boolean, result: JsValue): Unit = {
         sequence = sequence.copy(
           plugins = sequence.plugins :+ item.copy(
@@ -1699,6 +1691,22 @@ class ProxyEngine() extends RequestHandler {
           )
         )
       }
+      val __ctx = NgTransformerResponseContext(
+        snowflake = snowflake,
+        request = rawRequest,
+        response = response,
+        rawResponse = rawResponse,
+        otoroshiResponse = otoroshiResponse,
+        apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+        user = attrs.get(otoroshi.plugins.Keys.UserKey),
+        route = route,
+        config = Json.obj(),
+        globalConfig = globalConfig.plugins.config,
+        attrs = attrs,
+        report = report,
+        sequence = sequence,
+        markPluginItem = markPluginItem,
+      )
       if (all_plugins.size == 1) {
         val wrapper = all_plugins.head
         val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)

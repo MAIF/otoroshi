@@ -186,6 +186,8 @@ class Env(
     case a                                                       => None
   }
 
+  lazy val nextPluginsMerge = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.plugins.merge-sync-steps").getOrElse(true)
+
   lazy val healtCheckWorkers: Int        =
     configuration.getOptionalWithFileSupport[Int]("otoroshi.healthcheck.workers").getOrElse(4)
   lazy val healtCheckBlockOnRed: Boolean =

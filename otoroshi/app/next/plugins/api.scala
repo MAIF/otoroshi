@@ -8,8 +8,10 @@ import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser}
-import otoroshi.next.models.{NgTarget, NgPluginInstance, NgRoute}
-import otoroshi.next.proxy.NgExecutionReport
+import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute, NgTarget}
+import otoroshi.next.plugins.api.NgAccess.NgAllowed
+import otoroshi.next.proxy.{NgExecutionReport, NgReportPluginSequence, NgReportPluginSequenceItem}
+import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
 import otoroshi.utils.TypedMap
@@ -22,7 +24,7 @@ import play.api.mvc.{RequestHeader, Result, Results}
 
 import java.security.cert.X509Certificate
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 import play.api.mvc.Cookie
@@ -251,6 +253,8 @@ case class NgPreRoutingContext(
   globalConfig: JsValue,
   attrs: TypedMap,
   report: NgExecutionReport,
+  sequence: NgReportPluginSequence,
+  markPluginItem: Function4[NgReportPluginSequenceItem, NgPreRoutingContext, Boolean, JsValue, Unit],
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
@@ -262,7 +266,37 @@ case class NgPreRoutingContext(
   )
 }
 
-case class NgPluginWrapper[A <: NgNamedPlugin](instance: NgPluginInstance, plugin: A)
+sealed trait NgPluginWrapper[A <: NgNamedPlugin] {
+  def instance: NgPluginInstance
+  def plugin: A
+}
+object NgPluginWrapper {
+  case class NgSimplePluginWrapper[A <: NgNamedPlugin](instance: NgPluginInstance, plugin: A) extends NgPluginWrapper[A]
+  case class NgMergedRequestTransformerPluginWrapper(plugins: Seq[NgSimplePluginWrapper[NgRequestTransformer]]) extends NgPluginWrapper[NgRequestTransformer] {
+    private val reqTransformer = new NgMergedRequestTransformer(plugins)
+    private val inst = NgPluginInstance("transform-request-merged")
+    override def instance: NgPluginInstance = inst
+    override def plugin: NgRequestTransformer = reqTransformer
+  }
+  case class NgMergedResponseTransformerPluginWrapper(plugins: Seq[NgSimplePluginWrapper[NgRequestTransformer]]) extends NgPluginWrapper[NgRequestTransformer] {
+    private val respTransformer = new NgMergedResponseTransformer(plugins)
+    private val inst = NgPluginInstance("transform-response-merged")
+    override def instance: NgPluginInstance = inst
+    override def plugin: NgRequestTransformer = respTransformer
+  }
+  case class NgMergedPreRoutingPluginWrapper(plugins: Seq[NgSimplePluginWrapper[NgPreRouting]]) extends NgPluginWrapper[NgPreRouting] {
+    private val preRouting = new NgMergedPreRouting(plugins)
+    private val inst = NgPluginInstance("pre-routing-merged")
+    override def instance: NgPluginInstance = inst
+    override def plugin: NgPreRouting = preRouting
+  }
+  case class NgMergedAccessValidatorPluginWrapper(plugins: Seq[NgSimplePluginWrapper[NgAccessValidator]]) extends NgPluginWrapper[NgAccessValidator] {
+    private val accessValidator = new NgMergedAccessValidator(plugins)
+    private val inst = NgPluginInstance("access-validator-merged")
+    override def instance: NgPluginInstance = inst
+    override def plugin: NgAccessValidator = accessValidator
+  }
+}
 
 trait NgPreRoutingError {
   def result: Result
@@ -280,11 +314,14 @@ case class NgPreRoutingErrorRaw(
 case class NgPreRoutingErrorWithResult(result: Result) extends NgPreRoutingError
 
 object NgPreRouting {
-  val futureDone: Future[Either[NgPreRoutingError, Done]] = Right(Done).vfuture
+  val done: Either[NgPreRoutingError, Done] = Right(Done)
+  val futureDone: Future[Either[NgPreRoutingError, Done]] = done.vfuture
 }
 
 trait NgPreRouting extends NgPlugin {
-  def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = NgPreRouting.futureDone
+  def isPreRouteAsync: Boolean
+  def preRouteSync(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Either[NgPreRoutingError, Done] = NgPreRouting.done
+  def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = preRouteSync(ctx).vfuture
 }
 
 case class NgBeforeRequestContext(
@@ -334,7 +371,9 @@ case class NgTransformerRequestContext(
   config: JsValue,
   attrs: TypedMap,
   globalConfig: JsValue = Json.obj(),
-  report: NgExecutionReport
+  report: NgExecutionReport,
+  sequence: NgReportPluginSequence,
+  markPluginItem: Function4[NgReportPluginSequenceItem, NgTransformerRequestContext, Boolean, JsValue, Unit],
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
@@ -362,7 +401,9 @@ case class NgTransformerResponseContext(
   config: JsValue,
   attrs: TypedMap,
   globalConfig: JsValue = Json.obj(),
-  report: NgExecutionReport
+  report: NgExecutionReport,
+  sequence: NgReportPluginSequence,
+  markPluginItem: Function4[NgReportPluginSequenceItem, NgTransformerResponseContext, Boolean, JsValue, Unit],
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
@@ -415,6 +456,8 @@ trait NgRequestTransformer extends NgPlugin {
   def transformsRequest: Boolean = true
   def transformsResponse: Boolean = true
   def transformsError: Boolean = true
+  def isTransformRequestAsync: Boolean
+  def isTransformResponseAsync: Boolean
 
   def beforeRequest(ctx: NgBeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = ().vfuture
 
@@ -424,12 +467,20 @@ trait NgRequestTransformer extends NgPlugin {
     ctx.otoroshiResponse.vfuture
   }
 
+  def transformRequestSync(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+    Right(ctx.otoroshiRequest)
+  }
+
   def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
-    Right(ctx.otoroshiRequest).vfuture
+    transformRequestSync(ctx).vfuture
+  }
+
+  def transformResponseSync(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+    Right(ctx.otoroshiResponse)
   }
 
   def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
-    Right(ctx.otoroshiResponse).vfuture
+    transformResponseSync(ctx).vfuture
   }
 }
 
@@ -443,6 +494,8 @@ case class NgAccessContext(
   attrs: TypedMap,
   globalConfig: JsValue,
   report: NgExecutionReport,
+  sequence: NgReportPluginSequence,
+  markPluginItem: Function4[NgReportPluginSequenceItem, NgAccessContext, Boolean, JsValue, Unit],
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
@@ -463,7 +516,9 @@ object NgAccess {
 }
 
 trait NgAccessValidator extends NgNamedPlugin {
-  def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = NgAccess.NgAllowed.vfuture
+  def isAccessAsync: Boolean
+  def accessSync(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): NgAccess = NgAccess.NgAllowed
+  def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = accessSync(ctx).vfuture
 }
 
 sealed trait NgRequestOrigin {
@@ -496,9 +551,12 @@ case class NgRequestSinkContext(
 }
 
 trait NgRequestSink extends NgNamedPlugin {
+  def isSinkAsync: Boolean
   def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean       = false
+  def handleSync(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Result =
+    Results.NotImplemented(Json.obj("error" -> "not implemented yet"))
   def handle(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] =
-    Results.NotImplemented(Json.obj("error" -> "not implemented yet")).vfuture
+    handleSync(ctx).vfuture
 }
 
 case class NgRouteMatcherContext(
@@ -547,4 +605,153 @@ trait NgTunnelHandler extends NgNamedPlugin with NgAccessValidator {
     }
   }
   def handle(ctx: NgTunnelHandlerContext)(implicit env: Env, ec: ExecutionContext): Flow[Message, Message, _]
+}
+
+class NgMergedRequestTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgRequestTransformer]]) extends NgRequestTransformer {
+  override def transformsRequest: Boolean = true
+  override def isTransformRequestAsync: Boolean = true
+  override def isTransformResponseAsync: Boolean = true
+  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+    def next(_ctx: NgTransformerRequestContext, plugins: Seq[NgPluginWrapper[NgRequestTransformer]]): Future[Either[Result, NgPluginHttpRequest]] = {
+      plugins.headOption match {
+        case None => Right(_ctx.otoroshiRequest).vfuture
+        case Some(wrapper) => {
+          val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
+          val ctx = _ctx.copy(config = pluginConfig)
+          val debug = ctx.route.debugFlow || wrapper.instance.debug
+          val in: JsValue = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
+          val item = NgReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+          Try(wrapper.plugin.transformRequestSync(ctx)) match {
+            case Failure(exception) =>
+              ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
+              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              Left(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during request-transformation plugins phase", "error" -> JsonHelpers.errToJson(exception)))).vfuture
+            case Success(Left(result)) =>
+              ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "short-circuit", "status" -> result.header.status, "headers" -> result.header.headers))
+              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              Left(result).vfuture
+            case Success(Right(req_next)) if plugins.size == 1 =>
+              ctx.markPluginItem(item, ctx.copy(otoroshiRequest = req_next), debug, Json.obj("kind" -> "successful"))
+              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              Right(req_next).vfuture
+            case Success(Right(req_next)) =>
+              ctx.markPluginItem(item, ctx.copy(otoroshiRequest = req_next), debug, Json.obj("kind" -> "successful"))
+              next(_ctx.copy(otoroshiRequest = req_next), plugins.tail)
+          }
+        }
+      }
+    }
+    next(ctx, plugins)
+  }
+}
+
+class NgMergedResponseTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgRequestTransformer]]) extends NgRequestTransformer {
+  override def transformsResponse: Boolean = true
+  override def isTransformRequestAsync: Boolean = true
+  override def isTransformResponseAsync: Boolean = true
+  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+    def next(_ctx: NgTransformerResponseContext, plugins: Seq[NgPluginWrapper[NgRequestTransformer]]): Future[Either[Result, NgPluginHttpResponse]] = {
+      plugins.headOption match {
+        case None => Right(_ctx.otoroshiResponse).vfuture
+        case Some(wrapper) => {
+          val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
+          val ctx = _ctx.copy(config = pluginConfig)
+          val debug = ctx.route.debugFlow || wrapper.instance.debug
+          val in: JsValue = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
+          val item = NgReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+          wrapper.plugin.transformResponse(ctx).andThen {
+            case Failure(exception) =>
+              ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
+              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              Left(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during response-transformation plugins phase", "error" -> JsonHelpers.errToJson(exception)))).vfuture
+            case Success(Left(result)) =>
+              ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "short-circuit", "status" -> result.header.status, "headers" -> result.header.headers))
+              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              Left(result).vfuture
+            case Success(Right(resp_next)) if plugins.size == 1 =>
+              ctx.markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
+              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              Right(resp_next).vfuture
+            case Success(Right(resp_next)) =>
+              ctx.markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
+              next(_ctx.copy(otoroshiResponse = resp_next), plugins.tail)
+          }
+        }
+      }
+    }
+    next(ctx, plugins)
+  }
+}
+
+class NgMergedPreRouting(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgPreRouting]]) extends NgPreRouting {
+  override def isPreRouteAsync: Boolean = true
+  override def preRoute(_ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+    def next(plugins: Seq[NgPluginWrapper[NgPreRouting]]): Future[Either[NgPreRoutingError, Done]] = {
+      plugins.headOption match {
+        case None => Right(Done).vfuture
+        case Some(wrapper) => {
+          val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
+          val ctx = _ctx.copy(config = pluginConfig)
+          val debug = ctx.route.debugFlow || wrapper.instance.debug
+          val in: JsValue = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
+          val item = NgReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+          Try(wrapper.plugin.preRouteSync(ctx)) match {
+            case Failure(exception) =>
+              ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
+              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              Left(NgPreRoutingErrorWithResult(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during pre-routing plugins phase", "error" -> JsonHelpers.errToJson(exception))))).vfuture
+            case Success(Left(err)) =>
+              val result = err.result
+              ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "short-circuit", "status" -> result.header.status, "headers" -> result.header.headers))
+              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              Left(NgPreRoutingErrorWithResult(result)).vfuture
+            case Success(Right(_)) if plugins.size == 1 =>
+              ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
+              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              Right(Done).vfuture
+            case Success(Right(_)) =>
+              ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
+              next(plugins.tail)
+          }
+        }
+      }
+    }
+    next(plugins)
+  }
+}
+
+class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgAccessValidator]]) extends NgAccessValidator {
+  override def isAccessAsync: Boolean = true
+  override def access(_ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    def next(plugins: Seq[NgPluginWrapper[NgAccessValidator]]): Future[NgAccess] = {
+      plugins.headOption match {
+        case None => NgAccess.NgAllowed.vfuture
+        case Some(wrapper) => {
+          val pluginConfig: JsValue = wrapper.plugin.defaultConfig.map(dc => dc ++ wrapper.instance.config.raw).getOrElse(wrapper.instance.config.raw)
+          val ctx = _ctx.copy(config = pluginConfig)
+          val debug = ctx.route.debugFlow || wrapper.instance.debug
+          val in: JsValue = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
+          val item = NgReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
+          wrapper.plugin.access(ctx).andThen {
+            case Failure(exception) =>
+              ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
+              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              NgAccess.NgDenied(Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> "an error happened during pre-routing plugins phase", "error" -> JsonHelpers.errToJson(exception)))).vfuture
+            case Success(NgAccess.NgDenied(result)) =>
+              ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "denied", "status" -> result.header.status))
+              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              NgAccess.NgDenied(result).vfuture
+            case Success(NgAccess.NgAllowed) if plugins.size == 1 =>
+              ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
+              ctx.report.setContext(ctx.sequence.stopSequence().json)
+              Right(Done)
+            case Success(NgAccess.NgAllowed) =>
+              ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
+              next(plugins.tail)
+          }
+        }
+      }
+    }
+    next(plugins)
+  }
 }

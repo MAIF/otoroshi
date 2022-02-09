@@ -19,17 +19,18 @@ class Redirection extends NgPreRouting {
   override def name: String = "Redirection"
   override def description: Option[String] = "This plugin redirects the current request elsewhere".some
   override def defaultConfig: Option[JsObject] = RedirectionSettings(enabled = true).toJson.asObject.-("enabled").some
+  override def isPreRouteAsync: Boolean = false
 
-  override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  override def preRouteSync(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Either[NgPreRoutingError, Done] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(RedirectionSettings(enabled = true))
     if (config.enabled && config.hasValidCode) {
       val to = RedirectionExpressionLanguage(config.to, ctx.request.some, ctx.route.serviceDescriptor.some, None, None, ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get, ctx.attrs, env)
       Left(NgPreRoutingErrorWithResult(
         Results
           .Status(config.code)
-          .withHeaders("Location" -> to))).vfuture
+          .withHeaders("Location" -> to)))
     } else {
-      Right(Done).vfuture
+      Right(Done)
     }
   }
 }

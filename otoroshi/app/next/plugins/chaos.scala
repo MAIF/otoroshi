@@ -28,6 +28,8 @@ class SnowMonkeyChaos extends NgRequestTransformer {
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = true
   override def transformsError: Boolean = false
+  override def isTransformRequestAsync: Boolean = true
+  override def isTransformResponseAsync: Boolean = false
   override def name: String = "Snow Monkey Chaos"
   override def description: Option[String] = "This plugin introduce some chaos into you life".some
   override def defaultConfig: Option[JsObject] = ChaosConfig().asJson.asObject.-("enabled").some
@@ -46,15 +48,15 @@ class SnowMonkeyChaos extends NgRequestTransformer {
     }
   }
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  override def transformResponseSync(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     // val config = ctx.cachedConfig(internalName)(configReads).getOrElse(ChaosConfig(enabled = true))
     ctx.attrs.get(SnowMonkeyChaos.ContextKey) match {
-      case None => ctx.otoroshiResponse.right.vfuture
+      case None => ctx.otoroshiResponse.right
       case Some(snowMonkeyCtx) => {
         ctx.otoroshiResponse.copy(
           headers = ctx.otoroshiResponse.headers + ("Content-Length" -> snowMonkeyCtx.trailingResponseBodySize.toString),
           body = ctx.otoroshiResponse.body.concat(snowMonkeyCtx.trailingResponseBodyStream)
-        ).right.vfuture
+        ).right
       }
     }
   }

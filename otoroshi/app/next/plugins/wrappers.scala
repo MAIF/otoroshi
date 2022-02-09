@@ -24,7 +24,8 @@ class PreRoutingWrapper extends NgPreRouting {
   
   override def name: String = "Pre-routing plugin wrapper"
   override def description: Option[String] = "Wraps an old pre-routing plugin for the new router. The configuration is the one for the wrapped plugin.".some
-  
+  override def isPreRouteAsync: Boolean = true
+
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager.getAnyScript[PreRouting](pluginId) match {
@@ -55,7 +56,8 @@ class AccessValidatorWrapper extends NgAccessValidator {
 
   override def name: String = "Access validator plugin wrapper"
   override def description: Option[String] = "Wraps an old access validator plugin for the new router. The configuration is the one for the wrapped plugin.".some
-  
+  override def isAccessAsync: Boolean = true
+
   def newContextToOld(ctx: NgAccessContext, plugin: AccessValidator): AccessContext = {
     AccessContext(
       snowflake = ctx.snowflake,
@@ -87,6 +89,7 @@ class AccessValidatorWrapper extends NgAccessValidator {
 
 class RequestSinkWrapper extends NgRequestSink {
 
+  override def isSinkAsync: Boolean = true
   override def name: String = "Request sink plugin wrapper"
   override def description: Option[String] = "Wraps an old request sink plugin for the new router. The configuration is the one for the wrapped plugin.".some
   
@@ -134,6 +137,8 @@ class RequestTransformerWrapper extends NgRequestTransformer {
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = true
   override def transformsError: Boolean = true
+  override def isTransformRequestAsync: Boolean = true
+  override def isTransformResponseAsync: Boolean = true
   override def name: String = "Request transformer plugin wrapper"
   override def description: Option[String] = "Wraps an old request transformer plugin for the new router. The configuration is the one for the wrapped plugin.".some
 
@@ -421,6 +426,10 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = true
   override def transformsError: Boolean = true
+  override def isPreRouteAsync: Boolean = true
+  override def isAccessAsync: Boolean = true
+  override def isTransformRequestAsync: Boolean = true
+  override def isTransformResponseAsync: Boolean = true
 
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError,Done]] = {
     val pluginId = ctx.config.select("plugin").as[String]
