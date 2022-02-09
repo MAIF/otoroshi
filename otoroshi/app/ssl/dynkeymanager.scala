@@ -37,7 +37,7 @@ object DynamicKeyManager {
 class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X509KeyManager, env: Env)
     extends X509ExtendedKeyManager {
 
-  // private val logger = Logger("otoroshi-dyn-key-manager")
+  private val logger = Logger("otoroshi-dyn-key-manager")
 
   override def getClientAliases(keyType: String, issuers: Array[Principal]): Array[String] =
     manager.getClientAliases(keyType, issuers)
@@ -102,7 +102,9 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
               case ((d1, _), (d2, _)) if !d1.contains("*") && !d2.contains("*") => true
             }
             .map(_._2)
+            .seffectOn(certs => logger.debug(s"possible certificates for '$domain' - ${certs.map(c => s"'${c.name}'").mkString(", ")}"))
             .headOption
+            .seffectOn(opt => logger.debug(s"choosing '${opt.map(_.name).getOrElse("--")}'"))
 
           val foundCertDef = tlsSettings.defaultDomain.flatMap { d =>
             certs
