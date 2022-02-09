@@ -46,7 +46,7 @@ pub struct Opts {
     #[clap(long)]
     pub whole_chain: bool,
     /// the number of workers
-    #[clap(long, default_value = "1")]
+    #[clap(long, default_value = "4")]
     pub workers: usize,
     /// disable auto refresh
     #[clap(long)]

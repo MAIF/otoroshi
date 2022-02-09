@@ -2645,7 +2645,7 @@ object SSLImplicits {
     def encodedAndPadded: String = encoded.grouped(64).mkString("\n")
     def asPem: String               =
       s"${PemHeaders.BeginCertificate}\n${encodedAndPadded}\n${PemHeaders.EndCertificate}\n"
-    def altNames: Seq[String]       = CertInfo.getSubjectAlternativeNames(cert, logger).asScala.toSeq
+    def altNames: Seq[String] = CertInfo.getSubjectAlternativeNames(cert.getSubjectDN.toString, cert, logger).asScala.toSeq
     def rawDomain: Option[String] = {
       Option(DN(cert.getSubjectDN.getName).stringify)
         .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase.startsWith("cn=")))

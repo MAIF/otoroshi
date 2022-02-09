@@ -143,7 +143,7 @@ class Env(
       ActorSystem(
         "otoroshi-analytics-actor-system",
         configuration
-          .getOptionalWithFileSupport[Configuration]("app.actorsystems.analytics")
+          .getOptionalWithFileSupport[Configuration]("otoroshi.analytics.actorsystem")
           .map(_.underlying)
           .getOrElse(ConfigFactory.empty)
       )

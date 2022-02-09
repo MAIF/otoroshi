@@ -23,7 +23,7 @@ impl CopyBuffer {
             pos: 0,
             cap: 0,
             amt: 0,
-            buf: vec![0; 8 * 1024].into_boxed_slice(),
+            buf: vec![0; 16 * 1024].into_boxed_slice(),
         }
     }
 
@@ -86,12 +86,14 @@ impl CopyBuffer {
                     let new_chunk_bytes = new_chunk.as_bytes();
                     i = ready!(writer.as_mut().poll_write(cx, &new_chunk_bytes))?;
                     i = i - added.len() - 2;
+                    found = true;
                     // println!("chunk : {:?}", new_chunk);
                   } else if slice_str.contains("host: ") {
                     let fmt_headers = format!("{}\r\nhost: ", added);
                     let new_chunk = slice_str.replace("host: ", &fmt_headers[..]);
                     i = ready!(writer.as_mut().poll_write(cx, &new_chunk.as_bytes()))?;
                     i = i - added.len() - 2;
+                    found = true;
                   } else {
                     i = ready!(writer.as_mut().poll_write(cx, &me.buf[me.pos..me.cap]))?;
                   }
