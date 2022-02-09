@@ -283,7 +283,7 @@ class ReactivePgDataStores(
 
   def setupCleanup(): Unit = {
     implicit val ec = reactivePgActorSystem.dispatcher
-    cancel.set(reactivePgActorSystem.scheduler.scheduleAtFixedRate(1.minute, 5.minutes)(SchedulerHelper.runnable {
+    cancel.set(reactivePgActorSystem.scheduler.scheduleAtFixedRate(10.seconds, 30.second)(SchedulerHelper.runnable {
       client.query(s"DELETE FROM $schemaDotTable WHERE (ttl_starting_at + ttl) < NOW();").executeAsync()
     }))
   }
@@ -918,7 +918,14 @@ class ReactivePgRedis(
         Seq(key)
       ) { row =>
         val now = System.currentTimeMillis()
-        row.optOffsetDatetime("expire_at").map(ldate => (ldate.toEpochSecond * 1000) - now)
+        row.optOffsetDatetime("expire_at").map { ldate =>
+          val ttl = (ldate.toEpochSecond * 1000) - now
+          if (ttl > 31504464000000L && ttl < 31567536000000L) { // 999 and 1001
+            -1
+          } else {
+            ttl
+          }
+        }
       }.map(_.filter(_ > -1).getOrElse(-1))
     }
 

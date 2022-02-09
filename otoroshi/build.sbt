@@ -241,6 +241,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.http.port=9999",
   "-Dotoroshi.https.port=9998",
   "-Dotoroshi.storage=file",
+  // "-Dotoroshi.storage=experimental-pg",
   "-Dotoroshi.liveJs=true",
   "-Dotoroshi.adminPassword=password",
   "-Dotoroshi.domain=oto.tools",
