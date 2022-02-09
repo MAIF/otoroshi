@@ -102,9 +102,9 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
               case ((d1, _), (d2, _)) if !d1.contains("*") && !d2.contains("*") => true
             }
             .map(_._2)
-            .seffectOn(certs => logger.debug(s"possible certificates for '$domain' - ${certs.map(c => s"'${c.name}'").mkString(", ")}"))
+            .seffectOnIf(logger.isDebugEnabled)(certs => logger.debug(s"possible certificates for '$domain' - ${certs.map(c => s"'${c.name}'").mkString(", ")}"))
             .headOption
-            .seffectOn(opt => logger.debug(s"choosing '${opt.map(_.name).getOrElse("--")}'"))
+            .seffectOnIf(logger.isDebugEnabled)(opt => logger.debug(s"choosing '${opt.map(_.name).getOrElse("--")}'"))
 
           val foundCertDef = tlsSettings.defaultDomain.flatMap { d =>
             certs
