@@ -170,7 +170,7 @@ export class U2FRegisterPage extends Component {
             </button>
             <button
               type="button"
-              className="btn btn-danger btn-sm"
+              className="btn btn-danger btn-sm ms-2"
               onClick={(e) =>
                 this.discardAdmin(
                   e,
@@ -377,7 +377,7 @@ export class U2FRegisterPage extends Component {
           extractKey={(item) => (item.registration ? item.registration.keyHandle : item.username)}
           injectTopBar={() => (
             <>
-              <div className="btn-group">
+              <div className="btn-group input-group-btn">
                 <button type="button" className="btn btn-primary" onClick={this.createAdmin}>
                   <i className="fas fa-plus-circle" /> Register admin.
                 </button>
