@@ -17,38 +17,38 @@ import play.api.mvc.{Result, Results}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class IpAddressesConfig(addresses: Seq[String] = Seq.empty) extends AnyVal {
-  def json: JsValue = IpAddressesConfig.format.writes(this)
+case class NgIpAddressesConfig(addresses: Seq[String] = Seq.empty) extends AnyVal {
+  def json: JsValue = NgIpAddressesConfig.format.writes(this)
 }
 
-object IpAddressesConfig {
-  val format = new Format[IpAddressesConfig] {
-    override def reads(json: JsValue): JsResult[IpAddressesConfig] = Try {
-      IpAddressesConfig(
+object NgIpAddressesConfig {
+  val format = new Format[NgIpAddressesConfig] {
+    override def reads(json: JsValue): JsResult[NgIpAddressesConfig] = Try {
+      NgIpAddressesConfig(
         addresses = json.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
-    override def writes(o: IpAddressesConfig): JsValue = Json.obj("addresses" -> o.addresses)
+    override def writes(o: NgIpAddressesConfig): JsValue = Json.obj("addresses" -> o.addresses)
   }
 }
 
 class IpAddressAllowedList extends NgAccessValidator {
 
-  private val configReads: Reads[IpAddressesConfig] = IpAddressesConfig.format
+  private val configReads: Reads[NgIpAddressesConfig] = NgIpAddressesConfig.format
 
   override def core: Boolean = true
   override def name: String = "IP allowed list"
   override def description: Option[String] = "This plugin verifies the current request ip address is in the allowed list".some
-  override def defaultConfig: Option[JsObject] = IpAddressesConfig().json.asObject.some
+  override def defaultConfig: Option[JsObject] = NgIpAddressesConfig().json.asObject.some
   override def isAccessAsync: Boolean = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val remoteAddress = ctx.request.theIpAddress
     // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
-    val IpAddressesConfig(addresses) = ctx.cachedConfig(internalName)(configReads).getOrElse(IpAddressesConfig())
+    val NgIpAddressesConfig(addresses) = ctx.cachedConfig(internalName)(configReads).getOrElse(NgIpAddressesConfig())
     val shouldPass = if (addresses.nonEmpty) {
       addresses.exists { ip =>
         if (ip.contains("/")) {
@@ -81,18 +81,18 @@ class IpAddressAllowedList extends NgAccessValidator {
 
 class IpAddressBlockList extends NgAccessValidator {
 
-  private val configReads: Reads[IpAddressesConfig] = IpAddressesConfig.format
+  private val configReads: Reads[NgIpAddressesConfig] = NgIpAddressesConfig.format
 
   override def core: Boolean = true
   override def name: String = "IP block list"
   override def description: Option[String] = "This plugin verifies the current request ip address is not in the blocked list".some
-  override def defaultConfig: Option[JsObject] = IpAddressesConfig().json.asObject.some
+  override def defaultConfig: Option[JsObject] = NgIpAddressesConfig().json.asObject.some
   override def isAccessAsync: Boolean = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val remoteAddress = ctx.request.theIpAddress
     // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
-    val IpAddressesConfig(addresses) = ctx.cachedConfig(internalName)(configReads).getOrElse(IpAddressesConfig())
+    val NgIpAddressesConfig(addresses) = ctx.cachedConfig(internalName)(configReads).getOrElse(NgIpAddressesConfig())
     val shouldNotPass = if (addresses.nonEmpty) {
       addresses.exists { ip =>
         if (ip.contains("/")) {
@@ -124,14 +124,14 @@ class IpAddressBlockList extends NgAccessValidator {
 }
 
 
-case class EndlessHttpResponseConfig(finger: Boolean = false, addresses: Seq[String] = Seq.empty) {
-  def json: JsValue = EndlessHttpResponseConfig.format.writes(this)
+case class NgEndlessHttpResponseConfig(finger: Boolean = false, addresses: Seq[String] = Seq.empty) {
+  def json: JsValue = NgEndlessHttpResponseConfig.format.writes(this)
 }
 
-object EndlessHttpResponseConfig {
-  val format = new Format[EndlessHttpResponseConfig] {
-    override def reads(json: JsValue): JsResult[EndlessHttpResponseConfig] = Try {
-      EndlessHttpResponseConfig(
+object NgEndlessHttpResponseConfig {
+  val format = new Format[NgEndlessHttpResponseConfig] {
+    override def reads(json: JsValue): JsResult[NgEndlessHttpResponseConfig] = Try {
+      NgEndlessHttpResponseConfig(
         addresses = json.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty),
         finger = json.select("finger").asOpt[Boolean].getOrElse(false)
       )
@@ -139,14 +139,14 @@ object EndlessHttpResponseConfig {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
-    override def writes(o: EndlessHttpResponseConfig): JsValue = Json.obj("finger" -> o.finger, "addresses" -> o.addresses)
+    override def writes(o: NgEndlessHttpResponseConfig): JsValue = Json.obj("finger" -> o.finger, "addresses" -> o.addresses)
   }
 }
 
 class EndlessHttpResponse extends NgRequestTransformer {
 
   // TODO: should be a pre-route to be faster in the pipeline
-  private val configReads: Reads[EndlessHttpResponseConfig] = EndlessHttpResponseConfig.format
+  private val configReads: Reads[NgEndlessHttpResponseConfig] = NgEndlessHttpResponseConfig.format
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
@@ -157,13 +157,13 @@ class EndlessHttpResponse extends NgRequestTransformer {
   override def isTransformResponseAsync: Boolean = true
   override def name: String = "Endless HTTP responses"
   override def description: Option[String] = "This plugin returns 128 Gb of 0 to the ip addresses is in the list".some
-  override def defaultConfig: Option[JsObject] = EndlessHttpResponseConfig().json.asObject.some
+  override def defaultConfig: Option[JsObject] = NgEndlessHttpResponseConfig().json.asObject.some
 
   override def transformRequestSync(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val remoteAddress = ctx.request.theIpAddress
     // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
     // val finger = ctx.config.select("finger").asOpt[Boolean].getOrElse(false)
-    val EndlessHttpResponseConfig(finger, addresses) = ctx.cachedConfig(internalName)(configReads).getOrElse(EndlessHttpResponseConfig())
+    val NgEndlessHttpResponseConfig(finger, addresses) = ctx.cachedConfig(internalName)(configReads).getOrElse(NgEndlessHttpResponseConfig())
     val shouldPass = if (addresses.nonEmpty) {
       addresses.exists { ip =>
         if (ip.contains("/")) {

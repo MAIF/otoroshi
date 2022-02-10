@@ -10,8 +10,8 @@ import otoroshi.next.plugins.wrappers._
 import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
 import otoroshi.next.proxy.{NgProxyEngineError, NgReportPluginSequence, NgReportPluginSequenceItem}
 import otoroshi.next.utils.JsonHelpers
-import otoroshi.script.{NamedPlugin, PluginType}
 import otoroshi.script.plugins.Plugins
+import otoroshi.script.{NamedPlugin, PluginType}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.gzip.GzipConfig
@@ -181,7 +181,17 @@ case class NgRoute(
       forceHttps = plugins.getPluginByClass[ForceHttpsTraffic].isDefined,
       maintenanceMode = plugins.getPluginByClass[MaintenanceMode].isDefined,
       buildMode =  plugins.getPluginByClass[BuildMode].isDefined,
-      strictlyPrivate = plugins.getPluginByClass[PublicPrivatePaths].flatMap(_.config.raw.select("strict").asOpt[Boolean]).getOrElse(false),
+      strictlyPrivate = plugins.getPluginByClass[PublicPrivatePaths]
+        .flatMap(p => NgPublicPrivatePathsConfig.format.reads(p.config.raw).asOpt.map(_.strict))
+        .orElse(
+          plugins.getPluginByClass[AuthModule]
+            .flatMap(p => NgAuthModuleConfig.format.reads(p.config.raw).asOpt.map(!_.passWithApikey))
+        )
+        .orElse(
+          plugins.getPluginByClass[ApikeyCalls]
+            .flatMap(p => NgApikeyCallsConfig.format.reads(p.config.raw).asOpt.map(!_.passWithUser))
+        )
+        .getOrElse(false),
       sendOtoroshiHeadersBack =  plugins.getPluginByClass[SendOtoroshiHeadersBack].isDefined,
       readOnly =  plugins.getPluginByClass[ReadOnlyCalls].isDefined,
       xForwardedHeaders = plugins.getPluginByClass[XForwardedHeaders].isDefined,
@@ -214,26 +224,26 @@ case class NgRoute(
       secComAlgoInfoToken = plugins.getPluginByClass[OtoroshiInfos].flatMap(p => AlgoSettings.fromJson(p.config.raw.select("algo").asOpt[JsValue].getOrElse(Json.obj())).toOption).getOrElse(HSAlgoSettings(512, "secret", false)),
       // ///////////////////////////////////////////////////////////
       privateApp = plugins.getPluginByClass[AuthModule].isDefined,
-      authConfigRef = plugins.getPluginByClass[AuthModule].flatMap(_.config.raw.select("auth_module").asOpt[String]),
+      authConfigRef = plugins.getPluginByClass[AuthModule].flatMap(p => NgAuthModuleConfig.format.reads(p.config.raw).asOpt.flatMap(_.module)),
       securityExcludedPatterns  = plugins.getPluginByClass[AuthModule].map(_.exclude).getOrElse(Seq.empty),
       // ///////////////////////////////////////////////////////////
-      publicPatterns = plugins.getPluginByClass[PublicPrivatePaths].flatMap(p => p.config.raw.select("public_patterns").asOpt[Seq[String]])
+      publicPatterns = plugins.getPluginByClass[PublicPrivatePaths].flatMap(p => NgPublicPrivatePathsConfig.format.reads(p.config.raw).asOpt.map(_.publicPatterns))
                         .orElse(plugins.getPluginByClass[ApikeyCalls].map(p => p.exclude))
                         .getOrElse(Seq.empty),
-      privatePatterns = plugins.getPluginByClass[PublicPrivatePaths].flatMap(p => p.config.raw.select("private_patterns").asOpt[Seq[String]])
+      privatePatterns = plugins.getPluginByClass[PublicPrivatePaths].flatMap(p => NgPublicPrivatePathsConfig.format.reads(p.config.raw).asOpt.map(_.privatePatterns))
                         .orElse(plugins.getPluginByClass[ApikeyCalls].map(p => p.include))
                         .getOrElse(Seq.empty),
-      additionalHeaders = plugins.getPluginByClass[AdditionalHeadersIn].flatMap(p => p.config.raw.select("headers").asOpt[Map[String, String]]).getOrElse(Map.empty),
-      additionalHeadersOut = plugins.getPluginByClass[AdditionalHeadersOut].flatMap(p => p.config.raw.select("headers").asOpt[Map[String, String]]).getOrElse(Map.empty),
-      missingOnlyHeadersIn = plugins.getPluginByClass[MissingHeadersIn].flatMap(p => p.config.raw.select("headers").asOpt[Map[String, String]]).getOrElse(Map.empty),
-      missingOnlyHeadersOut = plugins.getPluginByClass[MissingHeadersOut].flatMap(p => p.config.raw.select("headers").asOpt[Map[String, String]]).getOrElse(Map.empty),
-      removeHeadersIn = plugins.getPluginByClass[RemoveHeadersIn].flatMap(p => p.config.raw.select("header_names").asOpt[Seq[String]]).getOrElse(Seq.empty),
-      removeHeadersOut = plugins.getPluginByClass[RemoveHeadersOut].flatMap(p => p.config.raw.select("header_names").asOpt[Seq[String]]).getOrElse(Seq.empty),
-      headersVerification = plugins.getPluginByClass[HeadersValidation].flatMap(p => p.config.raw.select("headers").asOpt[Map[String, String]]).getOrElse(Map.empty),
+      additionalHeaders = plugins.getPluginByClass[AdditionalHeadersIn].flatMap(p => NgHeaderValuesConfig.format.reads(p.config.raw).asOpt.map(_.headers)).getOrElse(Map.empty),
+      additionalHeadersOut = plugins.getPluginByClass[AdditionalHeadersOut].flatMap(p => NgHeaderValuesConfig.format.reads(p.config.raw).asOpt.map(_.headers)).getOrElse(Map.empty),
+      missingOnlyHeadersIn = plugins.getPluginByClass[MissingHeadersIn].flatMap(p => NgHeaderValuesConfig.format.reads(p.config.raw).asOpt.map(_.headers)).getOrElse(Map.empty),
+      missingOnlyHeadersOut = plugins.getPluginByClass[MissingHeadersOut].flatMap(p => NgHeaderValuesConfig.format.reads(p.config.raw).asOpt.map(_.headers)).getOrElse(Map.empty),
+      removeHeadersIn = plugins.getPluginByClass[RemoveHeadersIn].flatMap(p => NgHeaderNamesConfig.format.reads(p.config.raw).asOpt.map(_.names)).getOrElse(Seq.empty),
+      removeHeadersOut = plugins.getPluginByClass[RemoveHeadersOut].flatMap(p => NgHeaderNamesConfig.format.reads(p.config.raw).asOpt.map(_.names)).getOrElse(Seq.empty),
+      headersVerification = plugins.getPluginByClass[HeadersValidation].flatMap(p => NgHeaderValuesConfig.format.reads(p.config.raw).asOpt.map(_.headers)).getOrElse(Map.empty),
       ipFiltering = if (plugins.getPluginByClass[IpAddressBlockList].isDefined || plugins.getPluginByClass[IpAddressAllowedList].isDefined) {
         IpFiltering(
-          whitelist = plugins.getPluginByClass[IpAddressAllowedList].flatMap(_.config.raw.select("addresses").asOpt[Seq[String]]).getOrElse(Seq.empty),
-          blacklist = plugins.getPluginByClass[IpAddressBlockList].flatMap(_.config.raw.select("addresses").asOpt[Seq[String]]).getOrElse(Seq.empty),
+          whitelist = plugins.getPluginByClass[IpAddressAllowedList].flatMap(p => NgIpAddressesConfig.format.reads(p.config.raw).asOpt.map(_.addresses)).getOrElse(Seq.empty),
+          blacklist = plugins.getPluginByClass[IpAddressBlockList].flatMap(p => NgIpAddressesConfig.format.reads(p.config.raw).asOpt.map(_.addresses)).getOrElse(Seq.empty),
         )
       } else {
         IpFiltering()
@@ -241,7 +251,7 @@ case class NgRoute(
       api = openapiUrl.map(url => ApiDescriptor(true, url.some)).getOrElse(ApiDescriptor(false, None)),
       jwtVerifier = plugins.getPluginByClass[JwtVerification].flatMap(p => p.config.raw.select("verifiers").asOpt[Seq[String]].map(ids => RefJwtVerifier(ids, true, p.exclude))).getOrElse(RefJwtVerifier()),
       cors = plugins.getPluginByClass[otoroshi.next.plugins.Cors].flatMap(p => CorsSettings.fromJson(p.config.raw).toOption).getOrElse(CorsSettings()),
-      redirection = plugins.getPluginByClass[Redirection].flatMap(p => RedirectionSettings.format.reads(p.config.raw).asOpt).getOrElse(RedirectionSettings(false)),
+      redirection = plugins.getPluginByClass[Redirection].flatMap(p => NgRedirectionSettings.format.reads(p.config.raw).asOpt.map(_.legacy)).getOrElse(RedirectionSettings()),
       restrictions = plugins.getPluginByClass[RoutingRestrictions].flatMap(p => Restrictions.format.reads(p.config.raw).asOpt.map(_.copy(enabled = true))).getOrElse(Restrictions()),
       tcpUdpTunneling = Seq(
         plugins.getPluginByClass[TcpTunnel],
@@ -250,7 +260,7 @@ case class NgRoute(
       detectApiKeySooner = plugins.getPluginByClass[ApikeyCalls].flatMap(p => p.config.raw.select("validate").asOpt[Boolean].map(v => !v)).getOrElse(false),
       canary = plugins.getPluginByClass[CanaryMode].flatMap(p => Canary.format.reads(p.config.raw).asOpt.map(_.copy(enabled = true))).getOrElse(Canary()),
       chaosConfig = plugins.getPluginByClass[SnowMonkeyChaos].flatMap(p => ChaosConfig._fmt.reads(p.config.raw).asOpt.map(_.copy(enabled = true))).getOrElse(ChaosConfig(enabled = true)),
-      gzip = plugins.getPluginByClass[GzipResponseCompressor].flatMap(p => GzipConfig._fmt.reads(p.config.raw).asOpt.map(_.copy(enabled = true, excludedPatterns = p.exclude))).getOrElse(GzipConfig(enabled = true)),
+      gzip = plugins.getPluginByClass[GzipResponseCompressor].flatMap(p => NgGzipConfig.format.reads(p.config.raw).asOpt.map(_.legacy)).getOrElse(GzipConfig(enabled = true)),
       apiKeyConstraints = {
         plugins.getPluginByClass[ApikeyCalls].flatMap { plugin =>
           NgApikeyCallsConfig.format.reads(plugin.config.raw).asOpt.map(_.legacy)
@@ -518,9 +528,7 @@ object NgRoute {
           .applyOnIf(service.headersVerification.nonEmpty) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[HeadersValidation],
-              config = NgPluginInstanceConfig(Json.obj(
-                "headers" -> JsObject(service.headersVerification.mapValues(JsString.apply))
-              ))
+              config = NgPluginInstanceConfig(NgHeaderValuesConfig(service.headersVerification).json.asObject)
             )
           }
           .applyOnIf(service.maintenanceMode) { seq =>
@@ -546,71 +554,55 @@ object NgRoute {
           .applyOnIf(service.ipFiltering.blacklist.nonEmpty) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[IpAddressBlockList],
-              config = NgPluginInstanceConfig(Json.obj(
-                "addresses" -> JsArray(service.ipFiltering.blacklist.map(JsString.apply))
-              ))
+              config = NgPluginInstanceConfig(NgIpAddressesConfig(service.ipFiltering.blacklist).json.asObject)
             )
           }
           .applyOnIf(service.ipFiltering.whitelist.nonEmpty) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[IpAddressAllowedList],
-              config = NgPluginInstanceConfig(Json.obj(
-                "addresses" -> JsArray(service.ipFiltering.whitelist.map(JsString.apply))
-              ))
+              config = NgPluginInstanceConfig(NgIpAddressesConfig(service.ipFiltering.blacklist).json.asObject)
             )
           }
           .applyOnIf(service.redirection.enabled) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[Redirection],
-              config = NgPluginInstanceConfig(service.redirection.toJson.as[JsObject])
+              config = NgPluginInstanceConfig(NgRedirectionSettings.fromLegacy(service.redirection).json.asObject)
             )
           }
           .applyOnIf(service.additionalHeaders.nonEmpty) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[AdditionalHeadersIn],
-              config = NgPluginInstanceConfig(Json.obj(
-                "headers" -> JsObject(service.additionalHeaders.mapValues(JsString.apply))
-              ))
+              config = NgPluginInstanceConfig(NgHeaderValuesConfig(service.additionalHeaders).json.asObject)
             )
           }
           .applyOnIf(service.additionalHeadersOut.nonEmpty) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[AdditionalHeadersOut],
-              config = NgPluginInstanceConfig(Json.obj(
-                "headers" -> JsObject(service.additionalHeadersOut.mapValues(JsString.apply))
-              ))
+              config = NgPluginInstanceConfig(NgHeaderValuesConfig(service.additionalHeadersOut).json.asObject)
             )
           }
           .applyOnIf(service.missingOnlyHeadersIn.nonEmpty) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[MissingHeadersIn],
-              config = NgPluginInstanceConfig(Json.obj(
-                "headers" -> JsObject(service.missingOnlyHeadersIn.mapValues(JsString.apply))
-              ))
+              config = NgPluginInstanceConfig(NgHeaderValuesConfig(service.missingOnlyHeadersIn).json.asObject)
             )
           }
           .applyOnIf(service.missingOnlyHeadersOut.nonEmpty) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[MissingHeadersOut],
-              config = NgPluginInstanceConfig(Json.obj(
-                "headers" -> JsObject(service.missingOnlyHeadersOut.mapValues(JsString.apply))
-              ))
+              config = NgPluginInstanceConfig(NgHeaderValuesConfig(service.missingOnlyHeadersOut).json.asObject)
             )
           }
           .applyOnIf(service.removeHeadersIn.nonEmpty) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[RemoveHeadersIn],
-              config = NgPluginInstanceConfig(Json.obj(
-                "headers" -> JsArray(service.removeHeadersIn.map(JsString.apply))
-              ))
+              config = NgPluginInstanceConfig(NgHeaderNamesConfig(service.removeHeadersIn).json.asObject)
             )
           }
           .applyOnIf(service.removeHeadersOut.nonEmpty) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[RemoveHeadersOut],
-              config = NgPluginInstanceConfig(Json.obj(
-                "headers" -> JsArray(service.removeHeadersOut.map(JsString.apply))
-              ))
+              config = NgPluginInstanceConfig(NgHeaderNamesConfig(service.removeHeadersOut).json.asObject)
             )
           }
           .applyOnIf(service.sendOtoroshiHeadersBack) { seq =>
@@ -623,16 +615,6 @@ object NgRoute {
               plugin = pluginId[XForwardedHeaders],
             )
           }
-          // .applyOnIf(service.publicPatterns.nonEmpty || service.privatePatterns.nonEmpty) { seq =>
-          //   seq :+ PluginInstance(
-          //     plugin = pluginId[PublicPrivatePaths],
-          //     config = PluginInstanceConfig(Json.obj(
-          //       "private_patterns" -> JsArray(service.privatePatterns.map(JsString.apply)),
-          //       "public_patterns" -> JsArray(service.publicPatterns.map(JsString.apply)),
-          //       "strict" -> service.strictlyPrivate
-          //     ))
-          //   )
-          // }
           .applyOnIf(service.jwtVerifier.enabled && service.jwtVerifier.isRef) { seq =>
             val verifier = service.jwtVerifier.asInstanceOf[RefJwtVerifier]
             seq :+ NgPluginInstance(
@@ -653,10 +635,7 @@ object NgRoute {
             seq :+ NgPluginInstance(
               plugin = pluginId[AuthModule],
               exclude = service.securityExcludedPatterns,
-              config = NgPluginInstanceConfig(Json.obj(
-                "auth_module" -> service.authConfigRef.get,
-                "pass_with_apikey" -> !service.strictlyPrivate
-              ))
+              config = NgPluginInstanceConfig(NgAuthModuleConfig(service.authConfigRef, !service.strictlyPrivate).json.asObject),
             )
           }
           .applyOnIf(service.enforceSecureCommunication && service.sendStateChallenge) { seq =>
@@ -707,7 +686,7 @@ object NgRoute {
             seq :+ NgPluginInstance(
               plugin = pluginId[GzipResponseCompressor],
               exclude = service.gzip.excludedPatterns,
-              config = NgPluginInstanceConfig(service.gzip.asJson.asObject)
+              config = NgPluginInstanceConfig(NgGzipConfig.fromLegacy(service.gzip).json.asObject)
             )
           }
           .applyOnIf(service.canary.enabled) { seq =>

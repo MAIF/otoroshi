@@ -13,7 +13,7 @@ import play.api.mvc.Results
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class NgAuthModuleConfig(module: Option[String] = None) extends AnyVal {
+case class NgAuthModuleConfig(module: Option[String] = None, passWithApikey: Boolean = false) {
   def json: JsValue = NgAuthModuleConfig.format.writes(this)
 }
 
@@ -21,13 +21,17 @@ object NgAuthModuleConfig {
   val format = new Format[NgAuthModuleConfig] {
     override def reads(json: JsValue): JsResult[NgAuthModuleConfig] = Try {
       NgAuthModuleConfig(
-        module = json.select("auth_module").asOpt[String].filter(_.nonEmpty)
+        module = json.select("auth_module").asOpt[String].filter(_.nonEmpty),
+        passWithApikey = json.select("pass_with_apikey").asOpt[Boolean].getOrElse(false)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
-    override def writes(o: NgAuthModuleConfig): JsValue = Json.obj("auth_module" -> o.module.map(JsString.apply).getOrElse(JsNull).as[JsValue])
+    override def writes(o: NgAuthModuleConfig): JsValue = Json.obj(
+      "pass_with_apikey" -> o.passWithApikey,
+      "auth_module" -> o.module.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    )
   }
 }
 
@@ -44,16 +48,16 @@ class AuthModule extends NgAccessValidator {
   override def isAccessAsync: Boolean = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val NgAuthModuleConfig(module, passWithApikey) = ctx.cachedConfig(internalName)(configReads).getOrElse(NgAuthModuleConfig())
     val req = ctx.request
     val descriptor = ctx.route.serviceDescriptor
     val maybeApikey = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
-    val pass = ctx.config.select("pass_with_apikey").asOpt[Boolean].getOrElse(false) match {
+    val pass = passWithApikey match {
       case true => maybeApikey.isDefined
       case false => false
     }
     ctx.attrs.get(otoroshi.plugins.Keys.UserKey) match {
       case None if !pass => {
-        val NgAuthModuleConfig(module) = ctx.cachedConfig(internalName)(configReads).getOrElse(NgAuthModuleConfig())
         module match {
           case None =>
             Errors
