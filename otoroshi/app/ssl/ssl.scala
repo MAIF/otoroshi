@@ -183,6 +183,13 @@ case class Cert(
   def serialNumberLng: Option[java.math.BigInteger] =
     this.metadata.map(v => (v \ "serialNumberLng").as[java.math.BigInteger])
   def matchesDomain(dom: String): Boolean           = allDomains.exists(d => RegexPool.apply(d).matches(dom))
+  def sanMatchesDomain(dom: String, san: String): Boolean = {
+    if (san.contains("*")) {
+      RegexPool.apply(san).matches(dom)
+    } else {
+      dom == san
+    }
+  }
 
   def renew(
       _duration: Option[FiniteDuration] = None

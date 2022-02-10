@@ -93,23 +93,23 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
 
           // no * before with * then longer before smaller
           val foundCert = certs
-            .filter(_.matchesDomain(domain))
             .flatMap(c => c.allDomains.map(d => (d, c)))
+            .filter(c => c._2.sanMatchesDomain(domain, c._1))
             .sortWith {
               case ((d1, _), (d2, _)) if d1.contains("*") && d2.contains("*")   => d1.size > d2.size
               case ((d1, _), (d2, _)) if d1.contains("*") && !d2.contains("*")  => false
               case ((d1, _), (d2, _)) if !d1.contains("*") && d2.contains("*")  => true
               case ((d1, _), (d2, _)) if !d1.contains("*") && !d2.contains("*") => true
             }
+            .seffectOnIf(logger.isDebugEnabled)(certs => logger.debug(s"possible certificates for '$domain': \n${certs.map(c => s"  * '${c._2.name}' | '${c._1}' | - ${c._2.allDomains.mkString(", ")}").mkString("\n")}"))
             .map(_._2)
-            .seffectOnIf(logger.isDebugEnabled)(certs => logger.debug(s"possible certificates for '$domain': \n${certs.map(c => s"  * '${c.name}' - ${c.allDomains.mkString(", ")}").mkString("\n")}"))
             .headOption
             .seffectOnIf(logger.isDebugEnabled)(opt => logger.debug(s"choosing '${opt.map(_.name).getOrElse("--")}'"))
 
           val foundCertDef = tlsSettings.defaultDomain.flatMap { d =>
             certs
-              .filter(_.matchesDomain(d))
               .flatMap(c => c.allDomains.map(d => (d, c)))
+              .filter(c => c._2.sanMatchesDomain(domain, c._1))
               .sortWith {
                 case ((d1, _), (d2, _)) if d1.contains("*") && d2.contains("*")   => d1.size > d2.size
                 case ((d1, _), (d2, _)) if d1.contains("*") && !d2.contains("*")  => false
