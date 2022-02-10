@@ -155,7 +155,8 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
       tags = Seq.empty,
       metadata = Map.empty,
       enabled = true,
-      debugFlow = true,
+      debugFlow = false,
+      exportReporting = false,
       groups = Seq("default"),
       client = ClientConfig(),
       routes = Seq(NgMinimalRoute(

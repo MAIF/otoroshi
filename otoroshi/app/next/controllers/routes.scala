@@ -158,6 +158,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       metadata = Map.empty,
       enabled = true,
       debugFlow = true,
+      exportReporting = false,
       groups = Seq("default"),
       frontend = NgFrontend(
         domains = Seq(NgDomainAndPath("new-route.oto.tools")),

@@ -139,6 +139,9 @@ class ProxyEngine() extends RequestHandler {
     ).getOrElse(true)
     val routingStrategy = config.select("routing_strategy").asOpt[String].getOrElse("tree")
     val useTree = routingStrategy == "tree"
+    val exportReporting = config.select("export_reporting").asOpt[Boolean].orElse(
+      env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.export-reporting")
+    ).getOrElse(false)
     implicit val report = NgExecutionReport(requestId, reporting)
     report.start("start-handling")
     val debug = config.select("debug").asOpt[Boolean].getOrElse(false)
@@ -232,7 +235,9 @@ class ProxyEngine() extends RequestHandler {
         attrs.get(Keys.RouteKey).foreach { route =>
           callPluginsAfterRequestCallback(snowflake, request, route, attrs.get(Keys.ContextualPluginsKey).get)
           handleHighOverhead(request, route.some)
-          RequestFlowReport(report, route).toAnalytics()
+          if (exportReporting || route.exportReporting) {
+            RequestFlowReport(report, route).toAnalytics()
+          }
         }
     }.applyOnIf(/*env.env == "dev" && */(debug || debugHeaders))(_.map { res =>
       val addHeaders = if (reporting && debugHeaders) Seq(
@@ -266,6 +271,9 @@ class ProxyEngine() extends RequestHandler {
     val pluginMerge = config.select("merge_sync_steps").asOpt[Boolean].orElse(
       env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.plugins.merge-sync-steps")
     ).getOrElse(true)
+    val exportReporting = config.select("export_reporting").asOpt[Boolean].orElse(
+      env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.export-reporting")
+    ).getOrElse(false)
     val routingStrategy = config.select("routing_strategy").asOpt[String].getOrElse("tree")
     val useTree = routingStrategy == "tree"
     implicit val report = NgExecutionReport(requestId, reporting)
@@ -360,7 +368,9 @@ class ProxyEngine() extends RequestHandler {
         attrs.get(Keys.RouteKey).foreach { route =>
           callPluginsAfterRequestCallback(snowflake, request, route, attrs.get(Keys.ContextualPluginsKey).get)
           handleHighOverhead(request, route.some)
-          RequestFlowReport(report, route).toAnalytics()
+          if (exportReporting || route.exportReporting) {
+            RequestFlowReport(report, route).toAnalytics()
+          }
         }
     }
   }

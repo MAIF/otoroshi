@@ -34,6 +34,7 @@ case class NgRoute(
   metadata: Map[String, String],
   enabled: Boolean,
   debugFlow: Boolean,
+  exportReporting: Boolean,
   groups: Seq[String] = Seq("default"),
   frontend: NgFrontend,
   backend: NgBackend,
@@ -55,6 +56,7 @@ case class NgRoute(
     "metadata" -> metadata,
     "enabled" -> enabled,
     "debug_flow" -> debugFlow,
+    "export_reporting" -> exportReporting,
     "groups" -> groups,
     "frontend" -> frontend.json,
     "backend" -> backend.json,
@@ -368,6 +370,7 @@ object NgRoute {
     metadata = Map.empty,
     enabled = true,
     debugFlow = true,
+    exportReporting = false,
     groups = Seq("default"),
     frontend = NgFrontend(
       domains = Seq(NgDomainAndPath("fake-next-gen.oto.tools")),
@@ -431,6 +434,7 @@ object NgRoute {
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
         debugFlow = json.select("debug_flow").asOpt[Boolean].getOrElse(false),
+        exportReporting = json.select("export_reporting").asOpt[Boolean].getOrElse(false),
         groups = json.select("groups").asOpt[Seq[String]].getOrElse(Seq("default")),
         frontend = NgFrontend.readFrom(json.select("frontend")),
         backend = ref match {
@@ -473,6 +477,7 @@ object NgRoute {
       },
       enabled = service.enabled,
       debugFlow = debug,
+      exportReporting = service.metadata.get("otoroshi-core-export-reporting").contains("true"),
       frontend = NgFrontend(
         domains = {
           val dap = if (service.allPaths.isEmpty) {
