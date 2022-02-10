@@ -158,7 +158,7 @@ object NgPlugins {
   }
 }
 
-case class NgContextualPlugins(plugins: NgPlugins, global_plugins: NgPlugins, request: RequestHeader, _env: Env, _ec: ExecutionContext) {
+case class NgContextualPlugins(plugins: NgPlugins, global_plugins: NgPlugins, request: RequestHeader, nextPluginsMerge: Boolean, _env: Env, _ec: ExecutionContext) {
 
   implicit val env: Env = _env
   implicit val ec: ExecutionContext = _ec
@@ -184,7 +184,7 @@ case class NgContextualPlugins(plugins: NgPlugins, global_plugins: NgPlugins, re
   lazy val (transformerPluginsWithCallbacks, tpwoCallbacks) = transformerPlugins.partition(_.plugin.usesCallbacks)
   lazy val (transformerPluginsThatTransformsRequest, tpwoRequest) = {
     val (plugs, b) = transformerPlugins.partition(_.plugin.transformsRequest)
-    if (_env.nextPluginsMerge && plugs.size > 1) {
+    if (nextPluginsMerge && plugs.size > 1) {
       val new_plugins = plugs.foldLeft((true, Seq.empty[NgPluginWrapper[NgRequestTransformer]])) {
         case ((latestAsync, coll), plug) => {
           if (plug.plugin.isTransformRequestAsync) {
@@ -209,7 +209,7 @@ case class NgContextualPlugins(plugins: NgPlugins, global_plugins: NgPlugins, re
   }
   lazy val (transformerPluginsThatTransformsResponse, tpwoResponse) = {
     val (plugs, b) = transformerPlugins.partition(_.plugin.transformsResponse)
-    if (_env.nextPluginsMerge && plugs.size > 1) {
+    if (nextPluginsMerge && plugs.size > 1) {
       val new_plugins = plugs.foldLeft((true, Seq.empty[NgPluginWrapper[NgRequestTransformer]])) {
         case ((latestAsync, coll), plug) => {
           if (plug.plugin.isTransformResponseAsync) {
@@ -240,7 +240,7 @@ case class NgContextualPlugins(plugins: NgPlugins, global_plugins: NgPlugins, re
       .collect {
         case (inst, Some(plugin)) => NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
-    if (_env.nextPluginsMerge && plugs.size > 1) {
+    if (nextPluginsMerge && plugs.size > 1) {
       val new_plugins = plugs.foldLeft((true, Seq.empty[NgPluginWrapper[NgPreRouting]])) {
         case ((latestAsync, coll), plug) => {
           if (plug.plugin.isPreRouteAsync) {
@@ -270,7 +270,7 @@ case class NgContextualPlugins(plugins: NgPlugins, global_plugins: NgPlugins, re
       .collect {
         case (inst, Some(plugin)) => NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
-    if (_env.nextPluginsMerge && plugs.size > 1) {
+    if (nextPluginsMerge && plugs.size > 1) {
       val new_plugins = plugs.foldLeft((true, Seq.empty[NgPluginWrapper[NgAccessValidator]])) {
         case ((latestAsync, coll), plug) => {
           if (plug.plugin.isAccessAsync) {

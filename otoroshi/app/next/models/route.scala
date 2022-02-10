@@ -352,8 +352,8 @@ case class NgRoute(
     }
   }
 
-  def contextualPlugins(global_plugins: NgPlugins, request: RequestHeader)(implicit env: Env, ec: ExecutionContext): NgContextualPlugins = {
-    NgContextualPlugins(plugins, global_plugins, request, env, ec)
+  def contextualPlugins(global_plugins: NgPlugins, nextPluginsMerge: Boolean, request: RequestHeader)(implicit env: Env, ec: ExecutionContext): NgContextualPlugins = {
+    NgContextualPlugins(plugins, global_plugins, request, nextPluginsMerge, env, ec)
   }
 }
 

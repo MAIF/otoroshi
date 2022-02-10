@@ -30,7 +30,7 @@ import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSResponse
-import play.api.mvc.Results.{NotFound, Status}
+import play.api.mvc.Results.Status
 import play.api.mvc._
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
@@ -87,6 +87,7 @@ class ProxyEngine() extends RequestHandler {
         "debug" -> false,
         "debug_headers" -> true,
         "routing_strategy" -> "tree",
+        "merge_sync_steps" -> true,
         "domains" -> Json.arr()
       )
     ).some
@@ -133,7 +134,11 @@ class ProxyEngine() extends RequestHandler {
   def handleRequest(request: Request[Source[ByteString, _]], config: JsObject)(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig): Future[Result] = {
     val requestId = IdGenerator.uuid
     val reporting = config.select("reporting").asOpt[Boolean].getOrElse(true)
-    val useTree = config.select("routing_strategy").asOpt[String].contains("tree")
+    val pluginMerge = config.select("merge_sync_steps").asOpt[Boolean].orElse(
+      env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.plugins.merge-sync-steps")
+    ).getOrElse(true)
+    val routingStrategy = config.select("routing_strategy").asOpt[String].getOrElse("tree")
+    val useTree = routingStrategy == "tree"
     implicit val report = NgExecutionReport(requestId, reporting)
     report.start("start-handling")
     val debug = config.select("debug").asOpt[Boolean].getOrElse(false)
@@ -173,7 +178,7 @@ class ProxyEngine() extends RequestHandler {
       _               =  report.markDoneAndStart("find-route")
       route           <- findRoute(useTree, request, request.body, global_plugins__)
       _               =  report.markDoneAndStart("compute-plugins")
-      ctxPlugins      = route.contextualPlugins(global_plugins__, request).seffectOn(_.allPlugins)
+      ctxPlugins      = route.contextualPlugins(global_plugins__, pluginMerge, request).seffectOn(_.allPlugins)
       _               = attrs.put(Keys.ContextualPluginsKey -> ctxPlugins)
       _               =  report.markDoneAndStart("tenant-check", Json.obj("disabled_plugins" -> ctxPlugins.disabledPlugins.map(p => JsString(p.plugin)), "filtered_plugins" -> ctxPlugins.filteredPlugins.map(p => JsString(p.plugin))).some)
       _               <- handleTenantCheck(route)
@@ -258,7 +263,11 @@ class ProxyEngine() extends RequestHandler {
   def handleWsRequest(request: RequestHeader, config: JsObject)(implicit ec: ExecutionContext, env: Env, globalConfig: GlobalConfig): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     val requestId = IdGenerator.uuid
     val reporting = config.select("reporting").asOpt[Boolean].getOrElse(true)
-    val useTree = config.select("routing_strategy").asOpt[String].contains("tree")
+    val pluginMerge = config.select("merge_sync_steps").asOpt[Boolean].orElse(
+      env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.plugins.merge-sync-steps")
+    ).getOrElse(true)
+    val routingStrategy = config.select("routing_strategy").asOpt[String].getOrElse("tree")
+    val useTree = routingStrategy == "tree"
     implicit val report = NgExecutionReport(requestId, reporting)
     report.start("start-handling")
     implicit val mat = env.otoroshiMaterializer
@@ -298,7 +307,7 @@ class ProxyEngine() extends RequestHandler {
       _               =  report.markDoneAndStart("find-route")
       route           <- findRoute(useTree, request, fakeBody, global_plugins__)
       _               =  report.markDoneAndStart("compute-plugins")
-      ctxPlugins      = route.contextualPlugins(global_plugins__, request).seffectOn(_.allPlugins)
+      ctxPlugins      = route.contextualPlugins(global_plugins__, pluginMerge, request).seffectOn(_.allPlugins)
       _               = attrs.put(Keys.ContextualPluginsKey -> ctxPlugins)
       _               =  report.markDoneAndStart("tenant-check", Json.obj("disabled_plugins" -> ctxPlugins.disabledPlugins.map(p => JsString(p.plugin)), "filtered_plugins" -> ctxPlugins.filteredPlugins.map(p => JsString(p.plugin))).some)
       _               <- handleTenantCheck(route)
@@ -1564,7 +1573,7 @@ class ProxyEngine() extends RequestHandler {
          FEither(Errors
            .craftResponseResult(
              s"Resource not found",
-             NotFound,
+             Results.NotFound,
              rawRequest,
              None,
              Some("errors.resource.not.found"),
