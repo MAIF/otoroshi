@@ -204,7 +204,7 @@ export function ResourceLoaderPage({ setTitle }) {
 
   return (
     <div>
-      <div className="row mb-3">
+      <div className="mb-3">
         <button
           type="button"
           onClick={() => setFormat('json')}
@@ -214,11 +214,11 @@ export function ResourceLoaderPage({ setTitle }) {
         <button
           type="button"
           onClick={() => setFormat('yaml')}
-          className={`btn btn-sm btn-${format === 'yaml' ? 'success' : 'secondary'}`}>
+          className={`ms-2 btn btn-sm btn-${format === 'yaml' ? 'success' : 'secondary'}`}>
           YAML
         </button>
       </div>
-      <div className="row mb-3">
+      <div className="mb-3">
         <div className="row">
           <div className="col-sm-8" style={{ paddingRight: 0 }}>
             <AceEditor
