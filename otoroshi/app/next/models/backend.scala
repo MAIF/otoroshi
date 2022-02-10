@@ -1,8 +1,9 @@
 package otoroshi.next.models
 
 import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
+import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
-import otoroshi.models.{ClientConfig, _}
+import otoroshi.models._
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
@@ -10,7 +11,6 @@ import play.api.libs.json._
 
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.{Failure, Success, Try}
-import otoroshi.api.OtoroshiEnvHolder
 
 case class NgBackend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String, rewrite: Boolean, loadBalancing: LoadBalancing, healthCheck: Option[HealthCheck] = None, client: ClientConfig) {
   // I know it's not ideal but we'll go with it for now !
@@ -166,6 +166,7 @@ case class NgTarget(
     case 80 => ""
     case _ => s":${port}"
   }
+  lazy val legacy: otoroshi.models.Target = toTarget
   lazy val toTarget: otoroshi.models.Target = otoroshi.models.Target(
     host = s"${hostname}${defaultPortString}",
     scheme = if (tls) "https" else "http",
@@ -190,6 +191,7 @@ case class NgTarget(
 }
 
 object NgTarget {
+  def fromLegacy(target: Target): NgTarget = fromTarget(target)
   def fromTarget(target: Target): NgTarget = {
     NgTarget(
       id = target.tags.headOption.getOrElse(target.host),

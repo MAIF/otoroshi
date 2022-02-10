@@ -8,14 +8,75 @@ import otoroshi.gateway.Errors
 import otoroshi.models.CorsSettings
 import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsObject, Reads}
+import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
+
+case class NgCorsSettings(
+  allowOrigin: String = "*",
+  exposeHeaders: Seq[String] = Seq.empty[String],
+  allowHeaders: Seq[String] = Seq.empty[String],
+  allowMethods: Seq[String] = Seq.empty[String],
+  excludedPatterns: Seq[String] = Seq.empty[String],
+  maxAge: Option[FiniteDuration] = None,
+  allowCredentials: Boolean = true
+) {
+  def json: JsValue = NgCorsSettings.format.writes(this)
+  lazy val legacy: CorsSettings = CorsSettings(
+    allowOrigin = allowOrigin,
+    exposeHeaders = exposeHeaders,
+    allowHeaders = allowHeaders,
+    allowMethods = allowMethods,
+    excludedPatterns = excludedPatterns,
+    maxAge = maxAge,
+    allowCredentials = allowCredentials,
+  )
+}
+
+object NgCorsSettings {
+  def fromLegacy(settings: CorsSettings): NgCorsSettings = NgCorsSettings(
+    allowOrigin = settings.allowOrigin,
+    exposeHeaders = settings.exposeHeaders,
+    allowHeaders = settings.allowHeaders,
+    allowMethods = settings.allowMethods,
+    excludedPatterns = settings.excludedPatterns,
+    maxAge = settings.maxAge,
+    allowCredentials = settings.allowCredentials,
+  )
+  val format = new Format[NgCorsSettings] {
+    override def reads(json: JsValue): JsResult[NgCorsSettings] = Try {
+      NgCorsSettings(
+        allowOrigin = (json \ "allow_origin").asOpt[String].getOrElse("*"),
+        exposeHeaders = (json \ "expose_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        allowHeaders = (json \ "allow_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        allowMethods = (json \ "allow_methods").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        excludedPatterns = (json \ "excluded_patterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        maxAge = (json \ "max_age").asOpt[Long].map(a => FiniteDuration(a, TimeUnit.SECONDS)),
+        allowCredentials = (json \ "allow_credentials").asOpt[Boolean].getOrElse(true)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    override def writes(o: NgCorsSettings): JsValue = Json.obj(
+      "allow_origin"      -> o.allowOrigin,
+      "expose_headers"    -> JsArray(o.exposeHeaders.map(_.toLowerCase().trim).map(JsString.apply)),
+      "allow_headers"     -> JsArray(o.allowHeaders.map(_.toLowerCase().trim).map(JsString.apply)),
+      "allow_methods"     -> JsArray(o.allowMethods.map(JsString.apply)),
+      "excluded_patterns" -> JsArray(o.excludedPatterns.map(JsString.apply)),
+      "max_age"           -> o.maxAge.map(a => JsNumber(BigDecimal(a.toSeconds))).getOrElse(JsNull).as[JsValue],
+      "allow_credentials" -> o.allowCredentials
+    )
+  }
+}
 
 class Cors extends NgRequestTransformer with NgPreRouting {
 
-  private val configReads: Reads[CorsSettings] = CorsSettings.format
+  private val configReads: Reads[NgCorsSettings] = NgCorsSettings.format
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
@@ -27,15 +88,15 @@ class Cors extends NgRequestTransformer with NgPreRouting {
   override def transformsError: Boolean = false
   override def name: String = "CORS"
   override def description: Option[String] = "This plugin applies CORS rules".some
-  override def defaultConfig: Option[JsObject] = CorsSettings(enabled = true).asJson.asObject.-("enabled").some
+  override def defaultConfig: Option[JsObject] = NgCorsSettings().json.asObject.some
 
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val req = ctx.request
     // val cors = CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true)
-    val cors = ctx.cachedConfig(internalName)(configReads).getOrElse(CorsSettings(enabled = true))
+    val cors = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCorsSettings())
     if (req.method == "OPTIONS" && req.headers.get("Access-Control-Request-Method").isDefined) {
       // handle cors preflight request
-      if (cors.enabled && cors.shouldNotPass(req)) {
+      if (cors.legacy.shouldNotPass(req)) {
         Errors.craftResponseResult(
           "Cors error",
           Results.NotFound,
@@ -48,7 +109,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
       } else {
         NgPreRoutingErrorWithResult(Results
           .NoContent
-          .withHeaders(cors.asHeaders(req): _*))
+          .withHeaders(cors.legacy.asHeaders(req): _*))
           .left
           .vfuture
       }

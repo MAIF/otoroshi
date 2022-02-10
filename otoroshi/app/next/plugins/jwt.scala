@@ -13,27 +13,27 @@ import play.api.mvc.Result
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-case class JwtVerificationConfig(verifiers: Seq[String] = Seq.empty) extends AnyVal {
-  def json: JsValue = JwtVerificationConfig.format.writes(this)
+case class NgJwtVerificationConfig(verifiers: Seq[String] = Seq.empty) extends AnyVal {
+  def json: JsValue = NgJwtVerificationConfig.format.writes(this)
 }
 
-object JwtVerificationConfig {
-  val format = new Format[JwtVerificationConfig] {
-    override def reads(json: JsValue): JsResult[JwtVerificationConfig] = Try {
-      JwtVerificationConfig(
+object NgJwtVerificationConfig {
+  val format = new Format[NgJwtVerificationConfig] {
+    override def reads(json: JsValue): JsResult[NgJwtVerificationConfig] = Try {
+      NgJwtVerificationConfig(
         verifiers = json.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
-    override def writes(o: JwtVerificationConfig): JsValue = Json.obj("verifiers" -> o.verifiers)
+    override def writes(o: NgJwtVerificationConfig): JsValue = Json.obj("verifiers" -> o.verifiers)
   }
 }
 
 class JwtVerification extends NgAccessValidator with NgRequestTransformer {
 
-  private val configReads: Reads[JwtVerificationConfig] = JwtVerificationConfig.format
+  private val configReads: Reads[NgJwtVerificationConfig] = NgJwtVerificationConfig.format
 
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
@@ -46,11 +46,11 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
   override def isTransformResponseAsync: Boolean = true
   override def name: String = "Jwt verifiers"
   override def description: Option[String] = "This plugin verifies the current request with one or more jwt verifier".some
-  override def defaultConfig: Option[JsObject] = JwtVerificationConfig().json.asObject.some
+  override def defaultConfig: Option[JsObject] = NgJwtVerificationConfig().json.asObject.some
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     // val verifiers = ctx.config.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty)
-    val JwtVerificationConfig(verifiers) = ctx.cachedConfig(internalName)(configReads).getOrElse(JwtVerificationConfig())
+    val NgJwtVerificationConfig(verifiers) = ctx.cachedConfig(internalName)(configReads).getOrElse(NgJwtVerificationConfig())
     if (verifiers.nonEmpty) {
       val verifier = RefJwtVerifier(verifiers, true, Seq.empty)
       if (verifier.isAsync) {

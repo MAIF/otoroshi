@@ -5,22 +5,69 @@ import akka.http.scaladsl.util.FastFuture.EnhancedFuture
 import akka.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.models.Canary
-import otoroshi.next.models.{NgTarget, NgBackend}
+import otoroshi.next.models.{NgBackend, NgTarget}
 import otoroshi.next.plugins.api._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsObject, Reads}
+import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.Result
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
+
+// TODO: NgBackend instead of NgTarget ?
+case class NgCanarySettings(
+  traffic: Double = 0.2,
+  targets: Seq[NgTarget] = Seq.empty[NgTarget],
+  root: String = "/"
+) {
+  def json: JsValue = NgCanarySettings.format.writes(this)
+  lazy val legacy: Canary = Canary(
+    enabled = true,
+    traffic = traffic,
+    targets = targets.map(_.toTarget),
+    root = root,
+  )
+}
+
+object NgCanarySettings {
+  def fromLegacy(settings: Canary): NgCanarySettings = NgCanarySettings(
+    traffic = settings.traffic,
+    targets = settings.targets.map(t => NgTarget.fromLegacy(t)),
+    root = settings.root,
+  )
+  val format = new Format[NgCanarySettings] {
+    override def reads(json: JsValue): JsResult[NgCanarySettings] =
+      Try {
+        NgCanarySettings(
+          traffic = (json \ "traffic").asOpt[Double].getOrElse(0.2),
+          targets = (json \ "targets")
+            .asOpt[JsArray]
+            .map(_.value.map(e => NgTarget.readFrom(e)))
+            .getOrElse(Seq.empty[NgTarget]),
+          root = (json \ "root").asOpt[String].getOrElse("/")
+        )
+      } match {
+        case Failure(e) => JsError(e.getMessage)
+        case Success(c) => JsSuccess(c)
+      }
+
+    override def writes(o: NgCanarySettings): JsValue =
+      Json.obj(
+        "traffic" -> o.traffic,
+        "targets" -> JsArray(o.targets.map(_.json)),
+        "root"    -> o.root
+      )
+  }
+}
 
 class CanaryMode extends NgPreRouting with NgRequestTransformer {
 
   private val logger = Logger("otoroshi-next-plugins-canary-mode")
-  private val configReads: Reads[Canary] = Canary.format
+  private val configReads: Reads[NgCanarySettings] = NgCanarySettings.format
   override def core: Boolean = true
   override def usesCallbacks: Boolean = false
   override def transformsRequest: Boolean = false
@@ -28,14 +75,14 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
   override def transformsError: Boolean = false
   override def name: String = "Canary mode"
   override def description: Option[String] = "This plugin can split a portion of the traffic to canary backends".some
-  override def defaultConfig: Option[JsObject] = Canary().toJson.asObject.-("enabled").some
+  override def defaultConfig: Option[JsObject] = NgCanarySettings().json.asObject.some
 
   override def isPreRouteAsync: Boolean = true
   override def isTransformRequestAsync: Boolean = true
   override def isTransformResponseAsync: Boolean = false
 
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
-    val config = ctx.cachedConfig(internalName)(configReads).getOrElse(Canary(enabled = true))
+    val config = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCanarySettings())
     val gconfig = env.datastores.globalConfigDataStore.latest()
     val reqNumber = ctx.attrs.get(otoroshi.plugins.Keys.RequestNumberKey).get
     val trackingId = ctx.attrs.get(otoroshi.plugins.Keys.RequestCanaryIdKey).getOrElse {
@@ -66,7 +113,7 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
       case false => Right(Done)
       case true  =>
         val backends = NgBackend(
-          targets = config.targets.map(NgTarget.fromTarget),
+          targets = config.targets,
           targetRefs = Seq.empty,
           root = config.root,
           rewrite = false,

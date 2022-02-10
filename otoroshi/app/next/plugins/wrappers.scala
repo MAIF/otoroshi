@@ -1,24 +1,22 @@
 package otoroshi.next.plugins.wrappers
 
 import akka.Done
-import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.script._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{Result, Results}
-
-import scala.concurrent.{ExecutionContext, Future}
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import otoroshi.security.OtoroshiClaim
 import org.joda.time.DateTime
-import otoroshi.security.IdGenerator
+import otoroshi.env.Env
 import otoroshi.next.models.NgTarget
-import play.api.mvc.Cookie
+import otoroshi.next.plugins.NgOtoroshiChallengeKeys
+import otoroshi.next.plugins.api._
+import otoroshi.script._
+import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.http.WSCookieWithSameSite
-import otoroshi.next.plugins.OtoroshiChallengeKeys
+import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.Json
+import play.api.mvc.{Result, Results}
+
+import scala.concurrent.{ExecutionContext, Future}
 
 class PreRoutingWrapper extends NgPreRouting {
   
@@ -194,7 +192,7 @@ class RequestTransformerWrapper extends NgRequestTransformer {
             version = ctx.rawRequest.version,
             clientCertificateChain = ctx.rawRequest.clientCertificateChain,
             target = ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.rawRequest.backend).map(_.toTarget),
-            claims = ctx.attrs.get(OtoroshiChallengeKeys.ClaimKey).getOrElse(OtoroshiClaim(
+            claims = ctx.attrs.get(NgOtoroshiChallengeKeys.ClaimKey).getOrElse(OtoroshiClaim(
               iss = env.Headers.OtoroshiIssuer,
               sub = env.Headers.OtoroshiIssuer,
               aud = ctx.route.name,
@@ -212,7 +210,7 @@ class RequestTransformerWrapper extends NgRequestTransformer {
             version = ctx.otoroshiRequest.version,
             clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain,
             target = ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.rawRequest.backend).map(_.toTarget),
-            claims = ctx.attrs.get(OtoroshiChallengeKeys.ClaimKey).getOrElse(OtoroshiClaim(
+            claims = ctx.attrs.get(NgOtoroshiChallengeKeys.ClaimKey).getOrElse(OtoroshiClaim(
               iss = env.Headers.OtoroshiIssuer,
               sub = env.Headers.OtoroshiIssuer,
               aud = ctx.route.name,
@@ -243,7 +241,7 @@ class RequestTransformerWrapper extends NgRequestTransformer {
             version = ctx.rawRequest.version,
             clientCertificateChain = ctx.rawRequest.clientCertificateChain,
             target = ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.otoroshiRequest.backend).map(_.toTarget),
-            claims = ctx.attrs.get(OtoroshiChallengeKeys.ClaimKey).getOrElse(OtoroshiClaim(
+            claims = ctx.attrs.get(NgOtoroshiChallengeKeys.ClaimKey).getOrElse(OtoroshiClaim(
               iss = env.Headers.OtoroshiIssuer,
               sub = env.Headers.OtoroshiIssuer,
               aud = ctx.route.name,
@@ -261,7 +259,7 @@ class RequestTransformerWrapper extends NgRequestTransformer {
             version = ctx.otoroshiRequest.version,
             clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain,
             target = ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.otoroshiRequest.backend).map(_.toTarget),
-            claims = ctx.attrs.get(OtoroshiChallengeKeys.ClaimKey).getOrElse(OtoroshiClaim(
+            claims = ctx.attrs.get(NgOtoroshiChallengeKeys.ClaimKey).getOrElse(OtoroshiClaim(
               iss = env.Headers.OtoroshiIssuer,
               sub = env.Headers.OtoroshiIssuer,
               aud = ctx.route.name,
@@ -535,7 +533,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
             version = ctx.rawRequest.version,
             clientCertificateChain = ctx.rawRequest.clientCertificateChain,
             target = ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.rawRequest.backend).map(_.toTarget),
-            claims = ctx.attrs.get(OtoroshiChallengeKeys.ClaimKey).getOrElse(OtoroshiClaim(
+            claims = ctx.attrs.get(NgOtoroshiChallengeKeys.ClaimKey).getOrElse(OtoroshiClaim(
               iss = env.Headers.OtoroshiIssuer,
               sub = env.Headers.OtoroshiIssuer,
               aud = ctx.route.name,
@@ -553,7 +551,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
             version = ctx.otoroshiRequest.version,
             clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain,
             target = ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.rawRequest.backend).map(_.toTarget),
-            claims = ctx.attrs.get(OtoroshiChallengeKeys.ClaimKey).getOrElse(OtoroshiClaim(
+            claims = ctx.attrs.get(NgOtoroshiChallengeKeys.ClaimKey).getOrElse(OtoroshiClaim(
               iss = env.Headers.OtoroshiIssuer,
               sub = env.Headers.OtoroshiIssuer,
               aud = ctx.route.name,
@@ -584,7 +582,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
             version = ctx.rawRequest.version,
             clientCertificateChain = ctx.rawRequest.clientCertificateChain,
             target = ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.otoroshiRequest.backend).map(_.toTarget),
-            claims = ctx.attrs.get(OtoroshiChallengeKeys.ClaimKey).getOrElse(OtoroshiClaim(
+            claims = ctx.attrs.get(NgOtoroshiChallengeKeys.ClaimKey).getOrElse(OtoroshiClaim(
               iss = env.Headers.OtoroshiIssuer,
               sub = env.Headers.OtoroshiIssuer,
               aud = ctx.route.name,
@@ -602,7 +600,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
             version = ctx.otoroshiRequest.version,
             clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain,
             target = ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.otoroshiRequest.backend).map(_.toTarget),
-            claims = ctx.attrs.get(OtoroshiChallengeKeys.ClaimKey).getOrElse(OtoroshiClaim(
+            claims = ctx.attrs.get(NgOtoroshiChallengeKeys.ClaimKey).getOrElse(OtoroshiClaim(
               iss = env.Headers.OtoroshiIssuer,
               sub = env.Headers.OtoroshiIssuer,
               aud = ctx.route.name,

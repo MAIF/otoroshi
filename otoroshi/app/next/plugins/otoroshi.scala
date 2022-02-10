@@ -10,6 +10,7 @@ import otoroshi.models.{AlgoSettings, HSAlgoSettings, SecComInfoTokenVersion, Se
 import otoroshi.next.plugins.api._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.http.Implicits._
+import otoroshi.utils.infotoken.InfoTokenHelper
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -20,11 +21,8 @@ import play.api.mvc._
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import otoroshi.models.PrivateAppsUser
-import otoroshi.models.ApiKey
-import otoroshi.utils.infotoken.InfoTokenHelper
 
-case class OtoroshiChallengeConfig(raw: JsValue) {
+case class NgOtoroshiChallengeConfig(raw: JsValue) {
   lazy val secComVersion: SecComVersion = SecComVersion(raw.select("version").asOpt[String].getOrElse("V2")).getOrElse(SecComVersion.V2)
   lazy val secComTtl: FiniteDuration = raw.select("ttl").asOpt[Long].map(_.seconds).getOrElse(30.seconds)
   lazy val requestHeaderName: Option[String] = raw.select("request_header_name").asOpt[String]
@@ -43,7 +41,7 @@ case class OtoroshiChallengeConfig(raw: JsValue) {
   )
 }
 
-case class OtoroshiInfoConfig(raw: JsValue) {
+case class NgOtoroshiInfoConfig(raw: JsValue) {
   lazy val secComVersion: SecComInfoTokenVersion = SecComInfoTokenVersion(raw.select("version").asOpt[String].getOrElse("Latest")).getOrElse(SecComInfoTokenVersion.Latest)
   lazy val secComTtl: FiniteDuration = raw.select("ttl").asOpt[Long].map(_.seconds).getOrElse(30.seconds)
   lazy val headerName: Option[String] = raw.select("header_name").asOpt[String]
@@ -56,11 +54,11 @@ case class OtoroshiInfoConfig(raw: JsValue) {
   )
 }
 
-object OtoroshiChallengeKeys {
+object NgOtoroshiChallengeKeys {
   val ClaimKey = TypedKey[OtoroshiClaim]("otoroshi.next.core.plugins.OtoroshiChallenge.OtoroshiClaim")
   val StateTokenKey = TypedKey[String]("otoroshi.next.core.plugins.OtoroshiChallenge.StateToken")
   val StateValueKey = TypedKey[String]("otoroshi.next.core.plugins.OtoroshiChallenge.StateValue")
-  val ConfigKey = TypedKey[OtoroshiChallengeConfig]("otoroshi.next.core.plugins.OtoroshiChallenge.Config")
+  val ConfigKey = TypedKey[NgOtoroshiChallengeConfig]("otoroshi.next.core.plugins.OtoroshiChallenge.Config")
 }
 
 class OtoroshiChallenge extends NgRequestTransformer {
@@ -76,10 +74,10 @@ class OtoroshiChallenge extends NgRequestTransformer {
   override def transformsError: Boolean = false
   override def name: String = "Otoroshi challenge token"
   override def description: Option[String] = "This plugin adds a jwt challenge token to the request to a backend and expects a response with a matching token".some
-  override def defaultConfig: Option[JsObject] = OtoroshiChallengeConfig(Json.obj()).json.asObject.some
+  override def defaultConfig: Option[JsObject] = NgOtoroshiChallengeConfig(Json.obj()).json.asObject.some
 
   override def transformRequestSync(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
-    val config = ctx.cachedConfigFn(internalName)(json => OtoroshiChallengeConfig(json).some).getOrElse(OtoroshiChallengeConfig(ctx.config))
+    val config = ctx.cachedConfigFn(internalName)(json => NgOtoroshiChallengeConfig(json).some).getOrElse(NgOtoroshiChallengeConfig(ctx.config))
     val jti                    = IdGenerator.uuid
     val stateValue             = IdGenerator.extendedToken(128)
     val stateToken: String     = config.secComVersion match {
@@ -100,16 +98,16 @@ class OtoroshiChallenge extends NgRequestTransformer {
         .withClaim("state", stateValue)
         .serialize(config.algoOtoToBackend)
     }
-    ctx.attrs.put(OtoroshiChallengeKeys.StateValueKey -> stateValue)
-    ctx.attrs.put(OtoroshiChallengeKeys.StateTokenKey -> stateToken)
-    ctx.attrs.put(OtoroshiChallengeKeys.ConfigKey -> config)
+    ctx.attrs.put(NgOtoroshiChallengeKeys.StateValueKey -> stateValue)
+    ctx.attrs.put(NgOtoroshiChallengeKeys.StateTokenKey -> stateToken)
+    ctx.attrs.put(NgOtoroshiChallengeKeys.ConfigKey -> config)
     val stateRequestHeaderName = config.requestHeaderName.getOrElse(env.Headers.OtoroshiState)
     ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ Map(stateRequestHeaderName -> stateToken)).right
   }
 
   override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
-    val config = ctx.attrs.get(OtoroshiChallengeKeys.ConfigKey).get
-    val stateValue = ctx.attrs.get(OtoroshiChallengeKeys.StateValueKey).get
+    val config = ctx.attrs.get(NgOtoroshiChallengeKeys.ConfigKey).get
+    val stateValue = ctx.attrs.get(NgOtoroshiChallengeKeys.StateValueKey).get
     val stateRespHeaderName = config.responseHeaderName.getOrElse(env.Headers.OtoroshiStateResp)
     val isUp = true
     val stateResp           = ctx.request.headers
@@ -311,13 +309,13 @@ class OtoroshiInfos extends NgRequestTransformer {
   override def isTransformResponseAsync: Boolean = true
   override def name: String = "Otoroshi info. token"
   override def description: Option[String] = "This plugin adds a jwt info. token to the request to a backend".some
-  override def defaultConfig: Option[JsObject] = OtoroshiInfoConfig(Json.obj()).json.asObject.some
+  override def defaultConfig: Option[JsObject] = NgOtoroshiInfoConfig(Json.obj()).json.asObject.some
 
   override def transformRequestSync(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
-    val config = ctx.cachedConfigFn(internalName)(json => OtoroshiInfoConfig(json).some).getOrElse(OtoroshiInfoConfig(ctx.config))
+    val config = ctx.cachedConfigFn(internalName)(json => NgOtoroshiInfoConfig(json).some).getOrElse(NgOtoroshiInfoConfig(ctx.config))
     val claim = InfoTokenHelper.generateInfoToken(ctx.route.name, config.secComVersion, config.secComTtl, ctx.apikey, ctx.user, ctx.request.some)
     logger.trace(s"Claim is : $claim")
-    ctx.attrs.put(OtoroshiChallengeKeys.ClaimKey -> claim)
+    ctx.attrs.put(NgOtoroshiChallengeKeys.ClaimKey -> claim)
     ctx.attrs.put(otoroshi.plugins.Keys.OtoTokenKey -> claim.payload)
     val serialized = claim.serialize(config.algo)
     val headerName = config.headerName.getOrElse(env.Headers.OtoroshiClaim)

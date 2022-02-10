@@ -202,15 +202,15 @@ case class NgRoute(
       sendInfoToken = plugins.getPluginByClass[OtoroshiInfos].isDefined,
       sendStateChallenge = plugins.getPluginByClass[OtoroshiChallenge].isDefined,
       secComHeaders = SecComHeaders(
-        claimRequestName = plugins.getPluginByClass[OtoroshiInfos].flatMap(_.config.raw.select("header_name").asOpt[String]),
-        stateRequestName = plugins.getPluginByClass[OtoroshiChallenge].flatMap(_.config.raw.select("request_header_name").asOpt[String]),
-        stateResponseName = plugins.getPluginByClass[OtoroshiChallenge].flatMap(_.config.raw.select("response_header_name").asOpt[String]),
+        claimRequestName = plugins.getPluginByClass[OtoroshiInfos].flatMap(p => NgOtoroshiInfoConfig(p.config.raw).headerName),
+        stateRequestName = plugins.getPluginByClass[OtoroshiChallenge].flatMap(p => NgOtoroshiChallengeConfig(p.config.raw).requestHeaderName),
+        stateResponseName = plugins.getPluginByClass[OtoroshiChallenge].flatMap(p => NgOtoroshiChallengeConfig(p.config.raw).responseHeaderName),
       ),
-      secComTtl = plugins.getPluginByClass[OtoroshiChallenge].flatMap(p => p.config.raw.select("ttl").asOpt[Long])
-        .orElse(plugins.getPluginByClass[OtoroshiChallenge].flatMap(p => p.config.raw.select("ttl").asOpt[Long]))
-        .getOrElse(30L).seconds,
-      secComVersion = plugins.getPluginByClass[OtoroshiChallenge].map(p => p.config.raw.select("version").asOpt[String].getOrElse("V2")).flatMap(SecComVersion.apply).getOrElse(SecComVersion.V2),
-      secComInfoTokenVersion = plugins.getPluginByClass[OtoroshiInfos].map(p => p.config.raw.select("version").asOpt[String].getOrElse("Latest")).flatMap(SecComInfoTokenVersion.apply).getOrElse(SecComInfoTokenVersion.Latest),
+      secComTtl = plugins.getPluginByClass[OtoroshiChallenge].map(p => NgOtoroshiChallengeConfig(p.config.raw).secComTtl)
+        .orElse(plugins.getPluginByClass[OtoroshiInfos].map(p => NgOtoroshiInfoConfig(p.config.raw).secComTtl))
+        .getOrElse(30.seconds),
+      secComVersion = plugins.getPluginByClass[OtoroshiChallenge].map(p => NgOtoroshiChallengeConfig(p.config.raw).secComVersion).getOrElse(SecComVersion.V2),
+      secComInfoTokenVersion = plugins.getPluginByClass[OtoroshiInfos].map(p => NgOtoroshiInfoConfig(p.config.raw).secComVersion).getOrElse(SecComInfoTokenVersion.Latest),
       secComExcludedPatterns = {
         (
           plugins.getPluginByClass[OtoroshiChallenge].map(_.exclude).getOrElse(Seq.empty) ++
@@ -219,9 +219,9 @@ case class NgRoute(
       },
       // not needed because of the next line // secComSettings: AlgoSettings = HSAlgoSettings(512, "secret", false)
       secComUseSameAlgo = false,
-      secComAlgoChallengeOtoToBack = plugins.getPluginByClass[OtoroshiChallenge].flatMap(p => AlgoSettings.fromJson(p.config.raw.select("algo_to_backend").asOpt[JsValue].getOrElse(Json.obj())).toOption).getOrElse(HSAlgoSettings(512, "secret", false)),
-      secComAlgoChallengeBackToOto = plugins.getPluginByClass[OtoroshiChallenge].flatMap(p => AlgoSettings.fromJson(p.config.raw.select("algo_from_backend").asOpt[JsValue].getOrElse(Json.obj())).toOption).getOrElse(HSAlgoSettings(512, "secret", false)),
-      secComAlgoInfoToken = plugins.getPluginByClass[OtoroshiInfos].flatMap(p => AlgoSettings.fromJson(p.config.raw.select("algo").asOpt[JsValue].getOrElse(Json.obj())).toOption).getOrElse(HSAlgoSettings(512, "secret", false)),
+      secComAlgoChallengeOtoToBack = plugins.getPluginByClass[OtoroshiChallenge].map(p => NgOtoroshiChallengeConfig(p.config.raw).algoOtoToBackend).getOrElse(HSAlgoSettings(512, "secret", false)),
+      secComAlgoChallengeBackToOto = plugins.getPluginByClass[OtoroshiChallenge].map(p => NgOtoroshiChallengeConfig(p.config.raw).algoBackendToOto).getOrElse(HSAlgoSettings(512, "secret", false)),
+      secComAlgoInfoToken = plugins.getPluginByClass[OtoroshiInfos].map(p => NgOtoroshiInfoConfig(p.config.raw).algo).getOrElse(HSAlgoSettings(512, "secret", false)),
       // ///////////////////////////////////////////////////////////
       privateApp = plugins.getPluginByClass[AuthModule].isDefined,
       authConfigRef = plugins.getPluginByClass[AuthModule].flatMap(p => NgAuthModuleConfig.format.reads(p.config.raw).asOpt.flatMap(_.module)),
@@ -249,17 +249,17 @@ case class NgRoute(
         IpFiltering()
       },
       api = openapiUrl.map(url => ApiDescriptor(true, url.some)).getOrElse(ApiDescriptor(false, None)),
-      jwtVerifier = plugins.getPluginByClass[JwtVerification].flatMap(p => p.config.raw.select("verifiers").asOpt[Seq[String]].map(ids => RefJwtVerifier(ids, true, p.exclude))).getOrElse(RefJwtVerifier()),
-      cors = plugins.getPluginByClass[otoroshi.next.plugins.Cors].flatMap(p => CorsSettings.fromJson(p.config.raw).toOption).getOrElse(CorsSettings()),
+      jwtVerifier = plugins.getPluginByClass[JwtVerification].flatMap(p => NgJwtVerificationConfig.format.reads(p.config.raw).asOpt.map(_.verifiers).map(ids => RefJwtVerifier(ids, true, p.exclude))).getOrElse(RefJwtVerifier()),
+      cors = plugins.getPluginByClass[otoroshi.next.plugins.Cors].flatMap(p => NgCorsSettings.format.reads(p.config.raw).asOpt.map(_.legacy)).getOrElse(CorsSettings()),
       redirection = plugins.getPluginByClass[Redirection].flatMap(p => NgRedirectionSettings.format.reads(p.config.raw).asOpt.map(_.legacy)).getOrElse(RedirectionSettings()),
-      restrictions = plugins.getPluginByClass[RoutingRestrictions].flatMap(p => Restrictions.format.reads(p.config.raw).asOpt.map(_.copy(enabled = true))).getOrElse(Restrictions()),
+      restrictions = plugins.getPluginByClass[RoutingRestrictions].flatMap(p => NgRestrictions.format.reads(p.config.raw).asOpt.map(_.legacy)).getOrElse(Restrictions()),
       tcpUdpTunneling = Seq(
         plugins.getPluginByClass[TcpTunnel],
         plugins.getPluginByClass[UdpTunnel]
       ).flatten.nonEmpty,
-      detectApiKeySooner = plugins.getPluginByClass[ApikeyCalls].flatMap(p => p.config.raw.select("validate").asOpt[Boolean].map(v => !v)).getOrElse(false),
-      canary = plugins.getPluginByClass[CanaryMode].flatMap(p => Canary.format.reads(p.config.raw).asOpt.map(_.copy(enabled = true))).getOrElse(Canary()),
-      chaosConfig = plugins.getPluginByClass[SnowMonkeyChaos].flatMap(p => ChaosConfig._fmt.reads(p.config.raw).asOpt.map(_.copy(enabled = true))).getOrElse(ChaosConfig(enabled = true)),
+      detectApiKeySooner = plugins.getPluginByClass[ApikeyCalls].flatMap(p => NgApikeyCallsConfig.format.reads(p.config.raw).asOpt.map(!_.validate)).getOrElse(false),
+      canary = plugins.getPluginByClass[CanaryMode].flatMap(p => NgCanarySettings.format.reads(p.config.raw).asOpt.map(_.legacy)).getOrElse(Canary()),
+      chaosConfig = plugins.getPluginByClass[SnowMonkeyChaos].flatMap(p => NgChaosConfig.format.reads(p.config.raw).asOpt.map(_.legacy)).getOrElse(ChaosConfig(enabled = true)),
       gzip = plugins.getPluginByClass[GzipResponseCompressor].flatMap(p => NgGzipConfig.format.reads(p.config.raw).asOpt.map(_.legacy)).getOrElse(GzipConfig(enabled = true)),
       apiKeyConstraints = {
         plugins.getPluginByClass[ApikeyCalls].flatMap { plugin =>
@@ -620,15 +620,13 @@ object NgRoute {
             seq :+ NgPluginInstance(
               plugin = pluginId[JwtVerification],
               exclude = verifier.excludedPatterns,
-              config = NgPluginInstanceConfig(Json.obj(
-                "verifiers" -> JsArray(verifier.ids.map(JsString.apply)),
-              ))
+              config = NgPluginInstanceConfig(NgJwtVerificationConfig(verifier.ids).json.asObject)
             )
           }
           .applyOnIf(service.restrictions.enabled) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[RoutingRestrictions],
-              config = NgPluginInstanceConfig(service.restrictions.json.asObject)
+              config = NgPluginInstanceConfig(NgRestrictions.fromLegacy(service.restrictions).json.asObject)
             )
           }
           .applyOnIf(service.privateApp && service.authConfigRef.isDefined) { seq =>
@@ -642,33 +640,35 @@ object NgRoute {
             seq :+ NgPluginInstance(
               plugin = pluginId[OtoroshiChallenge],
               exclude = service.secComExcludedPatterns,
-              config = NgPluginInstanceConfig(Json.obj(
-                "version" -> service.secComVersion.str,
-                "ttl" -> service.secComTtl.toSeconds,
-                "request_header_name" -> service.secComHeaders.stateRequestName.getOrElse("Otoroshi-State").json,
-                "response_header_name" -> service.secComHeaders.stateResponseName.getOrElse("Otoroshi-State-Resp").json,
-                "algo_to_backend" -> (if (service.secComUseSameAlgo) service.secComSettings.asJson else service.secComAlgoChallengeOtoToBack.asJson),
-                "algo_from_backend" -> (if (service.secComUseSameAlgo) service.secComSettings.asJson else service.secComAlgoChallengeBackToOto.asJson),
-              ))
+              config = NgPluginInstanceConfig(NgOtoroshiChallengeConfig(
+                Json.obj(
+                  "version" -> service.secComVersion.str,
+                  "ttl" -> service.secComTtl.toSeconds,
+                  "request_header_name" -> service.secComHeaders.stateRequestName.getOrElse("Otoroshi-State").json,
+                  "response_header_name" -> service.secComHeaders.stateResponseName.getOrElse("Otoroshi-State-Resp").json,
+                  "algo_to_backend" -> (if (service.secComUseSameAlgo) service.secComSettings.asJson else service.secComAlgoChallengeOtoToBack.asJson),
+                  "algo_from_backend" -> (if (service.secComUseSameAlgo) service.secComSettings.asJson else service.secComAlgoChallengeBackToOto.asJson),
+                )
+              ).json.asObject),
             )
           }
           .applyOnIf(service.enforceSecureCommunication && service.sendInfoToken) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[OtoroshiInfos],
               exclude = service.secComExcludedPatterns,
-              config = NgPluginInstanceConfig(Json.obj(
+              config = NgPluginInstanceConfig(NgOtoroshiInfoConfig(Json.obj(
                 "version" -> service.secComInfoTokenVersion.version,
                 "ttl" -> service.secComTtl.toSeconds,
                 "header_name" -> service.secComHeaders.stateRequestName.getOrElse("Otoroshi-Claim").json,
                 "algo" -> (if (service.secComUseSameAlgo) service.secComSettings.asJson else service.secComAlgoInfoToken.asJson),
-              ))
+              )).json.asObject)
             )
           }
           .applyOnIf(service.cors.enabled) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[Cors],
               exclude = service.cors.excludedPatterns,
-              config = NgPluginInstanceConfig(service.cors.asJson.asObject)
+              config = NgPluginInstanceConfig(NgCorsSettings.fromLegacy(service.cors).json.asObject)
             )
           }
           .applyOnIf(!service.publicPatterns.contains("/.*")) { seq =>
@@ -692,13 +692,13 @@ object NgRoute {
           .applyOnIf(service.canary.enabled) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[CanaryMode],
-              config = NgPluginInstanceConfig(service.canary.toJson.asObject)
+              config = NgPluginInstanceConfig(NgCanarySettings.fromLegacy(service.canary).json.asObject)
             )
           }
           .applyOnIf(service.chaosConfig.enabled) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[SnowMonkeyChaos],
-              config = NgPluginInstanceConfig(service.chaosConfig.asJson.asObject)
+              config = NgPluginInstanceConfig(NgChaosConfig.fromLegacy(service.chaosConfig).json.asObject)
             )
           }
           .applyOnIf(service.tcpUdpTunneling) { seq =>
