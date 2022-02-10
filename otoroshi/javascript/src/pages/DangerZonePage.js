@@ -1342,7 +1342,7 @@ export class DangerZonePage extends Component {
           />
           {!this.state.readyToPush && (
             <div className="mb-3">
-              <label className="col-sm-2 control-label" />
+              <label className="col-sm-2 col-form-label" />
               <div className="col-sm-10">
                 <label
                   htmlFor="export"
@@ -1363,7 +1363,7 @@ export class DangerZonePage extends Component {
           )}
           {this.state.readyToPush && (
             <div className="mb-3">
-              <label className="col-sm-2 control-label" />
+              <label className="col-sm-2 col-form-label" />
               <div className="col-sm-10">
                 <button type="button" className="btn btn-danger" onClick={this.importData}>
                   <i className="fas fa-file-import" /> Flush DataStore & Import file '
@@ -1376,7 +1376,7 @@ export class DangerZonePage extends Component {
         <hr />
         <form className="form-horizontal">
           <div className="mb-3">
-            <label className="col-sm-2 control-label" />
+            <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <button type="button" className="btn btn-success" onClick={this.fullExport}>
                 <i className="fas fa-file-export" /> Full export
@@ -1410,7 +1410,7 @@ class BackOfficeAuthButtons extends Component {
   render() {
     return (
       <div className="mb-3">
-        <label className="col-xs-12 col-sm-2 control-label" />
+        <label className="col-xs-12 col-sm-2 col-form-label" />
         <div className="col-sm-10">
           {!this.props.rawValue.backOfficeAuthRef && (
             <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
@@ -1676,7 +1676,7 @@ export class Message extends Component {
   render() {
     return (
       <div className="mb-3">
-        <label className="col-xs-12 col-sm-2 control-label" />
+        <label className="col-xs-12 col-sm-2 col-form-label" />
         <div className="col-sm-10">
           <div className="sub-container sub-container__bg-color">
             <p style={{ textAlign: 'justify', marginBottom: 0 }}>{this.props.message}</p>

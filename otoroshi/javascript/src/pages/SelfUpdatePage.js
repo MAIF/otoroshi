@@ -331,7 +331,7 @@ export class SelfUpdatePage extends Component {
         </h5>
         <form className="form-horizontal" style={{ textAlign: 'left' }}>
           <div className="mb-3">
-            <label className="col-sm-2 control-label">Email</label>
+            <label className="col-sm-2 col-form-label">Email</label>
             <div className="col-sm-10">
               <input
                 type="text"
@@ -343,7 +343,7 @@ export class SelfUpdatePage extends Component {
             </div>
           </div>
           <div className="mb-3">
-            <label className="col-sm-2 control-label">Name</label>
+            <label className="col-sm-2 col-form-label">Name</label>
             <div className="col-sm-10">
               <input
                 type="text"
@@ -355,7 +355,7 @@ export class SelfUpdatePage extends Component {
             </div>
           </div>
           <div className="mb-3">
-            <label className="col-sm-2 control-label">
+            <label className="col-sm-2 col-form-label">
               Password <small style={{ color: 'rgb(181, 179, 179)' }}>(required)</small>
             </label>
             <div className="col-sm-10">
@@ -369,7 +369,7 @@ export class SelfUpdatePage extends Component {
             </div>
           </div>
           <div className="mb-3">
-            <label className="col-sm-2 control-label">New password</label>
+            <label className="col-sm-2 col-form-label">New password</label>
             <div className="col-sm-10">
               <input
                 type="password"
@@ -381,7 +381,7 @@ export class SelfUpdatePage extends Component {
             </div>
           </div>
           <div className="mb-3">
-            <label className="col-sm-2 control-label">
+            <label className="col-sm-2 col-form-label">
               New password <small style={{ color: 'rgb(181, 179, 179)' }}>(again)</small>
             </label>
             <div className="col-sm-10">
@@ -396,7 +396,7 @@ export class SelfUpdatePage extends Component {
           </div>
           {this.state.webauthn && this.state.mustRegWebauthnDevice && (
             <div className="mb-3">
-              <label className="col-sm-2 control-label" />
+              <label className="col-sm-2 col-form-label" />
               <div className="col-sm-10">
                 {this.state.hasWebauthnDeviceReg && (
                   <p style={{ width: '100%', textAlign: 'left' }}>
@@ -415,7 +415,7 @@ export class SelfUpdatePage extends Component {
             </div>
           )}
           <div className="mb-3">
-            <label className="col-sm-2 control-label" />
+            <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <button type="button" className="btn" style={{ marginLeft: 0 }} onClick={this.save}>
                 Update name and/or password
@@ -434,7 +434,7 @@ export class SelfUpdatePage extends Component {
             </div>
           </div>
           <div className="mb-3">
-            <label className="col-sm-2 control-label" />
+            <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <p style={{ color: 'green', width: '100%', textAlign: 'left' }}>
                 {!this.state.error && this.state.message}

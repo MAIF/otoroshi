@@ -281,7 +281,7 @@ export class Oauth2ModuleConfig extends Component {
         <div className="mb-3">
           <label
             htmlFor={`input-${this.props.label}`}
-            className="col-xs-12 col-sm-2 control-label"
+            className="col-xs-12 col-sm-2 col-form-label"
           />
           <div className="col-sm-10">
             <button type="button" className="btn btn-success" onClick={this.fetchConfig}>
@@ -968,7 +968,7 @@ export class BasicModuleConfig extends Component {
           onChange={(v) => changeTheValue(path + '.webauthn', v)}
         />
         <div className="mb-3">
-          <label htmlFor={`input-users`} className="col-sm-2 control-label">
+          <label htmlFor={`input-users`} className="col-sm-2 col-form-label">
             Users
           </label>
           <div className="col-sm-10">
@@ -991,7 +991,7 @@ export class BasicModuleConfig extends Component {
         </div>
         {!this.state.showRaw && (
           <div className="mb-3">
-            <label className="col-sm-2 control-label">Users raw</label>
+            <label className="col-sm-2 col-form-label">Users raw</label>
             <div className="col-sm-10">
               <button
                 type="button"
@@ -1004,7 +1004,7 @@ export class BasicModuleConfig extends Component {
         )}
         {this.state.showRaw && (
           <div className="mb-3">
-            <label className="col-sm-2 control-label">Users raw</label>
+            <label className="col-sm-2 col-form-label">Users raw</label>
             <div className="col-sm-10">
               <button
                 type="button"
@@ -1157,7 +1157,7 @@ export class LdapModuleConfig extends Component {
         />
         <Separator title="Match LDAP group to Otoroshi rights" />
         <div className="mb-3">
-          <label className="col-xs-12 col-sm-2 control-label">
+          <label className="col-xs-12 col-sm-2 col-form-label">
             Mapping group filter <Help text="Map LDAP groups with Otoroshi rights" />
           </label>
           <div className="col-sm-10" style={{ display: 'flex' }}>
@@ -1323,7 +1323,7 @@ export class LdapModuleConfig extends Component {
           onChange={(v) => changeTheValue(path + '.extractProfileFilterNot', v)}
         />
         <div className="mb-3">
-          <label className="col-xs-12 col-sm-2 control-label"></label>
+          <label className="col-xs-12 col-sm-2 col-form-label"></label>
           <div className="col-sm-10" style={{ display: 'flex' }}>
             <button type="button" className="btn btn-success" onClick={this.check}>
               Test admin. connection
@@ -1687,7 +1687,7 @@ export class SamlModuleConfig extends Component {
           const { warning } = this.props.value;
           return (
             <div className="mb-3">
-              <label className="col-xs-12 col-sm-2 control-label"></label>
+              <label className="col-xs-12 col-sm-2 col-form-label"></label>
               <div className="col-sm-10">{warning.error ? warning.error : warning.success}</div>
             </div>
           );
@@ -1978,7 +1978,7 @@ export class SamlModuleConfig extends Component {
         <div className="mb-3">
           <label
             htmlFor={`input-${this.props.label}`}
-            className="col-xs-12 col-sm-2 control-label"></label>
+            className="col-xs-12 col-sm-2 col-form-label"></label>
           <div className="col-sm-10">
             <button type="button" className="btn btn-success" onClick={this.fetchFromURL}>
               Get entity descriptor from URL

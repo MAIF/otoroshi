@@ -153,7 +153,7 @@ class Target extends Component {
         />
         {this.state.firstUrlError && (
           <div className="mb-3">
-            <label className="col-xs-12 col-sm-2 control-label" />
+            <label className="col-xs-12 col-sm-2 col-form-label" />
             <div className="col-sm-10" style={{ display: 'flex' }}>
               <span className="label label-danger">
                 Your target has a path after the host. The path will be ignored when saving the
@@ -1895,7 +1895,7 @@ export class ServicePage extends Component {
               <>
                 <hr style={{ borderTop: '1px solid #595959' }} />
                 <div className="mb-3">
-                  <label className="col-xs-12 col-sm-2 control-label">Otoroshi to backend</label>
+                  <label className="col-xs-12 col-sm-2 col-form-label">Otoroshi to backend</label>
                   <div className="col-sm-10">
                     <AlgoSettings
                       algo={this.state.service.secComAlgoChallengeOtoToBack}
@@ -1906,7 +1906,7 @@ export class ServicePage extends Component {
                 </div>
                 <hr style={{ borderTop: '1px solid #595959' }} />
                 <div className="mb-3">
-                  <label className="col-xs-12 col-sm-2 control-label">Backend to otoroshi</label>
+                  <label className="col-xs-12 col-sm-2 col-form-label">Backend to otoroshi</label>
                   <div className="col-sm-10">
                     <AlgoSettings
                       algo={this.state.service.secComAlgoChallengeBackToOto}
@@ -1917,7 +1917,7 @@ export class ServicePage extends Component {
                 </div>
                 <hr style={{ borderTop: '1px solid #595959' }} />
                 <div className="mb-3">
-                  <label className="col-xs-12 col-sm-2 control-label">Info. token</label>
+                  <label className="col-xs-12 col-sm-2 col-form-label">Info. token</label>
                   <div className="col-sm-10">
                     <AlgoSettings
                       algo={this.state.service.secComAlgoInfoToken}
@@ -2234,7 +2234,7 @@ export class ServicePage extends Component {
                   help="..."
                 />
                 <div className="mb-3">
-                  <label className="col-xs-12 col-sm-2 control-label" />
+                  <label className="col-xs-12 col-sm-2 col-form-label" />
                   <div className="col-sm-10">
                     {!this.state.service.thirdPartyApiKey.oidcConfigRef && (
                       <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
@@ -2609,7 +2609,7 @@ export class ServicePage extends Component {
             initCollapsed={true}
             label="Validation authority">
             <div class="mb-3">
-              <label class="col-xs-12 col-sm-2 control-label" />
+              <label class="col-xs-12 col-sm-2 col-form-label" />
               <div class="col-sm-10">
                 <div
                   style={{
@@ -2639,7 +2639,7 @@ export class ServicePage extends Component {
               help="..."
             />
             <div className="mb-3">
-              <label className="col-xs-12 col-sm-2 control-label" />
+              <label className="col-xs-12 col-sm-2 col-form-label" />
               <div className="col-sm-10">
                 {!this.state.service.clientValidatorRef && (
                   <a
@@ -2836,7 +2836,7 @@ export class ServicePage extends Component {
             />
             {false && (
               <div className="mb-3">
-                <label className="col-xs-12 col-sm-2 control-label" />
+                <label className="col-xs-12 col-sm-2 col-form-label" />
                 <div className="col-sm-10">
                   <button
                     type="button"

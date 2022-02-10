@@ -8,7 +8,7 @@ import { Restrictions } from '../components/Restrictions';
 
 const Both = ({ label, rawValue }) => (
   <div className="mb-3">
-    <label className="col-sm-2 control-label">{label}</label>
+    <label className="col-sm-2 col-form-label">{label}</label>
     <div className="col-sm-10">
       <input
         onChange={(e) => ''}
@@ -22,7 +22,7 @@ const Both = ({ label, rawValue }) => (
 
 const CurlCommand = ({ label, rawValue, env }) => (
   <div className="mb-3">
-    <label className="col-sm-2 control-label">{label}</label>
+    <label className="col-sm-2 col-form-label">{label}</label>
     <div className="col-sm-10">
       {env && (
         <input
@@ -42,7 +42,7 @@ const CurlCommand = ({ label, rawValue, env }) => (
 
 const BasicAuthToken = ({ label, rawValue }) => (
   <div className="mb-3">
-    <label className="col-sm-2 control-label">{label}</label>
+    <label className="col-sm-2 col-form-label">{label}</label>
     <div className="col-sm-10">
       <input
         onChange={(e) => ''}
@@ -58,7 +58,7 @@ const BasicAuthToken = ({ label, rawValue }) => (
 
 const CurlCommandWithBasicAuth = ({ label, rawValue, env }) => (
   <div className="mb-3">
-    <label className="col-sm-2 control-label">{label}</label>
+    <label className="col-sm-2 col-form-label">{label}</label>
     <div className="col-sm-10">
       {env && (
         <input
@@ -76,7 +76,7 @@ const CurlCommandWithBasicAuth = ({ label, rawValue, env }) => (
 
 const ResetSecret = ({ changeValue }) => (
   <div className="mb-3">
-    <label className="col-sm-2 control-label" />
+    <label className="col-sm-2 col-form-label" />
     <div className="col-sm-10">
       <button
         type="button"
@@ -103,7 +103,7 @@ class ResetQuotas extends Component {
     console.log(this.props);
     return (
       <div className="mb-3">
-        <label className="col-sm-2 control-label" />
+        <label className="col-sm-2 col-form-label" />
         <div className="col-sm-10">
           <button type="button" className="btn btn-danger btn-sm" onClick={this.resetQuotas}>
             <i className="fas fa-sync" /> Reset quotas consumption
@@ -118,8 +118,8 @@ class CopyCredentials extends Component {
   render() {
     const props = this.props;
     return (
-      <div className="mb-3">
-        <label className="col-sm-2 control-label" />
+      <div className="row mb-3">
+        <label className="col-sm-2 col-form-label" />
         <div className="col-sm-10">
           <input
             ref={(r) => (this.clipboard = r)}
@@ -196,7 +196,7 @@ class DailyRemainingQuotas extends Component {
     };
     return [
       <div className="mb-3">
-        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
+        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 col-form-label">
           Consumed daily calls
           <i
             className="far fa-question-circle"
@@ -219,7 +219,7 @@ class DailyRemainingQuotas extends Component {
         </div>
       </div>,
       <div className="mb-3">
-        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
+        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 col-form-label">
           Remaining daily calls
           <i
             className="far fa-question-circle"
@@ -242,7 +242,7 @@ class DailyRemainingQuotas extends Component {
         </div>
       </div>,
       <div className="mb-3">
-        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
+        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 col-form-label">
           Consumed monthly calls
           <i
             className="far fa-question-circle"
@@ -265,7 +265,7 @@ class DailyRemainingQuotas extends Component {
         </div>
       </div>,
       <div className="mb-3">
-        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
+        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 col-form-label">
           Remaining monthly calls
           <i
             className="far fa-question-circle"

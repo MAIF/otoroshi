@@ -182,7 +182,7 @@ export class VerticalObjectInput extends Component {
         {values.length === 0 && (
           <div className="mb-3">
             <div className="col-xs-12">
-              <label htmlFor={`input-${this.props.label}`} className="control-label">
+              <label htmlFor={`input-${this.props.label}`} className="col-form-label">
                 {this.props.label} <Help text={this.props.help} />
               </label>
               <div>
@@ -201,11 +201,11 @@ export class VerticalObjectInput extends Component {
           <div className="mb-3" style={{ marginBottom: 5 }}>
             <div className="col-xs-12">
               {idx === 0 && (
-                <label className="control-label">
+                <label className="col-form-label">
                   {this.props.label} <Help text={this.props.help} />
                 </label>
               )}
-              {idx > 0 && false && <label className="control-label">&nbsp;</label>}
+              {idx > 0 && false && <label className="col-form-label">&nbsp;</label>}
               <div className="input-group align-items-center">
                 <input
                   disabled={this.props.disabled}
