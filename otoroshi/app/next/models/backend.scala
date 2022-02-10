@@ -12,7 +12,15 @@ import play.api.libs.json._
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.{Failure, Success, Try}
 
-case class NgBackend(targets: Seq[NgTarget], targetRefs: Seq[String], root: String, rewrite: Boolean, loadBalancing: LoadBalancing, healthCheck: Option[HealthCheck] = None, client: ClientConfig) {
+case class NgBackend(
+  targets: Seq[NgTarget],
+  targetRefs: Seq[String],
+  root: String,
+  rewrite: Boolean,
+  loadBalancing: LoadBalancing,
+  healthCheck: Option[HealthCheck] = None,
+  client: ClientConfig
+) {
   // I know it's not ideal but we'll go with it for now !
   lazy val allTargets: Seq[NgTarget] = targets ++ targetRefs.map(OtoroshiEnvHolder.get().proxyState.target).collect {
     case Some(backend) => backend
