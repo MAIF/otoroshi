@@ -152,7 +152,7 @@ class Target extends Component {
           }}
         />
         {this.state.firstUrlError && (
-          <div className="mb-3">
+          <div className="row mb-3">
             <label className="col-xs-12 col-sm-2 col-form-label" />
             <div className="col-sm-10" style={{ display: 'flex' }}>
               <span className="label label-danger">
@@ -1894,7 +1894,7 @@ export class ServicePage extends Component {
             {!this.state.service.secComUseSameAlgo && (
               <>
                 <hr style={{ borderTop: '1px solid #595959' }} />
-                <div className="mb-3">
+                <div className="row mb-3">
                   <label className="col-xs-12 col-sm-2 col-form-label">Otoroshi to backend</label>
                   <div className="col-sm-10">
                     <AlgoSettings
@@ -1905,7 +1905,7 @@ export class ServicePage extends Component {
                   </div>
                 </div>
                 <hr style={{ borderTop: '1px solid #595959' }} />
-                <div className="mb-3">
+                <div className="row mb-3">
                   <label className="col-xs-12 col-sm-2 col-form-label">Backend to otoroshi</label>
                   <div className="col-sm-10">
                     <AlgoSettings
@@ -1916,7 +1916,7 @@ export class ServicePage extends Component {
                   </div>
                 </div>
                 <hr style={{ borderTop: '1px solid #595959' }} />
-                <div className="mb-3">
+                <div className="row mb-3">
                   <label className="col-xs-12 col-sm-2 col-form-label">Info. token</label>
                   <div className="col-sm-10">
                     <AlgoSettings
@@ -2233,7 +2233,7 @@ export class ServicePage extends Component {
                   transformer={a => ({ value: a.id, label: a.name })}
                   help="..."
                 />
-                <div className="mb-3">
+                <div className="row mb-3">
                   <label className="col-xs-12 col-sm-2 col-form-label" />
                   <div className="col-sm-10">
                     {!this.state.service.thirdPartyApiKey.oidcConfigRef && (
@@ -2592,7 +2592,7 @@ export class ServicePage extends Component {
               help="By default, when access validation is enabled, everything is verified. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
               onChange={(v) => this.changeTheValue('accessValidator.excludedPatterns', v)}
             />
-            <div className="mb-3">
+            <div className="row mb-3">
               <Suspense fallback={<div>loading ...</div>}>
                 <CodeInput
                   label="Configuration"
@@ -2638,7 +2638,7 @@ export class ServicePage extends Component {
               transformer={a => ({ value: a.id, label: a.name })}
               help="..."
             />
-            <div className="mb-3">
+            <div className="row mb-3">
               <label className="col-xs-12 col-sm-2 col-form-label" />
               <div className="col-sm-10">
                 {!this.state.service.clientValidatorRef && (
@@ -2835,7 +2835,7 @@ export class ServicePage extends Component {
               onChange={(v) => this.changeTheValue('clientConfig.proxy', v)}
             />
             {false && (
-              <div className="mb-3">
+              <div className="row mb-3">
                 <label className="col-xs-12 col-sm-2 col-form-label" />
                 <div className="col-sm-10">
                   <button
@@ -3248,7 +3248,7 @@ export class ServicePage extends Component {
               config={this.state.service.transformerConfig}
               onChangeConfig={(e) => this.changeTheValue('transformerConfig', e)}
             />
-            <div className="mb-3">
+            <div className="row mb-3">
               <Suspense fallback={<div>loading ...</div>}>
                 <CodeInput
                   label="Configuration"
@@ -3291,7 +3291,7 @@ export class ServicePage extends Component {
               help="By default, when plugins are enabled, everything pass in. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
               onChange={(v) => this.changeTheValue('plugins.excluded', v)}
             />
-            <div className="mb-3">
+            <div className="row mb-3">
               <Suspense fallback={<div>loading ...</div>}>
                 <CodeInput
                   label="Configuration"

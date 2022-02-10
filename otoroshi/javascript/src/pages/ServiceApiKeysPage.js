@@ -7,7 +7,7 @@ import faker from 'faker';
 import { Restrictions } from '../components/Restrictions';
 
 const Both = ({ label, rawValue }) => (
-  <div className="mb-3">
+  <div className="row mb-3">
     <label className="col-sm-2 col-form-label">{label}</label>
     <div className="col-sm-10">
       <input
@@ -21,7 +21,7 @@ const Both = ({ label, rawValue }) => (
 );
 
 const CurlCommand = ({ label, rawValue, env }) => (
-  <div className="mb-3">
+  <div className="row mb-3">
     <label className="col-sm-2 col-form-label">{label}</label>
     <div className="col-sm-10">
       {env && (
@@ -41,7 +41,7 @@ const CurlCommand = ({ label, rawValue, env }) => (
 );
 
 const BasicAuthToken = ({ label, rawValue }) => (
-  <div className="mb-3">
+  <div className="row mb-3">
     <label className="col-sm-2 col-form-label">{label}</label>
     <div className="col-sm-10">
       <input
@@ -57,7 +57,7 @@ const BasicAuthToken = ({ label, rawValue }) => (
 );
 
 const CurlCommandWithBasicAuth = ({ label, rawValue, env }) => (
-  <div className="mb-3">
+  <div className="row mb-3">
     <label className="col-sm-2 col-form-label">{label}</label>
     <div className="col-sm-10">
       {env && (
@@ -75,7 +75,7 @@ const CurlCommandWithBasicAuth = ({ label, rawValue, env }) => (
 );
 
 const ResetSecret = ({ changeValue }) => (
-  <div className="mb-3">
+  <div className="row mb-3">
     <label className="col-sm-2 col-form-label" />
     <div className="col-sm-10">
       <button
@@ -102,7 +102,7 @@ class ResetQuotas extends Component {
   render() {
     console.log(this.props);
     return (
-      <div className="mb-3">
+      <div className="row mb-3">
         <label className="col-sm-2 col-form-label" />
         <div className="col-sm-10">
           <button type="button" className="btn btn-danger btn-sm" onClick={this.resetQuotas}>
@@ -195,7 +195,7 @@ class DailyRemainingQuotas extends Component {
       remainingCallsPerMonth: 0,
     };
     return [
-      <div className="mb-3">
+      <div className="row mb-3">
         <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 col-form-label">
           Consumed daily calls
           <i
@@ -218,7 +218,7 @@ class DailyRemainingQuotas extends Component {
           </div>
         </div>
       </div>,
-      <div className="mb-3">
+      <div className="row mb-3">
         <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 col-form-label">
           Remaining daily calls
           <i
@@ -241,7 +241,7 @@ class DailyRemainingQuotas extends Component {
           </div>
         </div>
       </div>,
-      <div className="mb-3">
+      <div className="row mb-3">
         <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 col-form-label">
           Consumed monthly calls
           <i
@@ -264,7 +264,7 @@ class DailyRemainingQuotas extends Component {
           </div>
         </div>
       </div>,
-      <div className="mb-3">
+      <div className="row mb-3">
         <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 col-form-label">
           Remaining monthly calls
           <i

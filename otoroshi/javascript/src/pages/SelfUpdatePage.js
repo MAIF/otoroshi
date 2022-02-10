@@ -330,7 +330,7 @@ export class SelfUpdatePage extends Component {
           {('0' + duration.minutes()).slice(-2)}:{('0' + duration.seconds()).slice(-2)})
         </h5>
         <form className="form-horizontal" style={{ textAlign: 'left' }}>
-          <div className="mb-3">
+          <div className="row mb-3">
             <label className="col-sm-2 col-form-label">Email</label>
             <div className="col-sm-10">
               <input
@@ -342,7 +342,7 @@ export class SelfUpdatePage extends Component {
               />
             </div>
           </div>
-          <div className="mb-3">
+          <div className="row mb-3">
             <label className="col-sm-2 col-form-label">Name</label>
             <div className="col-sm-10">
               <input
@@ -354,7 +354,7 @@ export class SelfUpdatePage extends Component {
               />
             </div>
           </div>
-          <div className="mb-3">
+          <div className="row mb-3">
             <label className="col-sm-2 col-form-label">
               Password <small style={{ color: 'rgb(181, 179, 179)' }}>(required)</small>
             </label>
@@ -368,7 +368,7 @@ export class SelfUpdatePage extends Component {
               />
             </div>
           </div>
-          <div className="mb-3">
+          <div className="row mb-3">
             <label className="col-sm-2 col-form-label">New password</label>
             <div className="col-sm-10">
               <input
@@ -380,7 +380,7 @@ export class SelfUpdatePage extends Component {
               />
             </div>
           </div>
-          <div className="mb-3">
+          <div className="row mb-3">
             <label className="col-sm-2 col-form-label">
               New password <small style={{ color: 'rgb(181, 179, 179)' }}>(again)</small>
             </label>
@@ -395,7 +395,7 @@ export class SelfUpdatePage extends Component {
             </div>
           </div>
           {this.state.webauthn && this.state.mustRegWebauthnDevice && (
-            <div className="mb-3">
+            <div className="row mb-3">
               <label className="col-sm-2 col-form-label" />
               <div className="col-sm-10">
                 {this.state.hasWebauthnDeviceReg && (
@@ -414,7 +414,7 @@ export class SelfUpdatePage extends Component {
               </div>
             </div>
           )}
-          <div className="mb-3">
+          <div className="row mb-3">
             <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <button type="button" className="btn" style={{ marginLeft: 0 }} onClick={this.save}>
@@ -433,7 +433,7 @@ export class SelfUpdatePage extends Component {
               )}
             </div>
           </div>
-          <div className="mb-3">
+          <div className="row mb-3">
             <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <p style={{ color: 'green', width: '100%', textAlign: 'left' }}>

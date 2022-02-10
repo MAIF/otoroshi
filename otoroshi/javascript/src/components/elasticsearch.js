@@ -73,7 +73,7 @@ export class CheckElasticsearchConnection extends Component {
 
   render() {
     return (
-      <div className="mb-3">
+      <div className="row mb-3">
         <label className="col-sm-2 col-form-label"></label>
         <div className="col-sm-10">
           <div className="btn-group">

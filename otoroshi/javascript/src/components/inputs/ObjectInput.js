@@ -180,7 +180,7 @@ export class VerticalObjectInput extends Component {
     return (
       <div>
         {values.length === 0 && (
-          <div className="mb-3">
+          <div className="row mb-3">
             <div className="col-xs-12">
               <label htmlFor={`input-${this.props.label}`} className="col-form-label">
                 {this.props.label} <Help text={this.props.help} />

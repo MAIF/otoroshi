@@ -136,7 +136,7 @@ export class GenericLoginPage extends Component {
           method={this.props.method}
           action={this.props.action}>
           <input type="hidden" name="token" className="form-control" value={this.props.token} />
-          <div className="mb-3">
+          <div className="row mb-3">
             <label className="col-sm-2 col-form-label">Username</label>
             <div className="col-sm-10">
               <input
@@ -148,7 +148,7 @@ export class GenericLoginPage extends Component {
               />
             </div>
           </div>
-          <div className="mb-3">
+          <div className="row mb-3">
             <label className="col-sm-2 col-form-label">Password</label>
             <div className="col-sm-10">
               <input
@@ -160,7 +160,7 @@ export class GenericLoginPage extends Component {
               />
             </div>
           </div>
-          <div className="mb-3">
+          <div className="row mb-3">
             <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <button
@@ -172,7 +172,7 @@ export class GenericLoginPage extends Component {
               </button>
             </div>
           </div>
-          <div className="mb-3">
+          <div className="row mb-3">
             <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <p>{!this.state.error && this.state.message}</p>
@@ -304,7 +304,7 @@ export class GenericLoginPageWithWebAuthn extends Component {
           _method={this.props.method}
           _action={this.props.action}>
           <input type="hidden" name="token" className="form-control" value={this.props.token} />
-          <div className="mb-3">
+          <div className="row mb-3">
             <label className="col-sm-2 col-form-label">Username</label>
             <div className="col-sm-10">
               <input
@@ -316,7 +316,7 @@ export class GenericLoginPageWithWebAuthn extends Component {
               />
             </div>
           </div>
-          <div className="mb-3">
+          <div className="row mb-3">
             <label className="col-sm-2 col-form-label">Password</label>
             <div className="col-sm-10">
               <input
@@ -328,7 +328,7 @@ export class GenericLoginPageWithWebAuthn extends Component {
               />
             </div>
           </div>
-          <div className="mb-3">
+          <div className="row mb-3">
             <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <button
@@ -340,7 +340,7 @@ export class GenericLoginPageWithWebAuthn extends Component {
               </button>
             </div>
           </div>
-          <div className="mb-3">
+          <div className="row mb-3">
             <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <p>{!this.state.error && this.state.message}</p>

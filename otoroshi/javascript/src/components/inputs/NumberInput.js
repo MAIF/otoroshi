@@ -146,7 +146,7 @@ export class NumberRangeInput extends Component {
 
   render() {
     return (
-      <div className="mb-3">
+      <div className="row mb-3">
         <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 col-form-label">
           {this.props.label} <Help text={this.props.help} />
         </label>
