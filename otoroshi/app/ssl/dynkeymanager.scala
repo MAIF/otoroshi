@@ -102,7 +102,7 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
               case ((d1, _), (d2, _)) if !d1.contains("*") && !d2.contains("*") => true
             }
             .map(_._2)
-            .seffectOnIf(logger.isDebugEnabled)(certs => logger.debug(s"possible certificates for '$domain' - ${certs.map(c => s"'${c.name}'").mkString(", ")}"))
+            .seffectOnIf(logger.isDebugEnabled)(certs => logger.debug(s"possible certificates for '$domain': \n${certs.map(c => s"  * '${c.name}' - ${c.allDomains.mkString(", ")}").mkString("\n")}"))
             .headOption
             .seffectOnIf(logger.isDebugEnabled)(opt => logger.debug(s"choosing '${opt.map(_.name).getOrElse("--")}'"))
 
