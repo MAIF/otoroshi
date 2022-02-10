@@ -3538,6 +3538,266 @@
         }
       }
     },
+    "/api/experimental/services/{id}" : {
+      "patch" : {
+        "tags" : [ "experimental" ],
+        "summary" : "Updates (using json-patch) a specific NgService using its id",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.patchEntityAction",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+              }
+            }
+          }
+        }
+      },
+      "get" : {
+        "tags" : [ "experimental" ],
+        "summary" : "Find a specific NgService using its id",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.findEntityByIdAction",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "experimental" ],
+        "summary" : "Deletes a specific NgService using its id",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.deleteEntityAction",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "experimental" ],
+        "summary" : "Updates a specific NgService using its id",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.updateEntityAction",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/groups" : {
       "post" : {
         "tags" : [ "groups" ],
@@ -5127,6 +5387,59 @@
                 "type" : "array",
                 "items" : {
                   "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfig"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/experimental/services/_template" : {
+      "get" : {
+        "tags" : [ "experimental" ],
+        "summary" : "???",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.initiateService",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -9528,6 +9841,124 @@
         }
       }
     },
+    "/api/experimental/services" : {
+      "post" : {
+        "tags" : [ "experimental" ],
+        "summary" : "Creates a NgService",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.createAction",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+              }
+            }
+          }
+        }
+      },
+      "get" : {
+        "tags" : [ "experimental" ],
+        "summary" : "Find all possible NgServices entities",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.findAllEntitiesAction",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/services/{serviceId}/live" : {
       "get" : {
         "tags" : [ "services" ],
@@ -9582,6 +10013,251 @@
               "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/LiveStats"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/experimental/services/_bulk" : {
+      "patch" : {
+        "tags" : [ "experimental" ],
+        "summary" : "Update (using json-patch) multiple NgServices at the same time",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.bulkPatchAction",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BulkPatchBody"
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "experimental" ],
+        "summary" : "Create multiple NgServices at the same time",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.bulkCreateAction",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "experimental" ],
+        "summary" : "Delete multiple NgServices at the same time",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.bulkDeleteAction",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "experimental" ],
+        "summary" : "Update multiple NgServices at the same time",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.bulkUpdateAction",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
                 }
               }
             }
@@ -15109,6 +15785,59 @@
         }
       }
     },
+    "/api/experimental/certificates/_by_domain" : {
+      "get" : {
+        "tags" : [ "experimental" ],
+        "summary" : "???",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.domainsAndCertificates",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Unknown"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/pki/cas/{ca}/certs/_sign" : {
       "post" : {
         "tags" : [ "pki" ],
@@ -15946,6 +16675,28 @@
               "type" : "string"
             },
             "description" : "Fields array validation"
+          }
+        }
+      },
+      "otoroshi.next.models.NgMinimalRoute" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "frontend" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.next.models.NgFrontend"
+          },
+          "backend" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.next.models.NgMinimalBackend"
+          },
+          "backendRef" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
           }
         }
       },
@@ -18240,10 +18991,6 @@
             },
             "description" : "???"
           },
-          "healthCheck" : {
-            "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.models.HealthCheck"
-          },
           "frontend" : {
             "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgFrontend"
@@ -18266,10 +19013,6 @@
             },
             "description" : "???"
           },
-          "client" : {
-            "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.models.ClientConfig"
-          },
           "backendRef" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
@@ -18277,10 +19020,6 @@
               "type" : "string"
             } ],
             "description" : "???"
-          },
-          "plugins" : {
-            "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgPlugins"
           },
           "description" : {
             "description" : "???",
@@ -18583,17 +19322,17 @@
         "description" : "???",
         "type" : "object",
         "properties" : {
-          "domains" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.next.models.NgDomainAndPath"
-            },
-            "description" : "???"
-          },
           "headers" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
+            },
+            "description" : "???"
+          },
+          "domains" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.next.models.NgDomainAndPath"
             },
             "description" : "???"
           },
@@ -18603,6 +19342,10 @@
               "type" : "string"
             },
             "description" : "???"
+          },
+          "exact" : {
+            "description" : "???",
+            "type" : "boolean"
           },
           "stripPath" : {
             "description" : "???",
@@ -19000,6 +19743,38 @@
               "type" : "string"
             },
             "description" : "Enabled plugins"
+          }
+        }
+      },
+      "otoroshi.next.models.NgMinimalBackend" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "root" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "targets" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.next.models.NgTarget"
+            },
+            "description" : "???"
+          },
+          "loadBalancing" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.models.LoadBalancing"
+          },
+          "targetRefs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "rewrite" : {
+            "description" : "???",
+            "type" : "boolean"
           }
         }
       },
@@ -19639,16 +20414,6 @@
           }
         }
       },
-      "otoroshi.next.models.NgPluginInstanceConfig" : {
-        "description" : "???",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "???",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.models.PrivateAppsUser" : {
         "description" : "User session for private apps",
         "type" : "object",
@@ -19724,6 +20489,68 @@
       "HostMetrics" : {
         "type" : "object",
         "description" : "Host metrics"
+      },
+      "otoroshi.next.models.NgService" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "metadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "client" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.models.ClientConfig"
+          },
+          "name" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "id" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "description" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "routes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.next.models.NgMinimalRoute"
+            },
+            "description" : "???"
+          },
+          "debugFlow" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "_loc" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
+          },
+          "enabled" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          }
+        }
       },
       "AlertEventList" : {
         "type" : "array",
@@ -19830,19 +20657,6 @@
             "description" : "the kind of predicate",
             "type" : "string",
             "enum" : [ "AlwaysMatch", "NetworkLocationMatch", "GeolocationMatch" ]
-          }
-        }
-      },
-      "otoroshi.next.models.NgPlugins" : {
-        "description" : "???",
-        "type" : "object",
-        "properties" : {
-          "slots" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.next.models.NgPluginInstance"
-            },
-            "description" : "???"
           }
         }
       },
@@ -20355,42 +21169,6 @@
           }
         }
       },
-      "otoroshi.next.models.NgPluginInstance" : {
-        "description" : "???",
-        "type" : "object",
-        "properties" : {
-          "debug" : {
-            "description" : "???",
-            "type" : "boolean"
-          },
-          "config" : {
-            "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgPluginInstanceConfig"
-          },
-          "exclude" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "???"
-          },
-          "include" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "???"
-          },
-          "plugin" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "enabled" : {
-            "description" : "???",
-            "type" : "boolean"
-          }
-        }
-      },
       "WebAuthnRegistrationStartBody" : {
         "type" : "object",
         "description" : ""
@@ -20787,9 +21565,25 @@
             "description" : "???",
             "type" : "string"
           },
+          "healthCheck" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "$ref" : "#/components/schemas/otoroshi.models.HealthCheck"
+            } ],
+            "description" : "???"
+          },
+          "client" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.models.ClientConfig"
+          },
           "loadBalancing" : {
             "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.models.LoadBalancing"
+          },
+          "rewrite" : {
+            "description" : "???",
+            "type" : "boolean"
           },
           "targetRefs" : {
             "type" : "array",
