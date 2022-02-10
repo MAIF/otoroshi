@@ -83,6 +83,22 @@ The last possiblity is to retrieve a sub-object of an event. Let's say we want t
 { "user": { "name": true } }
 ```
 
+You can also expand the entire source object with 
+
+```json
+{
+  "$spread": true
+}
+```
+
+and the remove fields you don't want with 
+
+```json
+{
+  "fieldthatidontwant": false
+}
+```
+
 ## Elastic
 
 With this kind of exporter, every matching event will be sent to an elastic cluster (in batch). It is quite useful and can be used in combination with [elastic read in global config](./global-config.html#analytics-elastic-dashboard-datasource-read-)

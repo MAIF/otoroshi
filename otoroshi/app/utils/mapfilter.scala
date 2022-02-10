@@ -97,20 +97,38 @@ object Projection {
       dest = Composition.compose(source, blueprint, applyEl).asOpt[JsObject].getOrElse(Json.obj())
     } else {
       blueprint.value.foreach {
+        case ("$spread", JsBoolean(true)) =>
+          dest = dest ++ source.asOpt[JsObject].getOrElse(Json.obj())
         // direct inclusion
         case (key, JsBoolean(true))                           =>
           dest = dest ++ Json.obj(key -> source.select(key).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
+        // remove
+        case (key, JsBoolean(false))                           =>
+          dest = dest - key
         // direct inclusion with rename
         case (key, JsString(newKey))                          =>
           dest = dest ++ Json.obj(newKey -> source.select(key).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
         // with search
         case (key, o @ JsObject(_)) if Operator.isOperator(o) => {
           o.value.head match {
+            case ("$spread", value) if key == "..." => {
+              val remove = value.select("without").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+              dest = dest ++ (
+                if (remove.isEmpty)
+                  source.asOpt[JsObject].getOrElse(Json.obj())
+                else {
+                  remove.foldLeft(source.asOpt[JsObject].getOrElse(Json.obj()))((a, b) => a - b)
+                }
+              )
+            }
             case ("$compose", value)                => {
               dest = dest ++ Json.obj(key -> Composition.compose(source, value, applyEl))
             }
             case ("$value", value)                  => {
               dest = dest ++ Json.obj(key -> value)
+            }
+            case ("$remove", JsBoolean(true))                 => {
+              dest = dest - key
             }
             case ("$at", JsString(searchPath))      => {
               dest = dest ++ Json.obj(key -> source.at(searchPath).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
