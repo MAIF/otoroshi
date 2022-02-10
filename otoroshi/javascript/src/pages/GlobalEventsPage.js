@@ -268,7 +268,7 @@ export class GlobalEventsPage extends Component {
               to={this.state.to}
             />
             <div className="input-group" style={{ marginLeft: 10 }}>
-              <div className="input-group-addon">Limit</div>
+              <div className="input-group-text">Limit</div>
               <input
                 type="number"
                 style={{ width: 100 }}

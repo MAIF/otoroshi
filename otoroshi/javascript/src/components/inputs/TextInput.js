@@ -42,7 +42,7 @@ export class TextInput extends Component {
         <div className="col-sm-10" style={{ display: 'flex' }}>
           {(this.props.prefix || this.props.suffix) && (
             <div className="input-group">
-              {this.props.prefix && <div className="input-group-addon">{this.props.prefix}</div>}
+              {this.props.prefix && <div className="input-group-text">{this.props.prefix}</div>}
               <input
                 type={this.props.type || 'text'}
                 className="form-control"
@@ -54,7 +54,7 @@ export class TextInput extends Component {
                 onDrop={this.props.onDrop || this.onDrop}
                 onDragOver={(e) => e.preventDefault()}
               />
-              {this.props.suffix && <div className="input-group-addon">{this.props.suffix}</div>}
+              {this.props.suffix && <div className="input-group-text">{this.props.suffix}</div>}
             </div>
           )}
           {!(this.props.prefix || this.props.suffix) && (
@@ -179,7 +179,7 @@ export class RangeTextInput extends Component {
           {(this.props.prefixFrom || this.props.suffixFrom) && (
             <div className="input-group col-sm-6">
               {this.props.prefixFrom && (
-                <div className="input-group-addon">{this.props.prefixFrom}</div>
+                <div className="input-group-text">{this.props.prefixFrom}</div>
               )}
               <input
                 type={this.props.typeFrom || 'text'}
@@ -193,14 +193,14 @@ export class RangeTextInput extends Component {
                 onDragOver={(e) => e.preventDefault()}
               />
               {this.props.suffixFrom && (
-                <div className="input-group-addon">{this.props.suffixFrom}</div>
+                <div className="input-group-text">{this.props.suffixFrom}</div>
               )}
             </div>
           )}
           {(this.props.prefixTo || this.props.suffixTo) && (
             <div className="input-group col-sm-6">
               {this.props.prefixTo && (
-                <div className="input-group-addon">{this.props.prefixTo}</div>
+                <div className="input-group-text">{this.props.prefixTo}</div>
               )}
               <input
                 type={this.props.typeTo || 'text'}
@@ -214,7 +214,7 @@ export class RangeTextInput extends Component {
                 onDragOver={(e) => e.preventDefault()}
               />
               {this.props.suffixTo && (
-                <div className="input-group-addon">{this.props.suffixTo}</div>
+                <div className="input-group-text">{this.props.suffixTo}</div>
               )}
             </div>
           )}
@@ -286,7 +286,7 @@ export class VerticalTextInput extends Component {
           <div>
             {(this.props.prefix || this.props.suffix) && (
               <div className="input-group">
-                {this.props.prefix && <div className="input-group-addon">{this.props.prefix}</div>}
+                {this.props.prefix && <div className="input-group-text">{this.props.prefix}</div>}
                 <input
                   type={this.props.type || 'text'}
                   className="form-control"
@@ -298,7 +298,7 @@ export class VerticalTextInput extends Component {
                   onDrop={this.props.onDrop || this.onDrop}
                   onDragOver={(e) => e.preventDefault()}
                 />
-                {this.props.suffix && <div className="input-group-addon">{this.props.suffix}</div>}
+                {this.props.suffix && <div className="input-group-text">{this.props.suffix}</div>}
               </div>
             )}
             {!(this.props.prefix || this.props.suffix) && (

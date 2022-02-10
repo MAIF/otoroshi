@@ -214,7 +214,7 @@ class DailyRemainingQuotas extends Component {
               id="input-Throttling quota"
               value={quotas.currentCallsPerDay}
             />
-            <div className="input-group-addon">calls consumed today</div>
+            <div className="input-group-text">calls consumed today</div>
           </div>
         </div>
       </div>,
@@ -237,7 +237,7 @@ class DailyRemainingQuotas extends Component {
               id="input-Throttling quota"
               value={quotas.remainingCallsPerDay}
             />
-            <div className="input-group-addon">calls remaining for today</div>
+            <div className="input-group-text">calls remaining for today</div>
           </div>
         </div>
       </div>,
@@ -260,7 +260,7 @@ class DailyRemainingQuotas extends Component {
               id="input-Throttling quota"
               value={quotas.currentCallsPerMonth}
             />
-            <div className="input-group-addon">calls consumed this month</div>
+            <div className="input-group-text">calls consumed this month</div>
           </div>
         </div>
       </div>,
@@ -283,7 +283,7 @@ class DailyRemainingQuotas extends Component {
               id="input-Throttling quota"
               value={quotas.remainingCallsPerMonth}
             />
-            <div className="input-group-addon">calls remaining for this month</div>
+            <div className="input-group-text">calls remaining for this month</div>
           </div>
         </div>
       </div>,
