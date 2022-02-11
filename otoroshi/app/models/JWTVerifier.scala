@@ -1171,7 +1171,12 @@ sealed trait JwtVerifier extends AsJson {
               .left[JwtInjection]
           case Some(algorithm) => {
             val verification = strategy.verificationSettings.asVerification(algorithm)
-            val key = s"${this.asInstanceOf[GlobalJwtVerifier].id}-${signature}"
+            val id: String = this match {
+              case v: RefJwtVerifier => v.ids.mkString("-")
+              case v: GlobalJwtVerifier => v.id
+              case v: LocalJwtVerifier => descOpt.map(_.id).getOrElse(request.id.toString)
+            }
+            val key = s"${id}-${signature}"
             val verificationResult = JwtVerifier.signatureCache.get(key, _ => Try(verification.build().verify(token)))
             verificationResult match {
               case Failure(e)            =>

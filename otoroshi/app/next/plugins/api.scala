@@ -30,6 +30,8 @@ import scala.util.{Failure, Success, Try}
 import play.api.mvc.Cookie
 import otoroshi.utils.http.WSCookieWithSameSite
 
+import scala.annotation.tailrec
+
 object NgPluginHelper {
   def pluginId[A](implicit ct: ClassTag[A]): String = s"cp:${ct.runtimeClass.getName}"
 }
@@ -659,7 +661,7 @@ class NgMergedResponseTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWra
           val debug = ctx.route.debugFlow || wrapper.instance.debug
           val in: JsValue = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
           val item = NgReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
-          wrapper.plugin.transformResponse(ctx).andThen {
+          Try(wrapper.plugin.transformResponseSync(ctx)) match {
             case Failure(exception) =>
               ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
               ctx.report.setContext(ctx.sequence.stopSequence().json)
@@ -732,7 +734,7 @@ class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper
           val debug = ctx.route.debugFlow || wrapper.instance.debug
           val in: JsValue = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
           val item = NgReportPluginSequenceItem(wrapper.instance.plugin, wrapper.plugin.name, System.currentTimeMillis(), System.nanoTime(), -1L, -1L, in, JsNull)
-          wrapper.plugin.access(ctx).andThen {
+          Try(wrapper.plugin.accessSync(ctx)) match {
             case Failure(exception) =>
               ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
               ctx.report.setContext(ctx.sequence.stopSequence().json)
@@ -744,7 +746,7 @@ class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper
             case Success(NgAccess.NgAllowed) if plugins.size == 1 =>
               ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
               ctx.report.setContext(ctx.sequence.stopSequence().json)
-              Right(Done)
+              NgAccess.NgAllowed.vfuture
             case Success(NgAccess.NgAllowed) =>
               ctx.markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
               next(plugins.tail)

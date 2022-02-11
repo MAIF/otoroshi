@@ -33,6 +33,7 @@ import play.core.server.ServerConfig
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Random, Success, Try}
+import otoroshi.utils.syntax.implicits._
 
 trait AddConfiguration {
   def getConfiguration(configuration: Configuration): Configuration

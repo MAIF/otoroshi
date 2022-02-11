@@ -18,6 +18,7 @@ import otoroshi.security.IdGenerator
 
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
+import otoroshi.utils.syntax.implicits._
 
 class Version149Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 

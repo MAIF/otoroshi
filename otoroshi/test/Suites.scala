@@ -166,3 +166,8 @@ class NgTreeRouterTests
     // new NgTreeRouterSpec(),
     // new NgTreeRouterWithEnvSpec(Configurations.InMemoryConfiguration)
   )
+
+class OneShotTests
+  extends Suites(
+    new QuotasSpec("DEV", Configurations.InMemoryConfiguration)
+  )
