@@ -189,7 +189,7 @@ class PluginDocumentationGenerator(docPath: String) {
     }
 
     s"""
-         |@@@ div { .plugin .plugin-hidden .${pluginClazz} }
+         |@@@ div { .plugin .plugin-hidden .${pluginClazz} #${plugin.getClass.getName} }
          |
          |# ${plugin.name}
          |

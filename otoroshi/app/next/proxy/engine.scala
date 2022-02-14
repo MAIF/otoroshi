@@ -88,10 +88,10 @@ class ProxyEngine() extends RequestHandler {
       |An automated conversion happens for every service descriptor. If the exposed domain is handled by this plugin, it will be served by this plugin.
       |This plugin introduces new entities that will replace (one day maybe) service descriptors:
       |
-      | - routes: a unique routing rule based on hostname, path, method and headers that will execute a bunch of plugins
-      | - services: multiple routing rules based on hostname, path, method and headers that will execute the same list of plugins
-      | - targets: how to contact a backend either by using a domain name or an ip address, supports mtls
-      | - backends: a list of targets to contact a backend
+      | - `routes`: a unique routing rule based on hostname, path, method and headers that will execute a bunch of plugins
+      | - `services`: multiple routing rules based on hostname, path, method and headers that will execute the same list of plugins
+      | - `targets`: how to contact a backend either by using a domain name or an ip address, supports mtls
+      | - `backends`: a list of targets to contact a backend
       |
       |""".stripMargin.some
 
