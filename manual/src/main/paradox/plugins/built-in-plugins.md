@@ -3387,6 +3387,11 @@ This plugin introduces new entities that will replace (one day maybe) service de
  - `targets`: how to contact a backend either by using a domain name or an ip address, supports mtls
  - `backends`: a list of targets to contact a backend
 
+as an example, let say you want to use the new engine on your service exposed on `api.foo.bar/api`.
+To do that, just add the plugin in the `global plugins` section of the danger zone, inject the default configuration,
+enabled it and in `domains` add the value `api.foo.bar` (it is possible to use `*.foo.bar` if that's what you want to do).
+The next time a request hits the `api.foo.bar` domain, the new engine will handle it instead of the old one.
+
 
 
 ### Default configuration
