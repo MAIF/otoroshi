@@ -2381,6 +2381,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>targets</code>: how to contact a backend either by using a domain name or an ip address, supports mtls</li>
   <li><code>backends</code>: a list of targets to contact a backend</li>
 </ul>
+<p>as an example, let say you want to use the new engine on your service exposed on <code>api.foo.bar/api</code>. To do that, just add the plugin in the <code>global plugins</code> section of the danger zone, inject the default configuration, enabled it and in <code>domains</code> add the value <code>api.foo.bar</code> (it is possible to use <code>*.foo.bar</code> if that&rsquo;s what you want to do). The next time a request hits the <code>api.foo.bar</code> domain, the new engine will handle it instead of the old one.</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;NextGenProxyEngine&quot; : {
