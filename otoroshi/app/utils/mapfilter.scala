@@ -97,13 +97,13 @@ object Projection {
       dest = Composition.compose(source, blueprint, applyEl).asOpt[JsObject].getOrElse(Json.obj())
     } else {
       blueprint.value.foreach {
-        case ("$spread", JsBoolean(true)) =>
+        case ("$spread", JsBoolean(true))                     =>
           dest = dest ++ source.asOpt[JsObject].getOrElse(Json.obj())
         // direct inclusion
         case (key, JsBoolean(true))                           =>
           dest = dest ++ Json.obj(key -> source.select(key).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
         // remove
-        case (key, JsBoolean(false))                           =>
+        case (key, JsBoolean(false))                          =>
           dest = dest - key
         // direct inclusion with rename
         case (key, JsString(newKey))                          =>
@@ -127,7 +127,7 @@ object Projection {
             case ("$value", value)                  => {
               dest = dest ++ Json.obj(key -> value)
             }
-            case ("$remove", JsBoolean(true))                 => {
+            case ("$remove", JsBoolean(true))       => {
               dest = dest - key
             }
             case ("$at", JsString(searchPath))      => {

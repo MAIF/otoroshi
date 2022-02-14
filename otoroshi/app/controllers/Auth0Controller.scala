@@ -549,8 +549,7 @@ class AuthController(
               request.session
                 .get("bo-redirect-after-login")
                 .getOrElse(
-                  routes.BackOfficeController
-                    .index
+                  routes.BackOfficeController.index
                     .absoluteURL(env.exposedRootSchemeIsHttps)
                 )
             ).removingFromSession("bo-redirect-after-login")

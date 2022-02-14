@@ -17,7 +17,12 @@ class NgTreeRouterSpec extends WordSpec with MustMatchers with OptionValues with
   }
 }
 
-class NgTreeRouterPathParamsSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
+class NgTreeRouterPathParamsSpec
+    extends WordSpec
+    with MustMatchers
+    with OptionValues
+    with ScalaFutures
+    with IntegrationPatience {
   "NgTreeRouter" should {
     "be able to use path params" in {
       NgTreeRouter_Test.testPathParams()
@@ -25,7 +30,12 @@ class NgTreeRouterPathParamsSpec extends WordSpec with MustMatchers with OptionV
   }
 }
 
-class NgTreeRouterRealLifeSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
+class NgTreeRouterRealLifeSpec
+    extends WordSpec
+    with MustMatchers
+    with OptionValues
+    with ScalaFutures
+    with IntegrationPatience {
   "NgTreeRouter" should {
     "be able to handle real life" in {
       NgTreeRouter_Test.testRealLifeRouter()
@@ -33,7 +43,12 @@ class NgTreeRouterRealLifeSpec extends WordSpec with MustMatchers with OptionVal
   }
 }
 
-class NgTreeRouterWildcardSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
+class NgTreeRouterWildcardSpec
+    extends WordSpec
+    with MustMatchers
+    with OptionValues
+    with ScalaFutures
+    with IntegrationPatience {
   "NgTreeRouter" should {
     "be able to handle wildcard domains" in {
       NgTreeRouter_Test.testWildcardDomainsRouter()
@@ -91,20 +106,51 @@ class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extend
 
     "find route fast" in {
       import otoroshi.utils.syntax.implicits._
-      NgService.fromOpenApi("api.oto.tools", "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json")(otoroshiComponents.env.otoroshiExecutionContext, otoroshiComponents.env).map { route =>
-        val router = NgTreeRouter.build(route.toRoutes.debug(r => println(r.size)))
-        val attrs = TypedMap.empty.put(otoroshi.plugins.Keys.SnowFlakeKey -> "1")
-        implicit val env = otoroshiComponents.env
+      NgService
+        .fromOpenApi(
+          "api.oto.tools",
+          "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json"
+        )(otoroshiComponents.env.otoroshiExecutionContext, otoroshiComponents.env)
+        .map { route =>
+          val router       = NgTreeRouter.build(route.toRoutes.debug(r => println(r.size)))
+          val attrs        = TypedMap.empty.put(otoroshi.plugins.Keys.SnowFlakeKey -> "1")
+          implicit val env = otoroshiComponents.env
 
-        router.find("api.oto.tools", "/api/services").map(_.routes.map(_.name)).debugPrintln.exists(_.size == 1).mustBe(true)
-        router.find("api.oto.tools", "/api/apikeys/123/foo").map(_.routes.map(_.name)).debugPrintln.exists(_.size == 1).mustBe(true)
+          router
+            .find("api.oto.tools", "/api/services")
+            .map(_.routes.map(_.name))
+            .debugPrintln
+            .exists(_.size == 1)
+            .mustBe(true)
+          router
+            .find("api.oto.tools", "/api/apikeys/123/foo")
+            .map(_.routes.map(_.name))
+            .debugPrintln
+            .exists(_.size == 1)
+            .mustBe(true)
 
-        router.findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/services"), attrs).map(_.route.name).debugPrintln.isDefined.mustBe(true)
-        router.findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/apikeys/123/foo"), attrs).map(_.route.name).debugPrintln.isDefined.mustBe(false)
-        router.findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/apikeys/123"), attrs).map(_.route.name).debugPrintln.isDefined.mustBe(true)
-        
+          router
+            .findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/services"), attrs)
+            .map(_.route.name)
+            .debugPrintln
+            .isDefined
+            .mustBe(true)
+          router
+            .findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/apikeys/123/foo"), attrs)
+            .map(_.route.name)
+            .debugPrintln
+            .isDefined
+            .mustBe(false)
+          router
+            .findRoute(new NgTreeRouter_Test.NgFakeRequestHeader("api.oto.tools", "/api/apikeys/123"), attrs)
+            .map(_.route.name)
+            .debugPrintln
+            .isDefined
+            .mustBe(true)
+
         // java.nio.file.Files.writeString(new java.io.File("./routescomp-debug.json").toPath(), route.json.prettify)
-      }.futureValue
+        }
+        .futureValue
     }
 
     "shutdown" in {
@@ -112,4 +158,3 @@ class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extend
     }
   }
 }
-

@@ -27,41 +27,48 @@ object SwapStrategy       {
 }
 
 object ModernMemory {
-  def apply(store: TrieMap[String, Any] = new TrieMap[String, Any](), expirations: TrieMap[String, Long] = new TrieMap[String, Long]()): ModernMemory = new ModernMemory(store, expirations)
+  def apply(
+      store: TrieMap[String, Any] = new TrieMap[String, Any](),
+      expirations: TrieMap[String, Long] = new TrieMap[String, Long]()
+  ): ModernMemory = new ModernMemory(store, expirations)
 }
 
 class ModernMemory(
-  store: TrieMap[String, Any] = new TrieMap[String, Any](),
-  expirations: TrieMap[String, Long] = new TrieMap[String, Long](),
+    store: TrieMap[String, Any] = new TrieMap[String, Any](),
+    expirations: TrieMap[String, Long] = new TrieMap[String, Long]()
 ) {
-  def size: Int = store.size
-  def get(key: String): Option[Any] = store.get(key)
-  def getTyped[A](key: String)(implicit c: ClassTag[A]): Option[A] = store.get(key).map(_.asInstanceOf[A])
-  def getTypedOrUpdate[A](key: String, up: => A)(implicit c: ClassTag[A]): A = store.getOrElseUpdate(key, up).asInstanceOf[A]
-  def put(key: String, value: Any): Option[Any] = store.put(key, value)
-  def putIfAbsent(key: String, value: Any): Option[Any] = store.putIfAbsent(key, value)
-  def putAll(all: Map[String, Any]): Unit = store.++=(all)
-  def remove(key: String): Unit = store.remove(key)
+  def size: Int                                                              = store.size
+  def get(key: String): Option[Any]                                          = store.get(key)
+  def getTyped[A](key: String)(implicit c: ClassTag[A]): Option[A]           = store.get(key).map(_.asInstanceOf[A])
+  def getTypedOrUpdate[A](key: String, up: => A)(implicit c: ClassTag[A]): A =
+    store.getOrElseUpdate(key, up).asInstanceOf[A]
+  def put(key: String, value: Any): Option[Any]                              = store.put(key, value)
+  def putIfAbsent(key: String, value: Any): Option[Any]                      = store.putIfAbsent(key, value)
+  def putAll(all: Map[String, Any]): Unit                                    = store.++=(all)
+  def remove(key: String): Unit                                              = store.remove(key)
   def removeAll(keys: Seq[String]): Int = {
     store.--=(keys)
     keys.size
   }
-  def keys: scala.collection.Set[String] = store.keySet
-  def entries: Seq[(String, Any)] = store.toSeq
-  def containsKey(key: String): Boolean = store.contains(key)
+  def keys: scala.collection.Set[String]                                     = store.keySet
+  def entries: Seq[(String, Any)]                                            = store.toSeq
+  def containsKey(key: String): Boolean                                      = store.contains(key)
   def clear(): Unit = {
     store.clear()
     expirations.clear()
   }
-  def expirationContainsKey(key: String): Boolean = expirations.contains(key)
-  def expirationKeys: scala.collection.Set[String] = expirations.keySet
-  def expirationEntries: Seq[(String, Long)] = expirations.toSeq
-  def getExpiration(key: String): Option[Long] = expirations.get(key)
-  def putExpiration(key: String, exp: Long): Option[Long] = expirations.put(key, exp)
-  def putExpirations(all: Map[String, Long]): Unit = expirations.++=(all)
-  def removeExpiration(key: String): Unit = expirations.remove(key)
-  def removeExpirations(keys: Seq[String]): Unit = expirations.--=(keys)
-  def swap(nstore: scala.collection.Map[String, Any], nexpirations: scala.collection.Map[String, Long]): ModernMemory = {
+  def expirationContainsKey(key: String): Boolean                            = expirations.contains(key)
+  def expirationKeys: scala.collection.Set[String]                           = expirations.keySet
+  def expirationEntries: Seq[(String, Long)]                                 = expirations.toSeq
+  def getExpiration(key: String): Option[Long]                               = expirations.get(key)
+  def putExpiration(key: String, exp: Long): Option[Long]                    = expirations.put(key, exp)
+  def putExpirations(all: Map[String, Long]): Unit                           = expirations.++=(all)
+  def removeExpiration(key: String): Unit                                    = expirations.remove(key)
+  def removeExpirations(keys: Seq[String]): Unit                             = expirations.--=(keys)
+  def swap(
+      nstore: scala.collection.Map[String, Any],
+      nexpirations: scala.collection.Map[String, Long]
+  ): ModernMemory = {
     store.++=(nstore).--=(store.keySet.diff(nstore.keySet))
     expirations.++=(nexpirations).--=(expirations.keySet.diff(nexpirations.keySet))
     this
@@ -69,9 +76,9 @@ class ModernMemory(
 }
 
 class Memory(
-  val store: ConcurrentHashMap[String, Any],
-  val expirations: ConcurrentHashMap[String, Long],
-  val newStore: TrieMap[String, Any] = new TrieMap[String, Any]()
+    val store: ConcurrentHashMap[String, Any],
+    val expirations: ConcurrentHashMap[String, Long],
+    val newStore: TrieMap[String, Any] = new TrieMap[String, Any]()
 )
 
 object Memory {
@@ -425,7 +432,7 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
 }
 
 class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSystem)
-  extends RedisLike
+    extends RedisLike
     with SwappableRedis
     with OptimizedRedisLike {
 
@@ -447,12 +454,11 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
   private val cancel = actorSystem.scheduler.scheduleAtFixedRate(0.millis, 100.millis)(SchedulerHelper.runnable {
     try {
       val time = System.currentTimeMillis()
-      memory.expirationEntries.foreach {
-        case (key, value) =>
-          if (value < time) {
-            memory.remove(key)
-            memory.removeExpiration(key)
-          }
+      memory.expirationEntries.foreach { case (key, value) =>
+        if (value < time) {
+          memory.remove(key)
+          memory.removeExpiration(key)
+        }
       }
     } catch {
       case e: Throwable => SwappableInMemoryRedis.logger.error(s"Error while applying expiration", e)
@@ -507,19 +513,19 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
   override def get(key: String): Future[Option[ByteString]] = memory.getTyped[ByteString](key).future
 
   override def set(
-                    key: String,
-                    value: String,
-                    exSeconds: Option[Long] = None,
-                    pxMilliseconds: Option[Long] = None
-                  ): Future[Boolean] =
+      key: String,
+      value: String,
+      exSeconds: Option[Long] = None,
+      pxMilliseconds: Option[Long] = None
+  ): Future[Boolean] =
     setBS(key, ByteString(value), exSeconds, pxMilliseconds)
 
   override def setBS(
-                      key: String,
-                      value: ByteString,
-                      exSeconds: Option[Long] = None,
-                      pxMilliseconds: Option[Long] = None
-                    ): Future[Boolean] = {
+      key: String,
+      value: ByteString,
+      exSeconds: Option[Long] = None,
+      pxMilliseconds: Option[Long] = None
+  ): Future[Boolean] = {
     memory.put(key, value)
     if (exSeconds.isDefined) {
       expire(key, exSeconds.get.toInt)
@@ -549,15 +555,14 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
 
   override def keys(pattern: String): Future[Seq[String]] = {
     val pat = patterns.getOrElseUpdate(pattern, Pattern.compile(pattern.replaceAll("\\*", ".*")))
-    memory.keys.filter(k =>pat.matcher(k).find).toSeq.future
+    memory.keys.filter(k => pat.matcher(k).find).toSeq.future
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   override def hdel(key: String, fields: String*): Future[Long] = {
     val hash = memory.getTypedOrUpdate[TrieMap[String, ByteString]](key, new TrieMap[String, ByteString]())
-    hash
-      .keySet
+    hash.keySet
       .filter(k => fields.contains(k))
       .map(k => {
         hash.remove(k)
@@ -609,7 +614,7 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
 
   override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] = {
     val seq: MutableSeq[ByteString] = memory.getTypedOrUpdate[MutableSeq[ByteString]](key, emptySeq())
-    val result = seq.slice(start.toInt, stop.toInt - start.toInt)
+    val result                      = seq.slice(start.toInt, stop.toInt - start.toInt)
     memory.put(key, result)
     true.future
   }
@@ -617,11 +622,14 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   override def pttl(key: String): Future[Long] = {
-    memory.getExpiration(key)
+    memory
+      .getExpiration(key)
       .map { e =>
         val ttlValue: Long = e - System.currentTimeMillis()
         if (ttlValue < 0) -1L else ttlValue
-      }.getOrElse(-1L).future
+      }
+      .getOrElse(-1L)
+      .future
   }
 
   override def ttl(key: String): Future[Long] = {
@@ -671,7 +679,7 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
 
   override def sremBS(key: String, members: ByteString*): Future[Long] = {
     val seq: MutableSet[ByteString] = memory.getTypedOrUpdate[MutableSet[ByteString]](key, emptySet())
-    val newSeq = seq.filterNot(b => members.contains(b))
+    val newSeq                      = seq.filterNot(b => members.contains(b))
     memory.put(key, newSeq)
     members.size.toLong.future
   }

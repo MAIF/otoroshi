@@ -17,7 +17,7 @@ import otoroshi.utils.syntax.implicits._
 import scala.concurrent.{ExecutionContext, Future}
 
 class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
-  extends AbstractController(cc)
+    extends AbstractController(cc)
     with BulkControllerHelper[NgRoute, JsValue]
     with CrudControllerHelper[NgRoute, JsValue] {
 
@@ -40,7 +40,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   override def writeEntity(entity: NgRoute): JsValue = NgRoute.fmt.writes(entity)
 
   override def findByIdOps(
-    id: String
+      id: String
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.findById(id).map { opt =>
       Right(
@@ -56,7 +56,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   override def findAllOps(
-    req: RequestHeader
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.findAll().map { seq =>
       Right(
@@ -72,7 +72,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   override def createEntityOps(
-    entity: NgRoute
+      entity: NgRoute
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.set(entity).map {
       case true  => {
@@ -98,7 +98,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   override def updateEntityOps(
-    entity: NgRoute
+      entity: NgRoute
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.set(entity).map {
       case true  => {
@@ -124,7 +124,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   override def deleteEntityOps(
-    id: String
+      id: String
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.delete(id).map {
       case true  => {
@@ -149,78 +149,97 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   def initiateRoute() = ApiAction {
-    Ok(NgRoute(
-      location = EntityLocation.default,
-      id = s"route_${IdGenerator.uuid}",
-      name = "New route",
-      description = "A new route",
-      tags = Seq.empty,
-      metadata = Map.empty,
-      enabled = true,
-      debugFlow = true,
-      exportReporting = false,
-      groups = Seq("default"),
-      frontend = NgFrontend(
-        domains = Seq(NgDomainAndPath("new-route.oto.tools")),
-        headers = Map.empty,
-        methods = Seq.empty,
-        stripPath = true,
-        exact = false,
-      ),
-      backend = NgBackend(
-        targets = Seq(NgTarget(
-          id = "target_1",
-          hostname = "mirror.otoroshi.io",
-          port = 443,
-          tls = true
-        )),
-        targetRefs = Seq.empty,
-        root = "/",
-        rewrite = false,
-        loadBalancing = RoundRobin,
-        client = ClientConfig(),
-      ),
-      plugins = NgPlugins(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost],
+    Ok(
+      NgRoute(
+        location = EntityLocation.default,
+        id = s"route_${IdGenerator.uuid}",
+        name = "New route",
+        description = "A new route",
+        tags = Seq.empty,
+        metadata = Map.empty,
+        enabled = true,
+        debugFlow = true,
+        exportReporting = false,
+        groups = Seq("default"),
+        frontend = NgFrontend(
+          domains = Seq(NgDomainAndPath("new-route.oto.tools")),
+          headers = Map.empty,
+          methods = Seq.empty,
+          stripPath = true,
+          exact = false
+        ),
+        backend = NgBackend(
+          targets = Seq(
+            NgTarget(
+              id = "target_1",
+              hostname = "mirror.otoroshi.io",
+              port = 443,
+              tls = true
+            )
+          ),
+          targetRefs = Seq.empty,
+          root = "/",
+          rewrite = false,
+          loadBalancing = RoundRobin,
+          client = ClientConfig()
+        ),
+        plugins = NgPlugins(
+          Seq(
+            NgPluginInstance(
+              plugin = NgPluginHelper.pluginId[OverrideHost]
+            )
+          )
         )
-      ))
-    ).json)
+      ).json
+    )
   }
 
   def domainsAndCertificates() = ApiAction { ctx =>
-
     import otoroshi.ssl.SSLImplicits._
 
-    val routes = env.proxyState.allRoutes()
-    val domains = routes.flatMap(_.frontend.domains).map(_.domain).distinct
-    val certs = env.proxyState.allCertificates()
-    val jsonDomains = domains.map { domain =>
-      val certsForDomain = certs.filter(c => c.matchesDomain(domain))
-      Json.obj(domain -> JsArray(certsForDomain.map(_.id.json)))
-    }.fold(Json.obj())(_ ++ _)
+    val routes           = env.proxyState.allRoutes()
+    val domains          = routes.flatMap(_.frontend.domains).map(_.domain).distinct
+    val certs            = env.proxyState.allCertificates()
+    val jsonDomains      = domains
+      .map { domain =>
+        val certsForDomain = certs.filter(c => c.matchesDomain(domain))
+        Json.obj(domain -> JsArray(certsForDomain.map(_.id.json)))
+      }
+      .fold(Json.obj())(_ ++ _)
     def certToJson(cert: Cert): Option[JsValue] = {
       RawCertificate.fromChainAndKey(cert.chain, cert.privateKey) match {
-        case None => None
+        case None        => None
         case Some(rcert) => {
           val ecs: Seq[String] = rcert.certificatesChain.map(_.encoded)
-          Json.obj(
-            "id" -> cert.id,
-            "chain" -> ecs,
-            "key" -> rcert.cryptoKeyPair.getPrivate.encoded,
-            "domains" -> domains.filter(d => cert.matchesDomain(d)).distinct,
-            "sans" -> cert.allDomains
-          ).some
+          Json
+            .obj(
+              "id"      -> cert.id,
+              "chain"   -> ecs,
+              "key"     -> rcert.cryptoKeyPair.getPrivate.encoded,
+              "domains" -> domains.filter(d => cert.matchesDomain(d)).distinct,
+              "sans"    -> cert.allDomains
+            )
+            .some
         }
       }
     }
-    val jsonCerts = JsArray(certs.filter(_.isUsable).filterNot(_.ca).filterNot(_.keypair).filterNot(_.client).flatMap(certToJson))
-    val jsonTrustedCerts = JsArray(env.datastores.globalConfigDataStore.latest().tlsSettings.trustedCAsServer.flatMap(id => env.proxyState.certificate(id)).flatMap(certToJson))
-    Ok(Json.obj(
-      "trusted_certificates" -> jsonTrustedCerts,
-      "certificates" -> jsonCerts,
-      "domains" -> jsonDomains,
-      "tls_settings" -> env.datastores.globalConfigDataStore.latest().tlsSettings.json
-    ))
+    val jsonCerts        =
+      JsArray(certs.filter(_.isUsable).filterNot(_.ca).filterNot(_.keypair).filterNot(_.client).flatMap(certToJson))
+    val jsonTrustedCerts = JsArray(
+      env.datastores.globalConfigDataStore
+        .latest()
+        .tlsSettings
+        .trustedCAsServer
+        .flatMap(id => env.proxyState.certificate(id))
+        .flatMap(certToJson)
+    )
+    Ok(
+      Json.obj(
+        "trusted_certificates" -> jsonTrustedCerts,
+        "certificates"         -> jsonCerts,
+        "domains"              -> jsonDomains,
+        "tls_settings"         -> env.datastores.globalConfigDataStore.latest().tlsSettings.json
+      )
+    )
   }
 }

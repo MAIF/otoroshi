@@ -638,7 +638,7 @@ case class HealthCheck(enabled: Boolean, url: String) {
 
 object HealthCheck {
   implicit val format = Json.format[HealthCheck]
-  val empty = HealthCheck(false, "/")
+  val empty           = HealthCheck(false, "/")
 }
 
 case class CustomTimeouts(
@@ -1074,8 +1074,9 @@ case class ApiKeyRouteMatcher(
     oneMetaKeyIn: Seq[String] = Seq.empty,
     allMetaKeysIn: Seq[String] = Seq.empty
 ) extends {
-  def json: JsValue = ApiKeyRouteMatcher.format.writes(this)
-  def gentleJson: JsValue = Json.obj()
+  def json: JsValue                         = ApiKeyRouteMatcher.format.writes(this)
+  def gentleJson: JsValue                   = Json
+    .obj()
     .applyOnIf(noneTagIn.nonEmpty)(obj => obj ++ Json.obj("noneTagIn" -> noneTagIn))
     .applyOnIf(oneTagIn.nonEmpty)(obj => obj ++ Json.obj("oneTagIn" -> oneTagIn))
     .applyOnIf(allTagsIn.nonEmpty)(obj => obj ++ Json.obj("allTagsIn" -> allTagsIn))
@@ -1085,17 +1086,17 @@ case class ApiKeyRouteMatcher(
     .applyOnIf(noneMetaKeysIn.nonEmpty)(obj => obj ++ Json.obj("noneMetaKeysIn" -> noneMetaKeysIn))
     .applyOnIf(oneMetaKeyIn.nonEmpty)(obj => obj ++ Json.obj("oneMetaKeyIn" -> oneMetaKeyIn))
     .applyOnIf(allMetaKeysIn.nonEmpty)(obj => obj ++ Json.obj("allMetaKeysIn" -> allMetaKeysIn))
-  lazy val isActive: Boolean = !hasNoRoutingConstraints
+  lazy val isActive: Boolean                = !hasNoRoutingConstraints
   lazy val hasNoRoutingConstraints: Boolean =
     oneMetaIn.isEmpty &&
-      allMetaIn.isEmpty &&
-      oneTagIn.isEmpty &&
-      allTagsIn.isEmpty &&
-      noneTagIn.isEmpty &&
-      noneMetaIn.isEmpty &&
-      oneMetaKeyIn.isEmpty &&
-      allMetaKeysIn.isEmpty &&
-      noneMetaKeysIn.isEmpty
+    allMetaIn.isEmpty &&
+    oneTagIn.isEmpty &&
+    allTagsIn.isEmpty &&
+    noneTagIn.isEmpty &&
+    noneMetaIn.isEmpty &&
+    oneMetaKeyIn.isEmpty &&
+    allMetaKeysIn.isEmpty &&
+    noneMetaKeysIn.isEmpty
 }
 
 object ApiKeyRouteMatcher {
@@ -1337,8 +1338,13 @@ case class Restrictions(
   private val cache = new TrieMap[String, (Boolean, Future[Result])]() // Not that clean but perfs matters
 
   // def handleRestrictions(descriptor: ServiceDescriptor, apk: Option[ApiKey], req: RequestHeader, attrs: TypedMap)(
-  def handleRestrictions(id: String, descriptor: Option[ServiceDescriptor], apk: Option[ApiKey], req: RequestHeader, attrs: TypedMap)(
-      implicit
+  def handleRestrictions(
+      id: String,
+      descriptor: Option[ServiceDescriptor],
+      apk: Option[ApiKey],
+      req: RequestHeader,
+      attrs: TypedMap
+  )(implicit
       ec: ExecutionContext,
       env: Env
   ): (Boolean, Future[Result]) = {
@@ -1806,7 +1812,16 @@ case class ServiceDescriptor(
   )(implicit
       env: Env
   ): OtoroshiClaim = {
-    InfoTokenHelper.generateInfoToken(name, secComInfoTokenVersion, secComTtl, apiKey, paUsr, requestHeader, issuer, sub)(env)
+    InfoTokenHelper.generateInfoToken(
+      name,
+      secComInfoTokenVersion,
+      secComTtl,
+      apiKey,
+      paUsr,
+      requestHeader,
+      issuer,
+      sub
+    )(env)
   }
 
   import otoroshi.utils.http.RequestImplicits._

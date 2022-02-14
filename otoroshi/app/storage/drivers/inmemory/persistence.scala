@@ -101,7 +101,9 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
       val value = (item \ "v").as[JsValue]
       val what  = (item \ "w").as[String]
       val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
-      fromJson(what, value, ds._modern).map(v => store.put(key, v)).getOrElse(println(s"file read error for: ${item.prettify} "))
+      fromJson(what, value, ds._modern)
+        .map(v => store.put(key, v))
+        .getOrElse(println(s"file read error for: ${item.prettify} "))
       if (ttl > -1L) {
         expirations.put(key, ttl)
       }
@@ -114,39 +116,39 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     import collection.JavaConverters._
 
     what match {
-      case "counter" => Some(ByteString(value.as[Long].toString))
-      case "string"  => Some(ByteString(value.as[String]))
-      case "set"     if modern => {
+      case "counter"        => Some(ByteString(value.as[Long].toString))
+      case "string"         => Some(ByteString(value.as[String]))
+      case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
-      case "list"    if modern => {
+      case "list" if modern => {
         val list = scala.collection.mutable.MutableList.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
-      case "hash"    if modern => {
+      case "hash" if modern => {
         val map = new TrieMap[String, ByteString]()
         map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
         Some(map)
       }
-      case "set"     => {
+      case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "list"    => {
+      case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "hash"    => {
+      case "hash"           => {
         val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }
-      case _         => None
+      case _                => None
     }
   }
 
@@ -259,39 +261,39 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     import collection.JavaConverters._
 
     what match {
-      case "counter" => Some(ByteString(value.as[Long].toString))
-      case "string"  => Some(ByteString(value.as[String]))
-      case "set"     if modern => {
+      case "counter"        => Some(ByteString(value.as[Long].toString))
+      case "string"         => Some(ByteString(value.as[String]))
+      case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
-      case "list"    if modern => {
+      case "list" if modern => {
         val list = scala.collection.mutable.MutableList.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
-      case "hash"    if modern => {
+      case "hash" if modern => {
         val map = new TrieMap[String, ByteString]()
         map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
         Some(map)
       }
-      case "set"     => {
+      case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "list"    => {
+      case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "hash"    => {
+      case "hash"           => {
         val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }
-      case _         => None
+      case _                => None
     }
   }
 
@@ -450,39 +452,39 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     import collection.JavaConverters._
 
     what match {
-      case "counter" => Some(ByteString(value.as[Long].toString))
-      case "string"  => Some(ByteString(value.as[String]))
-      case "set"     if modern => {
+      case "counter"        => Some(ByteString(value.as[Long].toString))
+      case "string"         => Some(ByteString(value.as[String]))
+      case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
-      case "list"    if modern => {
+      case "list" if modern => {
         val list = scala.collection.mutable.MutableList.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
-      case "hash"    if modern => {
+      case "hash" if modern => {
         val map = new TrieMap[String, ByteString]()
         map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
         Some(map)
       }
-      case "set"     => {
+      case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "list"    => {
+      case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "hash"    => {
+      case "hash"           => {
         val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }
-      case _         => None
+      case _                => None
     }
   }
 

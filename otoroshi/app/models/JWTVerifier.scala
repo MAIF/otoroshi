@@ -585,7 +585,8 @@ case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings    
   def isAsync: Boolean = false
 
   override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
-    DynamicSSLEngineProvider.certificates.get(certId)
+    DynamicSSLEngineProvider.certificates
+      .get(certId)
       .orElse {
         DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
       }
@@ -634,7 +635,8 @@ case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings     
   def isAsync: Boolean = false
 
   override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
-    DynamicSSLEngineProvider.certificates.get(certId)
+    DynamicSSLEngineProvider.certificates
+      .get(certId)
       .orElse {
         DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
       }
@@ -965,9 +967,9 @@ sealed trait JwtVerifier extends AsJson {
   def asGlobal: GlobalJwtVerifier = this.asInstanceOf[GlobalJwtVerifier]
 
   def isAsync: Boolean = algoSettings.isAsync && (strategy match {
-    case DefaultToken(_, _, _) => false
-    case PassThrough(_) => false
-    case Sign(_, algoSettings) => algoSettings.isAsync
+    case DefaultToken(_, _, _)         => false
+    case PassThrough(_)                => false
+    case Sign(_, algoSettings)         => algoSettings.isAsync
     case Transform(_, _, algoSettings) => algoSettings.isAsync
   })
 
@@ -1033,35 +1035,37 @@ sealed trait JwtVerifier extends AsJson {
   }
 
   private[models] def internalVerify[A](
-    request: RequestHeader,
-    descOpt: Option[ServiceDescriptor],
-    apikey: Option[ApiKey],
-    user: Option[PrivateAppsUser],
-    elContext: Map[String, String],
-    attrs: TypedMap,
-    sendEvent: Boolean
+      request: RequestHeader,
+      descOpt: Option[ServiceDescriptor],
+      apikey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      elContext: Map[String, String],
+      attrs: TypedMap,
+      sendEvent: Boolean
   )(
-    f: JwtInjection => Future[A]
+      f: JwtInjection => Future[A]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     if (isAsync) {
       internalVerifyAsync(request, descOpt, apikey, user, elContext, attrs, sendEvent)(f)
     } else {
       internalVerifySync(request, descOpt, apikey, user, elContext, attrs, sendEvent) match {
-        case Left(result) => result.left.vfuture
+        case Left(result)     => result.left.vfuture
         case Right(injection) => f(injection).map(a => a.right)
       }
     }
   }
 
   private[models] def internalVerifySync[A](
-    request: RequestHeader,
-    descOpt: Option[ServiceDescriptor],
-    apikey: Option[ApiKey],
-    user: Option[PrivateAppsUser],
-    elContext: Map[String, String],
-    attrs: TypedMap,
-    sendEvent: Boolean
-  )(implicit ec: ExecutionContext, env: Env): Either[Result, JwtInjection] = env.metrics.withTimer("ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-int-sync") {
+      request: RequestHeader,
+      descOpt: Option[ServiceDescriptor],
+      apikey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      elContext: Map[String, String],
+      attrs: TypedMap,
+      sendEvent: Boolean
+  )(implicit ec: ExecutionContext, env: Env): Either[Result, JwtInjection] = env.metrics.withTimer(
+    "ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-int-sync"
+  ) {
 
     import Implicits._
 
@@ -1152,8 +1156,8 @@ sealed trait JwtVerifier extends AsJson {
           case _ if !strict                    => JwtInjection().right[Result]
         }
       case Some(token) =>
-        val tokenParts = token.split("\\.")
-        val signature = tokenParts.last
+        val tokenParts  = token.split("\\.")
+        val signature   = tokenParts.last
         val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(tokenParts(0)))).getOrElse(Json.obj())
         val kid         = (tokenHeader \ "kid").asOpt[String]
         val alg         = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
@@ -1170,13 +1174,13 @@ sealed trait JwtVerifier extends AsJson {
               )
               .left[JwtInjection]
           case Some(algorithm) => {
-            val verification = strategy.verificationSettings.asVerification(algorithm)
-            val id: String = this match {
-              case v: RefJwtVerifier => v.ids.mkString("-")
+            val verification       = strategy.verificationSettings.asVerification(algorithm)
+            val id: String         = this match {
+              case v: RefJwtVerifier    => v.ids.mkString("-")
               case v: GlobalJwtVerifier => v.id
-              case v: LocalJwtVerifier => descOpt.map(_.id).getOrElse(request.id.toString)
+              case v: LocalJwtVerifier  => descOpt.map(_.id).getOrElse(request.id.toString)
             }
-            val key = s"${id}-${signature}"
+            val key                = s"${id}-${signature}"
             val verificationResult = JwtVerifier.signatureCache.get(key, _ => Try(verification.build().verify(token)))
             verificationResult match {
               case Failure(e)            =>
@@ -1319,7 +1323,9 @@ sealed trait JwtVerifier extends AsJson {
                               case _                          => inj.copy(removeHeaders = Seq(n)).right[Result]
                             }
                           case InCookie(n)     =>
-                            tSettings.location.asJwtInjection(decodedToken, newToken).copy(removeCookies = Seq(n))
+                            tSettings.location
+                              .asJwtInjection(decodedToken, newToken)
+                              .copy(removeCookies = Seq(n))
                               .right[Result]
                         }
                       }
@@ -1341,7 +1347,9 @@ sealed trait JwtVerifier extends AsJson {
       sendEvent: Boolean
   )(
       f: JwtInjection => Future[A]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = env.metrics.withTimerAsync("ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-int-async") {
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = env.metrics.withTimerAsync(
+    "ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-int-async"
+  ) {
 
     import Implicits._
 
@@ -1443,8 +1451,8 @@ sealed trait JwtVerifier extends AsJson {
       //     .left[A]
       // case None if !strict => f(JwtInjection()).right[Result]
       case Some(token) =>
-        val tokenParts = token.split("\\.")
-        val signature = tokenParts.last
+        val tokenParts  = token.split("\\.")
+        val signature   = tokenParts.last
         val tokenHeader = Try(Json.parse(ApacheBase64.decodeBase64(tokenParts(0)))).getOrElse(Json.obj())
         val kid         = (tokenHeader \ "kid").asOpt[String]
         val alg         = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
@@ -1461,8 +1469,8 @@ sealed trait JwtVerifier extends AsJson {
               )
               .left[A]
           case Some(algorithm) => {
-            val verification = strategy.verificationSettings.asVerification(algorithm)
-            val key = s"${this.asInstanceOf[GlobalJwtVerifier].id}-${signature}"
+            val verification       = strategy.verificationSettings.asVerification(algorithm)
+            val key                = s"${this.asInstanceOf[GlobalJwtVerifier].id}-${signature}"
             val verificationResult = JwtVerifier.signatureCache.get(key, _ => Try(verification.build().verify(token)))
             verificationResult match {
               case Failure(e)            =>
@@ -1784,52 +1792,70 @@ case class RefJwtVerifier(
   }
 
   def verifyFromCache(
-    request: RequestHeader,
-    desc: Option[ServiceDescriptor],
-    apikey: Option[ApiKey],
-    user: Option[PrivateAppsUser],
-    elContext: Map[String, String],
-    attrs: TypedMap
+      request: RequestHeader,
+      desc: Option[ServiceDescriptor],
+      apikey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      elContext: Map[String, String],
+      attrs: TypedMap
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, JwtInjection]] = {
     ids match {
       case s if s.isEmpty => JwtInjection().right.future
-      case _ => {
+      case _              => {
         val promise = Promise[Either[Result, JwtInjection]]
         def dequeueNext(all: Seq[String], last: Either[Result, JwtInjection]): Unit = {
           all.headOption match {
-            case None => promise.trySuccess(last)
+            case None      => promise.trySuccess(last)
             case Some(ref) =>
               val key = s"${request.id}-${ref}-queue"
               JwtVerifier.verificationCache.getIfPresent(key) match {
-                case Some(JwtVerificationResult.FailedJwtVerificationResult(result)) => dequeueNext(all.tail, Left(result)) // weird use case where same verifier is used and fails
-                case _ => env.metrics.withTimerAsync(s"ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-single-async") {
+                case Some(JwtVerificationResult.FailedJwtVerificationResult(result)) =>
+                  dequeueNext(all.tail, Left(result)) // weird use case where same verifier is used and fails
+                case _                                                               =>
+                  env.metrics.withTimerAsync(
+                    s"ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-single-async"
+                  ) {
                     env.proxyState.jwtVerifier(ref) match {
                       case Some(verifier) =>
                         verifier
-                          .internalVerify(request, desc, apikey, user, elContext, attrs, all.size == 1)(injection => injection.right.future)
+                          .internalVerify(request, desc, apikey, user, elContext, attrs, all.size == 1)(injection =>
+                            injection.right.future
+                          )
                           .map {
                             case Left(result) if all.size == 1 =>
-                              JwtVerifier.verificationCache.put(key, JwtVerificationResult.FailedJwtVerificationResult(result))
+                              JwtVerifier.verificationCache.put(
+                                key,
+                                JwtVerificationResult.FailedJwtVerificationResult(result)
+                              )
                               promise.trySuccess(Left(result))
-                            case Left(result) =>
-                              JwtVerifier.verificationCache.put(key, JwtVerificationResult.FailedJwtVerificationResult(result))
+                            case Left(result)                  =>
+                              JwtVerifier.verificationCache.put(
+                                key,
+                                JwtVerificationResult.FailedJwtVerificationResult(result)
+                              )
                               dequeueNext(all.tail, Left(result))
-                            case Right(result) =>
+                            case Right(result)                 =>
                               result match {
                                 case Left(result) if all.size == 1 =>
-                                  JwtVerifier.verificationCache.put(key, JwtVerificationResult.FailedJwtVerificationResult(result))
+                                  JwtVerifier.verificationCache.put(
+                                    key,
+                                    JwtVerificationResult.FailedJwtVerificationResult(result)
+                                  )
                                   promise.trySuccess(Left(result))
-                                case Left(result) =>
-                                  JwtVerifier.verificationCache.put(key, JwtVerificationResult.FailedJwtVerificationResult(result))
+                                case Left(result)                  =>
+                                  JwtVerifier.verificationCache.put(
+                                    key,
+                                    JwtVerificationResult.FailedJwtVerificationResult(result)
+                                  )
                                   dequeueNext(all.tail, Left(result))
-                                case Right(flow) =>
+                                case Right(flow)                   =>
                                   // the first that passes win !
                                   promise.trySuccess(Right(flow))
                               }
                           }
                           .andThen { case Failure(e) => promise.tryFailure(e) }
 
-                      case None => {
+                      case None           => {
                         Errors
                           .craftResponseResult(
                             s"error.bad.globaljwtverifier.id",
@@ -1840,7 +1866,10 @@ case class RefJwtVerifier(
                             attrs = attrs
                           )
                           .map { result =>
-                            JwtVerifier.verificationCache.put(key, JwtVerificationResult.FailedJwtVerificationResult(result))
+                            JwtVerifier.verificationCache.put(
+                              key,
+                              JwtVerificationResult.FailedJwtVerificationResult(result)
+                            )
                             if (all.size == 1) {
                               promise.trySuccess(Left(result))
                             } else {
@@ -1854,67 +1883,95 @@ case class RefJwtVerifier(
               }
           }
         }
-        dequeueNext(ids, Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.missing.globaljwtverifier.id"))))
+        dequeueNext(
+          ids,
+          Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.missing.globaljwtverifier.id")))
+        )
         promise.future
       }
     }
   }
 
   def verifyFromCacheSync(
-   request: RequestHeader,
-   desc: Option[ServiceDescriptor],
-   apikey: Option[ApiKey],
-   user: Option[PrivateAppsUser],
-   elContext: Map[String, String],
-   attrs: TypedMap
- )(implicit ec: ExecutionContext, env: Env): Either[Result, JwtInjection] = {
+      request: RequestHeader,
+      desc: Option[ServiceDescriptor],
+      apikey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      elContext: Map[String, String],
+      attrs: TypedMap
+  )(implicit ec: ExecutionContext, env: Env): Either[Result, JwtInjection] = {
     ids match {
       case s if s.isEmpty => JwtInjection().right
-      case _ => {
+      case _              => {
 
         def dequeueNext(all: Seq[String], last: Either[Result, JwtInjection]): Either[Result, JwtInjection] = {
           all.headOption match {
-            case None => last
+            case None      => last
             case Some(ref) =>
               val key = s"${request.id}-${ref}-queue"
               JwtVerifier.verificationCache.getIfPresent(key) match {
-                case Some(JwtVerificationResult.FailedJwtVerificationResult(result)) => dequeueNext(all.tail, Left(result)) // weird use case where same verifier is used and fails
-                case _ => env.metrics.withTimer(s"ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-single-sync") {
-                  env.proxyState.jwtVerifier(ref) match {
-                    case Some(verifier) => verifier.internalVerifySync(request, desc, apikey, user, elContext, attrs, all.size == 1) match {
-                      case Left(result) if all.size == 1 =>
-                        JwtVerifier.verificationCache.put(key, JwtVerificationResult.FailedJwtVerificationResult(result))
-                        Left(result)
-                      case Left(result) =>
-                        JwtVerifier.verificationCache.put(key, JwtVerificationResult.FailedJwtVerificationResult(result))
-                        dequeueNext(all.tail, Left(result))
-                      case Right(result) =>
-                        Right(result)
-                    }
-                    case None => {
-                      val result = Errors
-                        .craftResponseResultSync(
-                          s"error.bad.globaljwtverifier.id",
-                          Results.InternalServerError,
+                case Some(JwtVerificationResult.FailedJwtVerificationResult(result)) =>
+                  dequeueNext(all.tail, Left(result)) // weird use case where same verifier is used and fails
+                case _                                                               =>
+                  env.metrics.withTimer(
+                    s"ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-single-sync"
+                  ) {
+                    env.proxyState.jwtVerifier(ref) match {
+                      case Some(verifier) =>
+                        verifier.internalVerifySync(
                           request,
                           desc,
-                          None,
-                          attrs = attrs
+                          apikey,
+                          user,
+                          elContext,
+                          attrs,
+                          all.size == 1
+                        ) match {
+                          case Left(result) if all.size == 1 =>
+                            JwtVerifier.verificationCache.put(
+                              key,
+                              JwtVerificationResult.FailedJwtVerificationResult(result)
+                            )
+                            Left(result)
+                          case Left(result)                  =>
+                            JwtVerifier.verificationCache.put(
+                              key,
+                              JwtVerificationResult.FailedJwtVerificationResult(result)
+                            )
+                            dequeueNext(all.tail, Left(result))
+                          case Right(result)                 =>
+                            Right(result)
+                        }
+                      case None           => {
+                        val result = Errors
+                          .craftResponseResultSync(
+                            s"error.bad.globaljwtverifier.id",
+                            Results.InternalServerError,
+                            request,
+                            desc,
+                            None,
+                            attrs = attrs
+                          )
+                        JwtVerifier.verificationCache.put(
+                          key,
+                          JwtVerificationResult.FailedJwtVerificationResult(result)
                         )
-                        JwtVerifier.verificationCache.put(key, JwtVerificationResult.FailedJwtVerificationResult(result))
                         if (all.size == 1) {
                           Left(result)
                         } else {
                           dequeueNext(all.tail, Left(result))
                         }
+                      }
                     }
                   }
-                }
               }
           }
         }
 
-        dequeueNext(ids, Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.missing.globaljwtverifier.id"))))
+        dequeueNext(
+          ids,
+          Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.missing.globaljwtverifier.id")))
+        )
       }
     }
   }

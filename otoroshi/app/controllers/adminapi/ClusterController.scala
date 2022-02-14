@@ -558,7 +558,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
 
             if (env.clusterConfig.autoUpdateState) {
               Cluster.logger.debug(
-                s"[${env.clusterConfig.mode.name}] Sending state from auto cache (${Option(env.clusterLeaderAgent.cachedCount).getOrElse(0L)} items / ${Option(cachedValue).getOrElse(ByteString.empty).size / 1024} Kb) ..."
+                s"[${env.clusterConfig.mode.name}] Sending state from auto cache (${Option(env.clusterLeaderAgent.cachedCount)
+                  .getOrElse(0L)} items / ${Option(cachedValue).getOrElse(ByteString.empty).size / 1024} Kb) ..."
               )
               Ok.sendEntity(
                 HttpEntity

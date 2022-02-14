@@ -107,8 +107,12 @@ class HasClientCertMatchingValidator extends AccessValidator {
 
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain
-      .map(_.map(cert => SubIss(cert.getSerialNumber.toString(16), DN(cert.getSubjectDN.getName), DN(cert.getIssuerDN.getName)))) //match {
-       .orElse(Some(Seq(SubIss("1234567890", DN("SN=foo"), DN("SN=ca, CN=CA_MAIF_ROOTCA"))))) match {
+      .map(
+        _.map(cert =>
+          SubIss(cert.getSerialNumber.toString(16), DN(cert.getSubjectDN.getName), DN(cert.getIssuerDN.getName))
+        )
+      ) //match {
+      .orElse(Some(Seq(SubIss("1234567890", DN("SN=foo"), DN("SN=ca, CN=CA_MAIF_ROOTCA"))))) match {
       case Some(certs) => {
         val config                 = (context.config \ "HasClientCertMatchingValidator")
           .asOpt[JsValue]
@@ -126,18 +130,11 @@ class HasClientCertMatchingValidator extends AccessValidator {
           (config \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         if (
           certs.exists(cert => allowedSerialNumbers.contains(cert.sn)) ||
-            certs.exists(cert =>
-              allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.subject.stringify))
-            ) ||
-            certs.exists(cert =>
-              allowedIssuerDNs.exists(s => RegexPool(s).matches(cert.issuer.stringify))
-            ) ||
-            certs.exists(cert =>
-              regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.subject.stringify))
-            ) ||
-            certs.exists(cert =>
-              regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.issuer.stringify))
-            )
+          certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.subject.stringify))) ||
+          certs.exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(cert.issuer.stringify))) ||
+          certs
+            .exists(cert => regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.subject.stringify))) ||
+          certs.exists(cert => regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.issuer.stringify)))
         ) {
           FastFuture.successful(true)
         } else {

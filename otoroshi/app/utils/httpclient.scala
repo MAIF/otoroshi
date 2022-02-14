@@ -1312,8 +1312,8 @@ case class AkkaWsClientRequest(
   }
 
   lazy val (akkaHttpEntity, updatedHeaders) = {
-    val ct                                   = realContentType.getOrElse(ContentTypes.`application/octet-stream`)
-    val cl                                   = realContentLength
+    val ct = realContentType.getOrElse(ContentTypes.`application/octet-stream`)
+    val cl = realContentLength
     body match {
       case EmptyBody                         => (HttpEntity.Empty, headers)
       case InMemoryBody(bytes)               => (HttpEntity.apply(ct, bytes), headers)
@@ -1325,7 +1325,7 @@ case class AkkaWsClientRequest(
   def buildRequest(): HttpRequest = {
     // val internalUri = Uri(rawUrl)
     // val ua = realUserAgent.flatMap(s => Try(`User-Agent`(s)).toOption)
-    val akkaHeaders: List[HttpHeader]    = updatedHeaders
+    val akkaHeaders: List[HttpHeader] = updatedHeaders
       .flatMap { case (key, values) =>
         values.distinct.map(value => HttpHeader.parse(key, value))
       }
@@ -1488,7 +1488,7 @@ object Implicits {
             case _          => ()
           }
           req.asInstanceOf[req.Self]
-        case _                          => req.asInstanceOf[req.Self]
+        case _                                => req.asInstanceOf[req.Self]
       }
     }
   }

@@ -22,7 +22,7 @@ import play.api.libs.json.Json
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future, Promise, duration}
+import scala.concurrent.{duration, ExecutionContext, Future, Promise}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success}
 
@@ -147,14 +147,25 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
   }
 
   def chooseTarget(
-    descriptor: ServiceDescriptor,
-    path: String,
-    reqId: String,
-    trackingId: String,
-    requestHeader: RequestHeader,
-    attrs: TypedMap
+      descriptor: ServiceDescriptor,
+      path: String,
+      reqId: String,
+      trackingId: String,
+      requestHeader: RequestHeader,
+      attrs: TypedMap
   ): Option[(Target, AkkaCircuitBreaker)] = {
-    chooseTargetNg(descriptor.id, descriptor.name, descriptor.targets, descriptor.targetsLoadBalancing, descriptor.clientConfig, path, reqId, trackingId, requestHeader, attrs)
+    chooseTargetNg(
+      descriptor.id,
+      descriptor.name,
+      descriptor.targets,
+      descriptor.targetsLoadBalancing,
+      descriptor.clientConfig,
+      path,
+      reqId,
+      trackingId,
+      requestHeader,
+      attrs
+    )
   }
 
   def chooseTargetNg(
@@ -190,7 +201,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
         //   callTimeout = descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout),
         //   resetTimeout = descriptor.clientConfig.sampleInterval.millis
         // )
-        val cb = getCircuitBreakerNg(clientConfig, path)
+        val cb   = getCircuitBreakerNg(clientConfig, path)
         val desc = Json.obj("id" -> descriptorId, "name" -> descriptorName)
         cb.onOpen {
           env.datastores.globalConfigDataStore.singleton().fast.map { config =>
@@ -244,8 +255,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
             maxFailures = clientConfig.maxErrors,
             callTimeout = clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout),
             resetTimeout = clientConfig.sampleInterval.millis,
-            callAndStreamTimeout =
-              clientConfig.extractTimeout(path, _.callAndStreamTimeout, _.callAndStreamTimeout)
+            callAndStreamTimeout = clientConfig.extractTimeout(path, _.callAndStreamTimeout, _.callAndStreamTimeout)
           )
         )
       }
@@ -274,20 +284,35 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
   }
 
   def callGen[A](
-    descriptor: ServiceDescriptor,
-    reqId: String,
-    trackingId: String,
-    path: String,
-    requestHeader: RequestHeader,
-    bodyAlreadyConsumed: AtomicBoolean,
-    ctx: String,
-    counter: AtomicInteger,
-    attrs: TypedMap,
-    f: (Target, Int, AtomicBoolean) => Future[Either[Result, A]]
+      descriptor: ServiceDescriptor,
+      reqId: String,
+      trackingId: String,
+      path: String,
+      requestHeader: RequestHeader,
+      bodyAlreadyConsumed: AtomicBoolean,
+      ctx: String,
+      counter: AtomicInteger,
+      attrs: TypedMap,
+      f: (Target, Int, AtomicBoolean) => Future[Either[Result, A]]
   )(implicit
-    env: Env
+      env: Env
   ): Future[Either[Result, A]] = {
-    callGenNg[A](descriptor.id, descriptor.name, descriptor.targets, descriptor.targetsLoadBalancing, descriptor.clientConfig, reqId, trackingId, path, requestHeader, bodyAlreadyConsumed, ctx, counter, attrs, f)
+    callGenNg[A](
+      descriptor.id,
+      descriptor.name,
+      descriptor.targets,
+      descriptor.targetsLoadBalancing,
+      descriptor.clientConfig,
+      reqId,
+      trackingId,
+      path,
+      requestHeader,
+      bodyAlreadyConsumed,
+      ctx,
+      counter,
+      attrs,
+      f
+    )
   }
 
   def callGenNg[A](
@@ -334,7 +359,18 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
             alreadyFailed.set(true)
           }
         } getOrElse {
-          chooseTargetNg(descId, descName, targets, targetsLoadBalancing, clientConfig, path, reqId, trackingId, requestHeader, attrs) match {
+          chooseTargetNg(
+            descId,
+            descName,
+            targets,
+            targetsLoadBalancing,
+            clientConfig,
+            path,
+            reqId,
+            trackingId,
+            requestHeader,
+            attrs
+          ) match {
             case Some((target, breaker)) =>
               val alreadyFailed = new AtomicBoolean(false)
               breaker.withCircuitBreaker {

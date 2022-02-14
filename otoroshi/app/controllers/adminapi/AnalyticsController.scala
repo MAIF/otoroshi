@@ -276,7 +276,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
                 "avgDuration"         -> avgduration,
                 "avgOverhead"         -> avgoverhead,
                 //"productPiechart"     -> productPiechart,
-                "servicePiechart"     -> servicePiechart,
+                "servicePiechart"     -> servicePiechart
                 //"apiKeyPiechart"      -> apiKeyPiechart,
                 //"userPiechart"        -> userPiechart
               ).collect { case (key, Some(jsv)) =>
@@ -567,7 +567,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
                         analyticsService.fetchServicePiechart(Some(filterable), fromDate, toDate, 0)
                       case _                => FastFuture.successful(None)
                     }
-                ),
+                )
                 // Part("userPiechart", () => analyticsService.fetchUserPiechart(Some(filterable), fromDate, toDate))
               )
               FastFuture.sequence(parts.map(_.call(ctx.request))).map { pts =>

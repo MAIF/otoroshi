@@ -13,14 +13,14 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class NgGzipConfig(
-  excludedPatterns: Seq[String] = Seq.empty[String],
-  whiteList: Seq[String] = Seq("text/*", "application/javascript", "application/json"),
-  blackList: Seq[String] = Seq.empty[String],
-  bufferSize: Int = 8192,
-  chunkedThreshold: Int = 102400,
-  compressionLevel: Int = 5
+    excludedPatterns: Seq[String] = Seq.empty[String],
+    whiteList: Seq[String] = Seq("text/*", "application/javascript", "application/json"),
+    blackList: Seq[String] = Seq.empty[String],
+    bufferSize: Int = 8192,
+    chunkedThreshold: Int = 102400,
+    compressionLevel: Int = 5
 ) {
-  def json: JsValue = NgGzipConfig.format.writes(this)
+  def json: JsValue           = NgGzipConfig.format.writes(this)
   lazy val legacy: GzipConfig = GzipConfig(
     enabled = true,
     excludedPatterns = excludedPatterns,
@@ -28,7 +28,7 @@ case class NgGzipConfig(
     blackList = blackList,
     bufferSize = bufferSize,
     chunkedThreshold = chunkedThreshold,
-    compressionLevel = compressionLevel,
+    compressionLevel = compressionLevel
   )
 }
 
@@ -39,9 +39,9 @@ object NgGzipConfig {
     blackList = settings.blackList,
     bufferSize = settings.bufferSize,
     chunkedThreshold = settings.chunkedThreshold,
-    compressionLevel = settings.compressionLevel,
+    compressionLevel = settings.compressionLevel
   )
-  val format: Format[NgGzipConfig] = new Format[NgGzipConfig] {
+  val format: Format[NgGzipConfig]                   = new Format[NgGzipConfig] {
     override def reads(json: JsValue): JsResult[NgGzipConfig] =
       Try {
         NgGzipConfig(
@@ -54,14 +54,14 @@ object NgGzipConfig {
         )
       } match {
         case Success(entity) => JsSuccess(entity)
-        case Failure(err) => JsError(err.getMessage)
+        case Failure(err)    => JsError(err.getMessage)
       }
 
     override def writes(o: NgGzipConfig): JsValue =
       Json.obj(
         "excluded_patterns" -> o.excludedPatterns,
-        "allowed_list"        -> o.whiteList,
-        "blocked_list"        -> o.blackList,
+        "allowed_list"      -> o.whiteList,
+        "blocked_list"      -> o.blackList,
         "buffer_size"       -> o.bufferSize,
         "chunked_threshold" -> o.chunkedThreshold,
         "compression_level" -> o.compressionLevel
@@ -73,19 +73,21 @@ class GzipResponseCompressor extends NgRequestTransformer {
 
   private val configReads: Reads[NgGzipConfig] = NgGzipConfig.format
 
-  override def core: Boolean = true
-  override def usesCallbacks: Boolean = false
-  override def transformsRequest: Boolean = false
-  override def transformsResponse: Boolean = true
-  override def transformsError: Boolean = false
-  override def isTransformRequestAsync: Boolean = true
+  override def core: Boolean                     = true
+  override def usesCallbacks: Boolean            = false
+  override def transformsRequest: Boolean        = false
+  override def transformsResponse: Boolean       = true
+  override def transformsError: Boolean          = false
+  override def isTransformRequestAsync: Boolean  = true
   override def isTransformResponseAsync: Boolean = false
-  override def name: String = "Gzip compression"
-  override def description: Option[String] = "This plugin can compress responses using gzip".some
-  override def defaultConfig: Option[JsObject] = NgGzipConfig().json.asObject.some
+  override def name: String                      = "Gzip compression"
+  override def description: Option[String]       = "This plugin can compress responses using gzip".some
+  override def defaultConfig: Option[JsObject]   = NgGzipConfig().json.asObject.some
 
-  override def transformResponseSync(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
-    val config = ctx.cachedConfig(internalName)(configReads).getOrElse(NgGzipConfig())
+  override def transformResponseSync(
+      ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+    val config                                    = ctx.cachedConfig(internalName)(configReads).getOrElse(NgGzipConfig())
     def transform(result: Result): Future[Result] = config.legacy.handleResult(ctx.request, result)
     ctx.attrs.put(otoroshi.next.plugins.Keys.ResultTransformerKey -> transform)
     ctx.otoroshiResponse.right

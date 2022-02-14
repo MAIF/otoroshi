@@ -36,10 +36,12 @@ class FEither[L, R](val value: Future[Either[L, R]]) {
 }
 
 object FEither {
-  def apply[L, R](value: Future[Either[L, R]]): FEither[L, R] = new FEither[L, R](value)
-  def apply[L, R](value: Either[L, R]): FEither[L, R] = new FEither[L, R](value.vfuture)
-  def left[L, R](value: L): FEither[L, R] = new FEither[L, R](Left(value).vfuture)
-  def fleft[L, R](value: Future[L])(implicit ec: ExecutionContext): FEither[L, R] = new FEither[L, R](value.map(v => Left(v)))
-  def right[L, R](value: R): FEither[L, R] = new FEither[L, R](Right(value).vfuture)
-  def fright[L, R](value: Future[R])(implicit ec: ExecutionContext): FEither[L, R] = new FEither[L, R](value.map(v => Right(v)))
+  def apply[L, R](value: Future[Either[L, R]]): FEither[L, R]                      = new FEither[L, R](value)
+  def apply[L, R](value: Either[L, R]): FEither[L, R]                              = new FEither[L, R](value.vfuture)
+  def left[L, R](value: L): FEither[L, R]                                          = new FEither[L, R](Left(value).vfuture)
+  def fleft[L, R](value: Future[L])(implicit ec: ExecutionContext): FEither[L, R]  =
+    new FEither[L, R](value.map(v => Left(v)))
+  def right[L, R](value: R): FEither[L, R]                                         = new FEither[L, R](Right(value).vfuture)
+  def fright[L, R](value: Future[R])(implicit ec: ExecutionContext): FEither[L, R] =
+    new FEither[L, R](value.map(v => Right(v)))
 }

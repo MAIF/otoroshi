@@ -18,7 +18,6 @@ import {
 const RADIAN = Math.PI / 180;
 
 export class Histogram extends Component {
-
   state = { error: null };
 
   colors = [
@@ -55,8 +54,9 @@ export class Histogram extends Component {
       // console.log(this.props.title, this.props.series);
 
       if (
-          this.props.series &&
-          this.props.series.map((s) => (s && s.data) ? s.data.length : 0).filter((v) => v > 0).length > 0
+        this.props.series &&
+        this.props.series.map((s) => (s && s.data ? s.data.length : 0)).filter((v) => v > 0)
+          .length > 0
       ) {
         seriesName = this.props.series.map((s) => s.name);
         const values = [];
@@ -82,42 +82,44 @@ export class Histogram extends Component {
       }
 
       return (
-          <div
-              className="sub-container__bg-color"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                width: '100%',
-              }}>
-            <h4 style={{marginTop: 10}}>{this.props.title}</h4>
-            <ResponsiveContainer height={this.props.height || 200}>
-              <AreaChart data={data} margin={{top: 10, right: 30, left: 0, bottom: 0}}>
-                <XAxis dataKey="name" hide={!!this.props.hideXAxis}/>
-                <YAxis tickFormatter={this.formatTick}/>
-                <CartesianGrid strokeDasharray="3 3"/>
-                <Tooltip/>
-                {_.sortBy(seriesName, (sn) => sn).map((sn, idx) => (
-                    <Area
-                        key={sn}
-                        type="monotone"
-                        name={sn}
-                        unit={this.props.unit}
-                        dataKey={sn}
-                        stroke={this.colors[idx]}
-                        fillOpacity={0.6}
-                        fill={this.colors[idx]}
-                    />
-                ))}
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+        <div
+          className="sub-container__bg-color"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: '100%',
+          }}>
+          <h4 style={{ marginTop: 10 }}>{this.props.title}</h4>
+          <ResponsiveContainer height={this.props.height || 200}>
+            <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <XAxis dataKey="name" hide={!!this.props.hideXAxis} />
+              <YAxis tickFormatter={this.formatTick} />
+              <CartesianGrid strokeDasharray="3 3" />
+              <Tooltip />
+              {_.sortBy(seriesName, (sn) => sn).map((sn, idx) => (
+                <Area
+                  key={sn}
+                  type="monotone"
+                  name={sn}
+                  unit={this.props.unit}
+                  dataKey={sn}
+                  stroke={this.colors[idx]}
+                  fillOpacity={0.6}
+                  fill={this.colors[idx]}
+                />
+              ))}
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       );
-    } catch(e) {
-      console.log(e)
+    } catch (e) {
+      console.log(e);
       return (
-          <span>{e.message} - {this.props.title}</span>
+        <span>
+          {e.message} - {this.props.title}
+        </span>
       );
     }
   }

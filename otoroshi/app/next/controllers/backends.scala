@@ -13,7 +13,7 @@ import play.api.mvc._
 import scala.concurrent.{ExecutionContext, Future}
 
 class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
-  extends AbstractController(cc)
+    extends AbstractController(cc)
     with BulkControllerHelper[StoredNgBackend, JsValue]
     with CrudControllerHelper[StoredNgBackend, JsValue] {
 
@@ -36,8 +36,11 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   override def writeEntity(entity: StoredNgBackend): JsValue = StoredNgBackend.format.writes(entity)
 
   override def findByIdOps(
-                            id: String
-                          )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[StoredNgBackend]]] = {
+      id: String
+  )(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.findById(id).map { opt =>
       Right(
         OptionalEntityAndContext(
@@ -52,8 +55,11 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   override def findAllOps(
-                           req: RequestHeader
-                         )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[StoredNgBackend]]] = {
+      req: RequestHeader
+  )(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[ApiError[JsValue], SeqEntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.findAll().map { seq =>
       Right(
         SeqEntityAndContext(
@@ -68,8 +74,8 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   override def createEntityOps(
-                                entity: StoredNgBackend
-                              )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
+      entity: StoredNgBackend
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.set(entity).map {
       case true  => {
         Right(
@@ -94,8 +100,8 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   override def updateEntityOps(
-                                entity: StoredNgBackend
-                              )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
+      entity: StoredNgBackend
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.set(entity).map {
       case true  => {
         Right(
@@ -120,8 +126,8 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   override def deleteEntityOps(
-                                id: String
-                              )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[StoredNgBackend]]] = {
+      id: String
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.delete(id).map {
       case true  => {
         Right(
@@ -145,14 +151,16 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   def initiateStoredNgBackend() = ApiAction {
-    Ok(StoredNgBackend(
-      location = EntityLocation.default,
-      id = s"backend_${IdGenerator.uuid}",
-      name = "New backend",
-      description = "A new backend",
-      tags = Seq.empty,
-      metadata = Map.empty,
-      backend = NgBackend.empty
-    ).json)
+    Ok(
+      StoredNgBackend(
+        location = EntityLocation.default,
+        id = s"backend_${IdGenerator.uuid}",
+        name = "New backend",
+        description = "A new backend",
+        tags = Seq.empty,
+        metadata = Map.empty,
+        backend = NgBackend.empty
+      ).json
+    )
   }
 }

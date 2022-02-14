@@ -21,16 +21,17 @@ import scala.concurrent.{ExecutionContext, Future}
 import play.api.http.websocket.{Message => PlayWSMessage}
 
 trait RequestHandler extends StartableAndStoppable with NamedPlugin {
-  override def pluginType: PluginType                                      = PluginType.RequestHandlerType
-  def handledDomains(implicit ec: ExecutionContext, env: Env): Seq[String] = Seq.empty[String]
+  override def pluginType: PluginType                                                                       = PluginType.RequestHandlerType
+  def handledDomains(implicit ec: ExecutionContext, env: Env): Seq[String]                                  = Seq.empty[String]
   def handle(
       request: Request[Source[ByteString, _]],
       defaultRouting: Request[Source[ByteString, _]] => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = defaultRouting(request)
+  )(implicit ec: ExecutionContext, env: Env): Future[Result]                                                = defaultRouting(request)
   def handleWs(
-    request: RequestHeader,
-    defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = defaultRouting(request)
+      request: RequestHeader,
+      defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
+    defaultRouting(request)
 }
 
 class ForwardTrafficHandler extends RequestHandler {

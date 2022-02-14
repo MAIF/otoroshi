@@ -252,7 +252,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
           }
         }
       }
-      case _ => None
+      case _                                                                                                => None
     }
   }
 }

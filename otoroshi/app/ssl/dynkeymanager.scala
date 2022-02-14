@@ -37,9 +37,9 @@ object DynamicKeyManager {
 class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X509KeyManager, env: Env)
     extends X509ExtendedKeyManager {
 
-  private val logger = Logger("otoroshi-dyn-key-manager")
-  private lazy val allCertificates: Seq[Cert] = allCerts()
-  private lazy val validCerts = allCertificates
+  private val logger                                 = Logger("otoroshi-dyn-key-manager")
+  private lazy val allCertificates: Seq[Cert]        = allCerts()
+  private lazy val validCerts                        = allCertificates
     .map(_.enrich())
     .filter(c => c.notRevoked && c.notExpired && !c.ca && !c.keypair)
     .sortWith((c1, c2) => c1.to.compareTo(c2.to) > 0)
@@ -91,24 +91,9 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
 
           val directCert = certsByDomains.get(domain)
 
-          val maybeCert: Option[Cert] = directCert.orElse {
-            // foundCert: no * before with * then longer before smaller
-            validCerts
-              .flatMap(c => c.allDomains.map(d => (d, c)))
-              .filter(c => c._2.sanMatchesDomain(domain, c._1))
-              .sortWith {
-                case ((d1, _), (d2, _)) if d1.contains("*") && d2.contains("*") => d1.size > d2.size
-                case ((d1, _), (d2, _)) if d1.contains("*") && !d2.contains("*") => false
-                case ((d1, _), (d2, _)) if !d1.contains("*") && d2.contains("*") => true
-                case ((d1, _), (d2, _)) if !d1.contains("*") && !d2.contains("*") => true
-              }
-              .seffectOnIf(logger.isDebugEnabled)(certs => logger.debug(s"possible certificates for '$domain': \n${certs.map(c => s"  * '${c._2.name}' | '${c._1}' | - ${c._2.allDomains.mkString(", ")}").mkString("\n")}"))
-              .map(_._2)
-              .headOption
-              .seffectOnIf(logger.isDebugEnabled)(opt => logger.debug(s"choosing '${opt.map(_.name).getOrElse("--")}'"))
-          }.orElse {
-            //foundCertDef
-            tlsSettings.defaultDomain.flatMap { d =>
+          val maybeCert: Option[Cert] = directCert
+            .orElse {
+              // foundCert: no * before with * then longer before smaller
               validCerts
                 .flatMap(c => c.allDomains.map(d => (d, c)))
                 .filter(c => c._2.sanMatchesDomain(domain, c._1))
@@ -118,10 +103,33 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
                   case ((d1, _), (d2, _)) if !d1.contains("*") && d2.contains("*")  => true
                   case ((d1, _), (d2, _)) if !d1.contains("*") && !d2.contains("*") => true
                 }
+                .seffectOnIf(logger.isDebugEnabled)(certs =>
+                  logger.debug(s"possible certificates for '$domain': \n${certs
+                    .map(c => s"  * '${c._2.name}' | '${c._1}' | - ${c._2.allDomains.mkString(", ")}")
+                    .mkString("\n")}")
+                )
                 .map(_._2)
                 .headOption
+                .seffectOnIf(logger.isDebugEnabled)(opt =>
+                  logger.debug(s"choosing '${opt.map(_.name).getOrElse("--")}'")
+                )
             }
-          }
+            .orElse {
+              //foundCertDef
+              tlsSettings.defaultDomain.flatMap { d =>
+                validCerts
+                  .flatMap(c => c.allDomains.map(d => (d, c)))
+                  .filter(c => c._2.sanMatchesDomain(domain, c._1))
+                  .sortWith {
+                    case ((d1, _), (d2, _)) if d1.contains("*") && d2.contains("*")   => d1.size > d2.size
+                    case ((d1, _), (d2, _)) if d1.contains("*") && !d2.contains("*")  => false
+                    case ((d1, _), (d2, _)) if !d1.contains("*") && d2.contains("*")  => true
+                    case ((d1, _), (d2, _)) if !d1.contains("*") && !d2.contains("*") => true
+                  }
+                  .map(_._2)
+                  .headOption
+              }
+            }
 
           // certs.find(_.matchesDomain(domain)).orElse(tlsSettings.defaultDomain.flatMap(d => certs.find(_.matchesDomain(d)))).map { c =>
           maybeCert.map { c =>

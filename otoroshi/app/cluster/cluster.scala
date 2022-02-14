@@ -28,14 +28,23 @@ import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.jobs.updates.Version
 import otoroshi.models.{SimpleAdminDataStore, TenantId, WebAuthnAdminDataStore}
-import otoroshi.next.models.{KvNgRouteDataStore, KvNgServiceDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, NgRouteDataStore, NgServiceDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
+import otoroshi.next.models.{
+  KvNgRouteDataStore,
+  KvNgServiceDataStore,
+  KvStoredNgBackendDataStore,
+  KvStoredNgTargetDataStore,
+  NgRouteDataStore,
+  NgServiceDataStore,
+  StoredNgBackendDataStore,
+  StoredNgTargetDataStore
+}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage._
 import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import otoroshi.utils
-import otoroshi.utils.{SchedulerHelper, future}
+import otoroshi.utils.{future, SchedulerHelper}
 import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
@@ -585,7 +594,8 @@ object ClusterAgent {
   def apply(config: ClusterConfig, env: Env) = new ClusterAgent(config, env)
 
   private def clusterGetApikey(env: Env, id: String)(implicit
-      executionContext: ExecutionContext, mat: Materializer
+      executionContext: ExecutionContext,
+      mat: Materializer
   ): Future[Option[JsValue]] = {
     val cfg         = env.clusterConfig
     val otoroshiUrl = cfg.leader.urls.head
@@ -606,7 +616,10 @@ object ClusterAgent {
       }
   }
 
-  def clusterSaveApikey(env: Env, apikey: ApiKey)(implicit executionContext: ExecutionContext, mat: Materializer): Future[Unit] = {
+  def clusterSaveApikey(env: Env, apikey: ApiKey)(implicit
+      executionContext: ExecutionContext,
+      mat: Materializer
+  ): Future[Unit] = {
     val cfg         = env.clusterConfig
     val otoroshiUrl = cfg.leader.urls.head
     clusterGetApikey(env, apikey.clientId)
@@ -620,10 +633,11 @@ object ClusterAgent {
             .withAuth(cfg.leader.clientId, cfg.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(cfg.worker.timeout, TimeUnit.MILLISECONDS))
             .withMaybeProxyServer(cfg.proxy)
-          request.post(apikey.toJson)
+          request
+            .post(apikey.toJson)
             .map(_.ignore())
-            .andThen {
-              case Failure(_) => request.ignore()
+            .andThen { case Failure(_) =>
+              request.ignore()
             }
         }
         case Some(_) => {
@@ -635,10 +649,11 @@ object ClusterAgent {
             .withAuth(cfg.leader.clientId, cfg.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(cfg.worker.timeout, TimeUnit.MILLISECONDS))
             .withMaybeProxyServer(cfg.proxy)
-          request.put(apikey.toJson)
+          request
+            .put(apikey.toJson)
             .map(_.ignore())
-            .andThen {
-              case Failure(_) => request.ignore()
+            .andThen { case Failure(_) =>
+              request.ignore()
             }
         }
       }
@@ -990,9 +1005,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
             .withMaybeProxyServer(config.proxy)
-          request.post(Json.obj())
-            .andThen {
-              case Failure(_) => request.ignore()
+          request
+            .post(Json.obj())
+            .andThen { case Failure(_) =>
+              request.ignore()
             }
             .filter { resp =>
               Cluster.logger.debug(s"login token for ${token} created on the leader ${resp.status}")
@@ -1027,9 +1043,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
             .withMaybeProxyServer(config.proxy)
-          request.post(user)
-            .andThen {
-              case Failure(_) => request.ignore()
+          request
+            .post(user)
+            .andThen { case Failure(_) =>
+              request.ignore()
             }
             .filter { resp =>
               Cluster.logger.debug(s"User token for ${token} created on the leader ${resp.status}")
@@ -1103,9 +1120,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
             .withMaybeProxyServer(config.proxy)
-          request.post(user.toJson)
-            .andThen {
-              case Failure(_) => request.ignore()
+          request
+            .post(user.toJson)
+            .andThen { case Failure(_) =>
+              request.ignore()
             }
             .filter { resp =>
               Cluster.logger.debug(s"Session for ${user.name} created on the leader ${resp.status}")
@@ -1156,39 +1174,39 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     import collection.JavaConverters._
 
     what match {
-      case "counter" => Some(ByteString(value.as[Long].toString))
-      case "string"  => Some(ByteString(value.as[String]))
-      case "set"     if modern => {
+      case "counter"        => Some(ByteString(value.as[Long].toString))
+      case "string"         => Some(ByteString(value.as[String]))
+      case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
-      case "list"    if modern => {
+      case "list" if modern => {
         val list = scala.collection.mutable.MutableList.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
-      case "hash"    if modern => {
+      case "hash" if modern => {
         val map = new TrieMap[String, ByteString]()
         map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
         Some(map)
       }
-      case "set"     => {
+      case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "list"    => {
+      case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "hash"    => {
+      case "hash"           => {
         val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }
-      case _         => None
+      case _                => None
     }
   }
 
@@ -1217,7 +1235,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
               .withMaybeProxyServer(config.proxy)
               .withMethod("GET")
-            request.stream()
+            request
+              .stream()
               .filter { resp =>
                 resp.ignoreIf(resp.status != 200)
                 resp.status == 200
@@ -1419,7 +1438,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               val globalSource      = Source.single(stats)
               val body              = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(env.clusterConfig.gzip())
               val wsBody            = SourceBody(body)
-              val request = env.MtlsWs
+              val request           = env.MtlsWs
                 .url(otoroshiUrl + s"/api/cluster/quotas?budget=${config.worker.quotas.timeout}", config.mtlsConfig)
                 .withHttpHeaders(
                   "Host"                                    -> config.leader.host,
@@ -1433,9 +1452,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 .withMaybeProxyServer(config.proxy)
                 .withMethod("PUT")
                 .withBody(wsBody)
-              request.stream()
-                .andThen {
-                  case Failure(_) => request.ignore()
+              request
+                .stream()
+                .andThen { case Failure(_) =>
+                  request.ignore()
                 }
                 .filter { resp =>
                   resp.ignore()
@@ -1541,7 +1561,8 @@ class SwappableInMemoryDataStores(
   import akka.stream.Materializer
 
   lazy val redisStatsItems: Int  = configuration.betterGet[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
-  lazy val experimental: Boolean = configuration.betterGet[Option[Boolean]]("app.inmemory.experimental").getOrElse(false)
+  lazy val experimental: Boolean =
+    configuration.betterGet[Option[Boolean]]("app.inmemory.experimental").getOrElse(false)
   lazy val actorSystem           =
     ActorSystem(
       "otoroshi-swapinmemory-system",
@@ -1635,39 +1656,39 @@ class SwappableInMemoryDataStores(
     import collection.JavaConverters._
 
     what match {
-      case "counter" => Some(ByteString(value.as[Long].toString))
-      case "string"  => Some(ByteString(value.as[String]))
-      case "set"     if modern => {
+      case "counter"        => Some(ByteString(value.as[Long].toString))
+      case "string"         => Some(ByteString(value.as[String]))
+      case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
-      case "list"    if modern => {
+      case "list" if modern => {
         val list = scala.collection.mutable.MutableList.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
-      case "hash"    if modern => {
+      case "hash" if modern => {
         val map = new TrieMap[String, ByteString]()
         map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
         Some(map)
       }
-      case "set"     => {
+      case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "list"    => {
+      case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "hash"    => {
+      case "hash"           => {
         val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }
-      case _         => None
+      case _                => None
     }
   }
 
@@ -1737,16 +1758,16 @@ class SwappableInMemoryDataStores(
   private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis, env)
   override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
 
-  private lazy val _routeDataStore = new KvNgRouteDataStore(redis, env)
+  private lazy val _routeDataStore              = new KvNgRouteDataStore(redis, env)
   override def routeDataStore: NgRouteDataStore = _routeDataStore
 
-  private lazy val _routesCompositionDataStore = new KvNgServiceDataStore(redis, env)
+  private lazy val _routesCompositionDataStore       = new KvNgServiceDataStore(redis, env)
   override def servicesDataStore: NgServiceDataStore = _routesCompositionDataStore
 
-  private lazy val _targetsDataStore = new KvStoredNgTargetDataStore(redis, env)
+  private lazy val _targetsDataStore                     = new KvStoredNgTargetDataStore(redis, env)
   override def targetsDataStore: StoredNgTargetDataStore = _targetsDataStore
 
-  private lazy val _backendsDataStore = new KvStoredNgBackendDataStore(redis, env)
+  private lazy val _backendsDataStore                      = new KvStoredNgBackendDataStore(redis, env)
   override def backendsDataStore: StoredNgBackendDataStore = _backendsDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
@@ -1954,15 +1975,15 @@ class SwappableInMemoryDataStores(
       case lng: Long                                                       => ("string", JsString(lng.toString))
       case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] =>
         ("hash", JsObject(map.asScala.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
-      case map: TrieMap[String, ByteString] =>
+      case map: TrieMap[String, ByteString]                                =>
         ("hash", JsObject(map.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
       case list: java.util.concurrent.CopyOnWriteArrayList[ByteString]     =>
         ("list", JsArray(list.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case list: scala.collection.mutable.MutableList[ByteString]     =>
+      case list: scala.collection.mutable.MutableList[ByteString]          =>
         ("list", JsArray(list.toSeq.map(a => JsString(a.utf8String))))
       case set: java.util.concurrent.CopyOnWriteArraySet[ByteString]       =>
         ("set", JsArray(set.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case set: scala.collection.mutable.HashSet[ByteString]       =>
+      case set: scala.collection.mutable.HashSet[ByteString]               =>
         ("set", JsArray(set.toSeq.map(a => JsString(a.utf8String))))
       case _                                                               => ("none", JsNull)
     }

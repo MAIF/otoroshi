@@ -17,15 +17,15 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class NgCorsSettings(
-  allowOrigin: String = "*",
-  exposeHeaders: Seq[String] = Seq.empty[String],
-  allowHeaders: Seq[String] = Seq.empty[String],
-  allowMethods: Seq[String] = Seq.empty[String],
-  excludedPatterns: Seq[String] = Seq.empty[String],
-  maxAge: Option[FiniteDuration] = None,
-  allowCredentials: Boolean = true
+    allowOrigin: String = "*",
+    exposeHeaders: Seq[String] = Seq.empty[String],
+    allowHeaders: Seq[String] = Seq.empty[String],
+    allowMethods: Seq[String] = Seq.empty[String],
+    excludedPatterns: Seq[String] = Seq.empty[String],
+    maxAge: Option[FiniteDuration] = None,
+    allowCredentials: Boolean = true
 ) {
-  def json: JsValue = NgCorsSettings.format.writes(this)
+  def json: JsValue             = NgCorsSettings.format.writes(this)
   lazy val legacy: CorsSettings = CorsSettings(
     allowOrigin = allowOrigin,
     exposeHeaders = exposeHeaders,
@@ -33,7 +33,7 @@ case class NgCorsSettings(
     allowMethods = allowMethods,
     excludedPatterns = excludedPatterns,
     maxAge = maxAge,
-    allowCredentials = allowCredentials,
+    allowCredentials = allowCredentials
   )
 }
 
@@ -45,9 +45,9 @@ object NgCorsSettings {
     allowMethods = settings.allowMethods,
     excludedPatterns = settings.excludedPatterns,
     maxAge = settings.maxAge,
-    allowCredentials = settings.allowCredentials,
+    allowCredentials = settings.allowCredentials
   )
-  val format = new Format[NgCorsSettings] {
+  val format                                             = new Format[NgCorsSettings] {
     override def reads(json: JsValue): JsResult[NgCorsSettings] = Try {
       NgCorsSettings(
         allowOrigin = (json \ "allow_origin").asOpt[String].getOrElse("*"),
@@ -62,7 +62,7 @@ object NgCorsSettings {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
-    override def writes(o: NgCorsSettings): JsValue = Json.obj(
+    override def writes(o: NgCorsSettings): JsValue             = Json.obj(
       "allow_origin"      -> o.allowOrigin,
       "expose_headers"    -> JsArray(o.exposeHeaders.map(_.toLowerCase().trim).map(JsString.apply)),
       "allow_headers"     -> JsArray(o.allowHeaders.map(_.toLowerCase().trim).map(JsString.apply)),
@@ -78,62 +78,72 @@ class Cors extends NgRequestTransformer with NgPreRouting {
 
   private val configReads: Reads[NgCorsSettings] = NgCorsSettings.format
 
-  override def core: Boolean = true
-  override def usesCallbacks: Boolean = false
-  override def transformsRequest: Boolean = false
-  override def transformsResponse: Boolean = true
-  override def isTransformRequestAsync: Boolean = true
+  override def core: Boolean                     = true
+  override def usesCallbacks: Boolean            = false
+  override def transformsRequest: Boolean        = false
+  override def transformsResponse: Boolean       = true
+  override def isTransformRequestAsync: Boolean  = true
   override def isTransformResponseAsync: Boolean = false
-  override def isPreRouteAsync: Boolean = true
-  override def transformsError: Boolean = false
-  override def name: String = "CORS"
-  override def description: Option[String] = "This plugin applies CORS rules".some
-  override def defaultConfig: Option[JsObject] = NgCorsSettings().json.asObject.some
+  override def isPreRouteAsync: Boolean          = true
+  override def transformsError: Boolean          = false
+  override def name: String                      = "CORS"
+  override def description: Option[String]       = "This plugin applies CORS rules".some
+  override def defaultConfig: Option[JsObject]   = NgCorsSettings().json.asObject.some
 
-  override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
-    val req = ctx.request
+  override def preRoute(
+      ctx: NgPreRoutingContext
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+    val req  = ctx.request
     // val cors = CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true)
     val cors = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCorsSettings())
     if (req.method == "OPTIONS" && req.headers.get("Access-Control-Request-Method").isDefined) {
       // handle cors preflight request
       if (cors.legacy.shouldNotPass(req)) {
-        Errors.craftResponseResult(
-          "Cors error",
-          Results.NotFound,
-          ctx.request,
-          None,
-          "errors.cors.error".some,
-          attrs = ctx.attrs,
-          maybeRoute = ctx.route.some,
-        ).map(r => Left(NgPreRoutingErrorWithResult(r)))
+        Errors
+          .craftResponseResult(
+            "Cors error",
+            Results.NotFound,
+            ctx.request,
+            None,
+            "errors.cors.error".some,
+            attrs = ctx.attrs,
+            maybeRoute = ctx.route.some
+          )
+          .map(r => Left(NgPreRoutingErrorWithResult(r)))
       } else {
-        NgPreRoutingErrorWithResult(Results
-          .NoContent
-          .withHeaders(cors.legacy.asHeaders(req): _*))
-          .left
-          .vfuture
+        NgPreRoutingErrorWithResult(
+          Results.NoContent
+            .withHeaders(cors.legacy.asHeaders(req): _*)
+        ).left.vfuture
       }
     } else {
       Done.right.vfuture
     }
   }
 
-  override def transformResponseSync(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
-    val req = ctx.request
-    val cors = CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true, excludedPatterns = Seq.empty)
+  override def transformResponseSync(
+      ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+    val req         = ctx.request
+    val cors        =
+      CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true, excludedPatterns = Seq.empty)
     val corsHeaders = cors
       .asHeaders(req)
       .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
       .map(v =>
-        (v._1, HeadersExpressionLanguage(
-          v._2, Some(req),
-          ctx.route.serviceDescriptor.some,
-          ctx.apikey,
-          ctx.user,
-          ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-          ctx.attrs,
-          env
-        ))
+        (
+          v._1,
+          HeadersExpressionLanguage(
+            v._2,
+            Some(req),
+            ctx.route.serviceDescriptor.some,
+            ctx.apikey,
+            ctx.user,
+            ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+            ctx.attrs,
+            env
+          )
+        )
       )
       .filterNot(h => h._2 == "null")
     ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ corsHeaders).right

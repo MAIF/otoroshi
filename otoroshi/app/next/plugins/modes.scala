@@ -11,12 +11,14 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class MaintenanceMode extends NgPreRouting {
 
-  override def core: Boolean = true
-  override def name: String = "Maintenance mode"
+  override def core: Boolean               = true
+  override def name: String                = "Maintenance mode"
   override def description: Option[String] = "This plugin displays a maintenance page".some
-  override def isPreRouteAsync: Boolean = true
+  override def isPreRouteAsync: Boolean    = true
 
-  override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  override def preRoute(
+      ctx: NgPreRoutingContext
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     Errors
       .craftResponseResult(
         "Service in maintenance mode",
@@ -27,19 +29,22 @@ class MaintenanceMode extends NgPreRouting {
         duration = ctx.report.getDurationNow(),
         overhead = ctx.report.getOverheadInNow(),
         attrs = ctx.attrs,
-        maybeRoute = ctx.route.some,
-      ).map(r => Left(NgPreRoutingErrorWithResult(r)))
+        maybeRoute = ctx.route.some
+      )
+      .map(r => Left(NgPreRoutingErrorWithResult(r)))
   }
 }
 
 class BuildMode extends NgPreRouting {
 
-  override def core: Boolean = true
-  override def name: String = "Build mode"
+  override def core: Boolean               = true
+  override def name: String                = "Build mode"
   override def description: Option[String] = "This plugin displays a build page".some
-  override def isPreRouteAsync: Boolean = true
+  override def isPreRouteAsync: Boolean    = true
 
-  override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  override def preRoute(
+      ctx: NgPreRoutingContext
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     Errors
       .craftResponseResult(
         "Service under construction",
@@ -50,7 +55,8 @@ class BuildMode extends NgPreRouting {
         duration = ctx.report.getDurationNow(),
         overhead = ctx.report.getOverheadInNow(),
         attrs = ctx.attrs,
-        maybeRoute = ctx.route.some,
-      ).map(r => Left(NgPreRoutingErrorWithResult(r)))
+        maybeRoute = ctx.route.some
+      )
+      .map(r => Left(NgPreRoutingErrorWithResult(r)))
   }
 }

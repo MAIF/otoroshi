@@ -13,8 +13,8 @@ import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
 case class NgRedirectionSettings(code: Int = 303, to: String = "https://www.otoroshi.io") {
-  def json: JsValue = NgRedirectionSettings.format.writes(this)
-  lazy val hasValidCode: Boolean = legacy.hasValidCode
+  def json: JsValue                    = NgRedirectionSettings.format.writes(this)
+  lazy val hasValidCode: Boolean       = legacy.hasValidCode
   lazy val legacy: RedirectionSettings = RedirectionSettings(
     enabled = true,
     code = code,
@@ -38,14 +38,14 @@ object NgRedirectionSettings {
         )
       } match {
         case Success(entity) => JsSuccess(entity)
-        case Failure(err) => JsError(err.getMessage)
+        case Failure(err)    => JsError(err.getMessage)
       }
     }
 
     override def writes(o: NgRedirectionSettings): JsValue = {
       Json.obj(
-        "code"    -> o.code,
-        "to"      -> o.to
+        "code" -> o.code,
+        "to"   -> o.to
       )
     }
   }
@@ -55,20 +55,34 @@ class Redirection extends NgPreRouting {
 
   private val configReads: Reads[NgRedirectionSettings] = NgRedirectionSettings.format
 
-  override def core: Boolean = true
-  override def name: String = "Redirection"
-  override def description: Option[String] = "This plugin redirects the current request elsewhere".some
+  override def core: Boolean                   = true
+  override def name: String                    = "Redirection"
+  override def description: Option[String]     = "This plugin redirects the current request elsewhere".some
   override def defaultConfig: Option[JsObject] = NgRedirectionSettings().json.asObject.some
-  override def isPreRouteAsync: Boolean = false
+  override def isPreRouteAsync: Boolean        = false
 
-  override def preRouteSync(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Either[NgPreRoutingError, Done] = {
+  override def preRouteSync(
+      ctx: NgPreRoutingContext
+  )(implicit env: Env, ec: ExecutionContext): Either[NgPreRoutingError, Done] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(NgRedirectionSettings())
     if (config.hasValidCode) {
-      val to = RedirectionExpressionLanguage(config.to, ctx.request.some, ctx.route.serviceDescriptor.some, None, None, ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get, ctx.attrs, env)
-      Left(NgPreRoutingErrorWithResult(
-        Results
-          .Status(config.code)
-          .withHeaders("Location" -> to)))
+      val to = RedirectionExpressionLanguage(
+        config.to,
+        ctx.request.some,
+        ctx.route.serviceDescriptor.some,
+        None,
+        None,
+        ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get,
+        ctx.attrs,
+        env
+      )
+      Left(
+        NgPreRoutingErrorWithResult(
+          Results
+            .Status(config.code)
+            .withHeaders("Location" -> to)
+        )
+      )
     } else {
       Right(Done)
     }

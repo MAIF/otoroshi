@@ -33,7 +33,23 @@ object Errors {
 
   private val cache = Scaffeine().expireAfterWrite(60.seconds).maximumSize(100).build[String, Option[ErrorTemplate]]()
 
-  private def sendAnalytics(headers: Seq[Header], errorId: String, message: String, status: Status, req: RequestHeader, maybeDescriptor: Option[ServiceDescriptor] = None, maybeCauseId: Option[String] = None, duration: Long = 0L, overhead: Long = 0L, cbDuration: Long = 0L, callAttempts: Int = 0, emptyBody: Boolean = false, sendEvent: Boolean = true, attrs: TypedMap, maybeRoute: Option[NgRoute] = None)(implicit env: Env, ec: ExecutionContext): Unit = {
+  private def sendAnalytics(
+      headers: Seq[Header],
+      errorId: String,
+      message: String,
+      status: Status,
+      req: RequestHeader,
+      maybeDescriptor: Option[ServiceDescriptor] = None,
+      maybeCauseId: Option[String] = None,
+      duration: Long = 0L,
+      overhead: Long = 0L,
+      cbDuration: Long = 0L,
+      callAttempts: Int = 0,
+      emptyBody: Boolean = false,
+      sendEvent: Boolean = true,
+      attrs: TypedMap,
+      maybeRoute: Option[NgRoute] = None
+  )(implicit env: Env, ec: ExecutionContext): Unit = {
     (maybeDescriptor, maybeRoute) match {
       case (Some(descriptor), _) => {
         val fromLbl          = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
@@ -124,8 +140,8 @@ object Errors {
           extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
         ).toAnalytics()(env)
       }
-      case (_, Some(route)) => {
-        val descriptor = route.serviceDescriptor
+      case (_, Some(route))      => {
+        val descriptor       = route.serviceDescriptor
         val fromLbl          = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
         // TODO : mark as error ???
         val viz: OtoroshiViz = OtoroshiViz(
@@ -212,7 +228,7 @@ object Errors {
           extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
         ).toAnalytics()(env)
       }
-      case _             => {
+      case _                     => {
         val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
         GatewayEvent(
           `@id` = errorId,
@@ -270,7 +286,13 @@ object Errors {
     ()
   }
 
-  private def standardResult(req: RequestHeader, status: Status, message: String, maybeCauseId: Option[String], emptyBody: Boolean)(implicit env: Env): Result = {
+  private def standardResult(
+      req: RequestHeader,
+      status: Status,
+      message: String,
+      maybeCauseId: Option[String],
+      emptyBody: Boolean
+  )(implicit env: Env): Result = {
     val accept = req.headers.get("Accept").getOrElse("text/html").split(",").toSeq
     if (accept.contains("text/html")) { // in a browser
       if (maybeCauseId.contains("errors.service.in.maintenance")) {
@@ -317,7 +339,15 @@ object Errors {
     }
   }
 
-  private def customResult(descriptorId: String, req: RequestHeader, status: Status, message: String, maybeCauseId: Option[String], emptyBody: Boolean, errorId: String)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  private def customResult(
+      descriptorId: String,
+      req: RequestHeader,
+      status: Status,
+      message: String,
+      maybeCauseId: Option[String],
+      emptyBody: Boolean,
+      errorId: String
+  )(implicit env: Env, ec: ExecutionContext): Future[Result] = {
     env.datastores.errorTemplateDataStore.findById(descriptorId).map {
       case None                => standardResult(req, status, message, maybeCauseId, emptyBody)
       case Some(errorTemplate) => {
@@ -352,20 +382,29 @@ object Errors {
   private def errorTemplate(descriptorId: String)(implicit env: Env, ec: ExecutionContext): Option[ErrorTemplate] = {
     cache.getIfPresent(descriptorId) match {
       case Some(opt) => opt
-      case None => Await.result(env.datastores.errorTemplateDataStore.findById(descriptorId), 10.seconds) match {
-        case None =>
-          cache.put(descriptorId, None)
-          None
-        case Some(errorTemplate) =>
-          cache.put(descriptorId, errorTemplate.some)
-          errorTemplate.some
-      }
+      case None      =>
+        Await.result(env.datastores.errorTemplateDataStore.findById(descriptorId), 10.seconds) match {
+          case None                =>
+            cache.put(descriptorId, None)
+            None
+          case Some(errorTemplate) =>
+            cache.put(descriptorId, errorTemplate.some)
+            errorTemplate.some
+        }
     }
   }
 
-  private def customResultSync(descriptorId: String, req: RequestHeader, status: Status, message: String, maybeCauseId: Option[String], emptyBody: Boolean, errorId: String)(implicit env: Env, ec: ExecutionContext): Result = {
+  private def customResultSync(
+      descriptorId: String,
+      req: RequestHeader,
+      status: Status,
+      message: String,
+      maybeCauseId: Option[String],
+      emptyBody: Boolean,
+      errorId: String
+  )(implicit env: Env, ec: ExecutionContext): Result = {
     errorTemplate(descriptorId) match {
-      case None => standardResult(req, status, message, maybeCauseId, emptyBody)
+      case None                => standardResult(req, status, message, maybeCauseId, emptyBody)
       case Some(errorTemplate) => {
         val accept = req.headers.get("Accept").getOrElse("text/html").split(",").toSeq
         if (accept.contains("text/html")) { // in a browser
@@ -396,23 +435,23 @@ object Errors {
   }
 
   def craftResponseResult(
-    message: String,
-    status: Status,
-    req: RequestHeader,
-    maybeDescriptor: Option[ServiceDescriptor] = None,
-    maybeCauseId: Option[String] = None,
-    duration: Long = 0L,
-    overhead: Long = 0L,
-    cbDuration: Long = 0L,
-    callAttempts: Int = 0,
-    emptyBody: Boolean = false,
-    sendEvent: Boolean = true,
-    attrs: TypedMap,
-    maybeRoute: Option[NgRoute] = None
+      message: String,
+      status: Status,
+      req: RequestHeader,
+      maybeDescriptor: Option[ServiceDescriptor] = None,
+      maybeCauseId: Option[String] = None,
+      duration: Long = 0L,
+      overhead: Long = 0L,
+      cbDuration: Long = 0L,
+      callAttempts: Int = 0,
+      emptyBody: Boolean = false,
+      sendEvent: Boolean = true,
+      attrs: TypedMap,
+      maybeRoute: Option[NgRoute] = None
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     val errorId = env.snowflakeGenerator.nextIdStr()
     ((maybeDescriptor, maybeRoute) match {
-      case (Some(desc), _) => {
+      case (Some(desc), _)  => {
         customResult(desc.id, req, status, message, maybeCauseId, emptyBody, errorId).flatMap { res =>
           val ctx = TransformerErrorContext(
             index = -1,
@@ -481,33 +520,50 @@ object Errors {
           route.transformError(ctx)(env, ec, env.otoroshiMaterializer)
         }
       }
-      case _ => standardResult(req, status, message, maybeCauseId, emptyBody).vfuture
+      case _                => standardResult(req, status, message, maybeCauseId, emptyBody).vfuture
     }) andThen {
-      case scala.util.Success(resp) if sendEvent => sendAnalytics(resp.header.headers.toSeq.map(Header.apply), errorId, message, status, req, maybeDescriptor, maybeCauseId, duration, overhead, cbDuration, callAttempts, emptyBody, sendEvent, attrs, maybeRoute)
+      case scala.util.Success(resp) if sendEvent =>
+        sendAnalytics(
+          resp.header.headers.toSeq.map(Header.apply),
+          errorId,
+          message,
+          status,
+          req,
+          maybeDescriptor,
+          maybeCauseId,
+          duration,
+          overhead,
+          cbDuration,
+          callAttempts,
+          emptyBody,
+          sendEvent,
+          attrs,
+          maybeRoute
+        )
     }
   }
 
   // this one might be dangerous
   def craftResponseResultSync(
-    message: String,
-    status: Status,
-    req: RequestHeader,
-    maybeDescriptor: Option[ServiceDescriptor] = None,
-    maybeCauseId: Option[String] = None,
-    duration: Long = 0L,
-    overhead: Long = 0L,
-    cbDuration: Long = 0L,
-    callAttempts: Int = 0,
-    emptyBody: Boolean = false,
-    sendEvent: Boolean = true,
-    attrs: TypedMap,
-    maybeRoute: Option[NgRoute] = None
+      message: String,
+      status: Status,
+      req: RequestHeader,
+      maybeDescriptor: Option[ServiceDescriptor] = None,
+      maybeCauseId: Option[String] = None,
+      duration: Long = 0L,
+      overhead: Long = 0L,
+      cbDuration: Long = 0L,
+      callAttempts: Int = 0,
+      emptyBody: Boolean = false,
+      sendEvent: Boolean = true,
+      attrs: TypedMap,
+      maybeRoute: Option[NgRoute] = None
   )(implicit ec: ExecutionContext, env: Env): Result = {
     val errorId = env.snowflakeGenerator.nextIdStr()
     (maybeDescriptor, maybeRoute) match {
-      case (Some(desc), _) => {
-        val res = customResultSync(desc.id, req, status, message, maybeCauseId, emptyBody, errorId)
-        val ctx = TransformerErrorContext(
+      case (Some(desc), _)  => {
+        val res      = customResultSync(desc.id, req, status, message, maybeCauseId, emptyBody, errorId)
+        val ctx      = TransformerErrorContext(
           index = -1,
           snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse(env.snowflakeGenerator.nextIdStr()),
           message = message,
@@ -538,12 +594,29 @@ object Errors {
           attrs = attrs
         )
         val finalRes = Await.result(desc.transformError(ctx)(env, ec, env.otoroshiMaterializer), 10.seconds)
-        if (sendEvent) sendAnalytics(finalRes.header.headers.toSeq.map(Header.apply), errorId, message, status, req, maybeDescriptor, maybeCauseId, duration, overhead, cbDuration, callAttempts, emptyBody, sendEvent, attrs, maybeRoute)
+        if (sendEvent)
+          sendAnalytics(
+            finalRes.header.headers.toSeq.map(Header.apply),
+            errorId,
+            message,
+            status,
+            req,
+            maybeDescriptor,
+            maybeCauseId,
+            duration,
+            overhead,
+            cbDuration,
+            callAttempts,
+            emptyBody,
+            sendEvent,
+            attrs,
+            maybeRoute
+          )
         finalRes
       }
       case (_, Some(route)) => {
-        val res = customResultSync(route.id, req, status, message, maybeCauseId, emptyBody, errorId)
-        val ctx = NgTransformerErrorContext(
+        val res      = customResultSync(route.id, req, status, message, maybeCauseId, emptyBody, errorId)
+        val ctx      = NgTransformerErrorContext(
           snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse(env.snowflakeGenerator.nextIdStr()),
           message = message,
           otoroshiResponse = NgPluginHttpResponse(
@@ -573,12 +646,46 @@ object Errors {
           report = attrs.get(otoroshi.next.plugins.Keys.ReportKey).get
         )
         val finalRes = Await.result(route.transformError(ctx)(env, ec, env.otoroshiMaterializer), 10.seconds)
-        if (sendEvent) sendAnalytics(finalRes.header.headers.toSeq.map(Header.apply), errorId, message, status, req, maybeDescriptor, maybeCauseId, duration, overhead, cbDuration, callAttempts, emptyBody, sendEvent, attrs, maybeRoute)
+        if (sendEvent)
+          sendAnalytics(
+            finalRes.header.headers.toSeq.map(Header.apply),
+            errorId,
+            message,
+            status,
+            req,
+            maybeDescriptor,
+            maybeCauseId,
+            duration,
+            overhead,
+            cbDuration,
+            callAttempts,
+            emptyBody,
+            sendEvent,
+            attrs,
+            maybeRoute
+          )
         finalRes
       }
-      case _ => {
+      case _                => {
         val resp = standardResult(req, status, message, maybeCauseId, emptyBody)
-        if (sendEvent) sendAnalytics(resp.header.headers.toSeq.map(Header.apply), errorId, message, status, req, maybeDescriptor, maybeCauseId, duration, overhead, cbDuration, callAttempts, emptyBody, sendEvent, attrs, maybeRoute)
+        if (sendEvent)
+          sendAnalytics(
+            resp.header.headers.toSeq.map(Header.apply),
+            errorId,
+            message,
+            status,
+            req,
+            maybeDescriptor,
+            maybeCauseId,
+            duration,
+            overhead,
+            cbDuration,
+            callAttempts,
+            emptyBody,
+            sendEvent,
+            attrs,
+            maybeRoute
+          )
         resp
       }
     }

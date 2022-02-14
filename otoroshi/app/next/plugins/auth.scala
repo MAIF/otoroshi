@@ -28,38 +28,39 @@ object NgAuthModuleConfig {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
-    override def writes(o: NgAuthModuleConfig): JsValue = Json.obj(
+    override def writes(o: NgAuthModuleConfig): JsValue             = Json.obj(
       "pass_with_apikey" -> o.passWithApikey,
-      "auth_module" -> o.module.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+      "auth_module"      -> o.module.map(JsString.apply).getOrElse(JsNull).as[JsValue]
     )
   }
 }
 
 class AuthModule extends NgAccessValidator {
 
-  private val logger = Logger("otoroshi-next-plugins-auth-module")
+  private val logger                                 = Logger("otoroshi-next-plugins-auth-module")
   private val configReads: Reads[NgAuthModuleConfig] = NgAuthModuleConfig.format
 
-  override def core: Boolean = true
-  override def name: String = "Authentication"
-  override def description: Option[String] = "This plugin applies an authentication module".some
+  override def core: Boolean                   = true
+  override def name: String                    = "Authentication"
+  override def description: Option[String]     = "This plugin applies an authentication module".some
   override def defaultConfig: Option[JsObject] = NgAuthModuleConfig().json.asObject.some
 
   override def isAccessAsync: Boolean = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val NgAuthModuleConfig(module, passWithApikey) = ctx.cachedConfig(internalName)(configReads).getOrElse(NgAuthModuleConfig())
-    val req = ctx.request
-    val descriptor = ctx.route.serviceDescriptor
-    val maybeApikey = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
-    val pass = passWithApikey match {
-      case true => maybeApikey.isDefined
+    val NgAuthModuleConfig(module, passWithApikey) =
+      ctx.cachedConfig(internalName)(configReads).getOrElse(NgAuthModuleConfig())
+    val req                                        = ctx.request
+    val descriptor                                 = ctx.route.serviceDescriptor
+    val maybeApikey                                = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
+    val pass                                       = passWithApikey match {
+      case true  => maybeApikey.isDefined
       case false => false
     }
     ctx.attrs.get(otoroshi.plugins.Keys.UserKey) match {
       case None if !pass => {
         module match {
-          case None =>
+          case None      =>
             Errors
               .craftResponseResult(
                 "Auth. config. ref not found on the descriptor",
@@ -68,7 +69,7 @@ class AuthModule extends NgAccessValidator {
                 None,
                 "errors.auth.config.ref.not.found".some,
                 attrs = ctx.attrs,
-                maybeRoute = ctx.route.some,
+                maybeRoute = ctx.route.some
               )
               .map(NgAccess.NgDenied.apply)
           case Some(ref) => {
@@ -83,7 +84,7 @@ class AuthModule extends NgAccessValidator {
                     None,
                     "errors.auth.config.not.found".some,
                     attrs = ctx.attrs,
-                    maybeRoute = ctx.route.some,
+                    maybeRoute = ctx.route.some
                   )
                   .map(NgAccess.NgDenied.apply)
               case Some(auth) => {
@@ -92,8 +93,8 @@ class AuthModule extends NgAccessValidator {
                   case Some(paUsr) =>
                     ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> paUsr)
                     NgAccess.NgAllowed.vfuture
-                  case None => {
-                    val redirect = req
+                  case None        => {
+                    val redirect   = req
                       .getQueryString("redirect")
                       .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
                     val redirectTo =
@@ -101,15 +102,19 @@ class AuthModule extends NgAccessValidator {
                         .confidentialAppLoginPage()
                         .url + s"?desc=${descriptor.id}&redirect=${redirect}"
                     logger.trace("should redirect to " + redirectTo)
-                    NgAccess.NgDenied(Results
-                      .Redirect(redirectTo)
-                      .discardingCookies(
-                        env.removePrivateSessionCookies(
-                          req.theDomain,
-                          descriptor,
-                          auth
-                        ): _*
-                      )).vfuture
+                    NgAccess
+                      .NgDenied(
+                        Results
+                          .Redirect(redirectTo)
+                          .discardingCookies(
+                            env.removePrivateSessionCookies(
+                              req.theDomain,
+                              descriptor,
+                              auth
+                            ): _*
+                          )
+                      )
+                      .vfuture
                   }
                 }
               }
@@ -117,7 +122,7 @@ class AuthModule extends NgAccessValidator {
           }
         }
       }
-      case _ => NgAccess.NgAllowed.vfuture
+      case _             => NgAccess.NgAllowed.vfuture
     }
   }
 }

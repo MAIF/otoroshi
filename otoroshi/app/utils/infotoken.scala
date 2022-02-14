@@ -11,14 +11,14 @@ import otoroshi.security._
 object InfoTokenHelper {
 
   def generateInfoToken(
-    name: String,
-    secComInfoTokenVersion: SecComInfoTokenVersion,
-    secComTtl: FiniteDuration,
-    apiKey: Option[ApiKey],
-    paUsr: Option[PrivateAppsUser],
-    requestHeader: Option[RequestHeader],
-    issuer: Option[String] = None,
-    sub: Option[String] = None
+      name: String,
+      secComInfoTokenVersion: SecComInfoTokenVersion,
+      secComTtl: FiniteDuration,
+      apiKey: Option[ApiKey],
+      paUsr: Option[PrivateAppsUser],
+      requestHeader: Option[RequestHeader],
+      issuer: Option[String] = None,
+      sub: Option[String] = None
   )(implicit env: Env): OtoroshiClaim = {
     import otoroshi.ssl.SSLImplicits._
     val clientCertChain = requestHeader
@@ -85,9 +85,8 @@ object InfoTokenHelper {
             case (Some(_), None)    => "apikey"
             case (None, None)       => "public"
           }
-        )
-        .withJsObjectClaim("user", paUsr.map(_.asJsonCleaned.as[JsObject]))
-        .withJsObjectClaim("apikey", apiKey.map(ak => ak.lightJson))
+        ).withJsObjectClaim("user", paUsr.map(_.asJsonCleaned.as[JsObject]))
+          .withJsObjectClaim("apikey", apiKey.map(ak => ak.lightJson))
       }
     }
   }
