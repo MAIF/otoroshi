@@ -25,7 +25,7 @@ impl AppConfig {
 #[derive(Parser, Clone, Debug)]
 #[clap(name = "otoroshi_tls_termination")]
 #[clap(version = "0.1.0")]
-#[clap(about = "Handles otoroshi TLS termination", long_about = None)]
+#[clap(about = "Handle otoroshi TLS termination (experimental)", long_about = None)]
 pub struct Opts {
     /// the otoroshi api hostname
     #[clap(long, default_value = "otoroshi-api.oto.tools")]
