@@ -2,8 +2,33 @@ apiVersion: v1
 entries:
   otoroshi:
   - apiVersion: v3
+    appVersion: 1.5.3
+    created: "2022-02-14T13:29:30.864635+01:00"
+    dependencies:
+    - condition: global.prod
+      name: redis
+      repository: https://charts.bitnami.com/bitnami
+      version: 15.0.0
+    description: An Otoroshi based Kubernetes ingress controller
+    digest: 560fbc62853ebcbdea1474013d5c3ea0d9c62a61964265295311d1f15bc5f717
+    icon: https://raw.githubusercontent.com/MAIF/otoroshi/master/resources/otoroshi-logo.png
+    keywords:
+    - otoroshi
+    - ingress
+    - reverseproxy
+    - apimanager
+    maintainers:
+    - name: mathieuancelin
+    name: otoroshi
+    sources:
+    - https://github.com/MAIF/otoroshi
+    type: application
+    urls:
+    - https://maif.github.io/otoroshi/helm/otoroshi-1.5.3.tgz
+    version: 1.5.3
+  - apiVersion: v3
     appVersion: 1.5.2
-    created: "2022-01-03T15:09:53.890932+01:00"
+    created: "2022-02-14T13:29:30.859039+01:00"
     dependencies:
     - condition: global.prod
       name: redis
@@ -28,7 +53,7 @@ entries:
     version: 1.5.2
   - apiVersion: v3
     appVersion: 1.5.1
-    created: "2022-01-03T15:09:53.885365+01:00"
+    created: "2022-02-14T13:29:30.851645+01:00"
     dependencies:
     - condition: global.prod
       name: redis
@@ -53,7 +78,7 @@ entries:
     version: 1.5.1
   - apiVersion: v3
     appVersion: 1.5.0
-    created: "2022-01-03T15:09:53.878652+01:00"
+    created: "2022-02-14T13:29:30.84353+01:00"
     dependencies:
     - condition: global.prod
       name: redis
@@ -78,7 +103,7 @@ entries:
     version: 1.5.0
   - apiVersion: v3
     appVersion: 1.5.0-rc.4
-    created: "2022-01-03T15:09:53.87193+01:00"
+    created: "2022-02-14T13:29:30.835411+01:00"
     dependencies:
     - condition: global.prod
       name: redis
@@ -103,7 +128,7 @@ entries:
     version: 1.5.0-rc.4
   - apiVersion: v3
     appVersion: 1.5.0-dev
-    created: "2022-01-03T15:09:53.865642+01:00"
+    created: "2022-02-14T13:29:30.827874+01:00"
     dependencies:
     - condition: global.prod
       name: redis
@@ -126,4 +151,4 @@ entries:
     urls:
     - https://maif.github.io/otoroshi/helm/otoroshi-1.5.0-dev.tgz
     version: 1.5.0-dev
-generated: "2022-01-03T15:09:53.85783+01:00"
+generated: "2022-02-14T13:29:30.82005+01:00"
