@@ -18984,6 +18984,10 @@
             "description" : "???",
             "type" : "string"
           },
+          "exportReporting" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
           "metadata" : {
             "type" : "object",
             "additionalProperties" : {
@@ -20525,6 +20529,10 @@
             "description" : "???"
           },
           "debugFlow" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "exportReporting" : {
             "description" : "???",
             "type" : "boolean"
           },

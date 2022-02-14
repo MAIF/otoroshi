@@ -1160,7 +1160,6 @@ play.http {
 }
 
 otoroshi {
-  instance = ${app.instance} # instance params
   maintenanceMode = false # enable global maintenance mode
   maintenanceMode = ${?OTOROSHI_MAINTENANCE_MODE_ENABLED} # enable global maintenance mode
   secret = &quot;verysecretvaluethatyoumustoverwrite&quot; # the secret used to sign sessions
@@ -2169,7 +2168,6 @@ akka { # akka specific configuration
   }
 }
 otoroshi {
-  instance = ${app.instance} # instance params
   maintenanceMode = ${?OTOROSHI_MAINTENANCE_MODE_ENABLED} # enable global maintenance mode
   secret = ${?OTOROSHI_SECRET}  # the secret used to sign sessions
   admin-api-secret = ${?OTOROSHI_ADMIN_API_SECRET}  # the secret for admin api
