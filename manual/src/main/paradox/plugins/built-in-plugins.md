@@ -3359,5 +3359,100 @@ Periodically run a custom workflow
 @@@
 
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-request-handler }
+
+## Otoroshi next proxy engine (experimental)
+
+<img class="plugin-logo plugin-hidden" src=""></img>
+
+### Infos
+
+* plugin type: `request-handler`
+* configuration root: `NextGenProxyEngine`
+
+### Description
+
+This plugin holds the next generation otoroshi proxy engine implementation. This engine is **experimental** and may not work as expected !
+
+You can active this plugin only on some domain names so you can easily A/B test the new engine.
+The new proxy engine is designed to be more reactive and more efficient generally.
+It is also designed to be very efficient on path routing where it wasn't the old engines strong suit.
+
+The idea is to only rely on plugins to work and avoid losing time with features that are not used in service descriptors.
+An automated conversion happens for every service descriptor. If the exposed domain is handled by this plugin, it will be served by this plugin.
+This plugin introduces new entities that will replace (one day maybe) service descriptors:
+
+ - routes: a unique routing rule based on hostname, path, method and headers that will execute a bunch of plugins
+ - services: multiple routing rules based on hostname, path, method and headers that will execute the same list of plugins
+ - targets: how to contact a backend either by using a domain name or an ip address, supports mtls
+ - backends: a list of targets to contact a backend
+
+
+
+### Default configuration
+
+```json
+{
+  "NextGenProxyEngine" : {
+    "enabled" : true,
+    "debug" : false,
+    "debug_headers" : false,
+    "routing_strategy" : "tree",
+    "merge_sync_steps" : true,
+    "domains" : [ ]
+  }
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-request-handler }
+
+## Forward traffic
+
+<img class="plugin-logo plugin-hidden" src=""></img>
+
+### Infos
+
+* plugin type: `request-handler`
+* configuration root: `ForwardTrafficHandler`
+
+### Description
+
+This plugin can be use to perform a raw traffic forward to an URL without passing through otoroshi routing
+
+
+
+### Default configuration
+
+```json
+{
+  "ForwardTrafficHandler" : {
+    "domains" : {
+      "my.domain.tld" : {
+        "baseUrl" : "https://my.otherdomain.tld",
+        "secret" : "jwt signing secret",
+        "service" : {
+          "id" : "service id for analytics",
+          "name" : "service name for analytics"
+        }
+      }
+    }
+  }
+}
+```
+
+
+
+
+
+@@@
+
+
 
 
