@@ -74,9 +74,25 @@ class ProxyEngine() extends RequestHandler {
     "Tls-Session-Info"
   )
 
-  override def name: String = "Otoroshi newest proxy engine"
+  override def name: String = "Otoroshi next proxy engine (experimental)"
 
-  override def description: Option[String] = "This plugin holds the next generation otoroshi proxy engine implementation".some
+  override def description: Option[String] =
+    """This plugin holds the next generation otoroshi proxy engine implementation.
+      |
+      |You can active this plugin only on some domain names so you can easily A/B test the new engine.
+      |The new proxy engine is designed to be more reactive and more efficient generally.
+      |It is also designed to be very efficient on path routing where it wasn't the old engines strong suit.
+      |
+      |The idea is to only rely on plugins to work and avoid losing time with features that are not used in service descriptors.
+      |An automated conversion happens for every service descriptor. If the exposed domain is handled by this plugin, it will be served by this plugin.
+      |This plugin introduces new entities that will replace (one day maybe) service descriptors:
+      |
+      | - routes: a unique routing rule based on hostname, path, method and headers that will execute a bunch of plugins
+      | - services: multiple routing rules based on hostname, path, method and headers that will execute the same list of plugins
+      | - targets: how to contact a backend either by using a domain name or an ip address, supports mtls
+      | - backends: a list of targets to contact a backend
+      |
+      |""".some
 
   override def configRoot: Option[String] = "NextGenProxyEngine".some
 
@@ -85,7 +101,7 @@ class ProxyEngine() extends RequestHandler {
       configRoot.get -> Json.obj(
         "enabled" -> true,
         "debug" -> false,
-        "debug_headers" -> true,
+        "debug_headers" -> false,
         "routing_strategy" -> "tree",
         "merge_sync_steps" -> true,
         "domains" -> Json.arr()
