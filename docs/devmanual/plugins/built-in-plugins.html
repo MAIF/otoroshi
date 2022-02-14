@@ -251,7 +251,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#otoroshi-built-in-plugins" name="otoroshi-built-in-plugins" class="anchor"><span class="anchor-link"></span></a>Otoroshi built-in plugins</h1>
-<p>Otoroshi provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration</p><div class="plugin plugin-hidden plugin-kind-transformer">
+<p>Otoroshi provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration</p><div id="otoroshi.plugins.accesslog.AccessLog" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#access-log-clf-" name="access-log-clf-" class="anchor"><span class="anchor-link"></span></a>Access log (CLF)</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -284,7 +284,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;identities&quot; : [ ]
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.accesslog.AccessLogJson" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#access-log-json-" name="access-log-json-" class="anchor"><span class="anchor-link"></span></a>Access log (JSON)</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -315,7 +315,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;identities&quot; : [ ]
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.accesslog.KafkaAccessLog" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#kafka-access-log" name="kafka-access-log" class="anchor"><span class="anchor-link"></span></a>Kafka access log</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -348,7 +348,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;identities&quot; : [ ]
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.authcallers.BasicAuthCaller" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#basic-auth-caller" name="basic-auth-caller" class="anchor"><span class="anchor-link"></span></a>Basic Auth. caller</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -367,7 +367,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;headerName&quot; : &quot;Authorization&quot;,
   &quot;headerValueFormat&quot; : &quot;Basic %s&quot;
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.authcallers.OAuth2Caller" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#oauth2-caller" name="oauth2-caller" class="anchor"><span class="anchor-link"></span></a>OAuth2 caller</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -396,7 +396,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;cacheTokenSeconds&quot; : &quot;the number of second to wait before asking for a new token&quot;,
   &quot;tlsConfig&quot; : &quot;an optional TLS settings object&quot;
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.cache.ResponseCache" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#response-cache" name="response-cache" class="anchor"><span class="anchor-link"></span></a>Response Cache</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -445,7 +445,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.clientcert.ClientCertChainHeader" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#client-certificate-header" name="client-certificate-header" class="anchor"><span class="anchor-link"></span></a>Client certificate header</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -498,7 +498,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.defer.DeferPlugin" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#defer-responses" name="defer-responses" class="anchor"><span class="anchor-link"></span></a>Defer Responses</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -521,7 +521,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;defaultDefer&quot; : 0
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.discovery.DiscoverySelfRegistrationTransformer" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#self-registration-endpoints-service-discovery-" name="self-registration-endpoints-service-discovery-" class="anchor"><span class="anchor-link"></span></a>Self registration endpoints (service discovery)</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -540,7 +540,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;registrationTtl&quot; : 60000
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.envoy.EnvoyControlPlane" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#envoy-control-plane-experimental-" name="envoy-control-plane-experimental-" class="anchor"><span class="anchor-link"></span></a>Envoy Control Plane (experimental)</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -557,7 +557,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;enabled&quot; : true
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.geoloc.GeolocationInfoEndpoint" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#geolocation-endpoint" name="geolocation-endpoint" class="anchor"><span class="anchor-link"></span></a>Geolocation endpoint</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -567,7 +567,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </ul>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
 <p>This plugin will expose current geolocation informations on the following endpoint.</p>
-<p><code>/.well-known/otoroshi/plugins/geolocation</code></p></div><div class="plugin plugin-hidden plugin-kind-transformer">
+<p><code>/.well-known/otoroshi/plugins/geolocation</code></p></div><div id="otoroshi.plugins.geoloc.GeolocationInfoHeader" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#geolocation-header" name="geolocation-header" class="anchor"><span class="anchor-link"></span></a>Geolocation header</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -590,7 +590,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;headerName&quot; : &quot;X-Geolocation-Info&quot;
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.hmac.HMACCallerPlugin" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#hmac-caller-plugin" name="hmac-caller-plugin" class="anchor"><span class="anchor-link"></span></a>HMAC caller plugin</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -607,7 +607,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;algo&quot; : &quot;HMAC-SHA512&quot;
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.izanami.IzanamiCanary" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#izanami-canary-campaign" name="izanami-canary-campaign" class="anchor"><span class="anchor-link"></span></a>Izanami Canary Campaign</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -654,7 +654,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.izanami.IzanamiProxy" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#izanami-apis-proxy" name="izanami-apis-proxy" class="anchor"><span class="anchor-link"></span></a>Izanami APIs Proxy</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -697,7 +697,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;timeout&quot; : 5000
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.jq.JqBodyTransformer" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#jq-bodies-transformer" name="jq-bodies-transformer" class="anchor"><span class="anchor-link"></span></a>JQ bodies transformer</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -752,7 +752,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.jsoup.HtmlPatcher" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#html-patcher" name="html-patcher" class="anchor"><span class="anchor-link"></span></a>Html Patcher</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -769,7 +769,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;appendBody&quot; : [ ]
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.log4j.Log4ShellFilter" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#log4shell-mitigation-plugin" name="log4shell-mitigation-plugin" class="anchor"><span class="anchor-link"></span></a>Log4Shell mitigation plugin</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -796,7 +796,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;parseBody&quot; : false
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.loggers.BodyLogger" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#body-logger" name="body-logger" class="anchor"><span class="anchor-link"></span></a>Body logger</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -851,7 +851,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.metrics.PrometheusServiceMetrics" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#prometheus-service-metrics" name="prometheus-service-metrics" class="anchor"><span class="anchor-link"></span></a>Prometheus Service Metrics</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -874,7 +874,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;includeUri&quot; : false
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.metrics.ServiceMetrics" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#service-metrics" name="service-metrics" class="anchor"><span class="anchor-link"></span></a>Service Metrics</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -899,7 +899,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;accessKeyQuery&quot; : &quot;access_key&quot;
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.mirror.MirroringPlugin" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#mirroring-plugin" name="mirroring-plugin" class="anchor"><span class="anchor-link"></span></a>Mirroring plugin</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -926,7 +926,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;generateEvents&quot; : false
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.oauth1.OAuth1CallerPlugin" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#oauth1-caller" name="oauth1-caller" class="anchor"><span class="anchor-link"></span></a>OAuth1 caller</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -942,7 +942,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;algo&quot; : &quot;HmacSHA512&quot;
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.oidc.OIDCHeaders" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#oidc-headers" name="oidc-headers" class="anchor"><span class="anchor-link"></span></a>OIDC headers</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -973,7 +973,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.security.SecurityTxt" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#security-txt" name="security-txt" class="anchor"><span class="anchor-link"></span></a>Security Txt</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1006,7 +1006,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;Hiring&quot; : &quot;https://...&quot;
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.static.StaticResponse" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#static-response" name="static-response" class="anchor"><span class="anchor-link"></span></a>Static Response</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1027,7 +1027,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;bodyBase64&quot; : null
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.useragent.UserAgentInfoEndpoint" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#user-agent-endpoint" name="user-agent-endpoint" class="anchor"><span class="anchor-link"></span></a>User-Agent endpoint</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1037,7 +1037,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </ul>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
 <p>This plugin will expose current user-agent informations on the following endpoint.</p>
-<p><code>/.well-known/otoroshi/plugins/user-agent</code></p></div><div class="plugin plugin-hidden plugin-kind-transformer">
+<p><code>/.well-known/otoroshi/plugins/user-agent</code></p></div><div id="otoroshi.plugins.useragent.UserAgentInfoHeader" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#user-agent-header" name="user-agent-header" class="anchor"><span class="anchor-link"></span></a>User-Agent header</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1060,7 +1060,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;headerName&quot; : &quot;X-User-Agent-Info&quot;
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-transformer">
+</code></pre></div><div id="otoroshi.plugins.workflow.WorkflowEndpoint" class="plugin plugin-hidden plugin-kind-transformer">
 <h2><a href="#workflow-endpoint" name="workflow-endpoint" class="anchor"><span class="anchor-link"></span></a>Workflow endpoint</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1076,7 +1076,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;workflow&quot; : { }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-validator">
+</code></pre></div><div id="otoroshi.plugins.biscuit.BiscuitValidator" class="plugin plugin-hidden plugin-kind-validator">
 <h2><a href="#biscuit-token-validator" name="biscuit-token-validator" class="anchor"><span class="anchor-link"></span></a>Biscuit token validator</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1102,7 +1102,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;name&quot; : &quot;Authorization&quot;
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-validator">
+</code></pre></div><div id="otoroshi.plugins.clientcert.HasClientCertMatchingApikeyValidator" class="plugin plugin-hidden plugin-kind-validator">
 <h2><a href="#client-certificate-api-key-only" name="client-certificate-api-key-only" class="anchor"><span class="anchor-link"></span></a>Client Certificate + Api Key only</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1111,7 +1111,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>configuration root: <code>none</code></li>
 </ul>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>Check if a client certificate is present in the request and that the apikey used matches the client certificate. You can set the client cert. DN in an apikey metadata named <code>allowed-client-cert-dn</code></p></div><div class="plugin plugin-hidden plugin-kind-validator">
+<p>Check if a client certificate is present in the request and that the apikey used matches the client certificate. You can set the client cert. DN in an apikey metadata named <code>allowed-client-cert-dn</code></p></div><div id="otoroshi.plugins.clientcert.HasClientCertMatchingHttpValidator" class="plugin plugin-hidden plugin-kind-validator">
 <h2><a href="#client-certificate-matching-over-http-" name="client-certificate-matching-over-http-" class="anchor"><span class="anchor-link"></span></a>Client certificate matching (over http)</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1157,7 +1157,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-validator">
+</code></pre></div><div id="otoroshi.plugins.clientcert.HasClientCertMatchingValidator" class="plugin plugin-hidden plugin-kind-validator">
 <h2><a href="#client-certificate-matching" name="client-certificate-matching" class="anchor"><span class="anchor-link"></span></a>Client certificate matching</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1188,7 +1188,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;regexIssuerDNs&quot; : [ ]
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-validator">
+</code></pre></div><div id="otoroshi.plugins.clientcert.HasClientCertValidator" class="plugin plugin-hidden plugin-kind-validator">
 <h2><a href="#client-certificate-only" name="client-certificate-only" class="anchor"><span class="anchor-link"></span></a>Client Certificate Only</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1197,7 +1197,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>configuration root: <code>none</code></li>
 </ul>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>Check if a client certificate is present in the request</p></div><div class="plugin plugin-hidden plugin-kind-validator">
+<p>Check if a client certificate is present in the request</p></div><div id="otoroshi.plugins.external.ExternalHttpValidator" class="plugin plugin-hidden plugin-kind-validator">
 <h2><a href="#external-http-validator" name="external-http-validator" class="anchor"><span class="anchor-link"></span></a>External Http Validator</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1257,7 +1257,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-validator">
+</code></pre></div><div id="otoroshi.plugins.hmac.HMACValidator" class="plugin plugin-hidden plugin-kind-validator">
 <h2><a href="#hmac-access-validator" name="hmac-access-validator" class="anchor"><span class="anchor-link"></span></a>HMAC access validator</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1278,7 +1278,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>The HMAC signature needs to be set on the <code>Authorization</code> or <code>Proxy-Authorization</code> header.  The format of this header should be : <code>hmac algorithm=&quot;&lt;ALGORITHM&gt;&quot;, headers=&quot;&lt;HEADER&gt;&quot;, signature=&quot;&lt;SIGNATURE&gt;&quot;</code>  As example, a simple nodeJS call with the expected header  ```js  const crypto = require(&lsquo;crypto&rsquo;);  const fetch = require(&lsquo;node-fetch&rsquo;);</p>
 <p>const date = new Date()  const secret = &ldquo;my-secret&rdquo; // equal to the api key secret by default</p>
 <p>const algo = &ldquo;sha512&rdquo;  const signature = crypto.createHmac(algo, secret)  .update(date.getTime().toString())  .digest(&lsquo;base64&rsquo;);</p>
-<p>fetch(&rsquo;<a href="http://myservice.oto.tools:9999/api/test'">http://myservice.oto.tools:9999/api/test'</a>, {  headers: {  &ldquo;Otoroshi-Client-Id&rdquo;: &ldquo;my-id&rdquo;,  &ldquo;Otoroshi-Client-Secret&rdquo;: &ldquo;my-secret&rdquo;,  &ldquo;Date&rdquo;: date.getTime().toString(),  &ldquo;Authorization&rdquo;: <code>hmac algorithm=&quot;hmac-${algo}&quot;, headers=&quot;Date&quot;, signature=&quot;${signature}&quot;</code>,  &ldquo;Accept&rdquo;: &ldquo;application/json&rdquo;  }  })  .then(r =&gt; r.json())  .then(console.log)  ```  In this example, we have an Otoroshi service deployed on <a href="http://myservice.oto.tools:9999/api/test">http://myservice.oto.tools:9999/api/test</a>, protected by api keys.  The secret used is the secret of the api key (by default, but you can change it and define a secret on the plugin configuration).  We send the base64 encoded date of the day, signed by the secret, in the Authorization header. We specify the headers signed and the type of algorithm used.  You can sign more than one header but you have to list them in the headers fields (each one separate by a space, example : headers=&ldquo;Date KeyId&rdquo;).  The algorithm used can be HMAC-SHA1, HMAC-SHA256, HMAC-SHA384 or HMAC-SHA512.</p></div><div class="plugin plugin-hidden plugin-kind-validator">
+<p>fetch(&rsquo;<a href="http://myservice.oto.tools:9999/api/test'">http://myservice.oto.tools:9999/api/test'</a>, {  headers: {  &ldquo;Otoroshi-Client-Id&rdquo;: &ldquo;my-id&rdquo;,  &ldquo;Otoroshi-Client-Secret&rdquo;: &ldquo;my-secret&rdquo;,  &ldquo;Date&rdquo;: date.getTime().toString(),  &ldquo;Authorization&rdquo;: <code>hmac algorithm=&quot;hmac-${algo}&quot;, headers=&quot;Date&quot;, signature=&quot;${signature}&quot;</code>,  &ldquo;Accept&rdquo;: &ldquo;application/json&rdquo;  }  })  .then(r =&gt; r.json())  .then(console.log)  ```  In this example, we have an Otoroshi service deployed on <a href="http://myservice.oto.tools:9999/api/test">http://myservice.oto.tools:9999/api/test</a>, protected by api keys.  The secret used is the secret of the api key (by default, but you can change it and define a secret on the plugin configuration).  We send the base64 encoded date of the day, signed by the secret, in the Authorization header. We specify the headers signed and the type of algorithm used.  You can sign more than one header but you have to list them in the headers fields (each one separate by a space, example : headers=&ldquo;Date KeyId&rdquo;).  The algorithm used can be HMAC-SHA1, HMAC-SHA256, HMAC-SHA384 or HMAC-SHA512.</p></div><div id="otoroshi.plugins.oidc.OIDCAccessTokenValidator" class="plugin plugin-hidden plugin-kind-validator">
 <h2><a href="#oidc-access-token-validator" name="oidc-access-token-validator" class="anchor"><span class="anchor-link"></span></a>OIDC access_token validator</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1340,7 +1340,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-validator">
+</code></pre></div><div id="otoroshi.plugins.quotas.InstanceQuotas" class="plugin plugin-hidden plugin-kind-validator">
 <h2><a href="#instance-quotas" name="instance-quotas" class="anchor"><span class="anchor-link"></span></a>Instance quotas</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1379,7 +1379,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;maxAuthModules&quot; : -1
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-validator">
+</code></pre></div><div id="otoroshi.plugins.quotas.ServiceQuotas" class="plugin plugin-hidden plugin-kind-validator">
 <h2><a href="#public-quotas" name="public-quotas" class="anchor"><span class="anchor-link"></span></a>Public quotas</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1397,7 +1397,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;monthlyQuota&quot; : 10000000
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-validator">
+</code></pre></div><div id="otoroshi.plugins.users.HasAllowedUsersValidator" class="plugin plugin-hidden plugin-kind-validator">
 <h2><a href="#allowed-users-only" name="allowed-users-only" class="anchor"><span class="anchor-link"></span></a>Allowed users only</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1432,7 +1432,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;profileNotMatch&quot; : [ ]
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-preroute">
+</code></pre></div><div id="otoroshi.plugins.apikeys.ApikeyAuthModule" class="plugin plugin-hidden plugin-kind-preroute">
 <h2><a href="#apikey-auth-module" name="apikey-auth-module" class="anchor"><span class="anchor-link"></span></a>Apikey auth module</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1457,7 +1457,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;allMetaKeysIn&quot; : [ ]
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-preroute">
+</code></pre></div><div id="otoroshi.plugins.apikeys.CertificateAsApikey" class="plugin plugin-hidden plugin-kind-preroute">
 <h2><a href="#client-certificate-as-apikey" name="client-certificate-as-apikey" class="anchor"><span class="anchor-link"></span></a>Client certificate as apikey</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1480,7 +1480,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;metadata&quot; : { }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-preroute">
+</code></pre></div><div id="otoroshi.plugins.apikeys.ClientCredentialFlowExtractor" class="plugin plugin-hidden plugin-kind-preroute">
 <h2><a href="#client-credential-flow-apikey-extractor" name="client-credential-flow-apikey-extractor" class="anchor"><span class="anchor-link"></span></a>Client Credential Flow ApiKey extractor</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1489,7 +1489,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>configuration root: <code>none</code></li>
 </ul>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>This plugin can extract an apikey from an opaque access_token generate by the <code>ClientCredentialFlow</code> plugin</p></div><div class="plugin plugin-hidden plugin-kind-preroute">
+<p>This plugin can extract an apikey from an opaque access_token generate by the <code>ClientCredentialFlow</code> plugin</p></div><div id="otoroshi.plugins.biscuit.BiscuitExtractor" class="plugin plugin-hidden plugin-kind-preroute">
 <h2><a href="#apikey-from-biscuit-token-extractor" name="apikey-from-biscuit-token-extractor" class="anchor"><span class="anchor-link"></span></a>Apikey from Biscuit token extractor</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1515,7 +1515,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;name&quot; : &quot;Authorization&quot;
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-preroute">
+</code></pre></div><div id="otoroshi.plugins.discovery.DiscoveryTargetsSelector" class="plugin plugin-hidden plugin-kind-preroute">
 <h2><a href="#service-discovery-target-selector-service-discovery-" name="service-discovery-target-selector-service-discovery-" class="anchor"><span class="anchor-link"></span></a>Service discovery target selector (service discovery)</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1534,7 +1534,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;registrationTtl&quot; : 60000
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-preroute">
+</code></pre></div><div id="otoroshi.plugins.geoloc.IpStackGeolocationInfoExtractor" class="plugin plugin-hidden plugin-kind-preroute">
 <h2><a href="#geolocation-details-extractor-using-ipstack-api-" name="geolocation-details-extractor-using-ipstack-api-" class="anchor"><span class="anchor-link"></span></a>Geolocation details extractor (using IpStack api)</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1561,7 +1561,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;log&quot; : false
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-preroute">
+</code></pre></div><div id="otoroshi.plugins.geoloc.MaxMindGeolocationInfoExtractor" class="plugin plugin-hidden plugin-kind-preroute">
 <h2><a href="#geolocation-details-extractor-using-maxmind-db-" name="geolocation-details-extractor-using-maxmind-db-" class="anchor"><span class="anchor-link"></span></a>Geolocation details extractor (using Maxmind db)</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1586,7 +1586,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;log&quot; : false
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-preroute">
+</code></pre></div><div id="otoroshi.plugins.jwt.JwtUserExtractor" class="plugin plugin-hidden plugin-kind-preroute">
 <h2><a href="#jwt-user-extractor" name="jwt-user-extractor" class="anchor"><span class="anchor-link"></span></a>Jwt user extractor</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1606,7 +1606,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;metaPath&quot; : null
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-preroute">
+</code></pre></div><div id="otoroshi.plugins.oidc.OIDCAccessTokenAsApikey" class="plugin plugin-hidden plugin-kind-preroute">
 <h2><a href="#oidc-access-token-as-apikey" name="oidc-access-token-as-apikey" class="anchor"><span class="anchor-link"></span></a>OIDC access_token as apikey</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1668,7 +1668,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-preroute">
+</code></pre></div><div id="otoroshi.plugins.useragent.UserAgentExtractor" class="plugin plugin-hidden plugin-kind-preroute">
 <h2><a href="#user-agent-details-extractor" name="user-agent-details-extractor" class="anchor"><span class="anchor-link"></span></a>User-Agent details extractor</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1691,7 +1691,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;log&quot; : false
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-sink">
+</code></pre></div><div id="otoroshi.plugins.apikeys.ClientCredentialService" class="plugin plugin-hidden plugin-kind-sink">
 <h2><a href="#client-credential-service" name="client-credential-service" class="anchor"><span class="anchor-link"></span></a>Client Credential Service</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1719,7 +1719,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;secure&quot; : true
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-sink">
+</code></pre></div><div id="otoroshi.plugins.discovery.DiscoverySelfRegistrationSink" class="plugin plugin-hidden plugin-kind-sink">
 <h2><a href="#global-self-registration-endpoints-service-discovery-" name="global-self-registration-endpoints-service-discovery-" class="anchor"><span class="anchor-link"></span></a>Global self registration endpoints (service discovery)</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1738,7 +1738,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;registrationTtl&quot; : 60000
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-sink">
+</code></pre></div><div id="otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator" class="plugin plugin-hidden plugin-kind-sink">
 <h2><a href="#kubernetes-admission-validator-webhook" name="kubernetes-admission-validator-webhook" class="anchor"><span class="anchor-link"></span></a>Kubernetes admission validator webhook</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1747,7 +1747,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>configuration root: <code>none</code></li>
 </ul>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>This plugin exposes a webhook to kubernetes to handle manifests validation</p></div><div class="plugin plugin-hidden plugin-kind-sink">
+<p>This plugin exposes a webhook to kubernetes to handle manifests validation</p></div><div id="otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector" class="plugin plugin-hidden plugin-kind-sink">
 <h2><a href="#kubernetes-sidecar-injector-webhook" name="kubernetes-sidecar-injector-webhook" class="anchor"><span class="anchor-link"></span></a>Kubernetes sidecar injector webhook</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1756,7 +1756,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>configuration root: <code>none</code></li>
 </ul>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>This plugin exposes a webhook to kubernetes to inject otoroshi-sidecar in pods</p></div><div class="plugin plugin-hidden plugin-kind-sink">
+<p>This plugin exposes a webhook to kubernetes to inject otoroshi-sidecar in pods</p></div><div id="otoroshi.plugins.metrics.PrometheusEndpoint" class="plugin plugin-hidden plugin-kind-sink">
 <h2><a href="#prometheus-endpoint" name="prometheus-endpoint" class="anchor"><span class="anchor-link"></span></a>Prometheus Endpoint</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1783,7 +1783,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;includeMetrics&quot; : false
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-job">
+</code></pre></div><div id="otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob" class="plugin plugin-hidden plugin-kind-job">
 <h2><a href="#kubernetes-ingress-controller" name="kubernetes-ingress-controller" class="anchor"><span class="anchor-link"></span></a>Kubernetes Ingress Controller</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1915,7 +1915,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-job">
+</code></pre></div><div id="otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob" class="plugin plugin-hidden plugin-kind-job">
 <h2><a href="#kubernetes-otoroshi-crds-controller" name="kubernetes-otoroshi-crds-controller" class="anchor"><span class="anchor-link"></span></a>Kubernetes Otoroshi CRDs Controller</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -2047,7 +2047,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-job">
+</code></pre></div><div id="otoroshi.plugins.jobs.kubernetes.KubernetesToOtoroshiCertSyncJob" class="plugin plugin-hidden plugin-kind-job">
 <h2><a href="#kubernetes-to-otoroshi-certs-synchronizer" name="kubernetes-to-otoroshi-certs-synchronizer" class="anchor"><span class="anchor-link"></span></a>Kubernetes to Otoroshi certs. synchronizer</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -2179,7 +2179,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-job">
+</code></pre></div><div id="otoroshi.plugins.jobs.kubernetes.OtoroshiToKubernetesCertSyncJob" class="plugin plugin-hidden plugin-kind-job">
 <h2><a href="#otoroshi-certs-to-kubernetes-secrets-synchronizer" name="otoroshi-certs-to-kubernetes-secrets-synchronizer" class="anchor"><span class="anchor-link"></span></a>Otoroshi certs. to Kubernetes secrets synchronizer</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -2311,7 +2311,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-job">
+</code></pre></div><div id="otoroshi.plugins.workflow.WorkflowJob" class="plugin plugin-hidden plugin-kind-job">
 <h2><a href="#workflow-job" name="workflow-job" class="anchor"><span class="anchor-link"></span></a>Workflow job</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -2363,7 +2363,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     }
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-request-handler">
+</code></pre></div><div id="otoroshi.next.proxy.ProxyEngine" class="plugin plugin-hidden plugin-kind-request-handler">
 <h2><a href="#otoroshi-next-proxy-engine-experimental-" name="otoroshi-next-proxy-engine-experimental-" class="anchor"><span class="anchor-link"></span></a>Otoroshi next proxy engine (experimental)</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -2376,10 +2376,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>You can active this plugin only on some domain names so you can easily A/B test the new engine. The new proxy engine is designed to be more reactive and more efficient generally. It is also designed to be very efficient on path routing where it wasn&rsquo;t the old engines strong suit.</p>
 <p>The idea is to only rely on plugins to work and avoid losing time with features that are not used in service descriptors. An automated conversion happens for every service descriptor. If the exposed domain is handled by this plugin, it will be served by this plugin. This plugin introduces new entities that will replace (one day maybe) service descriptors:</p>
 <ul>
-  <li>routes: a unique routing rule based on hostname, path, method and headers that will execute a bunch of plugins</li>
-  <li>services: multiple routing rules based on hostname, path, method and headers that will execute the same list of plugins</li>
-  <li>targets: how to contact a backend either by using a domain name or an ip address, supports mtls</li>
-  <li>backends: a list of targets to contact a backend</li>
+  <li><code>routes</code>: a unique routing rule based on hostname, path, method and headers that will execute a bunch of plugins</li>
+  <li><code>services</code>: multiple routing rules based on hostname, path, method and headers that will execute the same list of plugins</li>
+  <li><code>targets</code>: how to contact a backend either by using a domain name or an ip address, supports mtls</li>
+  <li><code>backends</code>: a list of targets to contact a backend</li>
 </ul>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
@@ -2392,7 +2392,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;domains&quot; : [ ]
   }
 }
-</code></pre></div><div class="plugin plugin-hidden plugin-kind-request-handler">
+</code></pre></div><div id="otoroshi.script.ForwardTrafficHandler" class="plugin plugin-hidden plugin-kind-request-handler">
 <h2><a href="#forward-traffic" name="forward-traffic" class="anchor"><span class="anchor-link"></span></a>Forward traffic</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>

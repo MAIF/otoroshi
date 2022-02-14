@@ -95,6 +95,13 @@ document.addEventListener("DOMContentLoaded", function(){
         });
     });
 
+    if (window.location.hash && window.location.hash.length > 1) {
+      const plugin = window.location.hash.substring(1);
+      setTimeout(function() {
+        document.getElementById(plugin).click();
+      }, 300)
+    }
+
     [...document.getElementsByClassName("nav-next")].forEach(nav => {
       nav.style.width = '100%'
       nav.style.float = 'left'
