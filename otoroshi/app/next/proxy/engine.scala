@@ -98,6 +98,19 @@ class ProxyEngine() extends RequestHandler {
       |enabled it and in `domains` add the value `api.foo.bar` (it is possible to use `*.foo.bar` if that's what you want to do).
       |The next time a request hits the `api.foo.bar` domain, the new engine will handle it instead of the old one.
       |
+      |```json
+      |{
+      |  "NextGenProxyEngine" : {
+      |    "enabled" : true,
+      |    "debug" : false,
+      |    "debug_headers" : false,
+      |    "routing_strategy" : "tree",
+      |    "merge_sync_steps" : true,
+      |    "domains" : [ "api.foo.bar" ]
+      |  }
+      |}
+      |```
+      |
       |""".stripMargin.some
 
   override def configRoot: Option[String] = "NextGenProxyEngine".some
