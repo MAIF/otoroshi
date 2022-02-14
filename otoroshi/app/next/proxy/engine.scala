@@ -77,7 +77,8 @@ class ProxyEngine() extends RequestHandler {
   override def name: String = "Otoroshi next proxy engine (experimental)"
 
   override def description: Option[String] =
-    """This plugin holds the next generation otoroshi proxy engine implementation. This engine is **experimental** and may not work as expected !
+    """
+      |This plugin holds the next generation otoroshi proxy engine implementation. This engine is **experimental** and may not work as expected !
       |
       |You can active this plugin only on some domain names so you can easily A/B test the new engine.
       |The new proxy engine is designed to be more reactive and more efficient generally.
@@ -92,7 +93,7 @@ class ProxyEngine() extends RequestHandler {
       | - targets: how to contact a backend either by using a domain name or an ip address, supports mtls
       | - backends: a list of targets to contact a backend
       |
-      |""".some
+      |""".stripMargin.some
 
   override def configRoot: Option[String] = "NextGenProxyEngine".some
 
