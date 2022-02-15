@@ -62,7 +62,7 @@ case class NgService(
     exportReporting: Boolean,
     groups: Seq[String] = Seq("default"),
     routes: Seq[NgMinimalRoute],
-    client: ClientConfig,
+    client: NgClientConfig,
     plugins: NgPlugins
 ) extends EntityLocationSupport {
 
@@ -83,7 +83,7 @@ case class NgService(
     "export_reporting" -> exportReporting,
     "groups"           -> groups,
     "routes"           -> JsArray(routes.map(_.json)),
-    "client"           -> client.toJson,
+    "client"           -> client.json,
     "plugins"          -> plugins.json
   )
 
@@ -134,7 +134,7 @@ object NgService {
           .asOpt[Seq[JsValue]]
           .map(seq => seq.flatMap(json => NgMinimalRoute.fmt.reads(json).asOpt))
           .getOrElse(Seq.empty),
-        client = (json \ "client").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
+        client = (json \ "client").asOpt(NgClientConfig.format).getOrElse(NgClientConfig.default),
         plugins = NgPlugins.readFrom(json.select("plugins"))
       )
     } match {
@@ -200,7 +200,7 @@ object NgService {
         exportReporting = false,
         groups = Seq("default"),
         routes = routes,
-        client = ClientConfig(),
+        client = NgClientConfig.default,
         plugins = NgPlugins(
           Seq(
             NgPluginInstance(

@@ -181,7 +181,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
           root = "/",
           rewrite = false,
           loadBalancing = RoundRobin,
-          client = ClientConfig()
+          client = NgClientConfig.default
         ),
         plugins = NgPlugins(
           Seq(

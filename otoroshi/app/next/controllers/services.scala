@@ -159,7 +159,7 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
         debugFlow = false,
         exportReporting = false,
         groups = Seq("default"),
-        client = ClientConfig(),
+        client = NgClientConfig.default,
         routes = Seq(
           NgMinimalRoute(
             frontend = NgFrontend(

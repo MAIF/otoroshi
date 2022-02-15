@@ -178,7 +178,7 @@ case class NgRoute(
       hosts = frontend.domains.map(_.domain),
       paths = frontend.domains.map(_.path),
       stripPath = frontend.stripPath,
-      clientConfig = backend.client, // TODO: maybe backendref too
+      clientConfig = backend.client.legacy,
       healthCheck = backend.healthCheck.getOrElse(HealthCheck.empty),
       matchingHeaders = frontend.headers,
       handleLegacyDomain = false,
@@ -581,7 +581,7 @@ object NgRoute {
       rewrite = false,
       loadBalancing = RoundRobin,
       healthCheck = None,
-      client = ClientConfig()
+      client = NgClientConfig.default
     ),
     plugins = NgPlugins(
       Seq(
@@ -704,7 +704,7 @@ object NgRoute {
         rewrite = false,
         loadBalancing = service.targetsLoadBalancing,
         healthCheck = if (service.healthCheck.enabled) service.healthCheck.some else None,
-        client = service.clientConfig
+        client = NgClientConfig.fromLegacy(service.clientConfig)
       ),
       groups = service.groups,
       plugins = NgPlugins(

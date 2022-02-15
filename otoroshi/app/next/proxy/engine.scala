@@ -1552,11 +1552,12 @@ class ProxyEngine() extends RequestHandler {
     val trackingId          = attrs.get(otoroshi.plugins.Keys.RequestTrackingIdKey).getOrElse(IdGenerator.uuid)
     val bodyAlreadyConsumed = new AtomicBoolean(false)
     attrs.put(Keys.BodyAlreadyConsumedKey -> bodyAlreadyConsumed)
-    if (globalConfig.useCircuitBreakers && route.backend.client.useCircuitBreaker) {
+    if (globalConfig.useCircuitBreakers) {
       val counter            = new AtomicInteger(0)
       val relUri             = request.relativeUri
       val cachedPath: String =
         route.backend.client
+          .legacy
           .timeouts(relUri)
           .map(_ => relUri)
           .getOrElse("")
@@ -1710,7 +1711,7 @@ class ProxyEngine() extends RequestHandler {
             route.name,
             route.backend.allTargets.map(_.toTarget),
             route.backend.loadBalancing,
-            route.backend.client,
+            route.backend.client.legacy,
             reqNumber.toString,
             trackingId,
             request.relativeUri,
@@ -1771,11 +1772,12 @@ class ProxyEngine() extends RequestHandler {
     val trackingId          = attrs.get(otoroshi.plugins.Keys.RequestTrackingIdKey).getOrElse(IdGenerator.uuid)
     val bodyAlreadyConsumed = new AtomicBoolean(false)
     attrs.put(Keys.BodyAlreadyConsumedKey -> bodyAlreadyConsumed)
-    if (globalConfig.useCircuitBreakers && route.backend.client.useCircuitBreaker) {
+    if (globalConfig.useCircuitBreakers) {
       val counter            = new AtomicInteger(0)
       val relUri             = request.relativeUri
       val cachedPath: String =
         route.backend.client
+          .legacy
           .timeouts(relUri)
           .map(_ => relUri)
           .getOrElse("")
@@ -1933,7 +1935,7 @@ class ProxyEngine() extends RequestHandler {
             route.name,
             route.backend.allTargets.map(_.toTarget),
             route.backend.loadBalancing,
-            route.backend.client,
+            route.backend.client.legacy,
             reqNumber.toString,
             trackingId,
             request.relativeUri,
@@ -2361,24 +2363,24 @@ class ProxyEngine() extends RequestHandler {
         env.gatewayClient.akkaUrlWithTarget(
           UrlSanitizer.sanitize(request.url),
           finalTarget,
-          clientConfig
+          clientConfig.legacy
         )
       case true                             =>
         env.gatewayClient.akkaUrlWithTarget(
           UrlSanitizer.sanitize(request.url),
           finalTarget,
-          clientConfig
+          clientConfig.legacy
         )
       case false                            =>
         env.gatewayClient.urlWithTarget(
           UrlSanitizer.sanitize(request.url),
           finalTarget,
-          clientConfig
+          clientConfig.legacy
         )
     }
     val host             = request.headers.get("Host").orElse(request.headers.get("host")).getOrElse(rawRequest.theHost)
     val extractedTimeout =
-      route.backend.client.extractTimeout(rawRequest.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
+      route.backend.client.legacy.extractTimeout(rawRequest.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
     val builder          = clientReq
       .withRequestTimeout(extractedTimeout)
       .withFailureIndicator(fakeFailureIndicator)

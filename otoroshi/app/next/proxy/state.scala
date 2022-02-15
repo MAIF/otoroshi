@@ -160,7 +160,7 @@ class NgProxyStateLoaderJob extends Job {
             root = s"/gen-${idx}",
             rewrite = false,
             loadBalancing = RoundRobin,
-            client = ClientConfig()
+            client = NgClientConfig.default
           ),
           plugins = NgPlugins(
             Seq(
@@ -227,7 +227,7 @@ class NgProxyStateLoaderJob extends Job {
             root = s"/path-${idx}",
             rewrite = false,
             loadBalancing = RoundRobin,
-            client = ClientConfig()
+            client = NgClientConfig.default
           ),
           plugins = NgPlugins(
             Seq(
@@ -288,7 +288,7 @@ class NgProxyStateLoaderJob extends Job {
             root = s"/path-${idx}",
             rewrite = false,
             loadBalancing = RoundRobin,
-            client = ClientConfig()
+            client = NgClientConfig.default
           ),
           plugins = NgPlugins(
             Seq(
@@ -343,7 +343,8 @@ class NgProxyStateLoaderJob extends Job {
                                "oto-api-next-gen.oto.tools",
                                "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json"
                              )
-                             .map(route =>
+                             .map(route => {
+                               // java.nio.file.Files.writeString(new java.io.File("./service.json").toPath(), route.json.prettify)
                                route.toRoutes.map(r =>
                                  r.copy(
                                    backend =
@@ -368,7 +369,7 @@ class NgProxyStateLoaderJob extends Job {
                                    )
                                  )
                                )
-                             )
+                             })
                          } else Seq.empty[NgRoute].vfuture
     } yield {
       env.proxyState.updateRoutes(newRoutes ++ croutes)
