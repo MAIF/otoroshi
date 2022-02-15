@@ -184,7 +184,7 @@ class BackOfficeAppContainer extends Component {
               <div className="row">
                 <div className={classes.join(' ')}>
                   <DynamicTitle />
-                  <div className="row" style={{ marginTop: 10 }}>
+                  <div className="row" style={{ marginTop: 3 }}>
                     {!this.state.catchedError && (
                       <Switch>
                         <Route

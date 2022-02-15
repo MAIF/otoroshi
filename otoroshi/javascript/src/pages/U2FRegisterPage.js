@@ -347,8 +347,7 @@ export class U2FRegisterPage extends Component {
               </button>
               <button
                 type="button"
-                className="btn btn-success"
-                style={{ marginLeft: 10 }}
+                className="btn btn-success ms-md-2 mt-2 mt-md-0"               
                 onClick={this.registerWebAuthn}>
                 Register Admin with WebAuthn
               </button>

@@ -485,10 +485,10 @@ export class TopBar extends Component {
       <nav className="navbar navbar-expand-lg fixed-top">
         <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
             <div className="d-flex flex-column flex-md-row">
-              <div className="pl-1 pr-2">
+              <div className="ps-1 pe-2 mb-2 mb-md-0 d-flex justify-content-between">
 
               <button 
-                  className="btn btn-primary navbar-toggler" 
+                  className="btn btn-primary ms-3 navbar-toggler" 
                   type="button" 
                   data-bs-toggle="collapse" 
                   data-bs-target="#collapseSidebar" 
@@ -578,8 +578,8 @@ export class TopBar extends Component {
             </form>
             </div>
 
-            <div className="d-flex flex-column flex-md-row mt-1 mt-xl-0">
-              <div className="d-flex justify-content-end align-items-center mt-1 mt-lg-0">
+            <div className="d-flex flex-grow-1 mt-1 mt-xl-0">
+              <div className="d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0">
               {window.__apiReadOnly && (
                 <div className="">
                   <a style={{ color: '#c44141' }} title="Admin API in read-only mode" >
@@ -619,7 +619,7 @@ export class TopBar extends Component {
               </div>
               <div className="dropdown mx-2">
                 <i className="fas fa-cog" role="button" id="dropdownMenuParams" data-bs-toggle="dropdown" aria-expanded="false"/>
-                <ul className="dropdown-menu  dropdown-menu-lg-end" aria-labelledby="dropdownMenuParams">
+                <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuParams">
                   {/*<li>
                     <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>
                   </li>*/}
