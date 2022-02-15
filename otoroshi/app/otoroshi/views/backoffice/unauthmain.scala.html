@@ -15,19 +15,19 @@
     </head>
     <body>
         <div class="container">
-            <div class="header">
-                <nav class="navbar-inverse">
-                    <ul class="nav navbar-nav navbar-right">
-                        <li>
-                            <a href="">
-                                <i id="otoroshi-dark-light-icon" class=" far fa-moon fa-lg"></i>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-               <a class="navbar-brand" href="/" style="display: flex;">
+            <div class="header d-flex justify-content-between align-items-start">
+               <a class="navbar-brand d-flex p-2" href="/">
                    <span>おとろし</span>&nbsp; Otoroshi
                </a>
+               <nav class="navbar-inverse p-2">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="">
+                            <i id="otoroshi-dark-light-icon" class=" far fa-moon fa-lg"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
             </div>
             @content
         </div>
