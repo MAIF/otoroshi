@@ -17,6 +17,18 @@ import java.util.concurrent.atomic.AtomicLong
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 
+sealed trait RoutingStrategy {
+  def json: JsValue
+}
+object RoutingStrategy {
+  case object Tree extends RoutingStrategy { def json: JsValue = JsString("tree") }
+  case object StartsWith extends RoutingStrategy { def json: JsValue = JsString("startswith") }
+  def parse(value: String): RoutingStrategy = value.toLowerCase() match {
+    case "startswith" => StartsWith
+    case _ => Tree
+  }
+}
+
 case class NgMatchedRoutes(
     routes: Seq[NgRoute],
     path: String = "",

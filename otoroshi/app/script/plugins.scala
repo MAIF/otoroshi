@@ -185,8 +185,12 @@ case class Plugins(
         val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)
         if (handlersMap.nonEmpty) {
           if (handlersMapHasWildcard) {
-            handlersMap.exists { case (key, _) =>
-              RegexPool(key).matches(request.theDomain)
+            if (handlersMap.contains("*")) {
+              true
+            } else {
+              handlersMap.exists { case (key, _) =>
+                RegexPool(key).matches(request.theDomain)
+              }
             }
           } else {
             handlersMap.contains(request.theDomain)

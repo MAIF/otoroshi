@@ -11,7 +11,7 @@ import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway._
 import otoroshi.models._
-import otoroshi.next.models.{NgContextualPlugins, NgMatchedRoute, NgPlugins, NgRoute, NgSelectedBackendTarget, NgTarget}
+import otoroshi.next.models._
 import otoroshi.next.plugins.Keys
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError._
@@ -38,6 +38,85 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
+case class ProxyEngineConfig(
+  enabled: Boolean,
+  domains: Seq[String],
+  reporting: Boolean,
+  pluginMerge: Boolean,
+  exportReporting: Boolean,
+  debug: Boolean,
+  debugHeaders: Boolean,
+  applyLegacyChecks: Boolean,
+  routingStrategy: RoutingStrategy,
+) {
+  lazy val useTree: Boolean = routingStrategy == RoutingStrategy.Tree
+  def json: JsValue = Json.obj(
+    "enabled" -> enabled,
+    "domains" -> domains,
+    "reporting" -> reporting,
+    "merge_sync_steps" -> pluginMerge,
+    "export_reporting" -> exportReporting,
+    "apply_legacy_checks" -> applyLegacyChecks,
+    "debug" -> debug,
+    "debug_headers" -> debugHeaders,
+    "routing_strategy" -> routingStrategy.json,
+  )
+}
+
+object ProxyEngineConfig {
+  lazy val default: ProxyEngineConfig = ProxyEngineConfig(
+    enabled = true,
+    domains = Seq("*-next-gen.oto.tools"),
+    reporting = true,
+    pluginMerge = true,
+    exportReporting = false,
+    debug = false,
+    debugHeaders = false,
+    applyLegacyChecks = true,
+    routingStrategy = RoutingStrategy.Tree,
+  )
+  def parse(config: JsValue, env: Env): ProxyEngineConfig = {
+    val enabled = config.select("enabled").asOpt[Boolean].getOrElse(true)
+    val domains = if (enabled) config.select("domains").asOpt[Seq[String]].getOrElse(Seq("*-next-gen.oto.tools")) else Seq.empty[String]
+    val reporting       = config.select("reporting").asOpt[Boolean].getOrElse(true)
+    val pluginMerge     = config
+      .select("merge_sync_steps")
+      .asOpt[Boolean]
+      .orElse(
+        env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.plugins.merge-sync-steps")
+      )
+      .getOrElse(true)
+    val applyLegacyChecks     = config
+      .select("apply_legacy_checks")
+      .asOpt[Boolean]
+      .orElse(
+        env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.plugins.apply-legacy-checks")
+      )
+      .getOrElse(true)
+    val routingStrategy = config.select("routing_strategy").asOpt[String].getOrElse("tree")
+    val exportReporting = config
+      .select("export_reporting")
+      .asOpt[Boolean]
+      .orElse(
+        env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.export-reporting")
+      )
+      .getOrElse(false)
+    val debug           = config.select("debug").asOpt[Boolean].getOrElse(false)
+    val debugHeaders    = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
+    ProxyEngineConfig(
+      enabled = enabled,
+      domains = domains,
+      reporting = reporting,
+      pluginMerge = pluginMerge,
+      exportReporting = exportReporting,
+      debug = debug,
+      debugHeaders = debugHeaders,
+      applyLegacyChecks = applyLegacyChecks,
+      routingStrategy = RoutingStrategy.parse(routingStrategy),
+    )
+  }
+}
+
 class ProxyEngine() extends RequestHandler {
 
   private val logger               = Logger("otoroshi-next-gen-proxy-engine")
@@ -47,7 +126,7 @@ class ProxyEngine() extends RequestHandler {
   private val enabledRef     = new AtomicBoolean(true)
   private val enabledDomains = new AtomicReference(Seq.empty[String])
 
-  private val configCache: Cache[String, JsObject] = Scaffeine()
+  private val configCache: Cache[String, ProxyEngineConfig] = Scaffeine()
     .expireAfterWrite(10.seconds)
     .maximumSize(2)
     .build()
@@ -104,6 +183,7 @@ class ProxyEngine() extends RequestHandler {
       |    "enabled" : true,
       |    "debug" : false,
       |    "debug_headers" : false,
+      |    "reporting": true,
       |    "routing_strategy" : "tree",
       |    "merge_sync_steps" : true,
       |    "domains" : [ "api.foo.bar" ]
@@ -116,32 +196,18 @@ class ProxyEngine() extends RequestHandler {
   override def configRoot: Option[String] = "NextGenProxyEngine".some
 
   override def defaultConfig: Option[JsObject] = {
-    Json
-      .obj(
-        configRoot.get -> Json.obj(
-          "enabled"          -> true,
-          "debug"            -> false,
-          "debug_headers"    -> false,
-          "routing_strategy" -> "tree",
-          "merge_sync_steps" -> true,
-          "domains"          -> Json.arr()
-        )
-      )
-      .some
+    ProxyEngineConfig.default.json.asObject.some
   }
 
   @inline
-  private def getConfig()(implicit ec: ExecutionContext, env: Env): JsObject = {
+  private def getConfig()(implicit ec: ExecutionContext, env: Env): ProxyEngineConfig = {
     configCache.get(
       "config",
-      key => {
-        val config  = env.datastores.globalConfigDataStore.latest().plugins.config.select(configRoot.get).asObject
-        val enabled = config.select("enabled").asOpt[Boolean].getOrElse(true)
-        val domains =
-          if (enabled) config.select("domains").asOpt[Seq[String]].getOrElse(Seq("*-next-gen.oto.tools"))
-          else Seq.empty[String]
-        enabledRef.set(enabled)
-        enabledDomains.set(domains)
+      _ => {
+        val config_json  = env.datastores.globalConfigDataStore.latest().plugins.config.select(configRoot.get).asObject
+        val config = ProxyEngineConfig.parse(config_json, env)
+        enabledRef.set(config.enabled)
+        enabledDomains.set(config.domains)
         config
       }
     )
@@ -179,35 +245,18 @@ class ProxyEngine() extends RequestHandler {
   }
 
   @inline
-  def handleRequest(request: Request[Source[ByteString, _]], config: JsObject)(implicit
+  def handleRequest(request: Request[Source[ByteString, _]], config: ProxyEngineConfig)(implicit
       ec: ExecutionContext,
       env: Env,
       globalConfig: GlobalConfig
   ): Future[Result] = {
     val requestId       = IdGenerator.uuid
-    val reporting       = config.select("reporting").asOpt[Boolean].getOrElse(true)
-    val pluginMerge     = config
-      .select("merge_sync_steps")
-      .asOpt[Boolean]
-      .orElse(
-        env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.plugins.merge-sync-steps")
-      )
-      .getOrElse(true)
-    val routingStrategy = config.select("routing_strategy").asOpt[String].getOrElse("tree")
-    val useTree         = routingStrategy == "tree"
-    val exportReporting = config
-      .select("export_reporting")
-      .asOpt[Boolean]
-      .orElse(
-        env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.export-reporting")
-      )
-      .getOrElse(false)
+    val ProxyEngineConfig(_, _, reporting, pluginMerge, exportReporting, debug, debugHeaders, _, _) = config
+    val useTree = config.useTree
     implicit val report = NgExecutionReport(requestId, reporting)
     report.start("start-handling")
-    val debug           = config.select("debug").asOpt[Boolean].getOrElse(false)
-    val debugHeaders    = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
-    implicit val mat    = env.otoroshiMaterializer
 
+    implicit val mat    = env.otoroshiMaterializer
     val snowflake        = env.snowflakeGenerator.nextIdStr()
     val callDate         = DateTime.now()
     val requestTimestamp = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
@@ -254,7 +303,7 @@ class ProxyEngine() extends RequestHandler {
                    )
       _         <- handleTenantCheck(route)
       _          = report.markDoneAndStart("check-global-maintenance")
-      _         <- checkGlobalMaintenance(route)
+      _         <- checkGlobalMaintenance(route, config)
       _          = report.markDoneAndStart("call-before-request-callbacks")
       _         <- callPluginsBeforeRequestCallback(snowflake, request, route, ctxPlugins)
       _          = report.markDoneAndStart("extract-tracking-id")
@@ -263,8 +312,10 @@ class ProxyEngine() extends RequestHandler {
       _         <- callPreRoutePlugins(snowflake, request, route, ctxPlugins)
       _          = report.markDoneAndStart("call-access-validator-plugins")
       _         <- callAccessValidatorPlugins(snowflake, request, route, ctxPlugins)
-      _          = report.markDoneAndStart("enforce-global-limits")
-      remQuotas <- checkGlobalLimits(request, route) // generic.scala (1269)
+      _          = report.markDoneAndStart("update-apikey-quotas")
+      remQuotas <- updateApikeyQuotas(request, route)
+      _          = report.markDoneAndStart("handle-legacy-checks")
+      _         <- handleLegacyChecks(request, route, config)
       _          = report.markDoneAndStart("choose-backend", Json.obj("remaining_quotas" -> remQuotas.toJson).some)
       result    <- callTarget(snowflake, reqNumber, request, route) {
                      case sb @ NgSelectedBackendTarget(backend, attempts, alreadyFailed, cbStart) =>
@@ -349,30 +400,16 @@ class ProxyEngine() extends RequestHandler {
   }
 
   @inline
-  def handleWsRequest(request: RequestHeader, config: JsObject)(implicit
+  def handleWsRequest(request: RequestHeader, config: ProxyEngineConfig)(implicit
       ec: ExecutionContext,
       env: Env,
       globalConfig: GlobalConfig
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     val requestId       = IdGenerator.uuid
-    val reporting       = config.select("reporting").asOpt[Boolean].getOrElse(true)
-    val pluginMerge     = config
-      .select("merge_sync_steps")
-      .asOpt[Boolean]
-      .orElse(
-        env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.plugins.merge-sync-steps")
-      )
-      .getOrElse(true)
-    val exportReporting = config
-      .select("export_reporting")
-      .asOpt[Boolean]
-      .orElse(
-        env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.export-reporting")
-      )
-      .getOrElse(false)
-    val routingStrategy = config.select("routing_strategy").asOpt[String].getOrElse("tree")
-    val useTree         = routingStrategy == "tree"
+    val ProxyEngineConfig(_, _, reporting, pluginMerge, exportReporting, _, _, _, _) = config
+    val useTree = config.useTree
     implicit val report = NgExecutionReport(requestId, reporting)
+
     report.start("start-handling")
     implicit val mat    = env.otoroshiMaterializer
 
@@ -424,7 +461,7 @@ class ProxyEngine() extends RequestHandler {
                    )
       _         <- handleTenantCheck(route)
       _          = report.markDoneAndStart("check-global-maintenance")
-      _         <- checkGlobalMaintenance(route)
+      _         <- checkGlobalMaintenance(route, config)
       _          = report.markDoneAndStart("call-before-request-callbacks")
       _         <- callPluginsBeforeRequestCallback(snowflake, request, route, ctxPlugins)
       _          = report.markDoneAndStart("extract-tracking-id")
@@ -433,8 +470,10 @@ class ProxyEngine() extends RequestHandler {
       _         <- callPreRoutePlugins(snowflake, request, route, ctxPlugins)
       _          = report.markDoneAndStart("call-access-validator-plugins")
       _         <- callAccessValidatorPlugins(snowflake, request, route, ctxPlugins)
-      _          = report.markDoneAndStart("enforce-global-limits")
-      remQuotas <- checkGlobalLimits(request, route) // generic.scala (1269)
+      _          = report.markDoneAndStart("update-apikey-quotas")
+      remQuotas <- updateApikeyQuotas(request, route)
+      _          = report.markDoneAndStart("handle-legacy-checks")
+      _         <- handleLegacyChecks(request, route, config)
       _          = report.markDoneAndStart("choose-backend", Json.obj("remaining_quotas" -> remQuotas.toJson).some)
       result    <- callWsTarget(snowflake, reqNumber, request, route) {
                      case sb @ NgSelectedBackendTarget(backend, attempts, alreadyFailed, cbStart) =>
@@ -688,7 +727,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def checkGlobalMaintenance(route: NgRoute)(implicit
+  def checkGlobalMaintenance(route: NgRoute, config: ProxyEngineConfig)(implicit
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -696,15 +735,19 @@ class ProxyEngine() extends RequestHandler {
       attrs: TypedMap,
       mat: Materializer
   ): FEither[NgProxyEngineError, Done] = {
-    if (route.id != env.backOfficeServiceId && globalConfig.maintenanceMode) {
-      report.markFailure(s"global maintenance activated")
-      FEither.left(
-        NgResultProxyEngineError(
-          Results.ServiceUnavailable(
-            Json.obj("error" -> "service_unavailable", "error_description" -> "Service in maintenance mode")
+    if (config.applyLegacyChecks) {
+      if (route.id != env.backOfficeServiceId && globalConfig.maintenanceMode) {
+        report.markFailure(s"global maintenance activated")
+        FEither.left(
+          NgResultProxyEngineError(
+            Results.ServiceUnavailable(
+              Json.obj("error" -> "service_unavailable", "error_description" -> "Service in maintenance mode")
+            )
           )
         )
-      )
+      } else {
+        FEither.right(Done)
+      }
     } else {
       FEither.right(Done)
     }
@@ -1387,92 +1430,106 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def checkGlobalLimits(request: RequestHeader, route: NgRoute)(implicit
+  def updateApikeyQuotas(request: RequestHeader, route: NgRoute)(implicit
+    ec: ExecutionContext,
+    env: Env,
+    report: NgExecutionReport,
+    globalConfig: GlobalConfig,
+    attrs: TypedMap,
+    mat: Materializer
+  ): FEither[NgProxyEngineError, RemainingQuotas] = {
+    val quotas = attrs
+      .get(otoroshi.plugins.Keys.ApiKeyKey)
+      .map(_.updateQuotas())
+      .getOrElse(RemainingQuotas().vfuture)
+      .map(rq => Right.apply[NgProxyEngineError, RemainingQuotas](rq))
+    FEither(quotas)
+  }
+
+  def handleLegacyChecks(request: RequestHeader, route: NgRoute, config: ProxyEngineConfig)(implicit
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
       globalConfig: GlobalConfig,
       attrs: TypedMap,
       mat: Materializer
-  ): FEither[NgProxyEngineError, RemainingQuotas] = {
-    val remoteAddress = request.theIpAddress
-    val isUp          = true
-    def errorResult(
-        status: Results.Status,
-        message: String,
-        code: String
-    ): Future[Either[NgProxyEngineError, RemainingQuotas]] = {
-      Errors
-        .craftResponseResult(
-          message,
-          status,
-          request,
-          None,
-          Some(code),
-          duration = report.getDurationNow(),
-          overhead = report.getOverheadInNow(),
-          attrs = attrs,
-          maybeRoute = route.some
-        )
-        .map(e => Left(NgResultProxyEngineError(e)))
-    }
-    FEither(env.datastores.globalConfigDataStore.quotasValidationFor(remoteAddress).flatMap { r =>
-      val (within, secCalls, maybeQuota) = r
-      val quota                          = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
-      if (secCalls > (quota * 10L)) {
-        errorResult(Results.TooManyRequests, "[IP] You performed too much requests", "errors.too.much.requests")
-      } else {
-        if (!within) {
-          errorResult(Results.TooManyRequests, "[GLOBAL] You performed too much requests", "errors.too.much.requests")
-        } else if (globalConfig.ipFiltering.notMatchesWhitelist(remoteAddress)) {
-          errorResult(
-            Results.Forbidden,
-            "Your IP address is not allowed",
-            "errors.ip.address.not.allowed"
-          ) // global whitelist
-        } else if (globalConfig.ipFiltering.matchesBlacklist(remoteAddress)) {
-          errorResult(
-            Results.Forbidden,
-            "Your IP address is not allowed",
-            "errors.ip.address.not.allowed"
-          ) // global blacklist
-        } else if (globalConfig.matchesEndlessIpAddresses(remoteAddress)) {
-          val gigas: Long            = 128L * 1024L * 1024L * 1024L
-          val middleFingers          = ByteString.fromString(
-            "\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95"
+  ): FEither[NgProxyEngineError, Done] = {
+    if (config.applyLegacyChecks) {
+      // generic.scala (1269)
+      val remoteAddress = request.theIpAddress
+      def errorResult(
+                       status: Results.Status,
+                       message: String,
+                       code: String
+                     ): Future[Either[NgProxyEngineError, Done]] = {
+        Errors
+          .craftResponseResult(
+            message,
+            status,
+            request,
+            None,
+            Some(code),
+            duration = report.getDurationNow(),
+            overhead = report.getOverheadInNow(),
+            attrs = attrs,
+            maybeRoute = route.some
           )
-          val zeros                  =
-            ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-          val characters: ByteString =
-            if (!globalConfig.middleFingers) middleFingers else zeros
-          val expected: Long         = (gigas / characters.size) + 1L
-          Left(
-            NgResultProxyEngineError(
-              Results
-                .Status(200)
-                .sendEntity(
-                  HttpEntity.Streamed(
-                    Source
-                      .repeat(characters)
-                      .take(expected), // 128 Go of zeros or middle fingers
-                    None,
-                    Some("application/octet-stream")
-                  )
-                )
-            )
-          ).vfuture
-        } else if (isUp) {
-          attrs
-            .get(otoroshi.plugins.Keys.ApiKeyKey)
-            .map(_.updateQuotas())
-            .getOrElse(RemainingQuotas().vfuture)
-            .map(rq => Right.apply[NgProxyEngineError, RemainingQuotas](rq))
-        } else {
-          // fail fast
-          errorResult(Results.Forbidden, "The service seems to be down :( come back later", "errors.service.down")
-        }
+          .map(e => Left(NgResultProxyEngineError(e)))
       }
-    })
+
+      FEither(env.datastores.globalConfigDataStore.quotasValidationFor(remoteAddress).flatMap { r =>
+        val (within, secCalls, maybeQuota) = r
+        val quota = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
+        if (secCalls > (quota * 10L)) {
+          errorResult(Results.TooManyRequests, "[IP] You performed too much requests", "errors.too.much.requests")
+        } else {
+          if (!within) {
+            errorResult(Results.TooManyRequests, "[GLOBAL] You performed too much requests", "errors.too.much.requests")
+          } else if (globalConfig.ipFiltering.notMatchesWhitelist(remoteAddress)) {
+            errorResult(
+              Results.Forbidden,
+              "Your IP address is not allowed",
+              "errors.ip.address.not.allowed"
+            ) // global whitelist
+          } else if (globalConfig.ipFiltering.matchesBlacklist(remoteAddress)) {
+            errorResult(
+              Results.Forbidden,
+              "Your IP address is not allowed",
+              "errors.ip.address.not.allowed"
+            ) // global blacklist
+          } else if (globalConfig.matchesEndlessIpAddresses(remoteAddress)) {
+            val gigas: Long = 128L * 1024L * 1024L * 1024L
+            val middleFingers = ByteString.fromString(
+              "\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95"
+            )
+            val zeros =
+              ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            val characters: ByteString =
+              if (!globalConfig.middleFingers) middleFingers else zeros
+            val expected: Long = (gigas / characters.size) + 1L
+            Left(
+              NgResultProxyEngineError(
+                Results
+                  .Status(200)
+                  .sendEntity(
+                    HttpEntity.Streamed(
+                      Source
+                        .repeat(characters)
+                        .take(expected), // 128 Go of zeros or middle fingers
+                      None,
+                      Some("application/octet-stream")
+                    )
+                  )
+              )
+            ).vfuture
+          } else {
+            Done.right.vfuture
+          }
+        }
+      })
+    } else {
+      FEither.right(Done)
+    }
   }
 
   def getBackend(target: Target, route: NgRoute)(implicit env: Env): NgTarget = {

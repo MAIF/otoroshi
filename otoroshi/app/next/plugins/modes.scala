@@ -35,6 +35,35 @@ class MaintenanceMode extends NgPreRouting {
   }
 }
 
+class GlobalMaintenanceMode extends NgPreRouting {
+
+  override def core: Boolean = true
+  override def name: String = "Global Maintenance mode"
+  override def description: Option[String] = "This plugin displays a maintenance page for every services".some
+  override def isPreRouteAsync: Boolean = true
+  override def preRoute(
+                         ctx: NgPreRoutingContext
+                       )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+    if (ctx.route.id != env.backOfficeServiceId && env.datastores.globalConfigDataStore.latest().maintenanceMode) {
+      Errors
+        .craftResponseResult(
+          "Service in maintenance mode",
+          Results.ServiceUnavailable,
+          ctx.request,
+          None,
+          Some("errors.service.in.maintenance"),
+          duration = ctx.report.getDurationNow(),
+          overhead = ctx.report.getOverheadInNow(),
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some
+        )
+        .map(r => Left(NgPreRoutingErrorWithResult(r)))
+    } else {
+      Done.right.vfuture
+    }
+  }
+}
+
 class BuildMode extends NgPreRouting {
 
   override def core: Boolean               = true
