@@ -357,6 +357,7 @@ class ProxyEngine() extends RequestHandler {
       .andThen { case _ =>
         report.markOverheadOut()
         report.markDurations()
+        closeCurrentRequest(env)
         attrs.get(Keys.RouteKey).foreach { route =>
           callPluginsAfterRequestCallback(snowflake, request, route, attrs.get(Keys.ContextualPluginsKey).get)
           handleHighOverhead(request, route.some)
@@ -514,6 +515,7 @@ class ProxyEngine() extends RequestHandler {
       .andThen { case _ =>
         report.markOverheadOut()
         report.markDurations()
+        closeCurrentRequest(env)
         attrs.get(Keys.RouteKey).foreach { route =>
           callPluginsAfterRequestCallback(snowflake, request, route, attrs.get(Keys.ContextualPluginsKey).get)
           handleHighOverhead(request, route.some)
@@ -605,6 +607,11 @@ class ProxyEngine() extends RequestHandler {
     } else {
       FEither.right(Done)
     }
+  }
+
+  def closeCurrentRequest(env: Env): Unit = {
+    val requests = env.datastores.requestsDataStore.decrementHandledRequests()
+    env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", requests)
   }
 
   def handleTenantCheck(route: NgRoute)(implicit
@@ -2393,10 +2400,10 @@ class ProxyEngine() extends RequestHandler {
       )
 
     val counterIn       = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
-    val theBody         = request.body.map { bs =>
+    val theBody         = request.body/*.map { bs =>
       counterIn.addAndGet(bs.length)
       bs
-    }
+    }*/
     // because writeableOf_WsBody always add a 'Content-Type: application/octet-stream' header
     val builderWithBody = if (currentReqHasBody) {
       builder.withBody(theBody)
@@ -2627,14 +2634,22 @@ class ProxyEngine() extends RequestHandler {
       attrs: TypedMap,
       mat: Materializer
   ): FEither[NgProxyEngineError, Result] = {
+    val counterIn                      = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
+    val counterOut                     = attrs.get(otoroshi.plugins.Keys.RequestCounterOutKey).get
     val contentType: Option[String]    = response.headers
       .get("Content-Type")
       .orElse(response.headers.get("content-type"))
-    val contentLength: Option[Long]    = response.headers
+    val contentLengthIn: Option[Long]    = rawRequest.headers
+      .get("Content-Length")
+      .orElse(rawRequest.headers.get("content-length"))
+      .map(_.toLong)
+    val contentLengthOut: Option[Long]    = response.headers
       .get("Content-Length")
       .orElse(response.headers.get("content-length"))
       .orElse(rawResponse.contentLengthStr)
       .map(_.toLong)
+    counterIn.addAndGet(contentLengthIn.getOrElse(0L))
+    counterOut.addAndGet(contentLengthOut.getOrElse(0L))
     val _cookies                       = response.cookies.map {
       case c: WSCookieWithSameSite =>
         Cookie(
@@ -2714,17 +2729,16 @@ class ProxyEngine() extends RequestHandler {
       }
       .applyOnIf(!isHttp10)(_.filterNot(h => h._1.toLowerCase() == "content-length"))
       .toSeq
-    val counterOut                     = attrs.get(otoroshi.plugins.Keys.RequestCounterOutKey).get
-    val theBody                        = response.body.map { bs =>
+    val theBody                        = response.body/*.map { bs =>
       counterOut.addAndGet(bs.length)
       bs
-    }
+    }*/
     if (isHttp10) {
       logger.warn(
         s"HTTP/1.0 request, storing temporary result in memory :( (${rawRequest.theProtocol}://${rawRequest.theHost}${rawRequest.relativeUri})"
       )
       FEither(
-        response.body
+        theBody
           .via(
             MaxLengthLimiter(
               globalConfig.maxHttp10ResponseSize.toInt,
@@ -2749,7 +2763,7 @@ class ProxyEngine() extends RequestHandler {
         case true  => {
           // stream out
           val res = Status(status)
-            .chunked(response.body)
+            .chunked(theBody)
             .withHeaders(headers: _*)
             .withCookies(cookies: _*)
           contentType match {
@@ -2762,8 +2776,8 @@ class ProxyEngine() extends RequestHandler {
             .Status(status)
             .sendEntity(
               HttpEntity.Streamed(
-                response.body,
-                contentLength,
+                theBody,
+                contentLengthOut,
                 contentType
               )
             )
