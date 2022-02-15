@@ -563,36 +563,36 @@ object Errors {
     (maybeDescriptor, maybeRoute) match {
       case (Some(desc), _)  => {
         val res      = customResultSync(desc.id, req, status, message, maybeCauseId, emptyBody, errorId)
-        val ctx      = TransformerErrorContext(
-          index = -1,
-          snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse(env.snowflakeGenerator.nextIdStr()),
-          message = message,
-          otoroshiResult = res,
-          otoroshiResponse = HttpResponse(
-            res.header.status,
-            res.header.headers,
-            res.newCookies.map(c =>
-              DefaultWSCookie(
-                name = c.name,
-                value = c.value,
-                domain = c.domain,
-                path = Option(c.path),
-                maxAge = c.maxAge.map(_.toLong),
-                secure = c.secure,
-                httpOnly = c.httpOnly
-              )
-            ),
-            () => res.body.dataStream
-          ),
-          request = req,
-          maybeCauseId = maybeCauseId,
-          callAttempts = callAttempts,
-          descriptor = desc,
-          apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
-          user = attrs.get(otoroshi.plugins.Keys.UserKey),
-          config = Json.obj(),
-          attrs = attrs
-        )
+        // val ctx      = TransformerErrorContext(
+        //   index = -1,
+        //   snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse(env.snowflakeGenerator.nextIdStr()),
+        //   message = message,
+        //   otoroshiResult = res,
+        //   otoroshiResponse = HttpResponse(
+        //     res.header.status,
+        //     res.header.headers,
+        //     res.newCookies.map(c =>
+        //       DefaultWSCookie(
+        //         name = c.name,
+        //         value = c.value,
+        //         domain = c.domain,
+        //         path = Option(c.path),
+        //         maxAge = c.maxAge.map(_.toLong),
+        //         secure = c.secure,
+        //         httpOnly = c.httpOnly
+        //       )
+        //     ),
+        //     () => res.body.dataStream
+        //   ),
+        //   request = req,
+        //   maybeCauseId = maybeCauseId,
+        //   callAttempts = callAttempts,
+        //   descriptor = desc,
+        //   apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+        //   user = attrs.get(otoroshi.plugins.Keys.UserKey),
+        //   config = Json.obj(),
+        //   attrs = attrs
+        // )
         // TODO: make it work with transformError
         val finalRes = res // Await.result(desc.transformError(ctx)(env, ec, env.otoroshiMaterializer), 10.seconds)
         if (sendEvent)
@@ -617,35 +617,35 @@ object Errors {
       }
       case (_, Some(route)) => {
         val res      = customResultSync(route.id, req, status, message, maybeCauseId, emptyBody, errorId)
-        val ctx      = NgTransformerErrorContext(
-          snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse(env.snowflakeGenerator.nextIdStr()),
-          message = message,
-          otoroshiResponse = NgPluginHttpResponse(
-            res.header.status,
-            res.header.headers,
-            res.newCookies.map(c =>
-              DefaultWSCookie(
-                name = c.name,
-                value = c.value,
-                domain = c.domain,
-                path = Option(c.path),
-                maxAge = c.maxAge.map(_.toLong),
-                secure = c.secure,
-                httpOnly = c.httpOnly
-              )
-            ),
-            res.body.dataStream
-          ),
-          request = req,
-          maybeCauseId = maybeCauseId,
-          callAttempts = callAttempts,
-          route = route,
-          apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
-          user = attrs.get(otoroshi.plugins.Keys.UserKey),
-          config = Json.obj(),
-          attrs = attrs,
-          report = attrs.get(otoroshi.next.plugins.Keys.ReportKey).get
-        )
+        // val ctx      = NgTransformerErrorContext(
+        //   snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse(env.snowflakeGenerator.nextIdStr()),
+        //   message = message,
+        //   otoroshiResponse = NgPluginHttpResponse(
+        //     res.header.status,
+        //     res.header.headers,
+        //     res.newCookies.map(c =>
+        //       DefaultWSCookie(
+        //         name = c.name,
+        //         value = c.value,
+        //         domain = c.domain,
+        //         path = Option(c.path),
+        //         maxAge = c.maxAge.map(_.toLong),
+        //         secure = c.secure,
+        //         httpOnly = c.httpOnly
+        //       )
+        //     ),
+        //     res.body.dataStream
+        //   ),
+        //   request = req,
+        //   maybeCauseId = maybeCauseId,
+        //   callAttempts = callAttempts,
+        //   route = route,
+        //   apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+        //   user = attrs.get(otoroshi.plugins.Keys.UserKey),
+        //   config = Json.obj(),
+        //   attrs = attrs,
+        //   report = attrs.get(otoroshi.next.plugins.Keys.ReportKey).get
+        // )
         // TODO: make it work with transformError
         val finalRes = res // Await.result(route.transformError(ctx)(env, ec, env.otoroshiMaterializer), 10.seconds)
         if (sendEvent)
