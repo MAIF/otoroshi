@@ -24,7 +24,7 @@ import play.api.mvc.{RequestHeader, Result, Results}
 
 import java.security.cert.X509Certificate
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 import play.api.mvc.Cookie

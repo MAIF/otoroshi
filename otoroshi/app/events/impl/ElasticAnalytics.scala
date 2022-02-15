@@ -533,6 +533,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
       logger.info(
         s"Creating Otoroshi template for $index on es cluster at ${config.clusterUri}/$index/${`type`}"
       )
+      // AWAIT: valid
       Await.result(
         ElasticUtils.applyTemplate(config, logger, env).recover { case t: Throwable =>
           logger.error("error during elasticsearch initialization", t)

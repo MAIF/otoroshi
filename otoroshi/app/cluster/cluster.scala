@@ -1598,6 +1598,7 @@ class SwappableInMemoryDataStores(
       cancelRef.set(
         actorSystem.scheduler.scheduleAtFixedRate(1.second, 5.seconds)(
           utils.SchedulerHelper.runnable(
+            // AWAIT: valid
             Await.result(writeStateToDisk(dbPath)(actorSystem.dispatcher, materializer), 10.seconds)
           )
         )(actorSystem.dispatcher)
@@ -1619,6 +1620,7 @@ class SwappableInMemoryDataStores(
     redis.stop()
     cancelRef.get().cancel()
     dbPathOpt.foreach { dbPath =>
+      // AWAIT: valid
       Await.result(writeStateToDisk(dbPath)(actorSystem.dispatcher, materializer), 10.seconds)
     }
     actorSystem.terminate()

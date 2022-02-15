@@ -80,6 +80,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     }
     readStateFromDisk(Files.readAllLines(file.toPath).asScala.toSeq)
     cancelRef.set(ds.actorSystem.scheduler.scheduleAtFixedRate(1.second, 5.seconds)(SchedulerHelper.runnable {
+      // AWAIT: valid
       Await.result(writeStateToDisk()(ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
     })(ds.actorSystem.dispatcher))
     FastFuture.successful(())
@@ -87,6 +88,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   override def onStop(): Future[Unit] = {
     cancelRef.get().cancel()
+    // AWAIT: valid
     Await.result(writeStateToDisk()(ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
     FastFuture.successful(())
   }
@@ -399,8 +401,10 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   override def message: String = s"Now using S3 DataStores (target '$url')"
 
   override def onStart(): Future[Unit] = {
+    // AWAIT: valid
     Await.result(readStateFromS3(), 60.seconds)
     cancelRef.set(ds.actorSystem.scheduler.scheduleAtFixedRate(5.second, conf.writeEvery)(SchedulerHelper.runnable {
+      // AWAIT: valid
       Await.result(writeStateToS3(), 60.seconds)
     })(ds.actorSystem.dispatcher))
     FastFuture.successful(())
@@ -408,6 +412,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   override def onStop(): Future[Unit] = {
     cancelRef.get().cancel()
+    // AWAIT: valid
     Await.result(writeStateToS3(), 60.seconds)
     FastFuture.successful(())
   }

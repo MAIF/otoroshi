@@ -74,11 +74,13 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
     redis.start()
     if (configuration.getOptionalWithFileSupport[Boolean]("app.mongo.testMode").getOrElse(false)) {
       logger.warn("Flushing DB as in test mode")
+      // AWAIT: valid
       Await.result(
         redis.keys(s"${env.storageRoot}:*").flatMap(keys => redis.del(keys: _*))(actorSystem.dispatcher),
         5.second
       )
     }
+    // AWAIT: valid
     Await.result(redis.initIndexes(), 5.second)
     _serviceDescriptorDataStore.startCleanup(env)
     _certificateDataStore.startSync()
@@ -91,6 +93,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
 
     _serviceDescriptorDataStore.stopCleanup()
     _certificateDataStore.stopSync()
+    // AWAIT: valid
     Await.ready(
       connection
         .askClose()(10.seconds)

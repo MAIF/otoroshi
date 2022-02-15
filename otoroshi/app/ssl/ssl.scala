@@ -1022,6 +1022,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
       // TODO: blocking ec
       implicit val ec = env.otoroshiExecutionContext
       implicit val ev = env
+      // AWAIT: valid
       Await.result(env.datastores.certificatesDataStore.autoGenerateCertificateForDomain(domain), 10.seconds)
     } match {
       case Failure(e)   => None
@@ -1930,6 +1931,7 @@ object FakeKeyStore {
       )
     )
 
+    // AWAIT: valid
     val resp = Await.result(f, 30.seconds)
 
     resp.right.get
@@ -1960,6 +1962,7 @@ object FakeKeyStore {
       caKeyPair.getPrivate
     )
 
+    // AWAIT: valid
     val resp = Await.result(f, 30.seconds)
 
     resp.right.get
@@ -1983,7 +1986,7 @@ object FakeKeyStore {
         client = true
       )
     )
-
+    // AWAIT: valid
     val resp = Await.result(f, 30.seconds)
 
     resp.right.get
@@ -2012,7 +2015,7 @@ object FakeKeyStore {
       caChain,
       caKeyPair.getPrivate
     )
-
+    // AWAIT: valid
     val resp = Await.result(f, 30.seconds)
 
     resp.right.get
@@ -2042,7 +2045,7 @@ object FakeKeyStore {
       caChain,
       caKeyPair.getPrivate
     )
-
+    // AWAIT: valid
     val resp = Await.result(f, 30.seconds)
 
     resp.right.get
@@ -2063,7 +2066,7 @@ object FakeKeyStore {
         ca = true
       )
     )
-
+    // AWAIT: valid
     val resp = Await.result(f, 30.seconds)
 
     resp.right.get

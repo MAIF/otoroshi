@@ -316,7 +316,7 @@ object NgTreeRouter_Test {
     }
     def routeFromPath(rpath: String): NgRoute = {
       val id     = rpath
-      val parts  = rpath.split("/").toSeq
+      val parts  = rpath.split("/").toSeq.filter(_.trim.nonEmpty)
       val domain = parts.head
       val path   = parts.tail.mkString("/", "/", "")
       NgRoute(
@@ -495,7 +495,7 @@ object NgTreeRouter_Test {
 
     def run(print: Boolean): Unit = {
       routesStr.foreach { rpath =>
-        val parts       = rpath.split("/").toSeq
+        val parts       = rpath.split("/").toSeq.filter(_.trim.nonEmpty)
         val domain      = parts.head
         val path        = parts.tail.mkString("/", "/", "")
         val start_ns    = System.nanoTime()

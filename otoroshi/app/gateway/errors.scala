@@ -383,7 +383,7 @@ object Errors {
     cache.getIfPresent(descriptorId) match {
       case Some(opt) => opt
       case None      =>
-        Await.result(env.datastores.errorTemplateDataStore.findById(descriptorId), 10.seconds) match {
+        env.proxyState.errorTemplate(descriptorId) match {
           case None                =>
             cache.put(descriptorId, None)
             None
@@ -593,7 +593,8 @@ object Errors {
           config = Json.obj(),
           attrs = attrs
         )
-        val finalRes = Await.result(desc.transformError(ctx)(env, ec, env.otoroshiMaterializer), 10.seconds)
+        // TODO: make it work with transformError
+        val finalRes = res // Await.result(desc.transformError(ctx)(env, ec, env.otoroshiMaterializer), 10.seconds)
         if (sendEvent)
           sendAnalytics(
             finalRes.header.headers.toSeq.map(Header.apply),
@@ -645,7 +646,8 @@ object Errors {
           attrs = attrs,
           report = attrs.get(otoroshi.next.plugins.Keys.ReportKey).get
         )
-        val finalRes = Await.result(route.transformError(ctx)(env, ec, env.otoroshiMaterializer), 10.seconds)
+        // TODO: make it work with transformError
+        val finalRes = res // Await.result(route.transformError(ctx)(env, ec, env.otoroshiMaterializer), 10.seconds)
         if (sendEvent)
           sendAnalytics(
             finalRes.header.headers.toSeq.map(Header.apply),

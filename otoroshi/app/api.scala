@@ -209,6 +209,7 @@ object OtoroshiLoaderHelper {
         _ <- waitForPluginsCompilation()
         _ <- waitForFirstProxyStateSync()
       } yield ()
+      // AWAIT: valid
       Await.result(waiting, globalWaitTimeout.millis)
       logger.info(s"subsystems initialization done in ${System.currentTimeMillis() - start} ms.")
     } else {

@@ -34,6 +34,7 @@ class NgProxyState(env: Env) {
   private val jwtVerifiers      = new TrieMap[String, GlobalJwtVerifier]()
   private val certificates      = new TrieMap[String, Cert]()
   private val authModules       = new TrieMap[String, AuthModuleConfig]()
+  private val errorTemplates    = new TrieMap[String, ErrorTemplate]()
   private val routesByDomain    = new TrieMap[String, Seq[NgRoute]]()
   private val domainPathTreeRef = new AtomicReference[NgTreeRouter](NgTreeRouter.empty)
 
@@ -48,6 +49,7 @@ class NgProxyState(env: Env) {
   }
 
   def backend(id: String): Option[NgBackend]             = backends.get(id)
+  def errorTemplate(id: String): Option[ErrorTemplate]   = errorTemplates.get(id)
   def target(id: String): Option[NgTarget]               = targets.get(id)
   def route(id: String): Option[NgRoute]                 = routes.get(id)
   def apikey(id: String): Option[ApiKey]                 = apikeys.get(id)
@@ -98,6 +100,10 @@ class NgProxyState(env: Env) {
 
   def updateAuthModules(values: Seq[AuthModuleConfig]): Unit = {
     authModules.++=(values.map(v => (v.id, v))).--=(authModules.keySet.toSeq.diff(values.map(_.id)))
+  }
+
+  def updateErrorTemplates(values: Seq[ErrorTemplate]): Unit = {
+    errorTemplates.++=(values.map(v => (v.serviceId, v))).--=(errorTemplates.keySet.toSeq.diff(values.map(_.serviceId)))
   }
 }
 
@@ -337,6 +343,7 @@ class NgProxyStateLoaderJob extends Job {
       modules         <- env.datastores.authConfigsDataStore.findAll()
       targets         <- env.datastores.targetsDataStore.findAll()
       backends        <- env.datastores.backendsDataStore.findAll()
+      errorTemplates  <- env.datastores.errorTemplateDataStore.findAll()
       croutes         <- if (env.env == "dev") {
                            NgService
                              .fromOpenApi(
@@ -379,6 +386,7 @@ class NgProxyStateLoaderJob extends Job {
       env.proxyState.updateCertificates(certs)
       env.proxyState.updateAuthModules(modules)
       env.proxyState.updateJwtVerifiers(verifiers)
+      env.proxyState.updateErrorTemplates(errorTemplates)
       NgProxyStateLoaderJob.firstSync.compareAndSet(false, true)
       // println(s"job done in ${System.currentTimeMillis() - start} ms")
     }

@@ -165,6 +165,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   override def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig = {
     val ref = configCache.get()
     if (ref == null) {
+      // AWAIT: valid
+      logger.error("this await should never be called!")
       Await.result(singleton(), 1.second) // WARN: await here should never be executed
     } else {
       ref

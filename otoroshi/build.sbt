@@ -232,6 +232,7 @@ addJava "-Dlog4j2.formatMsgNoLookups=true"
 // run with: ~reStart
 reStart / mainClass := Some("play.core.server.ProdServerStart")
 reStart / javaOptions ++= Seq(
+  "-Xms2g", "-Xmx8g",
   "--add-opens=java.base/javax.net.ssl=ALL-UNNAMED",
   "--add-exports=java.base/sun.security.x509=ALL-UNNAMED",
   "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED",

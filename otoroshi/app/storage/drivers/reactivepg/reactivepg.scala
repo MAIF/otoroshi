@@ -246,6 +246,7 @@ class ReactivePgDataStores(
     implicit val ec = reactivePgActorSystem.dispatcher
     logger.info("Running database migrations ...")
 
+    // AWAIT: valid
     Await.result(
       (for {
         _ <- client.query(s"CREATE SCHEMA IF NOT EXISTS $schema;").executeAsync()

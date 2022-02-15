@@ -522,6 +522,8 @@ case class JWKSAlgoSettings(
   }
 
   override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+    logger.error("this method should not be called !")
+    // AWAIT: valid
     Await.result(asAlgorithmF(mode)(env, env.otoroshiExecutionContext), timeout)
   }
 
