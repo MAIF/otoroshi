@@ -1,6 +1,7 @@
 package otoroshi.next.proxy
 
 import akka.Done
+import akka.http.scaladsl.model.HttpProtocols
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
@@ -283,14 +284,16 @@ class ProxyEngine() extends RequestHandler {
 
     attrs.put(otoroshi.plugins.Keys.ElCtxKey -> elCtx)
     val global_plugins__ = NgPlugins.readFrom(globalConfig.plugins.config.select("ng"))
-
     report.markDoneAndStart("check-concurrent-requests")
     (for {
       _         <- handleConcurrentRequest(request)
       _          = report.markDoneAndStart("find-route")
       route     <- findRoute(useTree, request, request.body, global_plugins__)
       _          = report.markDoneAndStart("compute-plugins")
-      ctxPlugins = route.contextualPlugins(global_plugins__, pluginMerge, request).seffectOn(_.allPlugins)
+      gplugs     = global_plugins__.applyOnIf(env.http2ClientProxyEnabled && route.backend.targets.forall(_.protocol == HttpProtocols.`HTTP/2.0`)) { o =>
+        o.add(NgPluginInstance("cp:otoroshi.next.plugins.Http2Caller"))
+      }
+      ctxPlugins = route.contextualPlugins(gplugs, pluginMerge, request).seffectOn(_.allPlugins)
       _          = attrs.put(Keys.ContextualPluginsKey -> ctxPlugins)
       _          = report.markDoneAndStart(
                      "tenant-check",
@@ -2360,7 +2363,7 @@ class ProxyEngine() extends RequestHandler {
       attrs: TypedMap,
       mat: Materializer
   ): FEither[NgProxyEngineError, WSResponse] = {
-    val currentReqHasBody   = rawRequest.theHasBody
+    val currentReqHasBody   = request.hasBody
     val wsCookiesIn         = request.cookies
     val finalTarget: Target = request.backend.getOrElse(backend).toTarget
     attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> finalTarget)
@@ -2643,13 +2646,17 @@ class ProxyEngine() extends RequestHandler {
       .get("Content-Length")
       .orElse(rawRequest.headers.get("content-length"))
       .map(_.toLong)
-    val contentLengthOut: Option[Long]    = response.headers
+    val contentLength: Option[Long]    = response.headers
       .get("Content-Length")
       .orElse(response.headers.get("content-length"))
       .orElse(rawResponse.contentLengthStr)
       .map(_.toLong)
+    val contentLengthOut: Option[Long]    = response.headers
+      .get("Content-Length")
+      .orElse(response.headers.get("content-length"))
+      .map(_.toLong)
     counterIn.addAndGet(contentLengthIn.getOrElse(0L))
-    counterOut.addAndGet(contentLengthOut.getOrElse(0L))
+    counterOut.addAndGet(contentLength.getOrElse(0L))
     val _cookies                       = response.cookies.map {
       case c: WSCookieWithSameSite =>
         Cookie(

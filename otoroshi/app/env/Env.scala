@@ -892,6 +892,9 @@ class Env(
 
   lazy val proxyState = new NgProxyState(this)
 
+  lazy val http2ClientProxyEnabled = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.experimental.http2-client-proxy.enabled").getOrElse(false)
+  lazy val http2ClientProxyPort = configuration.getOptionalWithFileSupport[Int]("otoroshi.next.experimental.http2-client-proxy.port").getOrElse(8555)
+
   lazy val defaultConfig = GlobalConfig(
     trustXForwarded = initialTrustXForwarded,
     perIpThrottlingQuota = 500,

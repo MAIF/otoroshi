@@ -162,17 +162,20 @@ async fn call_backend_with_request(req: Http2Request) -> Result<Http2Response, r
         );
     }
 
-    Ok(Http2Response {
+    let response = Http2Response {
         status: status.as_u16(),
         version: format!("{:?}", version),
         headers: headers_out,
         body: body_out,
-    })
+    };
+
+    Ok(response)
 }
 
 async fn handle_http2_request(req: Request<Body>) -> HyperResult<Response<Body>> {
     let whole_body = hyper::body::aggregate(req).await?;
-    let data: serde_json::Value = serde_json::from_reader(whole_body.reader())?;
+    let data_res = serde_json::from_reader(whole_body.reader());
+    let data: serde_json::Value = data_res?;
     let request = serde_json::from_value::<Http2Request>(data)?;
     let resp = call_backend_with_request(request).await?;
     let response = Response::builder()
@@ -232,3 +235,5 @@ async fn main() -> HyperResult<()> {
     server.await?;
     Ok(())
 }
+
+// curl -X POST -H 'Content-Type: application/json' http://127.0.0.1:8555/http2_request -d '{"method":"GET","url":"https://localhost:8444/hello","headers":{"host":"foo.oto.tools"},"target":{"port":8444, "tls_config":{"enabled":true, "loose":true,"trust_all":true,"certs":[],"trusted_certs":[]}}}' | jq

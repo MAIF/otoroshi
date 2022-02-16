@@ -55,6 +55,21 @@ case class NgPluginHttpRequest(
   lazy val path: String                = uri.path.toString()
   lazy val queryString: Option[String] = uri.rawQueryString
   lazy val relativeUri: String         = uri.toRelative.toString()
+  lazy val hasBody: Boolean = {
+    (method.toUpperCase(), headers.get("Content-Length").orElse(headers.get("content-length"))) match {
+      case ("GET", Some(_))    => true
+      case ("GET", None)       => false
+      case ("HEAD", Some(_))   => true
+      case ("HEAD", None)      => false
+      case ("PATCH", _)        => true
+      case ("POST", _)         => true
+      case ("PUT", _)          => true
+      case ("DELETE", Some(_)) => true
+      case ("DELETE", None)    => false
+      case _                   => true
+    }
+  }
+
   def json: JsValue                    =
     Json.obj(
       "url"               -> url,

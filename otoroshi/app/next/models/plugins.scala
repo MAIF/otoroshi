@@ -63,6 +63,8 @@ case class NgPluginInstance(
 
 case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
+  def add(plugin: NgPluginInstance): NgPlugins = copy(slots = slots :+ plugin)
+
   def json: JsValue = JsArray(slots.map(_.json))
 
   def getPluginByClass[A](implicit ct: ClassTag[A]): Option[NgPluginInstance] = {
