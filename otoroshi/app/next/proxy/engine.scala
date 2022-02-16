@@ -2363,6 +2363,11 @@ class ProxyEngine() extends RequestHandler {
       attrs: TypedMap,
       mat: Materializer
   ): FEither[NgProxyEngineError, WSResponse] = {
+    val contentLengthIn: Option[Long] = request.contentLengthStr
+      .orElse(rawRequest.contentLengthStr)
+      .map(_.toLong)
+    val counterIn = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
+    counterIn.addAndGet(contentLengthIn.getOrElse(0L))
     val currentReqHasBody   = request.hasBody
     val wsCookiesIn         = request.cookies
     val finalTarget: Target = request.backend.getOrElse(backend).toTarget
@@ -2401,12 +2406,7 @@ class ProxyEngine() extends RequestHandler {
       .withMaybeProxyServer(
         route.backend.client.proxy.orElse(globalConfig.proxies.services)
       )
-
-    val counterIn       = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
-    val theBody         = request.body/*.map { bs =>
-      counterIn.addAndGet(bs.length)
-      bs
-    }*/
+    val theBody         = request.body
     // because writeableOf_WsBody always add a 'Content-Type: application/octet-stream' header
     val builderWithBody = if (currentReqHasBody) {
       builder.withBody(theBody)
@@ -2637,25 +2637,13 @@ class ProxyEngine() extends RequestHandler {
       attrs: TypedMap,
       mat: Materializer
   ): FEither[NgProxyEngineError, Result] = {
-    val counterIn                      = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
     val counterOut                     = attrs.get(otoroshi.plugins.Keys.RequestCounterOutKey).get
-    val contentType: Option[String]    = response.headers
-      .get("Content-Type")
-      .orElse(response.headers.get("content-type"))
-    val contentLengthIn: Option[Long]    = rawRequest.headers
-      .get("Content-Length")
-      .orElse(rawRequest.headers.get("content-length"))
-      .map(_.toLong)
-    val contentLength: Option[Long]    = response.headers
-      .get("Content-Length")
-      .orElse(response.headers.get("content-length"))
+    val contentType: Option[String]    = response.header("Content-Type")
+    val contentLength: Option[Long]    = response.header("Content-Length")
       .orElse(rawResponse.contentLengthStr)
       .map(_.toLong)
-    val contentLengthOut: Option[Long]    = response.headers
-      .get("Content-Length")
-      .orElse(response.headers.get("content-length"))
+    val contentLengthOut: Option[Long]    = response.header("Content-Length")
       .map(_.toLong)
-    counterIn.addAndGet(contentLengthIn.getOrElse(0L))
     counterOut.addAndGet(contentLength.getOrElse(0L))
     val _cookies                       = response.cookies.map {
       case c: WSCookieWithSameSite =>

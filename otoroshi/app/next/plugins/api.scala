@@ -46,8 +46,9 @@ case class NgPluginHttpRequest(
     body: Source[ByteString, _],
     backend: Option[NgTarget]
 ) {
-  lazy val contentType: Option[String] = headers.get("Content-Type").orElse(headers.get("content-type"))
-  lazy val host: String                = headers.get("Host").orElse(headers.get("host")).getOrElse("")
+  lazy val contentType: Option[String] = header("Content-Type")
+  lazy val contentLengthStr: Option[String] = header("Content-Length")
+  lazy val host: String                = header("Host").getOrElse("")
   lazy val uri: Uri                    = Uri(url)
   lazy val scheme: String              = uri.scheme
   lazy val authority: Uri.Authority    = uri.authority
@@ -56,7 +57,7 @@ case class NgPluginHttpRequest(
   lazy val queryString: Option[String] = uri.rawQueryString
   lazy val relativeUri: String         = uri.toRelative.toString()
   lazy val hasBody: Boolean = {
-    (method.toUpperCase(), headers.get("Content-Length").orElse(headers.get("content-length"))) match {
+    (method.toUpperCase(), header("Content-Length")) match {
       case ("GET", Some(_))    => true
       case ("GET", None)       => false
       case ("HEAD", Some(_))   => true
@@ -69,6 +70,8 @@ case class NgPluginHttpRequest(
       case _                   => true
     }
   }
+
+  def header(name: String): Option[String] = headers.get(name).orElse(headers.get(name.toLowerCase()))
 
   def json: JsValue                    =
     Json.obj(
@@ -100,9 +103,10 @@ case class NgPluginHttpResponse(
     cookies: Seq[WSCookie] = Seq.empty[WSCookie],
     body: Source[ByteString, _]
 ) {
+  def header(name: String): Option[String] = headers.get(name).orElse(headers.get(name.toLowerCase()))
   def asResult: Result = {
-    val ctype   = headers.get("Content-Type").orElse(headers.get("content-type"))
-    val clength = headers.get("Content-Length").orElse(headers.get("content-length")).map(_.toLong)
+    val ctype   = header("Content-Type")
+    val clength = header("Content-Length").map(_.toLong)
     Results
       .Status(status)
       .sendEntity(HttpEntity.Streamed(body, clength, ctype))
