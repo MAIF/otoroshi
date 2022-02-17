@@ -488,7 +488,7 @@ export class TopBar extends Component {
               <div className="px-2 mb-2 mb-md-0 d-flex justify-content-between align-items-center navbar-header">
 
               <button 
-                  className="btn btn-primary ms-3 navbar-toggler" 
+                  className="btn btn-menu ms-3 navbar-toggler" 
                   type="button" 
                   data-bs-toggle="collapse" 
                   data-bs-target="#collapseSidebar" 
@@ -578,7 +578,7 @@ export class TopBar extends Component {
             </form>
             </div>
 
-            <div className="d-flex flex-grow-1 mt-1 mt-xl-0">
+            <div className="d-flex flex-grow-1 my-1 my-xl-0">
               <div className="d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0">
               {window.__apiReadOnly && (
                 <div className="">

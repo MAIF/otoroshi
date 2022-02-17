@@ -214,3 +214,15 @@
   padding: 3px 5px 0px 5px;
   text-shadow: none;
 }
+
+.btn-menu{
+  border-color: $fondNavbar;
+  &:hover{
+    background-color: $fondNavbar;
+    color: #FFF;
+  }
+
+  &:focus{
+    box-shadow:0 0 0 0;
+  }
+}
