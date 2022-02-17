@@ -1,5 +1,5 @@
 import React from 'react'
-import { LOAD_BALANCING } from './Constants';
+import { HTTP_PROTOCOLS, LOAD_BALANCING, PREDICATES } from './Constants';
 import { type, format, constraints } from '@maif/react-forms';
 
 export const COMPONENTS = [
@@ -35,19 +35,12 @@ export const COMPONENTS = [
                     type: type.string,
                     label: 'Methods',
                     format: format.select,
-                    possibleValues: [
+                    options: [
                         'GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH'
                     ],
                     isMulti: true
                 }
-            },
-            flow: [
-                "domains",
-                "strip_path",
-                "exact",
-                "headers",
-                "methods"
-            ]
+            }
         }
     },
     {
@@ -262,7 +255,7 @@ export const COMPONENTS = [
                             format: format.select,
                             label: "Challenge token version",
                             help: "Version the otoroshi exchange protocol challenge. This option will be set to V2 in a near future.",
-                            options: [
+                            possibleValues: [
                                 { label: 'V1 - simple values exchange', value: 1 },
                                 { label: 'V2 - signed JWT tokens exchange', value: 2 },
                             ]
@@ -272,7 +265,7 @@ export const COMPONENTS = [
                             format: format.select,
                             label: "Info. token version",
                             help: 'Version the otoroshi exchange protocol info token. This option will be set to Latest in a near future.',
-                            options: [
+                            possibleValues: [
                                 {
                                     label: 'Legacy - legacy version of the info token with flattened values',
                                     value: 'Legacy',
@@ -800,166 +793,119 @@ export const COMPONENTS = [
         icon: 'bullseye',
         elements: [
             {
-                id: 'Loadbalancing',
+                id: 'Backend',
                 default: true,
                 onTargetStream: true,
+                field: 'backend',
                 props: {
                     schema: {
-                        'targetsLoadBalancing.type': {
+                        'load_balancing': {
                             type: type.string,
                             format: format.select,
                             label: 'Load balancing',
                             help: 'The load balancing algorithm used',
-                            options: LOAD_BALANCING
-                        }
-                    },
-                    flow: [
-                        'targetsLoadBalancing.type'
-                    ]
-                }
-            },
-            {
-                id: 'Target root',
-                default: true,
-                onTargetStream: true,
-                props: {
-                    schema: {
+                            options: LOAD_BALANCING,
+                            transformer: v => ({ label: v, value: { type: v } })
+                        },
                         root: {
                             type: type.string,
                             label: 'Target root',
                             placeholder: 'The root URL of the target service',
                             help: "Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar",
-                        }
-                    },
-                    flow: [
-                        'root'
-                    ]
-                }
-            },
-            {
-                id: 'Targets',
-                default: true,
-                onTargetStream: true,
-                props: {
-                    schema: {
+                        },
+                        rewrite: {
+                            type: type.bool,
+                            label: 'Rewrite'
+                        },
                         targets: {
-                            // type: type.object,
-                            // format: 'array',
-                            type: type.string,
-                            format: 'array',
+                            type: type.object,
+                            array: true,
+                            format: format.form,
                             label: 'Targets',
-                            help: "The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures"
+                            help: "The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures",
+                            schema: {
+                                id: {
+                                    type: type.string,
+                                    label: 'Id',
+                                    visible: false
+                                },
+                                hostname: {
+                                    type: type.string,
+                                    label: 'Hostname'
+                                },
+                                port: {
+                                    type: type.number,
+                                    label: 'Port'
+                                },
+                                tls: {
+                                    type: type.bool,
+                                    label: 'TLS'
+                                },
+                                weight: {
+                                    type: type.number,
+                                    label: 'Weight',
+                                    defaultValue: 1
+                                },
+                                protocol: {
+                                    type: type.string,
+                                    format: format.select,
+                                    possibleValues: HTTP_PROTOCOLS,
+                                    transformer: r => ({ label: r, value: r })
+                                },
+                                predicate: {
+                                    type: type.string,
+                                    format: format.select,
+                                    possibleValues: PREDICATES,
+                                    transformer: r => ({ label: r, value: r })
+                                },
+                                ipAddress: {
+                                    type: type.string,
+                                    label: 'IP Address',
+                                    constraints: [constraints.nullable()]
+                                },
+                                tlsConfig: {
+                                    type: type.object,
+                                    format: format.form,
+                                    label: 'TLS configuration',
+                                    schema: {
+                                        certs: {
+                                            type: type.string,
+                                            format: format.select,
+                                            createOption: true,
+                                            isMulti: true
+                                        },
+                                        trustedCerts: {
+                                            type: type.string,
+                                            format: format.select,
+                                            createOption: true,
+                                            isMulti: true
+                                        },
+                                        loose: {
+                                            type: type.bool,
+                                            label: 'Loose'
+                                        },
+                                        trustAll: {
+                                            type: type.bool,
+                                            label: 'Trust All'
+                                        }
+                                    }
+                                }
+                            }
                         }
-                    },
-                    flow: [
-                        'targets'
-                    ]
-                    // schema: {
-                    //   host: {
-                    //     type: type.string,
-                    //     label: 'Host',
-                    //     placeholder: 'The host of the target',
-                    //   },
-                    //   scheme: {
-                    //     type: type.string,
-                    //     label: 'Scheme',
-                    //     placeholder: 'The scheme of the target',
-                    //   },
-                    //   weight: {
-                    //     type: type.number,
-                    //     label: 'Weight',
-                    //     placeholder: 'The weight of the target in the sequence of targets. Only used with experimental client'
-                    //   },
-                    //   'mtlsConfig.certs': {
-                    //     type: type.string,
-                    //     format: 'array',
-                    //     label: 'Client certificates',
-                    //     placeholder: 'The certificate used when performing a mTLS call'
-                    //   },
-                    //   'mtlsConfig.trustedCerts': {
-                    //     type: type.string,
-                    //     format: 'array',
-                    //     label: 'Trusted certificates',
-                    //     placeholder: 'The trusted certificate used when performing a mTLS call',
-
-                    //   },
-                    //   'mtlsConfig.mtls': {
-                    //     type: type.bool,
-                    //     label: 'Custom TLS Settings',
-                    //     placeholder: 'If enabled, Otoroshi will try to provide client certificate trusted by the target server, trust all servers, etc.'
-                    //   },
-                    //   'mtlsConfig.loose': {
-                    //     type: type.bool,
-                    //     label: 'TLS Loose',
-                    //     placeholder: 'If enabled, Otoroshi will accept any certificate and disable hostname verification'
-                    //   },
-                    //   'mtlsConfig.trustAll': {
-                    //     type: type.bool,
-                    //     label: 'Trust all',
-                    //     placeholder: 'If enabled, Otoroshi will accept trust all certificates'
-                    //   },
-                    //   tags: {
-                    //     type: type.string,
-                    //     format: 'array',
-                    //     label: 'Tags',
-                    //     placeholder: 'A tag'
-                    //   },
-                    //   metadata: {
-                    //     type: type.object,
-                    //     format: 'array',
-                    //     label: 'Metadata',
-                    //     placeholder: 'Specify metadata for the target'
-                    //   },
-                    //   protocol: {
-                    //     type: type.string,
-                    //     format: format.select,
-                    //     label: 'Protocol',
-                    //     placeholder: 'The protocol of the target. Only used with experimental client',
-                    //     options: HTTP_PROTOCOLS,
-                    //     defaultValue: HTTP_PROTOCOLS[1]
-                    //   },
-                    //   'predicate.type': {
-                    //     type: type.string,
-                    //     format: format.select,
-                    //     label: 'Predicate',
-                    //     placeholder: 'The predicate of the target. Only used with experimental client',
-                    //     options: PREDICATES,
-                    //     defaultValue: PREDICATES[0]
-                    //   },
-                    //   ipAddress: {
-                    //     type: type.string,
-                    //     label: 'IP Address',
-                    //     placeholder: 'The ip address of the target. Could be useful to perform manual DNS resolution. Only used with experimental client',
-                    //   }
-                    // },
-                    // flow: [
-                    //   'host',
-                    //   'scheme',
-                    //   'weight',
-                    //   'mtlsConfig.certs',
-                    //   'mtlsConfig.trustedCerts',
-                    //   'mtlsConfig.mtls',
-                    //   'mtlsConfig.loose',
-                    //   'mtlsConfig.trustAll',
-                    //   'tags',
-                    //   'metadata',
-                    //   'protocol',
-                    //   'predicate.type',
-                    //   'ipAddress'
-                    // ]
+                    }
                 }
             },
-            {
-                id: 'Client settings',
-                props: {
-                    schema: {
-                        // FORM
-                    },
-                    flow: [
-                        'clientConfig'
-                    ]
-                }
-            }
+            // {
+            //     id: 'Client settings',
+            //     props: {
+            //         schema: {
+            //             // FORM
+            //         },
+            //         flow: [
+            //             'clientConfig'
+            //         ]
+            //     }
+            // }
         ]
     },
     // {
