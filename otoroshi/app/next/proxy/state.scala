@@ -24,39 +24,44 @@ class NgProxyState(env: Env) {
 
   private val logger = Logger("otoroshi-proxy-state")
 
-  private val routes = TrieMap.newBuilder[String, NgRoute]
+  private val routes            = TrieMap
+    .newBuilder[String, NgRoute]
     .+=(NgRoute.fake.id -> NgRoute.fake)
     .result()
-  private val apikeys = new TrieMap[String, ApiKey]()
-  private val targets = new TrieMap[String, NgTarget]()
-  private val backends = new TrieMap[String, NgBackend]()
-  private val jwtVerifiers = new TrieMap[String, GlobalJwtVerifier]()
-  private val certificates = new TrieMap[String, Cert]()
-  private val authModules = new TrieMap[String, AuthModuleConfig]()
-  private val routesByDomain = new TrieMap[String, Seq[NgRoute]]()
+  private val apikeys           = new TrieMap[String, ApiKey]()
+  private val targets           = new TrieMap[String, NgTarget]()
+  private val backends          = new TrieMap[String, NgBackend]()
+  private val jwtVerifiers      = new TrieMap[String, GlobalJwtVerifier]()
+  private val certificates      = new TrieMap[String, Cert]()
+  private val authModules       = new TrieMap[String, AuthModuleConfig]()
+  private val errorTemplates    = new TrieMap[String, ErrorTemplate]()
+  private val routesByDomain    = new TrieMap[String, Seq[NgRoute]]()
   private val domainPathTreeRef = new AtomicReference[NgTreeRouter](NgTreeRouter.empty)
 
-  def findRoutes(domain: String, path: String): Option[Seq[NgRoute]] = domainPathTreeRef.get().find(domain, path).map(_.routes)
-  def findRoute(request: RequestHeader, attrs: TypedMap): Option[NgMatchedRoute] = domainPathTreeRef.get().findRoute(request, attrs)(env)
-  
+  def findRoutes(domain: String, path: String): Option[Seq[NgRoute]]             =
+    domainPathTreeRef.get().find(domain, path).map(_.routes)
+  def findRoute(request: RequestHeader, attrs: TypedMap): Option[NgMatchedRoute] =
+    domainPathTreeRef.get().findRoute(request, attrs)(env)
+
   def getDomainRoutes(domain: String): Option[Seq[NgRoute]] = routesByDomain.get(domain) match {
     case s @ Some(_) => s
-    case None => domainPathTreeRef.get().findWildcard(domain).map(_.routes)
+    case None        => domainPathTreeRef.get().findWildcard(domain).map(_.routes)
   }
 
-  def backend(id: String): Option[NgBackend] = backends.get(id)
-  def target(id: String): Option[NgTarget] = targets.get(id)
-  def route(id: String): Option[NgRoute] = routes.get(id)
-  def apikey(id: String): Option[ApiKey] = apikeys.get(id)
+  def backend(id: String): Option[NgBackend]             = backends.get(id)
+  def errorTemplate(id: String): Option[ErrorTemplate]   = errorTemplates.get(id)
+  def target(id: String): Option[NgTarget]               = targets.get(id)
+  def route(id: String): Option[NgRoute]                 = routes.get(id)
+  def apikey(id: String): Option[ApiKey]                 = apikeys.get(id)
   def jwtVerifier(id: String): Option[GlobalJwtVerifier] = jwtVerifiers.get(id)
-  def certificate(id: String): Option[Cert] = certificates.get(id)
-  def authModule(id: String): Option[AuthModuleConfig] = authModules.get(id)
+  def certificate(id: String): Option[Cert]              = certificates.get(id)
+  def authModule(id: String): Option[AuthModuleConfig]   = authModules.get(id)
 
-  def allRoutes(): Seq[NgRoute] = routes.values.toSeq
-  def allApikeys(): Seq[ApiKey] = apikeys.values.toSeq
+  def allRoutes(): Seq[NgRoute]                 = routes.values.toSeq
+  def allApikeys(): Seq[ApiKey]                 = apikeys.values.toSeq
   def allJwtVerifiers(): Seq[GlobalJwtVerifier] = jwtVerifiers.values.toSeq
-  def allCertificates(): Seq[Cert] = certificates.values.toSeq
-  def allAuthModules(): Seq[AuthModuleConfig] = authModules.values.toSeq
+  def allCertificates(): Seq[Cert]              = certificates.values.toSeq
+  def allAuthModules(): Seq[AuthModuleConfig]   = authModules.values.toSeq
 
   def updateRoutes(values: Seq[NgRoute]): Unit = {
     routes.++=(values.map(v => (v.id, v))).--=(routes.keySet.toSeq.diff(values.map(_.id)))
@@ -66,9 +71,9 @@ class NgProxyState(env: Env) {
       .groupBy(_.domain)
       .mapValues(_.sortWith((r1, r2) => r1.path.length.compareTo(r2.path.length) > 0).map(_.route))
     routesByDomain.++=(routesByDomainRaw).--=(routesByDomain.keySet.toSeq.diff(routesByDomainRaw.keySet.toSeq))
-    val s = System.currentTimeMillis()
+    val s                                            = System.currentTimeMillis()
     domainPathTreeRef.set(NgTreeRouter.build(values))
-    val d = System.currentTimeMillis() - s
+    val d                                            = System.currentTimeMillis() - s
     logger.debug(s"built TreeRouter(${values.size} routes) in ${d} ms.")
     // java.nio.file.Files.writeString(new java.io.File("./tree-router-config.json").toPath, domainPathTreeRef.get().json.prettify)
   }
@@ -95,6 +100,10 @@ class NgProxyState(env: Env) {
 
   def updateAuthModules(values: Seq[AuthModuleConfig]): Unit = {
     authModules.++=(values.map(v => (v.id, v))).--=(authModules.keySet.toSeq.diff(values.map(_.id)))
+  }
+
+  def updateErrorTemplates(values: Seq[ErrorTemplate]): Unit = {
+    errorTemplates.++=(values.map(v => (v.serviceId, v))).--=(errorTemplates.keySet.toSeq.diff(values.map(_.serviceId)))
   }
 }
 
@@ -136,46 +145,53 @@ class NgProxyStateLoaderJob extends Job {
           metadata = Map.empty,
           enabled = true,
           debugFlow = true,
+          exportReporting = false,
           frontend = NgFrontend(
             domains = Seq(NgDomainAndPath(s"${idx}-generated-next-gen.oto.tools")),
             headers = Map.empty,
             methods = Seq.empty,
             stripPath = true,
-            exact = false,
+            exact = false
           ),
           backend = NgBackend(
-            targets = Seq(NgTarget(
-              id = "mirror-1",
-              hostname = "mirror.otoroshi.io",
-              port = 443,
-              tls = true
-            )),
+            targets = Seq(
+              NgTarget(
+                id = "mirror-1",
+                hostname = "mirror.otoroshi.io",
+                port = 443,
+                tls = true
+              )
+            ),
             targetRefs = Seq.empty,
             root = s"/gen-${idx}",
             rewrite = false,
             loadBalancing = RoundRobin,
-            client = ClientConfig(),
+            client = NgClientConfig.default
           ),
-          plugins = NgPlugins(Seq(
-            NgPluginInstance(
-              plugin = pluginId[OverrideHost],
-              enabled = true,
-              include = Seq.empty,
-              exclude = Seq.empty,
-              config = NgPluginInstanceConfig(Json.obj())
-            ),
-            NgPluginInstance(
-              plugin = pluginId[AdditionalHeadersOut],
-              enabled = true,
-              include = Seq.empty,
-              exclude = Seq.empty,
-              config = NgPluginInstanceConfig(Json.obj(
-                "headers" -> Json.obj(
-                  "bar" -> "foo"
+          plugins = NgPlugins(
+            Seq(
+              NgPluginInstance(
+                plugin = pluginId[OverrideHost],
+                enabled = true,
+                include = Seq.empty,
+                exclude = Seq.empty,
+                config = NgPluginInstanceConfig(Json.obj())
+              ),
+              NgPluginInstance(
+                plugin = pluginId[AdditionalHeadersOut],
+                enabled = true,
+                include = Seq.empty,
+                exclude = Seq.empty,
+                config = NgPluginInstanceConfig(
+                  Json.obj(
+                    "headers" -> Json.obj(
+                      "bar" -> "foo"
+                    )
+                  )
                 )
-              ))
+              )
             )
-          ))
+          )
         )
       }.vfuture
     } else {
@@ -196,40 +212,47 @@ class NgProxyStateLoaderJob extends Job {
           metadata = Map.empty,
           enabled = true,
           debugFlow = true,
+          exportReporting = false,
           frontend = NgFrontend(
             domains = Seq(NgDomainAndPath(s"path-generated-next-gen.oto.tools/api/${idx}")),
             headers = Map.empty,
             methods = Seq.empty,
             stripPath = true,
-            exact = false,
+            exact = false
           ),
           backend = NgBackend(
-            targets = Seq(NgTarget(
-              id = "mirror-1",
-              hostname = "mirror.otoroshi.io",
-              port = 443,
-              tls = true
-            )),
+            targets = Seq(
+              NgTarget(
+                id = "mirror-1",
+                hostname = "mirror.otoroshi.io",
+                port = 443,
+                tls = true
+              )
+            ),
             targetRefs = Seq.empty,
             root = s"/path-${idx}",
             rewrite = false,
             loadBalancing = RoundRobin,
-            client = ClientConfig(),
+            client = NgClientConfig.default
           ),
-          plugins = NgPlugins(Seq(
-            NgPluginInstance(
-              plugin = pluginId[OverrideHost],
-              config = NgPluginInstanceConfig(Json.obj())
-            ),
-            NgPluginInstance(
-              plugin = pluginId[AdditionalHeadersOut],
-              config = NgPluginInstanceConfig(Json.obj(
-                "headers" -> Json.obj(
-                  "bar" -> "foo"
+          plugins = NgPlugins(
+            Seq(
+              NgPluginInstance(
+                plugin = pluginId[OverrideHost],
+                config = NgPluginInstanceConfig(Json.obj())
+              ),
+              NgPluginInstance(
+                plugin = pluginId[AdditionalHeadersOut],
+                config = NgPluginInstanceConfig(
+                  Json.obj(
+                    "headers" -> Json.obj(
+                      "bar" -> "foo"
+                    )
+                  )
                 )
-              ))
+              )
             )
-          ))
+          )
         )
       }.vfuture
     } else {
@@ -250,40 +273,47 @@ class NgProxyStateLoaderJob extends Job {
           metadata = Map.empty,
           enabled = true,
           debugFlow = true,
+          exportReporting = false,
           frontend = NgFrontend(
             domains = Seq(NgDomainAndPath(s"random-generated-next-gen.oto.tools/api/${idx}")),
             headers = Map.empty,
             methods = Seq.empty,
             stripPath = true,
-            exact = false,
+            exact = false
           ),
           backend = NgBackend(
-            targets = Seq(NgTarget(
-              id = "mirror-1",
-              hostname = "mirror.otoroshi.io",
-              port = 443,
-              tls = true
-            )),
+            targets = Seq(
+              NgTarget(
+                id = "mirror-1",
+                hostname = "mirror.otoroshi.io",
+                port = 443,
+                tls = true
+              )
+            ),
             targetRefs = Seq.empty,
             root = s"/path-${idx}",
             rewrite = false,
             loadBalancing = RoundRobin,
-            client = ClientConfig(),
+            client = NgClientConfig.default
           ),
-          plugins = NgPlugins(Seq(
-            NgPluginInstance(
-              plugin = pluginId[OverrideHost],
-              config = NgPluginInstanceConfig(Json.obj())
-            ),
-            NgPluginInstance(
-              plugin = pluginId[AdditionalHeadersOut],
-              config = NgPluginInstanceConfig(Json.obj(
-                "headers" -> Json.obj(
-                  "bar" -> "foo"
+          plugins = NgPlugins(
+            Seq(
+              NgPluginInstance(
+                plugin = pluginId[OverrideHost],
+                config = NgPluginInstanceConfig(Json.obj())
+              ),
+              NgPluginInstance(
+                plugin = pluginId[AdditionalHeadersOut],
+                config = NgPluginInstanceConfig(
+                  Json.obj(
+                    "headers" -> Json.obj(
+                      "bar" -> "foo"
+                    )
+                  )
                 )
-              ))
+              )
             )
-          ))
+          )
         )
       }.vfuture
     } else {
@@ -292,45 +322,62 @@ class NgProxyStateLoaderJob extends Job {
   }
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val start = System.currentTimeMillis()
-    val config = env.datastores.globalConfigDataStore.latest().plugins.config.select("NextGenProxyEngine").asObject
-    val debug = config.select("debug").asOpt[Boolean].getOrElse(false)
+    val start        = System.currentTimeMillis()
+    val config       = env.datastores.globalConfigDataStore.latest().plugins.config.select("NextGenProxyEngine").asObject
+    val debug        = config.select("debug").asOpt[Boolean].getOrElse(false)
     val debugHeaders = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
     for {
-      routes <- env.datastores.routeDataStore.findAll() 
-      routescomp <- env.datastores.servicesDataStore.findAll() 
+      routes          <- env.datastores.routeDataStore.findAll()
+      routescomp      <- env.datastores.servicesDataStore.findAll()
       genRoutesDomain <- generateRoutesByDomain(env)
-      genRoutesPath <- generateRoutesByName(env)
-      genRandom <- generateRandomRoutes(env)
-      descriptors <- env.datastores.serviceDescriptorDataStore.findAll()
-      fakeRoutes = if (env.env == "dev") Seq(NgRoute.fake) else Seq.empty
-      newRoutes = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d => NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes).filter(_.enabled)
-      apikeys <- env.datastores.apiKeyDataStore.findAll()
-      certs <- env.datastores.certificatesDataStore.findAll()
-      verifiers <- env.datastores.globalJwtVerifierDataStore.findAll()
-      modules <- env.datastores.authConfigsDataStore.findAll()
-      targets <- env.datastores.targetsDataStore.findAll()
-      backends <- env.datastores.backendsDataStore.findAll()
-      croutes <- if (env.env == "dev") {
-        NgService.fromOpenApi("oto-api-next-gen.oto.tools", "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json")
-          .map(route => route.toRoutes.map(r => r.copy(
-            backend = r.backend.copy(targets = r.backend.targets.map(t => t.copy(port = 9999, tls = false))),
-            plugins = NgPlugins(Seq(
-              NgPluginInstance(
-                plugin = NgPluginHelper.pluginId[OverrideHost],
-              ),
-              NgPluginInstance(
-                plugin = NgPluginHelper.pluginId[AdditionalHeadersIn],
-                config = NgPluginInstanceConfig(Json.obj(
-                  "headers" -> Json.obj(
-                    "Otoroshi-Client-Id" -> "admin-api-apikey-id",
-                    "Otoroshi-Client-Secret" -> "admin-api-apikey-secret",
-                  )
-                ))
-              )
-            ))
-          )))
-        } else Seq.empty[NgRoute].vfuture
+      genRoutesPath   <- generateRoutesByName(env)
+      genRandom       <- generateRandomRoutes(env)
+      descriptors     <- env.datastores.serviceDescriptorDataStore.findAll()
+      fakeRoutes       = if (env.env == "dev") Seq(NgRoute.fake) else Seq.empty
+      newRoutes        = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
+                           NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
+                         ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes).filter(_.enabled)
+      apikeys         <- env.datastores.apiKeyDataStore.findAll()
+      certs           <- env.datastores.certificatesDataStore.findAll()
+      verifiers       <- env.datastores.globalJwtVerifierDataStore.findAll()
+      modules         <- env.datastores.authConfigsDataStore.findAll()
+      targets         <- env.datastores.targetsDataStore.findAll()
+      backends        <- env.datastores.backendsDataStore.findAll()
+      errorTemplates  <- env.datastores.errorTemplateDataStore.findAll()
+      croutes         <- if (env.env == "dev") {
+                           NgService
+                             .fromOpenApi(
+                               "oto-api-next-gen.oto.tools",
+                               "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json"
+                             )
+                             .map(route => {
+                               // java.nio.file.Files.writeString(new java.io.File("./service.json").toPath(), route.json.prettify)
+                               route.toRoutes.map(r =>
+                                 r.copy(
+                                   backend =
+                                     r.backend.copy(targets = r.backend.targets.map(t => t.copy(port = 9999, tls = false))),
+                                   plugins = NgPlugins(
+                                     Seq(
+                                       NgPluginInstance(
+                                         plugin = NgPluginHelper.pluginId[OverrideHost]
+                                       ),
+                                       NgPluginInstance(
+                                         plugin = NgPluginHelper.pluginId[AdditionalHeadersIn],
+                                         config = NgPluginInstanceConfig(
+                                           Json.obj(
+                                             "headers" -> Json.obj(
+                                               "Otoroshi-Client-Id"     -> "admin-api-apikey-id",
+                                               "Otoroshi-Client-Secret" -> "admin-api-apikey-secret"
+                                             )
+                                           )
+                                         )
+                                       )
+                                     )
+                                   )
+                                 )
+                               )
+                             })
+                         } else Seq.empty[NgRoute].vfuture
     } yield {
       env.proxyState.updateRoutes(newRoutes ++ croutes)
       env.proxyState.updateTargets(targets)
@@ -339,11 +386,11 @@ class NgProxyStateLoaderJob extends Job {
       env.proxyState.updateCertificates(certs)
       env.proxyState.updateAuthModules(modules)
       env.proxyState.updateJwtVerifiers(verifiers)
+      env.proxyState.updateErrorTemplates(errorTemplates)
       NgProxyStateLoaderJob.firstSync.compareAndSet(false, true)
       // println(s"job done in ${System.currentTimeMillis() - start} ms")
     }
-  }.andThen {
-    case Failure(e) => e.printStackTrace()
+  }.andThen { case Failure(e) =>
+    e.printStackTrace()
   }.map(_ => ())
 }
-

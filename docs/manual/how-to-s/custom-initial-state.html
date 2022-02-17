@@ -34,7 +34,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.2
+1.5.3
 </div>
 </div>
 <div class="nav-toc">
@@ -147,7 +147,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.2
+1.5.3
 </div>
 </div>
 <div class="nav-toc">
@@ -252,7 +252,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#initial-state-customization" name="initial-state-customization" class="anchor"><span class="anchor-link"></span></a>Initial state customization</h1>
 <p>when you start otoroshi for the first time, some basic entities will be created and stored in the datastore in order to make your instance work properly. However it might not be enough for your use case but you do want to bother with restoring a complete otoroshi export.</p>
-<p>In order to make state customization easy, otoroshi provides the config. key <code>app.initialCustomization</code>, overriden by the env. variable <code>OTOROSHI_INITIAL_CUSTOMIZATION</code></p>
+<p>In order to make state customization easy, otoroshi provides the config. key <code>otoroshi.initialCustomization</code>, overriden by the env. variable <code>OTOROSHI_INITIAL_CUSTOMIZATION</code></p>
 <p>The expected structure is the following :</p>
 <pre class="prettyprint"><code class="language-javascript">{
   &quot;config&quot;: { ... },

@@ -12,9 +12,10 @@ class ReadOnlyCalls extends NgAccessValidator {
 
   private val methods = Seq("get", "head", "options")
 
-  override def core: Boolean = true
-  override def name: String = "Read only requests"
+  override def core: Boolean               = true
+  override def name: String                = "Read only requests"
   override def description: Option[String] = "This plugin verifies the current request only reads data".some
+  override def isAccessAsync: Boolean      = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val method = ctx.request.method.toLowerCase
@@ -27,8 +28,9 @@ class ReadOnlyCalls extends NgAccessValidator {
           None,
           Some("errors.method.not.allowed"),
           attrs = ctx.attrs,
-          maybeRoute = ctx.route.some,
-        ).map(r => NgAccess.NgDenied(r))
+          maybeRoute = ctx.route.some
+        )
+        .map(r => NgAccess.NgDenied(r))
     } else {
       NgAccess.NgAllowed.vfuture
     }
@@ -37,13 +39,15 @@ class ReadOnlyCalls extends NgAccessValidator {
 
 class AllowHttpMethods extends NgAccessValidator {
 
-  override def core: Boolean = true
-  override def name: String = "Allowed HTTP methods"
-  override def description: Option[String] = "This plugin verifies the current request only uses allowed http methods".some
+  override def core: Boolean               = true
+  override def name: String                = "Allowed HTTP methods"
+  override def description: Option[String] =
+    "This plugin verifies the current request only uses allowed http methods".some
+  override def isAccessAsync: Boolean      = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val method = ctx.request.method.toLowerCase
-    val allowed_methods = ctx.config.select("allowed").asOpt[Seq[String]].getOrElse(Seq.empty).map(_.toLowerCase)
+    val method            = ctx.request.method.toLowerCase
+    val allowed_methods   = ctx.config.select("allowed").asOpt[Seq[String]].getOrElse(Seq.empty).map(_.toLowerCase)
     val forbidden_methods = ctx.config.select("forbidden").asOpt[Seq[String]].getOrElse(Seq.empty).map(_.toLowerCase)
     if (!allowed_methods.contains(method) || forbidden_methods.contains(method)) {
       Errors
@@ -54,11 +58,11 @@ class AllowHttpMethods extends NgAccessValidator {
           None,
           Some("errors.method.not.allowed"),
           attrs = ctx.attrs,
-          maybeRoute = ctx.route.some,
-        ).map(r => NgAccess.NgDenied(r))
+          maybeRoute = ctx.route.some
+        )
+        .map(r => NgAccess.NgDenied(r))
     } else {
       NgAccess.NgAllowed.vfuture
     }
   }
 }
-

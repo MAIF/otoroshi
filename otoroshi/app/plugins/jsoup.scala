@@ -67,11 +67,11 @@ class HtmlPatcher extends RequestTransformer {
       case Some(ctype) if ctype.contains("text/html") => {
         Source.future(
           ctx.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-            val body        = bodyRaw.utf8String
-            val doc         = Jsoup.parse(body)
-            val config      = ctx.configFor("HtmlPatcher")
-            val appendHead  = config.select("appendHead").asOpt[Seq[String]].getOrElse(Seq.empty)
-            val appendBody  = config.select("appendBody").asOpt[Seq[String]].getOrElse(Seq.empty)
+            val body       = bodyRaw.utf8String
+            val doc        = Jsoup.parse(body)
+            val config     = ctx.configFor("HtmlPatcher")
+            val appendHead = config.select("appendHead").asOpt[Seq[String]].getOrElse(Seq.empty)
+            val appendBody = config.select("appendBody").asOpt[Seq[String]].getOrElse(Seq.empty)
             parseElement(appendHead.mkString("\n")).map { elementHead =>
               doc.head().insertChildren(-1, elementHead)
             }

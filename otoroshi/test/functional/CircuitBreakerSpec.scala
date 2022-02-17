@@ -104,7 +104,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       val basicTestResponse1 = callServer()
 
       basicTestResponse1.status mustBe 502
-      basicTestResponse1.body.contains("the connection to downstream service was refused") mustBe true
+      basicTestResponse1.body.contains("the connection to backend service was refused") mustBe true
 
       callServer()
       callServer()
@@ -112,7 +112,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
 
       val basicTestResponse2 = callServer()
       basicTestResponse2.status mustBe 503
-      basicTestResponse2.body.contains("the downstream service seems a little bit overwhelmed") mustBe true
+      basicTestResponse2.body.contains("the backend service seems a little bit overwhelmed") mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -152,7 +152,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
 
       val basicTestResponse1 = callServer()
       basicTestResponse1.status mustBe 502
-      basicTestResponse1.body.contains("the connection to downstream service was refused") mustBe true
+      basicTestResponse1.body.contains("the connection to backend service was refused") mustBe true
 
       callServer()
       callServer()
@@ -160,13 +160,13 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
 
       val basicTestResponse2 = callServer()
       basicTestResponse2.status mustBe 503
-      basicTestResponse2.body.contains("the downstream service seems a little bit overwhelmed") mustBe true
+      basicTestResponse2.body.contains("the backend service seems a little bit overwhelmed") mustBe true
 
       awaitF(1.seconds).futureValue
 
       val basicTestResponse3 = callServer()
       basicTestResponse3.status mustBe 502
-      basicTestResponse3.body.contains("the connection to downstream service was refused") mustBe true
+      basicTestResponse3.body.contains("the connection to backend service was refused") mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -262,7 +262,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       val basicTestResponse1 = callServer()
       basicTestResponse1.status mustBe 504
       basicTestResponse1.body.contains(
-        "Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding"
+        "Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding"
       ) mustBe true
 
       deleteOtoroshiService(service).futureValue
@@ -305,7 +305,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
 
       basicTestResponse1.status mustBe 504
       basicTestResponse1.body.contains(
-        "Something went wrong, the downstream service does not respond quickly enough, you should try later. Thanks for your understanding"
+        "Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding"
       ) mustBe true
 
       deleteOtoroshiService(service).futureValue

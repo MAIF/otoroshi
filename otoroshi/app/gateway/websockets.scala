@@ -72,12 +72,12 @@ class WebSocketHandler()(implicit env: Env) {
   }
 
   def forwardCallRaw(
-     req: RequestHeader,
-     reverseProxyAction: ReverseProxyAction,
-     snowMonkey: SnowMonkey,
-     headersInFiltered: Seq[String],
-     headersOutFiltered: Seq[String]
-   ) = {
+      req: RequestHeader,
+      reverseProxyAction: ReverseProxyAction,
+      snowMonkey: SnowMonkey,
+      headersInFiltered: Seq[String],
+      headersOutFiltered: Seq[String]
+  ) = {
     reverseProxyAction.async[WSFlow](
       ReverseProxyActionContext(req, Source.empty, snowMonkey, logger),
       true,

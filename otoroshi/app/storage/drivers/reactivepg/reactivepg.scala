@@ -21,7 +21,16 @@ import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
 import io.vertx.sqlclient.{PoolOptions, Row}
 import otoroshi.models._
 import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
-import otoroshi.next.models.{KvNgRouteDataStore, KvNgServiceDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, NgRouteDataStore, NgServiceDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
+import otoroshi.next.models.{
+  KvNgRouteDataStore,
+  KvNgServiceDataStore,
+  KvStoredNgBackendDataStore,
+  KvStoredNgTargetDataStore,
+  NgRouteDataStore,
+  NgServiceDataStore,
+  StoredNgBackendDataStore,
+  StoredNgTargetDataStore
+}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage.stores._
 import otoroshi.storage.{RedisLike, _}
@@ -237,6 +246,7 @@ class ReactivePgDataStores(
     implicit val ec = reactivePgActorSystem.dispatcher
     logger.info("Running database migrations ...")
 
+    // AWAIT: valid
     Await.result(
       (for {
         _ <- client.query(s"CREATE SCHEMA IF NOT EXISTS $schema;").executeAsync()
@@ -283,7 +293,7 @@ class ReactivePgDataStores(
 
   def setupCleanup(): Unit = {
     implicit val ec = reactivePgActorSystem.dispatcher
-    cancel.set(reactivePgActorSystem.scheduler.scheduleAtFixedRate(1.minute, 5.minutes)(SchedulerHelper.runnable {
+    cancel.set(reactivePgActorSystem.scheduler.scheduleAtFixedRate(10.seconds, 30.second)(SchedulerHelper.runnable {
       client.query(s"DELETE FROM $schemaDotTable WHERE (ttl_starting_at + ttl) < NOW();").executeAsync()
     }))
   }
@@ -382,16 +392,16 @@ class ReactivePgDataStores(
   private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis, env)
   override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
 
-  private lazy val _routeDataStore = new KvNgRouteDataStore(redis, env)
+  private lazy val _routeDataStore              = new KvNgRouteDataStore(redis, env)
   override def routeDataStore: NgRouteDataStore = _routeDataStore
 
-  private lazy val _routesCompositionDataStore = new KvNgServiceDataStore(redis, env)
+  private lazy val _routesCompositionDataStore       = new KvNgServiceDataStore(redis, env)
   override def servicesDataStore: NgServiceDataStore = _routesCompositionDataStore
 
-  private lazy val _targetsDataStore = new KvStoredNgTargetDataStore(redis, env)
+  private lazy val _targetsDataStore                     = new KvStoredNgTargetDataStore(redis, env)
   override def targetsDataStore: StoredNgTargetDataStore = _targetsDataStore
 
-  private lazy val _backendsDataStore = new KvStoredNgBackendDataStore(redis, env)
+  private lazy val _backendsDataStore                      = new KvStoredNgBackendDataStore(redis, env)
   override def backendsDataStore: StoredNgBackendDataStore = _backendsDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
@@ -918,7 +928,14 @@ class ReactivePgRedis(
         Seq(key)
       ) { row =>
         val now = System.currentTimeMillis()
-        row.optOffsetDatetime("expire_at").map(ldate => (ldate.toEpochSecond * 1000) - now)
+        row.optOffsetDatetime("expire_at").map { ldate =>
+          val ttl = (ldate.toEpochSecond * 1000) - now
+          if (ttl > 31504464000000L && ttl < 31567536000000L) { // 999 and 1001
+            -1
+          } else {
+            ttl
+          }
+        }
       }.map(_.filter(_ > -1).getOrElse(-1))
     }
 

@@ -793,8 +793,9 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
                 case Left(_)    => s
                 case Right(csr) => {
                   (caOpt match {
-                    case None     => Await.result(env.pki.genSelfSignedCert(csr), 1.second)
+                    case None     => Await.result(env.pki.genSelfSignedCert(csr), 1.second) // AWAIT: valid
                     case Some(ca) =>
+                      // AWAIT: valid
                       Await.result(
                         env.pki
                           .genCert(csr, ca._2.certificate.get, ca._2.certificates.tail, ca._2.cryptoKeyPair.getPrivate),

@@ -149,8 +149,9 @@ trait CustomDataExporter extends NamedPlugin with StartableAndStoppable {
 object DataExporter {
 
   case class RetryEvent(val raw: JsValue) extends OtoroshiEvent {
-    override def `@id`: String = raw.select("@id").asOpt[String].getOrElse(IdGenerator.uuid)
-    override def `@timestamp`: DateTime = raw.select("@timestamp").asOpt[String].map(DateTime.parse).getOrElse(DateTime.now())
+    override def `@id`: String                       = raw.select("@id").asOpt[String].getOrElse(IdGenerator.uuid)
+    override def `@timestamp`: DateTime              =
+      raw.select("@timestamp").asOpt[String].map(DateTime.parse).getOrElse(DateTime.now())
     override def toJson(implicit _env: Env): JsValue = raw
   }
 
@@ -179,18 +180,17 @@ object DataExporter {
       val stream = Source
         .queue[OtoroshiEvent](configUnsafe.bufferSize, OverflowStrategy.dropHead)
         .filter(_ => configOpt.exists(_.enabled))
-        .mapAsync(configUnsafe.jsonWorkers)(event => event.toEnrichedJson) // TODO: try/catch
-        .filter(event => accept(event)) // TODO: try/catch
-        .map(event => project(event)) // TODO: try/catch
+        .mapAsync(configUnsafe.jsonWorkers)(event => event.toEnrichedJson)
+        .filter(event => accept(event))
+        .map(event => project(event))
         .groupedWithin(configUnsafe.groupSize, configUnsafe.groupDuration)
         .filterNot(_.isEmpty)
         .mapAsync(configUnsafe.sendWorkers) { events =>
-          Try(send(events).recover {
-            case e: Throwable =>
-              val message = s"error while sending events on ${id} of kind ${this.getClass.getName}"
-              logger.error(message, e)
-              withQueue { queue => events.foreach(e => queue.offer(RetryEvent(e))) }
-              ExportResult.ExportResultFailure(s"$message: ${e.getMessage}")
+          Try(send(events).recover { case e: Throwable =>
+            val message = s"error while sending events on ${id} of kind ${this.getClass.getName}"
+            logger.error(message, e)
+            withQueue { queue => events.foreach(e => queue.offer(RetryEvent(e))) }
+            ExportResult.ExportResultFailure(s"$message: ${e.getMessage}")
           }) match {
             case Failure(e) =>
               val message = s"error while sending events on ${id} of kind ${this.getClass.getName}"
@@ -250,19 +250,31 @@ object DataExporter {
     }
 
     def accept(event: JsValue): Boolean = {
-      (configUnsafe.filtering.include.isEmpty || configUnsafe.filtering.include.exists(i =>
-        otoroshi.utils.Match.matches(event, i)
-      )) &&
-      (configUnsafe.filtering.exclude.isEmpty || configUnsafe.filtering.exclude.exists(i =>
-        !otoroshi.utils.Match.matches(event, i)
-      ))
+      try {
+        (configUnsafe.filtering.include.isEmpty || configUnsafe.filtering.include.exists(i =>
+          otoroshi.utils.Match.matches(event, i)
+        )) &&
+        (configUnsafe.filtering.exclude.isEmpty || configUnsafe.filtering.exclude.exists(i =>
+          !otoroshi.utils.Match.matches(event, i)
+        ))
+      } catch {
+        case t: Throwable =>
+          logger.error("error while accepting event", t)
+          false
+      }
     }
 
     def project(event: JsValue): JsValue = {
-      if (configUnsafe.projection.value.isEmpty) {
-        event
-      } else {
-        otoroshi.utils.Projection.project(event, configUnsafe.projection, identity)
+      try {
+        if (configUnsafe.projection.value.isEmpty) {
+          event
+        } else {
+          otoroshi.utils.Projection.project(event, configUnsafe.projection, identity)
+        }
+      } catch {
+        case t: Throwable =>
+          logger.error("error while projecting event", t)
+          event
       }
     }
 
@@ -413,13 +425,25 @@ object Exporters {
     ): Unit = {
       env.metrics.counterInc(MetricId.build("otoroshi.requests.count").tagged("serviceName", "otoroshi"))
       env.metrics
-        .histogramUpdate(MetricId.build("otoroshi.requests.duration.millis").tagged("serviceName", "otoroshi"), duration)
+        .histogramUpdate(
+          MetricId.build("otoroshi.requests.duration.millis").tagged("serviceName", "otoroshi"),
+          duration
+        )
       env.metrics
-        .histogramUpdate(MetricId.build("otoroshi.requests.overheadWoCb.millis").tagged("serviceName", "otoroshi"), overheadWoCb)
+        .histogramUpdate(
+          MetricId.build("otoroshi.requests.overheadWoCb.millis").tagged("serviceName", "otoroshi"),
+          overheadWoCb
+        )
       env.metrics
-        .histogramUpdate(MetricId.build("otoroshi.requests.cbDuration.millis").tagged("serviceName", "otoroshi"), cbDuration)
+        .histogramUpdate(
+          MetricId.build("otoroshi.requests.cbDuration.millis").tagged("serviceName", "otoroshi"),
+          cbDuration
+        )
       env.metrics
-        .histogramUpdate(MetricId.build("otoroshi.requests.overhead.millis").tagged("serviceName", "otoroshi"), overhead)
+        .histogramUpdate(
+          MetricId.build("otoroshi.requests.overhead.millis").tagged("serviceName", "otoroshi"),
+          overhead
+        )
       env.metrics
         .histogramUpdate(MetricId.build("otoroshi.requests.data.in.bytes").tagged("serviceName", "otoroshi"), dataIn)
       env.metrics
@@ -489,13 +513,25 @@ object Exporters {
             incGlobalOtoroshiMetrics(duration, overheadWoCb, cbDuration, overhead, dataIn, dataOut)
             env.metrics.counterInc(MetricId.build(s"otoroshi.service.requests.count").tagged(tags.asJava))
             env.metrics
-              .histogramUpdate(MetricId.build(s"otoroshi.service.requests.duration.millis").tagged(tags.asJava), duration)
+              .histogramUpdate(
+                MetricId.build(s"otoroshi.service.requests.duration.millis").tagged(tags.asJava),
+                duration
+              )
             env.metrics
-              .histogramUpdate(MetricId.build(s"otoroshi.service.requests.overheadWoCb.millis").tagged(tags.asJava), overheadWoCb)
+              .histogramUpdate(
+                MetricId.build(s"otoroshi.service.requests.overheadWoCb.millis").tagged(tags.asJava),
+                overheadWoCb
+              )
             env.metrics
-              .histogramUpdate(MetricId.build(s"otoroshi.service.requests.cbDuration.millis").tagged(tags.asJava), cbDuration)
+              .histogramUpdate(
+                MetricId.build(s"otoroshi.service.requests.cbDuration.millis").tagged(tags.asJava),
+                cbDuration
+              )
             env.metrics
-              .histogramUpdate(MetricId.build(s"otoroshi.service.requests.overhead.millis").tagged(tags.asJava), overhead)
+              .histogramUpdate(
+                MetricId.build(s"otoroshi.service.requests.overhead.millis").tagged(tags.asJava),
+                overhead
+              )
             env.metrics
               .histogramUpdate(MetricId.build(s"otoroshi.service.requests.data.in.bytes").tagged(tags.asJava), dataIn)
             env.metrics

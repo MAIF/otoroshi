@@ -308,6 +308,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>The last possiblity is to retrieve a sub-object of an event. Let&rsquo;s say we want to get the name of each exported user of events.</p>
 <pre class="prettyprint"><code class="language-json">{ &quot;user&quot;: { &quot;name&quot;: true } }
 </code></pre>
+<p>You can also expand the entire source object with </p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;$spread&quot;: true
+}
+</code></pre>
+<p>and the remove fields you don&rsquo;t want with </p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;fieldthatidontwant&quot;: false
+}
+</code></pre>
 <h2><a href="#elastic" name="elastic" class="anchor"><span class="anchor-link"></span></a>Elastic</h2>
 <p>With this kind of exporter, every matching event will be sent to an elastic cluster (in batch). It is quite useful and can be used in combination with <a href="./global-config.html#analytics-elastic-dashboard-datasource-read-">elastic read in global config</a></p>
 <ul>

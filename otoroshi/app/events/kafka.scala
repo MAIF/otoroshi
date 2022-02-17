@@ -85,6 +85,7 @@ object KafkaSettings {
       .withBootstrapServers(config.servers.mkString(","))
 
     if (config.mtlsConfig.mtls) {
+      // AWAIT: valid
       Await.result(waitForFirstSetup(_env), 5.seconds) // wait until certs fully populated at least once
       val (jks1, jks2, password) = config.mtlsConfig.toJKS(_env)
       settings

@@ -117,7 +117,8 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
   lazy val logger = Logger("otoroshi-certificates-ocsp")
 
   val rejectUnknown         = true
-  val nextUpdateOffset: Int = env.configuration.getOptionalWithFileSupport[Int]("app.ocsp.caching.seconds").getOrElse(3600)
+  val nextUpdateOffset: Int =
+    env.configuration.getOptionalWithFileSupport[Int]("app.ocsp.caching.seconds").getOrElse(3600)
 
   def aia(id: String, req: RequestHeader)(implicit ec: ExecutionContext): Future[Result] = {
     import scala.util._

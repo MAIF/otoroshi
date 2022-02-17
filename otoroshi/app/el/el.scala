@@ -55,25 +55,25 @@ object GlobalExpressionLanguage {
             case r"service.metadata.$field@(.*)" if service.isDefined               =>
               service.get.metadata.get(field).getOrElse(s"no-meta-$field")
 
-            case "req.fullUrl" if req.isDefined                                 =>
+            case "req.fullUrl" if req.isDefined                                             =>
               s"${req.get.theProtocol(env)}://${req.get.theHost(env)}${req.get.relativeUri}"
-            case "req.path" if req.isDefined                                    => req.get.path
-            case "req.uri" if req.isDefined                                     => req.get.relativeUri
-            case "req.host" if req.isDefined                                    => req.get.theHost(env)
-            case "req.domain" if req.isDefined                                  => req.get.theDomain(env)
-            case "req.method" if req.isDefined                                  => req.get.method
-            case "req.protocol" if req.isDefined                                => req.get.theProtocol(env)
-            case r"req.headers.$field@(.*):$defaultValue@(.*)" if req.isDefined =>
+            case "req.path" if req.isDefined                                                => req.get.path
+            case "req.uri" if req.isDefined                                                 => req.get.relativeUri
+            case "req.host" if req.isDefined                                                => req.get.theHost(env)
+            case "req.domain" if req.isDefined                                              => req.get.theDomain(env)
+            case "req.method" if req.isDefined                                              => req.get.method
+            case "req.protocol" if req.isDefined                                            => req.get.theProtocol(env)
+            case r"req.headers.$field@(.*):$defaultValue@(.*)" if req.isDefined             =>
               req.get.headers.get(field).getOrElse(defaultValue)
-            case r"req.headers.$field@(.*)" if req.isDefined                    =>
+            case r"req.headers.$field@(.*)" if req.isDefined                                =>
               req.get.headers.get(field).getOrElse(s"no-header-$field")
-            case r"req.query.$field@(.*):$defaultValue@(.*)" if req.isDefined   =>
+            case r"req.query.$field@(.*):$defaultValue@(.*)" if req.isDefined               =>
               req.get.getQueryString(field).getOrElse(defaultValue)
-            case r"req.query.$field@(.*)" if req.isDefined                      =>
+            case r"req.query.$field@(.*)" if req.isDefined                                  =>
               req.get.getQueryString(field).getOrElse(s"no-query-$field")
-            case r"req.pathparams.$field@(.*):$defaultValue@(.*)" if matchedRoute.isDefined   =>
+            case r"req.pathparams.$field@(.*):$defaultValue@(.*)" if matchedRoute.isDefined =>
               matchedRoute.get.pathParams.get(field).getOrElse(defaultValue)
-            case r"req.pathparams.$field@(.*)" if matchedRoute.isDefined                      =>
+            case r"req.pathparams.$field@(.*)" if matchedRoute.isDefined                    =>
               matchedRoute.get.pathParams.get(field).getOrElse(s"no-path-param-$field")
 
             case "apikey.name" if apiKey.isDefined                              => apiKey.get.clientName

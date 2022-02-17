@@ -34,7 +34,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.2
+1.5.3
 </div>
 </div>
 <div class="nav-toc">
@@ -147,7 +147,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.2
+1.5.3
 </div>
 </div>
 <div class="nav-toc">
@@ -268,9 +268,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/startup">http://xxxxxxxx.xxxxx.xx/.well-known/otoroshi/monitoring/startup</a></li>
 </ul>
 <h2><a href="#endpoints-security" name="endpoints-security" class="anchor"><span class="anchor-link"></span></a>Endpoints security</h2>
-<p>The two endpoints are exposed publicly on the Otoroshi admin api. But you can remove the corresponding public pattern and query the endpoints using standard apikeys. If you don&rsquo;t want to use apikeys but don&rsquo;t want to expose the endpoints publicly, you can defined two config. variables (<code>app.health.accessKey</code> or <code>HEALTH_ACCESS_KEY</code> and <code>otoroshi.metrics.accessKey</code> or <code>OTOROSHI_METRICS_ACCESS_KEY</code>) that will hold an access key for the endpoints. Then you can call the endpoints with an <code>access_key</code> query param with the value defined in the config. If you don&rsquo;t defined <code>otoroshi.metrics.accessKey</code> but define <code>app.health.accessKey</code>, <code>otoroshi.metrics.accessKey</code> will have the value of <code>app.health.accessKey</code>.</p>
+<p>The two endpoints are exposed publicly on the Otoroshi admin api. But you can remove the corresponding public pattern and query the endpoints using standard apikeys. If you don&rsquo;t want to use apikeys but don&rsquo;t want to expose the endpoints publicly, you can defined two config. variables (<code>otoroshi.health.accessKey</code> or <code>HEALTH_ACCESS_KEY</code> and <code>otoroshi.metrics.accessKey</code> or <code>OTOROSHI_METRICS_ACCESS_KEY</code>) that will hold an access key for the endpoints. Then you can call the endpoints with an <code>access_key</code> query param with the value defined in the config. If you don&rsquo;t defined <code>otoroshi.metrics.accessKey</code> but define <code>otoroshi.health.accessKey</code>, <code>otoroshi.metrics.accessKey</code> will have the value of <code>otoroshi.health.accessKey</code>.</p>
 <h2><a href="#examples" name="examples" class="anchor"><span class="anchor-link"></span></a>Examples</h2>
-<p>let say <code>app.health.accessKey</code> has value <code>MILpkVv6f2kG9Xmnc4mFIYRU4rTxHVGkxvB0hkQLZwEaZgE2hgbOXiRsN1DBnbtY</code></p>
+<p>let say <code>otoroshi.health.accessKey</code> has value <code>MILpkVv6f2kG9Xmnc4mFIYRU4rTxHVGkxvB0hkQLZwEaZgE2hgbOXiRsN1DBnbtY</code></p>
 <pre class="prettyprint"><code class="language-sh">$ curl http://otoroshi-api.oto.tools:8080/health\?access_key\=MILpkVv6f2kG9Xmnc4mFIYRU4rTxHVGkxvB0hkQLZwEaZgE2hgbOXiRsN1DBnbtY
 {&quot;otoroshi&quot;:&quot;healthy&quot;,&quot;datastore&quot;:&quot;healthy&quot;}
 

@@ -22,7 +22,20 @@ import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.events.{OtoroshiEventsActorSupervizer, StartExporters}
 import otoroshi.jobs.updates.Version
-import otoroshi.models.{EntityLocation, OtoroshiAdminType, SimpleOtoroshiAdmin, Team, TeamAccess, TeamId, Tenant, TenantAccess, TenantId, UserRight, UserRights, WebAuthnOtoroshiAdmin}
+import otoroshi.models.{
+  EntityLocation,
+  OtoroshiAdminType,
+  SimpleOtoroshiAdmin,
+  Team,
+  TeamAccess,
+  TeamId,
+  Tenant,
+  TenantAccess,
+  TenantId,
+  UserRight,
+  UserRights,
+  WebAuthnOtoroshiAdmin
+}
 import otoroshi.next.proxy.NgProxyState
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki
@@ -81,17 +94,22 @@ class Env(
     appConfig <- _configuration.getOptionalWithFileSupport[Configuration]("app")
     otoConfig <- _configuration.getOptionalWithFileSupport[Configuration]("otoroshi")
   } yield {
-    val wholeConfigJson: JsObject    =
-      Json.parse(_configuration.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject].-("app").-("otoroshi")
+    val wholeConfigJson: JsObject  =
+      Json
+        .parse(_configuration.underlying.root().render(ConfigRenderOptions.concise()))
+        .as[JsObject]
+        .-("app")
+        .-("otoroshi")
     val appConfigJson: JsObject    =
       Json.parse(appConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
     val otoConfigJson: JsObject    =
       Json.parse(otoConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
-    // val appKeys = appConfigJson.value.keySet  
-    // val otoKeys = otoConfigJson.value.keySet  
+    // val appKeys = appConfigJson.value.keySet
+    // val otoKeys = otoConfigJson.value.keySet
     // appKeys.filter(key => otoKeys.contains(key)).debugPrintln
-    val mergeConfig: JsObject = appConfigJson.deepMerge(otoConfigJson)
-    val finalConfigJson1: JsObject = wholeConfigJson.deepMerge(Json.obj("otoroshi" -> mergeConfig, "app" -> mergeConfig))
+    val mergeConfig: JsObject      = appConfigJson.deepMerge(otoConfigJson)
+    val finalConfigJson1: JsObject =
+      wholeConfigJson.deepMerge(Json.obj("otoroshi" -> mergeConfig, "app" -> mergeConfig))
     Configuration(ConfigFactory.parseString(Json.stringify(finalConfigJson1)))
   }) getOrElse _configuration
 
@@ -143,7 +161,7 @@ class Env(
       ActorSystem(
         "otoroshi-analytics-actor-system",
         configuration
-          .getOptionalWithFileSupport[Configuration]("app.actorsystems.analytics")
+          .getOptionalWithFileSupport[Configuration]("otoroshi.analytics.actorsystem")
           .map(_.underlying)
           .getOrElse(ConfigFactory.empty)
       )
@@ -165,7 +183,7 @@ class Env(
 
   val healthCheckerActor  = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
   val otoroshiEventsActor = otoroshiActorSystem.actorOf(OtoroshiEventsActorSupervizer.props(this))
-  val analyticsQueue = otoroshiActorSystem.actorOf(AnalyticsQueue.props(this))
+  val analyticsQueue      = otoroshiActorSystem.actorOf(AnalyticsQueue.props(this))
 
   lazy val sidecarConfig: Option[SidecarConfig] = (
     configuration.getOptionalWithFileSupport[String]("app.sidecar.serviceId"),
@@ -874,6 +892,9 @@ class Env(
 
   lazy val proxyState = new NgProxyState(this)
 
+  lazy val http2ClientProxyEnabled = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.experimental.http2-client-proxy.enabled").getOrElse(false)
+  lazy val http2ClientProxyPort = configuration.getOptionalWithFileSupport[Int]("otoroshi.next.experimental.http2-client-proxy.port").getOrElse(8555)
+
   lazy val defaultConfig = GlobalConfig(
     trustXForwarded = initialTrustXForwarded,
     perIpThrottlingQuota = 500,
@@ -888,11 +909,11 @@ class Env(
         "cp:otoroshi.plugins.apikeys.ClientCredentialService"
       ),
       config = Json.obj(
-        "NextGenProxyEngine" -> Json.obj(
-          "enabled" -> true,
-          "debug" -> false,
-          "debug_headers" -> false,
-          "domains" -> Seq("*-next-gen.oto.tools"),
+        "NextGenProxyEngine"      -> Json.obj(
+          "enabled"          -> true,
+          "debug"            -> false,
+          "debug_headers"    -> false,
+          "domains"          -> Seq("*-next-gen.oto.tools"),
           "routing_strategy" -> "tree"
         ),
         "ClientCredentialService" -> Json.obj(

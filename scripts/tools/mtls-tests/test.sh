@@ -5,7 +5,7 @@
 # sh ./certs.sh
 # curl -k -H "Host: mtls.oto.tools" https://mtls.oto.tools:18443/ --include
 GODEBUG=x509ignoreCN=0 go run backendmtls.go &
-sleep 5
+sleep 10
 GODEBUG=x509ignoreCN=0 go run clientbackend.go > clientbackend.out
 cp ../../../otoroshi/target/scala-2.12/otoroshi.jar ./otoroshi.jar
 java -Dapp.domain=oto.tools -Dhttp.port=18080 -Dhttps.port=18443 -jar otoroshi.jar &

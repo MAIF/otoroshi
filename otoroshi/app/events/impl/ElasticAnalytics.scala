@@ -26,13 +26,14 @@ object QueryResponse {
 }
 
 case class QueryResponse(resp: JsValue) {
-  lazy val countOpt: Option[Int] = (resp \ "count").asOpt[Int].orElse((resp \ "count" \ "value").asOpt[Int])
-  lazy val count: Int = countOpt.getOrElse(0)
-  lazy val hitSizeOpt: Option[Int] = (resp \ "hits" \ "total").asOpt[Int].orElse((resp \ "hits" \ "total" \ "value").asOpt[Int])
-  lazy val hitSize: Int = hitSizeOpt.getOrElse(0)
-  lazy val isEmpty: Boolean = hitSize <= 0
-  lazy val nonEmpty: Boolean = !isEmpty
-  lazy val hits: Seq[JsValue] = (resp \ "hits" \ "hits").as[Seq[JsValue]]
+  lazy val countOpt: Option[Int]   = (resp \ "count").asOpt[Int].orElse((resp \ "count" \ "value").asOpt[Int])
+  lazy val count: Int              = countOpt.getOrElse(0)
+  lazy val hitSizeOpt: Option[Int] =
+    (resp \ "hits" \ "total").asOpt[Int].orElse((resp \ "hits" \ "total" \ "value").asOpt[Int])
+  lazy val hitSize: Int            = hitSizeOpt.getOrElse(0)
+  lazy val isEmpty: Boolean        = hitSize <= 0
+  lazy val nonEmpty: Boolean       = !isEmpty
+  lazy val hits: Seq[JsValue]      = (resp \ "hits" \ "hits").as[Seq[JsValue]]
 }
 
 object ElasticTemplates {
@@ -489,9 +490,9 @@ object ElasticUtils {
       ec: ExecutionContext
   ): Future[Either[JsValue, Long]] = {
     val countUrl = config.index match {
-      case None => urlFromPath(s"/_count", config)
+      case None                                           => urlFromPath(s"/_count", config)
       case Some(index) if config.indexSettings.clientSide => urlFromPath(s"/${index}*/_count", config)
-      case Some(index) => urlFromPath(s"/${index}/_count", config)
+      case Some(index)                                    => urlFromPath(s"/${index}/_count", config)
     }
     url(countUrl, config, env)
       .get()
@@ -532,6 +533,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
       logger.info(
         s"Creating Otoroshi template for $index on es cluster at ${config.clusterUri}/$index/${`type`}"
       )
+      // AWAIT: valid
       Await.result(
         ElasticUtils.applyTemplate(config, logger, env).recover { case t: Throwable =>
           logger.error("error during elasticsearch initialization", t)
@@ -621,7 +623,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   private val index: String                     = config.index.getOrElse("otoroshi-events")
   private val searchUri                         =
     if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_search") else urlFromPath(s"/$index/_search")
-  private val countUri                         =
+  private val countUri                          =
     if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_count") else urlFromPath(s"/$index/_count")
   private implicit val mat                      = Materializer(system)
 
@@ -693,16 +695,18 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   ): Future[Option[JsValue]] = {
     for {
       res <- count(
-        Json.obj(
-          "query" -> Json.obj(
-            "bool" -> filters(filterable, from, to, raw = false)
-          )
-        )
-      )
+               Json.obj(
+                 "query" -> Json.obj(
+                   "bool" -> filters(filterable, from, to, raw = false)
+                 )
+               )
+             )
     } yield {
-      Json.obj(
-        "count" -> res.count
-      ).some
+      Json
+        .obj(
+          "count" -> res.count
+        )
+        .some
     }
   }
 
@@ -721,41 +725,45 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
     val pageFrom = (page - 1) * size
     for {
       noraw <- query(
-        Json.obj(
-          "size"  -> size,
-          "from"  -> pageFrom,
-          "query" -> Json.obj(
-            "bool" -> filters(filterable, from, to, raw = false)
-          ),
-          "sort"  -> Json.obj(
-            "@timestamp" -> Json.obj(
-              "order" -> order
-            )
-          )
-        )
-      )
-      raw <- if (noraw.isEmpty) query(
-        Json.obj(
-          "size"  -> size,
-          "from"  -> pageFrom,
-          "query" -> Json.obj(
-            "bool" -> filters(filterable, from, to, raw = true)
-          ),
-          "sort"  -> Json.obj(
-            "@timestamp" -> Json.obj(
-              "order" -> order
-            )
-          )
-        )
-      ) else QueryResponse.empty.vfuture
+                 Json.obj(
+                   "size"  -> size,
+                   "from"  -> pageFrom,
+                   "query" -> Json.obj(
+                     "bool" -> filters(filterable, from, to, raw = false)
+                   ),
+                   "sort"  -> Json.obj(
+                     "@timestamp" -> Json.obj(
+                       "order" -> order
+                     )
+                   )
+                 )
+               )
+      raw   <- if (noraw.isEmpty)
+                 query(
+                   Json.obj(
+                     "size"  -> size,
+                     "from"  -> pageFrom,
+                     "query" -> Json.obj(
+                       "bool" -> filters(filterable, from, to, raw = true)
+                     ),
+                     "sort"  -> Json.obj(
+                       "@timestamp" -> Json.obj(
+                         "order" -> order
+                       )
+                     )
+                   )
+                 )
+               else QueryResponse.empty.vfuture
     } yield {
-      val hits = if (noraw.isEmpty) raw.hits else noraw.hits
+      val hits                 = if (noraw.isEmpty) raw.hits else noraw.hits
       val events: Seq[JsValue] = hits.map { j =>
         (j \ "_source").as[JsValue]
       }
-      Json.obj(
-        "events" -> events
-      ).some
+      Json
+        .obj(
+          "events" -> events
+        )
+        .some
     }
   }
 
@@ -797,71 +805,73 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   ): Future[Option[JsValue]] = {
     for {
       noraw <- query(
-        Json.obj(
-          "size"  -> 0,
-          "query" -> Json.obj {
-            "bool" -> filters(filterable, from, to, raw = false)
-          },
-          "aggs"  -> Json.obj(
-            "codes" -> Json.obj(
-              "aggs"  -> Json.obj(
-                "codesOverTime" -> Json.obj(
-                  "date_histogram" -> Json.obj(
-                    "interval" -> "hour",
-                    "field"    -> "@timestamp"
-                  )
-                )
-              ),
-              "range" -> Json.obj(
-                "ranges" -> Json.arr(
-                  Json.obj("from" -> 100, "to" -> 199, "key" -> "1**"),
-                  Json.obj("from" -> 200, "to" -> 299, "key" -> "2**"),
-                  Json.obj("from" -> 300, "to" -> 399, "key" -> "3**"),
-                  Json.obj("from" -> 400, "to" -> 499, "key" -> "4**"),
-                  Json.obj("from" -> 500, "to" -> 599, "key" -> "5**")
-                ),
-                "field"  -> "status",
-                "keyed"  -> true
-              )
-            )
-          )
-        )
-      )
-      raw <- if (noraw.isEmpty) query(
-        Json.obj(
-          "size"  -> 0,
-          "query" -> Json.obj {
-            "bool" -> filters(filterable, from, to, raw = true)
-          },
-          "aggs"  -> Json.obj(
-            "codes" -> Json.obj(
-              "aggs"  -> Json.obj(
-                "codesOverTime" -> Json.obj(
-                  "date_histogram" -> Json.obj(
-                    "interval" -> "hour",
-                    "field"    -> "@timestamp"
-                  )
-                )
-              ),
-              "range" -> Json.obj(
-                "ranges" -> Json.arr(
-                  Json.obj("from" -> 100, "to" -> 199, "key" -> "1**"),
-                  Json.obj("from" -> 200, "to" -> 299, "key" -> "2**"),
-                  Json.obj("from" -> 300, "to" -> 399, "key" -> "3**"),
-                  Json.obj("from" -> 400, "to" -> 499, "key" -> "4**"),
-                  Json.obj("from" -> 500, "to" -> 599, "key" -> "5**")
-                ),
-                "field"  -> "status",
-                "keyed"  -> true
-              )
-            )
-          )
-        )
-      ) else QueryResponse.empty.vfuture
+                 Json.obj(
+                   "size"  -> 0,
+                   "query" -> Json.obj {
+                     "bool" -> filters(filterable, from, to, raw = false)
+                   },
+                   "aggs"  -> Json.obj(
+                     "codes" -> Json.obj(
+                       "aggs"  -> Json.obj(
+                         "codesOverTime" -> Json.obj(
+                           "date_histogram" -> Json.obj(
+                             "interval" -> "hour",
+                             "field"    -> "@timestamp"
+                           )
+                         )
+                       ),
+                       "range" -> Json.obj(
+                         "ranges" -> Json.arr(
+                           Json.obj("from" -> 100, "to" -> 199, "key" -> "1**"),
+                           Json.obj("from" -> 200, "to" -> 299, "key" -> "2**"),
+                           Json.obj("from" -> 300, "to" -> 399, "key" -> "3**"),
+                           Json.obj("from" -> 400, "to" -> 499, "key" -> "4**"),
+                           Json.obj("from" -> 500, "to" -> 599, "key" -> "5**")
+                         ),
+                         "field"  -> "status",
+                         "keyed"  -> true
+                       )
+                     )
+                   )
+                 )
+               )
+      raw   <- if (noraw.isEmpty)
+                 query(
+                   Json.obj(
+                     "size"  -> 0,
+                     "query" -> Json.obj {
+                       "bool" -> filters(filterable, from, to, raw = true)
+                     },
+                     "aggs"  -> Json.obj(
+                       "codes" -> Json.obj(
+                         "aggs"  -> Json.obj(
+                           "codesOverTime" -> Json.obj(
+                             "date_histogram" -> Json.obj(
+                               "interval" -> "hour",
+                               "field"    -> "@timestamp"
+                             )
+                           )
+                         ),
+                         "range" -> Json.obj(
+                           "ranges" -> Json.arr(
+                             Json.obj("from" -> 100, "to" -> 199, "key" -> "1**"),
+                             Json.obj("from" -> 200, "to" -> 299, "key" -> "2**"),
+                             Json.obj("from" -> 300, "to" -> 399, "key" -> "3**"),
+                             Json.obj("from" -> 400, "to" -> 499, "key" -> "4**"),
+                             Json.obj("from" -> 500, "to" -> 599, "key" -> "5**")
+                           ),
+                           "field"  -> "status",
+                           "keyed"  -> true
+                         )
+                       )
+                     )
+                   )
+                 )
+               else QueryResponse.empty.vfuture
     } yield {
-        val res = if (noraw.isEmpty) raw.resp else noraw.resp
-        val buckets: JsObject = (res \ "aggregations" \ "codes" \ "buckets").asOpt[JsObject].getOrElse(Json.obj())
-        val series            = buckets.value
+      val res               = if (noraw.isEmpty) raw.resp else noraw.resp
+      val buckets: JsObject = (res \ "aggregations" \ "codes" \ "buckets").asOpt[JsObject].getOrElse(Json.obj())
+      val series            = buckets.value
         .map { case (k, v) =>
           Json.obj(
             "name"  -> k,
@@ -876,10 +886,12 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
               })
           )
         }
-      Json.obj(
-        "chart" -> Json.obj("type" -> "areaspline"),
-        "series" -> series
-      ).some
+      Json
+        .obj(
+          "chart"  -> Json.obj("type" -> "areaspline"),
+          "series" -> series
+        )
+        .some
     }
   }
 
@@ -1009,53 +1021,55 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   )(implicit ec: ExecutionContext): Future[JsObject] = {
     for {
       noraw <- query(
-        Json.obj(
-          "size"  -> 0,
-          "query" -> Json.obj(
-            "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = false)
-          ),
-          "aggs"  -> Json.obj(
-            "stats" -> Json.obj(
-              "date_histogram" -> Json.obj(
-                "field"    -> "@timestamp",
-                "interval" -> calcInterval(mayBeFrom, mayBeTo)
-              ),
-              "aggs"           -> Json.obj(
-                "stats" -> Json.obj(
-                  "extended_stats" -> Json.obj(
-                    "field" -> field
-                  )
-                )
-              )
-            )
-          )
-        )
-      )
-      raw <- if (noraw.isEmpty) query(
-        Json.obj(
-          "size"  -> 0,
-          "query" -> Json.obj(
-            "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = true)
-          ),
-          "aggs"  -> Json.obj(
-            "stats" -> Json.obj(
-              "date_histogram" -> Json.obj(
-                "field"    -> "@timestamp",
-                "interval" -> calcInterval(mayBeFrom, mayBeTo)
-              ),
-              "aggs"           -> Json.obj(
-                "stats" -> Json.obj(
-                  "extended_stats" -> Json.obj(
-                    "field" -> field
-                  )
-                )
-              )
-            )
-          )
-        )
-      ) else QueryResponse.empty.vfuture
+                 Json.obj(
+                   "size"  -> 0,
+                   "query" -> Json.obj(
+                     "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = false)
+                   ),
+                   "aggs"  -> Json.obj(
+                     "stats" -> Json.obj(
+                       "date_histogram" -> Json.obj(
+                         "field"    -> "@timestamp",
+                         "interval" -> calcInterval(mayBeFrom, mayBeTo)
+                       ),
+                       "aggs"           -> Json.obj(
+                         "stats" -> Json.obj(
+                           "extended_stats" -> Json.obj(
+                             "field" -> field
+                           )
+                         )
+                       )
+                     )
+                   )
+                 )
+               )
+      raw   <- if (noraw.isEmpty)
+                 query(
+                   Json.obj(
+                     "size"  -> 0,
+                     "query" -> Json.obj(
+                       "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = true)
+                     ),
+                     "aggs"  -> Json.obj(
+                       "stats" -> Json.obj(
+                         "date_histogram" -> Json.obj(
+                           "field"    -> "@timestamp",
+                           "interval" -> calcInterval(mayBeFrom, mayBeTo)
+                         ),
+                         "aggs"           -> Json.obj(
+                           "stats" -> Json.obj(
+                             "extended_stats" -> Json.obj(
+                               "field" -> field
+                             )
+                           )
+                         )
+                       )
+                     )
+                   )
+                 )
+               else QueryResponse.empty.vfuture
     } yield {
-      val res = if (noraw.isEmpty) raw.resp else noraw.resp
+      val res    = if (noraw.isEmpty) raw.resp else noraw.resp
       val bucket = (res \ "aggregations" \ "stats" \ "buckets").asOpt[JsValue].getOrElse(JsNull)
       Json.obj(
         "chart"  -> Json.obj("type" -> "chart"),
@@ -1078,53 +1092,55 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   )(implicit ec: ExecutionContext): Future[JsObject] = {
     for {
       noraw <- query(
-        Json.obj(
-          "size"  -> 0,
-          "query" -> Json.obj(
-            "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = false)
-          ),
-          "aggs"  -> Json.obj(
-            "stats" -> Json.obj(
-              "date_histogram" -> Json.obj(
-                "field"    -> "@timestamp",
-                "interval" -> calcInterval(mayBeFrom, mayBeTo)
-              ),
-              "aggs"           -> Json.obj(
-                "stats" -> Json.obj(
-                  "percentiles" -> Json.obj(
-                    "field" -> field
-                  )
-                )
-              )
-            )
-          )
-        )
-      )
-      raw <- if (noraw.isEmpty) query(
-        Json.obj(
-          "size"  -> 0,
-          "query" -> Json.obj(
-            "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = true)
-          ),
-          "aggs"  -> Json.obj(
-            "stats" -> Json.obj(
-              "date_histogram" -> Json.obj(
-                "field"    -> "@timestamp",
-                "interval" -> calcInterval(mayBeFrom, mayBeTo)
-              ),
-              "aggs"           -> Json.obj(
-                "stats" -> Json.obj(
-                  "percentiles" -> Json.obj(
-                    "field" -> field
-                  )
-                )
-              )
-            )
-          )
-        )
-      ) else QueryResponse.empty.vfuture
+                 Json.obj(
+                   "size"  -> 0,
+                   "query" -> Json.obj(
+                     "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = false)
+                   ),
+                   "aggs"  -> Json.obj(
+                     "stats" -> Json.obj(
+                       "date_histogram" -> Json.obj(
+                         "field"    -> "@timestamp",
+                         "interval" -> calcInterval(mayBeFrom, mayBeTo)
+                       ),
+                       "aggs"           -> Json.obj(
+                         "stats" -> Json.obj(
+                           "percentiles" -> Json.obj(
+                             "field" -> field
+                           )
+                         )
+                       )
+                     )
+                   )
+                 )
+               )
+      raw   <- if (noraw.isEmpty)
+                 query(
+                   Json.obj(
+                     "size"  -> 0,
+                     "query" -> Json.obj(
+                       "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = true)
+                     ),
+                     "aggs"  -> Json.obj(
+                       "stats" -> Json.obj(
+                         "date_histogram" -> Json.obj(
+                           "field"    -> "@timestamp",
+                           "interval" -> calcInterval(mayBeFrom, mayBeTo)
+                         ),
+                         "aggs"           -> Json.obj(
+                           "stats" -> Json.obj(
+                             "percentiles" -> Json.obj(
+                               "field" -> field
+                             )
+                           )
+                         )
+                       )
+                     )
+                   )
+                 )
+               else QueryResponse.empty.vfuture
     } yield {
-      val res = if (noraw.isEmpty) raw.resp else noraw.resp
+      val res    = if (noraw.isEmpty) raw.resp else noraw.resp
       val bucket = (res \ "aggregations" \ "stats" \ "buckets").asOpt[JsValue].getOrElse(JsNull)
       Json.obj(
         "chart"  -> Json.obj("type" -> "areaspline"),
@@ -1213,35 +1229,37 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   )(implicit ec: ExecutionContext): Future[JsObject] = {
     for {
       noraw <- query(
-        Json.obj(
-          "size"  -> 0,
-          "query" -> Json.obj(
-            "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = false)
-          ),
-          "aggs"  -> Json.obj {
-            operation -> Json.obj(
-              operation -> Json.obj(
-                "field" -> field
-              )
-            )
-          }
-        )
-      )
-      raw <- if (noraw.isEmpty) query(
-        Json.obj(
-          "size"  -> 0,
-          "query" -> Json.obj(
-            "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = true)
-          ),
-          "aggs"  -> Json.obj {
-            operation -> Json.obj(
-              operation -> Json.obj(
-                "field" -> field
-              )
-            )
-          }
-        )
-      ) else QueryResponse.empty.vfuture
+                 Json.obj(
+                   "size"  -> 0,
+                   "query" -> Json.obj(
+                     "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = false)
+                   ),
+                   "aggs"  -> Json.obj {
+                     operation -> Json.obj(
+                       operation -> Json.obj(
+                         "field" -> field
+                       )
+                     )
+                   }
+                 )
+               )
+      raw   <- if (noraw.isEmpty)
+                 query(
+                   Json.obj(
+                     "size"  -> 0,
+                     "query" -> Json.obj(
+                       "bool" -> filters(filterable, mayBeFrom, mayBeTo, raw = true)
+                     ),
+                     "aggs"  -> Json.obj {
+                       operation -> Json.obj(
+                         operation -> Json.obj(
+                           "field" -> field
+                         )
+                       )
+                     }
+                   )
+                 )
+               else QueryResponse.empty.vfuture
     } yield {
       val res = if (noraw.isEmpty) raw.resp else noraw.resp
       Json.obj(
@@ -1263,46 +1281,48 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   ): Future[JsValue] = {
     for {
       noraw <- query(
-        Json.obj(
-          "size"  -> 0,
-          "query" -> Json.obj(
-            "bool" -> filters(filterable, from, to, additionalMust = additionalFilters, raw = false)
-          ),
-          "aggs"  -> Json.obj(
-            "codes" -> Json.obj(
-              "terms" -> Json.obj(
-                "field" -> field,
-                "order" -> Json.obj(
-                  "_term" -> "asc"
-                ),
-                "size"  -> size
-              )
-            )
-          )
-        )
-      )
-      raw <- if (noraw.isEmpty) query(
-        Json.obj(
-          "size"  -> 0,
-          "query" -> Json.obj(
-            "bool" -> filters(filterable, from, to, additionalMust = additionalFilters, raw = true)
-          ),
-          "aggs"  -> Json.obj(
-            "codes" -> Json.obj(
-              "terms" -> Json.obj(
-                "field" -> field,
-                "order" -> Json.obj(
-                  "_term" -> "asc"
-                ),
-                "size"  -> size
-              )
-            )
-          )
-        )
-      ) else QueryResponse.empty.vfuture
+                 Json.obj(
+                   "size"  -> 0,
+                   "query" -> Json.obj(
+                     "bool" -> filters(filterable, from, to, additionalMust = additionalFilters, raw = false)
+                   ),
+                   "aggs"  -> Json.obj(
+                     "codes" -> Json.obj(
+                       "terms" -> Json.obj(
+                         "field" -> field,
+                         "order" -> Json.obj(
+                           "_term" -> "asc"
+                         ),
+                         "size"  -> size
+                       )
+                     )
+                   )
+                 )
+               )
+      raw   <- if (noraw.isEmpty)
+                 query(
+                   Json.obj(
+                     "size"  -> 0,
+                     "query" -> Json.obj(
+                       "bool" -> filters(filterable, from, to, additionalMust = additionalFilters, raw = true)
+                     ),
+                     "aggs"  -> Json.obj(
+                       "codes" -> Json.obj(
+                         "terms" -> Json.obj(
+                           "field" -> field,
+                           "order" -> Json.obj(
+                             "_term" -> "asc"
+                           ),
+                           "size"  -> size
+                         )
+                       )
+                     )
+                   )
+                 )
+               else QueryResponse.empty.vfuture
     } yield {
       val json = if (noraw.isEmpty) raw.resp else noraw.resp
-      val pie = (json \ "aggregations" \ "codes" \ "buckets")
+      val pie  = (json \ "aggregations" \ "codes" \ "buckets")
         .asOpt[Seq[JsObject]]
         .getOrElse(Seq.empty)
         .map { o =>
@@ -1376,44 +1396,58 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
     // gatewayEventFilters ++
     // serviceQuery.toSeq
 
-    filterable match {
-      case None                                       => {
-        val eventFilterJson = JsArray(eventFilter.map(e => Json.obj("bool" -> Json.obj("should" -> Json.arr(e), "minimum_should_match" -> 1))))
-        val additionalMustJson = JsArray(additionalMust.map(e => Json.obj("bool" -> Json.obj("must" -> Json.arr(e)))))
-        val gatewayEvent = Json.arr(Json.obj(
-          "bool" -> Json.obj(
-            "should" -> Json.arr(
-              Json.obj(
-                "match_phrase" -> Json.obj(
-                  "@type" -> "GatewayEvent"
-                )
-              )
-            ),
-            "minimum_should_match" -> 1
-          )
-        ))
-        val filters = eventFilterJson ++ additionalMustJson ++ gatewayEvent
-        Json.obj(
-          "must" -> Json.arr(),
-          "must_not" -> Json.arr(),
-          "should" -> Json.arr(),
-          "filter" -> Json.arr(
+    val eventFilterArr    =
+      if (eventFilter.isEmpty) Json.arr()
+      else
+        JsArray(
+          eventFilter.map(e => Json.obj("bool" -> Json.obj("should" -> Json.arr(e), "minimum_should_match" -> 1)))
+        )
+    val additionalMustArr =
+      if (additionalMust.isEmpty) Json.arr()
+      else JsArray(additionalMust.map(e => Json.obj("bool" -> Json.obj("must" -> Json.arr(e)))))
+    val gatewayEvent      = Json.arr(
+      Json.obj(
+        "bool" -> Json.obj(
+          "should"               -> Json.arr(
             Json.obj(
-              "bool" -> Json.obj(
-                "filter" -> filters
+              "match_phrase" -> Json.obj(
+                "@type" -> "GatewayEvent"
               )
-            ),
-            Json.obj(
-              "range" -> Json.obj(
-                "@timestamp" -> Json.obj(
-                  "gte" -> mayBeFrom.getOrElse(DateTime.now()).toString(),
-                  "lte" -> mayBeTo.getOrElse(DateTime.now()).toString(),
-                  "format" -> "strict_date_optional_time"
-                )
+            )
+          ),
+          "minimum_should_match" -> 1
+        )
+      )
+    )
+    val basicFilters      = eventFilterArr ++ additionalMustArr /* ++ gatewayEvent */
+
+    def basicQuery(filters: JsArray): JsObject = {
+      Json.obj(
+        "must"     -> Json.arr(),
+        "must_not" -> Json.arr(),
+        "should"   -> Json.arr(),
+        "filter"   -> Json.arr(
+          Json.obj(
+            "bool"  -> Json.obj(
+              "filter" -> filters
+            )
+          ),
+          Json.obj(
+            "range" -> Json.obj(
+              "@timestamp" -> Json.obj(
+                "gte"    -> mayBeFrom.getOrElse(DateTime.now()).toString(),
+                "lte"    -> mayBeTo.getOrElse(DateTime.now()).toString(),
+                "format" -> "strict_date_optional_time"
               )
             )
           )
         )
+      )
+    }
+
+    filterable match {
+      case None                                => {
+        basicQuery(basicFilters)
         // Json.obj(
         //   "must" -> (
         //     dateFilters(mayBeFrom, mayBeTo) ++
@@ -1422,74 +1456,95 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         //   )
         // )
       }
-      case Some(ServiceGroupFilterable(group))        => {
-        Json.obj(
-          "should"               -> (
-            Seq(
-              if (!raw) Json.obj("term" -> Json.obj("descriptor.groups" -> group.id)) else Json.obj("term" -> Json.obj("descriptor.groups.raw" -> group.id))
-            ) ++
-            additionalShould
-          ),
-          "must"                 -> (
-            dateFilters(mayBeFrom, mayBeTo) ++
-            eventFilter ++
-            additionalMust
-          )
-        ).applyOnIf(additionalShould.nonEmpty) { obj =>
-          obj ++ Json.obj("minimum_should_match" -> 1)
-        }
-      }
-      case Some(ApiKeyFilterable(apiKey))             => {
-        val eventFilterArr = if (eventFilter.isEmpty) Json.arr() else JsArray(eventFilter.map(e => Json.obj("bool" -> Json.obj("should" -> Json.arr(e), "minimum_should_match" -> 1))))
-        val additionalMustArr = if (additionalMust.isEmpty) Json.arr() else JsArray(additionalMust.map(e => Json.obj("bool" -> Json.obj("must" -> Json.arr(e)))))
-        val filters = Json.arr(Json.obj(
-          "bool" -> Json.obj(
-            "should" -> Json.arr(
-              Json.obj(
-                "match_phrase" -> Json.obj(
-                  "@type" -> "GatewayEvent"
-                )
-              )
-            ),
-            "minimum_should_match" -> 1
-          )
-        )) ++ eventFilterArr ++ additionalMustArr ++ Json.arr(Json.obj(
-          "bool" -> Json.obj(
-            "should" -> Json.arr(
-              Json.obj(
-                "match_phrase" -> Json.obj(
-                  "identity.identity" -> apiKey.clientId
+      case Some(ServiceGroupFilterable(group)) => {
+
+        val filters = Json.arr(
+          Json.obj(
+            "bool" -> Json.obj(
+              "should"               -> Json.arr(
+                Json.obj(
+                  "match_phrase" -> Json.obj(
+                    "@type" -> "GatewayEvent"
+                  )
                 )
               ),
-              Json.obj(
-                "match_phrase" -> Json.obj(
-                  "identity.identity.raw" -> apiKey.clientId
+              "minimum_should_match" -> 1
+            )
+          )
+        ) ++ Json.arr(
+          Json.obj(
+            "bool" -> Json.obj(
+              "should"               -> Json.arr(
+                Json.obj(
+                  "match_phrase" -> Json.obj(
+                    "descriptor.groups" -> group.id
+                  )
+                ),
+                Json.obj(
+                  "match_phrase" -> Json.obj(
+                    "descriptor.groups.raw" -> group.id
+                  )
                 )
-              )
-            ),
-            "minimum_should_match" -> 1
-        )))
-        Json.obj(
-          "must" -> Json.arr(),
-          "must_not" -> Json.arr(),
-          "should" -> Json.arr(),
-          "filter" -> Json.arr(
-            Json.obj(
-              "bool" -> Json.obj(
-                "filter" -> filters
-              )
-            ),
-            Json.obj(
-              "range" -> Json.obj(
-                "@timestamp" -> Json.obj(
-                  "gte" -> mayBeFrom.getOrElse(DateTime.now()).toString(),
-                  "lte" -> mayBeTo.getOrElse(DateTime.now()).toString(),
-                  "format" -> "strict_date_optional_time"
-                )
-              )
+              ),
+              "minimum_should_match" -> 1
             )
           )
         )
+
+        basicQuery(filters)
+
+        // Json.obj(
+        //   "should"               -> (
+        //     Seq(
+        //       if (!raw) Json.obj("term" -> Json.obj("descriptor.groups" -> group.id)) else Json.obj("term" -> Json.obj("descriptor.groups.raw" -> group.id))
+        //     ) ++
+        //     additionalShould
+        //   ),
+        //   "must"                 -> (
+        //     dateFilters(mayBeFrom, mayBeTo) ++
+        //     eventFilter ++
+        //     additionalMust
+        //   )
+        // ).applyOnIf(additionalShould.nonEmpty) { obj =>
+        //   obj ++ Json.obj("minimum_should_match" -> 1)
+        // }
+      }
+      case Some(ApiKeyFilterable(apiKey))             => {
+        val filters = Json.arr(
+          Json.obj(
+            "bool" -> Json.obj(
+              "should"               -> Json.arr(
+                Json.obj(
+                  "match_phrase" -> Json.obj(
+                    "@type" -> "GatewayEvent"
+                  )
+                )
+              ),
+              "minimum_should_match" -> 1
+            )
+          )
+        ) ++ Json.arr(
+          Json.obj(
+            "bool" -> Json.obj(
+              "should"               -> Json.arr(
+                Json.obj(
+                  "match_phrase" -> Json.obj(
+                    "identity.identity" -> apiKey.clientId
+                  )
+                ),
+                Json.obj(
+                  "match_phrase" -> Json.obj(
+                    "identity.identity.raw" -> apiKey.clientId
+                  )
+                )
+              ),
+              "minimum_should_match" -> 1
+            )
+          )
+        )
+
+        basicQuery(filters)
+
         // Json.obj(
         //   "should"               -> (
         //     Seq(
@@ -1509,21 +1564,57 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         // }
       }
       case Some(ServiceDescriptorFilterable(service)) => {
-        Json.obj(
-          "should"               -> (
-            Seq(
-              if (!raw) Json.obj("term" -> Json.obj("@serviceId" -> service.id)) else Json.obj("term" -> Json.obj("@serviceId.raw" -> service.id))
-            ) ++
-            additionalShould
-          ),
-          "must"                 -> (
-            dateFilters(mayBeFrom, mayBeTo) ++
-            eventFilter ++
-            additionalMust
+
+        val filters = Json.arr(
+          Json.obj(
+            "bool" -> Json.obj(
+              "should"               -> Json.arr(
+                Json.obj(
+                  "match_phrase" -> Json.obj(
+                    "@type" -> "GatewayEvent"
+                  )
+                )
+              ),
+              "minimum_should_match" -> 1
+            )
           )
-        ).applyOnIf(additionalShould.nonEmpty) { obj =>
-          obj ++ Json.obj("minimum_should_match" -> 1)
-        }
+        ) ++ Json.arr(
+          Json.obj(
+            "bool" -> Json.obj(
+              "should"               -> Json.arr(
+                Json.obj(
+                  "match_phrase" -> Json.obj(
+                    "@serviceId" -> service.id
+                  )
+                ),
+                Json.obj(
+                  "match_phrase" -> Json.obj(
+                    "@serviceId.raw" -> service.id
+                  )
+                )
+              ),
+              "minimum_should_match" -> 1
+            )
+          )
+        )
+
+        basicQuery(filters)
+
+        // Json.obj(
+        //   "should"               -> (
+        //     Seq(
+        //       if (!raw) Json.obj("term" -> Json.obj("@serviceId" -> service.id)) else Json.obj("term" -> Json.obj("@serviceId.raw" -> service.id))
+        //     ) ++
+        //     additionalShould
+        //   ),
+        //   "must"                 -> (
+        //     dateFilters(mayBeFrom, mayBeTo) ++
+        //     eventFilter ++
+        //     additionalMust
+        //   )
+        // ).applyOnIf(additionalShould.nonEmpty) { obj =>
+        //   obj ++ Json.obj("minimum_should_match" -> 1)
+        // }
       }
     }
   }
@@ -1547,85 +1638,93 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       }
     for {
       noraw <- query(
-        Json.obj(
-          "query" -> Json.obj(
-            "bool" -> filters(
-              None,
-              from,
-              to,
-              raw = false,
-              eventFilter = healthCheckEventFilters,
-              additionalMust =
-                Seq(Json.obj("terms" -> Json.obj("@serviceId" -> JsArray(servicesDescriptors.map(d => JsString(d.id))))))
-            )
-          ),
-          "aggs"  -> Json.obj(
-            "services" -> Json.obj(
-              "terms" -> Json.obj(
-                "field" -> "@serviceId"
-              ),
-              "aggs"  -> Json.obj(
-                "date" -> Json.obj(
-                  "date_histogram" -> Json.obj(
-                    "field"           -> "@timestamp",
-                    "interval"        -> "day",
-                    "format"          -> "yyyy-MM-dd",
-                    "min_doc_count"   -> 0,
-                    "extended_bounds" -> extendedBounds
-                  ),
-                  "aggs"           -> Json.obj(
-                    "status" -> Json.obj(
-                      "terms" -> Json.obj(
-                        "field" -> "health"
-                      )
-                    )
-                  )
-                )
-              )
-            )
-          )
-        )
-      )
-      raw <- if (noraw.isEmpty) query(
-        Json.obj(
-          "query" -> Json.obj(
-            "bool" -> filters(
-              None,
-              from,
-              to,
-              raw = true,
-              eventFilter = healthCheckEventFilters,
-              additionalMust =
-                Seq(Json.obj("terms" -> Json.obj("@serviceId" -> JsArray(servicesDescriptors.map(d => JsString(d.id))))))
-            )
-          ),
-          "aggs"  -> Json.obj(
-            "services" -> Json.obj(
-              "terms" -> Json.obj(
-                "field" -> "@serviceId"
-              ),
-              "aggs"  -> Json.obj(
-                "date" -> Json.obj(
-                  "date_histogram" -> Json.obj(
-                    "field"           -> "@timestamp",
-                    "interval"        -> "day",
-                    "format"          -> "yyyy-MM-dd",
-                    "min_doc_count"   -> 0,
-                    "extended_bounds" -> extendedBounds
-                  ),
-                  "aggs"           -> Json.obj(
-                    "status" -> Json.obj(
-                      "terms" -> Json.obj(
-                        "field" -> "health"
-                      )
-                    )
-                  )
-                )
-              )
-            )
-          )
-        )
-      ) else QueryResponse.empty.vfuture
+                 Json.obj(
+                   "query" -> Json.obj(
+                     "bool" -> filters(
+                       None,
+                       from,
+                       to,
+                       raw = false,
+                       eventFilter = healthCheckEventFilters,
+                       additionalMust = Seq(
+                         Json.obj(
+                           "terms" -> Json.obj("@serviceId" -> JsArray(servicesDescriptors.map(d => JsString(d.id))))
+                         )
+                       )
+                     )
+                   ),
+                   "aggs"  -> Json.obj(
+                     "services" -> Json.obj(
+                       "terms" -> Json.obj(
+                         "field" -> "@serviceId"
+                       ),
+                       "aggs"  -> Json.obj(
+                         "date" -> Json.obj(
+                           "date_histogram" -> Json.obj(
+                             "field"           -> "@timestamp",
+                             "interval"        -> "day",
+                             "format"          -> "yyyy-MM-dd",
+                             "min_doc_count"   -> 0,
+                             "extended_bounds" -> extendedBounds
+                           ),
+                           "aggs"           -> Json.obj(
+                             "status" -> Json.obj(
+                               "terms" -> Json.obj(
+                                 "field" -> "health"
+                               )
+                             )
+                           )
+                         )
+                       )
+                     )
+                   )
+                 )
+               )
+      raw   <- if (noraw.isEmpty)
+                 query(
+                   Json.obj(
+                     "query" -> Json.obj(
+                       "bool" -> filters(
+                         None,
+                         from,
+                         to,
+                         raw = true,
+                         eventFilter = healthCheckEventFilters,
+                         additionalMust = Seq(
+                           Json.obj(
+                             "terms" -> Json.obj("@serviceId" -> JsArray(servicesDescriptors.map(d => JsString(d.id))))
+                           )
+                         )
+                       )
+                     ),
+                     "aggs"  -> Json.obj(
+                       "services" -> Json.obj(
+                         "terms" -> Json.obj(
+                           "field" -> "@serviceId"
+                         ),
+                         "aggs"  -> Json.obj(
+                           "date" -> Json.obj(
+                             "date_histogram" -> Json.obj(
+                               "field"           -> "@timestamp",
+                               "interval"        -> "day",
+                               "format"          -> "yyyy-MM-dd",
+                               "min_doc_count"   -> 0,
+                               "extended_bounds" -> extendedBounds
+                             ),
+                             "aggs"           -> Json.obj(
+                               "status" -> Json.obj(
+                                 "terms" -> Json.obj(
+                                   "field" -> "health"
+                                 )
+                               )
+                             )
+                           )
+                         )
+                       )
+                     )
+                   )
+                 )
+               else QueryResponse.empty.vfuture
     } yield {
       val json = if (noraw.isEmpty) raw.resp else noraw.resp
       (json \ "aggregations" \ "services" \ "buckets")
@@ -1692,71 +1791,73 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       }
     for {
       noraw <- query(
-        Json.obj(
-          "query" -> Json.obj(
-            "bool" -> filters(
-              None,
-              from,
-              to,
-              raw = false,
-              eventFilter = healthCheckEventFilters,
-              additionalMust =
-                Seq(Json.obj("term" -> Json.obj("@serviceId" -> Json.obj("value" -> servicesDescriptor.id))))
-            )
-          ),
-          "aggs"  -> Json.obj(
-            "dates" -> Json.obj(
-              "date_histogram" -> Json.obj(
-                "field"           -> "@timestamp",
-                "interval"        -> "hour",
-                "format"          -> "yyyy-MM-dd",
-                "min_doc_count"   -> 0,
-                "extended_bounds" -> extendedBounds
-              ),
-              "aggs"           -> Json.obj(
-                "duration" -> Json.obj(
-                  "avg" -> Json.obj(
-                    "field" -> "duration"
-                  )
-                )
-              )
-            )
-          )
-        )
-      )
-      raw <- if (noraw.isEmpty) query(
-        Json.obj(
-          "query" -> Json.obj(
-            "bool" -> filters(
-              None,
-              from,
-              to,
-              raw = true,
-              eventFilter = healthCheckEventFilters,
-              additionalMust =
-                Seq(Json.obj("term" -> Json.obj("@serviceId" -> Json.obj("value" -> servicesDescriptor.id))))
-            )
-          ),
-          "aggs"  -> Json.obj(
-            "dates" -> Json.obj(
-              "date_histogram" -> Json.obj(
-                "field"           -> "@timestamp",
-                "interval"        -> "hour",
-                "format"          -> "yyyy-MM-dd",
-                "min_doc_count"   -> 0,
-                "extended_bounds" -> extendedBounds
-              ),
-              "aggs"           -> Json.obj(
-                "duration" -> Json.obj(
-                  "avg" -> Json.obj(
-                    "field" -> "duration"
-                  )
-                )
-              )
-            )
-          )
-        )
-      ) else QueryResponse.empty.vfuture
+                 Json.obj(
+                   "query" -> Json.obj(
+                     "bool" -> filters(
+                       None,
+                       from,
+                       to,
+                       raw = false,
+                       eventFilter = healthCheckEventFilters,
+                       additionalMust =
+                         Seq(Json.obj("term" -> Json.obj("@serviceId" -> Json.obj("value" -> servicesDescriptor.id))))
+                     )
+                   ),
+                   "aggs"  -> Json.obj(
+                     "dates" -> Json.obj(
+                       "date_histogram" -> Json.obj(
+                         "field"           -> "@timestamp",
+                         "interval"        -> "hour",
+                         "format"          -> "yyyy-MM-dd",
+                         "min_doc_count"   -> 0,
+                         "extended_bounds" -> extendedBounds
+                       ),
+                       "aggs"           -> Json.obj(
+                         "duration" -> Json.obj(
+                           "avg" -> Json.obj(
+                             "field" -> "duration"
+                           )
+                         )
+                       )
+                     )
+                   )
+                 )
+               )
+      raw   <- if (noraw.isEmpty)
+                 query(
+                   Json.obj(
+                     "query" -> Json.obj(
+                       "bool" -> filters(
+                         None,
+                         from,
+                         to,
+                         raw = true,
+                         eventFilter = healthCheckEventFilters,
+                         additionalMust =
+                           Seq(Json.obj("term" -> Json.obj("@serviceId" -> Json.obj("value" -> servicesDescriptor.id))))
+                       )
+                     ),
+                     "aggs"  -> Json.obj(
+                       "dates" -> Json.obj(
+                         "date_histogram" -> Json.obj(
+                           "field"           -> "@timestamp",
+                           "interval"        -> "hour",
+                           "format"          -> "yyyy-MM-dd",
+                           "min_doc_count"   -> 0,
+                           "extended_bounds" -> extendedBounds
+                         ),
+                         "aggs"           -> Json.obj(
+                           "duration" -> Json.obj(
+                             "avg" -> Json.obj(
+                               "field" -> "duration"
+                             )
+                           )
+                         )
+                       )
+                     )
+                   )
+                 )
+               else QueryResponse.empty.vfuture
     } yield {
       val json = if (noraw.isEmpty) raw.resp else noraw.resp
       (json \ "aggregations" \ "dates" \ "buckets")

@@ -13,10 +13,15 @@ import java.util.List;
 
 public class CertInfo {
 
-    public static List<String> getSubjectAlternativeNames(X509Certificate certificate, Logger log) {
+    public static List<String> getSubjectAlternativeNames(String name, X509Certificate certificate, Logger log) {
         List<String> identities = new ArrayList<String>();
         try {
-            Collection<List<?>> altNames = certificate.getSubjectAlternativeNames();
+            Collection<List<?>> altNames;
+            try {
+                altNames = certificate.getSubjectAlternativeNames();
+            } catch (java.security.cert.CertificateParsingException ex) {
+                altNames = null;
+            }
             if (altNames == null)
                 return Collections.emptyList();
             for (List item : altNames) {
@@ -42,9 +47,8 @@ public class CertInfo {
                     log.underlyingLogger().warn("SubjectAltName of invalid type found (" + certificate.getSubjectDN().getName() + ": " + type + "): ");// + certificate);
                 }
             }
-        }
-        catch (CertificateParsingException e) {
-            log.underlyingLogger().error("Error parsing SubjectAltName in certificate: " + certificate + "\r\nerror:" + e.getLocalizedMessage(),e);
+        } catch (Exception e) {
+            log.underlyingLogger().error("Error parsing SubjectAltName in certificate: " + name + "\r\nerror:" + e.getLocalizedMessage(),e);
         }
         return identities;
     }

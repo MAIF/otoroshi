@@ -18,19 +18,31 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class TcpTunnel extends NgTunnelHandler {
 
-  override def core: Boolean = true
-  override def name: String = "TCP Tunnel"
+  override def core: Boolean               = true
+  override def name: String                = "TCP Tunnel"
   override def description: Option[String] = "This plugin creates TCP tunnels through otoroshi".some
+  override def isAccessAsync: Boolean      = true
 
-  override def handle(ctx: NgTunnelHandlerContext)(implicit env: Env, ec: ExecutionContext): Flow[Message, Message, _] = {
+  override def handle(
+      ctx: NgTunnelHandlerContext
+  )(implicit env: Env, ec: ExecutionContext): Flow[Message, Message, _] = {
     val target                          = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).get
-    val elCtx = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)
-    val apikey = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
-    val user = ctx.attrs.get(otoroshi.plugins.Keys.UserKey)
+    val elCtx                           = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)
+    val apikey                          = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
+    val user                            = ctx.attrs.get(otoroshi.plugins.Keys.UserKey)
     val (theHost: String, thePort: Int) =
       (
         target.scheme,
-        TargetExpressionLanguage(target.host, ctx.request.some, ctx.route.serviceDescriptor.some, apikey, user, elCtx, ctx.attrs, env)
+        TargetExpressionLanguage(
+          target.host,
+          ctx.request.some,
+          ctx.route.serviceDescriptor.some,
+          apikey,
+          user,
+          elCtx,
+          ctx.attrs,
+          env
+        )
       ) match {
         case (_, host) if host.contains(":")            =>
           (host.split(":").apply(0), host.split(":").apply(1).toInt)
@@ -50,7 +62,7 @@ class TcpTunnel extends NgTunnelHandler {
         .collect {
           case BinaryMessage(data) =>
             data
-          case _                         =>
+          case _                   =>
             ByteString.empty
         }
         .via(
@@ -68,23 +80,35 @@ class TcpTunnel extends NgTunnelHandler {
 
 class UdpTunnel extends NgTunnelHandler {
 
-  override def core: Boolean = true
-  override def name: String = "UDP Tunnel"
+  override def core: Boolean               = true
+  override def name: String                = "UDP Tunnel"
   override def description: Option[String] = "This plugin creates UDP tunnels through otoroshi".some
+  override def isAccessAsync: Boolean      = true
 
-  override def handle(ctx: NgTunnelHandlerContext)(implicit env: Env, ec: ExecutionContext): Flow[Message, Message, _] = {
+  override def handle(
+      ctx: NgTunnelHandlerContext
+  )(implicit env: Env, ec: ExecutionContext): Flow[Message, Message, _] = {
     import akka.stream.scaladsl.{Flow, GraphDSL, UnzipWith, ZipWith}
     import GraphDSL.Implicits._
-    val base64decoder = java.util.Base64.getDecoder
-    val base64encoder = java.util.Base64.getEncoder
+    val base64decoder                   = java.util.Base64.getDecoder
+    val base64encoder                   = java.util.Base64.getEncoder
     val target                          = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).get
-    val elCtx = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)
-    val apikey = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
-    val user = ctx.attrs.get(otoroshi.plugins.Keys.UserKey)
+    val elCtx                           = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)
+    val apikey                          = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
+    val user                            = ctx.attrs.get(otoroshi.plugins.Keys.UserKey)
     val (theHost: String, thePort: Int) =
       (
         target.scheme,
-        TargetExpressionLanguage(target.host, ctx.request.some, ctx.route.serviceDescriptor.some, apikey, user, elCtx, ctx.attrs, env)
+        TargetExpressionLanguage(
+          target.host,
+          ctx.request.some,
+          ctx.route.serviceDescriptor.some,
+          apikey,
+          user,
+          elCtx,
+          ctx.attrs,
+          env
+        )
       ) match {
         case (_, host) if host.contains(":")            =>
           (host.split(":").apply(0), host.split(":").apply(1).toInt)
@@ -111,7 +135,7 @@ class UdpTunnel extends NgTunnelHandler {
             .map(str => ByteString(base64decoder.decode(str)))
             .getOrElse(ByteString.empty)
           (port, address, Datagram(_data, remoteAddress))
-        case _                         =>
+        case _                   =>
           (0, "localhost", Datagram(ByteString.empty, remoteAddress))
       }
 

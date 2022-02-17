@@ -14,6 +14,7 @@ import play.api.libs.json._
 import otoroshi.security.Auth0Config
 import otoroshi.ssl.{Cert, ClientCertificateValidator}
 import otoroshi.utils.json.JsonImplicits._
+import otoroshi.utils.syntax.implicits.BetterSyntax
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -123,7 +124,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   )(implicit ec: ExecutionContext, env: Env): Future[Unit] =
     for {
       secCalls <- redisCli.incrby(throttlingKey(), 1L)
-      _        <- redisCli.ttl(throttlingKey()).filter(_ > -1).recoverWith { case _ => redisCli.expire(throttlingKey(), 10) }
+      _        <- redisCli.pttl(throttlingKey()).filter(_ > -1).recoverWith { case _ => redisCli.expire(throttlingKey(), 10) }
       fu        = env.metrics.markLong(s"global.throttling-quotas", secCalls)
     } yield ()
 
@@ -164,6 +165,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   override def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig = {
     val ref = configCache.get()
     if (ref == null) {
+      // AWAIT: valid
+      logger.error("this await should never be called!")
       Await.result(singleton(), 1.second) // WARN: await here should never be executed
     } else {
       ref

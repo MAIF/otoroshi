@@ -748,7 +748,7 @@ class ScriptManager(env: Env) {
     listenerNames,
     jobNames,
     exporterNames,
-    ngNames,
+    ngNames
   ) =
     Try {
       import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
@@ -936,7 +936,17 @@ class ScriptManager(env: Env) {
           .filterNot(predicate)
           .map(_.getName)
 
-        (requestTransformers, validators, preRoutes, reqSinks, reqHandlers, listenerNames, jobNames, customExporters, ngPlugins)
+        (
+          requestTransformers,
+          validators,
+          preRoutes,
+          reqSinks,
+          reqHandlers,
+          listenerNames,
+          jobNames,
+          customExporters,
+          ngPlugins
+        )
       } catch {
         case e: Throwable =>
           e.printStackTrace()

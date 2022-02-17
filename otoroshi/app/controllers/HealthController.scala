@@ -144,7 +144,7 @@ class HealthController(cc: ControllerComponents)(implicit env: Env) extends Abst
       def transformToArray(input: String): JsValue = {
         val metrics = Json.parse(input)
         metrics match {
-          case JsObject(value)    =>
+          case JsObject(value) =>
             value.toSeq.foldLeft(Json.arr()) {
               case (arr, (key, JsObject(value))) =>
                 arr ++ value.toSeq.foldLeft(Json.arr()) {
@@ -155,11 +155,11 @@ class HealthController(cc: ControllerComponents)(implicit env: Env) extends Abst
                         "type" -> key
                       )
                     )
-                  case (arr2, (key2, value2)) => arr2
+                  case (arr2, (key2, value2))               => arr2
                 }
-              case (arr, (key, value)) => arr
+              case (arr, (key, value))           => arr
             }
-          case a => a
+          case a               => a
         }
       }
 

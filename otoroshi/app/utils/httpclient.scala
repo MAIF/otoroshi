@@ -625,7 +625,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
   def url(url: String): WSRequest =
     new AkkaWsClientRequest(this, url, clientConfig = ClientConfig(), targetOpt = None, env = env)
 
-  override def close(): Unit = Await.ready(client.shutdownAllConnectionPools(), 10.seconds)
+  override def close(): Unit = Await.ready(client.shutdownAllConnectionPools(), 10.seconds) // AWAIT: valid
 
   private[utils] val logger                         = Logger("otoroshi-akka-ws-client")
   private[utils] val wsClientConfig: WSClientConfig = config
@@ -896,7 +896,7 @@ case class AkkWsClientStreamedResponse(
   private lazy val _contentType: String          = httpResponse.entity.contentType.mediaType
     .toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
   private lazy val _bodyAsBytes: ByteString      =
-    Await.result(bodyAsSource.runFold(ByteString.empty)(_ ++ _)(mat), FiniteDuration(10, TimeUnit.MINUTES))
+    Await.result(bodyAsSource.runFold(ByteString.empty)(_ ++ _)(mat), FiniteDuration(10, TimeUnit.MINUTES)) // AWAIT: valid
   private lazy val _bodyAsString: String         = _bodyAsBytes.utf8String
   private lazy val _bodyAsXml: Elem              = XML.loadString(_bodyAsString)
   private lazy val _bodyAsJson: JsValue          = Json.parse(_bodyAsString)
@@ -1312,8 +1312,8 @@ case class AkkaWsClientRequest(
   }
 
   lazy val (akkaHttpEntity, updatedHeaders) = {
-    val ct                                   = realContentType.getOrElse(ContentTypes.`application/octet-stream`)
-    val cl                                   = realContentLength
+    val ct = realContentType.getOrElse(ContentTypes.`application/octet-stream`)
+    val cl = realContentLength
     body match {
       case EmptyBody                         => (HttpEntity.Empty, headers)
       case InMemoryBody(bytes)               => (HttpEntity.apply(ct, bytes), headers)
@@ -1325,7 +1325,7 @@ case class AkkaWsClientRequest(
   def buildRequest(): HttpRequest = {
     // val internalUri = Uri(rawUrl)
     // val ua = realUserAgent.flatMap(s => Try(`User-Agent`(s)).toOption)
-    val akkaHeaders: List[HttpHeader]    = updatedHeaders
+    val akkaHeaders: List[HttpHeader] = updatedHeaders
       .flatMap { case (key, values) =>
         values.distinct.map(value => HttpHeader.parse(key, value))
       }
@@ -1488,7 +1488,7 @@ object Implicits {
             case _          => ()
           }
           req.asInstanceOf[req.Self]
-        case _                          => req.asInstanceOf[req.Self]
+        case _                                => req.asInstanceOf[req.Self]
       }
     }
   }

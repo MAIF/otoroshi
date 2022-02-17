@@ -34,7 +34,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.2
+1.5.3
 </div>
 </div>
 <div class="nav-toc">
@@ -147,7 +147,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.2
+1.5.3
 </div>
 </div>
 <div class="nav-toc">
@@ -263,7 +263,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#info-token" name="info-token" class="anchor"><span class="anchor-link"></span></a>Info. token</h3>
 <p>Otoroshi is also sending a JWT token in a header named <code>Otoroshi-Claim</code> that the target app can validate too.</p>
 <p>The <code>Otoroshi-Claim</code> is a JWT token containing some informations about the service that is called and the client if available. You can choose between a legacy version of the token and a new one that is more clear and structured.</p>
-<p>By default, the otoroshi jwt token is signed with the <code>app.claim.sharedKey</code> config property (or using the <code>$CLAIM_SHAREDKEY</code> env. variable) and uses the <code>HMAC512</code> signing algorythm. But it is possible to customize how the token is signed from the service descriptor page in the <code>Otoroshi exchange protocol</code> section. </p><div class="centered-img">
+<p>By default, the otoroshi jwt token is signed with the <code>otoroshi.claim.sharedKey</code> config property (or using the <code>$CLAIM_SHAREDKEY</code> env. variable) and uses the <code>HMAC512</code> signing algorythm. But it is possible to customize how the token is signed from the service descriptor page in the <code>Otoroshi exchange protocol</code> section. </p><div class="centered-img">
 <img src="../imgs/sec-com-signing-bis.png" /></div>
 <p>using another signing algo.</p><div class="centered-img">
 <img src="../imgs/sec-com-signing-2-bis.png" /></div>

@@ -152,7 +152,8 @@ case class Plugins(
     }
   }
 
-  private val request_handlers_cache = Scaffeine().maximumSize(2).expireAfterWrite(1.minute).build[String, (Boolean, Map[String, RequestHandler])]
+  private val request_handlers_cache      =
+    Scaffeine().maximumSize(2).expireAfterWrite(1.minute).build[String, (Boolean, Map[String, RequestHandler])]
   private val request_handlers_cache_name = "singleton"
   // private val request_handlers_ref = new AtomicReference[(Boolean, Map[String, RequestHandler])]()
 
@@ -160,12 +161,16 @@ case class Plugins(
       request: RequestHeader
   )(implicit ec: ExecutionContext, env: Env): (Boolean, Map[String, RequestHandler]) =
     env.metrics.withTimer("otoroshi.plugins.req-handlers.handlers-map-compute") {
-      request_handlers_cache.get(request_handlers_cache_name, _ => {
-        val handlers = getPlugins[RequestHandler](request)
-        val handlersMap = handlers.flatMap(h => plugin[RequestHandler](h)).flatMap(rh => rh.handledDomains.map(d => (d, rh))).toMap
-        val hasWildcard = handlersMap.keys.exists(_.contains("*"))
-        (hasWildcard, handlersMap)
-      })
+      request_handlers_cache.get(
+        request_handlers_cache_name,
+        _ => {
+          val handlers    = getPlugins[RequestHandler](request)
+          val handlersMap =
+            handlers.flatMap(h => plugin[RequestHandler](h)).flatMap(rh => rh.handledDomains.map(d => (d, rh))).toMap
+          val hasWildcard = handlersMap.keys.exists(_.contains("*"))
+          (hasWildcard, handlersMap)
+        }
+      )
       // request_handlers_ref.getOrSet {
       //   val handlers = getPlugins[RequestHandler](request)
       //   val handlersMap = handlers.flatMap(h => plugin[RequestHandler](h)).flatMap(rh => rh.handledDomains.map(d => (d, rh))).toMap
@@ -180,8 +185,12 @@ case class Plugins(
         val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)
         if (handlersMap.nonEmpty) {
           if (handlersMapHasWildcard) {
-            handlersMap.exists {
-              case (key, _) => RegexPool(key).matches(request.theDomain)
+            if (handlersMap.contains("*")) {
+              true
+            } else {
+              handlersMap.exists { case (key, _) =>
+                RegexPool(key).matches(request.theDomain)
+              }
             }
           } else {
             handlersMap.contains(request.theDomain)
@@ -200,7 +209,9 @@ case class Plugins(
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = env.metrics.withTimer("handle-ng-dispatch") {
     if (enabled) {
       val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)
-      val maybeHandler = if (handlersMapHasWildcard) handlersMap.find(t => RegexPool(t._1).matches(request.theDomain)).map(_._2) else handlersMap.get(request.theDomain)
+      val maybeHandler                          =
+        if (handlersMapHasWildcard) handlersMap.find(t => RegexPool(t._1).matches(request.theDomain)).map(_._2)
+        else handlersMap.get(request.theDomain)
       maybeHandler match {
         case None          => defaultRouting(request)
         case Some(handler) => env.metrics.withTimerAsync("handle-ng-request")(handler.handle(request, defaultRouting))
@@ -211,18 +222,27 @@ case class Plugins(
   }
 
   def handleWsRequest(
-    request: RequestHeader,
-    defaultRouting: RequestHeader => Future[Either[Result, Flow[play.api.http.websocket.Message, play.api.http.websocket.Message, _]]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[play.api.http.websocket.Message, play.api.http.websocket.Message, _]]] = env.metrics.withTimer("handle-ng-ws-dispatch") {
-    if (enabled) {
-      val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)
-      val maybeHandler = if (handlersMapHasWildcard) handlersMap.find(t => RegexPool(t._1).matches(request.theDomain)).map(_._2) else handlersMap.get(request.theDomain)
-      maybeHandler match {
-        case None          => defaultRouting(request)
-        case Some(handler) => env.metrics.withTimerAsync("handle-ng-ws-request")(handler.handleWs(request, defaultRouting))
+      request: RequestHeader,
+      defaultRouting: RequestHeader => Future[
+        Either[Result, Flow[play.api.http.websocket.Message, play.api.http.websocket.Message, _]]
+      ]
+  )(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[Result, Flow[play.api.http.websocket.Message, play.api.http.websocket.Message, _]]] =
+    env.metrics.withTimer("handle-ng-ws-dispatch") {
+      if (enabled) {
+        val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)
+        val maybeHandler                          =
+          if (handlersMapHasWildcard) handlersMap.find(t => RegexPool(t._1).matches(request.theDomain)).map(_._2)
+          else handlersMap.get(request.theDomain)
+        maybeHandler match {
+          case None          => defaultRouting(request)
+          case Some(handler) =>
+            env.metrics.withTimerAsync("handle-ng-ws-request")(handler.handleWs(request, defaultRouting))
+        }
+      } else {
+        defaultRouting(request)
       }
-    } else {
-      defaultRouting(request)
     }
-  }
 }
