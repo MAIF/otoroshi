@@ -545,7 +545,7 @@ export class CertificatesPage extends Component {
       title: 'revoked',
       cell: (v, item) =>
         item.revoked !== RevocationReason.VALID.value ? (
-          <span className="badge bg)label-danger">yes</span>
+          <span className="badge bg-danger">yes</span>
         ) : (
           ''
         ),
