@@ -113,26 +113,26 @@ class ElasticsearchConnectionDiagnostic extends Component {
         <div className="modal-body">
           {this.props.resp.version.error && (
             <>
-              Elasticsearch version: <span className="label label-danger">data not available</span>
+              Elasticsearch version: <span className="badge bg-danger">data not available</span>
             </>
           )}
           {!this.props.resp.version.error && (
             <>
               Elasticsearch version:{' '}
-              <span className="label label-success">{this.props.resp.version}</span>
+              <span className="badge bg-success">{this.props.resp.version}</span>
             </>
           )}
           <br />
           {this.props.resp.search.error && (
             <>
               Elasticsearch search API:{' '}
-              <span className="label label-danger">data not available</span>
+              <span className="badge bg-danger">data not available</span>
             </>
           )}
           {!this.props.resp.search.error && (
             <>
               Elasticsearch search API:{' '}
-              <span className="label label-success">{this.props.resp.search} docs</span>
+              <span className="badge bg-success">{this.props.resp.search} docs</span>
             </>
           )}
           {works && (
@@ -148,7 +148,7 @@ class ElasticsearchConnectionDiagnostic extends Component {
           {this.props.resp.search.error && (
             <p style={{ marginTop: 20 }}>
               Unable to access Elasticsearch search api on your index{' '}
-              <span className="label label-default">{this.props.spec.index}</span>. Maybe you don't
+              <span className="badge bg-default">{this.props.spec.index}</span>. Maybe you don't
               have the rights to access it.
             </p>
           )}

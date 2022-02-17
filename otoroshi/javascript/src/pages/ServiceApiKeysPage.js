@@ -371,7 +371,7 @@ const ApiKeysConstants = {
           return (
             <div style={{ display: 'flex' }}>
               <div style={{ width: 60 }}>
-                <span className={`label ${p.kind === 'group' ? 'label-warning' : 'label-success'}`}>
+                <span className={`badge ${p.kind === 'group' ? 'bg-warning' : 'bg-success'}`}>
                   {p.kind}
                 </span>
               </div>
@@ -511,7 +511,7 @@ const ApiKeysConstants = {
           return (
             <span
               title="This apikey controls the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it"
-              className="label label-danger">
+              className="badge bg-danger">
               {item.clientName}
             </span>
           );

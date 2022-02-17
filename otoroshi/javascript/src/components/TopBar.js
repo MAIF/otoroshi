@@ -413,15 +413,15 @@ export class TopBar extends Component {
 
   color(env) {
     if (env === 'prod') {
-      return 'label-success';
+      return 'bg-success';
     } else if (env === 'preprod') {
-      return 'label-primary';
+      return 'bg-primary';
     } else if (env === 'experiments') {
-      return 'label-warning';
+      return 'bg-warning';
     } else if (env === 'dev') {
-      return 'label-info';
+      return 'bg-info';
     } else {
-      return 'label-default';
+      return 'bg-secondary';
     }
   }
 
@@ -505,7 +505,7 @@ export class TopBar extends Component {
                 <div className="mb-3" style={{ marginRight: 10 }}>
                   <span
                     title="Current line"
-                    className="label label-success"
+                    className="badge bg-success"
                     style={{ fontSize: 20, cursor: 'pointer' }}>
                     {selected}
                   </span>
@@ -564,7 +564,7 @@ export class TopBar extends Component {
                             alignItems: 'center',
                           }}>
                           {p.env && _.isString(p.env) && (
-                            <span className={`label ${this.color(p.env)}`}>{env}</span>
+                            <span className={`badge ${this.color(p.env)}`}>{env}</span>
                           )}
                           {p.env && !_.isString(p.env) && p.env}
                         </div>

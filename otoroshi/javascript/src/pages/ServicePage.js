@@ -155,7 +155,7 @@ class Target extends Component {
           <div className="row mb-3">
             <label className="col-xs-12 col-sm-2 col-form-label" />
             <div className="col-sm-10" style={{ display: 'flex' }}>
-              <span className="label label-danger">
+              <span className="badge bg-danger">
                 Your target has a path after the host. The path will be ignored when saving the
                 service descriptor
               </span>
@@ -283,7 +283,7 @@ class Target extends Component {
               value: a.id,
               label: (
                 <span>
-                  <span className="label label-success" style={{ minWidth: 63 }}>
+                  <span className="badge bg-success" style={{ minWidth: 63 }}>
                     {a.certType}
                   </span>{' '}
                   {a.name} - {a.description}
@@ -304,7 +304,7 @@ class Target extends Component {
               value: a.id,
               label: (
                 <span>
-                  <span className="label label-success" style={{ minWidth: 63 }}>
+                  <span className="badge bg-success" style={{ minWidth: 63 }}>
                     {a.certType}
                   </span>{' '}
                   {a.name} - {a.description}
@@ -1532,7 +1532,7 @@ export class ServicePage extends Component {
                   value: a.id,
                   label: (
                     <span>
-                      <span className="label label-success" style={{ minWidth: 63 }}>
+                      <span className="bagde bg-success" style={{ minWidth: 63 }}>
                         {a.certType}
                       </span>{' '}
                       {a.name} - {a.description}

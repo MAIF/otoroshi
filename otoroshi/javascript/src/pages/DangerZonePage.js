@@ -420,7 +420,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -440,7 +440,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -486,7 +486,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -505,7 +505,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -918,7 +918,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -955,7 +955,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}

@@ -564,7 +564,7 @@ export class Oauth2ModuleConfig extends Component {
             value: a.id,
             label: (
               <span>
-                <span className="label label-success" style={{ minWidth: 63 }}>
+                <span className="badge bg-success" style={{ minWidth: 63 }}>
                   {a.certType}
                 </span>{' '}
                 {a.name} - {a.description}
@@ -583,7 +583,7 @@ export class Oauth2ModuleConfig extends Component {
             value: a.id,
             label: (
               <span>
-                <span className="label label-success" style={{ minWidth: 63 }}>
+                <span className="badge bg-success" style={{ minWidth: 63 }}>
                   {a.certType}
                 </span>{' '}
                 {a.name} - {a.description}
@@ -1539,8 +1539,8 @@ class LdapUserLoginTest extends Component {
             <button type="button" className="btn btn-success" onClick={this.check}>
               Test login
             </button>
-            <span className="label label-success">{this.state.message}</span>
-            <span className="label label-danger">{this.state.error}</span>
+            <span className="badge bg-success">{this.state.message}</span>
+            <span className="badge bg-danger">{this.state.error}</span>
             {Object.keys(this.state.body).length > 0 && (
               <pre style={{ maxHeight: '250px', marginTop: '12px' }}>
                 {JSON.stringify(this.state.body, null, 2)}
