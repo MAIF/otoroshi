@@ -38,7 +38,13 @@ class Http2Caller extends NgRequestTransformer {
         "method" -> ctx.otoroshiRequest.method,
         "url" -> ctx.otoroshiRequest.url,
         "headers" -> ctx.otoroshiRequest.headers, // TODO: add cookies
-        "target" -> ctx.otoroshiRequest.backend.map(_.json).getOrElse(JsNull).as[JsValue],
+        "target" -> ctx.otoroshiRequest.backend.map(b => b.json.asObject.applyOn { obj =>
+          val tls_config = b.tlsConfig.copy(
+            certs = b.tlsConfig.certs.map(id => env.proxyState.certificate(id)).collect { case Some(cert) => cert }.map(c => c.bundle),
+            trustedCerts = b.tlsConfig.trustedCerts.map(id => env.proxyState.certificate(id)).collect { case Some(cert) => cert }.map(c => c.bundle),
+          )
+          obj ++ Json.obj("tls_config" -> tls_config.json)
+        }).getOrElse(JsNull).as[JsValue],
       ).applyOnIf(hasBody) { obj =>
         obj ++ Json.obj("body" -> base64body)
       }.stringify.byteString

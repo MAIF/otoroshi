@@ -103,6 +103,11 @@ case class NgPluginHttpResponse(
     cookies: Seq[WSCookie] = Seq.empty[WSCookie],
     body: Source[ByteString, _]
 ) {
+  lazy val transferEncoding: Option[String] = header("Transfer-Encoding")
+  lazy val isChunked: Boolean = transferEncoding.exists(h => h.toLowerCase().contains("chunked"))
+  lazy val contentType: Option[String] = header("Content-Type")
+  lazy val contentLengthStr: Option[String] = header("Content-Length")
+  lazy val hasLength: Boolean = contentLengthStr.isDefined
   def header(name: String): Option[String] = headers.get(name).orElse(headers.get(name.toLowerCase()))
   def asResult: Result = {
     val ctype   = header("Content-Type")

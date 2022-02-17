@@ -173,7 +173,7 @@ case class Cert(
   lazy val notRevoked: Boolean = !revoked
   lazy val cacheKey: String    = s"$id###$contentHash"
   lazy val contentHash: String = Hashing.sha256().hashString(s"$chain:$privateKey", StandardCharsets.UTF_8).toString
-
+  lazy val bundle: String = s"${privateKey}\n\n${chain}\n"
   lazy val allDomains: Seq[String] = {
     val enriched = enrich()
     (Seq(enriched.domain) ++ enriched.sans).filter(_.trim.nonEmpty).filterNot(_ == "--").distinct

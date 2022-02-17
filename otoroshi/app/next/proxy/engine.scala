@@ -2640,7 +2640,7 @@ class ProxyEngine() extends RequestHandler {
     val counterOut                     = attrs.get(otoroshi.plugins.Keys.RequestCounterOutKey).get
     val contentType: Option[String]    = response.header("Content-Type")
     val contentLength: Option[Long]    = response.header("Content-Length")
-      .orElse(rawResponse.contentLengthStr)
+      .orElse(rawResponse.contentLengthStr) // legit
       .map(_.toLong)
     val contentLengthOut: Option[Long]    = response.header("Content-Length")
       .map(_.toLong)
@@ -2658,7 +2658,7 @@ class ProxyEngine() extends RequestHandler {
           sameSite = c.sameSite
         )
       case c                       => {
-        val sameSite: Option[Cookie.SameSite] = rawResponse.headers.get("Set-Cookie").flatMap { values =>
+        val sameSite: Option[Cookie.SameSite] = rawResponse.headers.get("Set-Cookie").flatMap { values => // legit
           values
             .find { sc =>
               sc.startsWith(s"${c.name}=${c.value}")
@@ -2696,13 +2696,12 @@ class ProxyEngine() extends RequestHandler {
         )
       }
     }
-    val noContentLengthHeader: Boolean =
-      rawResponse.contentLength.isEmpty
-    val hasChunkedHeader: Boolean      = rawResponse
+    val noContentLengthHeader: Boolean = response.hasLength // rawResponse.contentLength.isEmpty
+    val hasChunkedHeader: Boolean      = response.isChunked /*rawResponse
       .header("Transfer-Encoding")
       .orElse(response.headers.get("Transfer-Encoding"))
-      .exists(h => h.toLowerCase().contains("chunked"))
-    val isChunked: Boolean             = rawResponse.isChunked() match {
+      .exists(h => h.toLowerCase().contains("chunked"))*/
+    val isChunked: Boolean             = rawResponse.isChunked() match { // don't know if actualy legit ...
       case Some(chunked)                                                                         => chunked
       case None if !env.emptyContentLengthIsChunked                                              =>
         hasChunkedHeader // false
