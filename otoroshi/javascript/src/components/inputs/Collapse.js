@@ -26,7 +26,7 @@ export class Collapse extends Component {
           <hr />
           <div className="row mb-3">
             <label className="col-sm-2" />
-            <div className="col-sm-12" onClick={this.toggle} role="button">
+            <div className="col-sm-10" onClick={this.toggle} role="button">
               <span style={{ color: '#f9b000', fontWeight: 'bold', marginTop: 7 }}>
                 {this.props.label}
               </span>
@@ -47,7 +47,7 @@ export class Collapse extends Component {
           <hr />
           <div className="row mb-3">
             <label className="col-sm-2" />
-            <div className="col-sm-12" onClick={this.toggle} role="button">
+            <div className="col-sm-10" onClick={this.toggle} role="button">
               <span style={{ color: '#f9b000', fontWeight: 'bold', marginTop: 7 }}>
                 {this.props.label}
               </span>
