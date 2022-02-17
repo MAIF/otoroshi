@@ -1325,7 +1325,7 @@ export class DangerZonePage extends Component {
         <Form
           value={this.state.value}
           onChange={this.updateState}
-          flow={this.formFlow}
+          flow={this.formFlow(this.state.value)}
           schema={this.formSchema}
           style={{ marginTop: 50 }}
         />
