@@ -1308,8 +1308,7 @@ export class DangerZonePage extends Component {
       <div>
         <div className="row">
           <div className="mb-3 btnsService">
-            <div className="col-md-10">
-              <div className="btn-group float-end">
+            <div className="displayGroupBtn">
                 <button
                   title="Add item"
                   className="btn btn-success"
@@ -1318,7 +1317,6 @@ export class DangerZonePage extends Component {
                   {...propsDisabled}>
                   <i className="fas fa-hdd" />
                 </button>
-              </div>
             </div>
           </div>
         </div>
@@ -1377,7 +1375,7 @@ export class DangerZonePage extends Component {
         <form className="form-horizontal">
           <div className="row mb-3">
             <label className="col-sm-2 col-form-label" />
-            <div className="col-sm-10">
+            <div className="col-sm-10  input-group-btn">
               <button type="button" className="btn btn-success" onClick={this.fullExport}>
                 <i className="fas fa-file-export" /> Full export
               </button>
@@ -1411,7 +1409,7 @@ class BackOfficeAuthButtons extends Component {
     return (
       <div className="row mb-3">
         <label className="col-xs-12 col-sm-2 col-form-label" />
-        <div className="col-sm-10">
+        <div className="col-sm-10 input-group-btn">
           {!this.props.rawValue.backOfficeAuthRef && (
             <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
               <i className="fas fa-plus" /> Create a new auth. config.

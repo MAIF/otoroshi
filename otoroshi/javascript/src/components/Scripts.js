@@ -120,14 +120,11 @@ class PluginsDescription extends Component {
             this.findNode(
               script,
               <div
-                className="row mb-3"
-                style={{
-                  marginRight: 50,
-                }}>
+                className="row mb-3">
                 <label className="col-form-label" />
                 {!this.state.display[script.id] && (
                   <div
-                    className="d-flex justify-content-end"
+                    className="d-flex justify-content-end input-group-btn"
                     >
                     {script.id.indexOf('cp:otoroshi.') === 0 && (
                       <a
