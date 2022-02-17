@@ -484,8 +484,8 @@ export class TopBar extends Component {
     return (
       <nav className="navbar navbar-expand-lg fixed-top">
         <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
-            <div className="d-flex flex-column flex-md-row">
-              <div className="ps-1 pe-2 mb-2 mb-md-0 d-flex justify-content-between">
+            <div className="d-flex flex-column flex-md-row w-100">
+              <div className="px-2 mb-2 mb-md-0 d-flex justify-content-between align-items-center navbar-header">
 
               <button 
                   className="btn btn-primary ms-3 navbar-toggler" 
@@ -500,7 +500,7 @@ export class TopBar extends Component {
                   {this.brandName()}
                 </a>
               </div>
-              <form id="navbar" className="navbar-form navbar-left">
+              <form id="navbar" className="navbar-form navbar-left align-self-center">
               {selected && (
                 <div className="mb-3" style={{ marginRight: 10 }}>
                   <span
