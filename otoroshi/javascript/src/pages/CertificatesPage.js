@@ -363,8 +363,8 @@ class CertificateValid extends Component {
       );
 
     return (
-      <div className="form-group">
-        <label className="col-sm-2 control-label" />
+      <div className="row mb-3">
+        <label className="col-sm-2 col-form-label" />
         <div className="col-sm-10">
           {this.state.valid === true &&
             (this.state.revoked === RevocationReason.VALID.value ? (
@@ -514,17 +514,17 @@ export class CertificatesPage extends Component {
       title: 'Type',
       cell: (v, item, table) =>
         item.client ? (
-          <span className="label label-primary">client</span>
+          <span className="badge bg-primary">client</span>
         ) : item.ca ? (
-          <span className="label label-info">ca</span>
+          <span className="badge bg-info">ca</span>
         ) : item.letsEncrypt ? (
-          <span className="label label-warning">let's encrypt</span>
+          <span className="badge bg-warning">let's encrypt</span>
         ) : item.keypair ? (
-          <span className="label label-default">keypair</span>
+          <span className="badge bg-secondary">keypair</span>
         ) : item.selfSigned ? (
-          <span className="label label-danger">self signed</span>
+          <span className="badge bg-danger">self signed</span>
         ) : (
-          <span className="label label-success">certificate</span>
+          <span className="badge bg-success">certificate</span>
         ),
       content: (item) =>
         item.client
@@ -545,7 +545,7 @@ export class CertificatesPage extends Component {
       title: 'revoked',
       cell: (v, item) =>
         item.revoked !== RevocationReason.VALID.value ? (
-          <span className="label label-danger">yes</span>
+          <span className="badge bg-danger">yes</span>
         ) : (
           ''
         ),
@@ -554,19 +554,19 @@ export class CertificatesPage extends Component {
     },
     // {
     //   title: 'Client',
-    //   content: item => (!item.client ? 'no' : <span className="label label-success">yes</span>),
+    //   content: item => (!item.client ? 'no' : <span className="badge bg-success">yes</span>),
     //   style: { textAlign: 'center', width: 70 },
     //   notFilterable: true,
     // },
     // {
     //   title: 'Self signed',
-    //   content: item => (item.selfSigned ? <span className="label label-danger">yes</span> : 'no'),
+    //   content: item => (item.selfSigned ? <span className="badge bg-danger">yes</span> : 'no'),
     //   style: { textAlign: 'center', width: 90 },
     //   notFilterable: true,
     // },
     // {
     //   title: 'Let\'s Encrypt',
-    //   content: item => (!item.letsEncrypt ? 'no' : <span className="label label-success">yes</span>),
+    //   content: item => (!item.letsEncrypt ? 'no' : <span className="badge bg-success">yes</span>),
     //   style: { textAlign: 'center', width: 90 },
     //   notFilterable: true,
     // },
@@ -943,7 +943,7 @@ export class NewCertificateForm extends Component {
       return (
         <>
           <div className="modal-body">
-            <form className="form-horizontal" style={{ overflowY: 'auto' }}>
+            <form className="form-horizontal">
               <BooleanInput
                 label="Let's Encrypt"
                 value={this.state.letsEncrypt}
@@ -976,7 +976,7 @@ export class NewCertificateForm extends Component {
     return (
       <>
         <div className="modal-body">
-          <form className="form-horizontal" style={{ overflowY: 'auto', maxHeight: '80vh' }}>
+          <form className="form-horizontal" style={{maxHeight: '80vh' }}>
             <SelectInput
               label="Issuer"
               value={this.state.caRef}
@@ -1155,11 +1155,11 @@ export class LetsEncryptCreation extends Component {
 
   render() {
     if (this.state.error) {
-      return <span className="label label-danger">{this.state.error}</span>;
+      return <span className="badge bg-danger">{this.state.error}</span>;
     }
     if (this.state.done) {
       return (
-        <span className="label label-success">
+        <span className="badge bg-success">
           Certificate for {this.props.domain} created successfully !
         </span>
       );

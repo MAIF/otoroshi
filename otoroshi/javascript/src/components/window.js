@@ -15,15 +15,14 @@ class Alert extends Component {
         <div className="modal-dialog" role="document">
           <div className="modal-content">
             <div className="modal-header">
+              <h4 className="modal-title">{this.props.title ? this.props.title : 'Alert'}</h4>
               <button
                 type="button"
-                className="close"
+                className="btn-close"
                 data-dismiss="modal"
                 onClick={this.props.close}
                 aria-label="Close">
-                <span aria-hidden="true">&times;</span>
               </button>
-              <h4 className="modal-title">{this.props.title ? this.props.title : 'Alert'}</h4>
             </div>
             <div className="modal-body">
               {_.isString(res) && <p>{res}</p>}
@@ -66,15 +65,14 @@ class Confirm extends Component {
         <div className="modal-dialog" role="document">
           <div className="modal-content">
             <div className="modal-header">
+              <h4 className="modal-title">{this.props.title ? this.props.title : 'Confirm'}</h4>
               <button
                 type="button"
-                className="close"
+                className="btn-close"
                 data-dismiss="modal"
                 onClick={this.props.cancel}
                 aria-label="Close">
-                <span aria-hidden="true">&times;</span>
               </button>
-              <h4 className="modal-title">{this.props.title ? this.props.title : 'Confirm'}</h4>
             </div>
             <div className="modal-body">
               <p>{this.props.message}</p>
@@ -118,15 +116,14 @@ class Prompt extends Component {
         <div className="modal-dialog" role="document">
           <div className="modal-content">
             <div className="modal-header">
+              <h4 className="modal-title">{this.props.title ? this.props.title : 'Prompt'}</h4>
               <button
                 type="button"
-                className="close"
-                data-dismiss="modal"
+                className="btn-close"
+                data-bs-dismiss="modal"
                 onClick={this.props.cancel}
                 aria-label="Close">
-                <span aria-hidden="true">&times;</span>
               </button>
-              <h4 className="modal-title">{this.props.title ? this.props.title : 'Prompt'}</h4>
             </div>
             <div className="modal-body">
               <p>{this.props.message}</p>
@@ -179,15 +176,14 @@ class Popup extends Component {
         <div className="modal-dialog" role="document">
           <div className="modal-content">
             <div className="modal-header">
+              <h4 className="modal-title">{this.props.title}</h4>
               <button
                 type="button"
-                className="close"
+                className="btn-close"
                 data-dismiss="modal"
                 onClick={this.props.cancel}
                 aria-label="Close">
-                <span aria-hidden="true">&times;</span>
               </button>
-              <h4 className="modal-title">{this.props.title}</h4>
             </div>
             {this.props.body(this.props.ok, this.props.cancel)}
           </div>

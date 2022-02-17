@@ -7,8 +7,8 @@ import faker from 'faker';
 import { Restrictions } from '../components/Restrictions';
 
 const Both = ({ label, rawValue }) => (
-  <div className="form-group">
-    <label className="col-sm-2 control-label">{label}</label>
+  <div className="row mb-3">
+    <label className="col-sm-2 col-form-label">{label}</label>
     <div className="col-sm-10">
       <input
         onChange={(e) => ''}
@@ -21,8 +21,8 @@ const Both = ({ label, rawValue }) => (
 );
 
 const CurlCommand = ({ label, rawValue, env }) => (
-  <div className="form-group">
-    <label className="col-sm-2 control-label">{label}</label>
+  <div className="row mb-3">
+    <label className="col-sm-2 col-form-label">{label}</label>
     <div className="col-sm-10">
       {env && (
         <input
@@ -41,8 +41,8 @@ const CurlCommand = ({ label, rawValue, env }) => (
 );
 
 const BasicAuthToken = ({ label, rawValue }) => (
-  <div className="form-group">
-    <label className="col-sm-2 control-label">{label}</label>
+  <div className="row mb-3">
+    <label className="col-sm-2 col-form-label">{label}</label>
     <div className="col-sm-10">
       <input
         onChange={(e) => ''}
@@ -57,8 +57,8 @@ const BasicAuthToken = ({ label, rawValue }) => (
 );
 
 const CurlCommandWithBasicAuth = ({ label, rawValue, env }) => (
-  <div className="form-group">
-    <label className="col-sm-2 control-label">{label}</label>
+  <div className="row mb-3">
+    <label className="col-sm-2 col-form-label">{label}</label>
     <div className="col-sm-10">
       {env && (
         <input
@@ -75,12 +75,12 @@ const CurlCommandWithBasicAuth = ({ label, rawValue, env }) => (
 );
 
 const ResetSecret = ({ changeValue }) => (
-  <div className="form-group">
-    <label className="col-sm-2 control-label" />
+  <div className="row mb-3">
+    <label className="col-sm-2 col-form-label" />
     <div className="col-sm-10">
       <button
         type="button"
-        className="btn btn-danger btn-xs"
+        className="btn btn-danger btn-sm"
         onClick={(e) => changeValue('clientSecret', 'apks_' + faker.random.alphaNumeric(64))}>
         <i className="fas fa-sync" /> Reset secret
       </button>
@@ -102,10 +102,10 @@ class ResetQuotas extends Component {
   render() {
     console.log(this.props);
     return (
-      <div className="form-group">
-        <label className="col-sm-2 control-label" />
+      <div className="row mb-3">
+        <label className="col-sm-2 col-form-label" />
         <div className="col-sm-10">
-          <button type="button" className="btn btn-danger btn-xs" onClick={this.resetQuotas}>
+          <button type="button" className="btn btn-danger btn-sm" onClick={this.resetQuotas}>
             <i className="fas fa-sync" /> Reset quotas consumption
           </button>
         </div>
@@ -118,8 +118,8 @@ class CopyCredentials extends Component {
   render() {
     const props = this.props;
     return (
-      <div className="form-group">
-        <label className="col-sm-2 control-label" />
+      <div className="row mb-3">
+        <label className="col-sm-2 col-form-label" />
         <div className="col-sm-10">
           <input
             ref={(r) => (this.clipboard = r)}
@@ -130,7 +130,7 @@ class CopyCredentials extends Component {
           />
           <button
             type="button"
-            className="btn btn-success btn-xs"
+            className="btn btn-success btn-sm"
             onClick={(e) => {
               this.clipboard.select();
               document.execCommand('Copy');
@@ -195,8 +195,8 @@ class DailyRemainingQuotas extends Component {
       remainingCallsPerMonth: 0,
     };
     return [
-      <div className="form-group">
-        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
+      <div className="row mb-3">
+        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 col-form-label">
           Consumed daily calls
           <i
             className="far fa-question-circle"
@@ -214,12 +214,12 @@ class DailyRemainingQuotas extends Component {
               id="input-Throttling quota"
               value={quotas.currentCallsPerDay}
             />
-            <div className="input-group-addon">calls consumed today</div>
+            <div className="input-group-text">calls consumed today</div>
           </div>
         </div>
       </div>,
-      <div className="form-group">
-        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
+      <div className="row mb-3">
+        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 col-form-label">
           Remaining daily calls
           <i
             className="far fa-question-circle"
@@ -237,12 +237,12 @@ class DailyRemainingQuotas extends Component {
               id="input-Throttling quota"
               value={quotas.remainingCallsPerDay}
             />
-            <div className="input-group-addon">calls remaining for today</div>
+            <div className="input-group-text">calls remaining for today</div>
           </div>
         </div>
       </div>,
-      <div className="form-group">
-        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
+      <div className="row mb-3">
+        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 col-form-label">
           Consumed monthly calls
           <i
             className="far fa-question-circle"
@@ -260,12 +260,12 @@ class DailyRemainingQuotas extends Component {
               id="input-Throttling quota"
               value={quotas.currentCallsPerMonth}
             />
-            <div className="input-group-addon">calls consumed this month</div>
+            <div className="input-group-text">calls consumed this month</div>
           </div>
         </div>
       </div>,
-      <div className="form-group">
-        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
+      <div className="row mb-3">
+        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 col-form-label">
           Remaining monthly calls
           <i
             className="far fa-question-circle"
@@ -283,7 +283,7 @@ class DailyRemainingQuotas extends Component {
               id="input-Throttling quota"
               value={quotas.remainingCallsPerMonth}
             />
-            <div className="input-group-addon">calls remaining for this month</div>
+            <div className="input-group-text">calls remaining for this month</div>
           </div>
         </div>
       </div>,
@@ -371,7 +371,7 @@ const ApiKeysConstants = {
           return (
             <div style={{ display: 'flex' }}>
               <div style={{ width: 60 }}>
-                <span className={`label ${p.kind === 'group' ? 'label-warning' : 'label-success'}`}>
+                <span className={`badge ${p.kind === 'group' ? 'bg-warning' : 'bg-success'}`}>
                   {p.kind}
                 </span>
               </div>
@@ -511,7 +511,7 @@ const ApiKeysConstants = {
           return (
             <span
               title="This apikey controls the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it"
-              className="label label-danger">
+              className="badge bg-danger">
               {item.clientName}
             </span>
           );

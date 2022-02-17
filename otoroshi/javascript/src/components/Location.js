@@ -99,16 +99,16 @@ export class Location extends Component {
           })}
           help="The teams where this entity will belong"
         />
-        <div className="form-group">
-          <label className="col-xs-12 col-sm-2 control-label"></label>
-          <div className="col-sm-10">
+        <div className="row mb-3">
+          <label className="col-xs-12 col-sm-2 col-form-label"></label>
+          <div className="col-sm-10 d-flex justify-content-end input-group-btn">
             {window.__user.superAdmin && (
-              <a className="btn btn-xs btn-info pull-right" href="/bo/dashboard/organizations">
+              <a className="btn btn-sm btn-info" href="/bo/dashboard/organizations">
                 <i className="fas fa-edit"></i> Manage organizations
               </a>
             )}
             {window.__user.tenantAdmin && (
-              <a className="btn btn-xs btn-info pull-right" href="/bo/dashboard/teams">
+              <a className="btn btn-sm btn-info" href="/bo/dashboard/teams">
                 <i className="fas fa-edit"></i> Manage teams
               </a>
             )}

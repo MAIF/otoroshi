@@ -92,7 +92,7 @@ export class SnowMonkeyPage extends Component {
         return (
           <button
             type="button"
-            className="btn btn-success btn-xs"
+            className="btn btn-success btn-sm"
             onClick={(e) =>
               (window.location = `/bo/dashboard/lines/prod/services/${item.descriptorId}`)
             }>
@@ -172,8 +172,8 @@ export class SnowMonkeyPage extends Component {
     return (
       <div>
         <div className="row">
-          <div className="form-group btnsService">
-            <div className="col-xs-12 col-sm-10 displayGroupBtn">
+          <div className="mb-3 btnsService">
+            <div className="displayGroupBtn">
               <button
                 type="button"
                 className={`btn btn-${this.state.started ? 'danger' : 'success'}`}

@@ -71,8 +71,8 @@ export function ObjectInput(props) {
   return (
     <div>
       {data.length === 0 && (
-        <div className="form-group">
-          <label htmlFor={`input-${props.label}`} className="col-xs-12 col-sm-2 control-label">
+        <div className="row mb-3">
+          <label htmlFor={`input-${props.label}`} className="col-xs-12 col-sm-2 col-form-label">
             {props.label} <Help text={props.help} />
           </label>
           <div className="col-sm-10">
@@ -87,20 +87,19 @@ export function ObjectInput(props) {
         </div>
       )}
       {data.map(({ key, value, idx }, i) => (
-        <div className="form-group" key={`keys-${idx}`}>
+        <div className="row mb-3" key={`keys-${idx}`}>
           {i === 0 && (
-            <label className="col-xs-12 col-sm-2 control-label">
+            <label className="col-xs-12 col-sm-2 col-form-label">
               {props.label} <Help text={props.help} />
             </label>
           )}
-          {i > 0 && <label className="col-xs-12 col-sm-2 control-label">&nbsp;</label>}
+          {i > 0 && <label className="col-xs-12 col-sm-2 col-form-label">&nbsp;</label>}
           <div className="col-sm-10">
-            <div className="input-group">
+            <div className="input-group justify-content-between">
               <input
                 disabled={props.disabled}
                 type="text"
                 className="form-control"
-                style={{ width: '50%' }}
                 placeholder={props.placeholderKey}
                 value={key}
                 onChange={(e) => changeKey(idx, key, e)}
@@ -109,7 +108,6 @@ export function ObjectInput(props) {
                 disabled={props.disabled}
                 type="text"
                 className="form-control"
-                style={{ width: '50%' }}
                 placeholder={props.placeholderValue}
                 value={value}
                 onChange={(e) => changeValue(idx, key, e)}
@@ -182,9 +180,9 @@ export class VerticalObjectInput extends Component {
     return (
       <div>
         {values.length === 0 && (
-          <div className="form-group">
+          <div className="row mb-3">
             <div className="col-xs-12">
-              <label htmlFor={`input-${this.props.label}`} className="control-label">
+              <label htmlFor={`input-${this.props.label}`} className="col-form-label">
                 {this.props.label} <Help text={this.props.help} />
               </label>
               <div>
@@ -200,20 +198,19 @@ export class VerticalObjectInput extends Component {
           </div>
         )}
         {values.map((value, idx) => (
-          <div className="form-group" style={{ marginBottom: 5 }}>
+          <div className="mb-3" style={{ marginBottom: 5 }}>
             <div className="col-xs-12">
               {idx === 0 && (
-                <label className="control-label">
+                <label className="col-form-label">
                   {this.props.label} <Help text={this.props.help} />
                 </label>
               )}
-              {idx > 0 && false && <label className="control-label">&nbsp;</label>}
-              <div className="input-group">
+              {idx > 0 && false && <label className="col-form-label">&nbsp;</label>}
+              <div className="input-group align-items-center">
                 <input
                   disabled={this.props.disabled}
                   type="text"
                   className="form-control"
-                  style={{ width: '50%' }}
                   placeholder={this.props.placeholderKey}
                   value={value[0]}
                   onChange={(e) => this.changeKey(e, value[0])}
@@ -222,7 +219,6 @@ export class VerticalObjectInput extends Component {
                   disabled={this.props.disabled}
                   type="text"
                   className="form-control"
-                  style={{ width: '50%' }}
                   placeholder={this.props.placeholderValue}
                   value={value[1]}
                   onChange={(e) => this.changeValue(e, value[0])}

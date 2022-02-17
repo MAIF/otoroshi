@@ -31,8 +31,8 @@ export default class CodeInput extends Component {
     const [display, setDisplay] = useState(true);
     if (display) return <CodeInput {...props} />;
     return (
-      <div className="form-group">
-        <label htmlFor={`input-${props.label}`} className="col-sm-2 control-label">
+      <div className="row mb-3">
+        <label htmlFor={`input-${props.label}`} className="col-sm-2 col-form-label">
           {props.label} <Help text={props.help} />
         </label>
         <div className="col-sm-10">
@@ -122,9 +122,9 @@ export default class CodeInput extends Component {
     );
 
     return (
-      <div className="form-group">
+      <div className="row mb-3">
         {!this.props.hideLabel && (
-          <label htmlFor={`input-${this.props.label}`} className="col-sm-2 control-label">
+          <label htmlFor={`input-${this.props.label}`} className="col-sm-2 col-form-label">
             {this.props.label} <Help text={this.props.help} />
           </label>
         )}

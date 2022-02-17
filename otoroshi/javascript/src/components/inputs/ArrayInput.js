@@ -93,12 +93,12 @@ export class ArrayInput extends Component {
 
     if (Component) {
       return (
-        <div style={{ marginRight: 10 }}>
-          <div className="form-group">
-            <label className="col-xs-12 col-sm-2 control-label">
+        <div>
+          <div className="row mb-3">
+            <label className="col-xs-12 col-sm-2 col-form-label">
               {this.props.label} <Help text={this.props.help} />
             </label>
-            <div className="col-sm-10" style={{ marginBottom: 20 }}>
+            <div className="col-sm-10">
               {values.length === 0 && (
                 <button
                   disabled={this.props.disabled}
@@ -110,10 +110,10 @@ export class ArrayInput extends Component {
               )}
             </div>
           </div>
-          <div className="form-group" style={{ marginLeft: 0 }}>
+          <div className="row mb-3">
             {values.map((value, idx) => (
-              <div className="form-group" key={idx}>
-                <div className="col-sm-12">
+              <div className="col-12 mb-3" key={idx}>
+                <div>
                   {/*<div className="input-groupp">*/}
                   {this.props.component && (
                     <Component idx={idx} itemValue={value} {...this.props} />
@@ -125,7 +125,7 @@ export class ArrayInput extends Component {
                       justifyContent: 'flex-end',
                       paddingRight: 0,
                     }}>
-                    <span className="input-group-btnn">
+                    <span className="input-group-btn">
                       <button
                         disabled={this.props.disabled}
                         type="button"
@@ -155,10 +155,10 @@ export class ArrayInput extends Component {
     return (
       <div>
         {values.length === 0 && (
-          <div className="form-group">
+          <div className="row mb-3">
             <label
               htmlFor={`input-${this.props.label}`}
-              className="col-xs-12 col-sm-2 control-label">
+              className="col-xs-12 col-sm-2 col-form-label">
               {this.props.label} <Help text={this.props.help} />
             </label>
             <div className="col-sm-10">
@@ -173,19 +173,19 @@ export class ArrayInput extends Component {
           </div>
         )}
         {values.map((value, idx) => (
-          <div className="form-group" key={idx}>
+          <div className="row mb-3" key={idx}>
             {idx === 0 && (
-              <label className="col-xs-12 col-sm-2 control-label">
+              <label className="col-xs-12 col-sm-2 col-form-label">
                 {this.props.label} <Help text={this.props.help} />
               </label>
             )}
-            {idx > 0 && <label className="col-xs-12 col-sm-2 control-label">&nbsp;</label>}
+            {idx > 0 && <label className="col-xs-12 col-sm-2 col-form-label">&nbsp;</label>}
             <div className="col-sm-10">
-              <div className="input-group">
+              <div className="input-group justify-content-between">
                 {!this.state.values.length && !this.props.component && (
-                  <div className="input-group" style={{ width: '100%' }}>
+                  <>
                     {this.props.prefix && (
-                      <div className="input-group-addon">{this.props.prefix}</div>
+                      <span className="input-group-text">{this.props.prefix}</span>
                     )}
                     <input
                       disabled={this.props.disabled}
@@ -195,24 +195,25 @@ export class ArrayInput extends Component {
                       placeholder={this.props.placeholder}
                       value={value}
                       onChange={(e) => this.changeValue(e, idx)}
-                      style={{ width: '100%' }}
                     />
                     {this.props.suffix && (
-                      <div className="input-group-addon">{this.props.suffix}</div>
+                      <span className="input-group-text">{this.props.suffix}</span>
                     )}
-                  </div>
+                    </>
                 )}
                 {!!this.state.values.length && !this.props.creatable && !this.props.component && (
-                  <Select
-                    name={`selector-${idx}`}
-                    value={value}
-                    isLoading={this.state.loading}
-                    disabled={this.props.disabled}
-                    placeholder={this.props.placeholder}
-                    optionRenderer={this.props.optionRenderer}
-                    options={this.state.values}
-                    onChange={(e) => this.changeValue({ target: { value: e.value } }, idx)}
-                  />
+                  <div className="flex-grow-1">
+                    <Select
+                      name={`selector-${idx}`}
+                      value={value}
+                      isLoading={this.state.loading}
+                      disabled={this.props.disabled}
+                      placeholder={this.props.placeholder}
+                      optionRenderer={this.props.optionRenderer}
+                      options={this.state.values}
+                      onChange={(e) => this.changeValue({ target: { value: e.value } }, idx)}
+                    />
+                  </div>
                 )}
                 {!!this.state.values.length && this.props.creatable && !this.props.component && (
                   <Creatable

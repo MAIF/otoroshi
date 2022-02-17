@@ -31,7 +31,7 @@ export class SessionsPage extends Component {
       cell: (v, item) => (
         <button
           type="button"
-          className="btn btn-success btn-xs"
+          className="btn btn-success btn-sm"
           onClick={(e) =>
             window.newAlert(
               <pre style={{ height: 300 }}>{JSON.stringify(item.profile, null, 2)}</pre>,
@@ -50,7 +50,7 @@ export class SessionsPage extends Component {
       cell: (v, item) => (
         <button
           type="button"
-          className="btn btn-success btn-xs"
+          className="btn btn-success btn-sm"
           onClick={(e) =>
             window.newAlert(
               <pre style={{ height: 300 }}>{JSON.stringify(item.rights, null, 2)}</pre>,
@@ -72,7 +72,7 @@ export class SessionsPage extends Component {
           <button
             key={item.randomId}
             type="button"
-            className="btn btn-danger btn-xs"
+            className="btn btn-danger btn-sm"
             onClick={(e) => this.discardSession(e, item.randomId, table)}>
             <i className="fas fa-fire" /> Discard Session
           </button>
@@ -160,7 +160,7 @@ export class SessionsPage extends Component {
                 key="discard-all"
                 type="button"
                 className="btn btn-danger"
-                style={{ marginLeft: 15 }}
+                style={{ marginLeft: 5 }}
                 onClick={this.discardSessions}>
                 <i className="fas fa-fire" /> Discard all sessions
               </button>
@@ -169,7 +169,7 @@ export class SessionsPage extends Component {
               key="discard-old"
               type="button"
               className="btn btn-danger"
-              style={{ marginLeft: 15 }}
+              style={{ marginLeft: 5 }}
               onClick={this.discardOldSessions}>
               <i className="fas fa-fire" /> Discard old sessions
             </button>,

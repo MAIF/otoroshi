@@ -41,10 +41,9 @@ export class ServiceSidebar extends Component {
     const base = `/bo/dashboard/lines/${env}/services/${serviceId}/`;
     const className = (part) => (`${base}${part}` === pathname ? 'active' : '');
     return (
-      <ul className="nav nav-sidebar">
-        <li>
+      <ul className="nav flex-column nav-sidebar">
+        <li className="nav-item">
           <h3
-            style={{ marginTop: 0 }}
             {...createTooltip(`Back to the service descriptor of ${name}`)}>
             {nolink && (
               <span>
@@ -59,11 +58,11 @@ export class ServiceSidebar extends Component {
           </h3>
         </li>
         {!this.props.noSideMenu && (
-          <li>
+          <li className="nav-item">
             <Link
               {...createTooltip(`Show healthcheck report for ${name}`)}
               to={`/lines/${env}/services/${serviceId}/health`}
-              className={className('health')}>
+              className={`nav-link ${className('health')}`}>
               <i className="fas fa-heart" /> Health
             </Link>
           </li>
@@ -73,17 +72,17 @@ export class ServiceSidebar extends Component {
             <Link
               to={`/lines/${env}/services/${serviceId}/stats`}
               {...createTooltip(`Show live metrics report for ${name}`)}
-              className={className('stats')}>
+                className={`nav-link ${className('stats')}`}>
               <i className="fas fa-chart-bar" /> Live metrics
             </Link>
           </li>
         )}
         {!this.props.noSideMenu && (
-          <li>
+          <li className="nav-item">
             <Link
               to={`/lines/${env}/services/${serviceId}/analytics`}
               {...createTooltip(`Show analytics report for ${name}`)}
-              className={className('analytics')}>
+              className={`nav-link ${className('analytics')}`}>
               <i className="fas fa-signal" /> Analytics
             </Link>
           </li>
@@ -93,27 +92,27 @@ export class ServiceSidebar extends Component {
             <Link
               to={`/lines/${env}/services/${serviceId}/events`}
               {...createTooltip(`Show raw events report for ${name}`)}
-              className={className('events')}>
+              className={`nav-link ${className('events')}`}>
               <i className="fas fa-list" /> Events
             </Link>
           </li>
         )}
         {!this.props.noSideMenu && (
-          <li>
+          <li className="nav-item">
             <Link
               to={`/lines/${env}/services/${serviceId}/apikeys`}
               {...createTooltip(`Manage all API keys that can access ${name}`)}
-              className={className('apikeys')}>
+              className={`nav-link ${className('apikeys')}`}>
               <i className="fas fa-lock" /> API Keys
             </Link>
           </li>
         )}
         {!this.props.noSideMenu && (
-          <li>
+          <li className="nav-item">
             <Link
               to={`/lines/${env}/services/${serviceId}/doc`}
               {...createTooltip(`Show open API documentation for ${name}`)}
-              className={className('doc')}>
+              className={`nav-link ${className('doc')}`}>
               <i className="fas fa-folder" /> Documentation
             </Link>
           </li>

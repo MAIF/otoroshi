@@ -17,8 +17,8 @@ export class UpdateOtoroshiVersion extends Component {
         <div className="topbar-popup">
           <button
             type="button"
-            className="btn btn-xs"
-            style={{ alignSelf: 'flex-end', marginTop: 5 }}
+            className="btn btn-sm"
+            style={{ alignSelf: 'flex-end'}}
             onClick={(e) => {
               e.preventDefault();
               localStorage.setItem(

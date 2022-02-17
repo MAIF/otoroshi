@@ -9,7 +9,6 @@
         <meta name="robots" content="noindex, nofollow">
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
         <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap.min.css")">
-        <!-- <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap-theme.min.css")"> -->
         <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/otoroshiapps.css")">
         <link href="@routes.Assets.versioned("fonts/font-awesome/css/fontawesome.min.css")" rel="stylesheet">
         <link href="@routes.Assets.versioned("fonts/raleway/raleway.css")" rel="stylesheet">
@@ -18,10 +17,10 @@
     </head>
     <body >
         <div class="container">
-            <div class="header clearfix">
+            <div class="header">
                 @for(user <- userOpt) {
                     <nav>
-                        <ul class="nav pull-right">
+                        <ul class="nav float-end">
                             <li role="presentation"><a href="#">@user.email</a></li>
                         </ul>
                     </nav>
@@ -33,6 +32,7 @@
             @content
         </div>
         <script type="text/javascript" src="@routes.Assets.versioned("javascripts/jquery.js")"></script>
+        <script type="text/javascript" src="@routes.Assets.versioned("javascripts/bootstrap.bundle.min.js")"></script>
         @moreScripts
         @_env.providerJsUrlHtml
     </body>
