@@ -82,6 +82,13 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
         identity
       ) mustBe Json.obj("foo" -> "bar", "inner" -> Json.obj("foo" -> "bar"))
     }
+    "spread objects" in {
+      val res = otoroshi.utils.Projection.project(source, Json.obj("$spread" -> true, "type" -> false, "alert" -> false, "status" -> false, "foo" -> false), identity)
+      res mustBe Json.obj(
+        "codes" -> Json.arr("a", "b"),
+        "inner" -> Json.obj("foo" -> "bar", "bar" -> "foo")
+      )
+    }
     "work on actual otoroshi event" in {
       val source = Json.parse("""
           |{
@@ -608,7 +615,7 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
 
       otoroshi.utils.Match.matches(source, predicate) mustBe true
       val result = otoroshi.utils.Projection.project(source, projection, identity)
-      println(Json.prettyPrint(result))
+      // println(Json.prettyPrint(result))
     }
   }
 
