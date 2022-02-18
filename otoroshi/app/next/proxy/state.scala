@@ -8,6 +8,7 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, OverrideHost}
 import otoroshi.script._
 import otoroshi.ssl.Cert
+import otoroshi.tcp.TcpService
 import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -28,18 +29,30 @@ class NgProxyState(env: Env) {
     .newBuilder[String, NgRoute]
     .+=(NgRoute.fake.id -> NgRoute.fake)
     .result()
-  private val apikeys           = new TrieMap[String, ApiKey]()
-  private val targets           = new TrieMap[String, NgTarget]()
-  private val backends          = new TrieMap[String, NgBackend]()
-  private val jwtVerifiers      = new TrieMap[String, GlobalJwtVerifier]()
-  private val certificates      = new TrieMap[String, Cert]()
-  private val authModules       = new TrieMap[String, AuthModuleConfig]()
-  private val errorTemplates    = new TrieMap[String, ErrorTemplate]()
+
+  private val apikeys             = new TrieMap[String, ApiKey]()
+  private val targets             = new TrieMap[String, NgTarget]()
+  private val backends            = new TrieMap[String, NgBackend]()
+  private val jwtVerifiers        = new TrieMap[String, GlobalJwtVerifier]()
+  private val certificates        = new TrieMap[String, Cert]()
+  private val authModules         = new TrieMap[String, AuthModuleConfig]()
+  private val errorTemplates      = new TrieMap[String, ErrorTemplate]()
+  private val services            = new TrieMap[String, ServiceDescriptor]()
+  private val teams               = new TrieMap[String, Team]()
+  private val tenants             = new TrieMap[String, Tenant]()
+  private val serviceGroups       = new TrieMap[String, ServiceGroup]()
+  private val dataExporters       = new TrieMap[String, DataExporterConfig]()
+  private val otoroshiAdmins      = new TrieMap[String, OtoroshiAdmin]()
+  private val backofficeSessions  = new TrieMap[String, BackOfficeUser]()
+  private val privateAppsSessions = new TrieMap[String, PrivateAppsUser]()
+  private val tcpServices         = new TrieMap[String, TcpService]()
+
   private val routesByDomain    = new TrieMap[String, Seq[NgRoute]]()
   private val domainPathTreeRef = new AtomicReference[NgTreeRouter](NgTreeRouter.empty)
 
   def findRoutes(domain: String, path: String): Option[Seq[NgRoute]]             =
     domainPathTreeRef.get().find(domain, path).map(_.routes)
+
   def findRoute(request: RequestHeader, attrs: TypedMap): Option[NgMatchedRoute] =
     domainPathTreeRef.get().findRoute(request, attrs)(env)
 
@@ -56,12 +69,30 @@ class NgProxyState(env: Env) {
   def jwtVerifier(id: String): Option[GlobalJwtVerifier] = jwtVerifiers.get(id)
   def certificate(id: String): Option[Cert]              = certificates.get(id)
   def authModule(id: String): Option[AuthModuleConfig]   = authModules.get(id)
+  def service(id: String): Option[ServiceDescriptor] = services.get(id)
+  def team(id: String): Option[Team] = teams.get(id)
+  def tenant(id: String): Option[Tenant] = tenants.get(id)
+  def serviceGroup(id: String): Option[ServiceGroup] = serviceGroups.get(id)
+  def dataExporter(id: String): Option[DataExporterConfig] = dataExporters.get(id)
+  def otoroshiAdmin(id: String): Option[OtoroshiAdmin] = otoroshiAdmins.get(id)
+  def backofficeSession(id: String): Option[BackOfficeUser] = backofficeSessions.get(id)
+  def privateAppsSession(id: String): Option[PrivateAppsUser] = privateAppsSessions.get(id)
+  def tcpService(id: String): Option[TcpService] = tcpServices.get(id)
 
   def allRoutes(): Seq[NgRoute]                 = routes.values.toSeq
   def allApikeys(): Seq[ApiKey]                 = apikeys.values.toSeq
   def allJwtVerifiers(): Seq[GlobalJwtVerifier] = jwtVerifiers.values.toSeq
   def allCertificates(): Seq[Cert]              = certificates.values.toSeq
   def allAuthModules(): Seq[AuthModuleConfig]   = authModules.values.toSeq
+  def allServices(): Seq[ServiceDescriptor] = services.values.toSeq
+  def allTeams(): Seq[Team] = teams.values.toSeq
+  def allTenants(): Seq[Tenant] = tenants.values.toSeq
+  def allServiceGroups(): Seq[ServiceGroup] = serviceGroups.values.toSeq
+  def allDataExporters(): Seq[DataExporterConfig] = dataExporters.values.toSeq
+  def allOtoroshiAdmins(): Seq[OtoroshiAdmin] = otoroshiAdmins.values.toSeq
+  def allBackofficeSessions(): Seq[BackOfficeUser] = backofficeSessions.values.toSeq
+  def allPrivateAppsSessions(): Seq[PrivateAppsUser] = privateAppsSessions.values.toSeq
+  def allTcpServices(): Seq[TcpService] = tcpServices.values.toSeq
 
   def updateRoutes(values: Seq[NgRoute]): Unit = {
     routes.++=(values.map(v => (v.id, v))).--=(routes.keySet.toSeq.diff(values.map(_.id)))
@@ -76,6 +107,42 @@ class NgProxyState(env: Env) {
     val d                                            = System.currentTimeMillis() - s
     logger.debug(s"built TreeRouter(${values.size} routes) in ${d} ms.")
     // java.nio.file.Files.writeString(new java.io.File("./tree-router-config.json").toPath, domainPathTreeRef.get().json.prettify)
+  }
+
+  def updateServices(values: Seq[ServiceDescriptor]): Unit = {
+    services.++(values.map(v => (v.id, v))).--(services.keySet.toSeq.diff(values.map(_.id)))
+  }
+
+  def updateTeams(values: Seq[Team]): Unit = {
+    teams.++(values.map(v => (v.id, v))).--(teams.keySet.toSeq.diff(values.map(_.id)))
+  }
+
+  def updateTenants(values: Seq[Tenant]): Unit = {
+    tenants.++(values.map(v => (v.id, v))).--(tenants.keySet.toSeq.diff(values.map(_.id)))
+  }
+
+  def updateServiceGroups(values: Seq[ServiceGroup]): Unit = {
+    serviceGroups.++(values.map(v => (v.id, v))).--(serviceGroups.keySet.toSeq.diff(values.map(_.id)))
+  }
+
+  def updateDataExporters(values: Seq[DataExporterConfig]): Unit = {
+    dataExporters.++(values.map(v => (v.id, v))).--(dataExporters.keySet.toSeq.diff(values.map(_.id)))
+  }
+
+  def updateOtoroshiAdmins(values: Seq[OtoroshiAdmin]): Unit = {
+    otoroshiAdmins.++(values.map(v => (v.username, v))).--(otoroshiAdmins.keySet.toSeq.diff(values.map(_.username)))
+  }
+
+  def updateBackofficeSessions(values: Seq[BackOfficeUser]): Unit = {
+    backofficeSessions.++(values.map(v => (v.randomId, v))).--(backofficeSessions.keySet.toSeq.diff(values.map(_.randomId)))
+  }
+
+  def updatePrivateAppsSessions(values: Seq[PrivateAppsUser]): Unit = {
+    privateAppsSessions.++(values.map(v => (v.randomId, v))).--(privateAppsSessions.keySet.toSeq.diff(values.map(_.randomId)))
+  }
+
+  def updateTcpServices(values: Seq[TcpService]): Unit = {
+    tcpServices.++(values.map(v => (v.id, v))).--(tcpServices.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateTargets(values: Seq[StoredNgTarget]): Unit = {
@@ -327,24 +394,33 @@ class NgProxyStateLoaderJob extends Job {
     val debug        = config.select("debug").asOpt[Boolean].getOrElse(false)
     val debugHeaders = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
     for {
-      routes          <- env.datastores.routeDataStore.findAll()
-      routescomp      <- env.datastores.servicesDataStore.findAll()
-      genRoutesDomain <- generateRoutesByDomain(env)
-      genRoutesPath   <- generateRoutesByName(env)
-      genRandom       <- generateRandomRoutes(env)
-      descriptors     <- env.datastores.serviceDescriptorDataStore.findAll()
-      fakeRoutes       = if (env.env == "dev") Seq(NgRoute.fake) else Seq.empty
-      newRoutes        = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
-                           NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
-                         ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes).filter(_.enabled)
-      apikeys         <- env.datastores.apiKeyDataStore.findAll()
-      certs           <- env.datastores.certificatesDataStore.findAll()
-      verifiers       <- env.datastores.globalJwtVerifierDataStore.findAll()
-      modules         <- env.datastores.authConfigsDataStore.findAll()
-      targets         <- env.datastores.targetsDataStore.findAll()
-      backends        <- env.datastores.backendsDataStore.findAll()
-      errorTemplates  <- env.datastores.errorTemplateDataStore.findAll()
-      croutes         <- if (env.env == "dev") {
+      routes              <- env.datastores.routeDataStore.findAll()
+      routescomp          <- env.datastores.servicesDataStore.findAll()
+      genRoutesDomain     <- generateRoutesByDomain(env)
+      genRoutesPath       <- generateRoutesByName(env)
+      genRandom           <- generateRandomRoutes(env)
+      descriptors         <- env.datastores.serviceDescriptorDataStore.findAll()
+      fakeRoutes          = if (env.env == "dev") Seq(NgRoute.fake) else Seq.empty
+      newRoutes           = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
+                            NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
+                          ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes).filter(_.enabled)
+      apikeys             <- env.datastores.apiKeyDataStore.findAll()
+      certs               <- env.datastores.certificatesDataStore.findAll()
+      verifiers           <- env.datastores.globalJwtVerifierDataStore.findAll()
+      modules             <- env.datastores.authConfigsDataStore.findAll()
+      targets             <- env.datastores.targetsDataStore.findAll()
+      backends            <- env.datastores.backendsDataStore.findAll()
+      errorTemplates      <- env.datastores.errorTemplateDataStore.findAll()
+      teams               <- env.datastores.teamDataStore.findAll()
+      tenants             <- env.datastores.tenantDataStore.findAll()
+      serviceGroups       <- env.datastores.serviceGroupDataStore.findAll()
+      dataExporters       <- env.datastores.dataExporterConfigDataStore.findAll()
+      simpleAdmins        <- env.datastores.simpleAdminDataStore.findAll()
+      webauthnAdmins      <- env.datastores.webAuthnAdminDataStore.findAll()
+      backofficeSessions  <- env.datastores.backOfficeUserDataStore.findAll()
+      privateAppsSessions <- env.datastores.privateAppsUserDataStore.findAll()
+      tcpServices         <- env.datastores.tcpServiceDataStore.findAll()
+      croutes             <- if (env.env == "dev") {
                            NgService
                              .fromOpenApi(
                                "oto-api-next-gen.oto.tools",
@@ -387,6 +463,15 @@ class NgProxyStateLoaderJob extends Job {
       env.proxyState.updateAuthModules(modules)
       env.proxyState.updateJwtVerifiers(verifiers)
       env.proxyState.updateErrorTemplates(errorTemplates)
+      env.proxyState.updateServices(descriptors)
+      env.proxyState.updateTeams(teams)
+      env.proxyState.updateTenants(tenants)
+      env.proxyState.updateServiceGroups(serviceGroups)
+      env.proxyState.updateDataExporters(dataExporters)
+      env.proxyState.updateOtoroshiAdmins(simpleAdmins ++ webauthnAdmins)
+      env.proxyState.updateBackofficeSessions(backofficeSessions)
+      env.proxyState.updatePrivateAppsSessions(privateAppsSessions)
+      env.proxyState.updateTcpServices(tcpServices)
       NgProxyStateLoaderJob.firstSync.compareAndSet(false, true)
       // println(s"job done in ${System.currentTimeMillis() - start} ms")
     }
