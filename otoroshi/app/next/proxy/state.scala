@@ -479,3 +479,51 @@ class NgProxyStateLoaderJob extends Job {
     e.printStackTrace()
   }.map(_ => ())
 }
+
+class NgInternalStateMonitor extends Job {
+
+  import squants.information._
+  import squants.time._
+
+  private val logger = Logger("otoroshi-internal-state-monitor")
+
+  override def uniqueId: JobId = JobId("io.otoroshi.next.core.jobs.NgInternalStateMonitor")
+
+  override def name: String = "internal state size monitor"
+
+  override def visibility: JobVisibility = JobVisibility.Internal
+
+  override def kind: JobKind = JobKind.ScheduledEvery
+
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 1.second.some
+
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
+
+  override def starting: JobStarting = JobStarting.Automatically
+
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation =  JobInstantiation.OneInstancePerOtoroshiInstance
+
+  def monitorProxyState(env: Env): Unit = {
+    val start = System.currentTimeMillis()
+    val total = Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(env.proxyState).totalSize())
+    val duration = Milliseconds(System.currentTimeMillis() - start)
+    env.metrics.markDouble("ng-proxy-state-size-monitoring", total.value)
+    logger.debug(s"proxy-state: ${total.toMegabytes} mb, in ${duration}")
+  }
+
+  def monitorDataStoreState(env: Env): Unit = {
+    val start = System.currentTimeMillis()
+    val total = Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(env.datastores).totalSize())
+    val duration = Milliseconds(System.currentTimeMillis() - start)
+    env.metrics.markDouble("ng-datastore-size-monitoring", total.value)
+    logger.debug(s"datastore: ${total.toMegabytes} mb, in ${duration}")
+  }
+
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    val monitorState = env.configuration.getOptional[Boolean]("otoroshi.next.monitor-proxy-state-size").getOrElse(false)
+    val monitorDatastore = env.configuration.getOptional[Boolean]("otoroshi.next.monitor-datastore-size").getOrElse(false)
+    if (monitorState) monitorProxyState(env)
+    if (monitorDatastore) monitorDataStoreState(env)
+    ().vfuture
+  }
+}
