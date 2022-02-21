@@ -48,6 +48,7 @@ class NgProxyState(env: Env) {
   private val backofficeSessions  = new TrieMap[String, BackOfficeUser]()
   private val privateAppsSessions = new TrieMap[String, PrivateAppsUser]()
   private val tcpServices         = new TrieMap[String, TcpService]()
+  private val scripts         = new TrieMap[String, Script]()
 
   private val routesByDomain    = new TrieMap[String, Seq[NgRoute]]()
   private val domainPathTreeRef = new AtomicReference[NgTreeRouter](NgTreeRouter.empty)
@@ -63,6 +64,7 @@ class NgProxyState(env: Env) {
     case None        => domainPathTreeRef.get().findWildcard(domain).map(_.routes)
   }
 
+  def script(id: String): Option[Script]                 = scripts.get(id)
   def backend(id: String): Option[NgBackend]             = backends.get(id)
   def errorTemplate(id: String): Option[ErrorTemplate]   = errorTemplates.get(id)
   def target(id: String): Option[NgTarget]               = targets.get(id)
@@ -81,6 +83,7 @@ class NgProxyState(env: Env) {
   def privateAppsSession(id: String): Option[PrivateAppsUser] = privateAppsSessions.get(id)
   def tcpService(id: String): Option[TcpService] = tcpServices.get(id)
 
+  def allScripts(): Seq[Script]                 = scripts.values.toSeq
   def allRoutes(): Seq[NgRoute]                 = routes.values.toSeq
   def allApikeys(): Seq[ApiKey]                 = apikeys.values.toSeq
   def allJwtVerifiers(): Seq[GlobalJwtVerifier] = jwtVerifiers.values.toSeq
@@ -173,6 +176,10 @@ class NgProxyState(env: Env) {
 
   def updateErrorTemplates(values: Seq[ErrorTemplate]): Unit = {
     errorTemplates.++=(values.map(v => (v.serviceId, v))).--=(errorTemplates.keySet.toSeq.diff(values.map(_.serviceId)))
+  }
+
+  def updateScripts(values: Seq[Script]): Unit = {
+    scripts.++=(values.map(v => (v.id, v))).--=(scripts.keySet.toSeq.diff(values.map(_.id)))
   }
 }
 
@@ -488,6 +495,7 @@ class NgProxyStateLoaderJob extends Job {
       backofficeSessions  <- env.datastores.backOfficeUserDataStore.findAll()
       privateAppsSessions <- env.datastores.privateAppsUserDataStore.findAll()
       tcpServices         <- env.datastores.tcpServiceDataStore.findAll()
+      scripts             <- env.datastores.scriptDataStore.findAll()
       croutes             <- if (env.env == "dev") {
                            NgService
                              .fromOpenApi(
@@ -540,6 +548,7 @@ class NgProxyStateLoaderJob extends Job {
       env.proxyState.updateBackofficeSessions(backofficeSessions)
       env.proxyState.updatePrivateAppsSessions(privateAppsSessions)
       env.proxyState.updateTcpServices(tcpServices)
+      env.proxyState.updateScripts(scripts)
       NgProxyStateLoaderJob.firstSync.compareAndSet(false, true)
       env.metrics.timerUpdate("ng-proxy-state-refresh", System.currentTimeMillis() - start, TimeUnit.MILLISECONDS)
     }
