@@ -418,15 +418,15 @@ class NgProxyStateLoaderJob extends Job {
         backend = NgBackend(
           targets = Seq(
             NgTarget(
-              id = "mirror-1",
-              hostname = "mirror.otoroshi.io",
+              id = "www.dataaccess.com",
+              hostname = "www.dataaccess.com",
               port = 443,
               tls = true
             )
           ),
           targetRefs = Seq.empty,
-          root = s"/",
-          rewrite = false,
+          root = s"/webservicesserver/numberconversion.wso",
+          rewrite = true,
           loadBalancing = RoundRobin,
           client = NgClientConfig.default
         ),
@@ -435,7 +435,7 @@ class NgProxyStateLoaderJob extends Job {
             NgPluginInstance(
               plugin = pluginId[SOAPAction],
               config = NgPluginInstanceConfig(SOAPActionConfig(
-                url = "https://www.dataaccess.com/webservicesserver/numberconversion.wso",
+                // url = "https://www.dataaccess.com/webservicesserver/numberconversion.wso",
                 envelope =
                   s"""<?xml version="1.0" encoding="utf-8"?>
                     |<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">

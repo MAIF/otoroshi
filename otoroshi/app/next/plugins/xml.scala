@@ -112,7 +112,7 @@ class JsonToXmlResponse extends NgRequestTransformer {
 }
 
 case class SOAPActionConfig(
-  url: String,
+  url: Option[String] = None,
   envelope: String,
   action: Option[String] = None,
   preserveQuery: Boolean = true,
@@ -127,7 +127,7 @@ object SOAPActionConfig {
   val format = new Format[SOAPActionConfig] {
     override def reads(json: JsValue): JsResult[SOAPActionConfig] = Try {
       SOAPActionConfig(
-        url = json.select("url").as[String],
+        url = json.select("url").asOpt[String],
         envelope = json.select("envelope").as[String],
         action = json.select("action").asOpt[String],
         preserveQuery = json.select("preserve_query").asOpt[Boolean].getOrElse(true),
@@ -140,7 +140,7 @@ object SOAPActionConfig {
     }
 
     override def writes(o: SOAPActionConfig): JsValue = Json.obj(
-      "url" -> o.url,
+      "url" -> o.url.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "envelope" -> o.envelope,
       "action" -> o.action.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "preserve_query" -> o.preserveQuery,
@@ -177,7 +177,7 @@ class SOAPAction extends NgRequestTransformer {
     )
   }
 
-  def transformBody(body: String, config: SOAPActionConfig): Either[String, String] = {
+  def transformResponseBody(body: String, config: SOAPActionConfig): Either[String, String] = {
     config.jqResponseFilter match {
       case None => body.right
       case Some(filter) => {
@@ -214,7 +214,8 @@ class SOAPAction extends NgRequestTransformer {
     bodyF.flatMap { body =>
       val soapEnvelop: String = el(config.envelope, body, ctx, env)
       val operation = config.action
-      env.Ws.url(config.url)
+      val url = config.url.getOrElse(s"${ctx.route.backend.targets.head.baseUrl}${ctx.route.backend.root}")
+      env.Ws.url(url)
         .withHttpHeaders(
           "Content-Type" -> config.charset.getOrElse("text/xml; charset=utf-8"),
         ).applyOnWithOpt(operation) {
@@ -243,7 +244,7 @@ class SOAPAction extends NgRequestTransformer {
             } else {
               Results.Ok
             }
-            transformBody(jsonBody, config) match {
+            transformResponseBody(jsonBody, config) match {
               case Left(error) => Results.InternalServerError(error)
                 .as("application/json")
                 .withHeaders(headerz: _*)
