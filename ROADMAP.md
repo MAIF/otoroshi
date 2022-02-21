@@ -34,9 +34,12 @@ provide the authentication modules needed for most cases and associated tools
 - [ ] orchestrator plugin (based on flow plugin work)
 - [ ] access control helpers
 - [ ] eureka compatibility
-- [ ] representation plugins
-  - [ ] protocol transformations
-  - [ ] payload transformations
+- [x] representation plugins
+  - [x] protocol transformations
+    - [x] rest to soap
+  - [x] payload transformations
+    - [x] json-to-xml
+    - [x] xml-to-json
 
 ## backoffice
 
