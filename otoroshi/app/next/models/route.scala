@@ -181,6 +181,7 @@ case class NgRoute(
   lazy val openapiUrl: Option[String]           = metadata.get("otoroshi-core-openapi-url").filter(_.nonEmpty)
   lazy val originalRouteId: Option[String]      = metadata.get("otoroshi-core-original-route-id").filter(_.nonEmpty)
 
+  lazy val legacy: ServiceDescriptor = serviceDescriptor
   lazy val serviceDescriptor: ServiceDescriptor = {
     ServiceDescriptor(
       location = location,

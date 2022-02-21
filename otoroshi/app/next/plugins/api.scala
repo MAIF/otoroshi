@@ -492,8 +492,8 @@ trait NgRequestTransformer extends NgPlugin {
   def transformsRequest: Boolean  = true
   def transformsResponse: Boolean = true
   def transformsError: Boolean    = true
-  def isTransformRequestAsync: Boolean
-  def isTransformResponseAsync: Boolean
+  def isTransformRequestAsync: Boolean = true
+  def isTransformResponseAsync: Boolean = true
 
   def beforeRequest(
       ctx: NgBeforeRequestContext

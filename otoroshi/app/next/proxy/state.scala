@@ -5,7 +5,8 @@ import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.next.models._
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, OverrideHost}
+import otoroshi.next.plugins.api.NgPluginHelper.pluginId
+import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, OverrideHost, SOAPAction, SOAPActionConfig}
 import otoroshi.script._
 import otoroshi.ssl.Cert
 import otoroshi.tcp.TcpService
@@ -394,6 +395,67 @@ class NgProxyStateLoaderJob extends Job {
     }
   }
 
+  def soapRoute(env: Env): Seq[NgRoute] = {
+    if (env.env == "dev") {
+      Seq(NgRoute(
+        location = EntityLocation.default,
+        id = s"route_soap",
+        name = s"route_soap",
+        description = s"route_soap",
+        tags = Seq.empty,
+        metadata = Map.empty,
+        enabled = true,
+        debugFlow = true,
+        exportReporting = false,
+        frontend = NgFrontend(
+          domains = Seq(NgDomainAndPath(s"soap-next-gen.oto.tools/soap")),
+          headers = Map.empty,
+          query = Map.empty,
+          methods = Seq.empty,
+          stripPath = true,
+          exact = false,
+        ),
+        backend = NgBackend(
+          targets = Seq(
+            NgTarget(
+              id = "mirror-1",
+              hostname = "mirror.otoroshi.io",
+              port = 443,
+              tls = true
+            )
+          ),
+          targetRefs = Seq.empty,
+          root = s"/",
+          rewrite = false,
+          loadBalancing = RoundRobin,
+          client = NgClientConfig.default
+        ),
+        plugins = NgPlugins(
+          Seq(
+            NgPluginInstance(
+              plugin = pluginId[SOAPAction],
+              config = NgPluginInstanceConfig(SOAPActionConfig(
+                url = "https://www.dataaccess.com/webservicesserver/numberconversion.wso",
+                envelope =
+                  """<?xml version="1.0" encoding="utf-8"?>
+                    |<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    |  <soap:Body>
+                    |    <NumberToWords xmlns="http://www.dataaccess.com/webservicesserver/">
+                    |      <ubiNum>123</ubiNum>
+                    |    </NumberToWords>
+                    |  </soap:Body>
+                    |</soap:Envelope>""".stripMargin,
+                jqResponseFilter = """{number_str: .["soap:Envelope"] | .["soap:Body"] | .["m:NumberToWordsResponse"] | .["m:NumberToWordsResult"] }""".some
+              ).json.asObject)
+            )
+          )
+        )
+      ))
+    } else {
+      Seq.empty
+    }
+  }
+
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val start        = System.currentTimeMillis()
     val config       = env.datastores.globalConfigDataStore.latest().plugins.config.select("NextGenProxyEngine").asObject
@@ -409,7 +471,7 @@ class NgProxyStateLoaderJob extends Job {
       fakeRoutes          = if (env.env == "dev") Seq(NgRoute.fake) else Seq.empty
       newRoutes           = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
                             NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
-                          ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes).filter(_.enabled)
+                          ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
       apikeys             <- env.datastores.apiKeyDataStore.findAll()
       certs               <- env.datastores.certificatesDataStore.findAll()
       verifiers           <- env.datastores.globalJwtVerifierDataStore.findAll()

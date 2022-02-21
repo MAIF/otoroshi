@@ -20,7 +20,7 @@ provide the authentication modules needed for most cases and associated tools
 - [x] support oauth2 `client_credentials` flow
 - [ ] pluggable authentication modules using the existing discovery mecanism
 - [x] plugin to handle basic auth calls
-- [ ] plugin to handle OAuth1 calls
+- [x] plugin to handle OAuth1 calls
 - [x] plugin to handle OAuth2 calls
 - [ ] more integration of biscuit tokens
   - [ ] add biscuit playground to the UI
