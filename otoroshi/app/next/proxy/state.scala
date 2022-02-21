@@ -17,7 +17,7 @@ import play.api.mvc.RequestHeader
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.concurrent.duration.{DurationInt, DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
@@ -192,7 +192,9 @@ class NgProxyStateLoaderJob extends Job {
 
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 1.millisecond.some
 
-  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = {
+    env.configuration.getOptional[Long]("otoroshi.next.state-sync-interval").getOrElse(10000L).milliseconds.some
+  }
 
   override def starting: JobStarting = JobStarting.Automatically
 
