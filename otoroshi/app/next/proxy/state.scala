@@ -219,9 +219,10 @@ class NgProxyStateLoaderJob extends Job {
           frontend = NgFrontend(
             domains = Seq(NgDomainAndPath(s"${idx}-generated-next-gen.oto.tools")),
             headers = Map.empty,
+            query = Map.empty,
             methods = Seq.empty,
             stripPath = true,
-            exact = false
+            exact = false,
           ),
           backend = NgBackend(
             targets = Seq(
@@ -286,9 +287,10 @@ class NgProxyStateLoaderJob extends Job {
           frontend = NgFrontend(
             domains = Seq(NgDomainAndPath(s"path-generated-next-gen.oto.tools/api/${idx}")),
             headers = Map.empty,
+            query = Map.empty,
             methods = Seq.empty,
             stripPath = true,
-            exact = false
+            exact = false,
           ),
           backend = NgBackend(
             targets = Seq(
@@ -347,9 +349,10 @@ class NgProxyStateLoaderJob extends Job {
           frontend = NgFrontend(
             domains = Seq(NgDomainAndPath(s"random-generated-next-gen.oto.tools/api/${idx}")),
             headers = Map.empty,
+            query = Map.empty,
             methods = Seq.empty,
             stripPath = true,
-            exact = false
+            exact = false,
           ),
           backend = NgBackend(
             targets = Seq(
