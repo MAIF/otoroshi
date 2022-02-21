@@ -408,10 +408,10 @@ class NgProxyStateLoaderJob extends Job {
         debugFlow = true,
         exportReporting = false,
         frontend = NgFrontend(
-          domains = Seq(NgDomainAndPath(s"soap-next-gen.oto.tools/soap")),
+          domains = Seq(NgDomainAndPath(s"soap-next-gen.oto.tools/text/from/number/:number")),
           headers = Map.empty,
           query = Map.empty,
-          methods = Seq.empty,
+          methods = Seq("GET"),
           stripPath = true,
           exact = false,
         ),
@@ -437,11 +437,11 @@ class NgProxyStateLoaderJob extends Job {
               config = NgPluginInstanceConfig(SOAPActionConfig(
                 url = "https://www.dataaccess.com/webservicesserver/numberconversion.wso",
                 envelope =
-                  """<?xml version="1.0" encoding="utf-8"?>
+                  s"""<?xml version="1.0" encoding="utf-8"?>
                     |<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
                     |  <soap:Body>
                     |    <NumberToWords xmlns="http://www.dataaccess.com/webservicesserver/">
-                    |      <ubiNum>123</ubiNum>
+                    |      <ubiNum>$${req.pathparams.number}</ubiNum>
                     |    </NumberToWords>
                     |  </soap:Body>
                     |</soap:Envelope>""".stripMargin,
