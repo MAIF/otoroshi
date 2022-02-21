@@ -15,6 +15,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.RequestHeader
 
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationInt, DurationLong, FiniteDuration}
@@ -475,7 +476,7 @@ class NgProxyStateLoaderJob extends Job {
       env.proxyState.updatePrivateAppsSessions(privateAppsSessions)
       env.proxyState.updateTcpServices(tcpServices)
       NgProxyStateLoaderJob.firstSync.compareAndSet(false, true)
-      // println(s"job done in ${System.currentTimeMillis() - start} ms")
+      env.metrics.timerUpdate("ng-proxy-state-refresh", System.currentTimeMillis() - start, TimeUnit.MILLISECONDS)
     }
   }.andThen { case Failure(e) =>
     e.printStackTrace()
