@@ -352,7 +352,7 @@ object NgPreRouting {
 }
 
 trait NgPreRouting extends NgPlugin {
-  def isPreRouteAsync: Boolean
+  def isPreRouteAsync: Boolean = true
   def preRouteSync(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Either[NgPreRoutingError, Done] =
     NgPreRouting.done
   def preRoute(
@@ -566,7 +566,7 @@ object NgAccess {
 }
 
 trait NgAccessValidator extends NgNamedPlugin {
-  def isAccessAsync: Boolean
+  def isAccessAsync: Boolean = true
   def accessSync(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): NgAccess     = NgAccess.NgAllowed
   def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = accessSync(ctx).vfuture
 }
@@ -601,7 +601,7 @@ case class NgRequestSinkContext(
 }
 
 trait NgRequestSink extends NgNamedPlugin {
-  def isSinkAsync: Boolean
+  def isSinkAsync: Boolean = true
   def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean       = false
   def handleSync(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Result     =
     Results.NotImplemented(Json.obj("error" -> "not implemented yet"))

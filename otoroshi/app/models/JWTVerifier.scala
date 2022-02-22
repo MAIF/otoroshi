@@ -53,6 +53,7 @@ case class JwtInjection(
 ) extends AsJson {
   def asJson: JsValue =
     Json.obj(
+      "token" -> decodedToken.map(_.getToken.json).getOrElse(JsNull).asValue,
       "additionalHeaders" -> JsObject(this.additionalHeaders.mapValues(JsString.apply)),
       "removeHeaders"     -> JsArray(this.removeHeaders.map(JsString.apply)),
       "additionalCookies" -> JsObject(this.additionalCookies.mapValues(JsString.apply)),
