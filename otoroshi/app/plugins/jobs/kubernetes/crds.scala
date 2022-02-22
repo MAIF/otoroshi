@@ -1111,21 +1111,22 @@ object KubernetesCRDsJob {
       registerApkToExport: Function3[String, String, ApiKey, Unit],
       registerCertToExport: Function3[String, String, Cert, Unit]
   )(implicit env: Env, ec: ExecutionContext): Future[CRDContext] = {
+    val useProxyState = conf.useProxyState
     for {
 
-      otoserviceGroups      <- env.proxyState.allServiceGroups().vfuture //env.datastores.serviceGroupDataStore.findAll()
-      otoserviceDescriptors <- env.proxyState.allServices().vfuture // env.datastores.serviceDescriptorDataStore.findAll()
-      otoapiKeys            <- env.proxyState.allApikeys().vfuture // env.datastores.apiKeyDataStore.findAll()
-      otocertificates       <- env.proxyState.allCertificates().vfuture // env.datastores.certificatesDataStore.findAll()
+      otoserviceGroups      <- if (useProxyState) env.proxyState.allServiceGroups().vfuture else env.datastores.serviceGroupDataStore.findAll()
+      otoserviceDescriptors <- if (useProxyState) env.proxyState.allServices().vfuture else env.datastores.serviceDescriptorDataStore.findAll()
+      otoapiKeys            <- if (useProxyState) env.proxyState.allApikeys().vfuture else env.datastores.apiKeyDataStore.findAll()
+      otocertificates       <- if (useProxyState) env.proxyState.allCertificates().vfuture else env.datastores.certificatesDataStore.findAll()
       otoglobalConfigs      <- env.datastores.globalConfigDataStore.findAll()
-      otojwtVerifiers       <- env.proxyState.allJwtVerifiers().vfuture // env.datastores.globalJwtVerifierDataStore.findAll()
-      otoauthModules        <- env.proxyState.allAuthModules().vfuture // env.datastores.authConfigsDataStore.findAll()
-      otoscripts            <- env.proxyState.allScripts().vfuture // env.datastores.scriptDataStore.findAll()
-      ototcpServices        <- env.proxyState.allTcpServices().vfuture // env.datastores.tcpServiceDataStore.findAll()
-      otosimpleAdmins       <- env.proxyState.allOtoroshiAdmins().collect { case s: SimpleOtoroshiAdmin => s }.vfuture // env.datastores.simpleAdminDataStore.findAll()
-      otodataexporters      <- env.proxyState.allDataExporters().vfuture // env.datastores.dataExporterConfigDataStore.findAll()
-      ototeams              <- env.proxyState.allTeams().vfuture // env.datastores.teamDataStore.findAll()
-      ototenants            <- env.proxyState.allTenants().vfuture // env.datastores.tenantDataStore.findAll()
+      otojwtVerifiers       <- if (useProxyState) env.proxyState.allJwtVerifiers().vfuture else env.datastores.globalJwtVerifierDataStore.findAll()
+      otoauthModules        <- if (useProxyState) env.proxyState.allAuthModules().vfuture else env.datastores.authConfigsDataStore.findAll()
+      otoscripts            <- if (useProxyState) env.proxyState.allScripts().vfuture else env.datastores.scriptDataStore.findAll()
+      ototcpServices        <- if (useProxyState) env.proxyState.allTcpServices().vfuture else env.datastores.tcpServiceDataStore.findAll()
+      otosimpleAdmins       <- if (useProxyState) env.proxyState.allOtoroshiAdmins().collect { case s: SimpleOtoroshiAdmin => s }.vfuture else env.datastores.simpleAdminDataStore.findAll()
+      otodataexporters      <- if (useProxyState) env.proxyState.allDataExporters().vfuture else env.datastores.dataExporterConfigDataStore.findAll()
+      ototeams              <- if (useProxyState) env.proxyState.allTeams().vfuture else env.datastores.teamDataStore.findAll()
+      ototenants            <- if (useProxyState) env.proxyState.allTenants().vfuture else env.datastores.tenantDataStore.findAll()
 
       services           <- clientSupport.client.fetchServices()
       endpoints          <- clientSupport.client.fetchEndpoints()
@@ -2061,10 +2062,11 @@ object KubernetesCRDsJob {
       }
     }
 
-    env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA).flatMap {
+    (if (config.useProxyState) env.proxyState.certificate(Cert.OtoroshiCA).vfuture else env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA)).flatMap {
       case None     => ().future
       case Some(ca) => {
-        env.datastores.certificatesDataStore.findById("kubernetes-webhooks-cert").flatMap {
+        val cname = "kubernetes-webhooks-cert"
+        (if (config.useProxyState) env.proxyState.certificate(cname).vfuture else env.datastores.certificatesDataStore.findById(cname)).flatMap {
           case Some(c)
               if c.entityMetadata
                 .get("domain") == s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc".some =>
@@ -2118,10 +2120,10 @@ object KubernetesCRDsJob {
       }
     }
 
-    env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA).flatMap {
+    (if (config.useProxyState) env.proxyState.certificate(Cert.OtoroshiIntermediateCA).vfuture else env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA)).flatMap {
       case None     => ().future
       case Some(ca) => {
-        env.datastores.certificatesDataStore.findById(certId).flatMap {
+        (if (config.useProxyState) env.proxyState.certificate(certId).vfuture else env.datastores.certificatesDataStore.findById(certId)).flatMap {
           case Some(c) if c.entityMetadata.get("csr") == queryJson.some => ().future
           case _                                                        => doIt(ca)
         }
