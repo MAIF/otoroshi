@@ -60,7 +60,7 @@ class Http2Caller extends NgRequestTransformer {
         version = ctx.otoroshiRequest.version,
         clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain,
         backend = Some(target),
-        body = Source.single(body)
+        body = Source(body.grouped(16 * 1024).toList)
       )
       newRequest.right
     }
@@ -74,7 +74,7 @@ class Http2Caller extends NgRequestTransformer {
         status = body.select("status").asInt,
         headers = body.select("headers").as[Map[String, String]],
         cookies = Seq.empty, // TODO: handle cookies
-        body = Source.single(bodyOut)
+        body = Source(bodyOut.grouped(16 * 1024).toList)
       ).right
     }
   }

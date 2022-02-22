@@ -24,6 +24,9 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
 import io.kubernetes.client.proto.Meta.Time
 
+import scala.collection.TraversableOnce
+import scala.collection.concurrent.TrieMap
+
 object implicits {
   implicit class BetterSyntax[A](private val obj: A)                   extends AnyVal {
     def seq: Seq[A]                                                 = Seq(obj)
@@ -381,5 +384,25 @@ object implicits {
         case _ => timeStrings.init.mkString(", ") + " and " + timeStrings.last
       }
     }
+  }
+  implicit class BetterMapOfStringAndB[B](val theMap: Map[String, B])  extends AnyVal {
+    def put(key: String, value: B): Map[String, B] = theMap.+((key, value))
+    def put(tuple: (String, B)): Map[String, B] = theMap.+(tuple)
+    def remove(key: String): Map[String, B] = theMap.-(key)
+    def removeIgnoreCase(key: String): Map[String, B] = theMap.-(key).-(key.toLowerCase())
+    def containsIgnoreCase(key: String): Boolean = theMap.contains(key) || theMap.contains(key.toLowerCase())
+    def getIgnoreCase(key: String): Option[B] = theMap.get(key).orElse(theMap.get(key.toLowerCase()))
+    def removeAndPutIgnoreCase(tuple: (String, B)): Map[String, B] = removeIgnoreCase(tuple._1).put(tuple)
+  }
+  implicit class BetterTrieMapOfStringAndB[B](val theMap: TrieMap[String, B])  extends AnyVal {
+    def add(tuple: (String, B)): TrieMap[String, B] = theMap.+=(tuple)
+    def addAll(all:  TraversableOnce[(String, B)]): TrieMap[String, B] = theMap.++=(all)
+    def rem(key: String): TrieMap[String, B] = theMap.-=(key)
+    def remIgnoreCase(key: String): TrieMap[String, B] = theMap.-=(key).-=(key.toLowerCase())
+    def remAll(keys: TraversableOnce[String]): TrieMap[String, B] = theMap.--=(keys)
+    def remAllIgnoreCase(keys: TraversableOnce[String]): TrieMap[String, B] = theMap.--=(keys).--=(keys.map(_.toLowerCase()))
+    def containsIgnoreCase(key: String): Boolean = theMap.contains(key) || theMap.contains(key.toLowerCase())
+    def getIgnoreCase(key: String): Option[B] = theMap.get(key).orElse(theMap.get(key.toLowerCase()))
+    def remAndAddIgnoreCase(tuple: (String, B)): TrieMap[String, B] = remIgnoreCase(tuple._1).add(tuple)
   }
 }

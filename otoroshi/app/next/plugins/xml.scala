@@ -73,10 +73,8 @@ class XmlToJsonRequest extends NgRequestTransformer with JsonTransform {
             ctx.otoroshiRequest.copy(
               body = Source(body.byteString.grouped(16 * 1024).toList),
               headers = ctx.otoroshiRequest.headers
-                .-("content-type").-("Content-Type")
-                .-("content-length").-("Content-Length")
-                .+("Content-Type" -> "application/json")
-                .+("Content-Length" -> jsonBody.size.toString)
+                .removeAndPutIgnoreCase("Content-Type" -> "application/json")
+                .removeAndPutIgnoreCase("Content-Length" -> jsonBody.size.toString)
             ).right
           }
         }
@@ -111,10 +109,8 @@ class JsonToXmlRequest extends NgRequestTransformer with JsonTransform {
             ctx.otoroshiRequest.copy(
               body = Source(xmlBody.grouped(16 * 1024).toList),
               headers = ctx.otoroshiRequest.headers
-                .-("content-type").-("Content-Type")
-                .-("content-length").-("Content-Length")
-                .+("Content-Type" -> "text/xml")
-                .+("Content-Length" -> xmlBody.size.toString)
+                .removeAndPutIgnoreCase("Content-Type" -> "text/xml")
+                .removeAndPutIgnoreCase("Content-Length" -> xmlBody.size.toString)
             ).right
           }
         }
@@ -149,10 +145,8 @@ class XmlToJsonResponse extends NgRequestTransformer with JsonTransform {
             ctx.otoroshiResponse.copy(
               body = Source(body.byteString.grouped(16 * 1024).toList),
               headers = ctx.otoroshiResponse.headers
-                .-("content-type").-("Content-Type")
-                .-("content-length").-("Content-Length")
-                .+("Content-Type" -> "application/json")
-                .+("Content-Length" -> jsonBody.size.toString)
+                .removeAndPutIgnoreCase("Content-Type" -> "application/json")
+                .removeAndPutIgnoreCase("Content-Length" -> jsonBody.size.toString)
             ).right
           }
         }
@@ -187,10 +181,8 @@ class JsonToXmlResponse extends NgRequestTransformer with JsonTransform {
             ctx.otoroshiResponse.copy(
               body = Source(xmlBody.grouped(16 * 1024).toList),
               headers = ctx.otoroshiResponse.headers
-                .-("content-type").-("Content-Type")
-                .-("content-length").-("Content-Length")
-                .+("Content-Type" -> "text/xml")
-                .+("Content-Length" -> xmlBody.size.toString)
+                .removeAndPutIgnoreCase("Content-Type" -> "text/xml")
+                .removeAndPutIgnoreCase("Content-Length" -> xmlBody.size.toString)
             ).right
           }
         }

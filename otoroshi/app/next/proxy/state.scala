@@ -48,7 +48,7 @@ class NgProxyState(env: Env) {
   private val backofficeSessions  = new TrieMap[String, BackOfficeUser]()
   private val privateAppsSessions = new TrieMap[String, PrivateAppsUser]()
   private val tcpServices         = new TrieMap[String, TcpService]()
-  private val scripts         = new TrieMap[String, Script]()
+  private val scripts             = new TrieMap[String, Script]()
 
   private val routesByDomain    = new TrieMap[String, Seq[NgRoute]]()
   private val domainPathTreeRef = new AtomicReference[NgTreeRouter](NgTreeRouter.empty)
@@ -100,13 +100,13 @@ class NgProxyState(env: Env) {
   def allTcpServices(): Seq[TcpService] = tcpServices.values.toSeq
 
   def updateRoutes(values: Seq[NgRoute]): Unit = {
-    routes.++=(values.map(v => (v.id, v))).--=(routes.keySet.toSeq.diff(values.map(_.id)))
+    routes.addAll(values.map(v => (v.id, v))).remAll(routes.keySet.toSeq.diff(values.map(_.id)))
     val routesByDomainRaw: Map[String, Seq[NgRoute]] = values
       .flatMap(r => r.frontend.domains.map(d => NgRouteDomainAndPathWrapper(r, d.domain, d.path)))
       .filterNot(_.domain.contains("*"))
       .groupBy(_.domain)
       .mapValues(_.sortWith((r1, r2) => r1.path.length.compareTo(r2.path.length) > 0).map(_.route))
-    routesByDomain.++=(routesByDomainRaw).--=(routesByDomain.keySet.toSeq.diff(routesByDomainRaw.keySet.toSeq))
+    routesByDomain.addAll(routesByDomainRaw).remAll(routesByDomain.keySet.toSeq.diff(routesByDomainRaw.keySet.toSeq))
     val s                                            = System.currentTimeMillis()
     domainPathTreeRef.set(NgTreeRouter.build(values))
     val d                                            = System.currentTimeMillis() - s
@@ -115,71 +115,71 @@ class NgProxyState(env: Env) {
   }
 
   def updateServices(values: Seq[ServiceDescriptor]): Unit = {
-    services.++(values.map(v => (v.id, v))).--(services.keySet.toSeq.diff(values.map(_.id)))
+    services.addAll(values.map(v => (v.id, v))).remAll(services.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateTeams(values: Seq[Team]): Unit = {
-    teams.++(values.map(v => (v.id, v))).--(teams.keySet.toSeq.diff(values.map(_.id)))
+    teams.addAll(values.map(v => (v.id.value, v))).remAll(teams.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateTenants(values: Seq[Tenant]): Unit = {
-    tenants.++(values.map(v => (v.id, v))).--(tenants.keySet.toSeq.diff(values.map(_.id)))
+    tenants.addAll(values.map(v => (v.id.value, v))).remAll(tenants.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateServiceGroups(values: Seq[ServiceGroup]): Unit = {
-    serviceGroups.++(values.map(v => (v.id, v))).--(serviceGroups.keySet.toSeq.diff(values.map(_.id)))
+    serviceGroups.addAll(values.map(v => (v.id, v))).remAll(serviceGroups.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateDataExporters(values: Seq[DataExporterConfig]): Unit = {
-    dataExporters.++(values.map(v => (v.id, v))).--(dataExporters.keySet.toSeq.diff(values.map(_.id)))
+    dataExporters.addAll(values.map(v => (v.id, v))).remAll(dataExporters.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateOtoroshiAdmins(values: Seq[OtoroshiAdmin]): Unit = {
-    otoroshiAdmins.++(values.map(v => (v.username, v))).--(otoroshiAdmins.keySet.toSeq.diff(values.map(_.username)))
+    otoroshiAdmins.addAll(values.map(v => (v.username, v))).remAll(otoroshiAdmins.keySet.toSeq.diff(values.map(_.username)))
   }
 
   def updateBackofficeSessions(values: Seq[BackOfficeUser]): Unit = {
-    backofficeSessions.++(values.map(v => (v.randomId, v))).--(backofficeSessions.keySet.toSeq.diff(values.map(_.randomId)))
+    backofficeSessions.addAll(values.map(v => (v.randomId, v))).remAll(backofficeSessions.keySet.toSeq.diff(values.map(_.randomId)))
   }
 
   def updatePrivateAppsSessions(values: Seq[PrivateAppsUser]): Unit = {
-    privateAppsSessions.++(values.map(v => (v.randomId, v))).--(privateAppsSessions.keySet.toSeq.diff(values.map(_.randomId)))
+    privateAppsSessions.addAll(values.map(v => (v.randomId, v))).remAll(privateAppsSessions.keySet.toSeq.diff(values.map(_.randomId)))
   }
 
   def updateTcpServices(values: Seq[TcpService]): Unit = {
-    tcpServices.++(values.map(v => (v.id, v))).--(tcpServices.keySet.toSeq.diff(values.map(_.id)))
+    tcpServices.addAll(values.map(v => (v.id, v))).remAll(tcpServices.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateTargets(values: Seq[StoredNgTarget]): Unit = {
-    targets.++=(values.map(v => (v.id, v.target))).--=(targets.keySet.toSeq.diff(values.map(_.id)))
+    targets.addAll(values.map(v => (v.id, v.target))).remAll(targets.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateBackends(values: Seq[StoredNgBackend]): Unit = {
-    backends.++=(values.map(v => (v.id, v.backend))).--=(backends.keySet.toSeq.diff(values.map(_.id)))
+    backends.addAll(values.map(v => (v.id, v.backend))).remAll(backends.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateApikeys(values: Seq[ApiKey]): Unit = {
-    apikeys.++=(values.map(v => (v.clientId, v))).--=(apikeys.keySet.toSeq.diff(values.map(_.clientId)))
+    apikeys.addAll(values.map(v => (v.clientId, v))).remAll(apikeys.keySet.toSeq.diff(values.map(_.clientId)))
   }
 
   def updateJwtVerifiers(values: Seq[GlobalJwtVerifier]): Unit = {
-    jwtVerifiers.++=(values.map(v => (v.id, v))).--=(jwtVerifiers.keySet.toSeq.diff(values.map(_.id)))
+    jwtVerifiers.addAll(values.map(v => (v.id, v))).remAll(jwtVerifiers.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateCertificates(values: Seq[Cert]): Unit = {
-    certificates.++=(values.map(v => (v.id, v))).--=(certificates.keySet.toSeq.diff(values.map(_.id)))
+    certificates.addAll(values.map(v => (v.id, v))).remAll(certificates.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateAuthModules(values: Seq[AuthModuleConfig]): Unit = {
-    authModules.++=(values.map(v => (v.id, v))).--=(authModules.keySet.toSeq.diff(values.map(_.id)))
+    authModules.addAll(values.map(v => (v.id, v))).remAll(authModules.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateErrorTemplates(values: Seq[ErrorTemplate]): Unit = {
-    errorTemplates.++=(values.map(v => (v.serviceId, v))).--=(errorTemplates.keySet.toSeq.diff(values.map(_.serviceId)))
+    errorTemplates.addAll(values.map(v => (v.serviceId, v))).remAll(errorTemplates.keySet.toSeq.diff(values.map(_.serviceId)))
   }
 
   def updateScripts(values: Seq[Script]): Unit = {
-    scripts.++=(values.map(v => (v.id, v))).--=(scripts.keySet.toSeq.diff(values.map(_.id)))
+    scripts.addAll(values.map(v => (v.id, v))).remAll(scripts.keySet.toSeq.diff(values.map(_.id)))
   }
 }
 
