@@ -12,31 +12,44 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class RBACConfig(
-  roles: Seq[String] = Seq.empty,
-  all: Boolean = false,
+  allow: Seq[String] = Seq.empty,
+  deny: Seq[String] = Seq.empty,
+  allowAll: Boolean = false,
+  denyAll: Boolean = false,
   jwtPath: Option[String] = None,
   apikeyPath: Option[String] = None,
   userPath: Option[String] = None,
+  rolePrefix: Option[String] = None,
+  roles: String = "roles"
 ) {
   def json: JsValue = RBACConfig.format.writes(this)
+  lazy val prefix: String = rolePrefix.map(v => s"$v:role:").getOrElse("role:")
 }
 
 object RBACConfig {
   val format = new Format[RBACConfig] {
     override def writes(o: RBACConfig): JsValue = Json.obj(
+      "allow" -> o.allow,
+      "deny" -> o.deny,
+      "allow_all" -> o.allowAll,
+      "deny_all" -> o.denyAll,
+      "jwt_path" -> o.jwtPath.map(JsString.apply).getOrElse(JsNull).asValue,
+      "apikey_path" -> o.apikeyPath.map(JsString.apply).getOrElse(JsNull).asValue,
+      "user_path" -> o.userPath.map(JsString.apply).getOrElse(JsNull).asValue,
+      "role_prefix" -> o.rolePrefix.map(JsString.apply).getOrElse(JsNull).asValue,
       "roles" -> o.roles,
-      "all" -> o.all,
-      "jwt_path" -> o.jwtPath,
-      "apikey_path" -> o.apikeyPath,
-      "user_path" -> o.userPath,
     )
     override def reads(json: JsValue): JsResult[RBACConfig] = Try {
       RBACConfig(
-        roles = json.select("roles").asOpt[Seq[String]].getOrElse(Seq.empty),
-        all = json.select("all").asOpt[Boolean].getOrElse(false),
+        allow = json.select("allow").asOpt[Seq[String]].getOrElse(Seq.empty),
+        deny = json.select("deny").asOpt[Seq[String]].getOrElse(Seq.empty),
+        allowAll = json.select("allow_all").asOpt[Boolean].getOrElse(false),
+        denyAll = json.select("deny_all").asOpt[Boolean].getOrElse(false),
         jwtPath = json.select("jwt_path").asOpt[String],
         apikeyPath = json.select("apikey_path").asOpt[String],
         userPath = json.select("user_path").asOpt[String],
+        rolePrefix = json.select("role_prefix").asOpt[String],
+        roles = json.select("roles").asOpt[String].getOrElse("roles"),
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -56,15 +69,25 @@ class RBAC extends NgAccessValidator {
     if (roles.isEmpty) {
       false
     } else {
-      if (config.roles.isEmpty) {
+      val isAllowed = if (config.allow.isEmpty) {
         true
       } else {
-        if (config.all) {
-          config.roles.forall(role => roles.contains(role))
+        if (config.allowAll) {
+          config.allow.forall(role => roles.contains(role))
         } else {
-          config.roles.exists(role => roles.contains(role))
+          config.allow.exists(role => roles.contains(role))
         }
       }
+      val isDenied = if (config.deny.isEmpty) {
+        true
+      } else {
+        if (config.denyAll) {
+          config.deny.forall(role => roles.contains(role))
+        } else {
+          config.deny.exists(role => roles.contains(role))
+        }
+      }
+      isAllowed && !isDenied
     }
   }
 
@@ -75,7 +98,7 @@ class RBAC extends NgAccessValidator {
       case None => false
       case Some(token) => {
         val jsonToken = token.getPayload.fromBase64.parseJson
-        val roles = jsonToken.select("roles").asOpt[Seq[String]].getOrElse(Seq.empty)
+        val roles = jsonToken.select(config.roles).asOpt[Seq[String]].getOrElse(Seq.empty)
         matches(roles, config) || (config.jwtPath.flatMap(p => jsonToken.atPath(p).asOpt[JsValue]) match {
           case Some(JsString(value)) => {
             if (matches(Seq(value), config)) {
@@ -92,8 +115,8 @@ class RBAC extends NgAccessValidator {
   }
 
   private def checkRightsFromApikey(apikey: ApiKey, config: RBACConfig): Boolean = {
-    val rolesTags = apikey.tags.filter(_.startsWith("role:")).map(_.replaceFirst("role:", ""))
-    val rolesMeta = apikey.metadata.get("roles").map(str => Json.parse(str).asArray.value.map(_.asString)).getOrElse(Seq.empty)
+    val rolesTags = apikey.tags.filter(_.startsWith(config.prefix)).map(_.replaceFirst(config.prefix, ""))
+    val rolesMeta = apikey.metadata.get(config.roles).map(str => Json.parse(str).asArray.value.map(_.asString)).getOrElse(Seq.empty)
     val pathMatch = config.apikeyPath.flatMap(p => apikey.json.atPath(p).asOpt[JsValue]) match {
       case Some(JsString(value)) => {
         if (matches(Seq(value), config)) {
@@ -109,8 +132,21 @@ class RBAC extends NgAccessValidator {
   }
 
   private def checkRightsFromUser(user: PrivateAppsUser, config: RBACConfig): Boolean = {
-    val rolesTags = user.tags.filter(_.startsWith("role:")).map(_.replaceFirst("role:", ""))
-    val rolesMeta = user.metadata.get("roles").map(str => Json.parse(str).asArray.value.map(_.asString)).getOrElse(Seq.empty)
+    val rolesTags = user.tags.filter(_.startsWith(config.prefix)).map(_.replaceFirst(config.prefix, ""))
+    val rolesMeta = user.metadata.get(config.roles).map(str => Json.parse(str).asArray.value.map(_.asString)).getOrElse(Seq.empty)
+    val dataMatch = user.otoroshiData.exists { otodata =>
+      otodata.select(config.roles).asOpt[JsValue] match {
+        case Some(JsString(value)) => {
+          if (matches(Seq(value), config)) {
+            true
+          } else {
+            matches(tryParse(value), config)
+          }
+        }
+        case Some(JsArray(value)) => matches(value.map(_.asString), config)
+        case _ => false
+      }
+    }
     val pathMatch = config.userPath.flatMap(p => user.json.atPath(p).asOpt[JsValue]) match {
       case Some(JsString(value)) => {
         if (matches(Seq(value), config)) {
@@ -122,7 +158,7 @@ class RBAC extends NgAccessValidator {
       case Some(JsArray(value)) => matches(value.map(_.asString), config)
       case _ => false
     }
-    pathMatch || matches(rolesTags, config) || matches(rolesMeta, config)
+    pathMatch || dataMatch || matches(rolesTags, config) || matches(rolesMeta, config)
   }
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
