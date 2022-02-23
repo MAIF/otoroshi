@@ -141,6 +141,11 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.datatype"   % "jackson-datatype-jdk8"       % "2.10.5",
   "org.yaml"                         % "snakeyaml"                   % "1.28",
   "com.arakelian"                    % "java-jq"                     % "1.2.0",
+  "io.opentelemetry"                 % "opentelemetry-api"              % "1.11.0",
+  "io.opentelemetry"                 % "opentelemetry-sdk"              % "1.11.0",
+  "io.opentelemetry"                 % "opentelemetry-exporter-logging" % "1.11.0",
+  "io.opentelemetry"                 % "opentelemetry-exporter-zipkin"  % "1.11.0",
+  "io.opentelemetry"                 % "opentelemetry-exporter-jaeger"  % "1.11.0",
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"          % "5.1.0" % Test,
   // do not update because the feature is deprecated and will be removed
