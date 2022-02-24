@@ -1,6 +1,7 @@
 package otoroshi.next.plugins
 
 import akka.stream.Materializer
+import io.opentelemetry.api.baggage.Baggage
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.api.trace.{Span, SpanKind, StatusCode}
@@ -14,6 +15,7 @@ import io.opentelemetry.sdk.common.CompletableResultCode
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.{SimpleSpanProcessor, SpanExporter}
 import io.opentelemetry.sdk.trace.data.SpanData
+import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
@@ -61,7 +63,12 @@ object W3CTracingConfigKind {
   }
 }
 
-case class W3CTracingConfig(kind: W3CTracingConfigKind = W3CTracingConfigKind.Noop, endpoint: String = "http://localhost:3333/spans", timeout: Long = 30000) {
+case class W3CTracingConfig(
+    kind: W3CTracingConfigKind = W3CTracingConfigKind.Noop,
+    endpoint: String = "http://localhost:3333/spans",
+    timeout: Long = 30000,
+    baggage: Map[String, String] = Map.empty
+) {
   def json: JsValue = W3CTracingConfig.format.writes(this)
 }
 
@@ -70,13 +77,15 @@ object W3CTracingConfig {
     override def writes(o: W3CTracingConfig): JsValue = Json.obj(
       "kind" -> o.kind.name,
       "endpoint" -> o.endpoint,
-      "timeout" -> o.timeout
+      "timeout" -> o.timeout,
+      "baggage" -> o.baggage
     )
     override def reads(json: JsValue): JsResult[W3CTracingConfig] = Try {
       W3CTracingConfig(
         kind = json.select("kind").asOpt[String].map(W3CTracingConfigKind.parse).getOrElse(W3CTracingConfigKind.Logger),
         endpoint = json.select("endpoint").asString,
-        timeout = json.select("timeout").asLong
+        timeout = json.select("timeout").asLong,
+        baggage = json.select("baggage").asOpt[Map[String, String]].getOrElse(Map.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -136,12 +145,14 @@ class W3CTracing extends NgRequestTransformer {
   }
 
   private val SpanKey = TypedKey[Span]("otoroshi.next.plugins.W3CTracing.Span")
-  private val ScopeKey = TypedKey[Scope]("otoroshi.next.plugins.W3CTracing.Scope")
+  private val ScopesKey = TypedKey[Seq[Scope]]("otoroshi.next.plugins.W3CTracing.Scopes")
   private val TraceKey = TypedKey[Seq[(String, String)]]("otoroshi.next.plugins.W3CTracing.Trace")
 
   private val getter = new TextMapGetter[NgTransformerRequestContext] {
     override def keys(carrier: NgTransformerRequestContext): lang.Iterable[String] = carrier.otoroshiRequest.headers.keys.asJava
-    override def get(carrier: NgTransformerRequestContext, key: String): String = carrier.otoroshiRequest.headers.getIgnoreCase(key).getOrElse("")
+    override def get(carrier: NgTransformerRequestContext, key: String): String = {
+      carrier.otoroshiRequest.headers.getIgnoreCase(key).getOrElse("")
+    }
   }
 
   private val setter = new TextMapSetter[NgTransformerRequestContext] {
@@ -164,7 +175,10 @@ class W3CTracing extends NgRequestTransformer {
 
     val context = propagator.extract(Context.current(), ctx, getter)
     val span = tracer.spanBuilder("http_proxy").setParent(context).setSpanKind(SpanKind.SERVER).startSpan()
-    val scope = span.makeCurrent()
+    val baggage = Baggage.fromContext(context)
+    val scope1 = span.makeCurrent()
+    val scope2 = baggage.makeCurrent()
+    val current = Context.current()
 
     span.setAttribute("lc", "otoroshi")
     span.addEvent("process_request")
@@ -176,11 +190,29 @@ class W3CTracing extends NgRequestTransformer {
     span.setAttribute("http.domain", ctx.request.theDomain)
     span.setAttribute("http.scheme", ctx.request.theProtocol)
     span.setAttribute("http.from", ctx.request.theIpAddress)
-    ctx.attrs.put(ScopeKey -> scope)
+
+    val newContext = if (config.baggage.nonEmpty) {
+      config.baggage.foldLeft(baggage.toBuilder) {
+        case (builder, (key, value)) => builder.put(key, GlobalExpressionLanguage.apply(
+          value = value,
+          req = ctx.request.some,
+          service = ctx.route.serviceDescriptor.some,
+          apiKey = ctx.apikey,
+          user = ctx.user,
+          context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+          attrs = ctx.attrs,
+          env = env,
+        ))
+      }.build().storeInContext(current)
+    } else {
+      current
+    }
+
+    ctx.attrs.put(ScopesKey -> Seq(scope1, scope2))
     ctx.attrs.put(SpanKey -> span)
     ctx.attrs.put(TraceKey -> Seq.empty)
 
-    propagator.inject(Context.current(), ctx, setter)
+    propagator.inject(newContext, ctx, setter)
     val headers = ctx.attrs.get(TraceKey).get
     span.addEvent("forward_request")
     ctx.otoroshiRequest.copy(
@@ -195,7 +227,7 @@ class W3CTracing extends NgRequestTransformer {
       span.setStatus(StatusCode.OK)
       span.end()
     }
-    ctx.attrs.get(ScopeKey).foreach(_.close())
+    ctx.attrs.get(ScopesKey).foreach(_.foreach(_.close()))
     ctx.otoroshiResponse.right.vfuture
   }
 
@@ -206,7 +238,7 @@ class W3CTracing extends NgRequestTransformer {
       span.setStatus(StatusCode.ERROR)
       span.end()
     }
-    ctx.attrs.get(ScopeKey).foreach(_.close())
+    ctx.attrs.get(ScopesKey).foreach(_.foreach(_.close()))
     ctx.otoroshiResponse.vfuture
   }
 }
