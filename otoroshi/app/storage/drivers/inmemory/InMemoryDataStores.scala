@@ -14,7 +14,16 @@ import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import otoroshi.models._
 import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
-import otoroshi.next.models.{KvNgRouteDataStore, KvNgServiceDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, NgRouteDataStore, NgServiceDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
+import otoroshi.next.models.{
+  KvNgRouteDataStore,
+  KvNgServiceDataStore,
+  KvStoredNgBackendDataStore,
+  KvStoredNgTargetDataStore,
+  NgRouteDataStore,
+  NgServiceDataStore,
+  StoredNgBackendDataStore,
+  StoredNgTargetDataStore
+}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage.stores._
 import otoroshi.storage.{DataStoreHealth, DataStores, RawDataStore}
@@ -149,16 +158,16 @@ class InMemoryDataStores(
   private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis, env)
   override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
 
-  private lazy val _routeDataStore = new KvNgRouteDataStore(redis, env)
+  private lazy val _routeDataStore              = new KvNgRouteDataStore(redis, env)
   override def routeDataStore: NgRouteDataStore = _routeDataStore
 
-  private lazy val _routesCompositionDataStore = new KvNgServiceDataStore(redis, env)
+  private lazy val _routesCompositionDataStore       = new KvNgServiceDataStore(redis, env)
   override def servicesDataStore: NgServiceDataStore = _routesCompositionDataStore
 
-  private lazy val _targetsDataStore = new KvStoredNgTargetDataStore(redis, env)
+  private lazy val _targetsDataStore                     = new KvStoredNgTargetDataStore(redis, env)
   override def targetsDataStore: StoredNgTargetDataStore = _targetsDataStore
 
-  private lazy val _backendsDataStore = new KvStoredNgBackendDataStore(redis, env)
+  private lazy val _backendsDataStore                      = new KvStoredNgBackendDataStore(redis, env)
   override def backendsDataStore: StoredNgBackendDataStore = _backendsDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
@@ -327,15 +336,15 @@ class InMemoryDataStores(
       case lng: Long                                                       => ("string", JsString(lng.toString))
       case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] =>
         ("hash", JsObject(map.asScala.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
-      case map: TrieMap[String, ByteString] =>
+      case map: TrieMap[String, ByteString]                                =>
         ("hash", JsObject(map.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
       case list: java.util.concurrent.CopyOnWriteArrayList[ByteString]     =>
         ("list", JsArray(list.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case list: scala.collection.mutable.MutableList[ByteString]     =>
+      case list: scala.collection.mutable.MutableList[ByteString]          =>
         ("list", JsArray(list.toSeq.map(a => JsString(a.utf8String))))
       case set: java.util.concurrent.CopyOnWriteArraySet[ByteString]       =>
         ("set", JsArray(set.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case set: scala.collection.mutable.HashSet[ByteString]       =>
+      case set: scala.collection.mutable.HashSet[ByteString]               =>
         ("set", JsArray(set.toSeq.map(a => JsString(a.utf8String))))
       case _                                                               => ("none", JsNull)
     }

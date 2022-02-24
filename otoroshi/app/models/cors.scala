@@ -78,12 +78,12 @@ case class CorsSettings(
 }
 
 object CorsSettings extends FromJson[CorsSettings] {
-  val format = new Format[CorsSettings] {
+  val format                                                            = new Format[CorsSettings] {
     override def reads(json: JsValue): JsResult[CorsSettings] = fromJson(json) match {
-      case Left(err) =>  JsError(err.getMessage)
+      case Left(err)   => JsError(err.getMessage)
       case Right(cors) => JsSuccess(cors)
     }
-    override def writes(o: CorsSettings): JsValue = o.asJson
+    override def writes(o: CorsSettings): JsValue             = o.asJson
   }
   override def fromJson(json: JsValue): Either[Throwable, CorsSettings] =
     Try {

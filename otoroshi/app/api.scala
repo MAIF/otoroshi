@@ -61,7 +61,7 @@ object OtoroshiLoaderHelper {
         .getOrElse(true)
     val waitForFirstClusterFetchEnabled =
       components.env.configuration.betterGetOptional[Boolean]("app.boot.waitForFirstClusterFetch").getOrElse(true)
-    val waitProxyStateSync =
+    val waitProxyStateSync              =
       components.env.configuration.betterGetOptional[Boolean]("app.boot.waitProxyStateSync").getOrElse(true)
 
     val globalWaitTimeout: Long                =
@@ -74,7 +74,7 @@ object OtoroshiLoaderHelper {
       components.env.configuration.betterGetOptional[Long]("app.boot.waitForTlsInitTimeout").getOrElse(10000)
     val waitForFirstClusterFetchTimeout: Long  =
       components.env.configuration.betterGetOptional[Long]("app.boot.waitForFirstClusterFetchTimeout").getOrElse(10000)
-    val waitProxyStateSyncTimeout: Long =
+    val waitProxyStateSyncTimeout: Long        =
       components.env.configuration.betterGetOptional[Long]("app.boot.waitProxyStateSyncTimeout").getOrElse(10000)
 
     def timeout(duration: FiniteDuration): Future[Unit] = {
@@ -209,6 +209,7 @@ object OtoroshiLoaderHelper {
         _ <- waitForPluginsCompilation()
         _ <- waitForFirstProxyStateSync()
       } yield ()
+      // AWAIT: valid
       Await.result(waiting, globalWaitTimeout.millis)
       logger.info(s"subsystems initialization done in ${System.currentTimeMillis() - start} ms.")
     } else {
@@ -223,7 +224,7 @@ object OtoroshiEnvHolder {
     ref.set(env)
     env
   }
-  def get(): Env = ref.get()
+  def get(): Env  = ref.get()
 }
 
 class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfig, _configuration: Config)
@@ -276,16 +277,18 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
 
   lazy val circuitBreakersHolder: CircuitBreakersHolder = wire[CircuitBreakersHolder]
 
-  implicit lazy val env: Env = OtoroshiEnvHolder.set(new Env(
-    _configuration = configuration,
-    environment = environment,
-    lifecycle = applicationLifecycle,
-    wsClient = wsClient,
-    circuitBeakersHolder = circuitBreakersHolder,
-    getHttpPort = None,
-    getHttpsPort = None,
-    testing = false
-  ))
+  implicit lazy val env: Env = OtoroshiEnvHolder.set(
+    new Env(
+      _configuration = configuration,
+      environment = environment,
+      lifecycle = applicationLifecycle,
+      wsClient = wsClient,
+      circuitBeakersHolder = circuitBreakersHolder,
+      getHttpPort = None,
+      getHttpsPort = None,
+      testing = false
+    )
+  )
 
   override lazy val httpFilters: Seq[EssentialFilter] = Seq()
 

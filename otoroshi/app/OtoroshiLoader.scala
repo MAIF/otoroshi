@@ -51,16 +51,18 @@ package object modules {
 
     lazy val circuitBreakersHolder: CircuitBreakersHolder = wire[CircuitBreakersHolder]
 
-    implicit lazy val env: Env = OtoroshiEnvHolder.set(new Env(
-      _configuration = configuration,
-      environment = environment,
-      lifecycle = applicationLifecycle,
-      wsClient = wsClient,
-      circuitBeakersHolder = circuitBreakersHolder,
-      getHttpPort = getHttpPort,
-      getHttpsPort = getHttpsPort,
-      testing = testing
-    ))
+    implicit lazy val env: Env = OtoroshiEnvHolder.set(
+      new Env(
+        _configuration = configuration,
+        environment = environment,
+        lifecycle = applicationLifecycle,
+        wsClient = wsClient,
+        circuitBeakersHolder = circuitBreakersHolder,
+        getHttpPort = getHttpPort,
+        getHttpsPort = getHttpsPort,
+        testing = testing
+      )
+    )
 
     lazy val reverseProxyAction: ReverseProxyAction = wire[ReverseProxyAction]
     lazy val httpHandler: HttpHandler               = wire[HttpHandler]

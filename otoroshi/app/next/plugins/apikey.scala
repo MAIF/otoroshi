@@ -23,14 +23,17 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
 
   private val configReads: Reads[NgApikeyCallsConfig] = NgApikeyCallsConfig.format
 
-  override def core: Boolean = true
-  override def usesCallbacks: Boolean = false
-  override def transformsRequest: Boolean = true
-  override def transformsResponse: Boolean = false
-  override def transformsError: Boolean = false
-  override def name: String = "Apikeys"
-  override def description: Option[String] = "This plugin expects to find an apikey to allow the request to pass".some
-  override def defaultConfig: Option[JsObject] = ApiKeyConstraints().json.asObject.some
+  override def core: Boolean                     = true
+  override def usesCallbacks: Boolean            = false
+  override def transformsRequest: Boolean        = true
+  override def transformsResponse: Boolean       = false
+  override def transformsError: Boolean          = false
+  override def isTransformRequestAsync: Boolean  = false
+  override def isTransformResponseAsync: Boolean = false
+  override def isAccessAsync: Boolean            = true
+  override def name: String                      = "Apikeys"
+  override def description: Option[String]       = "This plugin expects to find an apikey to allow the request to pass".some
+  override def defaultConfig: Option[JsObject]   = NgApikeyCallsConfig().json.asObject.some
 
   override def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean = {
     val config = configCache.get(ctx.route.id, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
@@ -39,14 +42,15 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
         true
       } else {
         ApiKeyHelper.detectApikeyTuple(ctx.request, config.legacy, ctx.attrs) match {
-          case None => true
+          case None        => true
           case Some(tuple) =>
             ctx.attrs.put(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey -> tuple)
-            ApiKeyHelper.validateApikeyTuple(ctx.request, tuple, config.legacy, ctx.route.id, ctx.attrs).applyOn { either =>
-              ctx.attrs.put(otoroshi.next.plugins.Keys.PreExtractedApikeyKey -> either)
-              either
+            ApiKeyHelper.validateApikeyTuple(ctx.request, tuple, config.legacy, ctx.route.id, ctx.attrs).applyOn {
+              either =>
+                ctx.attrs.put(otoroshi.next.plugins.Keys.PreExtractedApikeyKey -> either)
+                either
             } match {
-              case Left(_) => false
+              case Left(_)       => false
               case Right(apikey) => apikey.matchRouting(config.legacy.routing)
             }
         }
@@ -57,10 +61,10 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
   }
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val config = configCache.get(ctx.route.id, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
+    val config    = configCache.get(ctx.route.id, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
     val maybeUser = ctx.attrs.get(otoroshi.plugins.Keys.UserKey)
-    val pass = config.passWithUser match {
-      case true => maybeUser.isDefined
+    val pass      = config.passWithUser match {
+      case true  => maybeUser.isDefined
       case false => false
     }
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
@@ -68,59 +72,67 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
         // Here are 2 + 12 datastore calls to handle quotas
         val routeId = ctx.route.originalRouteId.getOrElse(ctx.route.id) // handling route groups
         ApiKeyHelper.passWithApiKeyFromCache(ctx.request, config.legacy, ctx.attrs, routeId).map {
-          case Left(result) => NgAccess.NgDenied(result)
+          case Left(result)  => NgAccess.NgDenied(result)
           case Right(apikey) =>
             ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
             NgAccess.NgAllowed
         }
       }
-      case _ => NgAccess.NgAllowed.vfuture
+      case _                                => NgAccess.NgAllowed.vfuture
     }
   }
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result,NgPluginHttpRequest]] = {
+  override def transformRequestSync(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config = configCache.get(ctx.route.id, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
     if (config.wipeBackendRequest) {
       ctx.attrs.get(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey) match {
         case Some(ApikeyTuple(_, _, _, Some(location))) => {
           location.kind match {
-            case ApikeyLocationKind.Header => ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers.filterNot(_._1.toLowerCase() == location.name.toLowerCase())).right.vfuture
-            case ApikeyLocationKind.Query => {
-              val uri = ctx.otoroshiRequest.uri
+            case ApikeyLocationKind.Header =>
+              ctx.otoroshiRequest
+                .copy(headers =
+                  ctx.otoroshiRequest.headers.filterNot(_._1.toLowerCase() == location.name.toLowerCase())
+                )
+                .right
+            case ApikeyLocationKind.Query  => {
+              val uri      = ctx.otoroshiRequest.uri
               val newQuery = uri.rawQueryString.map(_ => uri.query().filterNot(_._1 == location.name).toString())
-              val newUrl = uri.copy(rawQueryString = newQuery).toString()
-              ctx.otoroshiRequest.copy(url = newUrl).right.vfuture
+              val newUrl   = uri.copy(rawQueryString = newQuery).toString()
+              ctx.otoroshiRequest.copy(url = newUrl).right
             }
-            case ApikeyLocationKind.Cookie => ctx.otoroshiRequest.copy(cookies = ctx.otoroshiRequest.cookies.filterNot(_.name == location.name)).right.vfuture
+            case ApikeyLocationKind.Cookie =>
+              ctx.otoroshiRequest.copy(cookies = ctx.otoroshiRequest.cookies.filterNot(_.name == location.name)).right
           }
         }
-        case _ => ctx.otoroshiRequest.right.vfuture
+        case _                                          => ctx.otoroshiRequest.right
       }
     } else {
-      ctx.otoroshiRequest.right.vfuture
+      ctx.otoroshiRequest.right
     }
   }
 }
 
 case class NgApikeyExtractorBasic(
-  enabled: Boolean = true,
-  headerName: Option[String] = None,
-  queryName: Option[String] = None
+    enabled: Boolean = true,
+    headerName: Option[String] = None,
+    queryName: Option[String] = None
 ) {
   lazy val legacy: BasicAuthConstraints = BasicAuthConstraints(
     enabled = enabled,
     headerName = headerName,
     queryName = queryName
   )
-  def json: JsValue = Json.obj(
-    "enabled"    -> enabled,
+  def json: JsValue                     = Json.obj(
+    "enabled"     -> enabled,
     "header_name" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "query_name"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
   )
 }
 
 object NgApikeyExtractorBasic {
-  val format = new Format[NgApikeyExtractorBasic] {
+  val format                                                      = new Format[NgApikeyExtractorBasic] {
     override def writes(o: NgApikeyExtractorBasic): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractorBasic] = JsonHelpers.reader {
       NgApikeyExtractorBasic(
@@ -138,24 +150,24 @@ object NgApikeyExtractorBasic {
 }
 
 case class NgApikeyExtractorClientId(
-  enabled: Boolean = true,
-  headerName: Option[String] = None,
-  queryName: Option[String] = None
+    enabled: Boolean = true,
+    headerName: Option[String] = None,
+    queryName: Option[String] = None
 ) {
   lazy val legacy: ClientIdAuthConstraints = ClientIdAuthConstraints(
     enabled = enabled,
     headerName = headerName,
     queryName = queryName
   )
-  def json: JsValue = Json.obj(
-    "enabled"    -> enabled,
+  def json: JsValue                        = Json.obj(
+    "enabled"     -> enabled,
     "header_name" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "query_name"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
   )
 }
 
 object NgApikeyExtractorClientId {
-  val format = new Format[NgApikeyExtractorClientId] {
+  val format                                                            = new Format[NgApikeyExtractorClientId] {
     override def writes(o: NgApikeyExtractorClientId): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractorClientId] = JsonHelpers.reader {
       NgApikeyExtractorClientId(
@@ -173,24 +185,24 @@ object NgApikeyExtractorClientId {
 }
 
 case class NgApikeyExtractorCustomHeaders(
-  enabled: Boolean = true,
-  clientIdHeaderName: Option[String] = None,
-  clientSecretHeaderName: Option[String] = None
+    enabled: Boolean = true,
+    clientIdHeaderName: Option[String] = None,
+    clientSecretHeaderName: Option[String] = None
 ) {
   lazy val legacy: CustomHeadersAuthConstraints = CustomHeadersAuthConstraints(
     enabled = enabled,
     clientIdHeaderName = clientIdHeaderName,
     clientSecretHeaderName = clientSecretHeaderName
   )
-  def json: JsValue =  Json.obj(
-    "enabled"                -> enabled,
+  def json: JsValue                             = Json.obj(
+    "enabled"                   -> enabled,
     "client_id_header_name"     -> clientIdHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "client_secret_header_name" -> clientSecretHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
   )
 }
 
 object NgApikeyExtractorCustomHeaders {
-  val format = new Format[NgApikeyExtractorCustomHeaders] {
+  val format                                                                      = new Format[NgApikeyExtractorCustomHeaders] {
     override def writes(o: NgApikeyExtractorCustomHeaders): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractorCustomHeaders] = JsonHelpers.reader {
       NgApikeyExtractorCustomHeaders(
@@ -208,14 +220,14 @@ object NgApikeyExtractorCustomHeaders {
 }
 
 case class NgApikeyExtractorJwt(
-  enabled: Boolean = true,
-  secretSigned: Boolean = true,
-  keyPairSigned: Boolean = true,
-  includeRequestAttrs: Boolean = false,
-  maxJwtLifespanSec: Option[Long] = None, //Some(10 * 365 * 24 * 60 * 60),
-  headerName: Option[String] = None,
-  queryName: Option[String] = None,
-  cookieName: Option[String] = None
+    enabled: Boolean = true,
+    secretSigned: Boolean = true,
+    keyPairSigned: Boolean = true,
+    includeRequestAttrs: Boolean = false,
+    maxJwtLifespanSec: Option[Long] = None, //Some(10 * 365 * 24 * 60 * 60),
+    headerName: Option[String] = None,
+    queryName: Option[String] = None,
+    cookieName: Option[String] = None
 ) {
   lazy val legacy: JwtAuthConstraints = JwtAuthConstraints(
     enabled = enabled,
@@ -225,22 +237,22 @@ case class NgApikeyExtractorJwt(
     maxJwtLifespanSecs = maxJwtLifespanSec,
     headerName = headerName,
     queryName = queryName,
-    cookieName = cookieName,
+    cookieName = cookieName
   )
-  def json: JsValue = Json.obj(
-      "enabled"        -> enabled,
-      "secret_signed"         -> secretSigned,
-      "keypair_signed"        -> keyPairSigned,
-      "include_request_attrs" -> includeRequestAttrs,
-      "max_jwt_lifespan_sec"  -> maxJwtLifespanSec.map(l => JsNumber(BigDecimal.exact(l))).getOrElse(JsNull).as[JsValue],
-      "header_name"           -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "query_name"            -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "cookie_name"            -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
-    )
+  def json: JsValue                   = Json.obj(
+    "enabled"               -> enabled,
+    "secret_signed"         -> secretSigned,
+    "keypair_signed"        -> keyPairSigned,
+    "include_request_attrs" -> includeRequestAttrs,
+    "max_jwt_lifespan_sec"  -> maxJwtLifespanSec.map(l => JsNumber(BigDecimal.exact(l))).getOrElse(JsNull).as[JsValue],
+    "header_name"           -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "query_name"            -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "cookie_name"           -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+  )
 }
 
 object NgApikeyExtractorJwt {
-  val format = new Format[NgApikeyExtractorJwt] {
+  val format                                                  = new Format[NgApikeyExtractorJwt] {
     override def writes(o: NgApikeyExtractorJwt): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractorJwt] = JsonHelpers.reader {
       NgApikeyExtractorJwt(
@@ -264,23 +276,23 @@ object NgApikeyExtractorJwt {
     maxJwtLifespanSec = s.maxJwtLifespanSecs,
     headerName = s.headerName,
     queryName = s.queryName,
-    cookieName = s.cookieName,
+    cookieName = s.cookieName
   )
 }
 
 case class NgApikeyMatcher(
-  enabled: Boolean = false,
-  noneTagIn: Seq[String] = Seq.empty,
-  oneTagIn: Seq[String] = Seq.empty,
-  allTagsIn: Seq[String] = Seq.empty,
-  noneMetaIn: Map[String, String] = Map.empty,
-  oneMetaIn: Map[String, String] = Map.empty,
-  allMetaIn: Map[String, String] = Map.empty,
-  noneMetaKeysIn: Seq[String] = Seq.empty,
-  oneMetaKeyIn: Seq[String] = Seq.empty,
-  allMetaKeysIn: Seq[String] = Seq.empty
+    enabled: Boolean = false,
+    noneTagIn: Seq[String] = Seq.empty,
+    oneTagIn: Seq[String] = Seq.empty,
+    allTagsIn: Seq[String] = Seq.empty,
+    noneMetaIn: Map[String, String] = Map.empty,
+    oneMetaIn: Map[String, String] = Map.empty,
+    allMetaIn: Map[String, String] = Map.empty,
+    noneMetaKeysIn: Seq[String] = Seq.empty,
+    oneMetaKeyIn: Seq[String] = Seq.empty,
+    allMetaKeysIn: Seq[String] = Seq.empty
 ) extends {
-  lazy val legacy: ApiKeyRouteMatcher = ApiKeyRouteMatcher(
+  lazy val legacy: ApiKeyRouteMatcher       = ApiKeyRouteMatcher(
     noneTagIn = noneTagIn,
     oneTagIn = oneTagIn,
     allTagsIn = allTagsIn,
@@ -289,10 +301,11 @@ case class NgApikeyMatcher(
     allMetaIn = allMetaIn,
     noneMetaKeysIn = noneMetaKeysIn,
     oneMetaKeyIn = oneMetaKeyIn,
-    allMetaKeysIn = allMetaKeysIn,
+    allMetaKeysIn = allMetaKeysIn
   )
-  def json: JsValue = gentleJson
-  def gentleJson: JsValue = Json.obj("enabled" -> enabled)
+  def json: JsValue                         = gentleJson
+  def gentleJson: JsValue                   = Json
+    .obj("enabled" -> enabled)
     .applyOnIf(noneTagIn.nonEmpty)(obj => obj ++ Json.obj("none_tagIn" -> noneTagIn))
     .applyOnIf(oneTagIn.nonEmpty)(obj => obj ++ Json.obj("one_tag_in" -> oneTagIn))
     .applyOnIf(allTagsIn.nonEmpty)(obj => obj ++ Json.obj("all_tags_in" -> allTagsIn))
@@ -302,22 +315,22 @@ case class NgApikeyMatcher(
     .applyOnIf(noneMetaKeysIn.nonEmpty)(obj => obj ++ Json.obj("none_meta_keys_in" -> noneMetaKeysIn))
     .applyOnIf(oneMetaKeyIn.nonEmpty)(obj => obj ++ Json.obj("one_meta_key_in" -> oneMetaKeyIn))
     .applyOnIf(allMetaKeysIn.nonEmpty)(obj => obj ++ Json.obj("all_meta_keys_in" -> allMetaKeysIn))
-  lazy val isActive: Boolean = !hasNoRoutingConstraints
+  lazy val isActive: Boolean                = !hasNoRoutingConstraints
   lazy val hasNoRoutingConstraints: Boolean =
     oneMetaIn.isEmpty &&
-      allMetaIn.isEmpty &&
-      oneTagIn.isEmpty &&
-      allTagsIn.isEmpty &&
-      noneTagIn.isEmpty &&
-      noneMetaIn.isEmpty &&
-      oneMetaKeyIn.isEmpty &&
-      allMetaKeysIn.isEmpty &&
-      noneMetaKeysIn.isEmpty
+    allMetaIn.isEmpty &&
+    oneTagIn.isEmpty &&
+    allTagsIn.isEmpty &&
+    noneTagIn.isEmpty &&
+    noneMetaIn.isEmpty &&
+    oneMetaKeyIn.isEmpty &&
+    allMetaKeysIn.isEmpty &&
+    noneMetaKeysIn.isEmpty
 }
 
 object NgApikeyMatcher {
-  val format = new Format[NgApikeyMatcher] {
-    override def writes(o: NgApikeyMatcher): JsValue = o.json
+  val format                                             = new Format[NgApikeyMatcher] {
+    override def writes(o: NgApikeyMatcher): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyMatcher] = JsonHelpers.reader {
       NgApikeyMatcher(
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
@@ -343,21 +356,21 @@ object NgApikeyMatcher {
     allMetaIn = s.allMetaIn,
     noneMetaKeysIn = s.noneMetaKeysIn,
     oneMetaKeyIn = s.oneMetaKeyIn,
-    allMetaKeysIn = s.allMetaKeysIn,
+    allMetaKeysIn = s.allMetaKeysIn
   ).applyOnWithPredicate(_.isActive)(_.copy(enabled = true))
 }
 
 case class NgApikeyExtractors(
-  basic: NgApikeyExtractorBasic = NgApikeyExtractorBasic(),
-  customHeaders: NgApikeyExtractorCustomHeaders = NgApikeyExtractorCustomHeaders(),
-  clientId: NgApikeyExtractorClientId = NgApikeyExtractorClientId(),
-  jwt: NgApikeyExtractorJwt = NgApikeyExtractorJwt(),
+    basic: NgApikeyExtractorBasic = NgApikeyExtractorBasic(),
+    customHeaders: NgApikeyExtractorCustomHeaders = NgApikeyExtractorCustomHeaders(),
+    clientId: NgApikeyExtractorClientId = NgApikeyExtractorClientId(),
+    jwt: NgApikeyExtractorJwt = NgApikeyExtractorJwt()
 ) {
   def json: JsValue = Json.obj(
-    "basic"         -> basic.json,
+    "basic"          -> basic.json,
     "custom_headers" -> customHeaders.json,
     "client_id"      -> clientId.json,
-    "jwt"           -> jwt.json,
+    "jwt"            -> jwt.json
   )
 }
 
@@ -367,26 +380,28 @@ object NgApikeyExtractors {
     override def reads(json: JsValue): JsResult[NgApikeyExtractors] = JsonHelpers.reader {
       NgApikeyExtractors(
         basic = (json \ "basic").asOpt(NgApikeyExtractorBasic.format).getOrElse(NgApikeyExtractorBasic()),
-        customHeaders = (json \ "custom_headers").asOpt(NgApikeyExtractorCustomHeaders.format).getOrElse(NgApikeyExtractorCustomHeaders()),
+        customHeaders = (json \ "custom_headers")
+          .asOpt(NgApikeyExtractorCustomHeaders.format)
+          .getOrElse(NgApikeyExtractorCustomHeaders()),
         clientId = (json \ "client_id").asOpt(NgApikeyExtractorClientId.format).getOrElse(NgApikeyExtractorClientId()),
-        jwt = (json \ "jwt").asOpt(NgApikeyExtractorJwt.format).getOrElse(NgApikeyExtractorJwt()),
+        jwt = (json \ "jwt").asOpt(NgApikeyExtractorJwt.format).getOrElse(NgApikeyExtractorJwt())
       )
     }
   }
 }
 
 case class NgApikeyCallsConfig(
-  extractors: NgApikeyExtractors = NgApikeyExtractors(),
-  routing: NgApikeyMatcher = NgApikeyMatcher(),
-  wipeBackendRequest: Boolean = true,
-  validate: Boolean = true,
-  passWithUser: Boolean = true,
+    extractors: NgApikeyExtractors = NgApikeyExtractors(),
+    routing: NgApikeyMatcher = NgApikeyMatcher(),
+    wipeBackendRequest: Boolean = true,
+    validate: Boolean = true,
+    passWithUser: Boolean = true
 ) {
-  def json: JsValue = Json.obj(
-    "extractors" -> extractors.json,
-    "routing" -> routing.json,
-    "validate" -> validate,
-    "pass_with_user" -> passWithUser,
+  def json: JsValue                  = Json.obj(
+    "extractors"           -> extractors.json,
+    "routing"              -> routing.json,
+    "validate"             -> validate,
+    "pass_with_user"       -> passWithUser,
     "wipe_backend_request" -> wipeBackendRequest
   )
   lazy val legacy: ApiKeyConstraints = ApiKeyConstraints(
@@ -394,12 +409,12 @@ case class NgApikeyCallsConfig(
     customHeadersAuth = extractors.customHeaders.legacy,
     clientIdAuth = extractors.clientId.legacy,
     jwtAuth = extractors.jwt.legacy,
-    routing = routing.legacy,
+    routing = routing.legacy
   )
 }
 
 object NgApikeyCallsConfig {
-  val format = new Format[NgApikeyCallsConfig] {
+  val format                                                = new Format[NgApikeyCallsConfig] {
     override def writes(o: NgApikeyCallsConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyCallsConfig] = Try {
       NgApikeyCallsConfig(
@@ -407,16 +422,17 @@ object NgApikeyCallsConfig {
         routing = (json \ "routing").asOpt(NgApikeyMatcher.format).getOrElse(NgApikeyMatcher()),
         validate = (json \ "validate").asOpt[Boolean].getOrElse(true),
         passWithUser = (json \ "pass_with_user").asOpt[Boolean].getOrElse(false),
-        wipeBackendRequest = (json \ "wipe_backend_request").asOpt[Boolean].getOrElse(true),
+        wipeBackendRequest = (json \ "wipe_backend_request").asOpt[Boolean].getOrElse(true)
       )
     } match {
       case Success(value) => JsSuccess(value)
-      case Failure(err) => ApiKeyConstraints.format.reads(json) match {
-        case s @ JsSuccess(_, _) => s.map(NgApikeyCallsConfig.fromLegacy)
-        case e @ JsError(_) =>
-          err.printStackTrace()
-          e
-      }
+      case Failure(err)   =>
+        ApiKeyConstraints.format.reads(json) match {
+          case s @ JsSuccess(_, _) => s.map(NgApikeyCallsConfig.fromLegacy)
+          case e @ JsError(_)      =>
+            err.printStackTrace()
+            e
+        }
     }
   }
   def fromLegacy(o: ApiKeyConstraints): NgApikeyCallsConfig = NgApikeyCallsConfig(
@@ -424,11 +440,11 @@ object NgApikeyCallsConfig {
       basic = NgApikeyExtractorBasic.fromLegacy(o.basicAuth),
       customHeaders = NgApikeyExtractorCustomHeaders.fromLegacy(o.customHeadersAuth),
       clientId = NgApikeyExtractorClientId.fromLegacy(o.clientIdAuth),
-      jwt = NgApikeyExtractorJwt.fromLegacy(o.jwtAuth),
+      jwt = NgApikeyExtractorJwt.fromLegacy(o.jwtAuth)
     ),
     routing = NgApikeyMatcher.fromLegacy(o.routing),
     validate = true,
     passWithUser = false,
-    wipeBackendRequest = true,
+    wipeBackendRequest = true
   )
 }

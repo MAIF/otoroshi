@@ -18,7 +18,6 @@ import otoroshi.models.Exporter
 import otoroshi.utils.http.MtlsConfig
 import play.api.libs.json._
 
-import scala.concurrent.Await
 import scala.util.{Failure, Success, Try}
 
 case class PulsarConfig(

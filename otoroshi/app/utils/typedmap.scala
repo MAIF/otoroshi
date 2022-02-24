@@ -31,15 +31,19 @@ final class ConcurrentMutableTypedMap(m: TrieMap[TypedKey[_], Any]) extends Type
 
   override def json: JsValue = {
     JsObject(m.toSeq.zipWithIndex.map {
-      case ((key, value: String), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsString(value))
-      case ((key, value: Boolean), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsBoolean(value))
-      case ((key, value: Int), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value))
-      case ((key, value: Double), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value))
-      case ((key, value: Long), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value))
-      case ((key, value: JsValue), idx) => (key.displayName.getOrElse(s"key-${idx}"), value)
-      case ((key, value: Jsonable), idx) => (key.displayName.getOrElse(s"key-${idx}"), value.json)
-      case ((key, value: Map[_, _]), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsObject(value.map { case (k, v) => (k.toString, JsString(v.toString)) } ))
-      case ((key, value), idx) => (key.displayName.getOrElse(s"key-${idx}"), JsString(value.toString))
+      case ((key, value: String), idx)    => (key.displayName.getOrElse(s"key-${idx}"), JsString(value))
+      case ((key, value: Boolean), idx)   => (key.displayName.getOrElse(s"key-${idx}"), JsBoolean(value))
+      case ((key, value: Int), idx)       => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value))
+      case ((key, value: Double), idx)    => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value))
+      case ((key, value: Long), idx)      => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value))
+      case ((key, value: JsValue), idx)   => (key.displayName.getOrElse(s"key-${idx}"), value)
+      case ((key, value: Jsonable), idx)  => (key.displayName.getOrElse(s"key-${idx}"), value.json)
+      case ((key, value: Map[_, _]), idx) =>
+        (
+          key.displayName.getOrElse(s"key-${idx}"),
+          JsObject(value.map { case (k, v) => (k.toString, JsString(v.toString)) })
+        )
+      case ((key, value), idx)            => (key.displayName.getOrElse(s"key-${idx}"), JsString(value.toString))
     })
   }
 

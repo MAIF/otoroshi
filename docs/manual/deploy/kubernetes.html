@@ -34,7 +34,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.2
+1.5.3
 </div>
 </div>
 <div class="nav-toc">
@@ -147,7 +147,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.2
+1.5.3
 </div>
 </div>
 <div class="nav-toc">
@@ -262,7 +262,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>If you want to deploy otoroshi into your kubernetes cluster, you can download the deployment descriptors from <a href="https://github.com/MAIF/otoroshi/tree/master/kubernetes">https://github.com/MAIF/otoroshi/tree/master/kubernetes</a> and use kustomize to create your own overlay.</p>
 <p>You can also create a <code>kustomization.yaml</code> file with a remote base</p>
 <pre class="prettyprint"><code class="language-yaml">bases:
-- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v1.5.2
+- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v1.5.3
 </code></pre>
 <p>Then deploy it with <code>kubectl apply -k ./overlays/myoverlay</code>. </p>
 <p>You can also use Helm to deploy a simple otoroshi cluster on your kubernetes cluster</p>
@@ -315,7 +315,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:1.5.2
+      - image: maif/otoroshi:1.5.3
         imagePullPolicy: IfNotPresent
         name: otoroshi
         args: [&#39;-Dconfig.file=/usr/app/otoroshi/conf/oto.conf&#39;]
@@ -1000,7 +1000,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:1.5.2-jdk11
+      - image: maif/otoroshi:1.5.3-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:
@@ -1237,7 +1237,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:1.5.2-jdk11
+      - image: maif/otoroshi:1.5.3-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:
@@ -1548,7 +1548,7 @@ spec:
       restartPolicy: Always
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:1.5.2-jdk11
+      - image: maif/otoroshi:1.5.3-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:
@@ -1839,7 +1839,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always
       containers:
-      - image: maif/otoroshi:1.5.2-jdk11
+      - image: maif/otoroshi:1.5.3-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
@@ -2016,7 +2016,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:1.5.2-dev
+      - image: maif/otoroshi:1.5.3-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
@@ -2228,7 +2228,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always
       containers:
-      - image: maif/otoroshi:1.5.2-jdk11
+      - image: maif/otoroshi:1.5.3-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
@@ -2405,7 +2405,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:1.5.2-dev
+      - image: maif/otoroshi:1.5.3-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
@@ -2670,7 +2670,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always
       containers:
-      - image: maif/otoroshi:1.5.2-jdk11
+      - image: maif/otoroshi:1.5.3-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
@@ -2861,7 +2861,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:1.5.2-dev
+      - image: maif/otoroshi:1.5.3-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:

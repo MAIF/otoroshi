@@ -17,7 +17,7 @@ class PluginDocumentationGenerator(docPath: String) {
 
   val logger = Logger("PluginDocumentationGenerator")
 
-  lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames, exporterNames) =
+  lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames, exporterNames, handlerNames) =
     Try {
       import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
 
@@ -85,7 +85,12 @@ class PluginDocumentationGenerator(docPath: String) {
           .filterNot(predicate)
           .map(_.getName)
 
-        (requestTransformers, validators, preRoutes, reqSinks, listenerNames, jobNames, customExporters)
+        val handlers: Seq[String] = (scanResult.getSubclasses(classOf[RequestHandler].getName).asScala ++
+          scanResult.getClassesImplementing(classOf[RequestHandler].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName)
+
+        (requestTransformers, validators, preRoutes, reqSinks, listenerNames, jobNames, customExporters, handlers)
       } catch {
         case e: Throwable =>
           e.printStackTrace()
@@ -96,11 +101,12 @@ class PluginDocumentationGenerator(docPath: String) {
             Seq.empty[String],
             Seq.empty[String],
             Seq.empty[String],
-            Seq.empty[String]
+            Seq.empty[String],
+            Seq.empty[String],
           )
       } finally if (scanResult != null) scanResult.close()
     } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq
-      .empty[String], Seq.empty[String])
+      .empty[String], Seq.empty[String], Seq.empty[String])
 
   def ensureRootDir(): File = {
     val root = new File(docPath + "/src/main/paradox/plugins")
@@ -183,7 +189,7 @@ class PluginDocumentationGenerator(docPath: String) {
     }
 
     s"""
-         |@@@ div { .plugin .plugin-hidden .${pluginClazz} }
+         |@@@ div { .plugin .plugin-hidden .${pluginClazz} #${plugin.getClass.getName} }
          |
          |# ${plugin.name}
          |
@@ -317,7 +323,7 @@ class PluginDocumentationGenerator(docPath: String) {
   def runOnePage(): Unit = {
     val root                  = ensureRootDir()
     val plugins               =
-      (transformersNames ++ validatorsNames ++ preRouteNames ++ reqSinkNames ++ listenerNames ++ jobNames ++ exporterNames).distinct
+      (transformersNames ++ validatorsNames ++ preRouteNames ++ reqSinkNames ++ listenerNames ++ jobNames ++ exporterNames ++ handlerNames).distinct
     val contents: Seq[String] = plugins
       .map { pl =>
         this.getClass.getClassLoader.loadClass(pl).newInstance()

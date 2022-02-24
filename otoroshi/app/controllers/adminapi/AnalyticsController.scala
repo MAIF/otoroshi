@@ -236,10 +236,10 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             fdurationStats       = analyticsService.fetchDurationStatsHistogram(None, fromDate, toDate)
             fdataInHistogram     = analyticsService.fetchDataInStatsHistogram(None, fromDate, toDate)
             fdataOutHistogram    = analyticsService.fetchDataOutStatsHistogram(None, fromDate, toDate)
-            fProductPiechart     = analyticsService.fetchProductPiechart(None, fromDate, toDate, (nbrOfServices * 4).toInt)
+            //fProductPiechart     = analyticsService.fetchProductPiechart(None, fromDate, toDate, (nbrOfServices * 4).toInt)
             fServicePiechart     = analyticsService.fetchServicePiechart(None, fromDate, toDate, (nbrOfServices * 4).toInt)
-            fApiKeyPiechart      = analyticsService.fetchApiKeyPiechart(None, fromDate, toDate)
-            fUserPiechart        = analyticsService.fetchUserPiechart(None, fromDate, toDate)
+            //fApiKeyPiechart      = analyticsService.fetchApiKeyPiechart(None, fromDate, toDate)
+            //fUserPiechart        = analyticsService.fetchUserPiechart(None, fromDate, toDate)
 
             statusesPiechart    <- fstatusesPiechart
             statusesHistogram   <- fstatusesHistogram
@@ -249,10 +249,10 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             durationStats       <- fdurationStats
             dataInStats         <- fdataInHistogram
             dataOutStats        <- fdataOutHistogram
-            productPiechart     <- fProductPiechart
+            //productPiechart     <- fProductPiechart
             servicePiechart     <- fServicePiechart
-            apiKeyPiechart      <- fApiKeyPiechart
-            userPiechart        <- fUserPiechart
+            //apiKeyPiechart      <- fApiKeyPiechart
+            //userPiechart        <- fUserPiechart
 
             hits        <- fhits
             datain      <- fdatain
@@ -275,10 +275,10 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
                 "dataOut"             -> dataout,
                 "avgDuration"         -> avgduration,
                 "avgOverhead"         -> avgoverhead,
-                "productPiechart"     -> productPiechart,
-                "servicePiechart"     -> servicePiechart,
-                "apiKeyPiechart"      -> apiKeyPiechart,
-                "userPiechart"        -> userPiechart
+                //"productPiechart"     -> productPiechart,
+                "servicePiechart"     -> servicePiechart
+                //"apiKeyPiechart"      -> apiKeyPiechart,
+                //"userPiechart"        -> userPiechart
               ).collect { case (key, Some(jsv)) =>
                 (key, jsv)
               }
@@ -548,15 +548,15 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
                 Part("dataOut", () => analyticsService.fetchDataOut(Some(filterable), fromDate, toDate)),
                 Part("avgDuration", () => analyticsService.fetchAvgDuration(Some(filterable), fromDate, toDate)),
                 Part("avgOverhead", () => analyticsService.fetchAvgOverhead(Some(filterable), fromDate, toDate)),
-                Part(
-                  "apiKeyPiechart",
-                  () =>
-                    (serviceId, apiKeyId, groupId) match {
-                      case (Some(id), _, _) => analyticsService.fetchApiKeyPiechart(Some(filterable), fromDate, toDate)
-                      case (_, _, Some(id)) => analyticsService.fetchApiKeyPiechart(Some(filterable), fromDate, toDate)
-                      case _                => FastFuture.successful(None)
-                    }
-                ),
+                // Part(
+                //   "apiKeyPiechart",
+                //   () =>
+                //     (serviceId, apiKeyId, groupId) match {
+                //       case (Some(id), _, _) => analyticsService.fetchApiKeyPiechart(Some(filterable), fromDate, toDate)
+                //       case (_, _, Some(id)) => analyticsService.fetchApiKeyPiechart(Some(filterable), fromDate, toDate)
+                //       case _                => FastFuture.successful(None)
+                //     }
+                // ),
                 Part(
                   "servicePiechart",
                   () =>
@@ -567,8 +567,8 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
                         analyticsService.fetchServicePiechart(Some(filterable), fromDate, toDate, 0)
                       case _                => FastFuture.successful(None)
                     }
-                ),
-                Part("userPiechart", () => analyticsService.fetchUserPiechart(Some(filterable), fromDate, toDate))
+                )
+                // Part("userPiechart", () => analyticsService.fetchUserPiechart(Some(filterable), fromDate, toDate))
               )
               FastFuture.sequence(parts.map(_.call(ctx.request))).map { pts =>
                 Ok(pts.foldLeft(Json.obj("type" -> filterType))(_ ++ _))

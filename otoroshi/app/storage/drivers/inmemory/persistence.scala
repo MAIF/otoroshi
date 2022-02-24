@@ -80,6 +80,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     }
     readStateFromDisk(Files.readAllLines(file.toPath).asScala.toSeq)
     cancelRef.set(ds.actorSystem.scheduler.scheduleAtFixedRate(1.second, 5.seconds)(SchedulerHelper.runnable {
+      // AWAIT: valid
       Await.result(writeStateToDisk()(ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
     })(ds.actorSystem.dispatcher))
     FastFuture.successful(())
@@ -87,6 +88,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   override def onStop(): Future[Unit] = {
     cancelRef.get().cancel()
+    // AWAIT: valid
     Await.result(writeStateToDisk()(ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
     FastFuture.successful(())
   }
@@ -101,7 +103,9 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
       val value = (item \ "v").as[JsValue]
       val what  = (item \ "w").as[String]
       val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
-      fromJson(what, value, ds._modern).map(v => store.put(key, v)).getOrElse(println(s"file read error for: ${item.prettify} "))
+      fromJson(what, value, ds._modern)
+        .map(v => store.put(key, v))
+        .getOrElse(println(s"file read error for: ${item.prettify} "))
       if (ttl > -1L) {
         expirations.put(key, ttl)
       }
@@ -114,39 +118,39 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     import collection.JavaConverters._
 
     what match {
-      case "counter" => Some(ByteString(value.as[Long].toString))
-      case "string"  => Some(ByteString(value.as[String]))
-      case "set"     if modern => {
+      case "counter"        => Some(ByteString(value.as[Long].toString))
+      case "string"         => Some(ByteString(value.as[String]))
+      case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
-      case "list"    if modern => {
+      case "list" if modern => {
         val list = scala.collection.mutable.MutableList.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
-      case "hash"    if modern => {
+      case "hash" if modern => {
         val map = new TrieMap[String, ByteString]()
         map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
         Some(map)
       }
-      case "set"     => {
+      case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "list"    => {
+      case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "hash"    => {
+      case "hash"           => {
         val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }
-      case _         => None
+      case _                => None
     }
   }
 
@@ -259,39 +263,39 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     import collection.JavaConverters._
 
     what match {
-      case "counter" => Some(ByteString(value.as[Long].toString))
-      case "string"  => Some(ByteString(value.as[String]))
-      case "set"     if modern => {
+      case "counter"        => Some(ByteString(value.as[Long].toString))
+      case "string"         => Some(ByteString(value.as[String]))
+      case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
-      case "list"    if modern => {
+      case "list" if modern => {
         val list = scala.collection.mutable.MutableList.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
-      case "hash"    if modern => {
+      case "hash" if modern => {
         val map = new TrieMap[String, ByteString]()
         map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
         Some(map)
       }
-      case "set"     => {
+      case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "list"    => {
+      case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "hash"    => {
+      case "hash"           => {
         val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }
-      case _         => None
+      case _                => None
     }
   }
 
@@ -397,8 +401,10 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   override def message: String = s"Now using S3 DataStores (target '$url')"
 
   override def onStart(): Future[Unit] = {
+    // AWAIT: valid
     Await.result(readStateFromS3(), 60.seconds)
     cancelRef.set(ds.actorSystem.scheduler.scheduleAtFixedRate(5.second, conf.writeEvery)(SchedulerHelper.runnable {
+      // AWAIT: valid
       Await.result(writeStateToS3(), 60.seconds)
     })(ds.actorSystem.dispatcher))
     FastFuture.successful(())
@@ -406,6 +412,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   override def onStop(): Future[Unit] = {
     cancelRef.get().cancel()
+    // AWAIT: valid
     Await.result(writeStateToS3(), 60.seconds)
     FastFuture.successful(())
   }
@@ -450,39 +457,39 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     import collection.JavaConverters._
 
     what match {
-      case "counter" => Some(ByteString(value.as[Long].toString))
-      case "string"  => Some(ByteString(value.as[String]))
-      case "set"     if modern => {
+      case "counter"        => Some(ByteString(value.as[Long].toString))
+      case "string"         => Some(ByteString(value.as[String]))
+      case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
-      case "list"    if modern => {
+      case "list" if modern => {
         val list = scala.collection.mutable.MutableList.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
-      case "hash"    if modern => {
+      case "hash" if modern => {
         val map = new TrieMap[String, ByteString]()
         map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
         Some(map)
       }
-      case "set"     => {
+      case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "list"    => {
+      case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "hash"    => {
+      case "hash"           => {
         val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }
-      case _         => None
+      case _                => None
     }
   }
 

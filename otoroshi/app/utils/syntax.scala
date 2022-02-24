@@ -34,7 +34,7 @@ object implicits {
     def left[B]: Either[A, B]                                       = Left(obj)
     def right[B]: Either[B, A]                                      = Right(obj)
     @inline
-    def vfuture: Future[A]                                          = {
+    def vfuture: Future[A] = {
       // Future.successful(obj)
       FastFuture.successful(obj)
     }
@@ -274,18 +274,20 @@ object implicits {
       }
     }
 
-    def validateAndComputePath[A](_path: String, f: String => A): String = {      
+    def validateAndComputePath[A](_path: String, f: String => A): String = {
       if (_path.startsWith("app.")) {
         val newPath: String = _path.replaceFirst("app", "otoroshi")
         // BetterConfiguration.logger.error(s"You chould change '${_path}' to '${newPath}'")
-        val app = f(_path)
-        val oto = f(newPath)
+        val app             = f(_path)
+        val oto             = f(newPath)
         if (app != oto) {
           val name = Try {
             val caller = new Throwable().getStackTrace().tail.head
             (caller.getClassName + "." + caller.getMethodName())
           }.getOrElse("--")
-          BetterConfiguration.logger.warn(s"configuration key '${_path}' does not match with '${newPath}' on ${name}. Please report this error to https://github.com/MAIF/otoroshi/issues")
+          BetterConfiguration.logger.warn(
+            s"configuration key '${_path}' does not match with '${newPath}' on ${name}. Please report this error to https://github.com/MAIF/otoroshi/issues"
+          )
           _path
         } else {
           newPath
@@ -349,15 +351,23 @@ object implicits {
       }
     }
   }
-  implicit class BetterDuration(val duration: Duration) extends AnyVal {
+  implicit class BetterDuration(val duration: Duration)                extends AnyVal {
     final def toHumanReadable: String = {
-      val units = Seq(TimeUnit.DAYS, TimeUnit.HOURS, TimeUnit.MINUTES, TimeUnit.SECONDS, TimeUnit.MILLISECONDS, TimeUnit.MICROSECONDS, TimeUnit.NANOSECONDS)
+      val units       = Seq(
+        TimeUnit.DAYS,
+        TimeUnit.HOURS,
+        TimeUnit.MINUTES,
+        TimeUnit.SECONDS,
+        TimeUnit.MILLISECONDS,
+        TimeUnit.MICROSECONDS,
+        TimeUnit.NANOSECONDS
+      )
       val timeStrings = units
         .foldLeft((Seq.empty[String], duration.toNanos))({ case ((humanReadable, rest), unit) =>
-          val name = unit.toString().toLowerCase()
+          val name   = unit.toString().toLowerCase()
           val result = unit.convert(rest, TimeUnit.NANOSECONDS)
-          val diff = rest - TimeUnit.NANOSECONDS.convert(result, unit)
-          val str = result match {
+          val diff   = rest - TimeUnit.NANOSECONDS.convert(result, unit)
+          val str    = result match {
             case 0    => humanReadable
             case 1    => humanReadable :+ s"1 ${name.init}" // Drop last 's'
             case more => humanReadable :+ s"$more $name"

@@ -279,11 +279,11 @@ document.addEventListener("DOMContentLoaded", function () {
           { expression: '{ "<key>": { "$lt": <number> } }', description: "a field with number value lower than number" },
           { expression: '{ "<key>": { "$lte": <number> } }', description: "a field with number value lower or equal to number" },
           { expression: '{ "<key>": { "$between": { "min": <number>, "max": <number> } } }', description: "a field with value between two values" },
-          { expression: '{ "<key>": { "$and": [ { "<key2>": "<value>" }, { "<key3>" : "<value>" }] } }', description: "an object with two fields with values" },
-          { expression: '{ "<key>": { "$or": [ { "<key2>": "<value>" }, { "<key3>" : "<value>" }] } }', description: "an object with one subfield matching an element of the list" },
+          { expression: '{ "<key>": { "$and": [ { "<key2>": "<value>" }, { "<key3>" : "<value>" }] } }', description: "an object with two fields with values" },
+          { expression: '{ "<key>": { "$or": [ { "<key2>": "<value>" }, { "<key3>" : "<value>" }] } }', description: "an object with one subfield matching an element of the list" },
           { expression: '{ "<key>": ["<value>", "<value2>"] }', description: "an array field with values" },
-          { expression: '{ "<key>": { "contains": "<value>" } }', description: "an array field containing a specific value" },
-          { expression: '{ "<key>": { "$all": ["<value>", "<value>"] } }', description: "and array field containing all specific values" }
+          { expression: '{ "<key>": { "contains": "<value>" } }', description: "an array field containing a specific value" },
+          { expression: '{ "<key>": { "$all": ["<value>", "<value>"] } }', description: "and array field containing all specific values" }
         ],
         values: [
           { expression: '{ "foo": "bar" }', description: "Keep events with foo as key and bar as value" },
@@ -295,11 +295,11 @@ document.addEventListener("DOMContentLoaded", function () {
           { expression: '{ "status": { "$lt": 100 } }', description: "Keep events with status code lower than 100" },
           { expression: '{ "status": { "$lte": 100 } }', description: "Keep events with status code lower or equal to 100" },
           { expression: '{ "status": { "$between": { "min": 100, "max": 200 } } }', description: "Keep events with status code between 100 and 200" },
-          { expression: '{ "inner": { "$and": [ { "foo": "bar" }, { "bar" : "foo" }] } }', description: "Keep events matching the list of key-value" },
-          { expression: '{ "inner": { "$or": [ { "foo": "bar" }, { "bar" : "foo" }] } }', description: "Keep events matching one condition of the list of key-value" },
+          { expression: '{ "inner": { "$and": [ { "foo": "bar" }, { "bar" : "foo" }] } }', description: "Keep events matching the list of key-value" },
+          { expression: '{ "inner": { "$or": [ { "foo": "bar" }, { "bar" : "foo" }] } }', description: "Keep events matching one condition of the list of key-value" },
           { expression: '{ "codes": ["a", "b"] }', description: "Keep events with an array codes which strictly containing values a and b" },
-          { expression: '{ "codes": { "contains": "a" } }', description: "Keep events with an array codes containing an a value" },
-          { expression: '{ "codes": { "$all": ["a", "b"] } }', description: "Keep events with an array codes containing at minima a and b values" }
+          { expression: '{ "codes": { "contains": "a" } }', description: "Keep events with an array codes containing an a value" },
+          { expression: '{ "codes": { "$all": ["a", "b"] } }', description: "Keep events with an array codes containing at minima a and b values" }
         ]
       }
     ]

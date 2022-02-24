@@ -14,56 +14,62 @@ import java.nio.file.Files
 import java.io.File
 import collection.JavaConverters._
 
-
 object ConfigurationCleanup {
   def cleanup(path: String, newpath: String): Unit = {
-    val file = new File(path)
-    val newfile = new File(newpath)
-    val content = Files.readAllLines(file.toPath).asScala
+    val file        = new File(path)
+    val newfile     = new File(newpath)
+    val content     = Files.readAllLines(file.toPath).asScala
     val fillContent = content.mkString("\n")
-    val newContent = content.flatMap { line =>
-      if (line.contains("${?APP_") && !line.contains("${?OTOROSHI_")) {
-        val replacedLine = line.replace("${?APP_", "${?OTOROSHI_")
-        if (fillContent.contains(replacedLine)) {
-          Seq(line)
+    val newContent  = content
+      .flatMap { line =>
+        if (line.contains("${?APP_") && !line.contains("${?OTOROSHI_")) {
+          val replacedLine = line.replace("${?APP_", "${?OTOROSHI_")
+          if (fillContent.contains(replacedLine)) {
+            Seq(line)
+          } else {
+            Seq(
+              line,
+              replacedLine
+            )
+          }
+
+        } else if (line.contains("${?PLAY_") && !line.contains("${?OTOROSHI_")) {
+          val replacedLine = line.replace("${?PLAY_", "${?OTOROSHI_")
+          if (fillContent.contains(replacedLine)) {
+            Seq(line)
+          } else {
+            Seq(
+              line,
+              replacedLine
+            )
+          }
+
+        } else if (line.contains("${?") && !line.contains("${?OTOROSHI_")) {
+          val replacedLine = line.replace("${?APP_", "${?OTOROSHI_").replace("${?", "${?OTOROSHI_")
+          if (fillContent.contains(replacedLine)) {
+            Seq(line)
+          } else {
+            Seq(
+              line,
+              replacedLine
+            )
+          }
+
         } else {
-          Seq(
-            line,
-            replacedLine
-          )
-        }
-        
-      } else if (line.contains("${?PLAY_") && !line.contains("${?OTOROSHI_")) {
-        val replacedLine = line.replace("${?PLAY_", "${?OTOROSHI_")
-        if (fillContent.contains(replacedLine)) {
           Seq(line)
-        } else {
-          Seq(
-            line,
-            replacedLine
-          )
         }
-        
-      } else if (line.contains("${?") && !line.contains("${?OTOROSHI_")) {
-        val replacedLine = line.replace("${?APP_", "${?OTOROSHI_").replace("${?", "${?OTOROSHI_")
-        if (fillContent.contains(replacedLine)) {
-          Seq(line)
-        } else {
-          Seq(
-            line,
-            replacedLine
-          )
-        }
-        
-      } else {
-        Seq(line)
       }
-    }.mkString("\n")
+      .mkString("\n")
     Files.writeString(newfile.toPath(), newContent)
   }
 }
 
-class ConfigurationCleanupSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
+class ConfigurationCleanupSpec
+    extends WordSpec
+    with MustMatchers
+    with OptionValues
+    with ScalaFutures
+    with IntegrationPatience {
   "ConfigurationCleanup" should {
     "cleanup configuration env. variables" in {
       ConfigurationCleanup.cleanup("./conf/old-application.conf", "./conf/application.conf")

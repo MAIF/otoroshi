@@ -1306,7 +1306,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration) extends Otoro
         .futureValue
 
       resp1.status mustBe 502
-      resp1.body.contains("Downstream microservice does not seems to be secured. Cancelling request !") mustBe true
+      resp1.body.contains("Backend server does not seems to be secured. Cancelling request !") mustBe true
 
       deleteOtoroshiService(service).futureValue
       server.stop()

@@ -133,8 +133,9 @@ class ServiceMetrics extends RequestTransformer {
     env.metrics
       .histogramUpdate(
         s"otoroshi.service.requests.duration.millis.${ctx.descriptor.name.slug}.${ctx.request.theProtocol}.${ctx.request.method
-          .toLowerCase()}.${ctx.rawResponse.status}"
-      , duration)
+          .toLowerCase()}.${ctx.rawResponse.status}",
+        duration
+      )
     Right(ctx.otoroshiResponse).future
   }
 
@@ -165,8 +166,9 @@ class ServiceMetrics extends RequestTransformer {
     env.metrics
       .histogramUpdate(
         s"otoroshi.service.requests.duration.millis.${ctx.descriptor.name.slug}.${ctx.request.theProtocol}.${ctx.request.method
-          .toLowerCase()}.${ctx.otoroshiResponse.status}"
-      , duration)
+          .toLowerCase()}.${ctx.otoroshiResponse.status}",
+        duration
+      )
     ctx.otoroshiResult.future
   }
 }

@@ -3,7 +3,7 @@
 Otoroshi provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.accesslog.AccessLog }
 
 ## Access log (CLF)
 
@@ -59,7 +59,7 @@ The plugin accepts the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.accesslog.AccessLogJson }
 
 ## Access log (JSON)
 
@@ -111,7 +111,7 @@ The plugin accepts the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.accesslog.KafkaAccessLog }
 
 ## Kafka access log
 
@@ -165,7 +165,7 @@ The plugin accepts the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.authcallers.BasicAuthCaller }
 
 ## Basic Auth. caller
 
@@ -209,7 +209,7 @@ This plugin accepts the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.authcallers.OAuth2Caller }
 
 ## OAuth2 caller
 
@@ -274,7 +274,7 @@ This plugin accepts the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.cache.ResponseCache }
 
 ## Response Cache
 
@@ -345,7 +345,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.clientcert.ClientCertChainHeader }
 
 ## Client certificate header
 
@@ -419,7 +419,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.defer.DeferPlugin }
 
 ## Defer Responses
 
@@ -464,7 +464,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.discovery.DiscoverySelfRegistrationTransformer }
 
 ## Self registration endpoints (service discovery)
 
@@ -502,7 +502,7 @@ This plugin accepts the following configuration:
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.envoy.EnvoyControlPlane }
 
 ## Envoy Control Plane (experimental)
 
@@ -538,7 +538,7 @@ Right now, all the features of otoroshi cannot be exposed as is through Envoy.
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.geoloc.GeolocationInfoEndpoint }
 
 ## Geolocation endpoint
 
@@ -564,7 +564,7 @@ This plugin will expose current geolocation informations on the following endpoi
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.geoloc.GeolocationInfoHeader }
 
 ## Geolocation header
 
@@ -608,7 +608,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.hmac.HMACCallerPlugin }
 
 ## HMAC caller plugin
 
@@ -644,7 +644,7 @@ This plugin can be used to call a "protected" api by an HMAC signature. It will 
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.izanami.IzanamiCanary }
 
 ## Izanami Canary Campaign
 
@@ -712,7 +712,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.izanami.IzanamiProxy }
 
 ## Izanami APIs Proxy
 
@@ -776,7 +776,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.jq.JqBodyTransformer }
 
 ## JQ bodies transformer
 
@@ -852,7 +852,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.jsoup.HtmlPatcher }
 
 ## Html Patcher
 
@@ -887,7 +887,7 @@ This plugin can inject elements in html pages (in the body or in the head) retur
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.log4j.Log4ShellFilter }
 
 ## Log4Shell mitigation plugin
 
@@ -935,7 +935,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.loggers.BodyLogger }
 
 ## Body logger
 
@@ -1012,7 +1012,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.metrics.PrometheusServiceMetrics }
 
 ## Prometheus Service Metrics
 
@@ -1056,7 +1056,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.metrics.ServiceMetrics }
 
 ## Service Metrics
 
@@ -1103,7 +1103,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.mirror.MirroringPlugin }
 
 ## Mirroring plugin
 
@@ -1151,7 +1151,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.oauth1.OAuth1CallerPlugin }
 
 ## OAuth1 caller
 
@@ -1187,7 +1187,7 @@ This plugin can be used to call api that are authenticated using OAuth1.
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.oidc.OIDCHeaders }
 
 ## OIDC headers
 
@@ -1236,7 +1236,7 @@ This plugin injects headers containing tokens and profile from current OIDC prov
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.security.SecurityTxt }
 
 ## Security Txt
 
@@ -1290,7 +1290,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.static.StaticResponse }
 
 ## Static Response
 
@@ -1329,7 +1329,7 @@ This plugin returns a static response for any request
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.useragent.UserAgentInfoEndpoint }
 
 ## User-Agent endpoint
 
@@ -1355,7 +1355,7 @@ This plugin will expose current user-agent informations on the following endpoin
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.useragent.UserAgentInfoHeader }
 
 ## User-Agent header
 
@@ -1399,7 +1399,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-transformer }
+@@@ div { .plugin .plugin-hidden .plugin-kind-transformer #otoroshi.plugins.workflow.WorkflowEndpoint }
 
 ## Workflow endpoint
 
@@ -1433,7 +1433,7 @@ This plugin runs a workflow and return the response
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator #otoroshi.plugins.biscuit.BiscuitValidator }
 
 ## Biscuit token validator
 
@@ -1477,7 +1477,7 @@ This plugin validates a Biscuit token.
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator #otoroshi.plugins.clientcert.HasClientCertMatchingApikeyValidator }
 
 ## Client Certificate + Api Key only
 
@@ -1502,7 +1502,7 @@ You can set the client cert. DN in an apikey metadata named `allowed-client-cert
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator #otoroshi.plugins.clientcert.HasClientCertMatchingHttpValidator }
 
 ## Client certificate matching (over http)
 
@@ -1572,7 +1572,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator #otoroshi.plugins.clientcert.HasClientCertMatchingValidator }
 
 ## Client certificate matching
 
@@ -1624,7 +1624,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator #otoroshi.plugins.clientcert.HasClientCertValidator }
 
 ## Client Certificate Only
 
@@ -1648,7 +1648,7 @@ Check if a client certificate is present in the request
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator #otoroshi.plugins.external.ExternalHttpValidator }
 
 ## External Http Validator
 
@@ -1732,7 +1732,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator #otoroshi.plugins.hmac.HMACValidator }
 
 ## HMAC access validator
 
@@ -1803,7 +1803,7 @@ This plugin can be used to check if a HMAC signature is present and valid in Aut
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator #otoroshi.plugins.oidc.OIDCAccessTokenValidator }
 
 ## OIDC access_token validator
 
@@ -1887,7 +1887,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator #otoroshi.plugins.quotas.InstanceQuotas }
 
 ## Instance quotas
 
@@ -1947,7 +1947,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator #otoroshi.plugins.quotas.ServiceQuotas }
 
 ## Public quotas
 
@@ -1987,7 +1987,7 @@ This plugin will enforce public quotas on the current service
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-validator }
+@@@ div { .plugin .plugin-hidden .plugin-kind-validator #otoroshi.plugins.users.HasAllowedUsersValidator }
 
 ## Allowed users only
 
@@ -2043,7 +2043,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute #otoroshi.plugins.apikeys.ApikeyAuthModule }
 
 ## Apikey auth module
 
@@ -2086,7 +2086,7 @@ This plugin adds basic auth on service where credentials are valid apikeys on th
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute #otoroshi.plugins.apikeys.CertificateAsApikey }
 
 ## Client certificate as apikey
 
@@ -2127,7 +2127,7 @@ This plugin uses client certificate as an apikey. The apikey will be stored for 
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute #otoroshi.plugins.apikeys.ClientCredentialFlowExtractor }
 
 ## Client Credential Flow ApiKey extractor
 
@@ -2151,7 +2151,7 @@ This plugin can extract an apikey from an opaque access_token generate by the `C
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute #otoroshi.plugins.biscuit.BiscuitExtractor }
 
 ## Apikey from Biscuit token extractor
 
@@ -2196,7 +2196,7 @@ apikey client_id and an #authority fact 'client_sign' that is the HMAC256 signat
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute #otoroshi.plugins.discovery.DiscoveryTargetsSelector }
 
 ## Service discovery target selector (service discovery)
 
@@ -2236,7 +2236,7 @@ This plugin accepts the following configuration:
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute #otoroshi.plugins.geoloc.IpStackGeolocationInfoExtractor }
 
 ## Geolocation details extractor (using IpStack api)
 
@@ -2285,7 +2285,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute #otoroshi.plugins.geoloc.MaxMindGeolocationInfoExtractor }
 
 ## Geolocation details extractor (using Maxmind db)
 
@@ -2332,7 +2332,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute #otoroshi.plugins.jwt.JwtUserExtractor }
 
 ## Jwt user extractor
 
@@ -2370,7 +2370,7 @@ This plugin extract a user from a JWT token
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute #otoroshi.plugins.oidc.OIDCAccessTokenAsApikey }
 
 ## OIDC access_token as apikey
 
@@ -2453,7 +2453,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-preroute }
+@@@ div { .plugin .plugin-hidden .plugin-kind-preroute #otoroshi.plugins.useragent.UserAgentExtractor }
 
 ## User-Agent details extractor
 
@@ -2498,7 +2498,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-sink }
+@@@ div { .plugin .plugin-hidden .plugin-kind-sink #otoroshi.plugins.apikeys.ClientCredentialService }
 
 ## Client Credential Service
 
@@ -2546,7 +2546,7 @@ This plugin add an an oauth client credentials service (`https://unhandleddomain
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-sink }
+@@@ div { .plugin .plugin-hidden .plugin-kind-sink #otoroshi.plugins.discovery.DiscoverySelfRegistrationSink }
 
 ## Global self registration endpoints (service discovery)
 
@@ -2584,7 +2584,7 @@ This plugin accepts the following configuration:
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-sink }
+@@@ div { .plugin .plugin-hidden .plugin-kind-sink #otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator }
 
 ## Kubernetes admission validator webhook
 
@@ -2608,7 +2608,7 @@ This plugin exposes a webhook to kubernetes to handle manifests validation
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-sink }
+@@@ div { .plugin .plugin-hidden .plugin-kind-sink #otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector }
 
 ## Kubernetes sidecar injector webhook
 
@@ -2632,7 +2632,7 @@ This plugin exposes a webhook to kubernetes to inject otoroshi-sidecar in pods
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-sink }
+@@@ div { .plugin .plugin-hidden .plugin-kind-sink #otoroshi.plugins.metrics.PrometheusEndpoint }
 
 ## Prometheus Endpoint
 
@@ -2681,7 +2681,7 @@ This plugin can accept the following configuration
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-job }
+@@@ div { .plugin .plugin-hidden .plugin-kind-job #otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob }
 
 ## Kubernetes Ingress Controller
 
@@ -2833,7 +2833,7 @@ This plugin enables Otoroshi as an Ingress Controller
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-job }
+@@@ div { .plugin .plugin-hidden .plugin-kind-job #otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob }
 
 ## Kubernetes Otoroshi CRDs Controller
 
@@ -2985,7 +2985,7 @@ This plugin enables Otoroshi CRDs Controller
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-job }
+@@@ div { .plugin .plugin-hidden .plugin-kind-job #otoroshi.plugins.jobs.kubernetes.KubernetesToOtoroshiCertSyncJob }
 
 ## Kubernetes to Otoroshi certs. synchronizer
 
@@ -3137,7 +3137,7 @@ This plugin syncs. TLS secrets from Kubernetes to Otoroshi
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-job }
+@@@ div { .plugin .plugin-hidden .plugin-kind-job #otoroshi.plugins.jobs.kubernetes.OtoroshiToKubernetesCertSyncJob }
 
 ## Otoroshi certs. to Kubernetes secrets synchronizer
 
@@ -3289,7 +3289,7 @@ This plugin syncs. Otoroshi certs to Kubernetes TLS secrets
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-job }
+@@@ div { .plugin .plugin-hidden .plugin-kind-job #otoroshi.plugins.workflow.WorkflowJob }
 
 ## Workflow job
 
@@ -3347,6 +3347,106 @@ Periodically run a custom workflow
           "statuses" : [ 200 ]
         }
       } ]
+    }
+  }
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-request-handler #otoroshi.next.proxy.ProxyEngine }
+
+## Otoroshi next proxy engine (experimental)
+
+<img class="plugin-logo plugin-hidden" src=""></img>
+
+### Infos
+
+* plugin type: `request-handler`
+* configuration root: `NextGenProxyEngine`
+
+### Description
+
+This plugin holds the next generation otoroshi proxy engine implementation. This engine is **experimental** and may not work as expected !
+
+You can active this plugin only on some domain names so you can easily A/B test the new engine.
+The new proxy engine is designed to be more reactive and more efficient generally.
+It is also designed to be very efficient on path routing where it wasn't the old engines strong suit.
+
+The idea is to only rely on plugins to work and avoid losing time with features that are not used in service descriptors.
+An automated conversion happens for every service descriptor. If the exposed domain is handled by this plugin, it will be served by this plugin.
+This plugin introduces new entities that will replace (one day maybe) service descriptors:
+
+ - `routes`: a unique routing rule based on hostname, path, method and headers that will execute a bunch of plugins
+ - `services`: multiple routing rules based on hostname, path, method and headers that will execute the same list of plugins
+ - `targets`: how to contact a backend either by using a domain name or an ip address, supports mtls
+ - `backends`: a list of targets to contact a backend
+
+as an example, let say you want to use the new engine on your service exposed on `api.foo.bar/api`.
+To do that, just add the plugin in the `global plugins` section of the danger zone, inject the default configuration,
+enabled it and in `domains` add the value `api.foo.bar` (it is possible to use `*.foo.bar` if that's what you want to do).
+The next time a request hits the `api.foo.bar` domain, the new engine will handle it instead of the old one.
+
+
+
+### Default configuration
+
+```json
+{
+  "NextGenProxyEngine" : {
+    "enabled" : true,
+    "debug" : false,
+    "debug_headers" : false,
+    "routing_strategy" : "tree",
+    "merge_sync_steps" : true,
+    "domains" : [ ]
+  }
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-request-handler #otoroshi.script.ForwardTrafficHandler }
+
+## Forward traffic
+
+<img class="plugin-logo plugin-hidden" src=""></img>
+
+### Infos
+
+* plugin type: `request-handler`
+* configuration root: `ForwardTrafficHandler`
+
+### Description
+
+This plugin can be use to perform a raw traffic forward to an URL without passing through otoroshi routing
+
+
+
+### Default configuration
+
+```json
+{
+  "ForwardTrafficHandler" : {
+    "domains" : {
+      "my.domain.tld" : {
+        "baseUrl" : "https://my.otherdomain.tld",
+        "secret" : "jwt signing secret",
+        "service" : {
+          "id" : "service id for analytics",
+          "name" : "service name for analytics"
+        }
+      }
     }
   }
 }

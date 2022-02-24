@@ -142,15 +142,27 @@ class CustomCollector(registry: SemanticMetricRegistry, jmxRegistry: MetricRegis
 
     registry.getGauges.entrySet.forEach(entry => addToMap(mfSamplesMap, fromGauge(entry.getKey, entry.getValue)))
     registry.getCounters.entrySet.forEach(entry => addToMap(mfSamplesMap, fromCounter(entry.getKey, entry.getValue)))
-    registry.getHistograms.entrySet.forEach(entry => addToMap(mfSamplesMap, fromHistogram(entry.getKey, entry.getValue)))
+    registry.getHistograms.entrySet.forEach(entry =>
+      addToMap(mfSamplesMap, fromHistogram(entry.getKey, entry.getValue))
+    )
     registry.getTimers.entrySet.forEach(entry => addToMap(mfSamplesMap, fromTimer(entry.getKey, entry.getValue)))
     registry.getMeters.entrySet.forEach(entry => addToMap(mfSamplesMap, fromMeter(entry.getKey, entry.getValue)))
 
-    jmxRegistry.getGauges.entrySet.forEach(entry => addToMap(mfSamplesMap, fromGauge(MetricId.build(entry.getKey), entry.getValue)))
-    jmxRegistry.getCounters.entrySet.forEach(entry => addToMap(mfSamplesMap, fromCounter(MetricId.build(entry.getKey), entry.getValue)))
-    jmxRegistry.getHistograms.entrySet.forEach(entry => addToMap(mfSamplesMap, fromHistogram(MetricId.build(entry.getKey), entry.getValue)))
-    jmxRegistry.getTimers.entrySet.forEach(entry => addToMap(mfSamplesMap, fromTimer(MetricId.build(entry.getKey), entry.getValue)))
-    jmxRegistry.getMeters.entrySet.forEach(entry => addToMap(mfSamplesMap, fromMeter(MetricId.build(entry.getKey), entry.getValue)))
+    jmxRegistry.getGauges.entrySet.forEach(entry =>
+      addToMap(mfSamplesMap, fromGauge(MetricId.build(entry.getKey), entry.getValue))
+    )
+    jmxRegistry.getCounters.entrySet.forEach(entry =>
+      addToMap(mfSamplesMap, fromCounter(MetricId.build(entry.getKey), entry.getValue))
+    )
+    jmxRegistry.getHistograms.entrySet.forEach(entry =>
+      addToMap(mfSamplesMap, fromHistogram(MetricId.build(entry.getKey), entry.getValue))
+    )
+    jmxRegistry.getTimers.entrySet.forEach(entry =>
+      addToMap(mfSamplesMap, fromTimer(MetricId.build(entry.getKey), entry.getValue))
+    )
+    jmxRegistry.getMeters.entrySet.forEach(entry =>
+      addToMap(mfSamplesMap, fromMeter(MetricId.build(entry.getKey), entry.getValue))
+    )
 
     new util.ArrayList[MetricFamilySamples](mfSamplesMap.values)
   }

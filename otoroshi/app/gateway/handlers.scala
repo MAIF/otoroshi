@@ -413,7 +413,14 @@ class GatewayRequestHandler(
           Some(WebSocket.acceptOrResult[play.api.http.websocket.Message, play.api.http.websocket.Message] { zeRequest =>
             config.get.plugins.handleWsRequest(
               zeRequest,
-              r => webSocketHandler.forwardCallRaw(r, reverseProxyAction, snowMonkey, headersInFiltered, headersOutFiltered)
+              r =>
+                webSocketHandler.forwardCallRaw(
+                  r,
+                  reverseProxyAction,
+                  snowMonkey,
+                  headersInFiltered,
+                  headersOutFiltered
+                )
             )
           })
         } else {

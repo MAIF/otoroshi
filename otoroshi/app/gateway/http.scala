@@ -78,16 +78,18 @@ class HttpHandler()(implicit env: Env) {
       headersOutFiltered: Seq[String]
   ) =
     actionBuilder.async(sourceBodyParser) { req =>
-      env.metrics.withTimerAsync("handle-request")(reverseProxyAction
-        .async[Result](
-          ReverseProxyActionContext(req, req.body, snowMonkey, logger),
-          false,
-          c => actuallyCallDownstream(c, analyticsQueue, headersInFiltered, headersOutFiltered)
-        )
-        .map {
-          case Left(r)  => r
-          case Right(r) => r
-        })
+      env.metrics.withTimerAsync("handle-request")(
+        reverseProxyAction
+          .async[Result](
+            ReverseProxyActionContext(req, req.body, snowMonkey, logger),
+            false,
+            c => actuallyCallDownstream(c, analyticsQueue, headersInFiltered, headersOutFiltered)
+          )
+          .map {
+            case Left(r)  => r
+            case Right(r) => r
+          }
+      )
     }
 
   def forwardAction(

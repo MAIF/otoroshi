@@ -55,7 +55,7 @@ case class PrivateAppsUser(
     env.datastores.privateAppsUserDataStore.delete(randomId)
 
   def toJson: JsValue        = PrivateAppsUser.fmt.writes(this)
-  def lightJson: JsValue = asJsonCleaned
+  def lightJson: JsValue     = asJsonCleaned
   def asJsonCleaned: JsValue =
     Json.obj(
       "name"     -> name,
@@ -162,17 +162,21 @@ object PrivateAppsUserHelper {
       case Some(preExistingUser) => FastFuture.successful(Some(preExistingUser))
       case _                     => {
         desc.authConfigRef match {
-          case Some(ref) => env.datastores.authConfigsDataStore.findById(ref).flatMap {
-            case None => FastFuture.successful(None)
-            case Some(auth) => isPrivateAppsSessionValidWithAuth(req, desc, auth)
-          }
-          case None => FastFuture.successful(None)
+          case Some(ref) =>
+            env.datastores.authConfigsDataStore.findById(ref).flatMap {
+              case None       => FastFuture.successful(None)
+              case Some(auth) => isPrivateAppsSessionValidWithAuth(req, desc, auth)
+            }
+          case None      => FastFuture.successful(None)
         }
       }
     }
   }
 
-  def isPrivateAppsSessionValidWithAuth(req: RequestHeader, desc: ServiceDescriptor, auth: AuthModuleConfig)(implicit ec: ExecutionContext, env: Env): Future[Option[PrivateAppsUser]] = {
+  def isPrivateAppsSessionValidWithAuth(req: RequestHeader, desc: ServiceDescriptor, auth: AuthModuleConfig)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Option[PrivateAppsUser]] = {
     val expected = "oto-papps-" + auth.cookieSuffix(desc)
     req.cookies
       .get(expected)

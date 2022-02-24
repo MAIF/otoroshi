@@ -34,7 +34,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.2
+1.5.3
 </div>
 </div>
 <div class="nav-toc">
@@ -147,7 +147,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.2
+1.5.3
 </div>
 </div>
 <div class="nav-toc">
@@ -253,10 +253,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h1><a href="#secure-an-app-and-or-your-otoroshi-ui-with-ldap" name="secure-an-app-and-or-your-otoroshi-ui-with-ldap" class="anchor"><span class="anchor-link"></span></a>Secure an app and/or your Otoroshi UI with LDAP</h1>
 <h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p>
 <p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.2/otoroshi.jar&#39;
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.3/otoroshi.jar&#39;
 </code></pre>
 <p>then you can run start Otoroshi :</p>
-<pre class="prettyprint"><code class="language-sh">java -Dapp.adminPassword=password -jar otoroshi.jar 
+<pre class="prettyprint"><code class="language-sh">java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
 </code></pre>
 <p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080" title="http://otoroshi.oto.tools:8080" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
 <h4><a href="#running-an-simple-openldap-server" name="running-an-simple-openldap-server" class="anchor"><span class="anchor-link"></span></a>Running an simple OpenLDAP server</h4>

@@ -13,7 +13,7 @@ import play.api.mvc._
 import scala.concurrent.{ExecutionContext, Future}
 
 class NgTargetsController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
-  extends AbstractController(cc)
+    extends AbstractController(cc)
     with BulkControllerHelper[StoredNgTarget, JsValue]
     with CrudControllerHelper[StoredNgTarget, JsValue] {
 
@@ -36,8 +36,11 @@ class NgTargetsController(val ApiAction: ApiAction, val cc: ControllerComponents
   override def writeEntity(entity: StoredNgTarget): JsValue = StoredNgTarget.format.writes(entity)
 
   override def findByIdOps(
-                            id: String
-                          )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[StoredNgTarget]]] = {
+      id: String
+  )(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[StoredNgTarget]]] = {
     env.datastores.targetsDataStore.findById(id).map { opt =>
       Right(
         OptionalEntityAndContext(
@@ -52,8 +55,8 @@ class NgTargetsController(val ApiAction: ApiAction, val cc: ControllerComponents
   }
 
   override def findAllOps(
-                           req: RequestHeader
-                         )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[StoredNgTarget]]] = {
+      req: RequestHeader
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[StoredNgTarget]]] = {
     env.datastores.targetsDataStore.findAll().map { seq =>
       Right(
         SeqEntityAndContext(
@@ -68,8 +71,8 @@ class NgTargetsController(val ApiAction: ApiAction, val cc: ControllerComponents
   }
 
   override def createEntityOps(
-                                entity: StoredNgTarget
-                              )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgTarget]]] = {
+      entity: StoredNgTarget
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgTarget]]] = {
     env.datastores.targetsDataStore.set(entity).map {
       case true  => {
         Right(
@@ -94,8 +97,8 @@ class NgTargetsController(val ApiAction: ApiAction, val cc: ControllerComponents
   }
 
   override def updateEntityOps(
-                                entity: StoredNgTarget
-                              )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgTarget]]] = {
+      entity: StoredNgTarget
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgTarget]]] = {
     env.datastores.targetsDataStore.set(entity).map {
       case true  => {
         Right(
@@ -120,8 +123,8 @@ class NgTargetsController(val ApiAction: ApiAction, val cc: ControllerComponents
   }
 
   override def deleteEntityOps(
-                                id: String
-                              )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[StoredNgTarget]]] = {
+      id: String
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[StoredNgTarget]]] = {
     env.datastores.targetsDataStore.delete(id).map {
       case true  => {
         Right(
@@ -145,19 +148,21 @@ class NgTargetsController(val ApiAction: ApiAction, val cc: ControllerComponents
   }
 
   def initiateStoredNgTarget() = ApiAction {
-    Ok(StoredNgTarget(
-      location = EntityLocation.default,
-      id = s"target_${IdGenerator.uuid}",
-      name = "New target",
-      description = "A new target",
-      tags = Seq.empty,
-      metadata = Map.empty,
-      target = NgTarget(
-        id = "target_1",
-        hostname = "mirror.otoroshi.io",
-        port = 443,
-        tls = true
-      )
-    ).json)
+    Ok(
+      StoredNgTarget(
+        location = EntityLocation.default,
+        id = s"target_${IdGenerator.uuid}",
+        name = "New target",
+        description = "A new target",
+        tags = Seq.empty,
+        metadata = Map.empty,
+        target = NgTarget(
+          id = "target_1",
+          hostname = "mirror.otoroshi.io",
+          port = 443,
+          tls = true
+        )
+      ).json
+    )
   }
 }

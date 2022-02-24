@@ -15,7 +15,7 @@ import play.api.mvc._
 import scala.concurrent.{ExecutionContext, Future}
 
 class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
-  extends AbstractController(cc)
+    extends AbstractController(cc)
     with BulkControllerHelper[NgService, JsValue]
     with CrudControllerHelper[NgService, JsValue] {
 
@@ -38,7 +38,7 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
   override def writeEntity(entity: NgService): JsValue = NgService.fmt.writes(entity)
 
   override def findByIdOps(
-    id: String
+      id: String
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[NgService]]] = {
     env.datastores.servicesDataStore.findById(id).map { opt =>
       Right(
@@ -54,7 +54,7 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   override def findAllOps(
-    req: RequestHeader
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[NgService]]] = {
     env.datastores.servicesDataStore.findAll().map { seq =>
       Right(
@@ -70,7 +70,7 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   override def createEntityOps(
-    entity: NgService
+      entity: NgService
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgService]]] = {
     env.datastores.servicesDataStore.set(entity).map {
       case true  => {
@@ -96,7 +96,7 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   override def updateEntityOps(
-    entity: NgService
+      entity: NgService
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgService]]] = {
     env.datastores.servicesDataStore.set(entity).map {
       case true  => {
@@ -122,7 +122,7 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   override def deleteEntityOps(
-    id: String
+      id: String
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[NgService]]] = {
     env.datastores.servicesDataStore.delete(id).map {
       case true  => {
@@ -147,43 +147,52 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   def initiateService() = ApiAction {
-    Ok(NgService(
-      location = EntityLocation.default,
-      id = s"ng-service_${IdGenerator.uuid}",
-      name = "New service",
-      description = "A new service",
-      tags = Seq.empty,
-      metadata = Map.empty,
-      enabled = true,
-      debugFlow = true,
-      groups = Seq("default"),
-      routes = Seq(NgMinimalRoute(
-        frontend = NgFrontend(
-          domains = Seq(NgDomainAndPath("new-route.oto.tools")),
-          headers = Map.empty,
-          methods = Seq.empty,
-          stripPath = true,
-          exact = false,
+    Ok(
+      NgService(
+        location = EntityLocation.default,
+        id = s"ng-service_${IdGenerator.uuid}",
+        name = "New service",
+        description = "A new service",
+        tags = Seq.empty,
+        metadata = Map.empty,
+        enabled = true,
+        debugFlow = false,
+        exportReporting = false,
+        groups = Seq("default"),
+        client = NgClientConfig.default,
+        routes = Seq(
+          NgMinimalRoute(
+            frontend = NgFrontend(
+              domains = Seq(NgDomainAndPath("new-route.oto.tools")),
+              headers = Map.empty,
+              methods = Seq.empty,
+              stripPath = true,
+              exact = false
+            ),
+            backend = NgMinimalBackend(
+              targets = Seq(
+                NgTarget(
+                  id = "target_1",
+                  hostname = "mirror.otoroshi.io",
+                  port = 443,
+                  tls = true
+                )
+              ),
+              targetRefs = Seq.empty,
+              root = "/",
+              rewrite = false,
+              loadBalancing = RoundRobin
+            )
+          )
         ),
-        backend = NgBackend(
-          targets = Seq(NgTarget(
-            id = "target_1",
-            hostname = "mirror.otoroshi.io",
-            port = 443,
-            tls = true
-          )),
-          targetRefs = Seq.empty,
-          root = "/",
-          rewrite = false,
-          loadBalancing = RoundRobin
+        plugins = NgPlugins(
+          Seq(
+            NgPluginInstance(
+              plugin = NgPluginHelper.pluginId[OverrideHost]
+            )
+          )
         )
-      )),
-      client = ClientConfig(),
-      plugins = NgPlugins(Seq(
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OverrideHost],
-        )
-      ))
-    ).json)
+      ).json
+    )
   }
 }

@@ -54,7 +54,9 @@ case class BackofficeFlags(
   lazy val logUrl: Boolean                =
     _logUrl.orElse(env.configuration.betterGetOptional[Boolean]("otoroshi.backoffice.flags.logUrl")).getOrElse(false)
   lazy val logStats: Boolean              =
-    _logStats.orElse(env.configuration.betterGetOptional[Boolean]("otoroshi.backoffice.flags.logStats")).getOrElse(false)
+    _logStats
+      .orElse(env.configuration.betterGetOptional[Boolean]("otoroshi.backoffice.flags.logStats"))
+      .getOrElse(false)
   lazy val requestTimeout: FiniteDuration = _requestTimeout
     .orElse(
       env.configuration
