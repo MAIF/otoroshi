@@ -463,6 +463,17 @@ export class Oauth2ModuleConfig extends Component {
           help="Retrieve user rights from user profile"
           onChange={(v) => changeTheValue(path + '.otoroshiRightsField', v)}
         />
+        <Separator title="Users" />
+        <ArrayInput 
+          label="User validators"
+          component={UserValidator}
+          value={settings.userValidators}
+          onChange={(v) => changeTheValue(path + '.userValidators', v)}
+          defaultValue={{
+            path: '$.profile.admin',
+            value: true
+          }}
+        />
         <Suspense fallback={<div>loading ...</div>}>
           <CodeInput
             label="Extra metadata"
@@ -1086,6 +1097,16 @@ export class BasicModuleConfig extends Component {
             />
           </Suspense>
         )}
+        <ArrayInput 
+          label="User validators"
+          component={UserValidator}
+          value={settings.userValidators}
+          onChange={(v) => changeTheValue(path + '.userValidators', v)}
+          defaultValue={{
+            path: '$.profile.admin',
+            value: true
+          }}
+        />
       </div>
     );
   }
@@ -1412,6 +1433,16 @@ export class LdapModuleConfig extends Component {
           help="Retrieve metadata from LDAP field"
           onChange={(v) => changeTheValue(path + '.metadataField', v)}
         />
+        <ArrayInput 
+          label="User validators"
+          component={UserValidator}
+          value={settings.userValidators}
+          onChange={(v) => changeTheValue(path + '.userValidators', v)}
+          defaultValue={{
+            path: '$.profile.admin',
+            value: true
+          }}
+        />
         <Suspense fallback={<div>loading ...</div>}>
           <CodeInput
             label="Extra metadata"
@@ -1727,6 +1758,7 @@ export class SamlModuleConfig extends Component {
     'validateSignature',
     'validateAssertions',
     'validatingCertificates',
+    'userValidators'
   ];
 
   changeTheValue = (name, value) => {
@@ -1742,6 +1774,17 @@ export class SamlModuleConfig extends Component {
   };
 
   schema = {
+    userValidators: {
+      type: 'array',
+      props: {
+        label: 'User validators',
+        component: UserValidator,
+        defaultValue: {
+          path: '$.profile.admin',
+          value: true
+        }
+      }
+    },
     warning: {
       type: ({}) => {
         if (this.props.value.warning) {
@@ -2063,9 +2106,9 @@ export class SamlModuleConfig extends Component {
 export class OAuth1ModuleConfig extends Component {
   flow = [
     'id',
-    'httpMethod',
     'name',
     'desc',
+    'httpMethod',
     'consumerKey',
     'consumerSecret',
     // "signatureMethod",
@@ -2074,6 +2117,7 @@ export class OAuth1ModuleConfig extends Component {
     'accessTokenURL',
     'profileURL',
     'callbackURL',
+    'userValidators',
     'rightsOverride',
   ];
 
@@ -2117,6 +2161,17 @@ export class OAuth1ModuleConfig extends Component {
     consumerSecret: {
       type: 'string',
       props: { label: 'Consumer secret', placeholder: 'Consumer secret' },
+    },
+    userValidators: {
+      type: 'array',
+      props: {
+        label: 'User validators',
+        component: UserValidator,
+        defaultValue: {
+          path: '$.profile.admin',
+          value: true
+        }
+      }
     },
     // signatureMethod: {
     //   type: 'select',
@@ -2231,3 +2286,40 @@ const SessionCookieConfig = (props) => {
     </>
   );
 };
+
+const UserValidator = (props) => {
+  
+  const validator = props.itemValue;
+
+  function changeTheValue(field, value) {
+    const arr = props.value;
+    arr[props.idx][field] = value
+    props.onChange(arr);
+  }
+  
+  console.log(props)
+  return (
+    <>
+      <TextInput
+        label="Json path"
+        value={validator.path}
+        help="The JSON Path to the validated element of the user"
+        suffix="JSON Path"
+        onChange={(v) => changeTheValue('path', v)}
+      />
+      <TextInput
+        label="Value"
+        value={_.isString(validator.value) ? validator.value : JSON.stringify(validator.value)}
+        help="The value you want to validate"
+        onChange={(v) => {
+          try {
+            const parsed = JSON.parse(v);
+            changeTheValue('value', parsed)
+          } catch(e) {
+            changeTheValue('value', v)
+          }
+        }}
+      />
+    </>
+  );
+}

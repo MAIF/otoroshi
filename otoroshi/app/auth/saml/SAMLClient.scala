@@ -153,24 +153,22 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
             val name = attributes.get("Name").map(_.head).getOrElse("No name")
 
             FastFuture.successful(
-              Right(
-                PrivateAppsUser(
-                  randomId = IdGenerator.token(64),
-                  name = name,
-                  email = email,
-                  profile = Json.obj(
-                    "name"  -> name,
-                    "email" -> email
-                  ),
-                  token = Json.obj(),
-                  authConfigId = samlConfig.id,
-                  realm = samlConfig.cookieSuffix(descriptor),
-                  tags = Seq.empty,
-                  metadata = Map("saml-id" -> assertion.getSubject.getNameID.getValue),
-                  otoroshiData = None,
-                  location = samlConfig.location
-                )
-              )
+              PrivateAppsUser(
+                randomId = IdGenerator.token(64),
+                name = name,
+                email = email,
+                profile = Json.obj(
+                  "name"  -> name,
+                  "email" -> email
+                ),
+                token = Json.obj(),
+                authConfigId = samlConfig.id,
+                realm = samlConfig.cookieSuffix(descriptor),
+                tags = Seq.empty,
+                metadata = Map("saml-id" -> assertion.getSubject.getNameID.getValue),
+                otoroshiData = None,
+                location = samlConfig.location
+              ).validate(samlConfig.userValidators)
             )
         }
       case None       => FastFuture.successful(Left(""))
@@ -258,30 +256,28 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
             val name = attributes.get("Name").map(_.head).getOrElse("No name")
 
             FastFuture.successful(
-              Right(
-                BackOfficeUser(
-                  randomId = IdGenerator.token(64),
-                  name = name,
-                  profile = Json.obj(
-                    "name"  -> name,
-                    "email" -> email
-                  ),
-                  email = email,
-                  authConfigId = samlConfig.id,
-                  simpleLogin = false,
-                  tags = Seq.empty,
-                  metadata = Map("saml-id" -> assertion.getSubject.getNameID.getValue),
-                  rights = UserRights(
-                    Seq(
-                      UserRight(
-                        TenantAccess(samlConfig.location.tenant.value),
-                        samlConfig.location.teams.map(t => TeamAccess(t.value))
-                      )
+              BackOfficeUser(
+                randomId = IdGenerator.token(64),
+                name = name,
+                profile = Json.obj(
+                  "name"  -> name,
+                  "email" -> email
+                ),
+                email = email,
+                authConfigId = samlConfig.id,
+                simpleLogin = false,
+                tags = Seq.empty,
+                metadata = Map("saml-id" -> assertion.getSubject.getNameID.getValue),
+                rights = UserRights(
+                  Seq(
+                    UserRight(
+                      TenantAccess(samlConfig.location.tenant.value),
+                      samlConfig.location.teams.map(t => TeamAccess(t.value))
                     )
-                  ),
-                  location = samlConfig.location
-                )
-              )
+                  )
+                ),
+                location = samlConfig.location
+              ).validate(samlConfig.userValidators)
             )
         }
       case None       => FastFuture.successful(Left(""))
@@ -339,7 +335,8 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
           usedNameIDAsEmail = (json \ "usedNameIDAsEmail").asOpt[Boolean].getOrElse(true),
           emailAttributeName = (json \ "emailAttributeName").asOpt[String],
           sessionCookieValues =
-            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues())
+            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+          userValidators = (json \ "userValidators").asOpt[Seq[JsValue]].map(_.flatMap(v => UserValidator.format.reads(v).asOpt)).getOrElse(Seq.empty)
         )
       )
     } recover { case e =>
@@ -637,6 +634,7 @@ case class SamlAuthModuleConfig(
     name: String,
     desc: String,
     sessionMaxAge: Int = 86400,
+    userValidators: Seq[UserValidator] = Seq.empty,
     singleSignOnUrl: String,
     singleLogoutUrl: String,
     ssoProtocolBinding: SAMLProtocolBinding = SAMLProtocolBinding.Redirect,
@@ -671,6 +669,7 @@ case class SamlAuthModuleConfig(
     "name"                        -> this.name,
     "desc"                        -> this.desc,
     "sessionMaxAge"               -> this.sessionMaxAge,
+    "userValidators"              -> JsArray(userValidators.map(_.json)),
     "singleSignOnUrl"             -> this.singleSignOnUrl,
     "singleLogoutUrl"             -> this.singleLogoutUrl,
     "credentials"                 -> SAMLCredentials.fmt.writes(this.credentials),

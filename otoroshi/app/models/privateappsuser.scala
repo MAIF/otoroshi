@@ -2,7 +2,7 @@ package otoroshi.models
 
 import java.util.concurrent.TimeUnit
 import akka.http.scaladsl.util.FastFuture
-import otoroshi.auth.{AuthModuleConfig, GenericOauth2Module}
+import otoroshi.auth.{AuthModuleConfig, GenericOauth2Module, UserValidator, ValidableUser}
 import otoroshi.env.Env
 import org.joda.time.DateTime
 import play.api.Logger
@@ -35,6 +35,7 @@ case class PrivateAppsUser(
     metadata: Map[String, String],
     location: otoroshi.models.EntityLocation
 ) extends RefreshableUser
+    with ValidableUser
     with otoroshi.models.EntityLocationSupport {
 
   def theDescription: String           = name

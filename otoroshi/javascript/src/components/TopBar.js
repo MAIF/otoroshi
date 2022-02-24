@@ -180,12 +180,6 @@ export class TopBar extends Component {
           value: 'auth-configs',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/validation-authorities'),
-          env: <span className="fas fa-gavel" />,
-          label: 'Validation authorities',
-          value: 'validation-authorities',
-        });
-        options.push({
           action: () => (window.location.href = '/bo/dashboard/certificates'),
           env: <span className="fas fa-certificate" />,
           label: 'SSL Certificates',
@@ -672,9 +666,6 @@ export class TopBar extends Component {
                     </a>
                     <a href="/bo/dashboard/certificates" className="dropdown-item">
                       <span className="fas fa-certificate" /> SSL/TLS Certificates
-                    </a>
-                    <a className="hide dropdown-item" href="/bo/dashboard/validation-authorities">
-                      <span className="fas fa-gavel" /> Validation authorities
                     </a>
                     {this.state.env.scriptingEnabled === true && (
                       <a href="/bo/dashboard/plugins" className="dropdown-item">

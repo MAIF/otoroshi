@@ -136,7 +136,8 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           sessionCookieValues =
-            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues())
+            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+          userValidators = (json \ "userValidators").asOpt[Seq[JsValue]].map(_.flatMap(v => UserValidator.format.reads(v).asOpt)).getOrElse(Seq.empty)
         )
       )
     } recover { case e =>
@@ -150,6 +151,7 @@ case class BasicAuthModuleConfig(
     desc: String,
     users: Seq[BasicAuthUser] = Seq.empty[BasicAuthUser],
     sessionMaxAge: Int = 86400,
+    userValidators: Seq[UserValidator] = Seq.empty,
     basicAuth: Boolean = false,
     webauthn: Boolean = false,
     tags: Seq[String],
@@ -171,7 +173,8 @@ case class BasicAuthModuleConfig(
       "metadata"            -> this.metadata,
       "tags"                -> JsArray(tags.map(JsString.apply)),
       "users"               -> Writes.seq(BasicAuthUser.fmt).writes(this.users),
-      "sessionCookieValues" -> SessionCookieValues.fmt.writes(this.sessionCookieValues)
+      "sessionCookieValues" -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
+      "userValidators"      -> JsArray(userValidators.map(_.json))
     )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"basic-auth-$id"
@@ -199,25 +202,23 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       .find(u => u.email == username)
       .filter(u => BCrypt.checkpw(password, u.password)) match {
       case Some(user) =>
-        Right(
-          PrivateAppsUser(
-            randomId = IdGenerator.token(64),
-            name = user.name,
-            email = user.email,
-            profile = Json.obj(
-              "name"     -> user.name,
-              "email"    -> user.email,
-              "metadata" -> user.metadata,
-              "tags"     -> user.tags
-            ),
-            realm = authConfig.cookieSuffix(descriptor),
-            otoroshiData = Some(user.metadata),
-            authConfigId = authConfig.id,
-            tags = Seq.empty,
-            metadata = Map.empty,
-            location = authConfig.location
-          )
-        )
+        PrivateAppsUser(
+          randomId = IdGenerator.token(64),
+          name = user.name,
+          email = user.email,
+          profile = Json.obj(
+            "name"     -> user.name,
+            "email"    -> user.email,
+            "metadata" -> user.metadata,
+            "tags"     -> user.tags
+          ),
+          realm = authConfig.cookieSuffix(descriptor),
+          otoroshiData = Some(user.metadata),
+          authConfigId = authConfig.id,
+          tags = Seq.empty,
+          metadata = Map.empty,
+          location = authConfig.location
+        ).validate(authConfig.userValidators)
       case None       => Left(s"You're not authorized here")
     }
   }
@@ -227,25 +228,23 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       .find(u => u.email == username)
       .filter(u => BCrypt.checkpw(password, u.password)) match {
       case Some(user) =>
-        Right(
-          BackOfficeUser(
-            randomId = IdGenerator.token(64),
-            name = user.name,
-            email = user.email,
-            profile = Json.obj(
-              "name"     -> user.name,
-              "email"    -> user.email,
-              "metadata" -> user.metadata,
-              "tags"     -> user.tags
-            ),
-            simpleLogin = false,
-            authConfigId = authConfig.id,
-            tags = Seq.empty,
-            metadata = Map.empty,
-            rights = user.rights,
-            location = authConfig.location
-          )
-        )
+        BackOfficeUser(
+          randomId = IdGenerator.token(64),
+          name = user.name,
+          email = user.email,
+          profile = Json.obj(
+            "name"     -> user.name,
+            "email"    -> user.email,
+            "metadata" -> user.metadata,
+            "tags"     -> user.tags
+          ),
+          simpleLogin = false,
+          authConfigId = authConfig.id,
+          tags = Seq.empty,
+          metadata = Map.empty,
+          rights = user.rights,
+          location = authConfig.location
+        ).validate(authConfig.userValidators)
       case None       => Left(s"You're not authorized here")
     }
   }
@@ -330,7 +329,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             .getUserForToken(token)
             .map(_.flatMap(a => PrivateAppsUser.fmt.reads(a).asOpt))
             .map {
-              case Some(user) => Right(user)
+              case Some(user) => user.validate(authConfig.userValidators)
               case None       => Left("No user found")
             }
         case _           => FastFuture.successful(Left("Forbidden access"))
@@ -348,25 +347,23 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                     .find(u => u.email == username)
                     .filter(u => BCrypt.checkpw(password, u.password)) match {
                     case Some(user) =>
-                      Right(
-                        PrivateAppsUser(
-                          randomId = IdGenerator.token(64),
-                          name = user.name,
-                          email = user.email,
-                          profile = Json.obj(
-                            "name"     -> user.name,
-                            "email"    -> user.email,
-                            "metadata" -> user.metadata,
-                            "tags"     -> user.tags
-                          ),
-                          realm = authConfig.cookieSuffix(descriptor),
-                          otoroshiData = Some(user.metadata),
-                          authConfigId = authConfig.id,
-                          tags = Seq.empty,
-                          metadata = Map.empty,
-                          location = authConfig.location
-                        )
-                      )
+                      PrivateAppsUser(
+                        randomId = IdGenerator.token(64),
+                        name = user.name,
+                        email = user.email,
+                        profile = Json.obj(
+                          "name"     -> user.name,
+                          "email"    -> user.email,
+                          "metadata" -> user.metadata,
+                          "tags"     -> user.tags
+                        ),
+                        realm = authConfig.cookieSuffix(descriptor),
+                        otoroshiData = Some(user.metadata),
+                        authConfigId = authConfig.id,
+                        tags = Seq.empty,
+                        metadata = Map.empty,
+                        location = authConfig.location
+                      ).validate(authConfig.userValidators)
                     case None       => Left(s"You're not authorized here")
                   }
               }
