@@ -81,7 +81,13 @@ class ContextValidation extends NgAccessValidator {
 
   private def validate(ctx: NgAccessContext): Boolean = {
     val config = ctx.cachedConfig(internalName)(ContextValidationConfig.format).getOrElse(ContextValidationConfig())
-    val json = ctx.json.asObject ++ Json.obj("route" -> ctx.route.json)
+    val token: JsValue = ctx.attrs.get(otoroshi.next.plugins.Keys.JwtInjectionKey).flatMap(_.decodedToken).map { token =>
+      Json.obj(
+        "header" -> token.getHeader.fromBase64.parseJson,
+        "payload" -> token.getPayload.fromBase64.parseJson,
+      )
+    }.getOrElse(JsNull)
+    val json = ctx.json.asObject ++ Json.obj("route" -> ctx.route.json, "token" -> token)
     config.validators.forall(validator => validator.validate(json))
   }
 
