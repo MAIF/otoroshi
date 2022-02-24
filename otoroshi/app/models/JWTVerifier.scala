@@ -51,6 +51,7 @@ case class JwtInjection(
     additionalCookies: Map[String, String] = Map.empty,
     removeCookies: Seq[String] = Seq.empty
 ) extends AsJson {
+  def json: JsValue = asJson
   def asJson: JsValue =
     Json.obj(
       "token" -> decodedToken.map(_.getToken.json).getOrElse(JsNull).asValue,

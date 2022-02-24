@@ -9,16 +9,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.common.base.Charsets
 import otoroshi.env.Env
-import otoroshi.events.{
-  Alerts,
-  ApiKeyQuotasAlmostExceededAlert,
-  ApiKeyQuotasAlmostExceededReason,
-  ApiKeyQuotasExceededAlert,
-  ApiKeyQuotasExceededReason,
-  ApiKeySecretHasRotated,
-  ApiKeySecretWillRotate,
-  RevokedApiKeyUsageAlert
-}
+import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.next.plugins.api.NgAccess
@@ -30,6 +21,7 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
 import otoroshi.ssl.DynamicSSLEngineProvider
+import otoroshi.utils.syntax.implicits.BetterDecodedJWT
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -68,7 +60,12 @@ case class ApiKeyRotation(
   def json: JsValue = ApiKeyRotation.fmt.writes(this)
 }
 
-case class ApiKeyRotationInfo(rotationAt: DateTime, remaining: Long)
+case class ApiKeyRotationInfo(rotationAt: DateTime, remaining: Long) {
+  def json: JsValue = Json.obj(
+    "remaining" -> remaining,
+    "rotation_at" -> rotationAt.toString()
+  )
+}
 
 object ApiKeyRotation         {
   val fmt = new Format[ApiKeyRotation] {
@@ -554,19 +551,33 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
   }
 }
 
-sealed trait ApikeyLocationKind
-object ApikeyLocationKind {
-  case object Header extends ApikeyLocationKind
-  case object Cookie extends ApikeyLocationKind
-  case object Query  extends ApikeyLocationKind
+sealed trait ApikeyLocationKind {
+  def name: String
 }
-case class ApikeyLocation(kind: ApikeyLocationKind, name: String)
+object ApikeyLocationKind {
+  case object Header extends ApikeyLocationKind { def name: String = "Header" }
+  case object Cookie extends ApikeyLocationKind { def name: String = "Cookie" }
+  case object Query  extends ApikeyLocationKind { def name: String = "Query" }
+}
+case class ApikeyLocation(kind: ApikeyLocationKind, name: String) {
+  def json: JsValue = Json.obj(
+    "name" -> name,
+    "kind" -> kind.name
+  )
+}
 case class ApikeyTuple(
     clientId: String,
     clientSecret: Option[String] = None,
     jwtToken: Option[DecodedJWT] = None,
     location: Option[ApikeyLocation]
-)
+) {
+  def json: JsValue = Json.obj(
+    "client_id" -> clientId,
+    "client_secret" -> clientSecret.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "jwt_token" -> jwtToken.map(_.json).getOrElse(JsNull).as[JsValue],
+    "location" -> location.map(_.json).getOrElse(JsNull).as[JsValue],
+  )
+}
 
 object ApiKeyHelper {
 

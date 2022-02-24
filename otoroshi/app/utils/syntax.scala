@@ -341,6 +341,10 @@ object implicits {
     def claimInt(name: String): Option[Int]      = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asInt())
     def claimLng(name: String): Option[Long]     = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asLong())
     def claimDbl(name: String): Option[Double]   = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asDouble())
+    def json: JsValue = Json.obj(
+      "header" -> jwt.getHeader.fromBase64.parseJson,
+      "payload" -> jwt.getPayload.fromBase64.parseJson,
+    )
   }
   implicit class BetterAtomicReference[A](val ref: AtomicReference[A]) extends AnyVal {
     def getOrSet(f: => A): A = {

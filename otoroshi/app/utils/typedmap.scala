@@ -1,9 +1,14 @@
 package otoroshi.utils
 
+import akka.http.scaladsl.model.DateTime
+import otoroshi.gateway.GwError
+import otoroshi.models.{ApiKey, ApiKeyRotationInfo, ApikeyTuple, JwtInjection, PrivateAppsUser, RemainingQuotas, Target}
+import otoroshi.next.models.{NgBackend, NgContextualPlugins, NgMatchedRoute, NgRoute, NgTarget}
 import play.api.libs.json.{JsBoolean, JsNumber, JsObject, JsString, JsValue}
 import play.api.libs.typedmap.{TypedEntry, TypedKey}
 import otoroshi.utils.json._
 
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 import scala.collection.concurrent.TrieMap
 
 trait TypedMap {
@@ -36,6 +41,12 @@ final class ConcurrentMutableTypedMap(m: TrieMap[TypedKey[_], Any]) extends Type
       case ((key, value: Int), idx)       => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value))
       case ((key, value: Double), idx)    => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value))
       case ((key, value: Long), idx)      => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value))
+      case ((key, value: DateTime), idx)      => (key.displayName.getOrElse(s"key-${idx}"), JsString(value.toString()))
+      case ((key, value: AtomicLong), idx)      => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value.get()))
+      case ((key, value: AtomicInteger), idx)      => (key.displayName.getOrElse(s"key-${idx}"), JsNumber(value.get()))
+      case ((key, value: AtomicBoolean), idx)      => (key.displayName.getOrElse(s"key-${idx}"), JsBoolean(value.get()))
+      case ((key, value: Target), idx)      => (key.displayName.getOrElse(s"key-${idx}"), value.json)
+      case ((key, value: GwError), idx)      => (key.displayName.getOrElse(s"key-${idx}"), value.json)
       case ((key, value: JsValue), idx)   => (key.displayName.getOrElse(s"key-${idx}"), value)
       case ((key, value: Jsonable), idx)  => (key.displayName.getOrElse(s"key-${idx}"), value.json)
       case ((key, value: Map[_, _]), idx) =>
@@ -43,6 +54,15 @@ final class ConcurrentMutableTypedMap(m: TrieMap[TypedKey[_], Any]) extends Type
           key.displayName.getOrElse(s"key-${idx}"),
           JsObject(value.map { case (k, v) => (k.toString, JsString(v.toString)) })
         )
+      case ((key, v: NgRoute), idx)            => (key.displayName.getOrElse(s"key-${idx}"), v.json)
+      case ((key, v: NgTarget), idx)            => (key.displayName.getOrElse(s"key-${idx}"), v.json)
+      case ((key, v: NgBackend), idx)            => (key.displayName.getOrElse(s"key-${idx}"), v.json)
+      case ((key, v: ApikeyTuple), idx)            => (key.displayName.getOrElse(s"key-${idx}"), v.json)
+      case ((key, v: JwtInjection), idx)            => (key.displayName.getOrElse(s"key-${idx}"), v.json)
+      case ((key, v: ApiKey), idx)            => (key.displayName.getOrElse(s"key-${idx}"), v.json)
+      case ((key, v: ApiKeyRotationInfo), idx)            => (key.displayName.getOrElse(s"key-${idx}"), v.json)
+      case ((key, v: RemainingQuotas), idx)            => (key.displayName.getOrElse(s"key-${idx}"), v.toJson)
+      case ((key, v: PrivateAppsUser), idx)            => (key.displayName.getOrElse(s"key-${idx}"), v.json)
       case ((key, value), idx)            => (key.displayName.getOrElse(s"key-${idx}"), JsString(value.toString))
     })
   }
