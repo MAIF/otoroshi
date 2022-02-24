@@ -91,7 +91,13 @@ class RBAC extends NgAccessValidator {
     }
   }
 
-  private def tryParse(value: String): Seq[String] = Try(Json.parse(value).asArray.value.map(_.asString)).getOrElse(Seq.empty)
+  private def tryParse(value: String): Seq[String] = {
+    if (value.trim.startsWith("[") && value.trim.endsWith("]")) {
+      Try(Json.parse(value).asArray.value.map(_.asString)).getOrElse(Seq.empty)
+    } else {
+      value.split(",").map(_.trim)
+    }
+  }
 
   private def checkRightsFromJwtInjection(injection: JwtInjection, config: RBACConfig): Boolean = {
     injection.decodedToken match {
