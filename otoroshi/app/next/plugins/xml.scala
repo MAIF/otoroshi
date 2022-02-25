@@ -53,6 +53,10 @@ class XmlToJsonRequest extends NgRequestTransformer with JsonTransform {
 
   private val configReads: Format[JsonTransformConfig] = JsonTransformConfig.format
 
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def core: Boolean                   = true
   override def name: String                    = "request body xml-to-json"
   override def description: Option[String]     = "This plugin transform incoming request body from xml to json and may apply a jq transformation".some
@@ -88,6 +92,10 @@ class XmlToJsonRequest extends NgRequestTransformer with JsonTransform {
 class JsonToXmlRequest extends NgRequestTransformer with JsonTransform {
 
   private val configReads: Format[JsonTransformConfig] = JsonTransformConfig.format
+
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean                   = true
   override def name: String                    = "request body json-to-xml"
@@ -125,6 +133,10 @@ class XmlToJsonResponse extends NgRequestTransformer with JsonTransform {
 
   private val configReads: Format[JsonTransformConfig] = JsonTransformConfig.format
 
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def core: Boolean                   = true
   override def name: String                    = "response body xml-to-json"
   override def description: Option[String]     = "This plugin transform response body from xml to json and may apply a jq transformation".some
@@ -160,6 +172,10 @@ class XmlToJsonResponse extends NgRequestTransformer with JsonTransform {
 class JsonToXmlResponse extends NgRequestTransformer with JsonTransform {
 
   private val configReads: Format[JsonTransformConfig] = JsonTransformConfig.format
+
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean                   = true
   override def name: String                    = "response body json-to-xml"
@@ -240,6 +256,10 @@ class SOAPAction extends NgRequestTransformer {
 
   private val configReads: Reads[SOAPActionConfig] = SOAPActionConfig.format
   private val library = ImmutableJqLibrary.of()
+
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean                   = true
   override def name: String                    = "SOAP action"

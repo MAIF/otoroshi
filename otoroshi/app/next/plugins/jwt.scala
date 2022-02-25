@@ -35,6 +35,10 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
 
   private val configReads: Reads[NgJwtVerificationConfig] = NgJwtVerificationConfig.format
 
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess, NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Security)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def core: Boolean               = true
   override def usesCallbacks: Boolean      = false
   override def transformsRequest: Boolean  = true

@@ -3,7 +3,7 @@ package otoroshi.next.plugins
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, JwtInjection, PrivateAppsUser}
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator}
+import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.Results
@@ -59,6 +59,10 @@ object RBACConfig {
 }
 
 class RBAC extends NgAccessValidator {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Security)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean                   = true
   override def name: String                    = "RBAC"

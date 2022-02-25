@@ -15,6 +15,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class Http2Caller extends NgRequestTransformer {
 
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+
   override def isTransformRequestAsync: Boolean = true
   override def isTransformResponseAsync: Boolean = true
 

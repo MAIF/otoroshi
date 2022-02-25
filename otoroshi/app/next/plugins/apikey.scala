@@ -23,6 +23,10 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
 
   private val configReads: Reads[NgApikeyCallsConfig] = NgApikeyCallsConfig.format
 
+  override def steps: Seq[NgStep] = Seq(NgStep.MatchRoute, NgStep.ValidateAccess, NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Apikey, NgPluginCategory.Security)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false
   override def transformsRequest: Boolean        = true

@@ -59,6 +59,10 @@ class Robots extends NgRequestTransformer {
 
   private val configReads: Reads[RobotConfig] = RobotConfig.format
 
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def core: Boolean                   = true
   override def name: String                    = "Robots"
   override def description: Option[String]     = "This plugin provides all the necessary tool to handle search engine robots".some

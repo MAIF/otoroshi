@@ -2,7 +2,7 @@ package otoroshi.next.plugins
 
 import akka.stream.Materializer
 import otoroshi.env.Env
-import otoroshi.next.plugins.api.{NgPluginHttpResponse, NgRequestTransformer, NgTransformerResponseContext}
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginHttpResponse, NgPluginVisibility, NgRequestTransformer, NgStep, NgTransformerResponseContext}
 import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.gzip.GzipConfig.logger
 import otoroshi.utils.syntax.implicits._
@@ -72,6 +72,10 @@ object NgGzipConfig {
 class GzipResponseCompressor extends NgRequestTransformer {
 
   private val configReads: Reads[NgGzipConfig] = NgGzipConfig.format
+
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false

@@ -105,6 +105,10 @@ class W3CTracing extends NgRequestTransformer {
 
   private val opentelemetrysdks = new TrieMap[String, SdkWrapper]()
 
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Monitoring, NgPluginCategory.Analytics)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   def buildOpenTelemetry(config: W3CTracingConfig): SdkWrapper = {
     val sdkTracerProvider = config.kind match {
       case W3CTracingConfigKind.Noop => SdkTracerProvider.builder

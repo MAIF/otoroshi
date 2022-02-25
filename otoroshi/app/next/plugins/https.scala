@@ -11,6 +11,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ForceHttpsTraffic extends NgPreRouting {
 
+  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def core: Boolean               = true
   override def name: String                = "Force HTTPS traffic"
   override def description: Option[String] = "This plugin verifies the current request uses HTTPS".some

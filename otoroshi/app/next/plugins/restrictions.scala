@@ -2,7 +2,7 @@ package otoroshi.next.plugins
 
 import otoroshi.env.Env
 import otoroshi.models.{RestrictionPath, Restrictions}
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator}
+import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
 import play.api.libs.json._
 
@@ -103,6 +103,10 @@ object NgRestrictions {
 class RoutingRestrictions extends NgAccessValidator {
 
   private val configReads: Reads[NgRestrictions] = NgRestrictions.format
+
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.TrafficControl)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean                   = true
   override def name: String                    = "Routing Restrictions"
