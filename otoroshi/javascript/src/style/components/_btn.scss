@@ -1,7 +1,7 @@
 .btn {
   background-color: transparent;
   background: none;
-  margin-right: 5px;
+  // margin-right: 5px;
 }
 
 .btnsService {
@@ -10,6 +10,7 @@
   z-index: 1000;
   background-color: $fondBody;
   padding-bottom: 16px;
+  right: 40px;
 }
 
 .btnsService+div{
@@ -21,7 +22,7 @@
 }
 .displayGroupBtn {
   text-align: right;
-  button.btn {
+  .btn {
     margin-left: 5px;
   }
   .btn-danger:focus {
@@ -56,8 +57,8 @@
 
 
 
-.input-group-btn:last-child>.btn,
-.input-group-btn:last-child>.btn-group {
+.input-group-btn>.btn,
+.input-group-btn>.btn-group {
   margin-left: 4px;
 }
 
@@ -212,4 +213,16 @@
   margin-left: 10px;
   padding: 3px 5px 0px 5px;
   text-shadow: none;
+}
+
+.btn-menu{
+  border-color: $fondNavbar;
+  &:hover{
+    background-color: $fondNavbar;
+    color: #FFF;
+  }
+
+  &:focus{
+    box-shadow:0 0 0 0;
+  }
 }

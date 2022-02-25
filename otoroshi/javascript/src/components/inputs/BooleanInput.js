@@ -33,8 +33,8 @@ export class BooleanInput extends Component {
 
     return (
       <div>
-        <div className="form-group">
-          <label className="col-xs-12 col-sm-2 control-label">
+        <div className="row mb-3">
+          <label className="col-xs-12 col-sm-2 col-form-label">
             {this.props.label} <Help text={this.props.help} />
           </label>
           <div className="col-sm-10">
@@ -44,7 +44,7 @@ export class BooleanInput extends Component {
                 {!value && <OffSwitch onChange={this.toggleOn} />}
               </div>
               <div className="col-sm-6">
-                {this.props.after && <div className="pull-right">{this.props.after()}</div>}
+                {this.props.after && <div className="float-end">{this.props.after()}</div>}
               </div>
             </div>
           </div>
@@ -77,8 +77,8 @@ export class BiColumnBooleanInput extends Component {
 
     return (
       <div>
-        <div className="form-group">
-          <label className="col-xs-12 col-sm-4 control-label">
+        <div className="row mb-3">
+          <label className="col-xs-12 col-sm-4 col-form-label">
             {this.props.label} <Help text={this.props.help} />
           </label>
           <div className="col-sm-8">
@@ -88,7 +88,7 @@ export class BiColumnBooleanInput extends Component {
                 {!value && <OffSwitch onChange={this.toggleOn} />}
               </div>
               <div className="col-sm-6">
-                {this.props.after && <div className="pull-right">{this.props.after()}</div>}
+                {this.props.after && <div className="float-end">{this.props.after()}</div>}
               </div>
             </div>
           </div>

@@ -164,6 +164,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
         frontend = NgFrontend(
           domains = Seq(NgDomainAndPath("new-route.oto.tools")),
           headers = Map.empty,
+          query = Map.empty,
           methods = Seq.empty,
           stripPath = true,
           exact = false

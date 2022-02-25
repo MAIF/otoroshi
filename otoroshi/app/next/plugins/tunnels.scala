@@ -6,7 +6,7 @@ import akka.stream.scaladsl.{Flow, Tcp}
 import akka.util.ByteString
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.next.plugins.api.{NgTunnelHandler, NgTunnelHandlerContext}
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep, NgTunnelHandler, NgTunnelHandlerContext}
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import otoroshi.utils.udp.{Datagram, UdpClient}
 import play.api.http.websocket.{BinaryMessage, Message}
@@ -17,6 +17,10 @@ import scala.concurrent.duration.DurationLong
 import scala.concurrent.{ExecutionContext, Future}
 
 class TcpTunnel extends NgTunnelHandler {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.HandlesTunnel)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Tunnel)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean               = true
   override def name: String                = "TCP Tunnel"
@@ -79,6 +83,10 @@ class TcpTunnel extends NgTunnelHandler {
 }
 
 class UdpTunnel extends NgTunnelHandler {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.HandlesTunnel)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Tunnel)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean               = true
   override def name: String                = "UDP Tunnel"

@@ -37,7 +37,7 @@ class Toast extends Component {
           <small style={{ color: '#fff' }}>{moment().format('YYYY-MM-DD HH:mm:ss')}</small>{' '}
           <button
             type="button"
-            className="btn btn-xs btn-danger"
+            className="btn btn-sm btn-danger"
             onClick={(e) => this.props.close()}>
             X
           </button>

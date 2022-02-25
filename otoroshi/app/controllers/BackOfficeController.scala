@@ -235,7 +235,12 @@ class BackOfficeController(
                 Status(res.status)
                   .sendEntity(
                     HttpEntity.Streamed(
-                      res.bodyAsSource.alsoTo(Sink.onComplete { case e =>
+                      res.bodyAsSource
+                        .recover {
+                          case t: java.util.concurrent.TimeoutException if path.contains("/live") =>
+                            ByteString.empty
+                        }
+                        .alsoTo(Sink.onComplete { case e =>
                         if (flags.logStats)
                           logger.info(
                             s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
@@ -298,6 +303,10 @@ class BackOfficeController(
                     HttpEntity.Streamed(
                       Source
                         .lazySource(() => res.bodyAsSource)
+                        .recover {
+                          case t: java.util.concurrent.TimeoutException if path.contains("/live") =>
+                          ByteString.empty
+                        }
                         .alsoTo(Sink.onComplete { case e =>
                           if (flags.logStats)
                             logger.info(

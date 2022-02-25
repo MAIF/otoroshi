@@ -76,7 +76,8 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
             .map(_.mapValues(UserRights.readFromArray))
             .getOrElse(Map.empty),
           sessionCookieValues =
-            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues())
+            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+          userValidators = (json \ "userValidators").asOpt[Seq[JsValue]].map(_.flatMap(v => UserValidator.format.reads(v).asOpt)).getOrElse(Seq.empty)
         )
       )
     } recover { case e =>
@@ -132,6 +133,7 @@ case class Oauth1ModuleConfig(
     tags: Seq[String],
     metadata: Map[String, String],
     sessionCookieValues: SessionCookieValues,
+    userValidators: Seq[UserValidator] = Seq.empty,
     rightsOverride: Map[String, UserRights] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends AuthModuleConfig {
@@ -158,6 +160,7 @@ case class Oauth1ModuleConfig(
       "accessTokenURL"      -> accessTokenURL,
       "callbackURL"         -> callbackURL,
       "sessionMaxAge"       -> sessionMaxAge,
+      "userValidators"      -> JsArray(userValidators.map(_.json)),
       "metadata"            -> metadata,
       "tags"                -> JsArray(tags.map(JsString.apply)),
       "rightsOverride"      -> JsObject(rightsOverride.mapValues(_.json)),
@@ -442,45 +445,43 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
             })
               .map { data =>
                 FastFuture.successful(
-                  Right(
-                    if (isBoLogin)
-                      BackOfficeUser(
-                        randomId = IdGenerator.token(64),
-                        name = data("name").toString,
-                        email = data("email").toString,
-                        profile = data("profile").asInstanceOf[JsObject],
-                        simpleLogin = false,
-                        authConfigId = authConfig.id,
-                        tags = Seq.empty,
-                        metadata = Map.empty,
-                        rights = authConfig.rightsOverride.getOrElse(
-                          data("email").toString,
-                          UserRights(
-                            Seq(
-                              UserRight(
-                                TenantAccess(authConfig.location.tenant.value),
-                                authConfig.location.teams.map(t => TeamAccess(t.value))
-                              )
+                  if (isBoLogin)
+                    BackOfficeUser(
+                      randomId = IdGenerator.token(64),
+                      name = data("name").toString,
+                      email = data("email").toString,
+                      profile = data("profile").asInstanceOf[JsObject],
+                      simpleLogin = false,
+                      authConfigId = authConfig.id,
+                      tags = Seq.empty,
+                      metadata = Map.empty,
+                      rights = authConfig.rightsOverride.getOrElse(
+                        data("email").toString,
+                        UserRights(
+                          Seq(
+                            UserRight(
+                              TenantAccess(authConfig.location.tenant.value),
+                              authConfig.location.teams.map(t => TeamAccess(t.value))
                             )
                           )
-                        ),
-                        location = authConfig.location
-                      )
-                    else {
-                      PrivateAppsUser(
-                        randomId = IdGenerator.token(64),
-                        name = data("name").toString,
-                        email = data("email").toString,
-                        profile = data("profile").asInstanceOf[JsObject],
-                        authConfigId = authConfig.id,
-                        tags = Seq.empty,
-                        metadata = Map.empty,
-                        location = authConfig.location,
-                        realm = authConfig.cookieSuffix(descriptor.get),
-                        otoroshiData = None
-                      )
-                    }
-                  )
+                        )
+                      ),
+                      location = authConfig.location
+                    ).validate(authConfig.userValidators)
+                  else {
+                    PrivateAppsUser(
+                      randomId = IdGenerator.token(64),
+                      name = data("name").toString,
+                      email = data("email").toString,
+                      profile = data("profile").asInstanceOf[JsObject],
+                      authConfigId = authConfig.id,
+                      tags = Seq.empty,
+                      metadata = Map.empty,
+                      location = authConfig.location,
+                      realm = authConfig.cookieSuffix(descriptor.get),
+                      otoroshiData = None
+                    ).validate(authConfig.userValidators)
+                  }
                 )
               }
               .getOrElse(FastFuture.successful(Left("Missing content type from provider")))

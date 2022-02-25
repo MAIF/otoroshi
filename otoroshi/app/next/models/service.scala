@@ -175,9 +175,10 @@ object NgService {
           frontend = NgFrontend(
             domains = Seq(NgDomainAndPath(s"${domain}${cleanPath}")),
             headers = Map.empty,
+            query = Map.empty,
             methods = methods,
             stripPath = false,
-            exact = true
+            exact = true,
           ),
           backend = NgMinimalBackend(
             targets = targets,

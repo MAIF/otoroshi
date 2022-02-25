@@ -91,7 +91,7 @@ body.white-mode {
   .navbar-nav > .open > a,
   .navbar-nav > .open > a:focus,
   .navbar-nav > .open > a:hover,
-  .navbar-inverse .navbar-nav > li .dropdown-menu,
+  .dropdown-menu,
   textarea.form-control,
   .Select-menu-outer,
   .plugin-doc,
@@ -151,7 +151,7 @@ body.white-mode {
   }
   .dropdown .dropdown-toggle:hover,
   .sub-container__bg-color,
-  .jumbotron {
+  .jumbotron, nav {
     @include bright-mode_background-color--darkest;
   }
 

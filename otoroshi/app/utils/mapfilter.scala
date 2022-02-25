@@ -96,9 +96,12 @@ object Projection {
     if (Operator.isOperator(blueprint) && blueprint.value.head._1 == "$compose") {
       dest = Composition.compose(source, blueprint, applyEl).asOpt[JsObject].getOrElse(Json.obj())
     } else {
+      if (blueprint.keys.contains("$spread") && blueprint.select("$spread").asOpt[Boolean].contains(true)) {
+        dest = dest ++ source.asOpt[JsObject].getOrElse(Json.obj())
+      }
       blueprint.value.foreach {
         case ("$spread", JsBoolean(true))                     =>
-          dest = dest ++ source.asOpt[JsObject].getOrElse(Json.obj())
+          dest = dest - "$spread"
         // direct inclusion
         case (key, JsBoolean(true))                           =>
           dest = dest ++ Json.obj(key -> source.select(key).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
@@ -111,16 +114,16 @@ object Projection {
         // with search
         case (key, o @ JsObject(_)) if Operator.isOperator(o) => {
           o.value.head match {
-            case ("$spread", value) if key == "..." => {
-              val remove = value.select("without").asOpt[Seq[String]].getOrElse(Seq.empty[String])
-              dest = dest ++ (
-                if (remove.isEmpty)
-                  source.asOpt[JsObject].getOrElse(Json.obj())
-                else {
-                  remove.foldLeft(source.asOpt[JsObject].getOrElse(Json.obj()))((a, b) => a - b)
-                }
-              )
-            }
+            // case ("$spread", value) if key == "..." => {
+            //   val remove = value.select("without").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            //   dest = dest ++ (
+            //     if (remove.isEmpty)
+            //       source.asOpt[JsObject].getOrElse(Json.obj())
+            //     else {
+            //       remove.foldLeft(source.asOpt[JsObject].getOrElse(Json.obj()))((a, b) => a - b)
+            //     }
+            //   )
+            // }
             case ("$compose", value)                => {
               dest = dest ++ Json.obj(key -> Composition.compose(source, value, applyEl))
             }

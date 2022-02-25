@@ -6,7 +6,12 @@ export class Help extends Component {
     if (shouldRender) {
       return (
         <i
-          ref={(r) => $(r).tooltip({ container: 'body' })}
+          ref={(r) => {
+            if (r)
+              new bootstrap.Tooltip(r, {
+                container: 'body'
+              })
+          }}
           className="far fa-question-circle"
           data-toggle="tooltip"
           data-placement="top"

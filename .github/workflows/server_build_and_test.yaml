@@ -21,7 +21,7 @@ jobs:
      # setup node to use yarn
     - uses: actions/setup-node@v2
       with:
-        node-version: '13'
+        node-version: '16'
     #test oto
     - uses: coursier/cache-action@v5
     - name: run-tests

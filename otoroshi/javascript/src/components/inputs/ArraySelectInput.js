@@ -79,8 +79,8 @@ export class ArraySelectInput extends Component {
   };
 
   renderOnEmptyValues = () => (
-    <div className="form-group">
-      <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+    <div className="row mb-3">
+      <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 col-form-label">
         {this.props.label} <Help text={this.props.help} />
       </label>
       <div className="col-sm-10">
@@ -125,13 +125,13 @@ export class ArraySelectInput extends Component {
         {values.length === 0 && this.renderOnEmptyValues()}
 
         {values.map((value, idx) => (
-          <div className="form-group" key={idx}>
+          <div className="mb-3" key={idx}>
             {idx === 0 ? (
-              <label className="col-xs-12 col-sm-2 control-label">
+              <label className="col-xs-12 col-sm-2 col-form-label">
                 {this.props.label} <Help text={this.props.help} />
               </label>
             ) : (
-              <label className="col-xs-12 col-sm-2 control-label">&nbsp;</label>
+              <label className="col-xs-12 col-sm-2 col-form-label">&nbsp;</label>
             )}
             <div className="col-sm-10">
               <div style={{ display: 'flex' }}>

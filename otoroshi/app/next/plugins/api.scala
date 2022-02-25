@@ -8,29 +8,24 @@ import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser}
-import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute, NgTarget}
-import otoroshi.next.plugins.api.NgAccess.NgAllowed
+import otoroshi.next.models.{NgPluginInstance, NgRoute, NgTarget}
 import otoroshi.next.proxy.{NgExecutionReport, NgReportPluginSequence, NgReportPluginSequenceItem}
-import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
 import otoroshi.utils.TypedMap
-import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
+import otoroshi.utils.http.WSCookieWithSameSite
+import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
 import play.api.http.websocket.Message
 import play.api.libs.json._
 import play.api.libs.ws.{WSCookie, WSResponse}
-import play.api.mvc.{RequestHeader, Result, Results}
+import play.api.mvc.{Cookie, RequestHeader, Result, Results}
 
 import java.security.cert.X509Certificate
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
-import play.api.mvc.Cookie
-import otoroshi.utils.http.WSCookieWithSameSite
-
-import scala.annotation.tailrec
 
 object NgPluginHelper {
   def pluginId[A](implicit ct: ClassTag[A]): String = s"cp:${ct.runtimeClass.getName}"
@@ -152,7 +147,86 @@ case class NgPluginHttpResponse(
     )
 }
 
+sealed trait NgPluginVisibility {
+  def name: String
+  def json: JsValue = name.json
+}
+object NgPluginVisibility {
+  case object NgInternal extends NgPluginVisibility { def name: String = "internal" }
+  case object NgUserLand extends NgPluginVisibility { def name: String = "userland" }
+}
+
+sealed trait NgPluginCategory {
+  def name: String
+  def json: JsValue = name.json
+}
+
+object NgPluginCategory {
+
+  case object Custom          extends NgPluginCategory { def name: String = "Custom" }
+  case object Other           extends NgPluginCategory { def name: String = "Other" }
+  case object Security        extends NgPluginCategory { def name: String = "Security" }
+  case object Apikey          extends NgPluginCategory { def name: String = "Apikey" }
+  case object Authentication  extends NgPluginCategory { def name: String = "Authentication" }
+  case object AccessControl   extends NgPluginCategory { def name: String = "AccessControl" }
+  case object Logging         extends NgPluginCategory { def name: String = "Logging" }
+  case object TrafficControl  extends NgPluginCategory { def name: String = "TrafficControl" }
+  case object Analytics       extends NgPluginCategory { def name: String = "Analytics" }
+  case object Monitoring      extends NgPluginCategory { def name: String = "Monitoring" }
+  case object Transformations extends NgPluginCategory { def name: String = "Transformations" }
+  case object Headers         extends NgPluginCategory { def name: String = "Headers" }
+  case object Experimental    extends NgPluginCategory { def name: String = "Experimental" }
+  case object Integrations    extends NgPluginCategory { def name: String = "Integrations" }
+  case object Tunnel          extends NgPluginCategory { def name: String = "Tunnel" }
+
+  val all = Seq(
+    Custom,
+    Other,
+    Security,
+    Apikey,
+    Authentication,
+    AccessControl,
+    Logging,
+    TrafficControl,
+    Analytics,
+    Monitoring,
+    Transformations,
+    Headers,
+    Experimental,
+    Integrations,
+    Tunnel
+  )
+}
+
+sealed trait NgStep {
+  def name: String
+  def json: JsValue = name.json
+}
+object NgStep {
+  case object Sink              extends NgStep { def name: String = "Sink" }
+  case object PreRoute          extends NgStep { def name: String = "PreRoute" }
+  case object ValidateAccess    extends NgStep { def name: String = "ValidateAccess" }
+  case object TransformRequest  extends NgStep { def name: String = "TransformRequest" }
+  case object TransformResponse extends NgStep { def name: String = "TransformResponse" }
+  case object MatchRoute        extends NgStep { def name: String = "MatchRoute" }
+  case object HandlesTunnel     extends NgStep { def name: String = "HandlesTunnel" }
+
+  val all = Seq(
+    Sink,
+    PreRoute,
+    ValidateAccess,
+    TransformRequest,
+    TransformResponse,
+    MatchRoute,
+    HandlesTunnel,
+  )
+}
+
 trait NgNamedPlugin extends NamedPlugin { self =>
+  def visibility: NgPluginVisibility
+  def categories: Seq[NgPluginCategory]
+  def tags: Seq[String] = Seq.empty
+  def steps: Seq[NgStep]
   override def pluginType: PluginType         = PluginType.CompositeType
   override def configRoot: Option[String]     = None
   override def configSchema: Option[JsObject] =
@@ -352,7 +426,7 @@ object NgPreRouting {
 }
 
 trait NgPreRouting extends NgPlugin {
-  def isPreRouteAsync: Boolean
+  def isPreRouteAsync: Boolean = true
   def preRouteSync(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Either[NgPreRoutingError, Done] =
     NgPreRouting.done
   def preRoute(
@@ -492,8 +566,8 @@ trait NgRequestTransformer extends NgPlugin {
   def transformsRequest: Boolean  = true
   def transformsResponse: Boolean = true
   def transformsError: Boolean    = true
-  def isTransformRequestAsync: Boolean
-  def isTransformResponseAsync: Boolean
+  def isTransformRequestAsync: Boolean = true
+  def isTransformResponseAsync: Boolean = true
 
   def beforeRequest(
       ctx: NgBeforeRequestContext
@@ -566,7 +640,7 @@ object NgAccess {
 }
 
 trait NgAccessValidator extends NgNamedPlugin {
-  def isAccessAsync: Boolean
+  def isAccessAsync: Boolean = true
   def accessSync(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): NgAccess     = NgAccess.NgAllowed
   def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = accessSync(ctx).vfuture
 }
@@ -601,7 +675,7 @@ case class NgRequestSinkContext(
 }
 
 trait NgRequestSink extends NgNamedPlugin {
-  def isSinkAsync: Boolean
+  def isSinkAsync: Boolean = true
   def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean       = false
   def handleSync(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Result     =
     Results.NotImplemented(Json.obj("error" -> "not implemented yet"))
@@ -659,6 +733,11 @@ trait NgTunnelHandler extends NgNamedPlugin with NgAccessValidator {
 
 class NgMergedRequestTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgRequestTransformer]])
     extends NgRequestTransformer {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+
   override def transformsRequest: Boolean        = true
   override def isTransformRequestAsync: Boolean  = true
   override def isTransformResponseAsync: Boolean = true
@@ -736,6 +815,11 @@ class NgMergedRequestTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrap
 
 class NgMergedResponseTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgRequestTransformer]])
     extends NgRequestTransformer {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+
   override def transformsResponse: Boolean       = true
   override def isTransformRequestAsync: Boolean  = true
   override def isTransformResponseAsync: Boolean = true
@@ -812,6 +896,11 @@ class NgMergedResponseTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWra
 }
 
 class NgMergedPreRouting(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgPreRouting]]) extends NgPreRouting {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+
   override def isPreRouteAsync: Boolean = true
   override def preRoute(
       _ctx: NgPreRoutingContext
@@ -887,6 +976,11 @@ class NgMergedPreRouting(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgPr
 
 class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgAccessValidator]])
     extends NgAccessValidator {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+
   override def isAccessAsync: Boolean = true
   override def access(_ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     def next(plugins: Seq[NgPluginWrapper[NgAccessValidator]]): Future[NgAccess] = {

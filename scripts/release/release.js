@@ -385,7 +385,7 @@ async function installDependencies(location) {
 async function releaseOtoroshi(from, to, next, last, location, dryRun) {
   console.log(`Releasing Otoroshi from version '${from}' to version '${to}'/'${next}' (${location})`);
   console.log(`Don't forget to set JAVA_HOME to JDK8_HOME and to docker login`);
-  console.log(`Don't forget to setup nvm with latest 13.x`);
+  console.log(`Don't forget to setup nvm with latest 16.x`);
   console.log(`Don't forget to update the CHANGELOG file before starting`);
   console.log(`Press a key to continue ...`)
   await keypress();
@@ -489,7 +489,7 @@ releaseOtoroshi(releaseFrom, releaseTo, releaseNext, releaseLast, location, dryR
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/adoptopenjdk-11.jdk//Contents/Home
 export JDK8_HOME=/Library/Java/JavaVirtualMachines/adoptopenjdk-11.jdk//Contents/Home
 export PATH=/Library/Java/JavaVirtualMachines/adoptopenjdk-11.jdk//Contents/Home/bin:$PATH
-nvm use 13
+nvm use 16
 docker login
 node release.js --from=1.5.0-dev --to=1.5.0-alpha.13 --next=1.5.0-dev --last=1.5.0-alpha.12 --location=/Users/mathieuancelin/projects/otoroshi
 

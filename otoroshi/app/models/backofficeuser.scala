@@ -1,7 +1,7 @@
 package otoroshi.models
 
 import akka.http.scaladsl.util.FastFuture._
-import otoroshi.auth.AuthModuleConfig
+import otoroshi.auth.{AuthModuleConfig, ValidableUser}
 import otoroshi.env.Env
 import org.joda.time.DateTime
 import play.api.libs.json._
@@ -35,6 +35,7 @@ case class BackOfficeUser(
     rights: UserRights,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends RefreshableUser
+    with ValidableUser
     with EntityLocationSupport {
 
   def internalId: String               = randomId

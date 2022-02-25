@@ -54,12 +54,13 @@ class AuthController(
   ): Future[Result] = {
     import otoroshi.utils.http.RequestImplicits._
 
-    val hash = auth match {
+    val hash: String = auth match {
       case module: GenericOauth2ModuleConfig if module.noWildcardRedirectURI =>
         val unsignedState = decryptState(req)
         logger.debug(s"Decoded state : ${Json.prettyPrint(unsignedState)}")
-        (unsignedState \ "hash").asOpt[String].getOrElse(Some("--"))
-      case _                                                                 => req.getQueryString("hash").orElse(req.session.get("hash")).getOrElse(Some("--"))
+        (unsignedState \ "hash").asOpt[String].getOrElse("--")
+      case _ =>
+        req.getQueryString("hash").orElse(req.session.get("hash")).getOrElse("--")
     }
 
     val expected = env.sign(s"${auth.id}:::$descId")

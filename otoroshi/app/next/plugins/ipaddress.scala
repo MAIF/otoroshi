@@ -39,6 +39,10 @@ class IpAddressAllowedList extends NgAccessValidator {
 
   private val configReads: Reads[NgIpAddressesConfig] = NgIpAddressesConfig.format
 
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Security)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def core: Boolean                   = true
   override def name: String                    = "IP allowed list"
   override def description: Option[String]     =
@@ -84,6 +88,10 @@ class IpAddressAllowedList extends NgAccessValidator {
 class IpAddressBlockList extends NgAccessValidator {
 
   private val configReads: Reads[NgIpAddressesConfig] = NgIpAddressesConfig.format
+
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Security)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean                   = true
   override def name: String                    = "IP block list"
@@ -151,6 +159,10 @@ class EndlessHttpResponse extends NgRequestTransformer {
 
   // TODO: should be a pre-route to be faster in the pipeline
   private val configReads: Reads[NgEndlessHttpResponseConfig] = NgEndlessHttpResponseConfig.format
+
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false

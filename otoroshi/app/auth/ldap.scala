@@ -137,7 +137,8 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
             .map(_.mapValues(GroupRights.reads).collect { case (key, Some(v)) =>
               (key, v)
             })
-            .getOrElse(Map.empty)
+            .getOrElse(Map.empty),
+          userValidators = (json \ "userValidators").asOpt[Seq[JsValue]].map(_.flatMap(v => UserValidator.format.reads(v).asOpt)).getOrElse(Seq.empty)
         )
       )
     } recover { case e =>
@@ -204,6 +205,7 @@ case class LdapAuthModuleConfig(
     name: String,
     desc: String,
     sessionMaxAge: Int = 86400,
+    userValidators: Seq[UserValidator] = Seq.empty,
     basicAuth: Boolean = false,
     allowEmptyPassword: Boolean = false,
     serverUrls: Seq[String] = Seq.empty,
@@ -247,6 +249,7 @@ case class LdapAuthModuleConfig(
       "basicAuth"               -> basicAuth,
       "allowEmptyPassword"      -> allowEmptyPassword,
       "sessionMaxAge"           -> sessionMaxAge,
+      "userValidators"          -> JsArray(userValidators.map(_.json)),
       "serverUrls"              -> serverUrls,
       "searchBase"              -> searchBase,
       "userBase"                -> userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -588,24 +591,22 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
   def bindUser(username: String, password: String, descriptor: ServiceDescriptor): Either[String, PrivateAppsUser] = {
     authConfig.bindUser(username, password).toOption match {
       case Some(user) =>
-        Right(
-          PrivateAppsUser(
-            randomId = IdGenerator.token(64),
-            name = user.name,
-            email = user.email,
-            profile = user.asJson,
-            realm = authConfig.cookieSuffix(descriptor),
-            // otoroshiData = authConfig.dataOverride.get(user.email).map(v => authConfig.extraMetadata.deepMerge(v)).orElse(Some(user.metadata)),
-            otoroshiData = authConfig.dataOverride
-              .get(user.email)
-              .map(v => authConfig.extraMetadata.deepMerge(v))
-              .orElse(Some(authConfig.extraMetadata.deepMerge(user.metadata))),
-            authConfigId = authConfig.id,
-            tags = Seq.empty,
-            metadata = Map.empty,
-            location = authConfig.location
-          )
-        )
+        PrivateAppsUser(
+          randomId = IdGenerator.token(64),
+          name = user.name,
+          email = user.email,
+          profile = user.asJson,
+          realm = authConfig.cookieSuffix(descriptor),
+          // otoroshiData = authConfig.dataOverride.get(user.email).map(v => authConfig.extraMetadata.deepMerge(v)).orElse(Some(user.metadata)),
+          otoroshiData = authConfig.dataOverride
+            .get(user.email)
+            .map(v => authConfig.extraMetadata.deepMerge(v))
+            .orElse(Some(authConfig.extraMetadata.deepMerge(user.metadata))),
+          authConfigId = authConfig.id,
+          tags = Seq.empty,
+          metadata = Map.empty,
+          location = authConfig.location
+        ).validate(authConfig.userValidators)
       case None       => Left(s"You're not authorized here")
     }
   }
@@ -621,52 +622,50 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
   def bindAdminUser(username: String, password: String): Either[String, BackOfficeUser] = {
     authConfig.bindUser(username, password).toOption match {
       case Some(user) =>
-        Right(
-          BackOfficeUser(
-            randomId = IdGenerator.token(64),
-            name = user.name,
-            email = user.email,
-            profile = user.asJson,
-            simpleLogin = false,
-            authConfigId = authConfig.id,
-            tags = Seq.empty,
-            metadata = Map.empty,
-            rights =
-              if (authConfig.superAdmins) UserRights.superAdmin
-              else {
-                user.userRights match {
-                  case Some(userRight) if userRightContainsTenant(userRight) =>
-                    hasOverrideRightsForEmailAndTenant(user.email) match {
-                      case Some(rightOverride) => UserRights(Seq(rightOverride))
-                      case None                =>
-                        UserRights(
-                          Seq(
-                            userRight.rights
-                              .find(f =>
-                                f.tenant.containsWildcard ||
-                                f.tenant.value.equals(authConfig.location.tenant.value)
-                              )
-                              .get
-                          )
-                        )
-                    }
-                  case None                                                  =>
-                    authConfig.rightsOverride.getOrElse(
-                      user.email,
+        BackOfficeUser(
+          randomId = IdGenerator.token(64),
+          name = user.name,
+          email = user.email,
+          profile = user.asJson,
+          simpleLogin = false,
+          authConfigId = authConfig.id,
+          tags = Seq.empty,
+          metadata = Map.empty,
+          rights =
+            if (authConfig.superAdmins) UserRights.superAdmin
+            else {
+              user.userRights match {
+                case Some(userRight) if userRightContainsTenant(userRight) =>
+                  hasOverrideRightsForEmailAndTenant(user.email) match {
+                    case Some(rightOverride) => UserRights(Seq(rightOverride))
+                    case None                =>
                       UserRights(
                         Seq(
-                          UserRight(
-                            TenantAccess(authConfig.location.tenant.value),
-                            authConfig.location.teams.map(t => TeamAccess(t.value))
-                          )
+                          userRight.rights
+                            .find(f =>
+                              f.tenant.containsWildcard ||
+                              f.tenant.value.equals(authConfig.location.tenant.value)
+                            )
+                            .get
+                        )
+                      )
+                  }
+                case None                                                  =>
+                  authConfig.rightsOverride.getOrElse(
+                    user.email,
+                    UserRights(
+                      Seq(
+                        UserRight(
+                          TenantAccess(authConfig.location.tenant.value),
+                          authConfig.location.teams.map(t => TeamAccess(t.value))
                         )
                       )
                     )
-                }
-              },
-            location = authConfig.location
-          )
-        )
+                  )
+              }
+            },
+          location = authConfig.location
+        ).validate(authConfig.userValidators)
       case None       => Left(s"You're not authorized here")
     }
   }
@@ -745,7 +744,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             .getUserForToken(token)
             .map(_.flatMap(a => PrivateAppsUser.fmt.reads(a).asOpt))
             .map {
-              case Some(user) => Right(user)
+              case Some(user) => user.validate(authConfig.userValidators)
               case None       => Left("No user found")
             }
         case _           => FastFuture.successful(Left("Forbidden access"))

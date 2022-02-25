@@ -11,7 +11,6 @@
         <meta name="theme-color" content="#000000">
         <meta name="robots" content="noindex, nofollow">
         <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap.min.css")">
-        <!-- <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap-theme.min.css")"> -->
         @if(_env.liveJs) {
             <link rel="stylesheet" href="//localhost:3040/assets/javascripts/bundle/backoffice.css">
 
@@ -36,6 +35,7 @@
             <script type="text/javascript" src="@routes.Assets.versioned(s"javascripts/bundle/backoffice.js?v=${_env.hash}")"></script>
         }
         <script type="text/javascript">window.__env = '@_env.env';</script>
+        <script type="text/javascript" src="@routes.Assets.versioned("javascripts/bootstrap.bundle.min.js")"></script>
         <script type="text/javascript" src="@routes.Assets.versioned(s"javascripts/dark-light-mode.js?v=${_env.hash}")"></script>
         @moreScripts
     </body>

@@ -52,6 +52,10 @@ object NgHeaderValuesConfig {
 
 class OverrideHost extends NgRequestTransformer {
 
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false
   override def transformsRequest: Boolean        = true
@@ -80,6 +84,10 @@ class OverrideHost extends NgRequestTransformer {
 class HeadersValidation extends NgAccessValidator {
 
   private val configReads: Reads[NgHeaderValuesConfig] = NgHeaderValuesConfig.format
+
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean                   = true
   override def name: String                    = "Headers validation"
@@ -120,6 +128,10 @@ class AdditionalHeadersOut extends NgRequestTransformer {
 
   private val configReads: Reads[NgHeaderValuesConfig] = NgHeaderValuesConfig.format
 
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false
   override def transformsRequest: Boolean        = false
@@ -155,6 +167,10 @@ class AdditionalHeadersIn extends NgRequestTransformer {
 
   private val configReads: Reads[NgHeaderValuesConfig] = NgHeaderValuesConfig.format
 
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false
   override def transformsRequest: Boolean        = true
@@ -189,6 +205,10 @@ class AdditionalHeadersIn extends NgRequestTransformer {
 class MissingHeadersIn extends NgRequestTransformer {
 
   private val configReads: Reads[NgHeaderValuesConfig] = NgHeaderValuesConfig.format
+
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false
@@ -232,6 +252,10 @@ class MissingHeadersOut extends NgRequestTransformer {
 
   private val configReads: Reads[NgHeaderValuesConfig] = NgHeaderValuesConfig.format
 
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false
   override def transformsRequest: Boolean        = false
@@ -271,6 +295,10 @@ class MissingHeadersOut extends NgRequestTransformer {
 
 class RemoveHeadersOut extends NgRequestTransformer {
 
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   private val configReads: Reads[NgHeaderNamesConfig] = NgHeaderNamesConfig.format
 
   override def core: Boolean                     = true
@@ -298,6 +326,10 @@ class RemoveHeadersIn extends NgRequestTransformer {
 
   private val configReads: Reads[NgHeaderNamesConfig] = NgHeaderNamesConfig.format
 
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false
   override def transformsRequest: Boolean        = true
@@ -322,6 +354,10 @@ class RemoveHeadersIn extends NgRequestTransformer {
 class SendOtoroshiHeadersBack extends NgRequestTransformer {
 
   import otoroshi.utils.http.HeadersHelperImplicits._
+
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false
@@ -388,6 +424,10 @@ class SendOtoroshiHeadersBack extends NgRequestTransformer {
 }
 
 class XForwardedHeaders extends NgRequestTransformer {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false

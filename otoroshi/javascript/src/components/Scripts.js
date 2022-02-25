@@ -120,27 +120,15 @@ class PluginsDescription extends Component {
             this.findNode(
               script,
               <div
-                className="form-group"
-                style={{
-                  marginLeft: 10,
-                  marginRight: 50,
-                }}>
-                <label className="col-xs-12 col-sm-2 control-label" />
+                className="row mb-3">
+                <label className="col-form-label" />
                 {!this.state.display[script.id] && (
                   <div
-                    style={{
-                      marginTop: 10,
-                      padding: 10,
-                      borderRadius: 5,
-                      width: '100%',
-                      display: 'flex',
-                      flexDirection: 'row',
-                      justifyContent: 'flex-end',
-                      height: 45,
-                    }}>
+                    className="d-flex justify-content-end input-group-btn"
+                    >
                     {script.id.indexOf('cp:otoroshi.') === 0 && (
                       <a
-                        className="btn btn-xs btn-info"
+                        className="btn btn-sm btn-info"
                         target="_blank"
                         href={`https://maif.github.io/otoroshi/manual/plugins/${script.id
                           .replace('cp:', '')
@@ -156,7 +144,7 @@ class PluginsDescription extends Component {
                     )}
                     <button
                       type="button"
-                      className="btn btn-xs btn-info"
+                      className="btn btn-sm btn-info"
                       onClick={(e) => this.toogle(script)}
                       _style={{
                         position: 'absolute',
@@ -168,7 +156,7 @@ class PluginsDescription extends Component {
                   </div>
                 )}
                 {false && !this.state.display[script.id] && (
-                  <div className="col-sm-10">
+                  <div className="col-sm-12">
                     <div
                       className="plugin-doc"
                       style={{
@@ -178,7 +166,7 @@ class PluginsDescription extends Component {
                       }}>
                       <button
                         type="button"
-                        className="btn btn-xs btn-info"
+                        className="btn btn-sm btn-info"
                         onClick={(e) => this.toogle(script)}
                         style={{
                           position: 'absolute',
@@ -191,7 +179,7 @@ class PluginsDescription extends Component {
                   </div>
                 )}
                 {this.state.display[script.id] && (
-                  <div className="col-sm-10">
+                  <div className="col-sm-12">
                     <div
                       className="plugin-doc"
                       style={{
@@ -202,7 +190,7 @@ class PluginsDescription extends Component {
                           {!!script.defaultConfig && (
                             <button
                               type="button"
-                              className="btn btn-xs btn-info"
+                              className="btn btn-sm btn-info"
                               onClick={(e) => this.inject(script)}
                               _style={{
                                 position: 'absolute',
@@ -215,7 +203,7 @@ class PluginsDescription extends Component {
                         </div>
                         {script.id.indexOf('cp:otoroshi.') === 0 && (
                           <a
-                            className="btn btn-xs btn-info"
+                            className="btn btn-sm btn-info"
                             target="_blank"
                             href={`https://maif.github.io/otoroshi/manual/plugins/${script.id
                               .replace('cp:', '')
@@ -231,7 +219,7 @@ class PluginsDescription extends Component {
                         )}
                         <button
                           type="button"
-                          className="btn btn-xs btn-info"
+                          className="btn btn-sm btn-info"
                           onClick={(e) => this.toogle(script)}
                           _style={{
                             position: 'absolute',
@@ -325,9 +313,9 @@ export class Scripts extends Component {
           config={this.props.config}
           onChangeConfig={this.props.onChangeConfig}
         />
-        <div className="form-group">
-          <label className="col-xs-12 col-sm-2 control-label" />
-          <div className="col-sm-10">
+        <div className="row mb-3">
+          <label className="col-xs-12 col-sm-2 col-form-label" />
+          <div className="col-sm-10 input-group-btn">
             {this.props.refs && this.props.refs.length === 0 && (
               <a href={`/bo/dashboard/plugins/add`} className="btn btn-sm btn-primary">
                 <i className="fas fa-plus" /> Create a new plugin.

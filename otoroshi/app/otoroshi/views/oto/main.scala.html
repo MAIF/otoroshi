@@ -19,8 +19,11 @@
     </head>
     <body>
         <div class="container">
-            <div class="header clearfix">
-                <nav class="navbar-inverse">
+            <div class="header d-flex justify-content-between align-items-start">
+                <a class="navbar-brand d-flex p-2" href="/" >
+                    <span>おとろし</span>&nbsp; Otoroshi
+                </a>
+                <nav class="navbar-inverse p-2">
                     <ul class="nav navbar-nav navbar-right">
                         <li>
                             <a href="">
@@ -29,9 +32,6 @@
                         </li>
                     </ul>
                 </nav>
-                <a class="navbar-brand" href="/" style="display: flex;">
-                    <span>おとろし</span>&nbsp; Otoroshi
-                </a>
             </div>
             @content
         </div>

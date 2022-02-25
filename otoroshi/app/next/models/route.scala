@@ -110,8 +110,28 @@ case class NgRoute(
           }
           .applyOnIf(frontend.headers.nonEmpty) { firstRes =>
             val headers   = request.headers.toSimpleMap.map(t => (t._1.toLowerCase, t._2))
-            val secondRes = frontend.headers.map(t => (t._1.toLowerCase, t._2)).forall { case (key, value) =>
-              headers.get(key).contains(value)
+            val secondRes = frontend.headers.map(t => (t._1.toLowerCase, t._2)).forall {
+              case (key, value) if value.startsWith("Regex(") =>
+                headers.get(key).exists(str => RegexPool.regex(value.substring(6).init).matches(str))
+              case (key, value) if value.startsWith("Wildcard(") =>
+                headers.get(key).exists(str => RegexPool.apply(value.substring(9).init).matches(str))
+              case (key, value) => headers.get(key).contains(value)
+            }
+            firstRes && secondRes
+          }.applyOnIf(frontend.query.nonEmpty) { firstRes =>
+            val query   = request.queryString
+            val secondRes = frontend.query.forall {
+              case (key, value) if value.startsWith("Regex(") =>
+                query.get(key).exists { values =>
+                  val regex = RegexPool.regex(value.substring(6).init)
+                  values.exists(str => regex.matches(str))
+                }
+              case (key, value) if value.startsWith("Wildcard(") =>
+                query.get(key).exists { values =>
+                  val regex = RegexPool.apply(value.substring(9).init)
+                  values.exists(str => regex.matches(str))
+                }
+              case (key, value) => query.get(key).exists(_.contains(value))
             }
             firstRes && secondRes
           }
@@ -161,6 +181,7 @@ case class NgRoute(
   lazy val openapiUrl: Option[String]           = metadata.get("otoroshi-core-openapi-url").filter(_.nonEmpty)
   lazy val originalRouteId: Option[String]      = metadata.get("otoroshi-core-original-route-id").filter(_.nonEmpty)
 
+  lazy val legacy: ServiceDescriptor = serviceDescriptor
   lazy val serviceDescriptor: ServiceDescriptor = {
     ServiceDescriptor(
       location = location,
@@ -562,9 +583,10 @@ object NgRoute {
     frontend = NgFrontend(
       domains = Seq(NgDomainAndPath("fake-next-gen.oto.tools")),
       headers = Map.empty,
+      query = Map.empty,
       methods = Seq.empty,
       stripPath = true,
-      exact = false
+      exact = false,
     ),
     backendRef = None,
     backend = NgBackend(
@@ -692,9 +714,10 @@ object NgRoute {
           dap.map(NgDomainAndPath.apply).distinct
         },
         headers = service.matchingHeaders,
+        query = Map.empty,
         methods = Seq.empty, // get from restrictions ???
         stripPath = service.stripPath,
-        exact = false
+        exact = false,
       ),
       backendRef = None,
       backend = NgBackend(

@@ -78,6 +78,10 @@ class Cors extends NgRequestTransformer with NgPreRouting {
 
   private val configReads: Reads[NgCorsSettings] = NgCorsSettings.format
 
+  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute, NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Security)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false
   override def transformsRequest: Boolean        = false
