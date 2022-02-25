@@ -14,7 +14,7 @@ export default ({ lineId, value }) => {
     const [selectedNode, setSelectedNode] = useState()
 
     const [plugins, setPlugins] = useState([])
-    const [filteredPlugins, setfilteredPlugins] = useState([])
+    const [filteredPlugins, setFilteredPlugins] = useState([])
 
     const [route, setRoute] = useState(value)
 
@@ -26,7 +26,7 @@ export default ({ lineId, value }) => {
             .then(cpts => cpts.filter(c => c.id && c.id.startsWith('cp:otoroshi.next.plugins')))
             .then(plugins => {
                 setPlugins(plugins)
-                setfilteredPlugins(plugins)
+                setFilteredPlugins(plugins)
                 setNodes(DEFAULT_FLOW)
             })
     }, [])
@@ -57,7 +57,7 @@ export default ({ lineId, value }) => {
             setElements([
                 ...elements,
                 {
-                    ...components.find(e => e.id === node.parent),
+                    ...plugins.find(e => e.id === node.parent),
                     parent: node.parent
                 }
             ])
@@ -67,7 +67,7 @@ export default ({ lineId, value }) => {
                 elements: element.group === node.parent ? [
                     ...element.elements,
                     {
-                        ...components.find(e => e.group === node.parent).elements?.find(elt => elt.id === node.id),
+                        ...plugins.find(e => e.group === node.parent).elements?.find(elt => elt.id === node.id),
                         parent: element.group
                     }
                 ] : element.elements
@@ -77,16 +77,21 @@ export default ({ lineId, value }) => {
     const addNode = (onFlow, node) => {
         if ((onFlow === "onOutputStream" && node.onOutputStream) ||
             (onFlow === 'onTargetStream' && node.onTargetStream) ||
-            onFlow === 'onInFlow' && (!node.onOutputStream && !node.onTargetStream)) {
-            setElements(elements?.map(n => ({
-                ...n,
-                elements: n.elements?.filter(element => element.id !== node.id)
-            })))
+            onFlow === 'onInputStream' && (!node.onOutputStream && !node.onTargetStream)) {
 
-            setNodes([
-                ...nodes,
-                node
-            ])
+            setPlugins(plugins.map(p => {
+                if (p.id === node.id)
+                    p.selected = true
+                return p
+            }))
+            setFilteredPlugins(plugins.filter(p => p.id !== node.id))
+
+            setNodes([...nodes, {
+                ...node,
+                onOutputStream: onFlow === 'onOutputStream',
+                onTargetStream: onFlow === 'onTargetStream',
+                onInputStream: onFlow === 'onInputStream'
+            }])
 
             if (node.switch)
                 changeValues([
@@ -94,18 +99,15 @@ export default ({ lineId, value }) => {
                 ])
 
             setSelectedNode(node)
+            console.log(node)
         }
         // TODO - disable out anchor when IN element is selected
     }
 
-    const Dot = ({ icon, children, flat, revertFlat, clickable, onClick, highlighted = true, style = {} }) => <div className="dot" style={{
-        borderRadius: "50%",
-        borderBottomLeftRadius: flat ? "25%" : "50%",
-        borderBottomRightRadius: flat ? "25%" : "50%",
-        borderTopLeftRadius: revertFlat ? "25%" : "50%",
-        borderTopRightRadius: revertFlat ? "25%" : "50%",
+    const Dot = ({ icon, children, clickable, onClick, highlighted = true, style = {} }) => <div className='dot' style={{
         cursor: clickable ? 'pointer' : 'initial',
         opacity: highlighted ? 1 : .25,
+        backgroundColor: highlighted ? '#f9b000': '#494948',
         ...style
     }} onClick={onClick ? e => {
         e.stopPropagation()
@@ -116,17 +118,18 @@ export default ({ lineId, value }) => {
         {children && children}
     </div>
 
-    const Anchor = ({ flow = 'onInFlow', flat, text, highlighted = true, mt = 0 }) => <div className={`anchor mt-${mt}`}
+    const Anchor = ({ flow = 'onInputStream', text, highlighted = true, mt = 'initial' }) => <div className='anchor'
         onDragOver={allowDrop} onDrop={e => onDrop(e, flow)}
-        style={{ opacity: highlighted ? 1 : .25 }}>
-        <span style={{
-            textAlign: 'center',
-            border: flat ? 'transparent' : '1px dotted #f9b000'
-        }}>{text}</span>
+        style={{
+            opacity: highlighted ? 1 : .25,
+            marginTop: mt
+        }}>
+        <div>{text}</div>
     </div>
 
-    const Link = ({ highlighted = true }) => <div className="link" style={{
-        opacity: highlighted ? 1 : .25
+    const Link = ({ highlighted = true, flex }) => <div className="link" style={{
+        opacity: highlighted ? 1 : .25,
+        flex: flex ? 1 : 'initial'
     }}></div>
 
     const Tab = ({ text }) => (
@@ -135,103 +138,27 @@ export default ({ lineId, value }) => {
         </div>
     )
 
-    const NodeElement = ({ element, setSelectedNode, hideLink, selectedNode }) => {
-        const { id, parent } = element
-        const group = components.find(element => element.group === parent || element.id === id)
+    const NodeElement = ({ element, setSelectedNode, hideLink, selectedNode, isLast }) => {
+        const { id, name } = element
         const highlighted = !selectedNode || selectedNode.id === id
 
         return <>
-            <Dot clickable={true} onClick={e => {
-                e.stopPropagation()
-                setSelectedNode(element)
-            }} highlighted={highlighted}>
+            <Dot clickable={true}
+                onClick={e => {
+                    e.stopPropagation()
+                    setSelectedNode(element)
+                }} highlighted={highlighted}>
                 <span style={{
-                    position: 'relative',
-                    backgroundColor: !selectedNode ? '#494948' : selectedNode.id === element.id ? '#f9b000' : '#494948',
                     padding: '4px 12px',
-                    border: '1px solid #f9b000',
-                    borderRadius: '6px',
+                    borderRadius: '4px',
                     color: "#fff",
                     whiteSpace: 'nowrap',
                     width: "fit-content"
                 }}>
-                    {id}
-                    <div style={{
-                        backgroundColor: "#f9b000",
-                        position: 'absolute',
-                        left: '-16px',
-                        top: '-16px',
-                        borderRadius: '8px'
-                    }}>
-                        <i
-                            className={`fas fa-${group.icon || 'list'}`}
-                            style={{
-                                color: "#fff",
-                                padding: '6px'
-                            }}
-                        />
-                    </div>
+                    {name || id}
                 </span>
             </Dot>
-            {!hideLink && <Link highlighted={highlighted} />}
-        </>
-    }
-
-    const GroupElement = ({ values, hideLink, selectedNode, setSelectedNode }) => {
-        if (values.length === 1)
-            return <NodeElement element={values[0]}
-                selectedNode={selectedNode}
-                setSelectedNode={setSelectedNode} />
-
-        const { id, parent } = values[0]
-        const group = components.find(element => element.group === parent || element.id === id)
-
-        return <>
-            <Dot clickable={true} style={{
-                height: `${values.length * 36}px`
-            }}>
-                <span style={{
-                    position: 'relative',
-                    backgroundColor: '#494948',
-                    padding: '4px 12px',
-                    border: '1px solid #f9b000',
-                    borderRadius: '6px',
-                    color: "#fff",
-                    whiteSpace: 'nowrap',
-                    width: "fit-content"
-                }}>
-                    {values.map((node, i) => {
-                        return <div style={{
-                            padding: "3px 8px",
-                            textAlign: 'center',
-                            border: "1px solid #f9b000",
-                            backgroundColor: !selectedNode ? 'transparent' : selectedNode.id === node.id ? '#f9b000' : 'transparent',
-                            color: "#fff",
-                            borderRadius: "8px",
-                            margin: "4px 0",
-                            opacity: !selectedNode ? 1 : selectedNode.id === node.id ? 1 : .25
-                        }} key={`${node.parent}${i}`} onClick={() => setSelectedNode(node)}>
-                            {node.id}
-                        </div>
-                    })}
-                    <div style={{
-                        backgroundColor: "#f9b000",
-                        position: 'absolute',
-                        left: '-16px',
-                        top: '-16px',
-                        borderRadius: '8px'
-                    }}>
-                        <i
-                            className={`fas fa-${group.icon || 'list'}`}
-                            style={{
-                                color: "#fff",
-                                padding: '6px'
-                            }}
-                        />
-                    </div>
-                </span>
-            </Dot>
-            {!hideLink && <Link />}
+            {!hideLink && <Link highlighted={highlighted} flex={isLast} />}
         </>
     }
 
@@ -270,6 +197,10 @@ export default ({ lineId, value }) => {
         <span>Update route</span>
     </button>
 
+    const inputNodes = nodes.filter(f => f.onInputStream)
+    const targetNodes = nodes.filter(f => f.onTargetStream)
+    const outputNodes = nodes.filter(f => f.onOutputStream && !f.onTargetStream)
+
     return (
         <div className="h-100" onClick={() => setSelectedNode(undefined)}>
             <SaveButton />
@@ -285,43 +216,32 @@ export default ({ lineId, value }) => {
                         top: 0,
                         zIndex: -1
                     }}></div>
-                    <div className="group">
-                        <div className="group-header">
-                            <i className={`fas fa-list group-icon`} />
-                            <span style={{ color: "#fff", paddingLeft: "12px" }}>Available</span>
-                            <div style={{ marginLeft: 'auto', display: 'flex', width: '64px' }}>
-                                <span className="group-size">{filteredPlugins.length}</span>
-                            </div>
-                        </div>
-                    </div>
                     <SearchBar handleSearch={handleSearch} />
-                    <PluginsStack elements={filteredPlugins} onDrag={onDrag} addNode={addNode} />
+                    <PluginsStack elements={filteredPlugins.filter(p => !p.selected)} onDrag={onDrag} addNode={addNode} />
                 </div>
             </div>
             <div className="col-sm-8">
                 <div className="row h-100">
-                    <div className="col-sm-4">
+                    <div className="col-sm-4" style={{ display: 'flex', flexDirection: 'column' }}>
                         <Tab text="Route" />
                         <div className="main-view">
-                            <Dot icon="arrow-down" flat={true} />
+                            <Dot icon="arrow-down" />
                             <Link highlighted={!selectedNode} />
-                            {nodes
-                                .filter(f => f.onInputStream)
-                                .map((value, i) => <GroupElement
-                                    values={value}
-                                    key={`inNodes${i}`}
-                                    selectedNode={selectedNode}
-                                    setSelectedNode={setSelectedNode}
-                                />)}
+                            {inputNodes.map((value, i) => <NodeElement
+                                element={value}
+                                key={`inNodes${i}`}
+                                selectedNode={selectedNode}
+                                setSelectedNode={setSelectedNode}
+                                isLast={(inputNodes.length - 1) === i}
+                            />)}
                             <Anchor text="Drop in elements here" highlighted={!selectedNode} />
-                            <Link highlighted={!selectedNode} />
+                            <Link highlighted={!selectedNode} flex={true} />
                         </div>
                         <div className="main-view"
                             style={{
                                 backgroundColor: "#494948",
-                                border: '1px solid #f9b000',
-                                paddingBottom: "8px",
-                                paddingTop: '32px',
+                                borderTop: '2px solid #f9b000',
+                                padding: '32px 6px 8px 6px',
                                 position: 'relative',
                                 opacity: !selectedNode ? 1 : !selectedNode.onTargetStream ? .25 : 1
                             }}>
@@ -336,47 +256,46 @@ export default ({ lineId, value }) => {
                                     borderRadius: "50%"
                                 }}>
                             </i>
-                            {nodes
-                                .filter(f => f.onTargetStream)
-                                .map((value, i, arr) => <GroupElement
-                                    values={value}
-                                    key={`targetNodes${i}`}
-                                    selectedNode={selectedNode}
-                                    setSelectedNode={setSelectedNode}
-                                    hideLink={arr.length - 1 === i} />)}
+                            {targetNodes.map((value, i, arr) => <NodeElement
+                                element={value}
+                                key={`targetNodes${i}`}
+                                selectedNode={selectedNode}
+                                setSelectedNode={setSelectedNode}
+                                hideLink={arr.length - 1 === i}
+                            />)}
                             <Anchor out={true} flat={true}
                                 text="Drop targets elements here"
                                 stream="onTargetStream"
                                 highlighted={!selectedNode}
-                                mt={4} />
+                                mt='auto' />
                         </div>
                         <div className="main-view">
                             <Link highlighted={!selectedNode} />
-                            {nodes
-                                .filter(f => f.onOutputStream && !f.onTargetStream)
-                                .map(([_, value], i) => <GroupElement
-                                    values={value}
-                                    key={`outNodes${i}`}
-                                    setSelectedNode={setSelectedNode}
-                                    selectedNode={selectedNode} />)}
+                            {outputNodes.map(([_, value], i) => <NodeElement
+                                element={value}
+                                key={`outNodes${i}`}
+                                setSelectedNode={setSelectedNode}
+                                selectedNode={selectedNode}
+                                isLast={(outputNodes.length - 1) === i}
+                            />)}
                             <Anchor
                                 out={true}
                                 text="Drop out elements here"
                                 stream="onOutputStream"
                                 highlighted={!selectedNode} />
-                            <Link highlighted={!selectedNode} />
-                            <Dot icon="arrow-down" revertFlat={true} />
+                            <Link highlighted={!selectedNode} flex={true} />
+                            <Dot icon="arrow-down" />
                         </div>
                     </div>
                     <div className="col-sm-8" style={{ paddingRight: 0 }}>
                         <Tab text="Details" />
-                        {/* <EditView
+                        <EditView
                             selectedNode={selectedNode}
                             setSelectedNode={setSelectedNode}
                             changeValues={changeValues}
                             removeNode={removeNode}
                             route={route}
-                            components={components} /> */}
+                            plugins={plugins} />
                     </div>
                 </div>
             </div>
@@ -384,37 +303,26 @@ export default ({ lineId, value }) => {
     )
 }
 
-const Element = ({ element, onDrag, n, addNode, parent }) => (
-    <div className="element" draggable={true} onDragStart={e => onDrag(e, {
-        ...element,
-        parent
-    })}>
+const Element = ({ element, onDrag, n, addNode }) => (
+    <div className="element" draggable={true} onDragStart={e => onDrag(e, { ...element })} onClick={e => {
+        e.stopPropagation()
+        addNode(element.onTargetStream ? 'onTargetStream' : element.onOutputStream ? 'onOutputStream' : 'onInputStream', element)
+    }}>
         <div className="element-icon group-icon">
             <span>{n}</span>
         </div>
-        <span style={{
-            marginLeft: "12px",
+        <div style={{
+            margin: "0 12px",
             textOverflow: 'ellipsis',
             overflow: 'hidden',
             whiteSpace: 'nowrap',
-            position: 'relative',
-            width: '100%'
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'space-between'
         }}>
             {element.name.charAt(0).toUpperCase() + element.name.slice(1)}
-            <button style={{
-                backgroundColor: "#f9b000",
-                right: '8px',
-                position: 'absolute',
-                border: 0,
-                background: "none",
-            }}
-                onClick={e => {
-                    e.stopPropagation()
-                    addNode(element.onTargetStream ? 'onTargetStream' : element.onOutputStream ? 'onOutputStream' : 'onInFlow', element)
-                }}>
-                <i className="fas fa-arrow-right" style={{ color: "#494948" }} />
-            </button>
-        </span>
+            <i className="fas fa-arrow-right" style={{ color: "#494948" }} />
+        </div>
     </div>
 )
 
@@ -491,7 +399,7 @@ const SearchBar = ({ handleSearch }) => {
     </div>
 }
 
-const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNode, components }) => {
+const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNode, plugins }) => {
     if (!selectedNode)
         return <div style={{
             backgroundColor: "rgb(73, 73, 73)",
@@ -503,9 +411,9 @@ const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNo
             Start by selecting a node
         </div>
 
-    const { props, id, parent } = selectedNode
+    const { id, flow, configFlow, configSchema, schema, name } = selectedNode
 
-    const group = components.find(element => element.group === parent || element.id === id)
+    const plugin = ['Backend', 'Frontend'].includes(id) ? DEFAULT_FLOW.find(f => f.id === id) : plugins.find(element => element.id === id)
 
     const close = () => setSelectedNode(undefined)
 
@@ -534,12 +442,12 @@ const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNo
             borderBottom: '1px solid #f9b000',
             borderRight: 0
         }}>
-            <i className={`fas fa-${group.icon || 'bars'} group-icon`}
+            <i className={`fas fa-${plugin.icon || 'bars'} group-icon`}
                 style={{
                     color: "#fff",
                     borderBottomLeftRadius: 0
                 }} />
-            <span style={{ color: "#fff", paddingLeft: "12px" }}>{id}</span>
+            <span style={{ color: "#fff", paddingLeft: "12px" }}>{name || id}</span>
         </div>
         {selectedNode.switch ?
             <div style={{
@@ -555,11 +463,11 @@ const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNo
             }}>
                 <Form
                     value={route[selectedNode.field]}
-                    schema={props.schema}
-                    flow={props.flow}
+                    schema={schema || configSchema}
+                    flow={flow || configFlow}
                     onSubmit={item => {
                         try {
-                            changeValues((props.flow || Object.keys(props.schema)).map(field => {
+                            changeValues((flow || configFlow || Object.keys(schema || configSchema)).map(field => {
                                 const fieldName = `${selectedNode.field ? `${selectedNode.field}.` : ''}${field}`
                                 return { name: fieldName, value: read(item, field) }
                             }))
