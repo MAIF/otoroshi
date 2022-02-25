@@ -26,7 +26,7 @@
     "licences": "legally"
   },
   "dependencies": {
-    "@maif/react-forms": "^1.0.18",
+    "@maif/react-forms": "^1.0.29",
     "antd": "3.26.0",
     "bcryptjs": "2.4.3",
     "bootstrap": "3.4.1",
@@ -83,7 +83,7 @@
     "less": "3.12.2",
     "less-loader": "7.0.1",
     "mini-css-extract-plugin": "0.11.2",
-    "node-sass": "4.14.1",
+    "node-sass": "7.0.1",
     "optimize-css-assets-webpack-plugin": "5.0.4",
     "parcel-bundler": "1.12.4",
     "prettier": "2.1.2",

@@ -196,7 +196,7 @@ class BackOfficeAppContainer extends Component {
             </div>
             <div className={`${(isFullPage ? 'col-sm-12' : 'col-sm-10 col-sm-offset-2 main')}`}>
               <div className="row">
-                <div className={classes.join(' ')}>
+                <div className={classes.join(' ')} style={{ overflowX: "hidden" }}>
                   {isFullPage ? null : <DynamicTitle />}
                   <div className="row" style={{ marginTop: 1 }}>
                     {!this.state.catchedError && (

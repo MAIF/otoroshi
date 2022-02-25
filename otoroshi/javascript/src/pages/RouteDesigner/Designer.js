@@ -1,277 +1,22 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import * as BackOfficeServices from '../../services/BackOfficeServices'
-
 import { Form } from '@maif/react-forms'
 import deepSet from 'set-value'
-
-import { COMPONENTS } from './Schema'
+import DEFAULT_FLOW from './Graph'
 
 import '../../style/components/_designer.scss'
-
-const Element = ({ element, onDrag, n, addNode, parent }) => (
-    <div className="element" draggable={true} onDragStart={e => onDrag(e, {
-        ...element,
-        parent
-    })}>
-        <div className="element-icon group-icon">
-            <span>{n}</span>
-        </div>
-        <span style={{
-            marginLeft: "12px",
-            textOverflow: 'ellipsis',
-            overflow: 'hidden',
-            whiteSpace: 'nowrap',
-            position: 'relative',
-            width: '100%'
-        }}>
-            {element.id.charAt(0).toUpperCase() + element.id.slice(1)}
-            <button style={{
-                backgroundColor: "#f9b000",
-                right: '8px',
-                position: 'absolute',
-                border: 0,
-                background: "none",
-            }}
-                onClick={e => {
-                    e.stopPropagation()
-                    addNode(element.onTargetStream ? 'onTargetStream' : element.onOutputStream ? 'onOutputStream' : 'onInFlow', element)
-                }}>
-                <i className="fas fa-arrow-right" style={{ color: "#494948" }} />
-            </button>
-        </span>
-    </div>
-)
-
-const Group = ({ group, icon, elements, onDrag, addNode }) => {
-    const [open, setOpen] = useState(false)
-
-    return <div className="group">
-        <div className="group-header" style={{ cursor: 'pointer' }} onClick={e => {
-            e.stopPropagation()
-            setOpen(!open)
-        }}>
-            <i className={`fas fa-${icon} group-icon`} style={{ color: "#fff" }} />
-            <span style={{ color: "#fff", paddingLeft: "12px" }}>{group.charAt(0).toUpperCase() + group.slice(1)}</span>
-            <div style={{ marginLeft: 'auto', display: 'flex', width: '64px' }}>
-                <div className="flex-center"
-                    onClick={e => {
-                        e.stopPropagation()
-                        setOpen(!open)
-                    }}
-                    style={{
-                        marginRight: '12px',
-                        backgroundColor: "#fff",
-                        padding: "3px 6px",
-                        borderRadius: "8px",
-                        cursor: 'pointer'
-                    }}>
-                    <i className="fas fa-plus" />
-                </div>
-                <span className="group-size">{elements?.length}</span>
-            </div>
-        </div>
-        {open && <>
-            <ElementsStack elements={elements} onDrag={onDrag} addNode={addNode} />
-        </>}
-    </div>
-}
-
-const ElementsStack = ({ elements, ...props }) => {
-    return <div className="">
-        {elements?.map((element, i) => {
-            if (element.group) {
-                if (element.elements?.find(e => !e.default))
-                    return <Group {...element} key={element.group} {...props} />
-                return null
-            }
-            else
-                return <Element
-                    key={`${element.id}${i}`}
-                    n={i + 1}
-                    element={element}
-                    {...props} />
-        })}
-    </div>
-}
-
-const SearchBar = ({ handleSearch }) => {
-    return <div className="group">
-        <div className="group-header">
-            <i className="fas fa-search group-icon" />
-            <div style={{ paddingLeft: '12px', width: '100%' }}>
-                <input
-                    type="text"
-                    style={{
-                        border: 0,
-                        padding: '6px 0px 6px 12px',
-                        width: '100%',
-                        outline: 'none',
-                        borderRadius: '4px'
-                    }}
-                    onChange={e => handleSearch(e.target.value)}
-                    placeholder="Search elements" />
-            </div>
-        </div>
-    </div>
-}
-
-const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNode, components }) => {
-    if (!selectedNode)
-        return <div style={{
-            backgroundColor: "rgb(73, 73, 73)",
-            textAlign: "center",
-            fontStyle: 'italic',
-            padding: '8px',
-            color: "#fff"
-        }}>
-            Start by selecting a node
-        </div>
-
-    const { props, id, parent } = selectedNode
-
-    const group = components.find(element => element.group === parent || element.id === id)
-
-    const close = () => setSelectedNode(undefined)
-
-    const read = (value, path) => {
-        const keys = path.split(".")
-        if (keys.length === 1)
-            return value[path]
-
-        return read(value[keys[0]], keys.slice(1).join("."))
-    }
-
-    const RemoveComponent = ({ mt = 0 }) => (
-        <button className={`btn btn-danger btn-block mt-${mt}`} onClick={e => {
-            e.stopPropagation()
-            setSelectedNode(undefined)
-            removeNode(id)
-        }}>
-            Disable this component
-        </button>
-    )
-
-    return <div onClick={e => {
-        e.stopPropagation()
-    }}>
-        <div className="group-header" style={{
-            borderBottom: '1px solid #f9b000',
-            borderRight: 0
-        }}>
-            <i className={`fas fa-${group.icon || 'bars'} group-icon`}
-                style={{
-                    color: "#fff",
-                    borderBottomLeftRadius: 0
-                }} />
-            <span style={{ color: "#fff", paddingLeft: "12px" }}>{id}</span>
-        </div>
-        {selectedNode.switch ?
-            <div style={{
-                backgroundColor: "#494949",
-                padding: "12px"
-            }}>
-                <p style={{ color: "#fff" }}>{selectedNode.description}</p>
-                <RemoveComponent />
-            </div>
-            : <div style={{
-                backgroundColor: "#494949",
-                padding: '12px'
-            }}>
-                <Form
-                    value={route[selectedNode.field]}
-                    schema={props.schema}
-                    flow={props.flow}
-                    onSubmit={item => {
-                        try {
-                            changeValues(props.flow.map(field => {
-                                const fieldName = `${selectedNode.field ? `${selectedNode.field}.` : ''}${field}`
-                                return { name: fieldName, value: read(item, field) }
-                            }))
-                            close()
-                        } catch (err) {
-                            console.log(err)
-                        }
-                    }}
-                    footer={({ valid }) => <button className="btn btn-success btn-block"
-                        style={{ backgroundColor: "#f9b000", borderColor: '#f9b000', marginTop: '12px' }}
-                        onClick={valid}>
-                        Update configuration
-                    </button>}
-                />
-                {!selectedNode.default && <RemoveComponent mt={2} />}
-            </div>}
-    </div>
-}
 
 export default ({ lineId, value }) => {
     const { routeId } = useParams()
 
-    const [plugins, setPlugins] = useState()
-
     const [nodes, setNodes] = useState([])
-    const [elements, setElements] = useState([])
-    const [filteredElements, setFilteredElements] = useState([])
     const [selectedNode, setSelectedNode] = useState()
-    const [components, setComponents] = useState([])
+
+    const [plugins, setPlugins] = useState([])
+    const [filteredPlugins, setfilteredPlugins] = useState([])
 
     const [route, setRoute] = useState(value)
-
-    function filterDefaultElements(components) {
-        const groupedElements = components.map((r, i) => ({
-            ...components[i],
-            elements: components[i].elements?.map(el => ({
-                ...el,
-                parent: components[i].group
-            }))
-        }))
-
-        const elementsWithSchema = groupedElements.map(elt => ({
-            ...elt,
-            elements: elt.elements
-                ?.filter(f => {
-                    if (f.configSchema || f.default || f.switch)
-                        return true
-                    if (!f.props)
-                        return false
-                    return Object.keys(f.props.schema || []).length > 0
-                })
-        }))
-
-        const { nodes, elements } = elementsWithSchema.reduce((acc, element) => {
-            if (element.default) {
-                return {
-                    ...acc,
-                    nodes: [...acc.nodes, element]
-                }
-            }
-
-            if (element.group) {
-                return {
-                    elements: [
-                        ...acc.elements,
-                        {
-                            ...element,
-                            elements: element.elements?.filter(f => !f.default)
-                        }
-                    ],
-                    nodes: [...acc.nodes, ...element.elements?.filter(f => f.default)]
-                }
-            }
-
-            return {
-                ...acc,
-                elements: [...acc.elements, element]
-            }
-        }, {
-            nodes: [], elements: []
-        })
-
-        // console.log(nodes, elements)
-        setNodes(nodes)
-        setElements(elements)
-        setFilteredElements(elements)
-    }
 
     useEffect(() => {
         BackOfficeServices.fetchRoute(routeId)
@@ -279,11 +24,10 @@ export default ({ lineId, value }) => {
 
         BackOfficeServices.getPlugins()
             .then(cpts => cpts.filter(c => c.id && c.id.startsWith('cp:otoroshi.next.plugins')))
-            .then(components => {
-                console.log(components)
-                setPlugins(components)
-                setComponents(COMPONENTS)
-                filterDefaultElements(COMPONENTS)
+            .then(plugins => {
+                setPlugins(plugins)
+                setfilteredPlugins(plugins)
+                setNodes(DEFAULT_FLOW)
             })
     }, [])
 
@@ -492,52 +236,39 @@ export default ({ lineId, value }) => {
     }
 
     const handleSearch = search => {
-        setFilteredElements(
-            elements
-                .map(element => {
-                    if (element.group)
-                        return {
-                            ...element,
-                            elements: element.elements?.filter(f => f.id.toLowerCase().includes(search.toLowerCase()))
-                        }
-                    else if (element.id.toLowerCase().includes(search.toLowerCase()))
-                        return element
-                    return undefined
-                })
-                .filter(f => f)
-        )
+        setFilteredPlugins(plugins
+            .reduce((acc, e) => e.id.toLowerCase().includes(search.toLowerCase()) ? [...acc, e] : acc, []))
     }
 
     const changeValues = ops => {
         const newRoute = ops.reduce((newRoute, { name, value }) => {
             return deepSet(_.cloneDeep(newRoute), name, value)
         }, route)
+
         BackOfficeServices.updateRoute(newRoute)
             .then(() => setRoute(newRoute))
     }
 
     const saveChanges = () => {
-        // TODO - check if the route is new
-        BackOfficeServices.updateRoute(route.id, route)
+        BackOfficeServices.updateRoute(route)
             .then(newRoute => {
                 setRoute(newRoute)
             })
     }
 
-    const SaveButton = () => (
-        <button
-            className="btn btn-save"
-            type="button"
-            onClick={saveChanges}
-            style={{
-                position: 'absolute',
-                bottom: '12px',
-                right: '12px'
-            }}>
-            <i className="far fa-paper-plane" style={{ paddingRight: '6px' }} />
-            <span>Update route</span>
-        </button>
-    )
+    const SaveButton = () => <button
+        className="btn btn-save"
+        type="button"
+        onClick={saveChanges}
+        style={{
+            position: 'absolute',
+            bottom: '12px',
+            right: '12px',
+            zIndex: 100
+        }}>
+        <i className="far fa-paper-plane" style={{ paddingRight: '6px' }} />
+        <span>Update route</span>
+    </button>
 
     return (
         <div className="h-100" onClick={() => setSelectedNode(undefined)}>
@@ -559,12 +290,12 @@ export default ({ lineId, value }) => {
                             <i className={`fas fa-list group-icon`} />
                             <span style={{ color: "#fff", paddingLeft: "12px" }}>Available</span>
                             <div style={{ marginLeft: 'auto', display: 'flex', width: '64px' }}>
-                                <span className="group-size">{filteredElements.reduce((acc, curr) => acc + (curr.request || []).length + (curr.out || []).length, 0)}</span>
+                                <span className="group-size">{filteredPlugins.length}</span>
                             </div>
                         </div>
                     </div>
                     <SearchBar handleSearch={handleSearch} />
-                    <ElementsStack elements={filteredElements} onDrag={onDrag} addNode={addNode} />
+                    <PluginsStack elements={filteredPlugins} onDrag={onDrag} addNode={addNode} />
                 </div>
             </div>
             <div className="col-sm-8">
@@ -574,19 +305,9 @@ export default ({ lineId, value }) => {
                         <div className="main-view">
                             <Dot icon="arrow-down" flat={true} />
                             <Link highlighted={!selectedNode} />
-                            {Object.entries(nodes
-                                .filter(f => !f.onOutputStream && !f.onTargetStream)
-                                .reduce((elts, node) => {
-                                    if (elts[node.parent])
-                                        elts[node.parent] = [
-                                            ...elts[node.parent],
-                                            node
-                                        ]
-                                    else
-                                        elts[node.parent] = [node]
-                                    return elts
-                                }, {}))
-                                .map(([_, value], i) => <GroupElement
+                            {nodes
+                                .filter(f => f.onInputStream)
+                                .map((value, i) => <GroupElement
                                     values={value}
                                     key={`inNodes${i}`}
                                     selectedNode={selectedNode}
@@ -615,19 +336,9 @@ export default ({ lineId, value }) => {
                                     borderRadius: "50%"
                                 }}>
                             </i>
-                            {Object.entries(nodes
+                            {nodes
                                 .filter(f => f.onTargetStream)
-                                .reduce((elts, node) => {
-                                    if (elts[node.parent])
-                                        elts[node.parent] = [
-                                            ...elts[node.parent],
-                                            node
-                                        ]
-                                    else
-                                        elts[node.parent] = [node]
-                                    return elts
-                                }, {}))
-                                .map(([_, value], i, arr) => <GroupElement
+                                .map((value, i, arr) => <GroupElement
                                     values={value}
                                     key={`targetNodes${i}`}
                                     selectedNode={selectedNode}
@@ -641,18 +352,8 @@ export default ({ lineId, value }) => {
                         </div>
                         <div className="main-view">
                             <Link highlighted={!selectedNode} />
-                            {Object.entries(nodes
+                            {nodes
                                 .filter(f => f.onOutputStream && !f.onTargetStream)
-                                .reduce((elts, node) => {
-                                    if (elts[node.parent])
-                                        elts[node.parent] = [
-                                            ...elts[node.parent],
-                                            node
-                                        ]
-                                    else
-                                        elts[node.parent] = [node]
-                                    return elts
-                                }, {}))
                                 .map(([_, value], i) => <GroupElement
                                     values={value}
                                     key={`outNodes${i}`}
@@ -669,16 +370,211 @@ export default ({ lineId, value }) => {
                     </div>
                     <div className="col-sm-8" style={{ paddingRight: 0 }}>
                         <Tab text="Details" />
-                        <EditView
+                        {/* <EditView
                             selectedNode={selectedNode}
                             setSelectedNode={setSelectedNode}
                             changeValues={changeValues}
                             removeNode={removeNode}
                             route={route}
-                            components={components} />
+                            components={components} /> */}
                     </div>
                 </div>
             </div>
         </div>
     )
+}
+
+const Element = ({ element, onDrag, n, addNode, parent }) => (
+    <div className="element" draggable={true} onDragStart={e => onDrag(e, {
+        ...element,
+        parent
+    })}>
+        <div className="element-icon group-icon">
+            <span>{n}</span>
+        </div>
+        <span style={{
+            marginLeft: "12px",
+            textOverflow: 'ellipsis',
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            position: 'relative',
+            width: '100%'
+        }}>
+            {element.name.charAt(0).toUpperCase() + element.name.slice(1)}
+            <button style={{
+                backgroundColor: "#f9b000",
+                right: '8px',
+                position: 'absolute',
+                border: 0,
+                background: "none",
+            }}
+                onClick={e => {
+                    e.stopPropagation()
+                    addNode(element.onTargetStream ? 'onTargetStream' : element.onOutputStream ? 'onOutputStream' : 'onInFlow', element)
+                }}>
+                <i className="fas fa-arrow-right" style={{ color: "#494948" }} />
+            </button>
+        </span>
+    </div>
+)
+
+const Group = ({ group, icon, elements, onDrag, addNode }) => {
+    const [open, setOpen] = useState(false)
+
+    return <div className="group">
+        <div className="group-header" style={{ cursor: 'pointer' }} onClick={e => {
+            e.stopPropagation()
+            setOpen(!open)
+        }}>
+            <i className={`fas fa-${icon} group-icon`} style={{ color: "#fff" }} />
+            <span style={{ color: "#fff", paddingLeft: "12px" }}>{group.charAt(0).toUpperCase() + group.slice(1)}</span>
+            <div style={{ marginLeft: 'auto', display: 'flex', width: '64px' }}>
+                <div className="flex-center"
+                    onClick={e => {
+                        e.stopPropagation()
+                        setOpen(!open)
+                    }}
+                    style={{
+                        marginRight: '12px',
+                        backgroundColor: "#fff",
+                        padding: "3px 6px",
+                        borderRadius: "8px",
+                        cursor: 'pointer'
+                    }}>
+                    <i className="fas fa-plus" />
+                </div>
+                <span className="group-size">{elements?.length}</span>
+            </div>
+        </div>
+        {open && <>
+            <PluginsStack elements={elements} onDrag={onDrag} addNode={addNode} />
+        </>}
+    </div>
+}
+
+const PluginsStack = ({ elements, ...props }) => {
+    return <div className="">
+        {elements?.map((element, i) => {
+            if (element.group) {
+                if (element.elements?.find(e => !e.default))
+                    return <Group {...element} key={element.group} {...props} />
+                return null
+            }
+            else
+                return <Element
+                    key={`${element.id}${i}`}
+                    n={i + 1}
+                    element={element}
+                    {...props} />
+        })}
+    </div>
+}
+
+const SearchBar = ({ handleSearch }) => {
+    return <div className="group">
+        <div className="group-header">
+            <i className="fas fa-search group-icon" />
+            <div style={{ paddingLeft: '12px', width: '100%' }}>
+                <input
+                    type="text"
+                    style={{
+                        border: 0,
+                        padding: '6px 0px 6px 12px',
+                        width: '100%',
+                        outline: 'none',
+                        borderRadius: '4px'
+                    }}
+                    onChange={e => handleSearch(e.target.value)}
+                    placeholder="Search elements" />
+            </div>
+        </div>
+    </div>
+}
+
+const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNode, components }) => {
+    if (!selectedNode)
+        return <div style={{
+            backgroundColor: "rgb(73, 73, 73)",
+            textAlign: "center",
+            fontStyle: 'italic',
+            padding: '8px',
+            color: "#fff"
+        }}>
+            Start by selecting a node
+        </div>
+
+    const { props, id, parent } = selectedNode
+
+    const group = components.find(element => element.group === parent || element.id === id)
+
+    const close = () => setSelectedNode(undefined)
+
+    const read = (value, path) => {
+        const keys = path.split(".")
+        if (keys.length === 1)
+            return value[path]
+
+        return read(value[keys[0]], keys.slice(1).join("."))
+    }
+
+    const RemoveComponent = ({ mt = 0 }) => (
+        <button className={`btn btn-danger btn-block mt-${mt}`} onClick={e => {
+            e.stopPropagation()
+            setSelectedNode(undefined)
+            removeNode(id)
+        }}>
+            Disable this component
+        </button>
+    )
+
+    return <div onClick={e => {
+        e.stopPropagation()
+    }}>
+        <div className="group-header" style={{
+            borderBottom: '1px solid #f9b000',
+            borderRight: 0
+        }}>
+            <i className={`fas fa-${group.icon || 'bars'} group-icon`}
+                style={{
+                    color: "#fff",
+                    borderBottomLeftRadius: 0
+                }} />
+            <span style={{ color: "#fff", paddingLeft: "12px" }}>{id}</span>
+        </div>
+        {selectedNode.switch ?
+            <div style={{
+                backgroundColor: "#494949",
+                padding: "12px"
+            }}>
+                <p style={{ color: "#fff" }}>{selectedNode.description}</p>
+                <RemoveComponent />
+            </div>
+            : <div style={{
+                backgroundColor: "#494949",
+                padding: '12px'
+            }}>
+                <Form
+                    value={route[selectedNode.field]}
+                    schema={props.schema}
+                    flow={props.flow}
+                    onSubmit={item => {
+                        try {
+                            changeValues((props.flow || Object.keys(props.schema)).map(field => {
+                                const fieldName = `${selectedNode.field ? `${selectedNode.field}.` : ''}${field}`
+                                return { name: fieldName, value: read(item, field) }
+                            }))
+                            close()
+                        } catch (err) {
+                            console.log(err)
+                        }
+                    }}
+                    footer={({ valid }) => <button className="btn btn-success btn-block"
+                        style={{ backgroundColor: "#f9b000", borderColor: '#f9b000', marginTop: '12px' }}
+                        onClick={valid}>
+                        Update configuration
+                    </button>}
+                />
+                {!selectedNode.default && <RemoveComponent mt={2} />}
+            </div>}
+    </div>
 }
