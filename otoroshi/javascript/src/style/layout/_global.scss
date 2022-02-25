@@ -6,6 +6,9 @@ body {
 }
 #app{
   padding-top: 60px;
+  @media screen and (max-width:767px) {
+    padding-top: 80px;
+  }
   padding-bottom: 20px;
 }
 a,
@@ -16,12 +19,17 @@ a:hover {
 .main {
   padding-right: 40px;
   padding-left: 40px;
+  @media screen and (max-width:767px) {
+    padding-left: 5px;
+  }
+
   margin-top: -20px;
 }
 .page-header {
   margin-top: 32px;
-  border-bottom-color: $primaryColor;
-  margin-left: 25px
+  margin-left: 25px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid $primaryColor;
 }
 
 .placeholders {
@@ -42,6 +50,16 @@ a:hover {
 .menu {
   float: left;
   color: #fff
+}
+
+.jumbotron {
+  padding: 4rem 2rem;
+}
+
+ @media screen and (min-width:768px) {
+   .col-form-label {
+    text-align: right;
+  }
 }
 
 .page-header,h3,
@@ -67,7 +85,7 @@ h4 {
 }
 
 .fixedH3+.row, .fixedH3withoutHeight+.row {
-  padding-top: 88px
+  padding-top: 79px
 }
 
 

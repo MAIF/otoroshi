@@ -9,15 +9,15 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 export class ServicesPage extends Component {
   color(env) {
     if (env === 'prod') {
-      return 'label-success';
+      return 'bg-success';
     } else if (env === 'preprod') {
-      return 'label-primary';
+      return 'bg-primary';
     } else if (env === 'experiments') {
-      return 'label-warning';
+      return 'bg-warning';
     } else if (env === 'dev') {
-      return 'label-info';
+      return 'bg-info';
     } else {
-      return 'label-default';
+      return 'bg-secondary';
     }
   }
 
@@ -30,7 +30,7 @@ export class ServicesPage extends Component {
           return (
             <span
               title="This service is the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it"
-              className="label label-danger">
+              className="badge bg-danger">
               {item.name}
             </span>
           );
@@ -59,7 +59,7 @@ export class ServicesPage extends Component {
       title: 'Env.',
       style: { textAlign: 'center', width: 120 },
       content: (item) => item.env,
-      cell: (v, item) => <span className={`label ${this.color(item.env)}`}>{item.env}</span>,
+      cell: (v, item) => <span className={`badge ${this.color(item.env)}`}>{item.env}</span>,
     },
     {
       title: 'Active',
@@ -136,7 +136,7 @@ export class ServicesPage extends Component {
   displayName = (item) => {
     console.log(this.state);
     return this.state && this.state.env && this.state.env.adminApiId === item.id ? (
-      <span className="label label-danger">{item.name}</span>
+      <span className="badge bg-danger">{item.name}</span>
     ) : (
       item.name
     );
@@ -252,11 +252,10 @@ export class ServicesPage extends Component {
           itemUrl={(i) => `/bo/dashboard/lines/${i.env}/services/${i.id}`}
           injectTopBar={() => (
             <>
-              <div className="btn-group" style={{ marginRight: 5 }}>
+              <div className="btn-group input-group-btn">
                 <button
                   type="button"
                   onClick={this.addService}
-                  style={{ marginRight: 0 }}
                   className="btn btn-primary">
                   <i className="fas fa-plus-circle" /> Create new service
                 </button>

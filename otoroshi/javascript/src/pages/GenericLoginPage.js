@@ -136,8 +136,8 @@ export class GenericLoginPage extends Component {
           method={this.props.method}
           action={this.props.action}>
           <input type="hidden" name="token" className="form-control" value={this.props.token} />
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Username</label>
+          <div className="row mb-3">
+            <label className="col-sm-2 col-form-label">Username</label>
             <div className="col-sm-10">
               <input
                 type="text"
@@ -148,8 +148,8 @@ export class GenericLoginPage extends Component {
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Password</label>
+          <div className="row mb-3">
+            <label className="col-sm-2 col-form-label">Password</label>
             <div className="col-sm-10">
               <input
                 type="password"
@@ -160,8 +160,8 @@ export class GenericLoginPage extends Component {
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
+          <div className="row mb-3">
+            <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <button
                 type="submit"
@@ -172,8 +172,8 @@ export class GenericLoginPage extends Component {
               </button>
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
+          <div className="row mb-3">
+            <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <p>{!this.state.error && this.state.message}</p>
               <p style={{ color: 'red', width: '100%', textAlign: 'left' }}>
@@ -304,8 +304,8 @@ export class GenericLoginPageWithWebAuthn extends Component {
           _method={this.props.method}
           _action={this.props.action}>
           <input type="hidden" name="token" className="form-control" value={this.props.token} />
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Username</label>
+          <div className="row mb-3">
+            <label className="col-sm-2 col-form-label">Username</label>
             <div className="col-sm-10">
               <input
                 type="text"
@@ -316,8 +316,8 @@ export class GenericLoginPageWithWebAuthn extends Component {
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Password</label>
+          <div className="row mb-3">
+            <label className="col-sm-2 col-form-label">Password</label>
             <div className="col-sm-10">
               <input
                 type="password"
@@ -328,8 +328,8 @@ export class GenericLoginPageWithWebAuthn extends Component {
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
+          <div className="row mb-3">
+            <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <button
                 type="submit"
@@ -340,8 +340,8 @@ export class GenericLoginPageWithWebAuthn extends Component {
               </button>
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
+          <div className="row mb-3">
+            <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <p>{!this.state.error && this.state.message}</p>
               <p style={{ color: 'red', width: '100%', textAlign: 'left' }}>

@@ -4,7 +4,7 @@ import akka.Done
 import otoroshi.el.RedirectionExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.models.RedirectionSettings
-import otoroshi.next.plugins.api.{NgPreRouting, NgPreRoutingContext, NgPreRoutingError, NgPreRoutingErrorWithResult}
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgPreRouting, NgPreRoutingContext, NgPreRoutingError, NgPreRoutingErrorWithResult, NgStep}
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
 import play.api.libs.json._
 import play.api.mvc.Results
@@ -54,6 +54,10 @@ object NgRedirectionSettings {
 class Redirection extends NgPreRouting {
 
   private val configReads: Reads[NgRedirectionSettings] = NgRedirectionSettings.format
+
+  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean                   = true
   override def name: String                    = "Redirection"

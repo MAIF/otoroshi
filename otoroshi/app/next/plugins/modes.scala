@@ -3,13 +3,17 @@ package otoroshi.next.plugins
 import akka.Done
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api.{NgPreRouting, NgPreRoutingContext, NgPreRoutingError, NgPreRoutingErrorWithResult}
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgPreRouting, NgPreRoutingContext, NgPreRoutingError, NgPreRoutingErrorWithResult, NgStep}
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class MaintenanceMode extends NgPreRouting {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean               = true
   override def name: String                = "Maintenance mode"
@@ -36,6 +40,10 @@ class MaintenanceMode extends NgPreRouting {
 }
 
 class GlobalMaintenanceMode extends NgPreRouting {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean = true
   override def name: String = "Global Maintenance mode"
@@ -65,6 +73,10 @@ class GlobalMaintenanceMode extends NgPreRouting {
 }
 
 class BuildMode extends NgPreRouting {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean               = true
   override def name: String                = "Build mode"

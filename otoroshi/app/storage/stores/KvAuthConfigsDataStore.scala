@@ -48,6 +48,7 @@ class KvAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
         redisCli.del(s"${_env.storageRoot}:auth:tokens:$token")
       }
     }
+    // FastFuture.successful(true)
   }
 
   override def setUserForToken(token: String, user: JsValue)(implicit ec: ExecutionContext): Future[Unit] = {

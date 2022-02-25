@@ -15,6 +15,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class Http2Caller extends NgRequestTransformer {
 
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+
   override def isTransformRequestAsync: Boolean = true
   override def isTransformResponseAsync: Boolean = true
 
@@ -60,7 +64,7 @@ class Http2Caller extends NgRequestTransformer {
         version = ctx.otoroshiRequest.version,
         clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain,
         backend = Some(target),
-        body = Source.single(body)
+        body = Source(body.grouped(16 * 1024).toList)
       )
       newRequest.right
     }
@@ -74,7 +78,7 @@ class Http2Caller extends NgRequestTransformer {
         status = body.select("status").asInt,
         headers = body.select("headers").as[Map[String, String]],
         cookies = Seq.empty, // TODO: handle cookies
-        body = Source.single(bodyOut)
+        body = Source(bodyOut.grouped(16 * 1024).toList)
       ).right
     }
   }

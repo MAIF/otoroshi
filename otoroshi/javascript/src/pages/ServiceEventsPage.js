@@ -73,7 +73,7 @@ export class ServiceEventsPage extends Component {
       cell: (v, item) => (
         <button
           type="button"
-          className="btn btn-success btn-xs"
+          className="btn btn-success btn-sm"
           onClick={(e) =>
             window.newAlert(
               <pre style={{ height: 300 }}>{JSON.stringify(item, null, 2)}</pre>,
@@ -92,7 +92,7 @@ export class ServiceEventsPage extends Component {
       cell: (v, item) => (
         <button
           type="button"
-          className="btn btn-success btn-xs"
+          className="btn btn-success btn-sm"
           onClick={(e) => {
             BackOfficeServices.fetchBodiesFor(item['@serviceId'], item.reqId).then((res) => {
               if (!res.error) {
@@ -274,14 +274,15 @@ export class ServiceEventsPage extends Component {
     return (
       <div>
         <div className="row" style={{ marginBottom: 30 }}>
-          <div className="col-xs-12" style={{ display: 'flex', alignItems: 'center' }}>
+          <div className="col-xs-12 col-4" style={{ display: 'flex', alignItems: 'center' }}>
             <OtoDatePicker
               updateDateRange={this.updateDateRange}
               from={this.state.from}
               to={this.state.to}
             />
-            <div className="input-group" style={{ marginLeft: 10 }}>
-              <div className="input-group-addon">Limit</div>
+            </div>
+            <div className="input-group col-3 ms-3" style={{ width: 'auto' }}>
+              <div className="input-group-text">Limit</div>
               <input
                 type="number"
                 style={{ width: 100 }}
@@ -292,7 +293,7 @@ export class ServiceEventsPage extends Component {
                 }
               />
             </div>
-            <div className="input-group" style={{ marginLeft: 10, width: '100%', display: 'flex' }}>
+            <div className="input-group col-4 ms-3" style={{ width: 'auto' }}>
               <span style={{ marginTop: 10, marginRight: 5 }}>
                 Order by timestamp ascending values
               </span>
@@ -304,7 +305,6 @@ export class ServiceEventsPage extends Component {
                   });
                 }}
               />
-            </div>
           </div>
         </div>
         <Table

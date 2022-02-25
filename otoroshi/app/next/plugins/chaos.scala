@@ -232,6 +232,10 @@ class SnowMonkeyChaos extends NgRequestTransformer {
   private val snowMonkeyRef                     = Scaffeine().maximumSize(1).build[String, SnowMonkey]()
   private val configReads: Reads[NgChaosConfig] = NgChaosConfig.format
 
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false
   override def transformsRequest: Boolean        = true

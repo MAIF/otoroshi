@@ -132,6 +132,8 @@ libraryDependencies ++= Seq(
   "org.opensaml"                     % "opensaml-saml-api"           % "4.0.1",
   //"org.opensaml"                     % "opensaml-xmlsec-impl"        % "4.0.1",
   "org.opensaml"                     % "opensaml-saml-impl"          % "4.0.1",
+  "org.openjdk.jol"                  % "jol-core"                    % "0.16",
+  "org.typelevel"                    %% "squants"                    % "1.6.0",
   // fix multiple CVEs
   "com.fasterxml.jackson.core"       % "jackson-databind"            % "2.10.5.1",
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml"     % "2.10.5",
@@ -139,7 +141,12 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.datatype"   % "jackson-datatype-jdk8"       % "2.10.5",
   "org.yaml"                         % "snakeyaml"                   % "1.28",
   "com.arakelian"                    % "java-jq"                     % "1.2.0",
-// tests
+  "io.opentelemetry"                 % "opentelemetry-api"              % "1.11.0",
+  "io.opentelemetry"                 % "opentelemetry-sdk"              % "1.11.0",
+  "io.opentelemetry"                 % "opentelemetry-exporter-logging" % "1.11.0",
+  "io.opentelemetry"                 % "opentelemetry-exporter-zipkin"  % "1.11.0",
+  "io.opentelemetry"                 % "opentelemetry-exporter-jaeger"  % "1.11.0",
+  // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"          % "5.1.0" % Test,
   // do not update because the feature is deprecated and will be removed
   "org.reactivemongo"               %% "reactivemongo"               % "0.20.13" excludeAll ExclusionRule(organization =

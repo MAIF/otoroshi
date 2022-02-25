@@ -7,7 +7,10 @@ input.form-control{
     background-color: $fondNavbar;
     border-color: 	$fondBody;
 }
-
+input.form-control:focus{
+    background-color: $fondNavbar;
+    color:$colorGris;
+}
 textarea.form-control{
     color:$colorGris;
     background-color: $fondNavbar;

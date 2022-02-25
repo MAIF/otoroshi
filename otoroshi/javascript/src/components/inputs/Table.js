@@ -504,7 +504,7 @@ export class Table extends Component {
               />
             )}
             <hr />
-            <div className="form-buttons pull-right">
+            <div className="displayGroupBtn float-end">
               <button type="button" className="btn btn-danger" onClick={this.closeAddForm}>
                 Cancel
               </button>
@@ -544,7 +544,7 @@ export class Table extends Component {
               />
             )}
             <hr />
-            <div className="form-buttons pull-right">
+            <div className="displayGroupBtn float-end">
               {this.props.export && (
                 <>
                   <button

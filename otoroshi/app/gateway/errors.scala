@@ -6,7 +6,7 @@ import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.events._
-import otoroshi.gateway.Errors.errorTemplate
+import otoroshi.gateway.Errors.{errorTemplate, messages}
 import otoroshi.models.{ErrorTemplate, RemainingQuotas, ServiceDescriptor}
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api.{NgPluginHttpResponse, NgTransformerErrorContext}
@@ -23,7 +23,9 @@ import play.api.mvc.{RequestHeader, Result}
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-case class GwError(message: String)
+case class GwError(message: String) {
+  def json: JsValue = Json.obj("message" -> message)
+}
 
 object Errors {
 

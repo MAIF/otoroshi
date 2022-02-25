@@ -4,14 +4,28 @@ import otoroshi.env.Env
 import otoroshi.models.{UserRights, _}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.BasicStore
+import otoroshi.utils.RegexPool
 import otoroshi.utils.http.MtlsConfig
+import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
+
+trait ValidableUser { self =>
+  def json: JsValue
+  def validate(validators: Seq[UserValidator]): Either[String, self.type] = {
+    val jsonuser = json
+    if (validators.forall(validator => validator.validate(jsonuser))) {
+      Right(this)
+    } else {
+      Left("user is not valid")
+    }
+  }
+}
 
 trait AuthModule {
 
@@ -67,9 +81,51 @@ object SessionCookieValues {
     }
 }
 
-//todo: move max-age here when it won't be a problem
+// TODO: move max-age here when it won't be a problem
 case class SessionCookieValues(httpOnly: Boolean = true, secure: Boolean = true) {
   def asJson: JsValue = SessionCookieValues.fmt.writes(this)
+}
+
+case class UserValidator(path: String, value: JsValue) {
+  def json: JsValue = UserValidator.format.writes(this)
+  def validate(user: JsValue): Boolean = {
+    // println(user.prettify)
+    user.atPath(path).asOpt[JsValue] match {
+      case None => false
+      case Some(JsString(v)) if value.isInstanceOf[JsString] => {
+        val expected = value.asString
+        if (expected.trim.startsWith("Regex(") && expected.trim.endsWith(")")) {
+          val regex = expected.substring(6).init
+          // println(regex, v, RegexPool.regex(regex).matches(v))
+          RegexPool.regex(regex).matches(v)
+        } else if (expected.trim.startsWith("Wildcard(") && expected.trim.endsWith(")")) {
+          val regex = expected.substring(9).init
+          RegexPool.apply(regex).matches(v)
+        } else {
+          v == expected
+        }
+      }
+      case Some(v) => v == value
+    }
+  }
+}
+
+object UserValidator {
+  val format = new Format[UserValidator] {
+    override def writes(o: UserValidator): JsValue = Json.obj(
+      "path" -> o.path,
+      "value" -> o.value
+    )
+    override def reads(json: JsValue): JsResult[UserValidator] = Try {
+      UserValidator(
+        path = json.select("path").as[String],
+        value = json.select("value").asValue
+      )
+    } match {
+      case Failure(exception) => JsError(exception.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
 }
 
 trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport {
@@ -82,6 +138,7 @@ trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport
   def sessionMaxAge: Int
   def metadata: Map[String, String]
   def sessionCookieValues: SessionCookieValues
+  def userValidators: Seq[UserValidator]
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   override def internalId: String = id
   override def json: JsValue      = asJson

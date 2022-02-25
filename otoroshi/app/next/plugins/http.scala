@@ -2,7 +2,7 @@ package otoroshi.next.plugins
 
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator}
+import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.mvc.Results
 
@@ -11,6 +11,10 @@ import scala.concurrent.{ExecutionContext, Future}
 class ReadOnlyCalls extends NgAccessValidator {
 
   private val methods = Seq("get", "head", "options")
+
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean               = true
   override def name: String                = "Read only requests"
@@ -38,6 +42,10 @@ class ReadOnlyCalls extends NgAccessValidator {
 }
 
 class AllowHttpMethods extends NgAccessValidator {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean               = true
   override def name: String                = "Allowed HTTP methods"

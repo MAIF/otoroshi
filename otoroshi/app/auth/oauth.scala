@@ -46,6 +46,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           id = (json \ "id").as[String],
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
+          userValidators = (json \ "userValidators").asOpt[Seq[JsValue]].map(_.flatMap(v => UserValidator.format.reads(v).asOpt)).getOrElse(Seq.empty),
           sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
           clientId = (json \ "clientId").asOpt[String].getOrElse("client"),
           clientSecret = (json \ "clientSecret").asOpt[String].getOrElse("secret"),
@@ -123,6 +124,7 @@ case class GenericOauth2ModuleConfig(
     name: String,
     desc: String,
     sessionMaxAge: Int = 86400,
+    userValidators: Seq[UserValidator] = Seq.empty,
     clientId: String = "client",
     clientSecret: String = "secret",
     tokenUrl: String = "http://localhost:8082/oauth/token",
@@ -173,6 +175,7 @@ case class GenericOauth2ModuleConfig(
       "name"                  -> this.name,
       "desc"                  -> this.desc,
       "sessionMaxAge"         -> this.sessionMaxAge,
+      "userValidators"        -> JsArray(userValidators.map(_.json)),
       "clientId"              -> this.clientId,
       "clientSecret"          -> this.clientSecret,
       "authorizeUrl"          -> this.authorizeUrl,
@@ -633,27 +636,25 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                   )
                   .map(_.asOpt[JsObject].getOrElse(Json.obj()))
                 val email                  = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools")
-                Right(
-                  PrivateAppsUser(
-                    randomId = IdGenerator.token(64),
-                    name = (user \ authConfig.nameField)
-                      .asOpt[String]
-                      .orElse((user \ "sub").asOpt[String])
-                      .getOrElse("No Name"),
-                    email = email,
-                    profile = user,
-                    token = rawToken,
-                    authConfigId = authConfig.id,
-                    realm = authConfig.cookieSuffix(descriptor),
-                    otoroshiData = authConfig.dataOverride
-                      .get(email)
-                      .map(v => authConfig.extraMetadata.deepMerge(v))
-                      .orElse(Some(authConfig.extraMetadata.deepMerge(meta.getOrElse(Json.obj())))),
-                    tags = authConfig.theTags,
-                    metadata = authConfig.metadata,
-                    location = authConfig.location
-                  )
-                )
+                PrivateAppsUser(
+                  randomId = IdGenerator.token(64),
+                  name = (user \ authConfig.nameField)
+                    .asOpt[String]
+                    .orElse((user \ "sub").asOpt[String])
+                    .getOrElse("No Name"),
+                  email = email,
+                  profile = user,
+                  token = rawToken,
+                  authConfigId = authConfig.id,
+                  realm = authConfig.cookieSuffix(descriptor),
+                  otoroshiData = authConfig.dataOverride
+                    .get(email)
+                    .map(v => authConfig.extraMetadata.deepMerge(v))
+                    .orElse(Some(authConfig.extraMetadata.deepMerge(meta.getOrElse(Json.obj())))),
+                  tags = authConfig.theTags,
+                  metadata = authConfig.metadata,
+                  location = authConfig.location
+                ).validate(authConfig.userValidators)
               }
           }
         }
@@ -705,40 +706,38 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                 val (user, rawToken) = tuple
                 val email            = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools")
 
-                Right(
-                  BackOfficeUser(
-                    randomId = IdGenerator.token(64),
-                    name = (user \ authConfig.nameField)
-                      .asOpt[String]
-                      .orElse((user \ "sub").asOpt[String])
-                      .getOrElse("No Name"),
-                    email = email,
-                    profile = user,
-                    authConfigId = authConfig.id,
-                    simpleLogin = false,
-                    tags = Seq.empty,
-                    metadata = Map.empty,
-                    rights =
-                      if (authConfig.superAdmins) UserRights.superAdmin
-                      else {
-                        authConfig.rightsOverride.getOrElse(
-                          email,
-                          extractOtoroshiRights(
-                            user,
-                            UserRights(
-                              Seq(
-                                UserRight(
-                                  TenantAccess(authConfig.location.tenant.value),
-                                  authConfig.location.teams.map(t => TeamAccess(t.value))
-                                )
+                BackOfficeUser(
+                  randomId = IdGenerator.token(64),
+                  name = (user \ authConfig.nameField)
+                    .asOpt[String]
+                    .orElse((user \ "sub").asOpt[String])
+                    .getOrElse("No Name"),
+                  email = email,
+                  profile = user,
+                  authConfigId = authConfig.id,
+                  simpleLogin = false,
+                  tags = Seq.empty,
+                  metadata = Map.empty,
+                  rights =
+                    if (authConfig.superAdmins) UserRights.superAdmin
+                    else {
+                      authConfig.rightsOverride.getOrElse(
+                        email,
+                        extractOtoroshiRights(
+                          user,
+                          UserRights(
+                            Seq(
+                              UserRight(
+                                TenantAccess(authConfig.location.tenant.value),
+                                authConfig.location.teams.map(t => TeamAccess(t.value))
                               )
-                            ).some
-                          )
+                            )
+                          ).some
                         )
-                      },
-                    location = authConfig.location
-                  )
-                )
+                      )
+                    },
+                  location = authConfig.location
+                ).validate(authConfig.userValidators)
               }
           }
         }

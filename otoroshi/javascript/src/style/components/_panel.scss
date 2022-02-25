@@ -2,7 +2,25 @@
 //   text-align: right;
 // }
 
-.panel, .panel-heading {
+.panel {
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.panel-heading {
+  padding: 10px 15px;
+  border-bottom: 1px solid transparent;
+  border-bottom-color: transparent;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+  color: #fff;
+}
+
+.panel-body {
+  padding: 15px;
+}
+.panel,
+.panel-heading {
   background-color: $fondBody;
   h4 {
     color: #fff;
@@ -10,10 +28,14 @@
 }
 
 .panel-primary {
-  border-color:$colorBleue;
+  border-color: $colorBleue;
   > .panel-heading {
-    background-color:$colorBleue;
-    border-color:$colorBleue;
-    background-image:linear-gradient(to bottom, $colorBleue 0, darken($colorBleue, 5%) 100%);
+    background-color: $colorBleue;
+    border-color: $colorBleue;
+    background-image: linear-gradient(
+      to bottom,
+      $colorBleue 0,
+      darken($colorBleue, 5%) 100%
+    );
   }
 }

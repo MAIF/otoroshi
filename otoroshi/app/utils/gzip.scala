@@ -85,7 +85,7 @@ case class GzipConfig(
     implicit val ec = mat.executionContext
 
     if (enabled && (!excludedPatterns.exists(p => RegexPool.regex(p).matches(request.relativeUri)))) {
-      if (shouldCompress(result) && shouldGzip(request, result)) {
+      if (mayCompress(request) && shouldCompress(result) && shouldGzip(request, result)) {
 
         val header = result.header.copy(headers = setupHeader(result.header))
 

@@ -102,7 +102,7 @@ export class DefaultAdminPopover extends Component {
             width: 0,
           }}
           data-toggle="popover"
-          title={`<span><strong>Create an admin user</strong></span><button type="button" class="close cancel pull-right popovercancel" >&times;</button>`}
+          title={`<span><strong>Create an admin user</strong></span><button type="button" class="close cancel float-end popovercancel" >&times;</button>`}
           data-content="You're using a temporary admin user with a default (and very unsecure) password, please <a href='/bo/dashboard/admins'>create a dedicated one here</a>"
         />
       </li>

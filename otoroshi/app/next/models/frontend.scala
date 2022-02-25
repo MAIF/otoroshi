@@ -13,6 +13,7 @@ case class NgDomainAndPath(raw: String) {
 case class NgFrontend(
     domains: Seq[NgDomainAndPath],
     headers: Map[String, String],
+    query: Map[String, String],
     methods: Seq[String],
     stripPath: Boolean,
     exact: Boolean
@@ -22,12 +23,13 @@ case class NgFrontend(
     "strip_path" -> stripPath,
     "exact"      -> exact,
     "headers"    -> headers,
+    "query"    -> query,
     "methods"    -> methods
   )
 }
 
 object NgFrontend {
-  def empty: NgFrontend = NgFrontend(Seq.empty, Map.empty, Seq.empty, stripPath = true, exact = false)
+  def empty: NgFrontend = NgFrontend(domains = Seq.empty, headers = Map.empty, query = Map.empty, methods = Seq.empty, stripPath = true, exact = false)
   def readFrom(lookup: JsLookupResult): NgFrontend = {
     lookup.asOpt[JsObject] match {
       case None      => empty
@@ -37,6 +39,7 @@ object NgFrontend {
           stripPath = obj.select("strip_path").asOpt[Boolean].getOrElse(true),
           exact = obj.select("exact").asOpt[Boolean].getOrElse(false),
           headers = obj.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+          query = obj.select("query").asOpt[Map[String, String]].getOrElse(Map.empty),
           methods = obj.select("methods").asOpt[Seq[String]].getOrElse(Seq.empty)
         )
     }

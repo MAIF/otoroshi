@@ -91,9 +91,9 @@ class BackOfficeAppContainer extends Component {
     this.props.history.listen(() => {
       // document.getElementById('sidebar').setAttribute('class', 'col-sm-2 sidebar collapse');
       // document.getElementById('navbar').setAttribute('class', 'navbar-collapse collapse');
-      document
-        .getElementById('toggle-sidebar')
-        .setAttribute('class', 'navbar-toggle menu collapsed');
+      //document
+      //  .getElementById('toggle-sidebar')
+      //  .setAttribute('class', 'navbar-toggler menu collapsed');
       // document.getElementById('toggle-navigation').setAttribute('class', 'navbar-toggle collapsed');
     });
     BackOfficeServices.env().then((env) => {
@@ -158,7 +158,7 @@ class BackOfficeAppContainer extends Component {
               <div className="sidebar-container">
                 <div className="sidebar-content">
                   <GlobalTenantSelector />
-                  <ul className="nav nav-sidebar">
+                  <ul className="nav flex-column nav-sidebar">
                     <li>
                       <h2>
                         <a
@@ -539,7 +539,7 @@ class BackOfficeAppContainer extends Component {
                           </button>
                           <button
                             type="button"
-                            className="btn btn-danger"
+                            className="btn btn-danger ms-2"
                             onClick={(e) => window.location.reload()}>
                             <i className="fas fa-redo" /> reload
                           </button>

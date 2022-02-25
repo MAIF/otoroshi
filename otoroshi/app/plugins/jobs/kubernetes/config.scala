@@ -37,6 +37,7 @@ case class KubernetesConfig(
     crds: Boolean,
     syncDaikokuApikeysOnly: Boolean,
     restartDependantDeployments: Boolean,
+    useProxyState: Boolean,
     mutatingWebhookName: String,
     validatingWebhookName: String,
     image: Option[String],
@@ -150,6 +151,7 @@ object KubernetesConfig {
           crds = (conf \ "crds").asOpt[Boolean].getOrElse(true),
           kubeLeader = (conf \ "kubeLeader").asOpt[Boolean].getOrElse(false),
           restartDependantDeployments = (conf \ "restartDependantDeployments").asOpt[Boolean].getOrElse(false),
+          useProxyState = (conf \ "useProxyState").asOpt[Boolean].getOrElse(false),
           watch = (conf \ "watch").asOpt[Boolean].getOrElse(true),
           syncDaikokuApikeysOnly = (conf \ "syncDaikokuApikeysOnly").asOpt[Boolean].getOrElse(false),
           triggerKey = (conf \ "triggerKey").asOpt[String],
@@ -238,6 +240,7 @@ object KubernetesConfig {
           crds = (conf \ "crds").asOpt[Boolean].getOrElse(true),
           kubeLeader = (conf \ "kubeLeader").asOpt[Boolean].getOrElse(false),
           restartDependantDeployments = (conf \ "restartDependantDeployments").asOpt[Boolean].getOrElse(false),
+          useProxyState = (conf \ "useProxyState").asOpt[Boolean].getOrElse(false),
           watch = (conf \ "watch").asOpt[Boolean].getOrElse(true),
           syncDaikokuApikeysOnly = (conf \ "syncDaikokuApikeysOnly").asOpt[Boolean].getOrElse(false),
           triggerKey = (conf \ "triggerKey").asOpt[String],
@@ -300,6 +303,7 @@ object KubernetesConfig {
         "coreDnsIntegrationDryRun"             -> false,
         "kubeLeader"                           -> false,
         "restartDependantDeployments"          -> true,
+        "useProxyState"                        -> false,
         "watch"                                -> true,
         "syncDaikokuApikeysOnly"               -> false,
         "kubeSystemNamespace"                  -> "kube-system",
@@ -371,6 +375,7 @@ object KubernetesConfig {
       "crds",
       "syncDaikokuApikeysOnly",
       "restartDependantDeployments",
+      "useProxyState",
       ">>>webhooks",
       "validatingWebhookName",
       "mutatingWebhookName",
@@ -527,7 +532,12 @@ object KubernetesConfig {
       "Restart deployments",
       "If enabled, deployments dependant to otoroshi managed secrets (apikeys, certs) will be automatically restarted as secrets are updated".some
     )
-
+    ++ makeFormField(
+      "useProxyState",
+      "bool",
+      "Use proxy state",
+      "If enabled, the sync between entities coming from kube and entity coming from datastore will use proxy state data instead of datastore access. Should save some cpu/io/ram.".some
+    )
     ++ makeFormField(
       "mutatingWebhookName",
       "string",

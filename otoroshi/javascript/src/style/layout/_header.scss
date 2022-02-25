@@ -75,6 +75,22 @@
 .navbar-header {
   height: 52px;
   background-color: $primaryColor;
+  a {
+    color: #fff;
+  }
+  width: 17.5%;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.navbar {
+  padding-top: 0;
+  padding-bottom: 0;
+
+  .container-fluid{
+    padding-left: 0;
+    padding-right: 0;
+  }
 }
 
 .navbar-inverse .navbar-nav > li > a {
@@ -83,16 +99,15 @@
 
 .fa-cog {
   font-size: 1.5em;
-  top: 5px;
-  @media screen and (min-width:768px) {
-    padding-right: 15px;
-  }
 }
 
 .fa-lightbulb, .fa-moon, .fa-cog{
   color: #fff;
 }
 
+nav {
+  background-color: $fondNavbar;
+}
 #navbar .Select-control {
   border: 1px solid #ccc;
 }
@@ -118,9 +133,9 @@
       display: inline-block;
     }
 
-    .Select-control {
-      width: 100% !important;
-    }
+    // .Select-control {
+    //   width: 100% !important;
+    // }
   }
 
   .link-logout {

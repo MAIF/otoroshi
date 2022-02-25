@@ -420,7 +420,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -440,7 +440,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -486,7 +486,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -505,7 +505,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -918,7 +918,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -955,7 +955,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -1307,9 +1307,8 @@ export class DangerZonePage extends Component {
     return (
       <div>
         <div className="row">
-          <div className="form-group btnsService">
-            <div className="col-md-10">
-              <div className="btn-group pull-right">
+          <div className="mb-3 btnsService">
+            <div className="displayGroupBtn">
                 <button
                   title="Add item"
                   className="btn btn-success"
@@ -1318,14 +1317,13 @@ export class DangerZonePage extends Component {
                   {...propsDisabled}>
                   <i className="fas fa-hdd" />
                 </button>
-              </div>
             </div>
           </div>
         </div>
         <Form
           value={this.state.value}
           onChange={this.updateState}
-          flow={this.formFlow}
+          flow={this.formFlow(this.state.value)}
           schema={this.formSchema}
           style={{ marginTop: 50 }}
         />
@@ -1341,8 +1339,8 @@ export class DangerZonePage extends Component {
             onChange={this.readyToPush}
           />
           {!this.state.readyToPush && (
-            <div className="form-group">
-              <label className="col-sm-2 control-label" />
+            <div className="row mb-3">
+              <label className="col-sm-2 col-form-label" />
               <div className="col-sm-10">
                 <label
                   htmlFor="export"
@@ -1362,8 +1360,8 @@ export class DangerZonePage extends Component {
             </div>
           )}
           {this.state.readyToPush && (
-            <div className="form-group">
-              <label className="col-sm-2 control-label" />
+            <div className="row mb-3">
+              <label className="col-sm-2 col-form-label" />
               <div className="col-sm-10">
                 <button type="button" className="btn btn-danger" onClick={this.importData}>
                   <i className="fas fa-file-import" /> Flush DataStore & Import file '
@@ -1375,9 +1373,9 @@ export class DangerZonePage extends Component {
         </form>
         <hr />
         <form className="form-horizontal">
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10">
+          <div className="row mb-3">
+            <label className="col-sm-2 col-form-label" />
+            <div className="col-sm-10  input-group-btn">
               <button type="button" className="btn btn-success" onClick={this.fullExport}>
                 <i className="fas fa-file-export" /> Full export
               </button>
@@ -1409,9 +1407,9 @@ export class DangerZonePage extends Component {
 class BackOfficeAuthButtons extends Component {
   render() {
     return (
-      <div className="form-group">
-        <label className="col-xs-12 col-sm-2 control-label" />
-        <div className="col-sm-10">
+      <div className="row mb-3">
+        <label className="col-xs-12 col-sm-2 col-form-label" />
+        <div className="col-sm-10 input-group-btn">
           {!this.props.rawValue.backOfficeAuthRef && (
             <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
               <i className="fas fa-plus" /> Create a new auth. config.
@@ -1541,7 +1539,7 @@ class GlobalScripts extends Component {
           config={config.jobConfig}
           onChangeConfig={(e) => this.changeTheValue('jobConfig', e)}
         />
-        <div className="form-group">
+        <div className="row mb-3">
           <Suspense fallback={<div>loading ...</div>}>
             <CodeInput
               label="Jobs configuration"
@@ -1559,7 +1557,7 @@ class GlobalScripts extends Component {
           config={config.sinkConfig}
           onChangeConfig={(e) => this.changeTheValue('sinkConfig', e)}
         />
-        <div className="form-group">
+        <div className="row mb-3">
           <Suspense fallback={<div>loading ...</div>}>
             <CodeInput
               label="Request sinks configuration"
@@ -1577,7 +1575,7 @@ class GlobalScripts extends Component {
           config={config.preRouteConfig}
           onChangeConfig={(e) => this.changeTheValue('preRouteConfig', e)}
         />
-        <div className="form-group">
+        <div className="row mb-3">
           <Suspense fallback={<div>loading ...</div>}>
             <CodeInput
               label="Pre-routes configuration"
@@ -1595,7 +1593,7 @@ class GlobalScripts extends Component {
           config={config.validatorConfig}
           onChangeConfig={(e) => this.changeTheValue('validatorConfig', e)}
         />
-        <div className="form-group">
+        <div className="row mb-3">
           <Suspense fallback={<div>loading ...</div>}>
             <CodeInput
               label="Access validators configuration"
@@ -1613,7 +1611,7 @@ class GlobalScripts extends Component {
           config={config.transformersConfig}
           onChangeConfig={(e) => this.changeTheValue('transformersConfig', e)}
         />
-        <div className="form-group">
+        <div className="row mb-3">
           <Suspense fallback={<div>loading ...</div>}>
             <CodeInput
               label="Transformers configuration"
@@ -1657,7 +1655,7 @@ class GlobalPlugins extends Component {
           config={config.config}
           onChangeConfig={(e) => this.changeTheValue('config', e)}
         />
-        <div className="form-group">
+        <div className="row mb-3">
           <Suspense fallback={<div>loading ...</div>}>
             <CodeInput
               label="plugins configuration"
@@ -1675,8 +1673,8 @@ class GlobalPlugins extends Component {
 export class Message extends Component {
   render() {
     return (
-      <div className="form-group">
-        <label className="col-xs-12 col-sm-2 control-label" />
+      <div className="row mb-3">
+        <label className="col-xs-12 col-sm-2 col-form-label" />
         <div className="col-sm-10">
           <div className="sub-container sub-container__bg-color">
             <p style={{ textAlign: 'justify', marginBottom: 0 }}>{this.props.message}</p>
@@ -1713,7 +1711,7 @@ export class Migration extends Component {
   render() {
     return (
       <button
-        className="btn btn-danger btn-xs btn-sm"
+        className="btn btn-danger btn-sm btn-sm"
         type="button"
         onClick={this.migrate}
         style={this.props.style}>

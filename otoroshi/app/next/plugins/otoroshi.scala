@@ -74,6 +74,10 @@ class OtoroshiChallenge extends NgRequestTransformer {
 
   private val logger = Logger("otoroshi-next-plugins-otoroshi-challenge")
 
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false
   override def transformsRequest: Boolean        = true
@@ -322,6 +326,10 @@ class OtoroshiChallenge extends NgRequestTransformer {
 class OtoroshiInfos extends NgRequestTransformer {
 
   private val logger = Logger("otoroshi-next-plugins-otoroshi-infos")
+
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Security)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false

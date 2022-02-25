@@ -443,6 +443,7 @@ case class NgTarget(
     ipAddress: Option[String] = None,
     tlsConfig: NgTlsConfig = NgTlsConfig()
 ) {
+  lazy val baseUrl: String = s"${if (tls) "https" else "http"}://${ipAddress.getOrElse(hostname)}${defaultPortString}"
   lazy val defaultPortString                = port match {
     case 443 => ""
     case 80  => ""
@@ -466,6 +467,7 @@ case class NgTarget(
     "port"       -> port,
     "tls"        -> tls,
     "weight"     -> weight,
+    "predicate"  -> predicate.toJson,
     "protocol"   -> protocol.value,
     "ip_address" -> ipAddress.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "tls_config" -> tlsConfig.json

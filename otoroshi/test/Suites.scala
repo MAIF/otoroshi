@@ -169,5 +169,5 @@ class NgTreeRouterTests
 
 class OneShotTests
     extends Suites(
-      new QuotasSpec("DEV", Configurations.InMemoryConfiguration)
+      new MapFilterSpec()
     )

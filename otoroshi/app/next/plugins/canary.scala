@@ -68,6 +68,11 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
 
   private val logger                               = Logger("otoroshi-next-plugins-canary-mode")
   private val configReads: Reads[NgCanarySettings] = NgCanarySettings.format
+
+  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute, NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def core: Boolean                       = true
   override def usesCallbacks: Boolean              = false
   override def transformsRequest: Boolean          = false
