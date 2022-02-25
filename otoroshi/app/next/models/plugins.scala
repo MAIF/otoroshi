@@ -179,11 +179,11 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
 object NgPlugins {
   def readFrom(lookup: JsLookupResult): NgPlugins = {
-    lookup.asOpt[JsObject] match {
+    lookup.asOpt[JsArray] match {
       case None      => NgPlugins(Seq.empty)
-      case Some(obj) =>
+      case Some(arr) =>
         NgPlugins(
-          slots = obj.select("slots").asOpt[Seq[JsValue]].map(_.map(NgPluginInstance.readFrom)).getOrElse(Seq.empty)
+          slots = arr.asOpt[Seq[JsValue]].map(_.map(NgPluginInstance.readFrom)).getOrElse(Seq.empty)
         )
     }
   }
