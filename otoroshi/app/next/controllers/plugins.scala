@@ -29,22 +29,21 @@ class NgPluginsController(
       case (name, plugin) =>
         Json.obj(
           "id"            -> name,
-          "name"          -> plugin.name,
-          "description"   -> plugin.description
+          "name"              -> plugin.name,
+          "description"       -> plugin.description
             .map(_.trim)
             .filter(_.nonEmpty)
             .map(JsString.apply)
             .getOrElse(JsNull)
             .as[JsValue],
-          "default_config" -> plugin.defaultConfig.getOrElse(JsNull).as[JsValue],
-          "config_root"    -> plugin.configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-          "config_schema"  -> plugin.configSchema.getOrElse(JsNull).as[JsValue],
-          "config_flow"    -> JsArray(plugin.configFlow.map(JsString.apply)),
-          "plugin_type"    -> "ng",
+          "default_config"    -> plugin.defaultConfig.getOrElse(JsNull).as[JsValue],
+          "config_schema"     -> plugin.configSchema.getOrElse(JsNull).as[JsValue],
+          "config_flow"       -> JsArray(plugin.configFlow.map(JsString.apply)),
+          "plugin_type"       -> "ng",
           "plugin_visibility" -> plugin.visibility.json,
           "plugin_categories" -> JsArray(plugin.categories.map(_.json)),
-          "plugin_steps" -> JsArray(plugin.steps.map(_.json)),
-          "plugin_tags" -> JsArray(plugin.tags.map(JsString.apply)),
+          "plugin_steps"      -> JsArray(plugin.steps.map(_.json)),
+          "plugin_tags"       -> JsArray(plugin.tags.map(JsString.apply)),
         )
     }))
   }
