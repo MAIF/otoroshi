@@ -10,6 +10,7 @@ import otoroshi.controllers.adminapi._
 import otoroshi.env.Env
 import otoroshi.gateway._
 import otoroshi.loader.modules._
+import otoroshi.next.controllers.NgPluginsController
 import otoroshi.next.controllers.adminapi._
 import play.api.ApplicationLoader.Context
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
@@ -117,6 +118,7 @@ package object modules {
     lazy val ngServicesController         = wire[NgServicesController]
     lazy val targetsController            = wire[NgTargetsController]
     lazy val backendsController           = wire[NgBackendsController]
+    lazy val pluginsController            = wire[NgPluginsController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

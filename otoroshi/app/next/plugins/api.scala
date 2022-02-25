@@ -158,6 +158,7 @@ object NgPluginVisibility {
 
 sealed trait NgPluginCategory {
   def name: String
+  def json: JsValue = name.json
 }
 
 object NgPluginCategory {
@@ -209,6 +210,16 @@ object NgStep {
   case object TransformResponse extends NgStep { def name: String = "TransformResponse" }
   case object MatchRoute        extends NgStep { def name: String = "MatchRoute" }
   case object HandlesTunnel     extends NgStep { def name: String = "HandlesTunnel" }
+
+  val all = Seq(
+    Sink,
+    PreRoute,
+    ValidateAccess,
+    TransformRequest,
+    TransformResponse,
+    MatchRoute,
+    HandlesTunnel,
+  )
 }
 
 trait NgNamedPlugin extends NamedPlugin { self =>
