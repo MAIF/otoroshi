@@ -1780,9 +1780,17 @@ export const updateRoute = route => fetchWrapper(`/routes/${route.id}`, 'PUT', r
 export const fetchRoute = routeId => fetchWrapper(`/routes/${routeId}`)
 export const removeRoute = route => fetchWrapper(`/routes/${route.id}`, 'DELETE')
 export const getRouteTemplate = () => fetchWrapper('/routes/_template')
-export const getPlugins = () => fetch('/bo/api/proxy/api/scripts/_list', {
+export const getPlugins = () => fetch('/bo/api/proxy/api/next/plugins/all', {
   credentials: 'include',
   headers: {
     Accept: 'application/json'
   }
 }).then(r => r.json())
+
+export const getCategories = () => fetch('/bo/api/proxy/api/next/plugins/categories', {
+  credentials: 'include',
+  headers: {
+    Accept: 'application/json'
+  }
+}).then(r => r.json())
+

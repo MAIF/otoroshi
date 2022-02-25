@@ -194,7 +194,7 @@ class BackOfficeAppContainer extends Component {
                 </div>
               </div>
             </div>
-            <div className={`${(isFullPage ? 'col-sm-12' : 'col-sm-10 col-sm-offset-2 main')}`}>
+            <div className={`${(isFullPage ? 'col-sm-12' : 'col-sm-10 offset-2 main')}`}>
               <div className="row">
                 <div className={classes.join(' ')} style={{ overflowX: "hidden" }}>
                   {isFullPage ? null : <DynamicTitle />}

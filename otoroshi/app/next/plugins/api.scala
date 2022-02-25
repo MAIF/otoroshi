@@ -237,26 +237,40 @@ trait NgNamedPlugin extends NamedPlugin { self =>
           jsobj.value.toSeq
             .map {
               case (key, JsString(_))              =>
-                Json.obj(prefix + key -> Json.obj("type" -> "string", "props" -> Json.obj("label" -> (prefix + key))))
+                Json.obj(prefix + key -> Json.obj("type" -> "string", "label" -> (prefix + key)))
               case (key, JsNumber(_))              =>
-                Json.obj(prefix + key -> Json.obj("type" -> "number", "props" -> Json.obj("label" -> (prefix + key))))
+                Json.obj(prefix + key -> Json.obj("type" -> "number", "label" -> (prefix + key)))
               case (key, JsBoolean(_))             =>
-                Json.obj(prefix + key -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> (prefix + key))))
+                Json.obj(prefix + key -> Json.obj("type" -> "bool", "label" -> (prefix + key)))
               case (key, JsArray(values))          => {
                 if (values.isEmpty) {
-                  Json.obj(prefix + key -> Json.obj("type" -> "array", "props" -> Json.obj("label" -> (prefix + key))))
+                    Json.obj(prefix + key -> Json.obj(
+                      "type" -> "string",
+                      "format" -> "select",
+                      "createOption" -> true,
+                      "isMulti" -> true,
+                      "label" -> (prefix + key)))
                 } else {
                   values.head match {
                     case JsNumber(_) =>
                       Json.obj(
                         prefix + key -> Json.obj(
-                          "type"  -> "array",
-                          "props" -> Json.obj("label" -> (prefix + key), "inputType" -> "number")
+                          "type"  -> "number",
+                          "format" -> "select",
+                          "label" -> (prefix + key),
+                          "createOption" -> true,
+                          "isMulti" -> true,
                         )
                       )
                     case _           =>
                       Json.obj(
-                        prefix + key -> Json.obj("type" -> "array", "props" -> Json.obj("label" -> (prefix + key)))
+                        prefix + key -> Json.obj(
+                          "type"  -> "string",
+                          "format" -> "select",
+                          "label" -> (prefix + key),
+                          "createOption" -> true,
+                          "isMulti" -> true,
+                        )
                       )
                   }
                 }
@@ -265,8 +279,18 @@ trait NgNamedPlugin extends NamedPlugin { self =>
               case ("mtls", a @ JsObject(_))       => genSchema(a, prefix + "mtls.")
               case ("filter", a @ JsObject(_))     => genSchema(a, prefix + "filter.")
               case ("not", a @ JsObject(_))        => genSchema(a, prefix + "not.")
-              case (key, JsObject(_))              =>
-                Json.obj(prefix + key -> Json.obj("type" -> "object", "props" -> Json.obj("label" -> (prefix + key))))
+              case (key, a @ JsObject(_))              =>
+                if (a.value.isEmpty)
+                  Json.obj(prefix + key -> Json.obj(
+                    "type" -> "object",
+                    "label" -> (prefix + key)
+                  ))
+                else
+                  Json.obj(prefix + key -> Json.obj(
+                    "type" -> "object",
+                    "format" -> "form",
+                    "label" -> (prefix + key)
+                  ).as[JsObject].deepMerge(Json.obj("schema" -> genSchema(a, ""))))
               case (key, JsNull)                   => Json.obj()
             }
             .foldLeft(Json.obj())(_ ++ _)
