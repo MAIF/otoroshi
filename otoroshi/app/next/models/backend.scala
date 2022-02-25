@@ -466,6 +466,7 @@ case class NgTarget(
     "port"       -> port,
     "tls"        -> tls,
     "weight"     -> weight,
+    "predicate"  -> predicate.toJson,
     "protocol"   -> protocol.value,
     "ip_address" -> ipAddress.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "tls_config" -> tlsConfig.json
