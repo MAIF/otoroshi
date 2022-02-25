@@ -24,7 +24,7 @@ import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.streams.MaxLengthLimiter
 import otoroshi.utils.syntax.implicits._
-import otoroshi.utils.{TypedMap, UrlSanitizer}
+import otoroshi.utils.{RegexPool, TypedMap, UrlSanitizer}
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.http.websocket.{Message => PlayWSMessage}
@@ -42,6 +42,7 @@ import scala.util.{Failure, Success}
 case class ProxyEngineConfig(
   enabled: Boolean,
   domains: Seq[String],
+  denyDomains: Seq[String],
   reporting: Boolean,
   pluginMerge: Boolean,
   exportReporting: Boolean,
@@ -54,6 +55,7 @@ case class ProxyEngineConfig(
   def json: JsValue = Json.obj(
     "enabled" -> enabled,
     "domains" -> domains,
+    "deny_domains" -> denyDomains,
     "reporting" -> reporting,
     "merge_sync_steps" -> pluginMerge,
     "export_reporting" -> exportReporting,
@@ -68,6 +70,7 @@ object ProxyEngineConfig {
   lazy val default: ProxyEngineConfig = ProxyEngineConfig(
     enabled = true,
     domains = Seq("*-next-gen.oto.tools"),
+    denyDomains = Seq.empty,
     reporting = true,
     pluginMerge = true,
     exportReporting = false,
@@ -79,6 +82,7 @@ object ProxyEngineConfig {
   def parse(config: JsValue, env: Env): ProxyEngineConfig = {
     val enabled = config.select("enabled").asOpt[Boolean].getOrElse(true)
     val domains = if (enabled) config.select("domains").asOpt[Seq[String]].getOrElse(Seq("*-next-gen.oto.tools")) else Seq.empty[String]
+    val denyDomains = if (enabled) config.select("deny_domains").asOpt[Seq[String]].getOrElse(Seq.empty) else Seq.empty[String]
     val reporting       = config.select("reporting").asOpt[Boolean].getOrElse(true)
     val pluginMerge     = config
       .select("merge_sync_steps")
@@ -107,6 +111,7 @@ object ProxyEngineConfig {
     ProxyEngineConfig(
       enabled = enabled,
       domains = domains,
+      denyDomains = denyDomains,
       reporting = reporting,
       pluginMerge = pluginMerge,
       exportReporting = exportReporting,
@@ -225,7 +230,8 @@ class ProxyEngine() extends RequestHandler {
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
     val config                = getConfig()
-    if (enabledRef.get()) {
+    val shouldNotHandle       = if (config.denyDomains.isEmpty) false else config.denyDomains.exists(d => RegexPool.apply(d).matches(request.theDomain))
+    if (enabledRef.get() && !shouldNotHandle) {
       handleRequest(request, config)
     } else {
       defaultRouting(request)
@@ -238,7 +244,8 @@ class ProxyEngine() extends RequestHandler {
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
     val config                = getConfig()
-    if (enabledRef.get()) {
+    val shouldNotHandle       = if (config.denyDomains.isEmpty) false else config.denyDomains.exists(d => RegexPool.apply(d).matches(request.theDomain))
+    if (enabledRef.get() && !shouldNotHandle) {
       handleWsRequest(request, config)
     } else {
       defaultRouting(request)
@@ -252,7 +259,7 @@ class ProxyEngine() extends RequestHandler {
       globalConfig: GlobalConfig
   ): Future[Result] = {
     val requestId       = IdGenerator.uuid
-    val ProxyEngineConfig(_, _, reporting, pluginMerge, exportReporting, debug, debugHeaders, _, _) = config
+    val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, debug, debugHeaders, _, _) = config
     val useTree = config.useTree
     implicit val report = NgExecutionReport(requestId, reporting)
     report.start("start-handling")
@@ -410,7 +417,7 @@ class ProxyEngine() extends RequestHandler {
       globalConfig: GlobalConfig
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     val requestId       = IdGenerator.uuid
-    val ProxyEngineConfig(_, _, reporting, pluginMerge, exportReporting, _, _, _, _) = config
+    val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, _, _, _, _) = config
     val useTree = config.useTree
     implicit val report = NgExecutionReport(requestId, reporting)
 
