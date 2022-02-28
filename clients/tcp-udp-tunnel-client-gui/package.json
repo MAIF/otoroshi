@@ -15,7 +15,7 @@
     "lodash": "4.17.20",
     "moment": "2.28.0",
     "node-fetch": "2.6.1",
-    "ws": "7.3.1"
+    "ws": "7.4.6"
   },
   "devDependencies": {
     "electron": "10.1.2",
