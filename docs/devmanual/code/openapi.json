@@ -73,6 +73,9 @@
     "name" : "live",
     "description" : "All api endpoints about live"
   }, {
+    "name" : "next",
+    "description" : "???"
+  }, {
     "name" : "organizations",
     "description" : "All api endpoints about organizations"
   }, {
@@ -314,6 +317,59 @@
               "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.script.Script"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/next/plugins/steps" : {
+      "get" : {
+        "tags" : [ "next" ],
+        "summary" : "???",
+        "operationId" : "otoroshi.next.controllers.NgPluginsController.steps",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -3120,6 +3176,59 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.models.SnowMonkeyConfig"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/next/plugins/all" : {
+      "get" : {
+        "tags" : [ "next" ],
+        "summary" : "???",
+        "operationId" : "otoroshi.next.controllers.NgPluginsController.plugins",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Unknown"
+                }
               }
             }
           }
@@ -7751,6 +7860,59 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenCsrQuery"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/next/plugins/categories" : {
+      "get" : {
+        "tags" : [ "next" ],
+        "summary" : "???",
+        "operationId" : "otoroshi.next.controllers.NgPluginsController.categories",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Unknown"
+                }
               }
             }
           }
@@ -17203,6 +17365,13 @@
             },
             "description" : "LDAP server list of url"
           },
+          "userValidators" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.auth.UserValidator"
+            },
+            "description" : "???"
+          },
           "_loc" : {
             "description" : "Location of the module",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
@@ -17667,6 +17836,13 @@
           "otoroshiDataField" : {
             "description" : "Field name to get otoroshi metadata from. You can specify sub fields using | as separator",
             "type" : "string"
+          },
+          "userValidators" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.auth.UserValidator"
+            },
+            "description" : "???"
           },
           "_loc" : {
             "description" : "Location of the module",
@@ -19333,6 +19509,13 @@
             },
             "description" : "???"
           },
+          "query" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
           "domains" : {
             "type" : "array",
             "items" : {
@@ -20072,6 +20255,41 @@
           }
         }
       },
+      "otoroshi.next.models.NgCustomTimeouts" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "connectionTimeout" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "callAndStreamTimeout" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "path" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "callTimeout" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "idleTimeout" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "globalTimeout" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          }
+        }
+      },
       "otoroshi.models.VerifierStrategy" : {
         "oneOf" : [ {
           "$ref" : "#/components/schemas/otoroshi.models.DefaultToken"
@@ -20507,7 +20725,7 @@
           },
           "client" : {
             "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.models.ClientConfig"
+            "$ref" : "#/components/schemas/otoroshi.next.models.NgClientConfig"
           },
           "name" : {
             "description" : "???",
@@ -20746,6 +20964,81 @@
           "path" : {
             "description" : "Path of the http request",
             "type" : "string"
+          }
+        }
+      },
+      "otoroshi.next.models.NgClientConfig" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "idleTimeout" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "sampleInterval" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "cacheConnectionSettings" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.next.models.NgCacheConnectionSettings"
+          },
+          "callAndStreamTimeout" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "customTimeouts" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.next.models.NgCustomTimeouts"
+            },
+            "description" : "???"
+          },
+          "connectionTimeout" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "callTimeout" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "globalTimeout" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "retryInitialDelay" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "backoffFactor" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "proxy" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
+            } ],
+            "description" : "???"
+          },
+          "retries" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "maxErrors" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
           }
         }
       },
@@ -21049,11 +21342,6 @@
         "description" : "Authentication module that let you use otoroshi as the identity provider",
         "type" : "object",
         "properties" : {
-          "sessionMaxAge" : {
-            "format" : "int32",
-            "description" : "max age for the session cookie in seconds",
-            "type" : "integer"
-          },
           "metadata" : {
             "type" : "object",
             "additionalProperties" : {
@@ -21069,22 +21357,17 @@
             "description" : "Use standard basic auth or web login form",
             "type" : "boolean"
           },
-          "name" : {
-            "description" : "name of the module",
-            "type" : "string"
-          },
-          "webauthn" : {
-            "description" : "Use webauthn for login",
-            "type" : "boolean"
-          },
-          "id" : {
-            "description" : "id of the module",
-            "type" : "string"
-          },
           "type" : {
             "description" : "the type of the module",
             "type" : "string",
             "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
+          },
+          "userValidators" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.auth.UserValidator"
+            },
+            "description" : "???"
           },
           "_loc" : {
             "description" : "location of the module",
@@ -21097,16 +21380,33 @@
             },
             "description" : "Users attached to the module"
           },
-          "desc" : {
-            "description" : "description of the module",
-            "type" : "string"
-          },
           "tags" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Entity tags"
+          },
+          "sessionMaxAge" : {
+            "format" : "int32",
+            "description" : "max age for the session cookie in seconds",
+            "type" : "integer"
+          },
+          "name" : {
+            "description" : "name of the module",
+            "type" : "string"
+          },
+          "webauthn" : {
+            "description" : "Use webauthn for login",
+            "type" : "boolean"
+          },
+          "id" : {
+            "description" : "id of the module",
+            "type" : "string"
+          },
+          "desc" : {
+            "description" : "description of the module",
+            "type" : "string"
           }
         }
       },
@@ -21386,6 +21686,38 @@
           }
         }
       },
+      "otoroshi.next.models.NgTlsConfig" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "certs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "loose" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "trustAll" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "trustedCerts" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          }
+        }
+      },
       "otoroshi.models.ApiKeyRouteMatcher" : {
         "description" : "Routing settings based on apikeys metadata and tags",
         "type" : "object",
@@ -21583,7 +21915,7 @@
           },
           "client" : {
             "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.models.ClientConfig"
+            "$ref" : "#/components/schemas/otoroshi.next.models.NgClientConfig"
           },
           "loadBalancing" : {
             "description" : "???",
@@ -21640,6 +21972,21 @@
           "config" : {
             "description" : "pre-routing plugins configuration",
             "type" : "object"
+          }
+        }
+      },
+      "otoroshi.next.models.NgCacheConnectionSettings" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "queueSize" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "enabled" : {
+            "description" : "???",
+            "type" : "boolean"
           }
         }
       },
@@ -21946,6 +22293,13 @@
             "type" : "string",
             "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
           },
+          "userValidators" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.auth.UserValidator"
+            },
+            "description" : "???"
+          },
           "_loc" : {
             "description" : "Location of the SAML module",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
@@ -22203,6 +22557,20 @@
           }
         }
       },
+      "otoroshi.auth.UserValidator" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "path" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "value" : {
+            "description" : "???",
+            "type" : "object"
+          }
+        }
+      },
       "otoroshi.models.RSAKPAlgoSettings" : {
         "description" : "Settings to use RSA signing algorithm from a certificate keypair",
         "type" : "object",
@@ -22273,6 +22641,13 @@
           "httpMethod" : {
             "description" : "Method used to fetch access and request token",
             "$ref" : "#/components/schemas/otoroshi.auth.OAuth1Provider"
+          },
+          "userValidators" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.auth.UserValidator"
+            },
+            "description" : "???"
           },
           "_loc" : {
             "description" : "The location of the OAuth 1 module",
@@ -22649,7 +23024,7 @@
           },
           "tlsConfig" : {
             "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
+            "$ref" : "#/components/schemas/otoroshi.next.models.NgTlsConfig"
           },
           "tls" : {
             "description" : "???",
