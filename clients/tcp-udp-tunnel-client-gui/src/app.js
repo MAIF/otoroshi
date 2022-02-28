@@ -9,8 +9,8 @@ let currentProfile = null;
 let connections = 0;
 let connectionsPerTunnel = {};
 
-const logoGrey = path.join(__dirname, '/otoroshi-logo-small-grey.png');
-const logo = path.join(__dirname, '/otoroshi-logo-small.png');
+const logoGrey = path.join(__dirname, '..', '/icon-small-grey.png');
+const logo = path.join(__dirname, '..', '/icon-small.png');
 
 function updateConnections(name, connection) {
   connections = 0;
@@ -120,8 +120,9 @@ class Profile {
 }
 
 app.on('ready', () => {
-  app.dock.hide();
+  // app.dock.hide();
   tray = new Tray(logoGrey);
+  tray.focus();
   updateTray([]);
   scanProfilesAndUpdateTray();
 
