@@ -29,6 +29,45 @@ The next time a request hits the `api.foo.bar` domain, the new engine will handl
 }
 ```
 
+if you need to enable global plugin with the new engine, you can add the following configuration in the `global plugins` configuration object 
+
+```javascript
+{
+  ...
+  "ng": {
+    "slots": [
+      {
+        "plugin": "cp:otoroshi.next.plugins.W3CTracing",
+        "enabled": true,
+        "include": [],
+        "exclude": [],
+        "config": {
+          "baggage": {
+            "foo": "bar"
+          }
+        }
+      },
+      {
+        "plugin": "cp:otoroshi.next.plugins.wrappers.RequestSinkWrapper",
+        "enabled": true,
+        "include": [],
+        "exclude": [],
+        "config": {
+          "plugin": "cp:otoroshi.plugins.apikeys.ClientCredentialService",
+          "ClientCredentialService": {
+            "domain": "ccs-next-gen.oto.tools",
+            "expiration": 3600000,
+            "defaultKeyPair": "otoroshi-jwt-signing",
+            "secure": false
+          }
+        }
+      }
+    ]
+  }
+  ...
+}
+```
+
 ## Entities
 
 This plugin introduces new entities that will replace (one day maybe) service descriptors:
@@ -51,9 +90,9 @@ The new route allow routes to be matched on a combination of
 * hostname
 * path
 * header values
-    * where values can be exact, or `Regex(value_regex)`, or `Wildcard(value_with_*)`
+    * where values can be `exact_value`, or `Regex(value_regex)`, or `Wildcard(value_with_*)`
 * query param values
-    * where values can be exact, or `Regex(value_regex)`, or `Wildcard(value_with_*)`
+    * where values can be `exact_value`, or `Regex(value_regex)`, or `Wildcard(value_with_*)`
 
 patch matching works 
 
@@ -84,7 +123,10 @@ as path matching can now include named path params, it is possible to perform a 
 
 ## Plugins
 
-the new route entity defines a plugin pipline where any plugin can be `enabled`/`disabled` globally or for some paths. Each plugin slot in the pipeline holds the plugin id and the plugin configuration. You can also enable debugging only on a plugin instance instead of the whole route
+the new route entity defines a plugin pipline where any plugin can be `enabled`/`disabled` globally or for some paths. 
+Each plugin slot in the pipeline holds the plugin id and the plugin configuration. 
+
+You can also enable debugging only on a plugin instance instead of the whole route (see [the debugging section](#debugging))
 
 ```javascript
 { 
@@ -104,6 +146,37 @@ the new route entity defines a plugin pipline where any plugin can be `enabled`/
     "exclude" : [ "/openapi.json" ],
     "config" : { }
   } ]
+}
+```
+
+## Using legacy plugins
+
+if you need to use legacy otoroshi plugins with the new engine, you can use several wrappers in order to do so
+
+* `otoroshi.next.plugins.wrappers.PreRoutingWrapper`
+* `otoroshi.next.plugins.wrappers.AccessValidatorWrapper`
+* `otoroshi.next.plugins.wrappers.RequestSinkWrapper`
+* `otoroshi.next.plugins.wrappers.RequestTransformerWrapper`
+* `otoroshi.next.plugins.wrappers.CompositeWrapper`
+
+to use it, just declare a plugin slot with the right wrapper and in the config, declare the `plugin` you want to use and its configuration like:
+
+```javascript
+{
+  "plugin": "cp:otoroshi.next.plugins.wrappers.PreRoutingWrapper",
+  "enabled": true,
+  "include": [],
+  "exclude": [],
+  "config": {
+    "plugin": "cp:otoroshi.plugins.jwt.JwtUserExtractor",
+    "JwtUserExtractor": {
+      "verifier" : "$ref",
+      "strict"   : true,
+      "namePath" : "name",
+      "emailPath": "email",
+      "metaPath" : null
+    }
+  }
 }
 ```
 
