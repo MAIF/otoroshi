@@ -84,7 +84,392 @@ as path matching can now include named path params, it is possible to perform a 
 
 ## Plugins
 
+the new route entity defines a plugin pipline where any plugin can be `enabled`/`disabled` globally or for some paths. Each plugin slot in the pipeline holds the plugin id and the plugin configuration. You can also enable debugging only on a plugin instance instead of the whole route
+
+```javascript
+{ 
+  ...
+  "plugins" : [ {
+    "enabled" : true,
+    "debug" : false,
+    "plugin" : "cp:otoroshi.next.plugins.OverrideHost",
+    "include" : [ ],
+    "exclude" : [ ],
+    "config" : { }
+  }, {
+    "enabled" : true,
+    "debug" : false,
+    "plugin" : "cp:otoroshi.next.plugins.ApikeyCalls",
+    "include" : [ ],
+    "exclude" : [ "/openapi.json" ],
+    "config" : { }
+  } ]
+}
+```
+
 ## Reporting
+
+by default, any request hiting the new engine will generate an execution report with informations about how the request pipeline steps were performed. It is possible to export those reports as `RequestFlowReport` events using classical data exporter. By default, exporting for reports is not enabled, you must enable the `export_reporting` flag on a `route` or `service`.
+
+```javascript
+{
+  "@id": "8efac472-07bc-4a80-8d27-4236309d7d01",
+  "@timestamp": "2022-02-15T09:51:25.402+01:00",
+  "@type": "RequestFlowReport",
+  "@product": "otoroshi",
+  "@serviceId": "service_548f13bb-a809-4b1d-9008-fae3b1851092",
+  "@service": "demo-service",
+  "@env": "prod",
+  "route": {
+    "_loc" : {
+      "tenant" : "default",
+      "teams" : [ "default" ]
+    },
+    "id" : "service_dev_d54f11d0-18e2-4da4-9316-cf47733fd29a",
+    "name" : "hey",
+    "description" : "hey",
+    "tags" : [ "env:prod" ],
+    "metadata" : { },
+    "enabled" : true,
+    "debug_flow" : true,
+    "export_reporting" : false,
+    "groups" : [ "default" ],
+    "frontend" : {
+      "domains" : [ "hey-next-gen.oto.tools/", "hey.oto.tools/" ],
+      "strip_path" : true,
+      "exact" : false,
+      "headers" : { },
+      "methods" : [ ]
+    },
+    "backend" : {
+      "targets" : [ {
+        "id" : "127.0.0.1:8081",
+        "hostname" : "127.0.0.1",
+        "port" : 8081,
+        "tls" : false,
+        "weight" : 1,
+        "protocol" : "HTTP/1.1",
+        "ip_address" : null,
+        "tls_config" : {
+          "certs" : [ ],
+          "trustedCerts" : [ ],
+          "mtls" : false,
+          "loose" : false,
+          "trustAll" : false
+        }
+      } ],
+      "target_refs" : [ ],
+      "root" : "/",
+      "rewrite" : false,
+      "load_balancing" : {
+        "type" : "RoundRobin"
+      },
+      "client" : {
+        "useCircuitBreaker" : true,
+        "retries" : 1,
+        "maxErrors" : 20,
+        "retryInitialDelay" : 50,
+        "backoffFactor" : 2,
+        "callTimeout" : 30000,
+        "callAndStreamTimeout" : 120000,
+        "connectionTimeout" : 10000,
+        "idleTimeout" : 60000,
+        "globalTimeout" : 30000,
+        "sampleInterval" : 2000,
+        "proxy" : { },
+        "customTimeouts" : [ ],
+        "cacheConnectionSettings" : {
+          "enabled" : false,
+          "queueSize" : 2048
+        }
+      }
+    },
+    "backend_ref" : null,
+    "plugins" : [ ]
+  },
+  "report": {
+    "id" : "ab73707b3-946b-4853-92d4-4c38bbaac6d6",
+    "creation" : "2022-02-15T09:51:25.402+01:00",
+    "termination" : "2022-02-15T09:51:25.408+01:00",
+    "duration" : 5,
+    "duration_ns" : 5905522,
+    "overhead" : 4,
+    "overhead_ns" : 4223215,
+    "overhead_in" : 2,
+    "overhead_in_ns" : 2687750,
+    "overhead_out" : 1,
+    "overhead_out_ns" : 1535465,
+    "state" : "Successful",
+    "steps" : [ {
+      "task" : "start-handling",
+      "start" : 1644915085402,
+      "start_fmt" : "2022-02-15T09:51:25.402+01:00",
+      "stop" : 1644915085402,
+      "stop_fmt" : "2022-02-15T09:51:25.402+01:00",
+      "duration" : 0,
+      "duration_ns" : 177430,
+      "ctx" : null
+    }, {
+      "task" : "check-concurrent-requests",
+      "start" : 1644915085402,
+      "start_fmt" : "2022-02-15T09:51:25.402+01:00",
+      "stop" : 1644915085402,
+      "stop_fmt" : "2022-02-15T09:51:25.402+01:00",
+      "duration" : 0,
+      "duration_ns" : 145242,
+      "ctx" : null
+    }, {
+      "task" : "find-route",
+      "start" : 1644915085402,
+      "start_fmt" : "2022-02-15T09:51:25.402+01:00",
+      "stop" : 1644915085403,
+      "stop_fmt" : "2022-02-15T09:51:25.403+01:00",
+      "duration" : 0,
+      "duration_ns" : 497119,
+      "ctx" : {
+        "found_route" : {
+          "_loc" : {
+            "tenant" : "default",
+            "teams" : [ "default" ]
+          },
+          "id" : "service_dev_d54f11d0-18e2-4da4-9316-cf47733fd29a",
+          "name" : "hey",
+          "description" : "hey",
+          "tags" : [ "env:prod" ],
+          "metadata" : { },
+          "enabled" : true,
+          "debug_flow" : true,
+          "export_reporting" : false,
+          "groups" : [ "default" ],
+          "frontend" : {
+            "domains" : [ "hey-next-gen.oto.tools/", "hey.oto.tools/" ],
+            "strip_path" : true,
+            "exact" : false,
+            "headers" : { },
+            "methods" : [ ]
+          },
+          "backend" : {
+            "targets" : [ {
+              "id" : "127.0.0.1:8081",
+              "hostname" : "127.0.0.1",
+              "port" : 8081,
+              "tls" : false,
+              "weight" : 1,
+              "protocol" : "HTTP/1.1",
+              "ip_address" : null,
+              "tls_config" : {
+                "certs" : [ ],
+                "trustedCerts" : [ ],
+                "mtls" : false,
+                "loose" : false,
+                "trustAll" : false
+              }
+            } ],
+            "target_refs" : [ ],
+            "root" : "/",
+            "rewrite" : false,
+            "load_balancing" : {
+              "type" : "RoundRobin"
+            },
+            "client" : {
+              "useCircuitBreaker" : true,
+              "retries" : 1,
+              "maxErrors" : 20,
+              "retryInitialDelay" : 50,
+              "backoffFactor" : 2,
+              "callTimeout" : 30000,
+              "callAndStreamTimeout" : 120000,
+              "connectionTimeout" : 10000,
+              "idleTimeout" : 60000,
+              "globalTimeout" : 30000,
+              "sampleInterval" : 2000,
+              "proxy" : { },
+              "customTimeouts" : [ ],
+              "cacheConnectionSettings" : {
+                "enabled" : false,
+                "queueSize" : 2048
+              }
+            }
+          },
+          "backend_ref" : null,
+          "plugins" : [ ]
+        },
+        "matched_path" : "",
+        "exact" : true,
+        "params" : { },
+        "matched_routes" : [ "service_dev_d54f11d0-18e2-4da4-9316-cf47733fd29a" ]
+      }
+    }, {
+      "task" : "compute-plugins",
+      "start" : 1644915085403,
+      "start_fmt" : "2022-02-15T09:51:25.403+01:00",
+      "stop" : 1644915085403,
+      "stop_fmt" : "2022-02-15T09:51:25.403+01:00",
+      "duration" : 0,
+      "duration_ns" : 105151,
+      "ctx" : {
+        "disabled_plugins" : [ ],
+        "filtered_plugins" : [ ]
+      }
+    }, {
+      "task" : "tenant-check",
+      "start" : 1644915085403,
+      "start_fmt" : "2022-02-15T09:51:25.403+01:00",
+      "stop" : 1644915085403,
+      "stop_fmt" : "2022-02-15T09:51:25.403+01:00",
+      "duration" : 0,
+      "duration_ns" : 26097,
+      "ctx" : null
+    }, {
+      "task" : "check-global-maintenance",
+      "start" : 1644915085403,
+      "start_fmt" : "2022-02-15T09:51:25.403+01:00",
+      "stop" : 1644915085403,
+      "stop_fmt" : "2022-02-15T09:51:25.403+01:00",
+      "duration" : 0,
+      "duration_ns" : 14132,
+      "ctx" : null
+    }, {
+      "task" : "call-before-request-callbacks",
+      "start" : 1644915085403,
+      "start_fmt" : "2022-02-15T09:51:25.403+01:00",
+      "stop" : 1644915085403,
+      "stop_fmt" : "2022-02-15T09:51:25.403+01:00",
+      "duration" : 0,
+      "duration_ns" : 56671,
+      "ctx" : null
+    }, {
+      "task" : "extract-tracking-id",
+      "start" : 1644915085403,
+      "start_fmt" : "2022-02-15T09:51:25.403+01:00",
+      "stop" : 1644915085403,
+      "stop_fmt" : "2022-02-15T09:51:25.403+01:00",
+      "duration" : 0,
+      "duration_ns" : 5207,
+      "ctx" : null
+    }, {
+      "task" : "call-pre-route-plugins",
+      "start" : 1644915085403,
+      "start_fmt" : "2022-02-15T09:51:25.403+01:00",
+      "stop" : 1644915085403,
+      "stop_fmt" : "2022-02-15T09:51:25.403+01:00",
+      "duration" : 0,
+      "duration_ns" : 39786,
+      "ctx" : null
+    }, {
+      "task" : "call-access-validator-plugins",
+      "start" : 1644915085403,
+      "start_fmt" : "2022-02-15T09:51:25.403+01:00",
+      "stop" : 1644915085403,
+      "stop_fmt" : "2022-02-15T09:51:25.403+01:00",
+      "duration" : 0,
+      "duration_ns" : 25311,
+      "ctx" : null
+    }, {
+      "task" : "enforce-global-limits",
+      "start" : 1644915085403,
+      "start_fmt" : "2022-02-15T09:51:25.403+01:00",
+      "stop" : 1644915085404,
+      "stop_fmt" : "2022-02-15T09:51:25.404+01:00",
+      "duration" : 0,
+      "duration_ns" : 296617,
+      "ctx" : {
+        "remaining_quotas" : {
+          "authorizedCallsPerSec" : 10000000,
+          "currentCallsPerSec" : 10000000,
+          "remainingCallsPerSec" : 10000000,
+          "authorizedCallsPerDay" : 10000000,
+          "currentCallsPerDay" : 10000000,
+          "remainingCallsPerDay" : 10000000,
+          "authorizedCallsPerMonth" : 10000000,
+          "currentCallsPerMonth" : 10000000,
+          "remainingCallsPerMonth" : 10000000
+        }
+      }
+    }, {
+      "task" : "choose-backend",
+      "start" : 1644915085404,
+      "start_fmt" : "2022-02-15T09:51:25.404+01:00",
+      "stop" : 1644915085404,
+      "stop_fmt" : "2022-02-15T09:51:25.404+01:00",
+      "duration" : 0,
+      "duration_ns" : 368899,
+      "ctx" : {
+        "backend" : {
+          "id" : "127.0.0.1:8081",
+          "hostname" : "127.0.0.1",
+          "port" : 8081,
+          "tls" : false,
+          "weight" : 1,
+          "protocol" : "HTTP/1.1",
+          "ip_address" : null,
+          "tls_config" : {
+            "certs" : [ ],
+            "trustedCerts" : [ ],
+            "mtls" : false,
+            "loose" : false,
+            "trustAll" : false
+          }
+        }
+      }
+    }, {
+      "task" : "transform-request",
+      "start" : 1644915085404,
+      "start_fmt" : "2022-02-15T09:51:25.404+01:00",
+      "stop" : 1644915085404,
+      "stop_fmt" : "2022-02-15T09:51:25.404+01:00",
+      "duration" : 0,
+      "duration_ns" : 506363,
+      "ctx" : null
+    }, {
+      "task" : "call-backend",
+      "start" : 1644915085404,
+      "start_fmt" : "2022-02-15T09:51:25.404+01:00",
+      "stop" : 1644915085407,
+      "stop_fmt" : "2022-02-15T09:51:25.407+01:00",
+      "duration" : 2,
+      "duration_ns" : 2163470,
+      "ctx" : null
+    }, {
+      "task" : "transform-response",
+      "start" : 1644915085407,
+      "start_fmt" : "2022-02-15T09:51:25.407+01:00",
+      "stop" : 1644915085407,
+      "stop_fmt" : "2022-02-15T09:51:25.407+01:00",
+      "duration" : 0,
+      "duration_ns" : 279887,
+      "ctx" : null
+    }, {
+      "task" : "stream-response",
+      "start" : 1644915085407,
+      "start_fmt" : "2022-02-15T09:51:25.407+01:00",
+      "stop" : 1644915085407,
+      "stop_fmt" : "2022-02-15T09:51:25.407+01:00",
+      "duration" : 0,
+      "duration_ns" : 382952,
+      "ctx" : null
+    }, {
+      "task" : "trigger-analytics",
+      "start" : 1644915085407,
+      "start_fmt" : "2022-02-15T09:51:25.407+01:00",
+      "stop" : 1644915085408,
+      "stop_fmt" : "2022-02-15T09:51:25.408+01:00",
+      "duration" : 0,
+      "duration_ns" : 812036,
+      "ctx" : null
+    }, {
+      "task" : "request-success",
+      "start" : 1644915085408,
+      "start_fmt" : "2022-02-15T09:51:25.408+01:00",
+      "stop" : 1644915085408,
+      "stop_fmt" : "2022-02-15T09:51:25.408+01:00",
+      "duration" : 0,
+      "duration_ns" : 0,
+      "ctx" : null
+    } ]
+  }
+}
+```
 
 ## Debugging
 
