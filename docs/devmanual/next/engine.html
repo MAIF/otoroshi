@@ -344,7 +344,386 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>output: <code>target.domain.tld/apis/v1/basic_users/${req.pathparams.id}/all_bills</code></li>
 </ul>
 <h2><a href="#plugins" name="plugins" class="anchor"><span class="anchor-link"></span></a>Plugins</h2>
+<p>the new route entity defines a plugin pipline where any plugin can be <code>enabled</code>/<code>disabled</code> globally or for some paths. Each plugin slot in the pipeline holds the plugin id and the plugin configuration. You can also enable debugging only on a plugin instance instead of the whole route</p>
+<pre class="prettyprint"><code class="language-javascript">{ 
+  ...
+  &quot;plugins&quot; : [ {
+    &quot;enabled&quot; : true,
+    &quot;debug&quot; : false,
+    &quot;plugin&quot; : &quot;cp:otoroshi.next.plugins.OverrideHost&quot;,
+    &quot;include&quot; : [ ],
+    &quot;exclude&quot; : [ ],
+    &quot;config&quot; : { }
+  }, {
+    &quot;enabled&quot; : true,
+    &quot;debug&quot; : false,
+    &quot;plugin&quot; : &quot;cp:otoroshi.next.plugins.ApikeyCalls&quot;,
+    &quot;include&quot; : [ ],
+    &quot;exclude&quot; : [ &quot;/openapi.json&quot; ],
+    &quot;config&quot; : { }
+  } ]
+}
+</code></pre>
 <h2><a href="#reporting" name="reporting" class="anchor"><span class="anchor-link"></span></a>Reporting</h2>
+<p>by default, any request hiting the new engine will generate an execution report with informations about how the request pipeline steps were performed. It is possible to export those reports as <code>RequestFlowReport</code> events using classical data exporter. By default, exporting for reports is not enabled, you must enable the <code>export_reporting</code> flag on a <code>route</code> or <code>service</code>.</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;@id&quot;: &quot;8efac472-07bc-4a80-8d27-4236309d7d01&quot;,
+  &quot;@timestamp&quot;: &quot;2022-02-15T09:51:25.402+01:00&quot;,
+  &quot;@type&quot;: &quot;RequestFlowReport&quot;,
+  &quot;@product&quot;: &quot;otoroshi&quot;,
+  &quot;@serviceId&quot;: &quot;service_548f13bb-a809-4b1d-9008-fae3b1851092&quot;,
+  &quot;@service&quot;: &quot;demo-service&quot;,
+  &quot;@env&quot;: &quot;prod&quot;,
+  &quot;route&quot;: {
+    &quot;_loc&quot; : {
+      &quot;tenant&quot; : &quot;default&quot;,
+      &quot;teams&quot; : [ &quot;default&quot; ]
+    },
+    &quot;id&quot; : &quot;service_dev_d54f11d0-18e2-4da4-9316-cf47733fd29a&quot;,
+    &quot;name&quot; : &quot;hey&quot;,
+    &quot;description&quot; : &quot;hey&quot;,
+    &quot;tags&quot; : [ &quot;env:prod&quot; ],
+    &quot;metadata&quot; : { },
+    &quot;enabled&quot; : true,
+    &quot;debug_flow&quot; : true,
+    &quot;export_reporting&quot; : false,
+    &quot;groups&quot; : [ &quot;default&quot; ],
+    &quot;frontend&quot; : {
+      &quot;domains&quot; : [ &quot;hey-next-gen.oto.tools/&quot;, &quot;hey.oto.tools/&quot; ],
+      &quot;strip_path&quot; : true,
+      &quot;exact&quot; : false,
+      &quot;headers&quot; : { },
+      &quot;methods&quot; : [ ]
+    },
+    &quot;backend&quot; : {
+      &quot;targets&quot; : [ {
+        &quot;id&quot; : &quot;127.0.0.1:8081&quot;,
+        &quot;hostname&quot; : &quot;127.0.0.1&quot;,
+        &quot;port&quot; : 8081,
+        &quot;tls&quot; : false,
+        &quot;weight&quot; : 1,
+        &quot;protocol&quot; : &quot;HTTP/1.1&quot;,
+        &quot;ip_address&quot; : null,
+        &quot;tls_config&quot; : {
+          &quot;certs&quot; : [ ],
+          &quot;trustedCerts&quot; : [ ],
+          &quot;mtls&quot; : false,
+          &quot;loose&quot; : false,
+          &quot;trustAll&quot; : false
+        }
+      } ],
+      &quot;target_refs&quot; : [ ],
+      &quot;root&quot; : &quot;/&quot;,
+      &quot;rewrite&quot; : false,
+      &quot;load_balancing&quot; : {
+        &quot;type&quot; : &quot;RoundRobin&quot;
+      },
+      &quot;client&quot; : {
+        &quot;useCircuitBreaker&quot; : true,
+        &quot;retries&quot; : 1,
+        &quot;maxErrors&quot; : 20,
+        &quot;retryInitialDelay&quot; : 50,
+        &quot;backoffFactor&quot; : 2,
+        &quot;callTimeout&quot; : 30000,
+        &quot;callAndStreamTimeout&quot; : 120000,
+        &quot;connectionTimeout&quot; : 10000,
+        &quot;idleTimeout&quot; : 60000,
+        &quot;globalTimeout&quot; : 30000,
+        &quot;sampleInterval&quot; : 2000,
+        &quot;proxy&quot; : { },
+        &quot;customTimeouts&quot; : [ ],
+        &quot;cacheConnectionSettings&quot; : {
+          &quot;enabled&quot; : false,
+          &quot;queueSize&quot; : 2048
+        }
+      }
+    },
+    &quot;backend_ref&quot; : null,
+    &quot;plugins&quot; : [ ]
+  },
+  &quot;report&quot;: {
+    &quot;id&quot; : &quot;ab73707b3-946b-4853-92d4-4c38bbaac6d6&quot;,
+    &quot;creation&quot; : &quot;2022-02-15T09:51:25.402+01:00&quot;,
+    &quot;termination&quot; : &quot;2022-02-15T09:51:25.408+01:00&quot;,
+    &quot;duration&quot; : 5,
+    &quot;duration_ns&quot; : 5905522,
+    &quot;overhead&quot; : 4,
+    &quot;overhead_ns&quot; : 4223215,
+    &quot;overhead_in&quot; : 2,
+    &quot;overhead_in_ns&quot; : 2687750,
+    &quot;overhead_out&quot; : 1,
+    &quot;overhead_out_ns&quot; : 1535465,
+    &quot;state&quot; : &quot;Successful&quot;,
+    &quot;steps&quot; : [ {
+      &quot;task&quot; : &quot;start-handling&quot;,
+      &quot;start&quot; : 1644915085402,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.402+01:00&quot;,
+      &quot;stop&quot; : 1644915085402,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.402+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 177430,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;check-concurrent-requests&quot;,
+      &quot;start&quot; : 1644915085402,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.402+01:00&quot;,
+      &quot;stop&quot; : 1644915085402,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.402+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 145242,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;find-route&quot;,
+      &quot;start&quot; : 1644915085402,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.402+01:00&quot;,
+      &quot;stop&quot; : 1644915085403,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 497119,
+      &quot;ctx&quot; : {
+        &quot;found_route&quot; : {
+          &quot;_loc&quot; : {
+            &quot;tenant&quot; : &quot;default&quot;,
+            &quot;teams&quot; : [ &quot;default&quot; ]
+          },
+          &quot;id&quot; : &quot;service_dev_d54f11d0-18e2-4da4-9316-cf47733fd29a&quot;,
+          &quot;name&quot; : &quot;hey&quot;,
+          &quot;description&quot; : &quot;hey&quot;,
+          &quot;tags&quot; : [ &quot;env:prod&quot; ],
+          &quot;metadata&quot; : { },
+          &quot;enabled&quot; : true,
+          &quot;debug_flow&quot; : true,
+          &quot;export_reporting&quot; : false,
+          &quot;groups&quot; : [ &quot;default&quot; ],
+          &quot;frontend&quot; : {
+            &quot;domains&quot; : [ &quot;hey-next-gen.oto.tools/&quot;, &quot;hey.oto.tools/&quot; ],
+            &quot;strip_path&quot; : true,
+            &quot;exact&quot; : false,
+            &quot;headers&quot; : { },
+            &quot;methods&quot; : [ ]
+          },
+          &quot;backend&quot; : {
+            &quot;targets&quot; : [ {
+              &quot;id&quot; : &quot;127.0.0.1:8081&quot;,
+              &quot;hostname&quot; : &quot;127.0.0.1&quot;,
+              &quot;port&quot; : 8081,
+              &quot;tls&quot; : false,
+              &quot;weight&quot; : 1,
+              &quot;protocol&quot; : &quot;HTTP/1.1&quot;,
+              &quot;ip_address&quot; : null,
+              &quot;tls_config&quot; : {
+                &quot;certs&quot; : [ ],
+                &quot;trustedCerts&quot; : [ ],
+                &quot;mtls&quot; : false,
+                &quot;loose&quot; : false,
+                &quot;trustAll&quot; : false
+              }
+            } ],
+            &quot;target_refs&quot; : [ ],
+            &quot;root&quot; : &quot;/&quot;,
+            &quot;rewrite&quot; : false,
+            &quot;load_balancing&quot; : {
+              &quot;type&quot; : &quot;RoundRobin&quot;
+            },
+            &quot;client&quot; : {
+              &quot;useCircuitBreaker&quot; : true,
+              &quot;retries&quot; : 1,
+              &quot;maxErrors&quot; : 20,
+              &quot;retryInitialDelay&quot; : 50,
+              &quot;backoffFactor&quot; : 2,
+              &quot;callTimeout&quot; : 30000,
+              &quot;callAndStreamTimeout&quot; : 120000,
+              &quot;connectionTimeout&quot; : 10000,
+              &quot;idleTimeout&quot; : 60000,
+              &quot;globalTimeout&quot; : 30000,
+              &quot;sampleInterval&quot; : 2000,
+              &quot;proxy&quot; : { },
+              &quot;customTimeouts&quot; : [ ],
+              &quot;cacheConnectionSettings&quot; : {
+                &quot;enabled&quot; : false,
+                &quot;queueSize&quot; : 2048
+              }
+            }
+          },
+          &quot;backend_ref&quot; : null,
+          &quot;plugins&quot; : [ ]
+        },
+        &quot;matched_path&quot; : &quot;&quot;,
+        &quot;exact&quot; : true,
+        &quot;params&quot; : { },
+        &quot;matched_routes&quot; : [ &quot;service_dev_d54f11d0-18e2-4da4-9316-cf47733fd29a&quot; ]
+      }
+    }, {
+      &quot;task&quot; : &quot;compute-plugins&quot;,
+      &quot;start&quot; : 1644915085403,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;stop&quot; : 1644915085403,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 105151,
+      &quot;ctx&quot; : {
+        &quot;disabled_plugins&quot; : [ ],
+        &quot;filtered_plugins&quot; : [ ]
+      }
+    }, {
+      &quot;task&quot; : &quot;tenant-check&quot;,
+      &quot;start&quot; : 1644915085403,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;stop&quot; : 1644915085403,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 26097,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;check-global-maintenance&quot;,
+      &quot;start&quot; : 1644915085403,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;stop&quot; : 1644915085403,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 14132,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;call-before-request-callbacks&quot;,
+      &quot;start&quot; : 1644915085403,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;stop&quot; : 1644915085403,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 56671,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;extract-tracking-id&quot;,
+      &quot;start&quot; : 1644915085403,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;stop&quot; : 1644915085403,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 5207,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;call-pre-route-plugins&quot;,
+      &quot;start&quot; : 1644915085403,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;stop&quot; : 1644915085403,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 39786,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;call-access-validator-plugins&quot;,
+      &quot;start&quot; : 1644915085403,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;stop&quot; : 1644915085403,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 25311,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;enforce-global-limits&quot;,
+      &quot;start&quot; : 1644915085403,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;stop&quot; : 1644915085404,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.404+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 296617,
+      &quot;ctx&quot; : {
+        &quot;remaining_quotas&quot; : {
+          &quot;authorizedCallsPerSec&quot; : 10000000,
+          &quot;currentCallsPerSec&quot; : 10000000,
+          &quot;remainingCallsPerSec&quot; : 10000000,
+          &quot;authorizedCallsPerDay&quot; : 10000000,
+          &quot;currentCallsPerDay&quot; : 10000000,
+          &quot;remainingCallsPerDay&quot; : 10000000,
+          &quot;authorizedCallsPerMonth&quot; : 10000000,
+          &quot;currentCallsPerMonth&quot; : 10000000,
+          &quot;remainingCallsPerMonth&quot; : 10000000
+        }
+      }
+    }, {
+      &quot;task&quot; : &quot;choose-backend&quot;,
+      &quot;start&quot; : 1644915085404,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.404+01:00&quot;,
+      &quot;stop&quot; : 1644915085404,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.404+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 368899,
+      &quot;ctx&quot; : {
+        &quot;backend&quot; : {
+          &quot;id&quot; : &quot;127.0.0.1:8081&quot;,
+          &quot;hostname&quot; : &quot;127.0.0.1&quot;,
+          &quot;port&quot; : 8081,
+          &quot;tls&quot; : false,
+          &quot;weight&quot; : 1,
+          &quot;protocol&quot; : &quot;HTTP/1.1&quot;,
+          &quot;ip_address&quot; : null,
+          &quot;tls_config&quot; : {
+            &quot;certs&quot; : [ ],
+            &quot;trustedCerts&quot; : [ ],
+            &quot;mtls&quot; : false,
+            &quot;loose&quot; : false,
+            &quot;trustAll&quot; : false
+          }
+        }
+      }
+    }, {
+      &quot;task&quot; : &quot;transform-request&quot;,
+      &quot;start&quot; : 1644915085404,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.404+01:00&quot;,
+      &quot;stop&quot; : 1644915085404,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.404+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 506363,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;call-backend&quot;,
+      &quot;start&quot; : 1644915085404,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.404+01:00&quot;,
+      &quot;stop&quot; : 1644915085407,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.407+01:00&quot;,
+      &quot;duration&quot; : 2,
+      &quot;duration_ns&quot; : 2163470,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;transform-response&quot;,
+      &quot;start&quot; : 1644915085407,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.407+01:00&quot;,
+      &quot;stop&quot; : 1644915085407,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.407+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 279887,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;stream-response&quot;,
+      &quot;start&quot; : 1644915085407,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.407+01:00&quot;,
+      &quot;stop&quot; : 1644915085407,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.407+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 382952,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;trigger-analytics&quot;,
+      &quot;start&quot; : 1644915085407,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.407+01:00&quot;,
+      &quot;stop&quot; : 1644915085408,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.408+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 812036,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;request-success&quot;,
+      &quot;start&quot; : 1644915085408,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.408+01:00&quot;,
+      &quot;stop&quot; : 1644915085408,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.408+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 0,
+      &quot;ctx&quot; : null
+    } ]
+  }
+}
+</code></pre>
 <h2><a href="#debugging" name="debugging" class="anchor"><span class="anchor-link"></span></a>Debugging</h2>
 <p>with the new reporting capabilities, the new engine also have debugging capabilities built in. In you enable the <code>debug_flow</code> flag on a route (or service), the resulting <code>RequestFlowReport</code> will be enriched with contextual informations between each plugins of the route plugin pipeline</p>
 <h2><a href="#openapi-import" name="openapi-import" class="anchor"><span class="anchor-link"></span></a>openapi import</h2>
