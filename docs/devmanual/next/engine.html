@@ -277,6 +277,42 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   }
 }
 </code></pre>
+<p>if you need to enable global plugin with the new engine, you can add the following configuration in the <code>global plugins</code> configuration object </p>
+<pre class="prettyprint"><code class="language-javascript">{
+  ...
+  &quot;ng&quot;: {
+    &quot;slots&quot;: [
+      {
+        &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.W3CTracing&quot;,
+        &quot;enabled&quot;: true,
+        &quot;include&quot;: [],
+        &quot;exclude&quot;: [],
+        &quot;config&quot;: {
+          &quot;baggage&quot;: {
+            &quot;foo&quot;: &quot;bar&quot;
+          }
+        }
+      },
+      {
+        &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.wrappers.RequestSinkWrapper&quot;,
+        &quot;enabled&quot;: true,
+        &quot;include&quot;: [],
+        &quot;exclude&quot;: [],
+        &quot;config&quot;: {
+          &quot;plugin&quot;: &quot;cp:otoroshi.plugins.apikeys.ClientCredentialService&quot;,
+          &quot;ClientCredentialService&quot;: {
+            &quot;domain&quot;: &quot;ccs-next-gen.oto.tools&quot;,
+            &quot;expiration&quot;: 3600000,
+            &quot;defaultKeyPair&quot;: &quot;otoroshi-jwt-signing&quot;,
+            &quot;secure&quot;: false
+          }
+        }
+      }
+    ]
+  }
+  ...
+}
+</code></pre>
 <h2><a href="#entities" name="entities" class="anchor"><span class="anchor-link"></span></a>Entities</h2>
 <p>This plugin introduces new entities that will replace (one day maybe) service descriptors:</p>
 <ul>
@@ -295,12 +331,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>path</li>
   <li>header values
     <ul>
-      <li>where values can be exact, or <code>Regex(value_regex)</code>, or <code>Wildcard(value_with_*)</code></li>
+      <li>where values can be <code>exact_value</code>, or <code>Regex(value_regex)</code>, or <code>Wildcard(value_with_*)</code></li>
     </ul>
   </li>
   <li>query param values
     <ul>
-      <li>where values can be exact, or <code>Regex(value_regex)</code>, or <code>Wildcard(value_with_*)</code></li>
+      <li>where values can be <code>exact_value</code>, or <code>Regex(value_regex)</code>, or <code>Wildcard(value_with_*)</code></li>
     </ul>
   </li>
 </ul>
@@ -344,7 +380,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>output: <code>target.domain.tld/apis/v1/basic_users/${req.pathparams.id}/all_bills</code></li>
 </ul>
 <h2><a href="#plugins" name="plugins" class="anchor"><span class="anchor-link"></span></a>Plugins</h2>
-<p>the new route entity defines a plugin pipline where any plugin can be <code>enabled</code>/<code>disabled</code> globally or for some paths. Each plugin slot in the pipeline holds the plugin id and the plugin configuration. You can also enable debugging only on a plugin instance instead of the whole route</p>
+<p>the new route entity defines a plugin pipline where any plugin can be <code>enabled</code>/<code>disabled</code> globally or for some paths. Each plugin slot in the pipeline holds the plugin id and the plugin configuration. </p>
+<p>You can also enable debugging only on a plugin instance instead of the whole route (see <a href="#debugging">the debugging section</a>)</p>
 <pre class="prettyprint"><code class="language-javascript">{ 
   ...
   &quot;plugins&quot; : [ {
@@ -362,6 +399,33 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;exclude&quot; : [ &quot;/openapi.json&quot; ],
     &quot;config&quot; : { }
   } ]
+}
+</code></pre>
+<h2><a href="#using-legacy-plugins" name="using-legacy-plugins" class="anchor"><span class="anchor-link"></span></a>Using legacy plugins</h2>
+<p>if you need to use legacy otoroshi plugins with the new engine, you can use several wrappers in order to do so</p>
+<ul>
+  <li><code>otoroshi.next.plugins.wrappers.PreRoutingWrapper</code></li>
+  <li><code>otoroshi.next.plugins.wrappers.AccessValidatorWrapper</code></li>
+  <li><code>otoroshi.next.plugins.wrappers.RequestSinkWrapper</code></li>
+  <li><code>otoroshi.next.plugins.wrappers.RequestTransformerWrapper</code></li>
+  <li><code>otoroshi.next.plugins.wrappers.CompositeWrapper</code></li>
+</ul>
+<p>to use it, just declare a plugin slot with the right wrapper and in the config, declare the <code>plugin</code> you want to use and its configuration like:</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.wrappers.PreRoutingWrapper&quot;,
+  &quot;enabled&quot;: true,
+  &quot;include&quot;: [],
+  &quot;exclude&quot;: [],
+  &quot;config&quot;: {
+    &quot;plugin&quot;: &quot;cp:otoroshi.plugins.jwt.JwtUserExtractor&quot;,
+    &quot;JwtUserExtractor&quot;: {
+      &quot;verifier&quot; : &quot;$ref&quot;,
+      &quot;strict&quot;   : true,
+      &quot;namePath&quot; : &quot;name&quot;,
+      &quot;emailPath&quot;: &quot;email&quot;,
+      &quot;metaPath&quot; : null
+    }
+  }
 }
 </code></pre>
 <h2><a href="#reporting" name="reporting" class="anchor"><span class="anchor-link"></span></a>Reporting</h2>
@@ -751,6 +815,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../next/engine.html#automatic-conversion" class="header">Automatic conversion</a></li>
     <li><a href="../next/engine.html#routing" class="header">Routing</a></li>
     <li><a href="../next/engine.html#plugins" class="header">Plugins</a></li>
+    <li><a href="../next/engine.html#using-legacy-plugins" class="header">Using legacy plugins</a></li>
     <li><a href="../next/engine.html#reporting" class="header">Reporting</a></li>
     <li><a href="../next/engine.html#debugging" class="header">Debugging</a></li>
     <li><a href="../next/engine.html#openapi-import" class="header">openapi import</a></li>
