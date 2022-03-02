@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../js/cc.js"></script>
 <script type="text/javascript" src="../js/groups.js"></script>
 <script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/ngplugins.js"></script>
 <script type="text/javascript" src="../js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
@@ -270,8 +271,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;enabled&quot; : true,
     &quot;debug_headers&quot; : false,
     &quot;reporting&quot;: true,
-    &quot;routing_strategy&quot; : &quot;tree&quot;,
-    &quot;merge_sync_steps&quot; : true,
     &quot;domains&quot; : [ &quot;api.foo.bar&quot; ],
     &quot;deny_domains&quot; : [ ],
   }
@@ -321,6 +320,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>targets</code>: how to contact a backend either by using a domain name or an ip address, supports mtls</li>
   <li><code>backends</code>: a list of targets to contact a backend</li>
 </ul>
+<h2><a href="#entities-sync" name="entities-sync" class="anchor"><span class="anchor-link"></span></a>Entities sync</h2>
+<p>A new behavior introduced for the new proxy engine is the entities sync job. To avoid unecessary operations on the underlying datastore when routing requests, a new job has been setup in otoroshi that synchronize the content of the datastore (at least a part of it) with an in-memory cache. Because of it, the propagation of changes between an admin api call and the actual result on routing can be longer than before. When a node creates, updates, or deletes an entity via the admin api, other nodes need to wait for the next poll to purge the old cached entity and start using the new one. You can change the interval between syncs with the configuration key <code>otoroshi.next.state-sync-interval</code> or the env. variable <code>OTOROSHI_NEXT_STATE_SYNC_INTERVAL</code>. The default value is <code>10000</code> and the unit is <code>milliseconds</code></p>
 <h2><a href="#automatic-conversion" name="automatic-conversion" class="anchor"><span class="anchor-link"></span></a>Automatic conversion</h2>
 <p>The new engine uses new entities for its configuration, but in order to facilitate transition between the old world and the new world, all the <code>service descriptors</code> of an otoroshi instance are automatically converted live into <code>routes</code> periodically. Any <code>service descriptor</code> should still work as expected through the new engine while enjoying all the perks.</p>
 <h2><a href="#routing" name="routing" class="anchor"><span class="anchor-link"></span></a>Routing</h2>
@@ -380,7 +381,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>output: <code>target.domain.tld/apis/v1/basic_users/${req.pathparams.id}/all_bills</code></li>
 </ul>
 <h2><a href="#plugins" name="plugins" class="anchor"><span class="anchor-link"></span></a>Plugins</h2>
-<p>the new route entity defines a plugin pipline where any plugin can be <code>enabled</code>/<code>disabled</code> globally or for some paths. Each plugin slot in the pipeline holds the plugin id and the plugin configuration. </p>
+<p>the new route entity defines a plugin pipline where any plugin can be enabled or not and can be active only on some paths. Each plugin slot in the pipeline holds the plugin id and the plugin configuration. </p>
 <p>You can also enable debugging only on a plugin instance instead of the whole route (see <a href="#debugging">the debugging section</a>)</p>
 <pre class="prettyprint"><code class="language-javascript">{ 
   ...
@@ -401,6 +402,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   } ]
 }
 </code></pre>
+<p>you can find the list of built-in plugins <a href="built-in-plugins.html">here</a></p>
 <h2><a href="#using-legacy-plugins" name="using-legacy-plugins" class="anchor"><span class="anchor-link"></span></a>Using legacy plugins</h2>
 <p>if you need to use legacy otoroshi plugins with the new engine, you can use several wrappers in order to do so</p>
 <ul>
@@ -812,6 +814,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../next/engine.html#enabling-the-new-engine" class="header">Enabling the new engine</a></li>
     <li><a href="../next/engine.html#entities" class="header">Entities</a></li>
+    <li><a href="../next/engine.html#entities-sync" class="header">Entities sync</a></li>
     <li><a href="../next/engine.html#automatic-conversion" class="header">Automatic conversion</a></li>
     <li><a href="../next/engine.html#routing" class="header">Routing</a></li>
     <li><a href="../next/engine.html#plugins" class="header">Plugins</a></li>
