@@ -3712,6 +3712,18 @@ spec:
               apiKeyTagsField:
                 description: "Field name to extract apikey tags"
                 type: "string"
+              userValidators:
+                description: "???"
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    path:
+                      description: "???"
+                      type: "string"
+                    value:
+                      description: "???"
+                      type: "object"
               serverUrls:
                 type: "array"
                 items:

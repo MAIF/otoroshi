@@ -2715,6 +2715,7 @@ This plugin enables Otoroshi as an Ingress Controller
     "coreDnsIntegrationDryRun" : false,
     "kubeLeader" : false,
     "restartDependantDeployments" : true,
+    "useProxyState" : false,
     "watch" : true,
     "syncDaikokuApikeysOnly" : false,
     "kubeSystemNamespace" : "kube-system",
@@ -2782,6 +2783,7 @@ This plugin enables Otoroshi as an Ingress Controller
     "coreDnsIntegrationDryRun" : false,
     "kubeLeader" : false,
     "restartDependantDeployments" : true,
+    "useProxyState" : false,
     "watch" : true,
     "syncDaikokuApikeysOnly" : false,
     "kubeSystemNamespace" : "kube-system",
@@ -2867,6 +2869,7 @@ This plugin enables Otoroshi CRDs Controller
     "coreDnsIntegrationDryRun" : false,
     "kubeLeader" : false,
     "restartDependantDeployments" : true,
+    "useProxyState" : false,
     "watch" : true,
     "syncDaikokuApikeysOnly" : false,
     "kubeSystemNamespace" : "kube-system",
@@ -2934,6 +2937,7 @@ This plugin enables Otoroshi CRDs Controller
     "coreDnsIntegrationDryRun" : false,
     "kubeLeader" : false,
     "restartDependantDeployments" : true,
+    "useProxyState" : false,
     "watch" : true,
     "syncDaikokuApikeysOnly" : false,
     "kubeSystemNamespace" : "kube-system",
@@ -3019,6 +3023,7 @@ This plugin syncs. TLS secrets from Kubernetes to Otoroshi
     "coreDnsIntegrationDryRun" : false,
     "kubeLeader" : false,
     "restartDependantDeployments" : true,
+    "useProxyState" : false,
     "watch" : true,
     "syncDaikokuApikeysOnly" : false,
     "kubeSystemNamespace" : "kube-system",
@@ -3086,6 +3091,7 @@ This plugin syncs. TLS secrets from Kubernetes to Otoroshi
     "coreDnsIntegrationDryRun" : false,
     "kubeLeader" : false,
     "restartDependantDeployments" : true,
+    "useProxyState" : false,
     "watch" : true,
     "syncDaikokuApikeysOnly" : false,
     "kubeSystemNamespace" : "kube-system",
@@ -3171,6 +3177,7 @@ This plugin syncs. Otoroshi certs to Kubernetes TLS secrets
     "coreDnsIntegrationDryRun" : false,
     "kubeLeader" : false,
     "restartDependantDeployments" : true,
+    "useProxyState" : false,
     "watch" : true,
     "syncDaikokuApikeysOnly" : false,
     "kubeSystemNamespace" : "kube-system",
@@ -3238,6 +3245,7 @@ This plugin syncs. Otoroshi certs to Kubernetes TLS secrets
     "coreDnsIntegrationDryRun" : false,
     "kubeLeader" : false,
     "restartDependantDeployments" : true,
+    "useProxyState" : false,
     "watch" : true,
     "syncDaikokuApikeysOnly" : false,
     "kubeSystemNamespace" : "kube-system",
@@ -3398,14 +3406,16 @@ The next time a request hits the `api.foo.bar` domain, the new engine will handl
 
 ```json
 {
-  "NextGenProxyEngine" : {
-    "enabled" : true,
-    "debug" : false,
-    "debug_headers" : false,
-    "routing_strategy" : "tree",
-    "merge_sync_steps" : true,
-    "domains" : [ ]
-  }
+  "enabled" : true,
+  "domains" : [ "*-next-gen.oto.tools" ],
+  "deny_domains" : [ ],
+  "reporting" : true,
+  "merge_sync_steps" : true,
+  "export_reporting" : false,
+  "apply_legacy_checks" : true,
+  "debug" : false,
+  "debug_headers" : false,
+  "routing_strategy" : "tree"
 }
 ```
 
