@@ -440,6 +440,7 @@ GET     /api/experimental/routes                            otoroshi.next.contro
 POST    /api/experimental/routes                            otoroshi.next.controllers.adminapi.NgRoutesController.createAction()
 
 ## NgServices
+POST    /api/experimental/services/_openapi             otoroshi.next.controllers.adminapi.NgServicesController.fromOpenapi()
 GET     /api/experimental/services/_template            otoroshi.next.controllers.adminapi.NgServicesController.initiateService()
 POST    /api/experimental/services/_bulk                otoroshi.next.controllers.adminapi.NgServicesController.bulkCreateAction()
 PUT     /api/experimental/services/_bulk                otoroshi.next.controllers.adminapi.NgServicesController.bulkUpdateAction()

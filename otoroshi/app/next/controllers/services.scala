@@ -8,6 +8,7 @@ import otoroshi.next.plugins.OverrideHost
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.controllers._
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -195,5 +196,13 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
         )
       ).json
     )
+  }
+
+  def fromOpenapi() = ApiAction.async(parse.json) { ctx =>
+    (ctx.request.body.select("domain").asOpt[String], ctx.request.body.select("openapi").asOpt[String]) match {
+      case (Some(domain), Some(openapi)) => NgService.fromOpenApi(domain, openapi)
+        .map(service => Ok(service.json))
+      case _ => BadRequest(Json.obj("error" -> "missing domain and/or openapi value")).vfuture
+    }
   }
 }
