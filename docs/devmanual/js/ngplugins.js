@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const title = fullContent[0];
     const description = fullContent[7];
     const smallContent = [ title, description ];
+    title.children[0].setAttribute('href', '#' + plugin.id);
     plugin.replaceChildren(...smallContent)
     plugin.classList.remove("plugin-hidden");
     plugin.addEventListener("click", e => {  
@@ -20,7 +21,6 @@ document.addEventListener("DOMContentLoaded", function() {
   if (plugins.length > 0 && window.location.hash && window.location.hash.length > 1) {
     const plugin = window.location.hash.substring(1);
     setTimeout(function() {
-      console.log('click on', plugin)
       const elem = document.getElementById(plugin)
       elem.click();
       elem.scrollIntoView();
