@@ -4,6 +4,7 @@ import { type, format, constraints } from '@maif/react-forms';
 export default [
     {
         id: 'Frontend',
+        plugin_steps: ["PreRoute"],
         icon: 'eye',
         default: true,
         field: 'frontend',

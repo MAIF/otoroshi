@@ -24,16 +24,6 @@
     margin-top: 2rem;
 }
 
-.studio-tab {
-    text-align: center;
-    background-color: #494949;
-    border-top: 1px solid #f9b000;
-    padding: 8px 0;
-    color: #fff;
-    font-weight: 700;
-    margin-bottom: 12px;
-}
-
 .elements {
     flex: 1;
     position: relative;
@@ -124,8 +114,8 @@
 
 .link {
     height: 12px;
-    width: 2px;
-    background-color: #f9b000;
+    width: 8px;
+    background-color: #eee;
 }
 
 .designer-sidebar {
@@ -176,6 +166,7 @@
 
 .dot {
     background-color: #494948;
+    border: 1px solid #eee;
     width: 100%;
     height: 36px;
     display: flex;
@@ -186,10 +177,16 @@
 .plugins-stack {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none; 
-    max-height: 75vh;
+    max-height: 85vh;
     overflow-y: scroll;
 }
 
 .plugins-stack::-webkit-scrollbar {
     display: none;
+}
+
+.form-description {
+    color: #fff; 
+    background: #424242; 
+    padding: 12px;
 }

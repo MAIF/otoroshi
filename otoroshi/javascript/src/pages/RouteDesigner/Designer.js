@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import * as BackOfficeServices from '../../services/BackOfficeServices'
 import { Form } from '@maif/react-forms'
@@ -15,39 +15,52 @@ export default ({ lineId, value }) => {
     const [selectedNode, setSelectedNode] = useState()
 
     const [plugins, setPlugins] = useState([])
-    const [filteredPlugins, setFilteredPlugins] = useState([])
 
     const [route, setRoute] = useState(value)
 
     useEffect(() => {
-        BackOfficeServices.fetchRoute(routeId)
-            .then(setRoute)
+        Promise.all([
+            BackOfficeServices.fetchRoute(routeId),
+            BackOfficeServices.getCategories(),
+            BackOfficeServices.getPlugins()
+        ])
+            .then(([route, categories, plugins]) => {
+                const formatedPlugins = plugins
+                    .filter(plugin => !plugin.plugin_steps.includes('Sink') && !plugin.plugin_steps.includes('HandlesTunnel'))
+                    .map(plugin => ({
+                        ...plugin,
+                        config_schema: format(plugin.config_schema || {}),
+                        config: plugin.default_config
+                    }))
 
-        BackOfficeServices.getCategories()
-            .then(setCategories)
+                setCategories(categories.filter(category => category !== 'Tunnel'))
+                setRoute(route)
 
-        BackOfficeServices.getPlugins()
-            .then(plugins => Promise.resolve(plugins.map(plugin => ({
-                ...plugin,
-                config_schema: format(plugin.config_schema || {})
-            }))))
-            .then(plugins => {
-                setPlugins(plugins)
-                setFilteredPlugins(plugins)
-                setNodes(DEFAULT_FLOW)
+                setPlugins(formatedPlugins.map(p => ({
+                    ...p,
+                    selected: route.plugins.find(r => r.plugin === p.id)
+                })))
+
+                setNodes([
+                    ...DEFAULT_FLOW,
+                    ...route.plugins.map(ref => {
+                        const plugin = formatedPlugins.find(p => p.id === ref.plugin.replace('cp:', '')) // TODO - s'assurer de ça
+                        const onInputStream = (plugin.plugin_steps || []).some(s => ["PreRoute", "ValidateAccess", "TransformRequest"].includes(s))
+                        const onOutputStream = (plugin.plugin_steps || []).some(s => ["TransformResponse"].includes(s))
+
+                        return {
+                            ...plugin,
+                            onOutputStream,
+                            onInputStream
+                        }
+                    })
+                ])
             })
     }, [])
 
     const format = obj => {
         return Object.entries(obj).reduce((acc, [key, value]) => {
             const v = key === "label" ? value.replace(/_/g, ' ') : value
-
-            // if (key === "props")
-            //     return {
-            //         ...acc,
-            //         ...format(value)
-            //     }
-
             return {
                 ...acc,
                 [key]: key === "label" ? v.charAt(0).toUpperCase() + v.slice(1) :
@@ -58,53 +71,50 @@ export default ({ lineId, value }) => {
 
     const allowDrop = e => e.preventDefault()
     const onDrag = (e, element) => e.dataTransfer.setData("newElement", JSON.stringify(element))
-    const onDrop = (ev, onFlow) => {
+    const onDrop = (ev) => {
         ev.preventDefault()
 
         const node = JSON.parse(ev.dataTransfer.getData("newElement"))
 
-        addNode(onFlow, node)
+        addNode(node)
     }
 
     const removeNode = id => {
         setNodes(nodes.filter(node => node.id !== id))
+        setRoute({
+            ...route,
+            plugins: route.plugins.filter(plugin => !plugin.plugin.endsWith(id))
+        })
 
-        // TODO - edit route
-        setRoute(route)
-
-        setFilteredPlugins(plugins.map(plugin => {
+        setPlugins(plugins.map(plugin => {
             if (plugin.id === id)
                 return { ...plugin, selected: undefined }
             return plugin
         }))
     }
 
-    const addNode = (onFlow, node) => {
-        if ((onFlow === "onOutputStream" && node.onOutputStream) ||
-            (onFlow === 'onTargetStream' && node.onTargetStream) ||
-            onFlow === 'onInputStream' && (!node.onOutputStream && !node.onTargetStream)) {
-
+    const addNode = node => {
+        if ((node.plugin_steps || []).some(s => ["TransformResponse"].includes(s)) ||
+            node.onTargetStream ||
+            (node.plugin_steps || []).some(s => ["PreRoute", "ValidateAccess", "TransformRequest"].includes(s))) {
             setPlugins(plugins.map(p => {
                 if (p.id === node.id)
                     p.selected = true
                 return p
             }))
-            setFilteredPlugins(plugins.filter(p => p.id !== node.id))
 
             setRoute({
                 ...route,
                 plugins: [
                     ...route.plugins,
-                    node
+                    {
+                        plugin: node.id,
+                        config: node.config
+                    }
                 ]
             })
 
-            setNodes([...nodes, {
-                ...node,
-                onOutputStream: onFlow === 'onOutputStream',
-                onTargetStream: onFlow === 'onTargetStream',
-                onInputStream: onFlow === 'onInputStream'
-            }])
+            setNodes([...nodes, node])
 
             if (node.switch)
                 changeValues([
@@ -115,22 +125,21 @@ export default ({ lineId, value }) => {
         }
     }
 
-    const Dot = ({ icon, children, clickable, onClick, highlighted = true, style = {} }) => <div className='dot' style={{
+    const Dot = ({ icon, children, clickable, onClick, highlighted, selectedNode, style = {} }) => <div className='dot' style={{
         cursor: clickable ? 'pointer' : 'initial',
-        opacity: highlighted ? 1 : .25,
+        opacity: (!selectedNode || highlighted) ? 1 : .25,
         backgroundColor: highlighted ? '#f9b000' : '#494948',
         ...style
     }} onClick={onClick ? e => {
         e.stopPropagation()
         onClick(e)
     } : e => e.stopPropagation()}>
-        {icon && <i className={`fas fa-${icon}`}
-            style={{ color: "#fff", fontSize: 20 }} />}
+        {icon && <i className={`fas fa-${icon}`} style={{ color: "#fff", fontSize: 20 }} />}
         {children && children}
     </div>
 
-    const Anchor = ({ flow = 'onInputStream', text, highlighted = true, mt = 'initial' }) => <div className='anchor'
-        onDragOver={allowDrop} onDrop={e => onDrop(e, flow)}
+    const Anchor = ({ text, highlighted = true, mt = 'initial' }) => <div className='anchor'
+        onDragOver={allowDrop} onDrop={onDrop}
         style={{
             opacity: highlighted ? 1 : .25,
             marginTop: mt
@@ -143,18 +152,16 @@ export default ({ lineId, value }) => {
         flex: flex ? 1 : 'initial'
     }}></div>
 
-    const Tab = ({ text }) => (
-        <div className="studio-tab">
-            {text}
-        </div>
-    )
-
-    const NodeElement = ({ element, setSelectedNode, hideLink, selectedNode, isLast }) => {
+    const NodeElement = ({ element, setSelectedNode, hideLink, selectedNode, isLast, disableBorder }) => {
         const { id, name } = element
-        const highlighted = !selectedNode || selectedNode.id === id
+        const highlighted = selectedNode && selectedNode.id === id
 
         return <>
             <Dot clickable={true}
+                selectedNode={selectedNode}
+                style={{
+                    border: disableBorder ? 0 : 1
+                }}
                 onClick={e => {
                     e.stopPropagation()
                     setSelectedNode(element)
@@ -174,8 +181,11 @@ export default ({ lineId, value }) => {
     }
 
     const handleSearch = search => {
-        setFilteredPlugins(plugins
-            .reduce((acc, e) => e.id.toLowerCase().includes(search.toLowerCase()) ? [...acc, e] : acc, []))
+        setPlugins(plugins
+            .map(plugin => ({
+                ...plugin,
+                filtered: !plugin.id.toLowerCase().includes(search.toLowerCase())
+            })))
     }
 
     const changeValues = ops => {
@@ -187,20 +197,61 @@ export default ({ lineId, value }) => {
             .then(() => setRoute(newRoute))
     }
 
-    const saveChanges = () => {
+    const updatePlugin = (pluginId, config) => {
         BackOfficeServices.updateRoute({
             ...route,
-            plugins: {
-                slots: route.plugins.map(r => ({
-                    ...r,
-                    selected: null
-                }))
-            }
+            plugins: route.plugins.map(plugin => {
+                if (plugin.plugin === pluginId)
+                    return {
+                        ...plugin,
+                        config
+                    }
+                return plugin
+            })
         })
+            .then(r => {
+                if (!r.error)
+                    setRoute(r)
+                else {
+                    // TODO - manage error
+                }
+            })
+    }
+
+    const saveChanges = () => {
+        BackOfficeServices.updateRoute(route)
             .then(newRoute => {
                 setRoute(newRoute)
             })
     }
+
+    const sortInputStream = arr => Object.values(arr.reduce((acc, node) => {
+        if (node.plugin_steps.includes('PreRoute'))
+            return {
+                ...acc, PreRoute: [
+                    ...acc['PreRoute'],
+                    node
+                ]
+            }
+        else if (node.plugin_steps.includes('ValidateAccess'))
+            return {
+                ...acc, ValidateAccess: [
+                    ...acc['ValidateAccess'],
+                    node
+                ]
+            }
+        return {
+            ...acc, TransformRequest: [
+                ...acc['TransformRequest'],
+                node
+            ]
+        }
+    }, {
+        PreRoute: [],
+        ValidateAccess: [],
+        TransformRequest: []
+    }))
+        .flat()
 
     const SaveButton = () => <button
         className="btn btn-save"
@@ -216,40 +267,43 @@ export default ({ lineId, value }) => {
         <span>Update route</span>
     </button>
 
-    console.log(route)
+    // console.log(route)
 
-    const inputNodes = nodes.filter(f => f.onInputStream)
-    const targetNodes = nodes.filter(f => f.onTargetStream)
-    const outputNodes = nodes.filter(f => f.onOutputStream && !f.onTargetStream)
+    const inputNodes = sortInputStream(nodes
+        .filter(node => (node.plugin_steps || []).some(s => ["PreRoute", "ValidateAccess", "TransformRequest"].includes(s))))
+    const targetNodes = nodes.filter(node => node.onTargetStream)
+    const outputNodes = nodes.filter(node => (node.plugin_steps || []).some(s => ["TransformResponse"].includes(s)))
+
+    console.log(inputNodes)
 
     return (
-        <div className="h-100" onClick={() => setSelectedNode(undefined)}>
-            <SaveButton />
+        <div className="h-100 col-sm-12" style={{ maxWidth: '1020px' }}
+            onClick={() => setSelectedNode(undefined)}>
+            {!selectedNode && <SaveButton />}
             <div className="col-sm-4" style={{
                 paddingLeft: 0,
                 marginRight: 'calc(var(--bs-gutter-x) * 1)'
             }}>
-                <Tab text="Components" />
                 <div className="elements">
                     <div style={{
                         height: "calc(100% - 12px)",
                         width: "3px",
                         backgroundColor: "#f9b000",
                         position: 'absolute',
-                        left: "24px",
+                        left: "20px",
                         top: 0,
                         zIndex: -1
                     }}></div>
                     <SearchBar handleSearch={handleSearch} />
-                    <PluginsStack elements={filteredPlugins
+                    <PluginsStack elements={plugins
                         .reduce((acc, plugin) => {
-                            if (plugin.selected)
+                            if (plugin.selected || plugin.filtered)
                                 return acc
                             return acc.map(group => {
                                 if (plugin.plugin_categories.includes(group.group))
                                     return {
                                         ...group,
-                                        elements: [...group.elements, plugin]
+                                        elements: [...(group.elements || []), plugin]
                                     }
                                 return group
                             })
@@ -263,9 +317,12 @@ export default ({ lineId, value }) => {
             <div className="col-sm-8">
                 <div className="row h-100">
                     <div className="col-sm-4" style={{ display: 'flex', flexDirection: 'column' }}>
-                        <Tab text="Route" />
                         <div className="main-view">
-                            <Dot icon="arrow-down" />
+                            <Dot style={{
+                                width: "72px",
+                                height: "36px",
+                                borderRadius: '6px'
+                            }} icon="chevron-down" selectedNode={selectedNode} />
                             <Link highlighted={!selectedNode} />
                             {inputNodes.map((value, i) => <NodeElement
                                 element={value}
@@ -279,18 +336,18 @@ export default ({ lineId, value }) => {
                         </div>
                         <div className="main-view"
                             style={{
-                                backgroundColor: "#494948",
-                                borderTop: '2px solid #f9b000',
-                                padding: '32px 6px 8px 6px',
+                                flex: 0,
+                                backgroundColor: "#f9b000",
+                                padding: '1px',
                                 position: 'relative',
                                 opacity: !selectedNode ? 1 : !selectedNode.onTargetStream ? .25 : 1
                             }}>
                             <i className="fas fa-globe-americas"
                                 style={{
                                     position: 'absolute',
-                                    top: '-18px',
+                                    top: '-3px',
                                     right: '-18px',
-                                    fontSize: 42,
+                                    fontSize: '42px',
                                     color: "#fff",
                                     backgroundColor: "#f9b000",
                                     borderRadius: "50%"
@@ -299,19 +356,20 @@ export default ({ lineId, value }) => {
                             {targetNodes.map((value, i, arr) => <NodeElement
                                 element={value}
                                 key={`targetNodes${i}`}
-                                selectedNode={selectedNode}
+                                selectedNode={(selectedNode && selectedNode.onTargetStream) ? selectedNode : undefined}
                                 setSelectedNode={setSelectedNode}
                                 hideLink={arr.length - 1 === i}
+                                disableBorder={true}
                             />)}
-                            <Anchor out={true} flat={true}
+                            {/* <Anchor out={true} flat={true}
                                 text="Drop targets elements here"
                                 stream="onTargetStream"
                                 highlighted={!selectedNode}
-                                mt='auto' />
+                                mt='auto' /> */}
                         </div>
                         <div className="main-view">
                             <Link highlighted={!selectedNode} />
-                            {outputNodes.map(([_, value], i) => <NodeElement
+                            {outputNodes.map((value, i) => <NodeElement
                                 element={value}
                                 key={`outNodes${i}`}
                                 setSelectedNode={setSelectedNode}
@@ -324,15 +382,19 @@ export default ({ lineId, value }) => {
                                 stream="onOutputStream"
                                 highlighted={!selectedNode} />
                             <Link highlighted={!selectedNode} flex={true} />
-                            <Dot icon="arrow-down" />
+                            <Dot style={{
+                                width: "72px",
+                                height: "36px",
+                                borderRadius: '6px'
+                            }} icon="chevron-down" selectedNode={selectedNode} />
                         </div>
                     </div>
                     <div className="col-sm-8" style={{ paddingRight: 0 }}>
-                        <Tab text="Details" />
                         <EditView
                             selectedNode={selectedNode}
                             setSelectedNode={setSelectedNode}
                             changeValues={changeValues}
+                            updatePlugin={updatePlugin}
                             removeNode={removeNode}
                             route={route}
                             plugins={plugins} />
@@ -346,7 +408,7 @@ export default ({ lineId, value }) => {
 const Element = ({ element, onDrag, n, addNode }) => (
     <div className="element" draggable={true} onDragStart={e => onDrag(e, { ...element })} onClick={e => {
         e.stopPropagation()
-        addNode(element.onTargetStream ? 'onTargetStream' : element.onOutputStream ? 'onOutputStream' : 'onInputStream', element)
+        addNode(element)
     }}>
         <div className="element-icon group-icon">
             <span>{n}</span>
@@ -442,7 +504,7 @@ const SearchBar = ({ handleSearch }) => <div className='group'>
 </div>
 
 
-const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNode, plugins }) => {
+const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNode, plugins, updatePlugin }) => {
     if (!selectedNode)
         return <div style={{
             backgroundColor: "rgb(73, 73, 73)",
@@ -456,7 +518,9 @@ const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNo
 
     const { id, flow, config_flow, config_schema, schema, name } = selectedNode
 
-    const plugin = ['Backend', 'Frontend'].includes(id) ? DEFAULT_FLOW.find(f => f.id === id) : plugins.find(element => element.id === id)
+    const plugin = ['Backend', 'Frontend'].includes(id) ? DEFAULT_FLOW.find(f => f.id === id) : plugins.find(element => element.id === id || element.id.endsWith(id))
+
+    console.log(plugin, id, plugins)
 
     const close = () => setSelectedNode(undefined)
 
@@ -468,21 +532,34 @@ const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNo
         return read(value[keys[0]], keys.slice(1).join("."))
     }
 
-    const RemoveComponent = () => <button className='btn btn-danger btn-block' onClick={e => {
+    const RemoveComponent = () => <button className='btn btn-danger ms-2' onClick={e => {
         e.stopPropagation()
         setSelectedNode(undefined)
         removeNode(id)
     }}>
-        <i className='fas fa-times' />
+        Remove this component
     </button>
+
+    let value = route[selectedNode.field]
+
+    if (!value) {
+        const pluginOnFlow = route.plugins.find(p => p.plugin === id)
+        if (pluginOnFlow)
+            value = pluginOnFlow.config
+    }
+
+    if (!value) {
+        const defaultPlugin = plugins.find(p => p.id === id)
+        if (defaultPlugin)
+            value = defaultPlugin.config
+    }
 
     return <div onClick={e => {
         e.stopPropagation()
     }} className="plugins-stack">
         <div className="group-header" style={{
             borderBottom: '1px solid #f9b000',
-            borderRight: 0,
-            justifyContent: 'space-between'
+            borderRight: 0
         }}>
             <i className={`fas fa-${plugin.icon || 'bars'} group-icon`}
                 style={{
@@ -490,41 +567,48 @@ const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNo
                     borderBottomLeftRadius: 0
                 }} />
             <span style={{ color: "#fff", paddingLeft: "12px" }}>{name || id}</span>
-            {!selectedNode.default && <RemoveComponent />}
         </div>
         {selectedNode.switch ?
             <div style={{
                 backgroundColor: "#494949",
                 padding: "12px"
             }}>
-                <p style={{ color: "#fff" }}>{selectedNode.description}</p>
+                <p className='form-description' style={{ margin: 0 }}>{selectedNode.description}</p>
             </div>
             : <div style={{
-                backgroundColor: "#494949",
-                padding: '12px'
+                backgroundColor: "#494949"
             }}>
-                <p style={{ color: "#fff" }}>{selectedNode.description}</p>
-                <Form
-                    value={route[selectedNode.field]}
-                    schema={schema || config_schema}
-                    flow={flow || config_flow}
-                    onSubmit={item => {
-                        try {
-                            changeValues((flow || config_flow || Object.keys(schema || config_schema)).map(field => {
-                                const fieldName = `${selectedNode.field ? `${selectedNode.field}.` : ''}${field}`
-                                return { name: fieldName, value: read(item, field) }
-                            }))
-                            close()
-                        } catch (err) {
-                            console.log(err)
-                        }
-                    }}
-                    footer={({ valid }) => <button className="btn btn-success btn-block"
-                        style={{ backgroundColor: "#f9b000", borderColor: '#f9b000', marginTop: '12px' }}
-                        onClick={valid}>
-                        Update configuration
-                    </button>}
-                />
+                <p className='form-description'>{selectedNode.description}</p>
+                <div style={{ padding: '0 12px 12px' }}>
+                    <Form
+                        value={value}
+                        schema={schema || config_schema}
+                        flow={flow || config_flow}
+                        onSubmit={item => {
+                            try {
+                                if (config_schema)
+                                    updatePlugin(id, item)
+                                else
+                                    changeValues((flow || config_flow || Object.keys(schema || config_schema)).map(field => {
+                                        const fieldName = `${selectedNode.field ? `${selectedNode.field}.` : ''}${field}`
+                                        return { name: fieldName, value: read(item, field) }
+                                    }))
+                                close()
+                            } catch (err) {
+                                console.log(err)
+                            }
+                        }}
+                        footer={({ valid }) => <div className='d-flex mt-2'>
+                            <button className="btn btn-success btn-block"
+                                style={{ backgroundColor: "#f9b000", borderColor: '#f9b000' }}
+                                onClick={valid}>
+                                Update configuration
+                            </button>
+                            {!selectedNode.default && <RemoveComponent />}
+                        </div>}
+                    />
+                </div>
             </div>}
+        {selectedNode.switch && !selectedNode.default && <RemoveComponent />}
     </div>
 }
