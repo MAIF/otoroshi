@@ -246,7 +246,7 @@ trait NgNamedPlugin extends NamedPlugin { self =>
                 if (values.isEmpty) {
                     Json.obj(prefix + key -> Json.obj(
                       "type" -> "string",
-                      "format" -> "select",
+                      "array" -> "true",
                       "createOption" -> true,
                       "isMulti" -> true,
                       "label" -> (prefix + key)))
@@ -256,7 +256,7 @@ trait NgNamedPlugin extends NamedPlugin { self =>
                       Json.obj(
                         prefix + key -> Json.obj(
                           "type"  -> "number",
-                          "format" -> "select",
+                          "array" -> "true",
                           "label" -> (prefix + key),
                           "createOption" -> true,
                           "isMulti" -> true,
@@ -266,7 +266,7 @@ trait NgNamedPlugin extends NamedPlugin { self =>
                       Json.obj(
                         prefix + key -> Json.obj(
                           "type"  -> "string",
-                          "format" -> "select",
+                          "array" -> "true",
                           "label" -> (prefix + key),
                           "createOption" -> true,
                           "isMulti" -> true,
