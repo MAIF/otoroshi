@@ -104,18 +104,20 @@ class NgPluginDocumentationGenerator(docPath: String) {
       }
       .getOrElse("")
 
-    val pluginClazz = "foo" //  plugin.steps.map(s => s"plugin-kind-${s.name.toLowerCase()}").mkString(" ")
+    val pluginClazz = "pl" //  plugin.steps.map(s => s"plugin-kind-${s.name.toLowerCase()}").mkString(" ")
     val pluginLogo  = ""
     s"""
-       |@@@ div { .plugin .plugin-hidden .${pluginClazz} #${plugin.getClass.getName} }
+       |@@@ div { .ng-plugin .plugin-hidden .${pluginClazz} #${plugin.getClass.getName} }
        |
        |# ${plugin.name}
-       |
-       |<img class="plugin-logo plugin-hidden" src="${pluginLogo}"></img>
        |
        |## Defined on steps
        |
        |${plugin.steps.map(s => s"  - `${s.name}`").mkString("\n")}
+       |
+       |## Plugin reference
+       |
+       |`cp:${plugin.internalName}`
        |
        |$description
        |

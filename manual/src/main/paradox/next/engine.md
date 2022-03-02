@@ -21,8 +21,6 @@ The next time a request hits the `api.foo.bar` domain, the new engine will handl
     "enabled" : true,
     "debug_headers" : false,
     "reporting": true,
-    "routing_strategy" : "tree",
-    "merge_sync_steps" : true,
     "domains" : [ "api.foo.bar" ],
     "deny_domains" : [ ],
   }
@@ -77,6 +75,10 @@ This plugin introduces new entities that will replace (one day maybe) service de
  - `targets`: how to contact a backend either by using a domain name or an ip address, supports mtls
  - `backends`: a list of targets to contact a backend
 
+## Entities sync
+
+A new behavior introduced for the new proxy engine is the entities sync job. To avoid unecessary operations on the underlying datastore when routing requests, a new job has been setup in otoroshi that synchronize the content of the datastore (at least a part of it) with an in-memory cache. Because of it, the propagation of changes between an admin api call and the actual result on routing can be longer than before. When a node creates, updates, or deletes an entity via the admin api, other nodes need to wait for the next poll to purge the old cached entity and start using the new one. You can change the interval between syncs with the configuration key `otoroshi.next.state-sync-interval` or the env. variable `OTOROSHI_NEXT_STATE_SYNC_INTERVAL`. The default value is `10000` and the unit is `milliseconds`
+
 ## Automatic conversion
 
 The new engine uses new entities for its configuration, but in order to facilitate transition between the old world and the new world, all the `service descriptors` of an otoroshi instance are automatically converted live into `routes` periodically. Any `service descriptor` should still work as expected through the new engine while enjoying all the perks.
@@ -123,7 +125,7 @@ as path matching can now include named path params, it is possible to perform a 
 
 ## Plugins
 
-the new route entity defines a plugin pipline where any plugin can be `enabled`/`disabled` globally or for some paths. 
+the new route entity defines a plugin pipline where any plugin can be enabled or not and can be active only on some paths. 
 Each plugin slot in the pipeline holds the plugin id and the plugin configuration. 
 
 You can also enable debugging only on a plugin instance instead of the whole route (see [the debugging section](#debugging))
@@ -148,6 +150,8 @@ You can also enable debugging only on a plugin instance instead of the whole rou
   } ]
 }
 ```
+
+you can find the list of built-in plugins @ref:[here](./built-in-plugins.md)
 
 ## Using legacy plugins
 
