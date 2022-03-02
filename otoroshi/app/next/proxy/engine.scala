@@ -123,6 +123,10 @@ object ProxyEngineConfig {
   }
 }
 
+object ProxyEngine {
+  def configRoot: String = "NextGenProxyEngine"
+}
+
 class ProxyEngine() extends RequestHandler {
 
   private val logger               = Logger("otoroshi-next-gen-proxy-engine")
@@ -199,7 +203,7 @@ class ProxyEngine() extends RequestHandler {
       |
       |""".stripMargin.some
 
-  override def configRoot: Option[String] = "NextGenProxyEngine".some
+  override def configRoot: Option[String] = ProxyEngine.configRoot.some
 
   override def defaultConfig: Option[JsObject] = {
     ProxyEngineConfig.default.json.asObject.some
@@ -210,8 +214,13 @@ class ProxyEngine() extends RequestHandler {
     configCache.get(
       "config",
       _ => {
-        val config_json  = env.datastores.globalConfigDataStore.latest().plugins.config.select(configRoot.get).asObject
-        val config = ProxyEngineConfig.parse(config_json, env)
+        val config = env.datastores.globalConfigDataStore.latest()
+          .plugins
+          .config
+          .select(configRoot.get)
+          .asOpt[JsObject]
+          .map(v => ProxyEngineConfig.parse(v, env))
+          .getOrElse(ProxyEngineConfig.default)
         enabledRef.set(config.enabled)
         enabledDomains.set(config.domains)
         config
