@@ -1,7 +1,7 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef } from 'react'
 import { Form, type, constraints, format } from '@maif/react-forms'
 import { Location } from '../../components/Location'
-import { createRoute, updateRoute } from '../../services/BackOfficeServices'
+import { nextClient } from '../../services/BackOfficeServices'
 import { useHistory } from 'react-router-dom'
 
 export const Informations = (props) => {
@@ -23,9 +23,13 @@ export const Informations = (props) => {
             type: type.bool,
             label: 'Route enabled'
         },
-        debugFlow: {
+        debug_flow: {
             type: type.bool,
             label: 'Debug the flow'
+        },
+        export_reporting: {
+            type: type.bool,
+            label: 'Export reporting'
         },
         description: {
             type: type.string,
@@ -74,7 +78,8 @@ export const Informations = (props) => {
         'id',
         'name',
         'enabled',
-        'debugFlow',
+        'debug_flow',
+        'export_reporting',
         'description',
         'groups',
         {
@@ -101,14 +106,14 @@ export const Informations = (props) => {
                 ref={ref}
                 onSubmit={item => {
                     if (props.isCreation)
-                        createRoute(item)
+                        nextClient.create(nextClient.ENTITIES.ROUTES, item)
                             .then(() => history.push(`/routes/${item.id}?tab=flow`))
                     else
-                        updateRoute(item)
+                        nextClient.update(nextClient.ENTITIES.BACKENDS, item)
                 }}
                 footer={() => null}
             />
-            <button className='btn btn-success btn-block'
+            <button className='btn btn-success btn-block mt-3'
                 onClick={() => ref.current.handleSubmit()}>
                 {props.isCreation ? "Create the route" : "Update the route"}
             </button>

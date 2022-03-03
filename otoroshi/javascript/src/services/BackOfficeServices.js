@@ -1774,12 +1774,19 @@ const fetchWrapper = (url, method = 'GET', body) => fetch(`/bo/api/proxy/api/exp
 })
   .then(r => r.json())
 
-export const findRoutes = () => fetchWrapper('/routes')
-export const createRoute = route => fetchWrapper('/routes', 'POST', route)
-export const updateRoute = route => fetchWrapper(`/routes/${route.id}`, 'PUT', route)
-export const fetchRoute = routeId => fetchWrapper(`/routes/${routeId}`)
-export const removeRoute = route => fetchWrapper(`/routes/${route.id}`, 'DELETE')
-export const getRouteTemplate = () => fetchWrapper('/routes/_template')
+export const nextClient = {
+  ENTITIES: {
+    ROUTES: 'routes',
+    BACKENDS: 'backends'
+  },
+  find: entity => fetchWrapper(`/${entity}`),
+  create: (entity, content) => fetchWrapper(`/${entity}`, 'POST', content),
+  update: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
+  fetch: (entity, entityId) => fetchWrapper(`/${entity}/${entityId}`),
+  remove: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'DELETE'),
+  template: entity => fetchWrapper(`/${entity}/_template`)
+}
+
 export const getPlugins = () => fetch('/bo/api/proxy/api/next/plugins/all', {
   credentials: 'include',
   headers: {
@@ -1793,4 +1800,3 @@ export const getCategories = () => fetch('/bo/api/proxy/api/next/plugins/categor
     Accept: 'application/json'
   }
 }).then(r => r.json())
-

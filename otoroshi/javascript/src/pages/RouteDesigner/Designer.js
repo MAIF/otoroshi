@@ -1,30 +1,34 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
-import * as BackOfficeServices from '../../services/BackOfficeServices'
+import { nextClient, getCategories, getPlugins } from '../../services/BackOfficeServices'
 import { Form } from '@maif/react-forms'
+import { SelectInput } from '@maif/react-forms/lib/inputs'
 import deepSet from 'set-value'
 import DEFAULT_FLOW from './Graph'
 
 import '../../style/components/_designer.scss'
+import { BackendForm } from '../BackendsPage'
 
 export default ({ lineId, value }) => {
     const { routeId } = useParams()
 
+    const [backends, setBackends] = useState([])
+
     const [categories, setCategories] = useState([])
     const [nodes, setNodes] = useState([])
-    const [selectedNode, setSelectedNode] = useState()
-
     const [plugins, setPlugins] = useState([])
 
+    const [selectedNode, setSelectedNode] = useState()
     const [route, setRoute] = useState(value)
 
     useEffect(() => {
         Promise.all([
-            BackOfficeServices.fetchRoute(routeId),
-            BackOfficeServices.getCategories(),
-            BackOfficeServices.getPlugins()
+            nextClient.find(nextClient.ENTITIES.BACKENDS),
+            nextClient.fetch(nextClient.ENTITIES.ROUTES, routeId),
+            getCategories(),
+            getPlugins()
         ])
-            .then(([route, categories, plugins]) => {
+            .then(([backends, route, categories, plugins]) => {
                 const formatedPlugins = plugins
                     .filter(plugin => !plugin.plugin_steps.includes('Sink') && !plugin.plugin_steps.includes('HandlesTunnel'))
                     .map(plugin => ({
@@ -33,6 +37,7 @@ export default ({ lineId, value }) => {
                         config: plugin.default_config
                     }))
 
+                setBackends(backends)
                 setCategories(categories.filter(category => category !== 'Tunnel'))
                 setRoute(route)
 
@@ -193,12 +198,12 @@ export default ({ lineId, value }) => {
             return deepSet(_.cloneDeep(newRoute), name, value)
         }, route)
 
-        BackOfficeServices.updateRoute(newRoute)
+        nextClient.update(nextClient.ENTITIES.ROUTES, newRoute)
             .then(() => setRoute(newRoute))
     }
 
     const updatePlugin = (pluginId, config) => {
-        BackOfficeServices.updateRoute({
+        nextClient.update(nextClient.ENTITIES.ROUTES, {
             ...route,
             plugins: route.plugins.map(plugin => {
                 if (plugin.plugin === pluginId)
@@ -219,7 +224,7 @@ export default ({ lineId, value }) => {
     }
 
     const saveChanges = () => {
-        BackOfficeServices.updateRoute(route)
+        nextClient.update(nextClient.ENTITIES.ROUTES, route)
             .then(newRoute => {
                 setRoute(newRoute)
             })
@@ -267,14 +272,12 @@ export default ({ lineId, value }) => {
         <span>Update route</span>
     </button>
 
-    // console.log(route)
+    console.log(route)
 
     const inputNodes = sortInputStream(nodes
         .filter(node => (node.plugin_steps || []).some(s => ["PreRoute", "ValidateAccess", "TransformRequest"].includes(s))))
     const targetNodes = nodes.filter(node => node.onTargetStream)
     const outputNodes = nodes.filter(node => (node.plugin_steps || []).some(s => ["TransformResponse"].includes(s)))
-
-    console.log(inputNodes)
 
     return (
         <div className="h-100 col-sm-12" style={{ maxWidth: '1020px' }}
@@ -391,13 +394,16 @@ export default ({ lineId, value }) => {
                     </div>
                     <div className="col-sm-8" style={{ paddingRight: 0 }}>
                         <EditView
+                            setRoute={setRoute}
                             selectedNode={selectedNode}
                             setSelectedNode={setSelectedNode}
                             changeValues={changeValues}
                             updatePlugin={updatePlugin}
                             removeNode={removeNode}
                             route={route}
-                            plugins={plugins} />
+                            plugins={plugins}
+                            backends={backends}
+                        />
                     </div>
                 </div>
             </div>
@@ -504,7 +510,9 @@ const SearchBar = ({ handleSearch }) => <div className='group'>
 </div>
 
 
-const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNode, plugins, updatePlugin }) => {
+const EditView = ({
+    selectedNode, setSelectedNode, route, changeValues,
+    removeNode, plugins, updatePlugin, setRoute, backends }) => {
     if (!selectedNode)
         return <div style={{
             backgroundColor: "rgb(73, 73, 73)",
@@ -516,7 +524,20 @@ const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNo
             Start by selecting a node
         </div>
 
+    const [usingExistingBackend, setUsingExistingBackend] = useState(route.backend_ref)
+    const [backendConfigRef, setBackendConfigRef] = useState()
+
+    useEffect(() => {
+        if (route.backend_ref)
+            nextClient.fetch(nextClient.ENTITIES.BACKENDS, route.backend_ref)
+                .then(setBackendConfigRef)
+    }, [route.backend_ref])
+
     const { id, flow, config_flow, config_schema, schema, name } = selectedNode
+
+    const hasBackendRef = id === "Backend" && route.backend_ref
+
+    // if (hasBackendRef)
 
     const plugin = ['Backend', 'Frontend'].includes(id) ? DEFAULT_FLOW.find(f => f.id === id) : plugins.find(element => element.id === id || element.id.endsWith(id))
 
@@ -525,6 +546,7 @@ const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNo
     const close = () => setSelectedNode(undefined)
 
     const read = (value, path) => {
+        console.log(value, path)
         const keys = path.split(".")
         if (keys.length === 1)
             return value[path]
@@ -554,6 +576,8 @@ const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNo
             value = defaultPlugin.config
     }
 
+    console.log(value)
+
     return <div onClick={e => {
         e.stopPropagation()
     }} className="plugins-stack">
@@ -578,8 +602,46 @@ const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNo
             : <div style={{
                 backgroundColor: "#494949"
             }}>
-                <p className='form-description'>{selectedNode.description}</p>
-                <div style={{ padding: '0 12px 12px' }}>
+                <p className='form-description' style={{
+                    marginBottom: selectedNode.description ? 'inherit' : 0,
+                    padding: selectedNode.description ? '12px' : 0
+                }}>{selectedNode.description}</p>
+                {id === "Backend" && <div style={{ padding: "12px", backgroundColor: "#404040" }}>
+                    <div className={`d-flex ${usingExistingBackend ? 'mb-3' : ''}`}>
+                        <button className='btn'
+                            onClick={() => {
+                                setBackendConfigRef(undefined)
+                                setUsingExistingBackend(false)
+                                setRoute({
+                                    ...route,
+                                    backend_ref: undefined
+                                })
+                            }}
+                            style={{
+                                padding: "6px 12px",
+                                backgroundColor: usingExistingBackend ? "#494849" : "#f9b000",
+                                color: "#fff"
+                            }}>Create a new backend</button>
+                        <button className='btn' onClick={() => setUsingExistingBackend(true)} style={{
+                            padding: "6px 12px",
+                            backgroundColor: usingExistingBackend ? "#f9b000" : "#494849",
+                            color: "#fff"
+                        }}>Select an existing backend</button>
+                    </div>
+                    {usingExistingBackend && <SelectInput
+                        id="backend_select"
+                        value={route.backend_ref}
+                        placeholder="Select an existing backend"
+                        label=""
+                        onChange={backend_ref => setRoute({
+                            ...route,
+                            backend_ref
+                        })}
+                        possibleValues={backends}
+                        transformer={item => ({ label: item.name, value: item.id })}
+                    />}
+                </div>}
+                {(!usingExistingBackend || id !== "Backend") ? <div style={{ padding: '0 12px 12px' }}>
                     <Form
                         value={value}
                         schema={schema || config_schema}
@@ -589,10 +651,16 @@ const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNo
                                 if (config_schema)
                                     updatePlugin(id, item)
                                 else
-                                    changeValues((flow || config_flow || Object.keys(schema || config_schema)).map(field => {
-                                        const fieldName = `${selectedNode.field ? `${selectedNode.field}.` : ''}${field}`
-                                        return { name: fieldName, value: read(item, field) }
-                                    }))
+                                    changeValues((flow || config_flow || Object.keys(schema || config_schema))
+                                        .reduce((acc, curr) => {
+                                            if (curr.flow)
+                                                return [...acc, ...curr.flow]
+                                            return [...acc, curr]
+                                        }, [])
+                                        .map(field => {
+                                            const fieldName = `${selectedNode.field ? `${selectedNode.field}.` : ''}${field}`
+                                            return { name: fieldName, value: read(item, field) }
+                                        }))
                                 close()
                             } catch (err) {
                                 console.log(err)
@@ -602,13 +670,28 @@ const EditView = ({ selectedNode, setSelectedNode, route, changeValues, removeNo
                             <button className="btn btn-success btn-block"
                                 style={{ backgroundColor: "#f9b000", borderColor: '#f9b000' }}
                                 onClick={valid}>
-                                Update configuration
+                                Update the plugin configuration
                             </button>
                             {!selectedNode.default && <RemoveComponent />}
                         </div>}
                     />
-                </div>
-            </div>}
+                </div> : <>
+                    {backendConfigRef && <BackendForm isCreation={false} value={backendConfigRef} style={{
+                        maxWidth: '100%'
+                    }} foldable={true} />}
+                    <button className="btn btn-success btn-bloc m-3"
+                        style={{ backgroundColor: "#f9b000", borderColor: '#f9b000' }}
+                        onClick={() => {
+                            nextClient.update(nextClient.ENTITIES.ROUTES, route)
+                                .then(newRoute => {
+                                    setRoute(newRoute)
+                                })
+                        }}>
+                        Update the plugin configuration
+                    </button>
+                </>}
+            </div>
+        }
         {selectedNode.switch && !selectedNode.default && <RemoveComponent />}
-    </div>
+    </div >
 }

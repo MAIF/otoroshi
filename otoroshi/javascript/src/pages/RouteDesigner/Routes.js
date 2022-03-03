@@ -1,9 +1,9 @@
 import React, { useEffect } from "react"
 import { Link, useHistory, useParams } from "react-router-dom";
 import { Table } from "../../components/inputs";
-import { findRoutes, removeRoute } from '../../services/BackOfficeServices'
+import { nextClient } from '../../services/BackOfficeServices'
 
-export default ({ setTitle }) => {
+export default ({ }) => {
     const params = useParams()
     const history = useHistory()
 
@@ -24,8 +24,8 @@ export default ({ setTitle }) => {
         formSchema={null}
         formFlow={null}
         columns={columns}
-        fetchItems={findRoutes}
-        deleteItem={removeRoute}
+        fetchItems={() => nextClient.find(nextClient.ENTITIES.ROUTES)}
+        deleteItem={() => nextClient.remove(nextClient.ENTITIES.ROUTES)}
         showActions={true}
         showLink={false}
         extractKey={item => item.id}

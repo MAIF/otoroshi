@@ -59,7 +59,6 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       val jobNames          = env.scriptManager.jobNames
       val exporterNames     = env.scriptManager.exporterNames
       val reqHandlerNames   = env.scriptManager.reqHandlerNames
-      val ngPluginsNames    = env.scriptManager.ngNames
 
       val typ                        = ctx.request.getQueryString("type")
       val excludedTypes: Seq[String] = ctx.request
@@ -106,11 +105,6 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       val reqHandlers     = typ match {
         case None                    => reqHandlerNames
         case Some("request-handler") => reqHandlerNames
-        case _                       => Seq.empty
-      }
-      val ngPlugins       = typ match {
-        case None                    => ngPluginsNames
-        case Some("ng-plugins")      => ngPluginsNames
         case _                       => Seq.empty
       }
       def extractInfosFromJob(c: String): JsValue = {
@@ -192,12 +186,11 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
           cpListenerNames.map(extractInfos) ++
           cpExporterNames.map(extractInfos) ++
           reqHandlers.map(extractInfos) ++
-          ngPlugins.map(extractInfos) ++
           cpJobNames.map(extractInfosFromJob).filter {
             case JsNull => false
             case _      => true
           }
-        Ok(JsArray(allClasses.filter(p => !excludedTypes.contains((p \ "pluginType").as[String]))))
+        Ok(JsArray(allClasses))
       }
     }
 

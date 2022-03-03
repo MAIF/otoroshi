@@ -210,7 +210,7 @@ class ProxyEngine() extends RequestHandler {
     configCache.get(
       "config",
       _ => {
-        val config_json  = env.datastores.globalConfigDataStore.latest().plugins.config.select(configRoot.get).asObject
+        val config_json  = env.datastores.globalConfigDataStore.latest().plugins.config.select(configRoot.get).asOpt[JsObject].getOrElse(defaultConfig.get)
         val config = ProxyEngineConfig.parse(config_json, env)
         enabledRef.set(config.enabled)
         enabledDomains.set(config.domains)

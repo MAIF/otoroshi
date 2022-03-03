@@ -41,6 +41,7 @@ import { TcpServicesPage } from '../pages/TcpServicesPage';
 import { ProvidersDashboardPage } from '../pages/ProvidersDashboardPage';
 import { ResourceLoaderPage } from '../pages/ResourceLoaderPage';
 import RouteDesignerPage from '../pages/RouteDesigner';
+import { BackendsPage } from '../pages/BackendsPage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -67,7 +68,8 @@ class BackOfficeAppContainer extends Component {
     };
 
     this.fullPageForRoutes = [
-      /^(\/routes\/[\w]*)/
+      /^(\/routes\/[\w]*)/,
+      /^(\/backends\/[\w]*)/
     ].map(r => new RegExp(r))
   }
 
@@ -255,6 +257,14 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/routes"
                           component={(props) => <RouteDesignerPage
+                            globalEnv={this.state.env}
+                            setTitle={(t) => DynamicTitle.setContent(t)}
+                            getTitle={() => DynamicTitle.getContent()}
+                            {...props} />}
+                        />
+                        <Route
+                          path="/backends"
+                          component={(props) => <BackendsPage
                             globalEnv={this.state.env}
                             setTitle={(t) => DynamicTitle.setContent(t)}
                             getTitle={() => DynamicTitle.getContent()}
