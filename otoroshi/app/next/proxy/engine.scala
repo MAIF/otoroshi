@@ -2092,7 +2092,8 @@ class ProxyEngine() extends RequestHandler {
       env.Headers.OtoroshiRequestId,
       env.Headers.OtoroshiClientId,
       env.Headers.OtoroshiClientSecret,
-      env.Headers.OtoroshiAuthorization
+      env.Headers.OtoroshiAuthorization,
+      "Otoroshi-Try-It-Request-Id"
     ).++(headersInStatic).map(_.toLowerCase)
 
     val headers = request.headers.toSimpleMap
@@ -2126,7 +2127,7 @@ class ProxyEngine() extends RequestHandler {
     val otoroshiRequest = NgPluginHttpRequest(
       url = targetUrl,
       method = request.method,
-      headers = request.headers.toSimpleMap,
+      headers = headers,
       cookies = wsCookiesIn,
       version = request.version,
       clientCertificateChain = request.clientCertificateChain,
