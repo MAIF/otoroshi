@@ -864,6 +864,32 @@ class ReactivePgRedis(
       }.map(_.isDefined)
     }
 
+  // PostgreSQL parses interval quantity as an integer so ...
+  // Minutes are enough for the 1000 years limit
+  def millisecondsToInterval(millis: Long): String = {
+    if (millis < Int.MaxValue) {
+      s"'$millis milliseconds'::interval"
+    } else {
+      val seconds: Long = millis / 1000L
+      if (seconds < Int.MaxValue) {
+        s"'$seconds seconds'::interval"
+      } else {
+        val minutes: Long = seconds / 60L
+        if (minutes < Int.MaxValue) {
+          s"'$minutes minutes'::interval"
+        } else {
+          val hours: Long = minutes / 60L
+          if (hours < Int.MaxValue) {
+            s"'$hours hours'::interval"
+          } else {
+            val days: Long = hours / 24L
+            s"'$days days'::interval"
+          }
+        }
+      }
+    }
+  }
+
   override def setBS(
       key: String,
       value: ByteString,
@@ -874,12 +900,12 @@ class ReactivePgRedis(
       val ttl            = exSeconds
         .map(_ * 1000)
         .orElse(pxMilliseconds)
-        .map(v => s"'$v milliseconds'::interval")
+        .map(v => millisecondsToInterval(v))
         .getOrElse("'1000 years'::interval")
       val maybeTtlUpdate = exSeconds
         .map(_ * 1000)
         .orElse(pxMilliseconds)
-        .map(v => s"'$v milliseconds'::interval")
+        .map(v => millisecondsToInterval(v))
         .map(ttl => s", ttl = $ttl, ttl_starting_at = NOW()")
         .getOrElse("")
       matchesEntity(key, value) match {
@@ -946,7 +972,7 @@ class ReactivePgRedis(
   override def pexpire(key: String, milliseconds: Long): Future[Boolean] =
     measure("pg.ops.pexpire") {
       queryRaw(
-        s"update $schemaDotTable set ttl = '$milliseconds milliseconds'::interval, ttl_starting_at = NOW() where key = $$1 and (ttl_starting_at + ttl) > NOW();",
+        s"update $schemaDotTable set ttl = ${millisecondsToInterval(milliseconds)}, ttl_starting_at = NOW() where key = $$1 and (ttl_starting_at + ttl) > NOW();",
         Seq(key)
       ) { row =>
         true

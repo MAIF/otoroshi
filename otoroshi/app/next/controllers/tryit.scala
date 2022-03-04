@@ -2,12 +2,13 @@ package otoroshi.next.controllers
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import otoroshi.actions.{ApiAction, BackOfficeActionAuth}
+import otoroshi.actions.BackOfficeActionAuth
 import otoroshi.env.Env
-import otoroshi.next.models.NgRoute
-import otoroshi.next.plugins.api.{NgNamedPlugin, NgPluginCategory, NgPluginVisibility, NgStep}
+import otoroshi.next.models.{NgRoute, NgTarget, NgTlsConfig}
+import otoroshi.next.plugins.ForceHttpsTraffic
+import otoroshi.next.utils.JsonHelpers
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsArray, JsNull, JsString, JsValue, Json}
+import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 
@@ -36,7 +37,8 @@ class TryItController(
       val method = jsonBody.select("method").asOpt[String].map(_.toUpperCase()).getOrElse("GET")
       val path = jsonBody.select("path").asOpt[String].getOrElse("/")
       val _headers = jsonBody.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
-      // TODO: support cookies here !
+      val cookies = jsonBody.select("cookies").asOpt[Seq[JsObject]].map(_.map(JsonHelpers.cookieFromJson)).getOrElse(Seq.empty)
+      val clientCert = jsonBody.select("client_cert").asOpt[String]
       val bodyBase64 = jsonBody.select("base_64").asOpt[Boolean].getOrElse(false)
       val body: Option[ByteString] = jsonBody.select("body").asOpt[String].filter(_.nonEmpty).map { rb =>
         if (bodyBase64) {
@@ -46,8 +48,11 @@ class TryItController(
         }
       }
 
-      val routeFromId = jsonBody.select("route_id").asOpt[String].flatMap(id => env.proxyState.route(id)).flatMap(_.frontend.domains.map(_.domain).headOption)
-      val routeFromJson = jsonBody.select("route").asOpt[String].flatMap(json => NgRoute.fmt.reads(json.parseJson).asOpt).flatMap(_.frontend.domains.map(_.domain).headOption)
+      val routeFromIdOpt = jsonBody.select("route_id").asOpt[String].flatMap(id => env.proxyState.route(id))
+      val routeFromJsonOpt = jsonBody.select("route").asOpt[String].flatMap(json => NgRoute.fmt.reads(json.parseJson).asOpt)
+      val maybeRoute = routeFromIdOpt.orElse(routeFromJsonOpt)
+      val routeFromId = routeFromIdOpt.flatMap(_.frontend.domains.map(_.domain).headOption)
+      val routeFromJson = routeFromJsonOpt.flatMap(_.frontend.domains.map(_.domain).headOption)
 
       routeFromId.orElse(routeFromJson) match {
         case None => InternalServerError(Json.obj("error" -> "route not found !")).vfuture
@@ -56,12 +61,26 @@ class TryItController(
             "Otoroshi-Try-It-Request-Id" -> requestId,
             "Host" -> hostname
           )
-          // TODO: support TLS here
-          // TODO: support mTLS here
-          val wsRequest = env.Ws.url(s"http://127.0.0.1:${env.port}${path}")
+          val isHttps = maybeRoute.exists(_.plugins.hasPlugin[ForceHttpsTraffic])
+          val url = if (isHttps) s"https://${hostname}:${env.httpsPort}${path}" else s"http://${hostname}:${env.port}${path}"
+          val target = NgTarget(
+            id = s"tryit-${requestId}",
+            hostname = hostname,
+            port = if (isHttps) env.httpsPort else env.port,
+            tls = isHttps,
+            ipAddress = "127.0.0.1".some,
+            tlsConfig = NgTlsConfig(
+              certs = clientCert.toSeq,
+              enabled = true,
+              loose = true,
+              trustAll = true,
+            )
+          ).legacy
+          val wsRequest = env.gatewayClient.akkaUrlWithTarget(url, target)
+            .withFollowRedirects(false)
             .withMethod(method)
             .addHttpHeaders(headers.toSeq: _*)
-            // TODO: support cookies here !
+            .withCookies(cookies: _*)
             .withRequestTimeout(1.minute)
           val respF = body match {
             case None => wsRequest.execute()
@@ -72,11 +91,11 @@ class TryItController(
             val status = resp.status
             val headers = resp.headers.mapValues(_.last)
             resp.bodyAsSource.runFold(ByteString.empty)(_ ++ _).map { respBodyRaw =>
-              // TODO: support cookies here !
               Ok(Json.obj(
                 "status" -> status,
                 "headers" -> headers,
                 "body_base_64" -> respBodyRaw.encodeBase64.utf8String,
+                "cookies" -> JsArray(resp.cookies.map(c => JsonHelpers.wsCookieToJson(c))),
                 "report" -> report
               ))
             }
