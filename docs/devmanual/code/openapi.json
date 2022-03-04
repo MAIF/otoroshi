@@ -53,7 +53,7 @@
     "description" : "All api endpoints about events"
   }, {
     "name" : "experimental",
-    "description" : "???"
+    "description" : "All experimental endpoints"
   }, {
     "name" : "globalconfig",
     "description" : "All api endpoints about globalconfig"
@@ -74,7 +74,7 @@
     "description" : "All api endpoints about live"
   }, {
     "name" : "next",
-    "description" : "???"
+    "description" : "All experimental endpoints"
   }, {
     "name" : "organizations",
     "description" : "All api endpoints about organizations"
@@ -327,7 +327,7 @@
     "/api/next/plugins/steps" : {
       "get" : {
         "tags" : [ "next" ],
-        "summary" : "???",
+        "summary" : "Return all possible plugin steps",
         "operationId" : "otoroshi.next.controllers.NgPluginsController.steps",
         "parameters" : [ ],
         "security" : [ {
@@ -369,7 +369,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/StringList"
                 }
               }
             }
@@ -1856,7 +1856,7 @@
     "/api/experimental/targets/_template" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "Creates a new template for a target",
         "operationId" : "otoroshi.next.controllers.adminapi.NgTargetsController.initiateStoredNgTarget",
         "parameters" : [ ],
         "security" : [ {
@@ -1898,7 +1898,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.StoredNgTarget"
                 }
               }
             }
@@ -3185,7 +3185,7 @@
     "/api/next/plugins/all" : {
       "get" : {
         "tags" : [ "next" ],
-        "summary" : "???",
+        "summary" : "Return all next gen. plugins",
         "operationId" : "otoroshi.next.controllers.NgPluginsController.plugins",
         "parameters" : [ ],
         "security" : [ {
@@ -3227,7 +3227,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/PluginDescriptionsResponse"
                 }
               }
             }
@@ -4692,7 +4692,7 @@
     "/api/experimental/backends/_template" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "Generates a new backend template",
         "operationId" : "otoroshi.next.controllers.adminapi.NgBackendsController.initiateStoredNgBackend",
         "parameters" : [ ],
         "security" : [ {
@@ -4734,7 +4734,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.StoredNgBackend"
                 }
               }
             }
@@ -5506,7 +5506,7 @@
     "/api/experimental/services/_template" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "Creates a new template for a service",
         "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.initiateService",
         "parameters" : [ ],
         "security" : [ {
@@ -5548,7 +5548,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
                 }
               }
             }
@@ -7869,7 +7869,7 @@
     "/api/next/plugins/categories" : {
       "get" : {
         "tags" : [ "next" ],
-        "summary" : "???",
+        "summary" : "Returns all possible plugin catageories",
         "operationId" : "otoroshi.next.controllers.NgPluginsController.categories",
         "parameters" : [ ],
         "security" : [ {
@@ -7911,7 +7911,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/StringList"
                 }
               }
             }
@@ -11472,7 +11472,7 @@
     "/api/experimental/routes/_template" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "Creates a new template for a route",
         "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.initiateRoute",
         "parameters" : [ ],
         "security" : [ {
@@ -11514,7 +11514,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
                 }
               }
             }
@@ -15641,7 +15641,7 @@
     "/api/experimental/services/_openapi" : {
       "post" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "Generates a service based on an openapi spec.",
         "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.fromOpenapi",
         "parameters" : [ ],
         "security" : [ {
@@ -15683,7 +15683,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
                 }
               }
             }
@@ -15695,7 +15695,7 @@
           "content" : {
             "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/ServiceFromOpenApiBody"
               }
             }
           }
@@ -16014,7 +16014,7 @@
     "/api/experimental/certificates/_by_domain" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "Return a composition of possibles domains and their corresponding certificates",
         "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.domainsAndCertificates",
         "parameters" : [ ],
         "security" : [ {
@@ -16056,7 +16056,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/Empty"
                 }
               }
             }
@@ -16905,15 +16905,15 @@
         }
       },
       "otoroshi.next.models.NgMinimalRoute" : {
-        "description" : "???",
+        "description" : "A route representation with it's minimal attributes",
         "type" : "object",
         "properties" : {
           "frontend" : {
-            "description" : "???",
+            "description" : "The frontend of the route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgFrontend"
           },
           "backend" : {
-            "description" : "???",
+            "description" : "The backend of the route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgMinimalBackend"
           },
           "backendRef" : {
@@ -16922,7 +16922,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The backend id of the route (if one)"
           }
         }
       },
@@ -17434,7 +17434,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.auth.UserValidator"
             },
-            "description" : "???"
+            "description" : "Validators that will check if the current user is authorized after successful login"
           },
           "_loc" : {
             "description" : "Location of the module",
@@ -17906,7 +17906,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.auth.UserValidator"
             },
-            "description" : "???"
+            "description" : "Validators that will check if the current user is authorized after successful login"
           },
           "_loc" : {
             "description" : "Location of the module",
@@ -17971,6 +17971,20 @@
           "desc" : {
             "description" : "Description of the config",
             "type" : "string"
+          }
+        }
+      },
+      "ServiceFromOpenApiBody" : {
+        "type" : "object",
+        "description" : "Properties to create a service from an openapi spec",
+        "properties" : {
+          "domain" : {
+            "type" : "string",
+            "description" : "the domain on which the service will be exposed by otoroshi"
+          },
+          "openapi" : {
+            "type" : "string",
+            "description" : "the url to an openapi 3 spec or the content of an openapi 3 spec"
           }
         }
       },
@@ -18138,6 +18152,61 @@
               "type" : "object"
             },
             "description" : "Include the events matching one of those filters"
+          }
+        }
+      },
+      "PluginDescription" : {
+        "type" : "object",
+        "description" : "Description of a plugin",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "description" : "the id of the plugin"
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "the name of the plugin"
+          },
+          "description" : {
+            "type" : "string",
+            "description" : "the description of the plugin"
+          },
+          "default_config" : {
+            "type" : "string",
+            "description" : "the default config of the plugin (for UI form)"
+          },
+          "config_schema" : {
+            "type" : "string",
+            "description" : "the config schema of the plugin (for UI form)"
+          },
+          "config_flow" : {
+            "type" : "array",
+            "description" : "the config flow of the plugin (for UI form)"
+          },
+          "plugin_visibility" : {
+            "type" : "string",
+            "description" : "visibility of the plugin (can be internal or userland)"
+          },
+          "plugin_categories" : {
+            "type" : "array",
+            "description" : "categories of the plugin",
+            "items" : {
+              "$ref" : "#/components/schemas/StringList"
+            }
+          },
+          "plugin_steps" : {
+            "type" : "array",
+            "description" : "steps of the plugin",
+            "items" : {
+              "$ref" : "#/components/schemas/StringList"
+            }
+          },
+          "plugin_tags" : {
+            "type" : "array",
+            "description" : "tags of the plugin",
+            "items" : {
+              "$ref" : "#/components/schemas/StringList"
+            }
           }
         }
       },
@@ -18464,15 +18533,15 @@
         }
       },
       "otoroshi.next.models.StoredNgTarget" : {
-        "description" : "???",
+        "description" : "A target that can be stored in the otoroshi datastore",
         "type" : "object",
         "properties" : {
           "name" : {
-            "description" : "???",
+            "description" : "The name of the target",
             "type" : "string"
           },
           "_loc" : {
-            "description" : "???",
+            "description" : "The location of the target",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "metadata" : {
@@ -18480,10 +18549,10 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The metadata of the target"
           },
           "description" : {
-            "description" : "???",
+            "description" : "The description of the target",
             "type" : "string"
           },
           "tags" : {
@@ -18491,14 +18560,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The tags of the target"
           },
           "id" : {
-            "description" : "???",
+            "description" : "The id of the target",
             "type" : "string"
           },
           "target" : {
-            "description" : "???",
+            "description" : "The actual tagrte",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgTarget"
           }
         }
@@ -19205,27 +19274,27 @@
         }
       },
       "otoroshi.next.models.NgRoute" : {
-        "description" : "???",
+        "description" : "A routing primitive representing how a request is matched and where the request is forwarded",
         "type" : "object",
         "properties" : {
           "debugFlow" : {
-            "description" : "???",
+            "description" : "Enable report debugging",
             "type" : "boolean"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "Is the route enabled",
             "type" : "boolean"
           },
           "name" : {
-            "description" : "???",
+            "description" : "The name of the route",
             "type" : "string"
           },
           "id" : {
-            "description" : "???",
+            "description" : "The ud of the route",
             "type" : "string"
           },
           "exportReporting" : {
-            "description" : "???",
+            "description" : "Export the execution reporting through standard data exporter",
             "type" : "boolean"
           },
           "metadata" : {
@@ -19233,14 +19302,14 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The metadata of the route"
           },
           "frontend" : {
-            "description" : "???",
+            "description" : "The frontend of the route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgFrontend"
           },
           "_loc" : {
-            "description" : "???",
+            "description" : "The location of the route",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "tags" : {
@@ -19248,14 +19317,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The tags of the route"
           },
           "groups" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The groups of the route"
           },
           "backendRef" : {
             "oneOf" : [ {
@@ -19263,14 +19332,14 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The backend id of the route (if one)"
           },
           "description" : {
-            "description" : "???",
+            "description" : "The description of the route",
             "type" : "string"
           },
           "backend" : {
-            "description" : "???",
+            "description" : "The backend of the route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgBackend"
           }
         }
@@ -19563,7 +19632,7 @@
         }
       },
       "otoroshi.next.models.NgFrontend" : {
-        "description" : "???",
+        "description" : "Representation of how a request will be matched to a route",
         "type" : "object",
         "properties" : {
           "headers" : {
@@ -19571,35 +19640,35 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "the headers that will be matched"
           },
           "query" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "the query params that will be matched"
           },
           "domains" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.models.NgDomainAndPath"
             },
-            "description" : "???"
+            "description" : "The domain and path that will be matched"
           },
           "methods" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "the http methods that will be matched"
           },
           "exact" : {
-            "description" : "???",
+            "description" : "Match on exact path ?",
             "type" : "boolean"
           },
           "stripPath" : {
-            "description" : "???",
+            "description" : "Is path stripped from backend request",
             "type" : "boolean"
           }
         }
@@ -19888,11 +19957,11 @@
         }
       },
       "otoroshi.next.models.NgDomainAndPath" : {
-        "description" : "???",
+        "description" : "A string representing a domain and an optional path",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "the raw value of the domain and path",
             "type" : "string"
           }
         }
@@ -19998,11 +20067,11 @@
         }
       },
       "otoroshi.next.models.NgMinimalBackend" : {
-        "description" : "???",
+        "description" : "A backend representation with it's minimal attributes",
         "type" : "object",
         "properties" : {
           "root" : {
-            "description" : "???",
+            "description" : "The root path of the backend or the full rewrite path",
             "type" : "string"
           },
           "targets" : {
@@ -20010,10 +20079,10 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.models.NgTarget"
             },
-            "description" : "???"
+            "description" : "The targets of the backend"
           },
           "loadBalancing" : {
-            "description" : "???",
+            "description" : "Loadbalancing config og the backend",
             "$ref" : "#/components/schemas/otoroshi.models.LoadBalancing"
           },
           "targetRefs" : {
@@ -20021,10 +20090,10 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "List of NgStoredBackend ids"
           },
           "rewrite" : {
-            "description" : "???",
+            "description" : "Does the backend performs a full url rewrite ?",
             "type" : "boolean"
           }
         }
@@ -20320,36 +20389,36 @@
         }
       },
       "otoroshi.next.models.NgCustomTimeouts" : {
-        "description" : "???",
+        "description" : "Custom timeouts per path",
         "type" : "object",
         "properties" : {
           "connectionTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Timeout at connection",
             "type" : "integer"
           },
           "callAndStreamTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)",
             "type" : "integer"
           },
           "path" : {
-            "description" : "???",
+            "description" : "path on which this configuration works",
             "type" : "string"
           },
           "callTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)",
             "type" : "integer"
           },
           "idleTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Timeout on idle connection",
             "type" : "integer"
           },
           "globalTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Specify how long the global call (with retries) should last at most in milliseconds",
             "type" : "integer"
           }
         }
@@ -20582,11 +20651,11 @@
         }
       },
       "otoroshi.next.models.StoredNgBackend" : {
-        "description" : "???",
+        "description" : "A backend that can be stored in the otoroshi datastore",
         "type" : "object",
         "properties" : {
           "description" : {
-            "description" : "???",
+            "description" : "The description of the backend",
             "type" : "string"
           },
           "tags" : {
@@ -20594,29 +20663,29 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The tags of the backend"
           },
           "metadata" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The metadata of the backend"
           },
           "backend" : {
-            "description" : "???",
+            "description" : "The actual backend",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgBackend"
           },
           "name" : {
-            "description" : "???",
+            "description" : "The name of the backend",
             "type" : "string"
           },
           "_loc" : {
-            "description" : "???",
+            "description" : "The location of the backend",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "id" : {
-            "description" : "???",
+            "description" : "The id of the backend",
             "type" : "string"
           }
         }
@@ -20777,7 +20846,7 @@
         "description" : "Host metrics"
       },
       "otoroshi.next.models.NgService" : {
-        "description" : "???",
+        "description" : "A composition of multiple routes with the same plugins",
         "type" : "object",
         "properties" : {
           "metadata" : {
@@ -20785,22 +20854,22 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The metadata of the service"
           },
           "client" : {
-            "description" : "???",
+            "description" : "The client config of the service",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgClientConfig"
           },
           "name" : {
-            "description" : "???",
+            "description" : "The name of the service",
             "type" : "string"
           },
           "id" : {
-            "description" : "???",
+            "description" : "The id of the service",
             "type" : "string"
           },
           "description" : {
-            "description" : "???",
+            "description" : "The description of the service",
             "type" : "string"
           },
           "routes" : {
@@ -20808,22 +20877,22 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.models.NgMinimalRoute"
             },
-            "description" : "???"
+            "description" : "The routes of the service"
           },
           "debugFlow" : {
-            "description" : "???",
+            "description" : "Enable report debugging",
             "type" : "boolean"
           },
           "exportReporting" : {
-            "description" : "???",
+            "description" : "Export the execution reporting through standard data exporter",
             "type" : "boolean"
           },
           "_loc" : {
-            "description" : "???",
+            "description" : "The location of the service",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "Is the service enabled",
             "type" : "boolean"
           },
           "tags" : {
@@ -20831,14 +20900,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The tags of the service"
           },
           "groups" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The groups of the service"
           }
         }
       },
@@ -21032,26 +21101,26 @@
         }
       },
       "otoroshi.next.models.NgClientConfig" : {
-        "description" : "???",
+        "description" : "Settings for the http client when http request is forwarded",
         "type" : "object",
         "properties" : {
           "idleTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Timeout on idle connection",
             "type" : "integer"
           },
           "sampleInterval" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
             "type" : "integer"
           },
           "cacheConnectionSettings" : {
-            "description" : "???",
+            "description" : "Cached connection settings",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgCacheConnectionSettings"
           },
           "callAndStreamTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)",
             "type" : "integer"
           },
           "customTimeouts" : {
@@ -21059,31 +21128,31 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.models.NgCustomTimeouts"
             },
-            "description" : "???"
+            "description" : "Custom timeouts per path"
           },
           "connectionTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Timeout at connection",
             "type" : "integer"
           },
           "callTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)",
             "type" : "integer"
           },
           "globalTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Specify how long the global call (with retries) should last at most in milliseconds",
             "type" : "integer"
           },
           "retryInitialDelay" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor",
             "type" : "integer"
           },
           "backoffFactor" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Specify the factor to multiply the delay for each retry",
             "type" : "integer"
           },
           "proxy" : {
@@ -21092,16 +21161,16 @@
             }, {
               "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
-            "description" : "???"
+            "description" : "Web proxy settings for http client"
           },
           "retries" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Specify how many times the client will try to fetch the result of the request after an error before giving up.",
             "type" : "integer"
           },
           "maxErrors" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Specify how many errors can pass before opening the circuit breaker",
             "type" : "integer"
           }
         }
@@ -21431,7 +21500,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.auth.UserValidator"
             },
-            "description" : "???"
+            "description" : "Validators that will check if the current user is authorized after successful login"
           },
           "_loc" : {
             "description" : "location of the module",
@@ -21751,11 +21820,11 @@
         }
       },
       "otoroshi.next.models.NgTlsConfig" : {
-        "description" : "???",
+        "description" : "TLS settings for the http client",
         "type" : "object",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "Enabled",
             "type" : "boolean"
           },
           "certs" : {
@@ -21763,14 +21832,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Trusted cert. ids"
           },
           "loose" : {
-            "description" : "???",
+            "description" : "Loose verification",
             "type" : "boolean"
           },
           "trustAll" : {
-            "description" : "???",
+            "description" : "Trust any certificate",
             "type" : "boolean"
           },
           "trustedCerts" : {
@@ -21778,7 +21847,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Trusted cert. ids"
           }
         }
       },
@@ -21962,11 +22031,11 @@
         }
       },
       "otoroshi.next.models.NgBackend" : {
-        "description" : "???",
+        "description" : "A backend representation with it's targets, load balancing and general settings",
         "type" : "object",
         "properties" : {
           "root" : {
-            "description" : "???",
+            "description" : "The root path of the backend or the full rewrite path",
             "type" : "string"
           },
           "healthCheck" : {
@@ -21975,18 +22044,18 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.models.HealthCheck"
             } ],
-            "description" : "???"
+            "description" : "Healthcheck config og the backend"
           },
           "client" : {
-            "description" : "???",
+            "description" : "Client config. of the backend",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgClientConfig"
           },
           "loadBalancing" : {
-            "description" : "???",
+            "description" : "Loadbalancing config og the backend",
             "$ref" : "#/components/schemas/otoroshi.models.LoadBalancing"
           },
           "rewrite" : {
-            "description" : "???",
+            "description" : "Does the backend performs a full url rewrite ?",
             "type" : "boolean"
           },
           "targetRefs" : {
@@ -21994,14 +22063,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "List of NgStoredBackend ids"
           },
           "targets" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.models.NgTarget"
             },
-            "description" : "???"
+            "description" : "The targets of the backend"
           }
         }
       },
@@ -22009,6 +22078,12 @@
         "type" : "array",
         "items" : {
           "$ref" : "#/components/schemas/otoroshi.models.Outage"
+        }
+      },
+      "PluginDescriptionsResponse" : {
+        "type" : "array",
+        "items" : {
+          "$ref" : "#/components/schemas/PluginDescription"
         }
       },
       "otoroshi.script.PreRoutingRef" : {
@@ -22040,16 +22115,16 @@
         }
       },
       "otoroshi.next.models.NgCacheConnectionSettings" : {
-        "description" : "???",
+        "description" : "The settings for http cached connection at host level",
         "type" : "object",
         "properties" : {
           "queueSize" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "How much request can be queue before dropping it",
             "type" : "integer"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "Is cached connection enabled",
             "type" : "boolean"
           }
         }
@@ -22362,7 +22437,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.auth.UserValidator"
             },
-            "description" : "???"
+            "description" : "Validators that will check if the current user is authorized after successful login"
           },
           "_loc" : {
             "description" : "Location of the SAML module",
@@ -22622,15 +22697,15 @@
         }
       },
       "otoroshi.auth.UserValidator" : {
-        "description" : "???",
+        "description" : "Validate if a user is valid or not (for auth) based on a JsonPath and an expected value",
         "type" : "object",
         "properties" : {
           "path" : {
-            "description" : "???",
+            "description" : "The JSON Path that will be checked",
             "type" : "string"
           },
           "value" : {
-            "description" : "???",
+            "description" : "The expected value at the previously defined path",
             "type" : "object"
           }
         }
@@ -22711,7 +22786,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.auth.UserValidator"
             },
-            "description" : "???"
+            "description" : "Validators that will check if the current user is authorized after successful login"
           },
           "_loc" : {
             "description" : "The location of the OAuth 1 module",
@@ -23067,7 +23142,7 @@
         }
       },
       "otoroshi.next.models.NgTarget" : {
-        "description" : "???",
+        "description" : "A target where incoming requests will be forwarded",
         "type" : "object",
         "properties" : {
           "ipAddress" : {
@@ -23076,40 +23151,40 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI"
           },
           "protocol" : {
-            "description" : "???",
+            "description" : "Protocol for the target",
             "type" : "string"
           },
           "predicate" : {
-            "description" : "???",
+            "description" : "Predicate to choose this target",
             "$ref" : "#/components/schemas/otoroshi.models.TargetPredicate"
           },
           "tlsConfig" : {
-            "description" : "???",
+            "description" : "TLS settings to contact this target",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgTlsConfig"
           },
           "tls" : {
-            "description" : "???",
+            "description" : "Does the target uses TLS",
             "type" : "boolean"
           },
           "port" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "port of the target",
             "type" : "integer"
           },
           "id" : {
-            "description" : "???",
+            "description" : "id of the target",
             "type" : "string"
           },
           "weight" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "The weight of the target when choosing",
             "type" : "integer"
           },
           "hostname" : {
-            "description" : "???",
+            "description" : "hostname of the target",
             "type" : "string"
           }
         }
