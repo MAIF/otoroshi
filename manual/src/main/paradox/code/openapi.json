@@ -21824,7 +21824,7 @@
         "type" : "object",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "Enabled",
             "type" : "boolean"
           },
           "certs" : {
@@ -21832,14 +21832,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Trusted cert. ids"
           },
           "loose" : {
-            "description" : "???",
+            "description" : "Loose verification",
             "type" : "boolean"
           },
           "trustAll" : {
-            "description" : "???",
+            "description" : "Trust any certificate",
             "type" : "boolean"
           },
           "trustedCerts" : {
@@ -21847,7 +21847,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Trusted cert. ids"
           }
         }
       },
