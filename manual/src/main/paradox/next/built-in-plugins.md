@@ -3,7 +3,7 @@
 Otoroshi next provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.AdditionalHeadersIn }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.AdditionalHeadersIn }
 
 ## Additional headers in
 
@@ -12,6 +12,10 @@ Otoroshi next provides some plugins out of the box. Here is the available plugin
 ### Defined on steps
 
   - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.AdditionalHeadersIn`
 
 ### Description
 
@@ -34,7 +38,7 @@ This plugin adds headers in the incoming otoroshi request
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.AdditionalHeadersOut }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.AdditionalHeadersOut }
 
 ## Additional headers out
 
@@ -43,6 +47,10 @@ This plugin adds headers in the incoming otoroshi request
 ### Defined on steps
 
   - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.AdditionalHeadersOut`
 
 ### Description
 
@@ -65,7 +73,7 @@ This plugin adds headers in the otoroshi response
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.AllowHttpMethods }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.AllowHttpMethods }
 
 ## Allowed HTTP methods
 
@@ -74,6 +82,10 @@ This plugin adds headers in the otoroshi response
 ### Defined on steps
 
   - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.AllowHttpMethods`
 
 ### Description
 
@@ -88,7 +100,7 @@ This plugin verifies the current request only uses allowed http methods
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.ApikeyCalls }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.ApikeyCalls }
 
 ## Apikeys
 
@@ -99,6 +111,10 @@ This plugin verifies the current request only uses allowed http methods
   - `MatchRoute`
   - `ValidateAccess`
   - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.ApikeyCalls`
 
 ### Description
 
@@ -153,7 +169,7 @@ This plugin expects to find an apikey to allow the request to pass
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.AuthModule }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.AuthModule }
 
 ## Authentication
 
@@ -162,6 +178,10 @@ This plugin expects to find an apikey to allow the request to pass
 ### Defined on steps
 
   - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.AuthModule`
 
 ### Description
 
@@ -185,7 +205,7 @@ This plugin applies an authentication module
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.BuildMode }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.BuildMode }
 
 ## Build mode
 
@@ -194,6 +214,10 @@ This plugin applies an authentication module
 ### Defined on steps
 
   - `PreRoute`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.BuildMode`
 
 ### Description
 
@@ -208,7 +232,7 @@ This plugin displays a build page
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.CanaryMode }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.CanaryMode }
 
 ## Canary mode
 
@@ -218,6 +242,10 @@ This plugin displays a build page
 
   - `PreRoute`
   - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.CanaryMode`
 
 ### Description
 
@@ -242,7 +270,7 @@ This plugin can split a portion of the traffic to canary backends
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.ContextValidation }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.ContextValidation }
 
 ## Context validator
 
@@ -251,6 +279,10 @@ This plugin can split a portion of the traffic to canary backends
 ### Defined on steps
 
   - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.ContextValidation`
 
 ### Description
 
@@ -273,7 +305,7 @@ This plugin validates the current context
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.Cors }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.Cors }
 
 ## CORS
 
@@ -283,6 +315,10 @@ This plugin validates the current context
 
   - `PreRoute`
   - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.Cors`
 
 ### Description
 
@@ -311,7 +347,7 @@ This plugin applies CORS rules
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.DisableHttp10 }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.DisableHttp10 }
 
 ## Disable HTTP/1.0
 
@@ -320,6 +356,10 @@ This plugin applies CORS rules
 ### Defined on steps
 
   - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.DisableHttp10`
 
 ### Description
 
@@ -334,7 +374,7 @@ This plugin forbids HTTP/1.0 requests
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.EndlessHttpResponse }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.EndlessHttpResponse }
 
 ## Endless HTTP responses
 
@@ -343,6 +383,10 @@ This plugin forbids HTTP/1.0 requests
 ### Defined on steps
 
   - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.EndlessHttpResponse`
 
 ### Description
 
@@ -366,7 +410,7 @@ This plugin returns 128 Gb of 0 to the ip addresses is in the list
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.ForceHttpsTraffic }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.ForceHttpsTraffic }
 
 ## Force HTTPS traffic
 
@@ -375,6 +419,10 @@ This plugin returns 128 Gb of 0 to the ip addresses is in the list
 ### Defined on steps
 
   - `PreRoute`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.ForceHttpsTraffic`
 
 ### Description
 
@@ -389,7 +437,7 @@ This plugin verifies the current request uses HTTPS
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.GlobalMaintenanceMode }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.GlobalMaintenanceMode }
 
 ## Global Maintenance mode
 
@@ -398,6 +446,10 @@ This plugin verifies the current request uses HTTPS
 ### Defined on steps
 
   - `PreRoute`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.GlobalMaintenanceMode`
 
 ### Description
 
@@ -412,7 +464,7 @@ This plugin displays a maintenance page for every services
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.GzipResponseCompressor }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.GzipResponseCompressor }
 
 ## Gzip compression
 
@@ -421,6 +473,10 @@ This plugin displays a maintenance page for every services
 ### Defined on steps
 
   - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.GzipResponseCompressor`
 
 ### Description
 
@@ -448,7 +504,7 @@ This plugin can compress responses using gzip
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.HeadersValidation }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.HeadersValidation }
 
 ## Headers validation
 
@@ -457,6 +513,10 @@ This plugin can compress responses using gzip
 ### Defined on steps
 
   - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.HeadersValidation`
 
 ### Description
 
@@ -479,7 +539,7 @@ This plugin validates the values of incoming request headers
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.IpAddressAllowedList }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.IpAddressAllowedList }
 
 ## IP allowed list
 
@@ -488,6 +548,10 @@ This plugin validates the values of incoming request headers
 ### Defined on steps
 
   - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.IpAddressAllowedList`
 
 ### Description
 
@@ -510,7 +574,7 @@ This plugin verifies the current request ip address is in the allowed list
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.IpAddressBlockList }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.IpAddressBlockList }
 
 ## IP block list
 
@@ -519,6 +583,10 @@ This plugin verifies the current request ip address is in the allowed list
 ### Defined on steps
 
   - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.IpAddressBlockList`
 
 ### Description
 
@@ -541,7 +609,7 @@ This plugin verifies the current request ip address is not in the blocked list
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.JQ }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.JQ }
 
 ## JQ
 
@@ -551,6 +619,10 @@ This plugin verifies the current request ip address is not in the blocked list
 
   - `TransformRequest`
   - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.JQ`
 
 ### Description
 
@@ -574,7 +646,7 @@ This plugin let you transform JSON bodies (in requests and responses) using [JQ 
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.JsonToXmlRequest }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.JsonToXmlRequest }
 
 ## request body json-to-xml
 
@@ -583,6 +655,10 @@ This plugin let you transform JSON bodies (in requests and responses) using [JQ 
 ### Defined on steps
 
   - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.JsonToXmlRequest`
 
 ### Description
 
@@ -605,7 +681,7 @@ This plugin transform incoming request body from json to xml and may apply a jq 
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.JsonToXmlResponse }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.JsonToXmlResponse }
 
 ## response body json-to-xml
 
@@ -614,6 +690,10 @@ This plugin transform incoming request body from json to xml and may apply a jq 
 ### Defined on steps
 
   - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.JsonToXmlResponse`
 
 ### Description
 
@@ -636,7 +716,7 @@ This plugin transform response body from json to xml and may apply a jq transfor
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.JwtVerification }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.JwtVerification }
 
 ## Jwt verifiers
 
@@ -646,6 +726,10 @@ This plugin transform response body from json to xml and may apply a jq transfor
 
   - `ValidateAccess`
   - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.JwtVerification`
 
 ### Description
 
@@ -668,7 +752,7 @@ This plugin verifies the current request with one or more jwt verifier
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.MaintenanceMode }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.MaintenanceMode }
 
 ## Maintenance mode
 
@@ -677,6 +761,10 @@ This plugin verifies the current request with one or more jwt verifier
 ### Defined on steps
 
   - `PreRoute`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.MaintenanceMode`
 
 ### Description
 
@@ -691,7 +779,7 @@ This plugin displays a maintenance page
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.MissingHeadersIn }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.MissingHeadersIn }
 
 ## Missing headers in
 
@@ -700,6 +788,10 @@ This plugin displays a maintenance page
 ### Defined on steps
 
   - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.MissingHeadersIn`
 
 ### Description
 
@@ -722,7 +814,7 @@ This plugin adds headers (if missing) in the incoming otoroshi request
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.MissingHeadersOut }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.MissingHeadersOut }
 
 ## Missing headers out
 
@@ -731,6 +823,10 @@ This plugin adds headers (if missing) in the incoming otoroshi request
 ### Defined on steps
 
   - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.MissingHeadersOut`
 
 ### Description
 
@@ -753,7 +849,7 @@ This plugin adds headers (if missing) in the otoroshi response
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.MockResponses }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.MockResponses }
 
 ## Mock Responses
 
@@ -762,6 +858,10 @@ This plugin adds headers (if missing) in the otoroshi response
 ### Defined on steps
 
   - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.MockResponses`
 
 ### Description
 
@@ -784,7 +884,7 @@ This plugin returns mock responses
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.OtoroshiChallenge }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.OtoroshiChallenge }
 
 ## Otoroshi challenge token
 
@@ -794,6 +894,10 @@ This plugin returns mock responses
 
   - `TransformRequest`
   - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.OtoroshiChallenge`
 
 ### Description
 
@@ -832,7 +936,7 @@ This plugin adds a jwt challenge token to the request to a backend and expects a
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.OtoroshiInfos }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.OtoroshiInfos }
 
 ## Otoroshi info. token
 
@@ -841,6 +945,10 @@ This plugin adds a jwt challenge token to the request to a backend and expects a
 ### Defined on steps
 
   - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.OtoroshiInfos`
 
 ### Description
 
@@ -871,7 +979,7 @@ This plugin adds a jwt info. token to the request to a backend
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.OverrideHost }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.OverrideHost }
 
 ## Override host header
 
@@ -880,6 +988,10 @@ This plugin adds a jwt info. token to the request to a backend
 ### Defined on steps
 
   - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.OverrideHost`
 
 ### Description
 
@@ -894,7 +1006,7 @@ This plugin override the current Host header with the Host of the backend target
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.PublicPrivatePaths }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.PublicPrivatePaths }
 
 ## Public/Private paths
 
@@ -903,6 +1015,10 @@ This plugin override the current Host header with the Host of the backend target
 ### Defined on steps
 
   - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.PublicPrivatePaths`
 
 ### Description
 
@@ -927,7 +1043,7 @@ This plugin allows or forbid request based on path patterns
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.QueryTransformer }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.QueryTransformer }
 
 ## Query param transformer
 
@@ -936,6 +1052,10 @@ This plugin allows or forbid request based on path patterns
 ### Defined on steps
 
   - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.QueryTransformer`
 
 ### Description
 
@@ -960,7 +1080,7 @@ This plugin can modify the query params of the request
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.RBAC }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.RBAC }
 
 ## RBAC
 
@@ -969,6 +1089,10 @@ This plugin can modify the query params of the request
 ### Defined on steps
 
   - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RBAC`
 
 ### Description
 
@@ -999,7 +1123,7 @@ This plugin check if current user/apikey/jwt token has the right role
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.ReadOnlyCalls }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.ReadOnlyCalls }
 
 ## Read only requests
 
@@ -1008,6 +1132,10 @@ This plugin check if current user/apikey/jwt token has the right role
 ### Defined on steps
 
   - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.ReadOnlyCalls`
 
 ### Description
 
@@ -1022,7 +1150,7 @@ This plugin verifies the current request only reads data
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.Redirection }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.Redirection }
 
 ## Redirection
 
@@ -1031,6 +1159,10 @@ This plugin verifies the current request only reads data
 ### Defined on steps
 
   - `PreRoute`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.Redirection`
 
 ### Description
 
@@ -1054,7 +1186,7 @@ This plugin redirects the current request elsewhere
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.RemoveHeadersIn }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.RemoveHeadersIn }
 
 ## Remove headers in
 
@@ -1063,6 +1195,10 @@ This plugin redirects the current request elsewhere
 ### Defined on steps
 
   - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RemoveHeadersIn`
 
 ### Description
 
@@ -1085,7 +1221,7 @@ This plugin removes headers in the incoming otoroshi request
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.RemoveHeadersOut }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.RemoveHeadersOut }
 
 ## Remove headers out
 
@@ -1094,6 +1230,10 @@ This plugin removes headers in the incoming otoroshi request
 ### Defined on steps
 
   - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RemoveHeadersOut`
 
 ### Description
 
@@ -1116,7 +1256,7 @@ This plugin removes headers in the otoroshi response
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.Robots }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.Robots }
 
 ## Robots
 
@@ -1126,6 +1266,10 @@ This plugin removes headers in the otoroshi response
 
   - `TransformRequest`
   - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.Robots`
 
 ### Description
 
@@ -1153,7 +1297,7 @@ This plugin provides all the necessary tool to handle search engine robots
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.RoutingRestrictions }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.RoutingRestrictions }
 
 ## Routing Restrictions
 
@@ -1162,6 +1306,10 @@ This plugin provides all the necessary tool to handle search engine robots
 ### Defined on steps
 
   - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.RoutingRestrictions`
 
 ### Description
 
@@ -1187,7 +1335,7 @@ This plugin apply routing restriction `method domain/path` on the current reques
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.SOAPAction }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.SOAPAction }
 
 ## SOAP action
 
@@ -1197,6 +1345,10 @@ This plugin apply routing restriction `method domain/path` on the current reques
 
   - `TransformRequest`
   - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.SOAPAction`
 
 ### Description
 
@@ -1225,7 +1377,7 @@ This plugin is able to call SOAP actions and expose it as a rest endpoint
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.SendOtoroshiHeadersBack }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.SendOtoroshiHeadersBack }
 
 ## Send otoroshi headers back
 
@@ -1234,6 +1386,10 @@ This plugin is able to call SOAP actions and expose it as a rest endpoint
 ### Defined on steps
 
   - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.SendOtoroshiHeadersBack`
 
 ### Description
 
@@ -1248,7 +1404,7 @@ This plugin adds response header containing useful informations about the curren
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.SnowMonkeyChaos }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.SnowMonkeyChaos }
 
 ## Snow Monkey Chaos
 
@@ -1258,6 +1414,10 @@ This plugin adds response header containing useful informations about the curren
 
   - `TransformRequest`
   - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.SnowMonkeyChaos`
 
 ### Description
 
@@ -1283,7 +1443,7 @@ This plugin introduce some chaos into you life
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.StaticResponse }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.StaticResponse }
 
 ## Static Response
 
@@ -1292,6 +1452,10 @@ This plugin introduce some chaos into you life
 ### Defined on steps
 
   - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.StaticResponse`
 
 ### Description
 
@@ -1316,7 +1480,7 @@ This plugin returns static responses
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.TcpTunnel }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.TcpTunnel }
 
 ## TCP Tunnel
 
@@ -1325,6 +1489,10 @@ This plugin returns static responses
 ### Defined on steps
 
   - `HandlesTunnel`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.TcpTunnel`
 
 ### Description
 
@@ -1339,7 +1507,7 @@ This plugin creates TCP tunnels through otoroshi
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.UdpTunnel }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.UdpTunnel }
 
 ## UDP Tunnel
 
@@ -1348,6 +1516,10 @@ This plugin creates TCP tunnels through otoroshi
 ### Defined on steps
 
   - `HandlesTunnel`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.UdpTunnel`
 
 ### Description
 
@@ -1362,7 +1534,7 @@ This plugin creates UDP tunnels through otoroshi
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.W3CTracing }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.W3CTracing }
 
 ## W3C Trace Context
 
@@ -1372,6 +1544,10 @@ This plugin creates UDP tunnels through otoroshi
 
   - `TransformRequest`
   - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.W3CTracing`
 
 ### Description
 
@@ -1397,7 +1573,7 @@ This plugin propagates W3C Trace Context spans and can export it to Jaeger or Zi
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.XForwardedHeaders }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.XForwardedHeaders }
 
 ## X-Forwarded-* headers
 
@@ -1406,6 +1582,10 @@ This plugin propagates W3C Trace Context spans and can export it to Jaeger or Zi
 ### Defined on steps
 
   - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.XForwardedHeaders`
 
 ### Description
 
@@ -1420,7 +1600,7 @@ This plugin adds all the X-Forwarder-* headers to the request for the backend ta
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.XmlToJsonRequest }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.XmlToJsonRequest }
 
 ## request body xml-to-json
 
@@ -1429,6 +1609,10 @@ This plugin adds all the X-Forwarder-* headers to the request for the backend ta
 ### Defined on steps
 
   - `TransformRequest`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.XmlToJsonRequest`
 
 ### Description
 
@@ -1451,7 +1635,7 @@ This plugin transform incoming request body from xml to json and may apply a jq 
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .foo #otoroshi.next.plugins.XmlToJsonResponse }
+@@@ div { .ng-plugin .plugin-hidden .foo #otoroshi.next.plugins.XmlToJsonResponse }
 
 ## response body xml-to-json
 
@@ -1460,6 +1644,10 @@ This plugin transform incoming request body from xml to json and may apply a jq 
 ### Defined on steps
 
   - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.XmlToJsonResponse`
 
 ### Description
 

@@ -1,5 +1,6 @@
 package otoroshi.next.proxy
 
+import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import otoroshi.models._
@@ -49,9 +50,45 @@ class NgProxyState(env: Env) {
   private val privateAppsSessions = new TrieMap[String, PrivateAppsUser]()
   private val tcpServices         = new TrieMap[String, TcpService]()
   private val scripts             = new TrieMap[String, Script]()
+  private val tryItEnabledReports        = Scaffeine()
+    .expireAfterWrite(5.minutes)
+    .maximumSize(100)
+    .build[String, Unit]()
+  private val tryItReports        = Scaffeine()
+    .expireAfterWrite(5.minutes)
+    .maximumSize(100)
+    .build[String, NgExecutionReport]()
 
   private val routesByDomain    = new TrieMap[String, Seq[NgRoute]]()
   private val domainPathTreeRef = new AtomicReference[NgTreeRouter](NgTreeRouter.empty)
+
+  def enableReportFor(id: String): Unit = {
+    tryItEnabledReports.put(id, ())
+  }
+
+  def isReportEnabledFor(id: String): Boolean = {
+    tryItEnabledReports.getIfPresent(id) match {
+      case Some(_) => {
+        tryItEnabledReports.invalidate(id)
+        true
+      }
+      case None => false
+    }
+  }
+
+  def addReport(id: String, report: NgExecutionReport): Unit = {
+    tryItReports.put(id, report)
+  }
+
+  def report(id: String): Option[NgExecutionReport] = {
+    tryItReports.getIfPresent(id) match {
+      case Some(report) => {
+        tryItReports.invalidate(id)
+        report.some
+      }
+      case None => None
+    }
+  }
 
   def findRoutes(domain: String, path: String): Option[Seq[NgRoute]]             =
     domainPathTreeRef.get().find(domain, path).map(_.routes)
@@ -465,9 +502,9 @@ class NgProxyStateLoaderJob extends Job {
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val start        = System.currentTimeMillis()
-    val config       = env.datastores.globalConfigDataStore.latest().plugins.config.select("NextGenProxyEngine").asObject
-    val debug        = config.select("debug").asOpt[Boolean].getOrElse(false)
-    val debugHeaders = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
+    val config       = env.datastores.globalConfigDataStore.latest().plugins.config.select(ProxyEngine.configRoot).asOpt[JsObject].map(v => ProxyEngineConfig.parse(v, env)).getOrElse(ProxyEngineConfig.default)
+    val debug        = config.debug
+    val debugHeaders = config.debugHeaders
     for {
       routes              <- env.datastores.routeDataStore.findAll()
       routescomp          <- env.datastores.servicesDataStore.findAll()

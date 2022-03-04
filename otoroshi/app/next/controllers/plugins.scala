@@ -28,7 +28,7 @@ class NgPluginsController(
     Ok(JsArray(plugins.filter(_._2.visibility == NgPluginVisibility.NgUserLand).map {
       case (name, plugin) =>
         Json.obj(
-          "id"            -> name,
+          "id"            -> s"cp:$name",
           "name"              -> plugin.name,
           "description"       -> plugin.description
             .map(_.trim)
