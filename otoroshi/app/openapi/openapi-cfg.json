@@ -1565,7 +1565,7 @@
     "otoroshi.next.models.NgFrontend.stripPath": "Is path stripped from backend request",
     "otoroshi.next.models.NgMinimalBackend.loadBalancing": "Loadbalancing config og the backend",
     "otoroshi.next.models.NgMinimalBackend.rewrite": "Does the backend performs a full url rewrite ?",
-    "otoroshi.next.models.NgMinimalBackend.root":  "The root path of the backend or the full rewrite path",
+    "otoroshi.next.models.NgMinimalBackend.root": "The root path of the backend or the full rewrite path",
     "otoroshi.next.models.NgMinimalBackend.targetRefs": "List of NgStoredBackend ids",
     "otoroshi.next.models.NgMinimalBackend.targets": "The targets of the backend",
     "otoroshi.next.models.NgMinimalRoute.backend": "The backend of the route",
@@ -1605,11 +1605,11 @@
     "otoroshi.next.models.NgTarget.tls": "Does the target uses TLS",
     "otoroshi.next.models.NgTarget.tlsConfig": "TLS settings to contact this target",
     "otoroshi.next.models.NgTarget.weight": "The weight of the target when choosing",
-    "otoroshi.next.models.MtlsConfig.certs": "Trusted cert. ids",
-    "otoroshi.next.models.MtlsConfig.loose": "Loose verification",
-    "otoroshi.next.models.MtlsConfig.mtls": "Enabled",
-    "otoroshi.next.models.MtlsConfig.trustAll": "Trust any certificate",
-    "otoroshi.next.models.MtlsConfig.trustedCerts": "Trusted cert. ids",
+    "otoroshi.next.models.NgTlsConfig.certs": "Trusted cert. ids",
+    "otoroshi.next.models.NgTlsConfig.loose": "Loose verification",
+    "otoroshi.next.models.NgTlsConfig.enabled": "Enabled",
+    "otoroshi.next.models.NgTlsConfig.trustAll": "Trust any certificate",
+    "otoroshi.next.models.NgTlsConfig.trustedCerts": "Trusted cert. ids",
     "otoroshi.next.models.StoredNgBackend.backend": "The actual backend",
     "otoroshi.next.models.StoredNgBackend.description": "The description of the backend",
     "otoroshi.next.models.StoredNgBackend.id": "The id of the backend",
@@ -2267,61 +2267,61 @@
         "type" : "string"
       }
     },
-    "PluginDescriptionsResponse": {
+    "PluginDescriptionsResponse" : {
       "type" : "array",
       "items" : {
         "$ref" : "#/components/schemas/PluginDescription"
       }
     },
-    "PluginDescription": {
+    "PluginDescription" : {
       "type" : "object",
       "description" : "Description of a plugin",
       "properties" : {
-        "id": {
-          "type": "string",
-          "description": "the id of the plugin"
+        "id" : {
+          "type" : "string",
+          "description" : "the id of the plugin"
         },
-        "name": {
-          "type": "string",
-          "description": "the name of the plugin"
+        "name" : {
+          "type" : "string",
+          "description" : "the name of the plugin"
         },
-        "description":  {
-          "type": "string",
-          "description": "the description of the plugin"
+        "description" : {
+          "type" : "string",
+          "description" : "the description of the plugin"
         },
-        "default_config": {
-          "type": "string",
-          "description": "the default config of the plugin (for UI form)"
+        "default_config" : {
+          "type" : "string",
+          "description" : "the default config of the plugin (for UI form)"
         },
-        "config_schema":  {
-          "type": "string",
-          "description": "the config schema of the plugin (for UI form)"
+        "config_schema" : {
+          "type" : "string",
+          "description" : "the config schema of the plugin (for UI form)"
         },
-        "config_flow": {
-          "type": "array",
-          "description": "the config flow of the plugin (for UI form)"
-        },
-        "plugin_visibility": {
-          "type": "string",
-          "description": "visibility of the plugin (can be internal or userland)"
-        },
-        "plugin_categories":  {
+        "config_flow" : {
           "type" : "array",
-          "description": "categories of the plugin",
+          "description" : "the config flow of the plugin (for UI form)"
+        },
+        "plugin_visibility" : {
+          "type" : "string",
+          "description" : "visibility of the plugin (can be internal or userland)"
+        },
+        "plugin_categories" : {
+          "type" : "array",
+          "description" : "categories of the plugin",
           "items" : {
             "$ref" : "#/components/schemas/StringList"
           }
         },
-        "plugin_steps": {
+        "plugin_steps" : {
           "type" : "array",
-          "description": "steps of the plugin",
+          "description" : "steps of the plugin",
           "items" : {
             "$ref" : "#/components/schemas/StringList"
           }
         },
-        "plugin_tags": {
+        "plugin_tags" : {
           "type" : "array",
-          "description": "tags of the plugin",
+          "description" : "tags of the plugin",
           "items" : {
             "$ref" : "#/components/schemas/StringList"
           }
@@ -2390,17 +2390,17 @@
       "type" : "object",
       "description" : "Host metrics"
     },
-    "ServiceFromOpenApiBody":{
+    "ServiceFromOpenApiBody" : {
       "type" : "object",
       "description" : "Properties to create a service from an openapi spec",
       "properties" : {
         "domain" : {
           "type" : "string",
-          "description": "the domain on which the service will be exposed by otoroshi"
+          "description" : "the domain on which the service will be exposed by otoroshi"
         },
         "openapi" : {
           "type" : "string",
-          "description": "the url to an openapi 3 spec or the content of an openapi 3 spec"
+          "description" : "the url to an openapi 3 spec or the content of an openapi 3 spec"
         }
       }
     },
