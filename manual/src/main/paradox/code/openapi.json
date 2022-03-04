@@ -73,9 +73,6 @@
     "name" : "live",
     "description" : "All api endpoints about live"
   }, {
-    "name" : "next",
-    "description" : "All experimental endpoints"
-  }, {
     "name" : "organizations",
     "description" : "All api endpoints about organizations"
   }, {
@@ -317,59 +314,6 @@
               "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/otoroshi.script.Script"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/next/plugins/steps" : {
-      "get" : {
-        "tags" : [ "next" ],
-        "summary" : "Return all possible plugin steps",
-        "operationId" : "otoroshi.next.controllers.NgPluginsController.steps",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/StringList"
                 }
               }
             }
@@ -2151,6 +2095,59 @@
         }
       }
     },
+    "/api/experimental/plugins/categories" : {
+      "get" : {
+        "tags" : [ "experimental" ],
+        "summary" : "Return all possible plugin categories",
+        "operationId" : "otoroshi.next.controllers.NgPluginsController.categories",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StringList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/scripts" : {
       "post" : {
         "tags" : [ "scripts" ],
@@ -3182,59 +3179,6 @@
         }
       }
     },
-    "/api/next/plugins/all" : {
-      "get" : {
-        "tags" : [ "next" ],
-        "summary" : "Return all next gen. plugins",
-        "operationId" : "otoroshi.next.controllers.NgPluginsController.plugins",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/PluginDescriptionsResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/globalconfig/_template" : {
       "get" : {
         "tags" : [ "globalconfig" ],
@@ -4018,6 +3962,59 @@
                   "items" : {
                     "$ref" : "#/components/schemas/otoroshi.models.ServiceGroup"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/experimental/plugins/steps" : {
+      "get" : {
+        "tags" : [ "experimental" ],
+        "summary" : "Return all possible plugin steps",
+        "operationId" : "otoroshi.next.controllers.NgPluginsController.steps",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StringList"
                 }
               }
             }
@@ -7860,59 +7857,6 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenCsrQuery"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/next/plugins/categories" : {
-      "get" : {
-        "tags" : [ "next" ],
-        "summary" : "Returns all possible plugin catageories",
-        "operationId" : "otoroshi.next.controllers.NgPluginsController.categories",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/StringList"
-                }
               }
             }
           }
@@ -12173,6 +12117,59 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/Empty"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/experimental/plugins/all" : {
+      "get" : {
+        "tags" : [ "experimental" ],
+        "summary" : "Return all next gen. plugins",
+        "operationId" : "otoroshi.next.controllers.NgPluginsController.plugins",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PluginDescriptionsResponse"
+                }
               }
             }
           }
