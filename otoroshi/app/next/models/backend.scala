@@ -467,6 +467,7 @@ case class NgTarget(
     "port"       -> port,
     "tls"        -> tls,
     "weight"     -> weight,
+    "predicate"  -> predicate.toJson,
     "protocol"   -> protocol.value,
     "ip_address" -> ipAddress.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "tls_config" -> tlsConfig.json
@@ -513,7 +514,7 @@ object StoredNgBackend {
       StoredNgBackend(
         location = otoroshi.models.EntityLocation.readFromKey(json),
         id = json.select("id").as[String],
-        name = json.select("id").as[String],
+        name = json.select("name").as[String],
         description = json.select("description").asOpt[String].getOrElse(""),
         tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),

@@ -174,8 +174,8 @@ export function allServices(env, group) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-    ? `/bo/api/proxy/api/services?filter.groups=${group}`
-    : `/bo/api/proxy/api/services`;
+      ? `/bo/api/proxy/api/services?filter.groups=${group}`
+      : `/bo/api/proxy/api/services`;
   return fetch(url, {
     method: 'GET',
     credentials: 'include',
@@ -1759,3 +1759,46 @@ export function createResources(resources) {
     }),
   }).then((r) => r.json());
 }
+
+export function tryIt(content) {
+  return fetch('/bo/api/tryit', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(content),
+  });
+}
+
+
+// NgRoutes
+
+const fetchWrapper = (url, method = 'GET', body) => fetch(`/bo/api/proxy/api/experimental${url}`, {
+  method,
+  credentials: 'include',
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json'
+  },
+  body: body ? JSON.stringify(body) : undefined
+})
+  .then(r => r.json())
+
+export const nextClient = {
+  ENTITIES: {
+    ROUTES: 'routes',
+    BACKENDS: 'backends'
+  },
+  find: entity => fetchWrapper(`/${entity}`),
+  create: (entity, content) => fetchWrapper(`/${entity}`, 'POST', content),
+  update: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
+  fetch: (entity, entityId) => fetchWrapper(`/${entity}/${entityId}`),
+  remove: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'DELETE'),
+  template: entity => fetchWrapper(`/${entity}/_template`)
+}
+
+export const getPlugins = () => fetchWrapper('/plugins/all')
+
+export const getCategories = () => fetchWrapper('/plugins/categories')

@@ -221,6 +221,7 @@ class ProxyEngine() extends RequestHandler {
           .asOpt[JsObject]
           .map(v => ProxyEngineConfig.parse(v, env))
           .getOrElse(ProxyEngineConfig.default)
+
         enabledRef.set(config.enabled)
         enabledDomains.set(config.domains)
         config

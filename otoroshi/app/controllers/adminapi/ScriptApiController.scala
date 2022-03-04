@@ -190,7 +190,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
             case JsNull => false
             case _      => true
           }
-        Ok(JsArray(allClasses.filter(p => !excludedTypes.contains((p \ "pluginType").as[String]))))
+        Ok(JsArray(allClasses))
       }
     }
 

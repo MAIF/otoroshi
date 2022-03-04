@@ -11,7 +11,7 @@ class Alert extends Component {
       ? this.props.message(this.props.close)
       : this.props.message;
     return (
-      <div className="modal" tabindex="-1" role="dialog" style={{ display: 'block' }}>
+      <div className="modal" tabIndex="-1" role="dialog" style={{ display: 'block' }}>
         <div className="modal-dialog" role="document">
           <div className="modal-content">
             <div className="modal-header">
@@ -61,7 +61,7 @@ class Confirm extends Component {
   }
   render() {
     return (
-      <div className="modal" tabindex="-1" role="dialog" style={{ display: 'block' }}>
+      <div className="modal" tabIndex="-1" role="dialog" style={{ display: 'block' }}>
         <div className="modal-dialog" role="document">
           <div className="modal-content">
             <div className="modal-header">
@@ -112,7 +112,7 @@ class Prompt extends Component {
   }
   render() {
     return (
-      <div className="modal" tabindex="-1" role="dialog" style={{ display: 'block' }}>
+      <div className="modal" tabIndex="-1" role="dialog" style={{ display: 'block' }}>
         <div className="modal-dialog" role="document">
           <div className="modal-content">
             <div className="modal-header">
@@ -170,7 +170,7 @@ class Popup extends Component {
     return (
       <div
         className="modal"
-        tabindex="-1"
+        tabIndex="-1"
         role="dialog"
         style={{ display: 'block', ...this.props.style }}>
         <div className="modal-dialog" role="document">

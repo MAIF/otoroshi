@@ -148,7 +148,8 @@ export class Table extends Component {
   closeAddForm = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.unmountShortcuts();
-    this.props.parentProps.setTitle(this.props.defaultTitle);
+    if (this.props.parentProps.setTitle)
+      this.props.parentProps.setTitle(this.props.defaultTitle);
     this.setState({ currentItem: null, showAddForm: false });
     this.update();
     urlTo(`/bo/dashboard/${this.props.selfUrl}`);
@@ -157,7 +158,9 @@ export class Table extends Component {
   showAddForm = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.mountShortcuts();
-    this.props.parentProps.setTitle(`Create a new ${this.props.itemName}`);
+
+    if (this.props.parentProps.setTitle)
+      this.props.parentProps.setTitle(`Create a new ${this.props.itemName}`);
     urlTo(`/bo/dashboard/${this.props.selfUrl}/add`);
     const defVal = this.props.defaultValue();
     if (defVal.then) {
@@ -170,7 +173,8 @@ export class Table extends Component {
   closeEditForm = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.unmountShortcuts();
-    this.props.parentProps.setTitle(this.props.defaultTitle);
+    if (this.props.parentProps.setTitle)
+      this.props.parentProps.setTitle(this.props.defaultTitle);
     this.setState({ currentItem: null, showEditForm: false });
     this.update();
     urlTo(`/bo/dashboard/${this.props.selfUrl}`);
@@ -179,8 +183,13 @@ export class Table extends Component {
   showEditForm = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
     this.mountShortcuts();
-    urlTo(`/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`);
-    this.props.parentProps.setTitle(`Update a ${this.props.itemName}`);
+    if (this.props.rawEditUrl)
+      urlTo(`/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`);
+    else
+      urlTo(`/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`);
+
+    if (this.props.parentProps.setTitle)
+      this.props.parentProps.setTitle(`Update a ${this.props.itemName}`);
     this.setState({ currentItem: item, showEditForm: true });
   };
 
@@ -425,7 +434,7 @@ export class Table extends Component {
                   onClick={this.update}>
                   <span className="fas fa-sync" />
                 </button>
-                {this.props.showActions && (
+                {this.props.showActions && !this.props.hideAddItemAction && (
                   <button
                     type="button"
                     className="btn btn-primary"

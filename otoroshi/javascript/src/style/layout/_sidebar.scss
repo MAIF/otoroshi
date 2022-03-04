@@ -12,6 +12,10 @@
   overflow-x: hidden;
   overflow-y: auto;
   border-right: none;
+  transition: all 150ms ease;
+
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;
 
   .active a {
     color: $primaryColor;
@@ -32,6 +36,17 @@
   i {
     margin-right: 5px;
   }
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.col-sm-0 {
+  width: 0;
+  flex-shrink: 1;
+  transition: all 150ms ease;
+  padding: 0 !important;
 }
 
 .sidebar-container {

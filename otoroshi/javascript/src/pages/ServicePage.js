@@ -41,6 +41,8 @@ import { Restrictions } from '../components/Restrictions';
 import { Scripts } from '../components/Scripts';
 import { Location } from '../components/Location';
 
+import { Loader } from '../components/Loader'
+
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
   for (let i in b) if (a[i] !== b[i]) return true;
@@ -601,6 +603,7 @@ export class ServicePage extends Component {
     neverSaved: false,
     allCollapsed: false,
     freeDomain: true,
+    loading: true
   };
 
   toggleCollapsed = (e) => {
@@ -623,24 +626,29 @@ export class ServicePage extends Component {
   }
 
   load() {
-    if (ServicePage.__willCreateService) {
-      const service = { ...ServicePage.__willCreateService };
-      console.log('create ' + service);
-      delete ServicePage.__willCreateService;
-      this.props.setTitle(`Service descriptor`);
-      this.setState({ service, originalService: service, changed: true, neverSaved: true }, () => {
-        this.props.setSidebarContent(this.sidebarContent(service.name));
-      });
-    } else {
-      BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId).then(
-        (service) => {
+    this.setState({ loading: true }, () => {
+      setTimeout(() => {
+        this.setState({ loading: false })
+        if (ServicePage.__willCreateService) {
+          const service = { ...ServicePage.__willCreateService };
+          console.log('create ' + service);
+          delete ServicePage.__willCreateService;
           this.props.setTitle(`Service descriptor`);
-          this.setState({ service, originalService: service }, () => {
+          this.setState({ service, originalService: service, changed: true, neverSaved: true }, () => {
             this.props.setSidebarContent(this.sidebarContent(service.name));
           });
+        } else {
+          BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId).then(
+            (service) => {
+              this.props.setTitle(`Service descriptor`);
+              this.setState({ service, originalService: service }, () => {
+                this.props.setSidebarContent(this.sidebarContent(service.name));
+              });
+            }
+          );
         }
-      );
-    }
+      }, 50)
+    })
   }
 
   componentDidMount() {
@@ -1103,6 +1111,10 @@ export class ServicePage extends Component {
 
   render() {
     if (!this.state.service) return null;
+
+    if (this.state.loading)
+      return <Loader />
+
     const propsDisabled = { disabled: true };
     if (this.state.changed) {
       delete propsDisabled.disabled;
@@ -1455,26 +1467,22 @@ export class ServicePage extends Component {
                 {this.state.service.env === 'prod' &&
                   this.state.service.subdomain.trim().length === 0 && (
                     <LinkDisplay
-                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                        this.state.service.domain
-                      }${this.state.service.matchingRoot || ''}/`}
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.domain
+                        }${this.state.service.matchingRoot || ''}/`}
                     />
                   )}
                 {this.state.service.env === 'prod' &&
                   this.state.service.subdomain.trim().length > 0 && (
                     <LinkDisplay
-                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                        this.state.service.subdomain
-                      }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
+                        }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
                     />
                   )}
                 {this.state.service.env !== 'prod' && (
                   <LinkDisplay
-                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                      this.state.service.subdomain
-                    }.${this.state.service.env}.${this.state.service.domain}${
-                      this.state.service.matchingRoot || ''
-                    }/`}
+                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
+                      }.${this.state.service.env}.${this.state.service.domain}${this.state.service.matchingRoot || ''
+                      }/`}
                   />
                 )}
               </>
@@ -3422,11 +3430,10 @@ export class TemplateInput extends Component {
             </a>
         </div>
         <div class="jumbotron">
-            ${
-              error
-                ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
-                : `<h2 style="color:white;">${title}</h2>`
-            }
+            ${error
+        ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
+        : `<h2 style="color:white;">${title}</h2>`
+      }
             <p class="lead">
               ${message}
             </p>
