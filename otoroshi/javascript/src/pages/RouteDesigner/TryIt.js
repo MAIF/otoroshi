@@ -241,11 +241,22 @@ export const TryIt = ({ route }) => {
 
 const ReportView = ({ report }) => {
     const [selectedStep, setSelectedStep] = useState(-1)
+    const [selectedPlugin, setSelectedPlugin] = useState(-1)
+
     const [search, setSearch] = useState("")
     const [unit, setUnit] = useState('ms')
     const [sort, setSort] = useState('flow')
 
-    const { steps, ...informations } = report
+    const [steps, setSteps] = useState([])
+    const [informations, setInformations] = useState({})
+
+    useEffect(() => {
+        const { steps, ...informations } = report
+        setSteps(report.steps)
+        setInformations(informations)
+    }, [report])
+
+    console.log(selectedStep, selectedPlugin, steps)
 
     const round = num => Math.round((num + Number.EPSILON) * 10000) / 10000
 
@@ -271,18 +282,47 @@ const ReportView = ({ report }) => {
                 <span>Report</span>
                 <span>{unit === 'ms' ? report.duration : unit === 'ns' ? report.duration_ns : 100} {unit}</span>
             </div>
-            {[...report.steps]
+            {[...steps]
                 .sort((a, b) => sort === 'flow' ? 0 : (a.duration_ns < b.duration_ns ? 1 : -1))
                 .filter(step => search.length <= 0 ? true : step.task.includes(search))
-                .map((step, i) => {
+                .map(step => {
                     const name = step.task.replace(/-/g, ' ')
                     const pourcentage = Number.parseFloat(round(step.duration_ns / report.duration_ns) * 100).toFixed(2)
+                    const hasPlugins = step.ctx?.plugins?.length > 0
 
-                    return <div key={step.task}
-                        onClick={() => setSelectedStep(i)}
-                        className={`d-flex-between mt-1 px-3 py-2 report-step ${i === selectedStep ? 'btn-dark' : ''}`}>
-                        <span>{name.charAt(0).toUpperCase() + name.slice(1)}</span>
-                        <span style={{ minWidth: '100px', textAlign: 'right' }}>{unit === 'ms' ? step.duration : unit === 'ns' ? step.duration_ns : pourcentage} {unit}</span>
+                    return <div key={step.task} style={{ width: '100%' }}>
+                        <div onClick={() => {
+                            setSelectedPlugin(-1)
+                            setSelectedStep(step.task)
+                        }}
+                            className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep ? 'btn-dark' : ''}`}>
+                            <div className='d-flex align-items-center'>
+                                {hasPlugins && <i className={`fas fa-chevron-${step.open ? 'down' : 'right'} me-1`} onClick={() => setSteps(steps.map(s => {
+                                    if (s.task === step.task)
+                                        return { ...s, open: !step.open }
+                                    return s
+                                }))} />}
+                                <span>{name.charAt(0).toUpperCase() + name.slice(1)}</span>
+                            </div>
+                            <span style={{ maxWidth: '100px', textAlign: 'right' }}>{unit === 'ms' ? step.duration : unit === 'ns' ? step.duration_ns : pourcentage} {unit}</span>
+                        </div>
+                        {step.open && step.ctx.plugins
+                            .sort((a, b) => sort === 'flow' ? 0 : (a.duration_ns < b.duration_ns ? 1 : -1))
+                            .filter(plugin => search.length <= 0 ? true : plugin.name.includes(search))
+                            .map(plugin => {
+                                const pluginName = plugin.name.replace(/-/g, ' ').split('.').pop()
+                                const pluginPourcentage = Number.parseFloat(round(plugin.duration_ns / report.duration_ns) * 100).toFixed(2)
+
+                                return <div key={plugin.name}
+                                    style={{ width: 'calc(100% - 12px)', marginLeft: '12px' }}
+                                    onClick={() => setSelectedPlugin(plugin.name)}
+                                    className={`d-flex-between mt-1 px-3 py-2 report-step ${(step.task === selectedStep && plugin.name === selectedPlugin) ? 'btn-dark' : ''}`}>
+                                    <span>{pluginName.charAt(0).toUpperCase() + pluginName.slice(1)}</span>
+                                    <span style={{ maxWidth: '100px', textAlign: 'right' }}>
+                                        {unit === 'ms' ? plugin.duration : unit === 'ns' ? plugin.duration_ns : pluginPourcentage} {unit}
+                                    </span>
+                                </div>
+                            })}
                     </div>
                 })}
         </div>
@@ -290,10 +330,12 @@ const ReportView = ({ report }) => {
             <CodeInput
                 readOnly={true}
                 width="100%"
-                value={JSON.stringify(selectedStep === -1 ? informations : steps[selectedStep], null, 4)}
+                value={JSON.stringify(
+                    selectedPlugin === -1 ? (selectedStep === -1 ? informations : steps.find(t => t.task === selectedStep)) : (steps.find(t => t.task === selectedStep)?.ctx?.plugins.find(f => f.name === selectedPlugin))
+                    , null, 4)}
             />
         </div>
-    </div>
+    </div >
 }
 
 const Headers = ({ headers, onKeyChange, onValueChange }) => <div className='mt-2 w-50 div-overflowy pb-3' style={{
