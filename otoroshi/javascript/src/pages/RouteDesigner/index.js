@@ -34,6 +34,8 @@ export default (props) => {
                             .then(setValue)
                 }, [p.routeId])
 
+                console.log(value)
+
                 return <div style={{ padding: '7px 15px 0 0' }} className="row">
                     <NextSidebar isCreation={isCreation} entity={nextClient.ENTITIES.ROUTES} />
                     <div className='col-sm-11' style={{ paddingLeft: 0 }}>
@@ -42,7 +44,7 @@ export default (props) => {
                                 <Designer {...props} value={value} /> :
                                 (query && query === 'informations') ?
                                     <Informations {...props} isCreation={isCreation} value={value} /> :
-                                    <TryIt {...props} value={value} />
+                                    <TryIt route={value} />
                         }
                     </div>
                 </div>

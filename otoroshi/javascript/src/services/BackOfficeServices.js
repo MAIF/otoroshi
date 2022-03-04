@@ -1760,6 +1760,18 @@ export function createResources(resources) {
   }).then((r) => r.json());
 }
 
+export function tryIt(content) {
+  return fetch('/bo/api/tryit', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(content),
+  });
+}
+
 
 // NgRoutes
 

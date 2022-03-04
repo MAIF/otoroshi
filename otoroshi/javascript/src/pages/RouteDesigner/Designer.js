@@ -49,7 +49,7 @@ export default ({ lineId, value }) => {
                 setNodes([
                     ...DEFAULT_FLOW,
                     ...route.plugins.map(ref => {
-                        const plugin = formatedPlugins.find(p => p.id === ref.plugin.replace('cp:', '')) // TODO - s'assurer de ça
+                        const plugin = formatedPlugins.find(p => p.id === ref.plugin) // TODO - s'assurer de ça
                         const onInputStream = (plugin.plugin_steps || []).some(s => ["PreRoute", "ValidateAccess", "TransformRequest"].includes(s))
                         const onOutputStream = (plugin.plugin_steps || []).some(s => ["TransformResponse"].includes(s))
 
@@ -554,7 +554,7 @@ const EditView = ({
         return read(value[keys[0]], keys.slice(1).join("."))
     }
 
-    const RemoveComponent = () => <button className='btn btn-danger ms-2' onClick={e => {
+    const RemoveComponent = () => <button className='btn btn-sm btn-danger ms-2' onClick={e => {
         e.stopPropagation()
         setSelectedNode(undefined)
         removeNode(id)
@@ -608,7 +608,7 @@ const EditView = ({
                 }}>{selectedNode.description}</p>
                 {id === "Backend" && <div style={{ padding: "12px", backgroundColor: "#404040" }}>
                     <div className={`d-flex ${usingExistingBackend ? 'mb-3' : ''}`}>
-                        <button className='btn'
+                        <button className='btn btn-sm'
                             onClick={() => {
                                 setBackendConfigRef(undefined)
                                 setUsingExistingBackend(false)
@@ -622,7 +622,7 @@ const EditView = ({
                                 backgroundColor: usingExistingBackend ? "#494849" : "#f9b000",
                                 color: "#fff"
                             }}>Create a new backend</button>
-                        <button className='btn' onClick={() => setUsingExistingBackend(true)} style={{
+                        <button className='btn btn-sm' onClick={() => setUsingExistingBackend(true)} style={{
                             padding: "6px 12px",
                             backgroundColor: usingExistingBackend ? "#f9b000" : "#494849",
                             color: "#fff"
@@ -667,7 +667,7 @@ const EditView = ({
                             }
                         }}
                         footer={({ valid }) => <div className='d-flex mt-2'>
-                            <button className="btn btn-success btn-block"
+                            <button className="btn btn-sm btn-success"
                                 style={{ backgroundColor: "#f9b000", borderColor: '#f9b000' }}
                                 onClick={valid}>
                                 Update the plugin configuration
@@ -679,7 +679,7 @@ const EditView = ({
                     {backendConfigRef && <BackendForm isCreation={false} value={backendConfigRef} style={{
                         maxWidth: '100%'
                     }} foldable={true} />}
-                    <button className="btn btn-success btn-bloc m-3"
+                    <button className="btn btn-sm btn-success m-3"
                         style={{ backgroundColor: "#f9b000", borderColor: '#f9b000' }}
                         onClick={() => {
                             nextClient.update(nextClient.ENTITIES.ROUTES, route)

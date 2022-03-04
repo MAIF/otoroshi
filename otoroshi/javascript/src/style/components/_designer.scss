@@ -1,3 +1,7 @@
+.flex {
+    flex: 1;
+}
+
 .h-100 {
     display: flex;
     min-height: calc(100vh - 85px);
@@ -10,6 +14,12 @@
 .flex-row {
     flex-direction: row;
     align-items: center;
+}
+
+.d-flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .mt-1 {
@@ -193,4 +203,13 @@
 
 .input-group-append {
     margin-left: 12px;
+}
+
+.div-overflowy {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none; 
+}
+
+.div-overflowy::-webkit-scrollbar {
+    display: none;
 }
