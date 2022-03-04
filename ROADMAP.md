@@ -27,6 +27,15 @@ provide the authentication modules needed for most cases and associated tools
 - [ ] access control helpers
 - [ ] spikes and DoS detection and arrest
 - [ ] beyondcorp like setup helpers
+- [ ] secret management from pluggable vaults
+  - [ ] apikey secrets
+  - [ ] jwt verifier secrets
+  - [ ] certificates keypairs
+  - [ ] datastore credentials
+  - [ ] auth. modules secrets
+  - [ ] data exporter secrets
+  - [ ] config. file secrets
+  - [ ] global config secrets
 
 ## plugins
 
@@ -63,6 +72,7 @@ provide the authentication modules needed for most cases and associated tools
 
 - [x] support postgresql as leader datastore
 - [x] support S3 as leader datastore
+- [ ] support cosmos db as leader datastore (should be already true with cassandra support but needs to be checked)
 - [ ] master - master replication (leader / follower at least)
 - [ ] experiment around lightweight workers
   - [ ] written in rust (based on sozu or hyper ?)
@@ -72,6 +82,7 @@ provide the authentication modules needed for most cases and associated tools
 
 - [x] support a generic way to export data (events) from otoroshi
 - [ ] add more data export modules
+  - [ ] cosmos db bulks (which API ?)
 - [x] support W3C Trace Context: [trace-context spec](https://www.w3.org/TR/trace-context), [manual impl.](https://github.com/open-telemetry/opentelemetry-java/blob/main/api/all/src/main/java/io/opentelemetry/api/trace/propagation/W3CTraceContextPropagator.java)
   - [x] support Jaeger exporter (use [opentelemetry-java](https://github.com/open-telemetry/opentelemetry-java/tree/main/exporters/jaeger))
   - [x] support Zipkin exporter (use [opentelemetry-java](https://github.com/open-telemetry/opentelemetry-java/tree/main/exporters/zipkin))
