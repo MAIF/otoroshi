@@ -14,7 +14,7 @@ import otoroshi.controllers._
 import otoroshi.controllers.adminapi._
 import otoroshi.env._
 import otoroshi.gateway._
-import otoroshi.next.controllers.NgPluginsController
+import otoroshi.next.controllers.{NgPluginsController, TryItController}
 import otoroshi.next.controllers.adminapi._
 import otoroshi.next.proxy.NgProxyStateLoaderJob
 import otoroshi.ssl.DynamicSSLEngineProvider
@@ -350,6 +350,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val targetsController            = wire[NgTargetsController]
   lazy val backendsController           = wire[NgBackendsController]
   lazy val pluginsController            = wire[NgPluginsController]
+  lazy val tryItController              = wire[TryItController]
 
   override lazy val assets: Assets = wire[Assets]
 

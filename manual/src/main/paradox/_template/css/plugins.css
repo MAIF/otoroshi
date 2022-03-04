@@ -18,6 +18,26 @@
     align-items: flex-start;
 }
 
+.ng-plugin {
+  background-color: #fff !important;
+  box-shadow: 0 1px 3px rgb(25 25 25 / 30%);
+  padding: 24px;
+  border-radius: 4px;
+  max-width: calc(33% - 36px);
+  min-width: calc(33% - 36px);
+  margin: 0 24px 24px 0;
+  min-height: 260px;
+  max-height: 260px;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  float: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
 
 @media screen and (max-width: 1440px) {
   .plugin {

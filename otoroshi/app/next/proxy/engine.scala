@@ -123,6 +123,10 @@ object ProxyEngineConfig {
   }
 }
 
+object ProxyEngine {
+  def configRoot: String = "NextGenProxyEngine"
+}
+
 class ProxyEngine() extends RequestHandler {
 
   private val logger               = Logger("otoroshi-next-gen-proxy-engine")
@@ -199,7 +203,7 @@ class ProxyEngine() extends RequestHandler {
       |
       |""".stripMargin.some
 
-  override def configRoot: Option[String] = "NextGenProxyEngine".some
+  override def configRoot: Option[String] = ProxyEngine.configRoot.some
 
   override def defaultConfig: Option[JsObject] = {
     ProxyEngineConfig.default.json.asObject.some
@@ -210,8 +214,14 @@ class ProxyEngine() extends RequestHandler {
     configCache.get(
       "config",
       _ => {
-        val config_json  = env.datastores.globalConfigDataStore.latest().plugins.config.select(configRoot.get).asOpt[JsObject].getOrElse(defaultConfig.get)
-        val config = ProxyEngineConfig.parse(config_json, env)
+        val config = env.datastores.globalConfigDataStore.latest()
+          .plugins
+          .config
+          .select(configRoot.get)
+          .asOpt[JsObject]
+          .map(v => ProxyEngineConfig.parse(v, env))
+          .getOrElse(ProxyEngineConfig.default)
+
         enabledRef.set(config.enabled)
         enabledDomains.set(config.domains)
         config
@@ -258,6 +268,9 @@ class ProxyEngine() extends RequestHandler {
       env: Env,
       globalConfig: GlobalConfig
   ): Future[Result] = {
+    val start           = System.currentTimeMillis()
+    val tryItId         = request.headers.get("Otoroshi-Try-It-Request-Id")
+    val tryIt           = tryItId.exists(id => env.proxyState.isReportEnabledFor(id))
     val requestId       = IdGenerator.uuid
     val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, debug, debugHeaders, _, _) = config
     val useTree = config.useTree
@@ -271,7 +284,6 @@ class ProxyEngine() extends RequestHandler {
     val reqNumber        = reqCounter.incrementAndGet()
     val counterIn        = new AtomicLong(0L)
     val counterOut       = new AtomicLong(0L)
-    val start            = System.currentTimeMillis()
     implicit val attrs   = TypedMap.empty.put(
       otoroshi.next.plugins.Keys.ReportKey       -> report,
       otoroshi.plugins.Keys.RequestNumberKey     -> reqNumber,
@@ -295,7 +307,7 @@ class ProxyEngine() extends RequestHandler {
     (for {
       _         <- handleConcurrentRequest(request)
       _          = report.markDoneAndStart("find-route")
-      route     <- findRoute(useTree, request, request.body, global_plugins__)
+      route    <- findRoute(useTree, request, request.body, global_plugins__, tryIt)
       _          = report.markDoneAndStart("compute-plugins")
       gplugs     = global_plugins__.applyOnIf(env.http2ClientProxyEnabled && route.backend.targets.forall(_.protocol == HttpProtocols.`HTTP/2.0`)) { o =>
         o.add(NgPluginInstance("cp:otoroshi.next.plugins.Http2Caller"))
@@ -371,6 +383,9 @@ class ProxyEngine() extends RequestHandler {
         attrs.get(Keys.RouteKey).foreach { route =>
           callPluginsAfterRequestCallback(snowflake, request, route, attrs.get(Keys.ContextualPluginsKey).get)
           handleHighOverhead(request, route.some)
+          if (tryIt) {
+            tryItId.foreach(id => env.proxyState.addReport(id, report))
+          }
           if (exportReporting || route.exportReporting) {
             RequestFlowReport(report, route).toAnalytics()
           }
@@ -416,6 +431,9 @@ class ProxyEngine() extends RequestHandler {
       env: Env,
       globalConfig: GlobalConfig
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    val start           = System.currentTimeMillis()
+    val tryItId         = request.headers.get("Otoroshi-Try-It-Request-Id")
+    val tryIt           = tryItId.exists(id => env.proxyState.isReportEnabledFor(id))
     val requestId       = IdGenerator.uuid
     val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, _, _, _, _) = config
     val useTree = config.useTree
@@ -430,7 +448,6 @@ class ProxyEngine() extends RequestHandler {
     val reqNumber        = reqCounter.incrementAndGet()
     val counterIn        = new AtomicLong(0L)
     val counterOut       = new AtomicLong(0L)
-    val start            = System.currentTimeMillis()
     implicit val attrs   = TypedMap.empty.put(
       otoroshi.next.plugins.Keys.ReportKey       -> report,
       otoroshi.plugins.Keys.RequestNumberKey     -> reqNumber,
@@ -457,7 +474,7 @@ class ProxyEngine() extends RequestHandler {
     (for {
       _         <- handleConcurrentRequest(request)
       _          = report.markDoneAndStart("find-route")
-      route     <- findRoute(useTree, request, fakeBody, global_plugins__)
+      route     <- findRoute(useTree, request, fakeBody, global_plugins__, tryIt)
       _          = report.markDoneAndStart("compute-plugins")
       ctxPlugins = route.contextualPlugins(global_plugins__, pluginMerge, request).seffectOn(_.allPlugins)
       _          = attrs.put(Keys.ContextualPluginsKey -> ctxPlugins)
@@ -529,6 +546,9 @@ class ProxyEngine() extends RequestHandler {
         attrs.get(Keys.RouteKey).foreach { route =>
           callPluginsAfterRequestCallback(snowflake, request, route, attrs.get(Keys.ContextualPluginsKey).get)
           handleHighOverhead(request, route.some)
+          if (tryIt) {
+            tryItId.foreach(id => env.proxyState.addReport(id, report))
+          }
           if (exportReporting || route.exportReporting) {
             RequestFlowReport(report, route).toAnalytics()
           }
@@ -648,7 +668,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def findRoute(useTree: Boolean, request: RequestHeader, body: Source[ByteString, _], global_plugins: NgPlugins)(
+  def findRoute(useTree: Boolean, request: RequestHeader, body: Source[ByteString, _], global_plugins: NgPlugins, tryIt: Boolean)(
       implicit
       ec: ExecutionContext,
       env: Env,
@@ -678,7 +698,13 @@ class ProxyEngine() extends RequestHandler {
         .map(r => NgMatchedRoute(r))
     }
     maybeRoute match {
-      case Some(route) =>
+      case Some(_route) =>
+        val route = if (tryIt) {
+          val nroute: NgRoute = _route.route.copy(debugFlow = true)
+          _route.copy(route = nroute)
+        } else {
+          _route
+        }
         attrs.put(Keys.RouteKey        -> route.route)
         attrs.put(Keys.MatchedRouteKey -> route)
         val rts: Seq[String] = attrs.get(Keys.MatchedRoutesKey).getOrElse(Seq.empty[String])
@@ -2067,7 +2093,8 @@ class ProxyEngine() extends RequestHandler {
       env.Headers.OtoroshiRequestId,
       env.Headers.OtoroshiClientId,
       env.Headers.OtoroshiClientSecret,
-      env.Headers.OtoroshiAuthorization
+      env.Headers.OtoroshiAuthorization,
+      "Otoroshi-Try-It-Request-Id"
     ).++(headersInStatic).map(_.toLowerCase)
 
     val headers = request.headers.toSimpleMap
@@ -2101,7 +2128,7 @@ class ProxyEngine() extends RequestHandler {
     val otoroshiRequest = NgPluginHttpRequest(
       url = targetUrl,
       method = request.method,
-      headers = request.headers.toSimpleMap,
+      headers = headers,
       cookies = wsCookiesIn,
       version = request.version,
       clientCertificateChain = request.clientCertificateChain,
