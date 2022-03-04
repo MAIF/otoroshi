@@ -1799,16 +1799,6 @@ export const nextClient = {
   template: entity => fetchWrapper(`/${entity}/_template`)
 }
 
-export const getPlugins = () => fetch('/bo/api/proxy/api/next/plugins/all', {
-  credentials: 'include',
-  headers: {
-    Accept: 'application/json'
-  }
-}).then(r => r.json())
+export const getPlugins = () => fetchWrapper('/plugins/all')
 
-export const getCategories = () => fetch('/bo/api/proxy/api/next/plugins/categories', {
-  credentials: 'include',
-  headers: {
-    Accept: 'application/json'
-  }
-}).then(r => r.json())
+export const getCategories = () => fetchWrapper('/plugins/categories')
