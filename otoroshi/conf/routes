@@ -482,9 +482,9 @@ GET     /api/experimental/backends                          otoroshi.next.contro
 POST    /api/experimental/backends                          otoroshi.next.controllers.adminapi.NgBackendsController.createAction()
 
 ## Plugins
-GET     /api/next/plugins/categories                        otoroshi.next.controllers.NgPluginsController.categories()
-GET     /api/next/plugins/steps                             otoroshi.next.controllers.NgPluginsController.steps()
-GET     /api/next/plugins/all                               otoroshi.next.controllers.NgPluginsController.plugins()
+GET     /api/experimental/plugins/categories                otoroshi.next.controllers.NgPluginsController.categories()
+GET     /api/experimental/plugins/steps                     otoroshi.next.controllers.NgPluginsController.steps()
+GET     /api/experimental/plugins/all                       otoroshi.next.controllers.NgPluginsController.plugins()
 
 GET     /api/stats/global                                     otoroshi.controllers.adminapi.AnalyticsController.globalStats(from: Option[String], to: Option[String])
 GET     /api/status/global                                    otoroshi.controllers.adminapi.AnalyticsController.globalStatus(from: Option[String], to: Option[String])

@@ -3713,16 +3713,17 @@ spec:
                 description: "Field name to extract apikey tags"
                 type: "string"
               userValidators:
-                description: "???"
+                description: "Validators that will check if the current user is authorized\
+                  \ after successful login"
                 type: "array"
                 items:
                   type: "object"
                   properties:
                     path:
-                      description: "???"
+                      description: "The JSON Path that will be checked"
                       type: "string"
                     value:
-                      description: "???"
+                      description: "The expected value at the previously defined path"
                       type: "object"
               serverUrls:
                 type: "array"

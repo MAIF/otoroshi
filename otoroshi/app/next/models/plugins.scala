@@ -67,6 +67,8 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
   def json: JsValue = JsArray(slots.map(_.json))
 
+  def hasPlugin[A](implicit ct: ClassTag[A]): Boolean = getPluginByClass[A](ct).isDefined
+
   def getPluginByClass[A](implicit ct: ClassTag[A]): Option[NgPluginInstance] = {
     val name = s"cp:${ct.runtimeClass.getName}"
     slots.find(pi => pi.plugin == name).filter(_.enabled)
