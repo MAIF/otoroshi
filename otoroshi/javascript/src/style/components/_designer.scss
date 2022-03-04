@@ -213,3 +213,14 @@
 .div-overflowy::-webkit-scrollbar {
     display: none;
 }
+
+.main-view .ace-editor {
+    resize: vertical;
+}
+
+.report-step {
+    width: 100%;
+    cursor: pointer;
+    background-color: #494849;
+    border-radius: 4px;
+}

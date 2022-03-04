@@ -318,7 +318,11 @@ export default ({ lineId, value }) => {
                 </div>
             </div>
             <div className="col-sm-8">
-                <div className="row h-100">
+                <div className="row h-100" style={{
+                    background: 'rgb(60, 60, 60)',
+                    padding: '12px',
+                    borderRadius: '4px'
+                }}>
                     <div className="col-sm-4" style={{ display: 'flex', flexDirection: 'column' }}>
                         <div className="main-view">
                             <Dot style={{

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import { BooleanInput, CodeInput, SelectInput } from '@maif/react-forms/lib/inputs'
-import { Loader } from '../../components/Loader'
 import { tryIt } from '../../services/BackOfficeServices'
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD']
@@ -10,7 +9,8 @@ const CONTENT_TYPE = ['text', 'javascript', 'json', 'html', 'xml']
 export const TryIt = ({ route }) => {
 
     const [selectedTab, setSelectedTab] = useState('Headers')
-    const [selectedResponseTab, setSelectedResponseTab] = useState('Body')
+    const [selectedResponseTab, setSelectedResponseTab] = useState('Report')
+    const [headersStatus, setHeadersStatus] = useState('down')
 
     const [request, setRequest] = useState({
         path: '/',
@@ -38,6 +38,7 @@ export const TryIt = ({ route }) => {
     const send = () => {
         setLoading(true)
         setRawResponse(undefined)
+        setHeadersStatus('up')
         tryIt({
             ...request, headers: Object.fromEntries(Object.entries(Object.fromEntries(Object.values(request.headers)))
                 .filter(([k, _]) => k.length > 0))
@@ -76,7 +77,12 @@ export const TryIt = ({ route }) => {
 
     console.log(rawResponse)
 
-    return <div className='h-100' style={{ flexDirection: 'column' }}>
+    return <div className='h-100' style={{
+        flexDirection: 'column',
+        background: 'rgb(60,60,60)',
+        padding: '12px',
+        borderRadius: '8px'
+    }}>
         <div className='d-flex'>
             <div style={{ minWidth: '120px' }}>
                 <SelectInput
@@ -97,55 +103,60 @@ export const TryIt = ({ route }) => {
                 Send
             </button>
         </div>
-        <div style={{ height: '225px', flexDirection: "column", overflowY: 'hidden' }} className="pb-3">
-            <div className='d-flex mt-3'>
-                {[
-                    { label: 'Headers', value: `Headers (${Object.keys(request.headers || {}).length})` },
-                    { label: 'Body', value: 'Body' }
-                ].map(({ label, value }) => (
-                    <button onClick={() => setSelectedTab(label)} className='pb-2 me-3' style={{
-                        padding: 0,
-                        border: 0,
-                        borderBottom: selectedTab === label ? '2px solid #f9b000' : 'transparent',
-                        background: 'none'
-                    }}>{value}</button>
-                ))}
+        <div style={{
+            height: headersStatus === 'down' ? '225px' : 'initial',
+            flexDirection: "column",
+            overflowY: 'hidden',
+            paddingBottom: headersStatus === 'down' ? '120px' : 0
+        }}>
+            <div className='d-flex-between mt-3'>
+                <div className='d-flex'>
+                    {[
+                        { label: 'Headers', value: `Headers (${Object.keys(request.headers || {}).length})` },
+                        { label: 'Body', value: 'Body' }
+                    ].map(({ label, value }) => (
+                        <button onClick={() => setSelectedTab(label)} className='pb-2 me-3' style={{
+                            padding: 0,
+                            border: 0,
+                            borderBottom: selectedTab === label ? '2px solid #f9b000' : 'transparent',
+                            background: 'none'
+                        }}>{value}</button>
+                    ))}
+                </div>
+                <i className={`tab fas fa-chevron-${headersStatus}`} onClick={() => setHeadersStatus(headersStatus === 'up' ? 'down' : 'up')} />
             </div>
-            {selectedTab === "Headers" && <Headers
+            {selectedTab === "Headers" && headersStatus === 'down' && <Headers
                 headers={request.headers}
                 onKeyChange={(id, v) => {
                     const updatedRequest = {
                         ...request,
                         headers: {
                             ...request.headers,
-                            [id]: { key: v, value: request.headers[id].value },
-                            ...item
+                            [id]: { key: v, value: request.headers[id].value }
                         }
                     }
-
                     let item = {}
-                    if (Object.values(updatedRequest.headers).every(r => r.key?.length > 0))
+                    if (Object.values(updatedRequest.headers).every(r => r.key.length > 0 || r.value.length > 0))
                         item = { [Date.now()]: { key: '', value: '' } }
 
-                    setRequest(updatedRequest)
+                    setRequest({ ...updatedRequest, headers: { ...updatedRequest.headers, ...item } })
                 }}
                 onValueChange={(id, v) => {
                     const updatedRequest = {
                         ...request,
                         headers: {
                             ...request.headers,
-                            [id]: { key: request.headers[id].key, value: v },
-                            ...item
+                            [id]: { key: request.headers[id].key, value: v }
                         }
                     }
 
                     let item = {}
-                    if (Object.keys(updatedRequest.headers).every(r => r.length > 0))
+                    if (Object.values(updatedRequest.headers).every(r => r.key.length > 0 || r.value.length > 0))
                         item = { [Date.now()]: { key: '', value: '' } }
 
-                    setRequest(updatedRequest)
+                    setRequest({ ...updatedRequest, headers: { ...updatedRequest.headers, ...item } })
                 }} />}
-            {selectedTab === "Body" && <div className='mt-3'>
+            {selectedTab === "Body" && headersStatus === 'down' && <div className='mt-3'>
                 <div className='d-flex align-items-center mb-3'>
                     <div className='d-flex'>
                         <BooleanInput value={!request.body} onChange={() => setRequest({ ...request, body: undefined })} />
@@ -170,15 +181,16 @@ export const TryIt = ({ route }) => {
                 />}
             </div>
             }
-        </div >
+        </div>
         {receivedResponse && <div className='d-flex flex-row mt-3'>
             <div className='d-flex flex-row justify-content-between flex'>
                 <div>
                     {[
+                        { label: 'Report', value: 'Report' },
                         { label: 'Body', value: 'Body' },
                         { label: 'Cookies', value: 'Cookies' },
-                        { label: 'Headers', value: `Headers (${([...rawResponse.headers] || []).length})` },
-                    ].map(({ label, value, tab }) => (
+                        { label: 'Headers', value: `Headers (${([...rawResponse.headers] || []).length})` }
+                    ].map(({ label, value }) => (
                         <button onClick={() => setSelectedResponseTab(label)} className='pb-2 me-3' style={{
                             padding: 0,
                             border: 0,
@@ -214,7 +226,7 @@ export const TryIt = ({ route }) => {
         {receivedResponse && selectedResponseTab === "Body" && <div className='mt-3'>
             <CodeInput
                 readOnly={true}
-                value={JSON.stringify(response, null, 4)}
+                value={JSON.stringify(JSON.parse(atob(response.body_base_64)), null, 4)}
                 width="-1"
             />
         </div>}
@@ -222,6 +234,58 @@ export const TryIt = ({ route }) => {
             <span>Enter the URL and click Send to get a response</span>
         </div>}
         {loading && <div className='d-flex justify-content-center'><i className='fas fa-cog fa-spin' style={{ fontSize: "40px" }} /></div>}
+
+        {receivedResponse && selectedResponseTab === 'Report' && <ReportView report={response.report} />}
+    </div>
+}
+
+const ReportView = ({ report }) => {
+    const [selectedStep, setSelectedStep] = useState(-1)
+    const [search, setSearch] = useState("")
+    const [unit, setUnit] = useState('ms')
+
+    const { steps, ...informations } = report
+
+    const round = num => Math.round((num + Number.EPSILON) * 10000) / 10000
+
+    return <div className='d-flex mt-3'>
+        <div className='main-view me-2' style={{ flex: .5, minWidth: '250px' }}>
+            <div onClick={() => setSelectedStep(-1)} className="d-flex-between py-2" style={{ width: '100%' }}>
+                <input type="text" className='form-control' value={search}
+                    placeholder="Search a step"
+                    onChange={e => setSearch(e.target.value)} />
+                <div className='d-flex-between mx-1'>
+                    <button className={`btn btn-sm btn-${unit === 'ns' ? 'success' : 'dark'}`} onClick={() => setUnit('ns')}>ns</button>
+                    <button className={`btn btn-sm btn-${unit === 'ms' ? 'success' : 'dark'} mx-1`} onClick={() => setUnit('ms')}>ms</button>
+                    <button className={`btn btn-sm btn-${unit === '%' ? 'success' : 'dark'}`} onClick={() => setUnit('%')}>%</button>
+                </div>
+            </div>
+            <div onClick={() => setSelectedStep(-1)}
+                className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${informations.state === 'Successful' ? 'success' : 'danger'}`}>
+                <span>Report</span>
+                <span>{unit === 'ms' ? report.duration : unit === 'ns' ? report.duration_ns : 100} {unit}</span>
+            </div>
+            {report.steps
+                .filter(step => search.length <= 0 ? true : step.task.includes(search))
+                .map((step, i) => {
+                    const name = step.task.replace(/-/g, ' ')
+                    const pourcentage = Number.parseFloat(round(step.duration_ns / report.duration_ns) * 100).toFixed(2)
+
+                    return <div key={step.task}
+                        onClick={() => setSelectedStep(i)}
+                        className={`d-flex-between mt-1 px-3 py-2 report-step ${i === selectedStep ? 'btn-dark' : ''}`}>
+                        <span>{name.charAt(0).toUpperCase() + name.slice(1)}</span>
+                        <span style={{ minWidth: '100px', textAlign: 'right' }}>{unit === 'ms' ? step.duration : unit === 'ns' ? step.duration_ns : pourcentage} {unit}</span>
+                    </div>
+                })}
+        </div>
+        <div className='main-view'>
+            <CodeInput
+                readOnly={true}
+                width="100%"
+                value={JSON.stringify(selectedStep === -1 ? informations : steps[selectedStep], null, 4)}
+            />
+        </div>
     </div>
 }
 
