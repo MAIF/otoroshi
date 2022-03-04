@@ -4,6 +4,7 @@ import NextSidebar from '../../components/NextSidebar'
 import { nextClient } from '../../services/BackOfficeServices'
 import Designer from './Designer'
 import { Informations } from './Informations'
+import { TryIt } from './TryIt'
 import Routes from './Routes'
 
 export default (props) => {
@@ -39,7 +40,9 @@ export default (props) => {
                         {
                             (query && query === 'flow' && !isCreation) ?
                                 <Designer {...props} value={value} /> :
-                                <Informations {...props} isCreation={isCreation} value={value} />
+                                (query && query === 'informations') ?
+                                    <Informations {...props} isCreation={isCreation} value={value} /> :
+                                    <TryIt {...props} value={value} />
                         }
                     </div>
                 </div>

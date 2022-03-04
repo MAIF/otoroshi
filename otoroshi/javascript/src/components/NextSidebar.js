@@ -6,7 +6,8 @@ export default ({ isCreation, entity }) => {
     const { search, pathname } = useLocation()
 
     const query = new URLSearchParams(search).get("tab")
-    const isCogTab = !query || query === 'informations';
+    const isCogTab = query === 'informations';
+    const isTryItTab = query === 'try-it';
 
     return <div className='col-sm-1 designer-sidebar'>
         <button className='btn btn-sm' style={{
@@ -21,11 +22,17 @@ export default ({ isCreation, entity }) => {
             <i className='fas fa-arrow-left fa-2x' style={{ color: '#f9b000' }} />
         </button>
         {!isCreation && <div className='designer-sidebar' style={{ marginTop: '24px' }}>
-            <Link className={`tab ${!isCogTab ? 'tab-selected' : ''}`} to={{
+            <Link className={`tab ${(!isCogTab && !isTryItTab) ? 'tab-selected' : ''}`} to={{
                 pathname,
                 search: '?tab=flow'
             }}>
                 <i className='fas fa-stream fa-lg' />
+            </Link>
+            <Link className={`tab ${isTryItTab ? 'tab-selected' : ''}`} to={{
+                pathname,
+                search: '?tab=try-it'
+            }}>
+                <i className='fas fa-hammer fa-lg' />
             </Link>
             <Link className={`tab ${isCogTab ? 'tab-selected' : ''}`} to={{
                 pathname,

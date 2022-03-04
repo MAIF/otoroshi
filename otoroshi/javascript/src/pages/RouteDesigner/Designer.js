@@ -113,7 +113,7 @@ export default ({ lineId, value }) => {
                 plugins: [
                     ...route.plugins,
                     {
-                        plugin: node.id,
+                        plugin: `cp:${node.id}`,
                         config: node.config
                     }
                 ]
