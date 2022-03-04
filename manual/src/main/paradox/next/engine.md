@@ -4,10 +4,13 @@ Starting from the `1.5.3` release, otoroshi offers a new plugin that implements 
 This engine has been designed based on our 5 years experience building, maintaining and running the previous one. 
 It tries to fix all the drawback we may have encountered during those years and highly improve performances, user experience, reporting and debugging capabilities. 
 The new engine is fully plugin oriented in order to spend CPU cycles only on useful stuff.
-This engine is **experimental** and may not work as expected !
 You can enable this plugin only on some domain names so you can easily A/B test the new engine.
 The new proxy engine is designed to be more reactive and more efficient generally.
 It is also designed to be very efficient on path routing where it wasn't the old engines strong suit.
+
+@@@ warning
+This engine is **experimental** and might not work as expected !
+@@@
 
 ## Enabling the new engine
 
@@ -79,9 +82,17 @@ This plugin introduces new entities that will replace (one day maybe) service de
 
 A new behavior introduced for the new proxy engine is the entities sync job. To avoid unecessary operations on the underlying datastore when routing requests, a new job has been setup in otoroshi that synchronize the content of the datastore (at least a part of it) with an in-memory cache. Because of it, the propagation of changes between an admin api call and the actual result on routing can be longer than before. When a node creates, updates, or deletes an entity via the admin api, other nodes need to wait for the next poll to purge the old cached entity and start using the new one. You can change the interval between syncs with the configuration key `otoroshi.next.state-sync-interval` or the env. variable `OTOROSHI_NEXT_STATE_SYNC_INTERVAL`. The default value is `10000` and the unit is `milliseconds`
 
+@@@ warning
+Because of entities sync, memory consumption of otoroshi will be significantly higher than previous versions. You can use `otoroshi.next.monitor-proxy-state-size=true` config (or `OTOROSHI_NEXT_MONITOR_PROXY_STATE_SIZE` env. variable) to monitor the actual memory size of the entities cache. This will produce the `ng-proxy-state-size-monitoring` metric in standard otoroshi metrics
+@@@
+
 ## Automatic conversion
 
 The new engine uses new entities for its configuration, but in order to facilitate transition between the old world and the new world, all the `service descriptors` of an otoroshi instance are automatically converted live into `routes` periodically. Any `service descriptor` should still work as expected through the new engine while enjoying all the perks.
+
+@@@ warning
+the experimental nature of the engine can imply unexpected behaviors for converted service descriptors
+@@@
 
 ## Routing
 
@@ -551,6 +562,10 @@ by default, any request hiting the new engine will generate an execution report 
 ## Debugging
 
 with the new reporting capabilities, the new engine also have debugging capabilities built in. In you enable the `debug_flow` flag on a route (or service), the resulting `RequestFlowReport` will be enriched with contextual informations between each plugins of the route plugin pipeline
+
+@@@ note
+you can also use the `Try it` feature of the new route designer UI to get debug reports automatically for a specific call
+@@@
 
 ## openapi import
 
