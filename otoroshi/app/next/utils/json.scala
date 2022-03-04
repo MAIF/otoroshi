@@ -2,8 +2,10 @@ package otoroshi.next.utils
 
 import otoroshi.utils.http.DN
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
+import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.libs.json._
-import play.api.mvc.RequestHeader
+import play.api.libs.ws.{DefaultWSCookie, WSCookie}
+import play.api.mvc.{Cookie, RequestHeader}
 
 import java.security.cert.X509Certificate
 import scala.util.{Failure, Success, Try}
@@ -48,6 +50,7 @@ object JsonHelpers {
       "id"                -> request.id,
       "method"            -> request.method,
       "headers"           -> request.headers.toSimpleMap,
+      "cookies"           -> JsArray(request.cookies.toSeq.map(c => cookieToJson(c))),
       "tls"               -> request.theSecuredTrusted,
       "uri"               -> request.uri,
       "path"              -> request.path,
@@ -55,6 +58,40 @@ object JsonHelpers {
       "has_body"          -> request.hasBody,
       "remote"            -> request.remoteAddress,
       "client_cert_chain" -> JsonHelpers.clientCertChainToJson(request.clientCertificateChain)
+    )
+  }
+  def cookieToJson(cookie: Cookie): JsValue = {
+    Json.obj(
+      "name" -> cookie.name,
+      "value" -> cookie.value,
+      "path" -> cookie.path,
+      "domain" -> cookie.domain,
+      "http_only" -> cookie.httpOnly,
+      "max_age" -> cookie.maxAge,
+      "secure" -> cookie.secure,
+      "same_site" -> cookie.sameSite.map(_.value),
+    )
+  }
+  def wsCookieToJson(cookie: WSCookie): JsValue = {
+    Json.obj(
+      "name" -> cookie.name,
+      "value" -> cookie.value,
+      "path" -> cookie.path,
+      "domain" -> cookie.domain,
+      "http_only" -> cookie.httpOnly,
+      "max_age" -> cookie.maxAge,
+      "secure" -> cookie.secure,
+    )
+  }
+  def cookieFromJson(cookie: JsValue): WSCookie = {
+    DefaultWSCookie(
+      name = cookie.select("name").as[String],
+      value = cookie.select("value").as[String],
+      domain = cookie.select("domain").asOpt[String],
+      path = cookie.select("path").asOpt[String],
+      maxAge = cookie.select("max_age").asOpt[Long],
+      secure = cookie.select("secure").asOpt[Boolean].getOrElse(false),
+      httpOnly = cookie.select("http_only").asOpt[Boolean].getOrElse(false),
     )
   }
   def errToJson(error: Throwable): JsValue = {
