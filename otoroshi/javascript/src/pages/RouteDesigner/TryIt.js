@@ -283,8 +283,9 @@ const ReportView = ({ report }) => {
                 <span>{unit === 'ms' ? report.duration : unit === 'ns' ? report.duration_ns : 100} {unit}</span>
             </div>
             {[...steps]
+                .filter(step => search.length <= 0 ? true : (step.task.includes(search) || [...(step?.ctx?.plugins || [])]
+                    .find(plugin => search.length <= 0 ? true : plugin.name.includes(search))))
                 .sort((a, b) => sort === 'flow' ? 0 : (a.duration_ns < b.duration_ns ? 1 : -1))
-                .filter(step => search.length <= 0 ? true : step.task.includes(search))
                 .map(step => {
                     const name = step.task.replace(/-/g, ' ')
                     const pourcentage = Number.parseFloat(round(step.duration_ns / report.duration_ns) * 100).toFixed(2)
@@ -306,9 +307,9 @@ const ReportView = ({ report }) => {
                             </div>
                             <span style={{ maxWidth: '100px', textAlign: 'right' }}>{unit === 'ms' ? step.duration : unit === 'ns' ? step.duration_ns : pourcentage} {unit}</span>
                         </div>
-                        {step.open && step.ctx.plugins
-                            .sort((a, b) => sort === 'flow' ? 0 : (a.duration_ns < b.duration_ns ? 1 : -1))
+                        {step.open && [...step.ctx.plugins]
                             .filter(plugin => search.length <= 0 ? true : plugin.name.includes(search))
+                            .sort((a, b) => sort === 'flow' ? 0 : (a.duration_ns < b.duration_ns ? 1 : -1))
                             .map(plugin => {
                                 const pluginName = plugin.name.replace(/-/g, ' ').split('.').pop()
                                 const pluginPourcentage = Number.parseFloat(round(plugin.duration_ns / report.duration_ns) * 100).toFixed(2)
