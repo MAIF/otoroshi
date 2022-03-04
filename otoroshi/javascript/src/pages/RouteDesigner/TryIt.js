@@ -243,6 +243,7 @@ const ReportView = ({ report }) => {
     const [selectedStep, setSelectedStep] = useState(-1)
     const [search, setSearch] = useState("")
     const [unit, setUnit] = useState('ms')
+    const [sort, setSort] = useState('flow')
 
     const { steps, ...informations } = report
 
@@ -254,18 +255,24 @@ const ReportView = ({ report }) => {
                 <input type="text" className='form-control' value={search}
                     placeholder="Search a step"
                     onChange={e => setSearch(e.target.value)} />
-                <div className='d-flex-between mx-1'>
+                <div className='d-flex-between ms-1'>
                     <button className={`btn btn-sm btn-${unit === 'ns' ? 'success' : 'dark'}`} onClick={() => setUnit('ns')}>ns</button>
                     <button className={`btn btn-sm btn-${unit === 'ms' ? 'success' : 'dark'} mx-1`} onClick={() => setUnit('ms')}>ms</button>
                     <button className={`btn btn-sm btn-${unit === '%' ? 'success' : 'dark'}`} onClick={() => setUnit('%')}>%</button>
                 </div>
+            </div>
+            <div className='ms-auto mb-2'>
+                <button className='btn btn-sm btn-success' onClick={() => setSort(sort === 'flow' ? 'duration' : 'flow')}>
+                    Sort by {sort === 'flow' ? 'duration' : 'flow'}
+                </button>
             </div>
             <div onClick={() => setSelectedStep(-1)}
                 className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${informations.state === 'Successful' ? 'success' : 'danger'}`}>
                 <span>Report</span>
                 <span>{unit === 'ms' ? report.duration : unit === 'ns' ? report.duration_ns : 100} {unit}</span>
             </div>
-            {report.steps
+            {[...report.steps]
+                .sort((a, b) => sort === 'flow' ? 0 : (a.duration_ns < b.duration_ns ? 1 : -1))
                 .filter(step => search.length <= 0 ? true : step.task.includes(search))
                 .map((step, i) => {
                     const name = step.task.replace(/-/g, ' ')
