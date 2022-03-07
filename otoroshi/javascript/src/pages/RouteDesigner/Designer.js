@@ -36,7 +36,7 @@ export default ({ lineId, value }) => {
                         config_schema: format(plugin.config_schema || {}),
                         config: plugin.default_config
                     }))
-
+                
                 setBackends(backends)
                 setCategories(categories.filter(category => category !== 'Tunnel'))
                 setRoute(route)
@@ -50,6 +50,7 @@ export default ({ lineId, value }) => {
                     ...DEFAULT_FLOW,
                     ...route.plugins.map(ref => {
                         const plugin = formatedPlugins.find(p => p.id === ref.plugin) // TODO - s'assurer de ça
+                        console.log(ref.plugin, plugin)
                         const onInputStream = (plugin.plugin_steps || []).some(s => ["PreRoute", "ValidateAccess", "TransformRequest"].includes(s))
                         const onOutputStream = (plugin.plugin_steps || []).some(s => ["TransformResponse"].includes(s))
 
@@ -69,7 +70,7 @@ export default ({ lineId, value }) => {
             return {
                 ...acc,
                 [key]: key === "label" ? v.charAt(0).toUpperCase() + v.slice(1) :
-                    ((typeof value === 'object' && value !== null) ? format(value) : value)
+                    ((typeof value === 'object' && value !== null && key !== "transformer") ? format(value) : value)
             }
         }, {})
     }
@@ -102,9 +103,10 @@ export default ({ lineId, value }) => {
         if ((node.plugin_steps || []).some(s => ["TransformResponse"].includes(s)) ||
             node.onTargetStream ||
             (node.plugin_steps || []).some(s => ["PreRoute", "ValidateAccess", "TransformRequest"].includes(s))) {
+
             setPlugins(plugins.map(p => {
                 if (p.id === node.id)
-                    p.selected = true
+                    p.selected = !p.plugin_multi_inst
                 return p
             }))
 
@@ -113,7 +115,7 @@ export default ({ lineId, value }) => {
                 plugins: [
                     ...route.plugins,
                     {
-                        plugin: `cp:${node.id}`,
+                        plugin: node.id,
                         config: node.config
                     }
                 ]
@@ -280,10 +282,9 @@ export default ({ lineId, value }) => {
     const outputNodes = nodes.filter(node => (node.plugin_steps || []).some(s => ["TransformResponse"].includes(s)))
 
     return (
-        <div className="h-100 col-sm-12" style={{ maxWidth: '1020px' }}
-            onClick={() => setSelectedNode(undefined)}>
+        <div className="h-100 col-sm-12" onClick={() => setSelectedNode(undefined)}>
             {!selectedNode && <SaveButton />}
-            <div className="col-sm-4" style={{
+            <div className="col-sm-4 pe-3" style={{
                 paddingLeft: 0,
                 marginRight: 'calc(var(--bs-gutter-x) * 1)'
             }}>
@@ -323,7 +324,7 @@ export default ({ lineId, value }) => {
                     padding: '12px',
                     borderRadius: '4px'
                 }}>
-                    <div className="col-sm-4" style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div className="col-sm-4 pe-3" style={{ display: 'flex', flexDirection: 'column' }}>
                         <div className="main-view">
                             <Dot style={{
                                 width: "72px",
@@ -513,6 +514,16 @@ const SearchBar = ({ handleSearch }) => <div className='group'>
     </div>
 </div>
 
+const convertTransformer = obj => {
+    return Object.entries(obj).reduce((acc, [key, value]) => {
+        return {
+            ...acc,
+            [key]: key === "transformer" ? item => ({ label: item[value.label], value: item[value.value] }) :
+                ((typeof value === 'object' && value !== null) ? convertTransformer(value) : value)
+        }
+    }, {})
+}
+
 
 const EditView = ({
     selectedNode, setSelectedNode, route, changeValues,
@@ -539,18 +550,15 @@ const EditView = ({
 
     const { id, flow, config_flow, config_schema, schema, name } = selectedNode
 
-    const hasBackendRef = id === "Backend" && route.backend_ref
-
-    // if (hasBackendRef)
+    const formSchema = convertTransformer(schema || config_schema)
 
     const plugin = ['Backend', 'Frontend'].includes(id) ? DEFAULT_FLOW.find(f => f.id === id) : plugins.find(element => element.id === id || element.id.endsWith(id))
 
-    console.log(plugin, id, plugins)
+    // console.log(plugin, id, plugins)
 
     const close = () => setSelectedNode(undefined)
 
     const read = (value, path) => {
-        console.log(value, path)
         const keys = path.split(".")
         if (keys.length === 1)
             return value[path]
@@ -579,8 +587,6 @@ const EditView = ({
         if (defaultPlugin)
             value = defaultPlugin.config
     }
-
-    console.log(value)
 
     return <div onClick={e => {
         e.stopPropagation()
@@ -648,9 +654,10 @@ const EditView = ({
                 {(!usingExistingBackend || id !== "Backend") ? <div style={{ padding: '0 12px 12px' }}>
                     <Form
                         value={value}
-                        schema={schema || config_schema}
+                        schema={formSchema}
                         flow={flow || config_flow}
                         onSubmit={item => {
+                            console.log(item)
                             try {
                                 if (config_schema)
                                     updatePlugin(id, item)

@@ -54,6 +54,17 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
     "This plugin verifies the current request with one or more jwt verifier".some
   override def defaultConfig: Option[JsObject]   = NgJwtVerificationConfig().json.asObject.some
 
+  override def configSchema: Option[JsObject] = Json.obj(
+    "verifiers" -> Json.obj(
+      "type" -> "string",
+      "format" -> "select",
+      "optionsFrom" -> "/bo/api/proxy/api/verifiers",
+      "transformer" -> Json.obj("value" -> "id", "label" -> "name"),
+      "isMulti" -> true,
+      "label" -> "verifiers"
+    )
+  ).some
+
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     // val verifiers = ctx.config.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty)
     val NgJwtVerificationConfig(verifiers) =

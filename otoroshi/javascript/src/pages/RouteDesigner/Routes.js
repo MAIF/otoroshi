@@ -25,7 +25,7 @@ export default ({ }) => {
         formFlow={null}
         columns={columns}
         fetchItems={() => nextClient.find(nextClient.ENTITIES.ROUTES)}
-        deleteItem={() => nextClient.remove(nextClient.ENTITIES.ROUTES)}
+        deleteItem={item => nextClient.remove(nextClient.ENTITIES.ROUTES, item)}
         showActions={true}
         showLink={false}
         extractKey={item => item.id}
