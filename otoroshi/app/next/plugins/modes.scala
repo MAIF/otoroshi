@@ -49,7 +49,7 @@ class GlobalMaintenanceMode extends NgPreRouting {
   override def multiInstance: Boolean = false
   override def core: Boolean = true
   override def name: String = "Global Maintenance mode"
-  override def description: Option[String] = "This plugin displays a maintenance page for every services".some
+  override def description: Option[String] = "This plugin displays a maintenance page for every services. Useful when 'legacy checks' are disabled on a service/globally".some
   override def isPreRouteAsync: Boolean = true
   override def preRoute(
                          ctx: NgPreRoutingContext

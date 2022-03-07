@@ -263,7 +263,7 @@ class ProxyEngine() extends RequestHandler {
   }
 
   @inline
-  def handleRequest(request: Request[Source[ByteString, _]], config: ProxyEngineConfig)(implicit
+  def handleRequest(request: Request[Source[ByteString, _]], _config: ProxyEngineConfig)(implicit
       ec: ExecutionContext,
       env: Env,
       globalConfig: GlobalConfig
@@ -272,8 +272,8 @@ class ProxyEngine() extends RequestHandler {
     val tryItId         = request.headers.get("Otoroshi-Try-It-Request-Id")
     val tryIt           = tryItId.exists(id => env.proxyState.isReportEnabledFor(id))
     val requestId       = IdGenerator.uuid
-    val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, debug, debugHeaders, _, _) = config
-    val useTree = config.useTree
+    val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, debug, debugHeaders, _, _) = _config
+    val useTree = _config.useTree
     implicit val report = NgExecutionReport(requestId, reporting)
     report.start("start-handling")
 
@@ -307,7 +307,12 @@ class ProxyEngine() extends RequestHandler {
     (for {
       _         <- handleConcurrentRequest(request)
       _          = report.markDoneAndStart("find-route")
-      route    <- findRoute(useTree, request, request.body, global_plugins__, tryIt)
+      route     <- findRoute(useTree, request, request.body, global_plugins__, tryIt)
+      config     = route.metadata.get("otoroshi-core-apply-legacy-checks") match {
+        case Some("false") => _config.copy(applyLegacyChecks = false)
+        case Some("true")  => _config.copy(applyLegacyChecks = true)
+        case None => _config
+      }
       _          = report.markDoneAndStart("compute-plugins")
       gplugs     = global_plugins__.applyOnIf(env.http2ClientProxyEnabled && route.backend.targets.forall(_.protocol == HttpProtocols.`HTTP/2.0`)) { o =>
         o.add(NgPluginInstance("cp:otoroshi.next.plugins.Http2Caller"))
@@ -335,10 +340,10 @@ class ProxyEngine() extends RequestHandler {
       _          = report.markDoneAndStart("call-access-validator-plugins")
       _         <- callAccessValidatorPlugins(snowflake, request, route, ctxPlugins)
       _          = report.markDoneAndStart("update-apikey-quotas")
-      remQuotas <- updateApikeyQuotas(request, route)
-      _          = report.markDoneAndStart("handle-legacy-checks")
+      _         <- updateApikeyQuotas(config)
+      _          = report.markDoneAndStart("handle-legacy-checks", attrs.get(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey).map(remQuotas => Json.obj("remaining_quotas" -> remQuotas.toJson)))
       _         <- handleLegacyChecks(request, route, config)
-      _          = report.markDoneAndStart("choose-backend", Json.obj("remaining_quotas" -> remQuotas.toJson).some)
+      _          = report.markDoneAndStart("choose-backend")
       result    <- callTarget(snowflake, reqNumber, request, route) {
                      case sb @ NgSelectedBackendTarget(backend, attempts, alreadyFailed, cbStart) =>
                        report.markDoneAndStart("transform-request", Json.obj("backend" -> backend.json).some)
@@ -349,7 +354,7 @@ class ProxyEngine() extends RequestHandler {
                          response     <- callBackend(snowflake, request, finalRequest, route, backend)
                          _             = report.markDoneAndStart("transform-response")
                          finalResp    <-
-                           callResponseTransformer(snowflake, request, response, remQuotas, route, backend, ctxPlugins)
+                           callResponseTransformer(snowflake, request, response, route, backend, ctxPlugins)
                          _             = report.markDoneAndStart("stream-response")
                          clientResp   <- streamResponse(snowflake, request, response, finalResp, route, backend)
                          _             = report.markDoneAndStart("trigger-analytics")
@@ -426,7 +431,7 @@ class ProxyEngine() extends RequestHandler {
   }
 
   @inline
-  def handleWsRequest(request: RequestHeader, config: ProxyEngineConfig)(implicit
+  def handleWsRequest(request: RequestHeader, _config: ProxyEngineConfig)(implicit
       ec: ExecutionContext,
       env: Env,
       globalConfig: GlobalConfig
@@ -435,8 +440,8 @@ class ProxyEngine() extends RequestHandler {
     val tryItId         = request.headers.get("Otoroshi-Try-It-Request-Id")
     val tryIt           = tryItId.exists(id => env.proxyState.isReportEnabledFor(id))
     val requestId       = IdGenerator.uuid
-    val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, _, _, _, _) = config
-    val useTree = config.useTree
+    val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, _, _, _, _) = _config
+    val useTree = _config.useTree
     implicit val report = NgExecutionReport(requestId, reporting)
 
     report.start("start-handling")
@@ -475,6 +480,11 @@ class ProxyEngine() extends RequestHandler {
       _         <- handleConcurrentRequest(request)
       _          = report.markDoneAndStart("find-route")
       route     <- findRoute(useTree, request, fakeBody, global_plugins__, tryIt)
+      config     = route.metadata.get("otoroshi-core-apply-legacy-checks") match {
+        case Some("false") => _config.copy(applyLegacyChecks = false)
+        case Some("true")  => _config.copy(applyLegacyChecks = true)
+        case None => _config
+      }
       _          = report.markDoneAndStart("compute-plugins")
       ctxPlugins = route.contextualPlugins(global_plugins__, pluginMerge, request).seffectOn(_.allPlugins)
       _          = attrs.put(Keys.ContextualPluginsKey -> ctxPlugins)
@@ -499,10 +509,10 @@ class ProxyEngine() extends RequestHandler {
       _          = report.markDoneAndStart("call-access-validator-plugins")
       _         <- callAccessValidatorPlugins(snowflake, request, route, ctxPlugins)
       _          = report.markDoneAndStart("update-apikey-quotas")
-      remQuotas <- updateApikeyQuotas(request, route)
+      _         <- updateApikeyQuotas(config)
       _          = report.markDoneAndStart("handle-legacy-checks")
       _         <- handleLegacyChecks(request, route, config)
-      _          = report.markDoneAndStart("choose-backend", Json.obj("remaining_quotas" -> remQuotas.toJson).some)
+      _          = report.markDoneAndStart("choose-backend", attrs.get(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey).map(remQuotas => Json.obj("remaining_quotas" -> remQuotas.toJson)))
       result    <- callWsTarget(snowflake, reqNumber, request, route) {
                      case sb @ NgSelectedBackendTarget(backend, attempts, alreadyFailed, cbStart) =>
                        report.markDoneAndStart("transform-requests", Json.obj("backend" -> backend.json).some)
@@ -1473,7 +1483,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def updateApikeyQuotas(request: RequestHeader, route: NgRoute)(implicit
+  def updateApikeyQuotas(config: ProxyEngineConfig)(implicit
     ec: ExecutionContext,
     env: Env,
     report: NgExecutionReport,
@@ -1481,12 +1491,19 @@ class ProxyEngine() extends RequestHandler {
     attrs: TypedMap,
     mat: Materializer
   ): FEither[NgProxyEngineError, RemainingQuotas] = {
-    val quotas = attrs
-      .get(otoroshi.plugins.Keys.ApiKeyKey)
-      .map(_.updateQuotas())
-      .getOrElse(RemainingQuotas().vfuture)
-      .map(rq => Right.apply[NgProxyEngineError, RemainingQuotas](rq))
-    FEither(quotas)
+    if (config.applyLegacyChecks) {
+      val quotas = attrs
+        .get(otoroshi.plugins.Keys.ApiKeyKey)
+        .map(_.updateQuotas())
+        .getOrElse(RemainingQuotas().vfuture)
+        .andThen {
+          case Success(value) => attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> value)
+        }
+        .map(rq => Right.apply[NgProxyEngineError, RemainingQuotas](rq))
+      FEither(quotas)
+    } else {
+      FEither.right(RemainingQuotas())
+    }
   }
 
   def handleLegacyChecks(request: RequestHeader, route: NgRoute, config: ProxyEngineConfig)(implicit
@@ -2458,7 +2475,6 @@ class ProxyEngine() extends RequestHandler {
       snowflake: String,
       rawRequest: Request[Source[ByteString, _]],
       response: WSResponse,
-      quotas: RemainingQuotas,
       route: NgRoute,
       backend: NgTarget,
       plugins: NgContextualPlugins
