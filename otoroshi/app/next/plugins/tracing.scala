@@ -166,6 +166,7 @@ class W3CTracing extends NgRequestTransformer {
     }
   }
 
+  override def multiInstance: Boolean = false
   override def core: Boolean               = true
   override def name: String                = "W3C Trace Context"
   override def description: Option[String] = "This plugin propagates W3C Trace Context spans and can export it to Jaeger or Zipkin".some

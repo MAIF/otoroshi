@@ -16,6 +16,7 @@ class ReadOnlyCalls extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean               = true
   override def name: String                = "Read only requests"
   override def description: Option[String] = "This plugin verifies the current request only reads data".some
@@ -47,6 +48,7 @@ class AllowHttpMethods extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean               = true
   override def name: String                = "Allowed HTTP methods"
   override def description: Option[String] =

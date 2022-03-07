@@ -19,6 +19,7 @@ class Http2Caller extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
 
+  override def multiInstance: Boolean = false
   override def isTransformRequestAsync: Boolean = true
   override def isTransformResponseAsync: Boolean = true
 

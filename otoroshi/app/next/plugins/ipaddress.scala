@@ -43,6 +43,7 @@ class IpAddressAllowedList extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Security)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean                   = true
   override def name: String                    = "IP allowed list"
   override def description: Option[String]     =
@@ -93,6 +94,7 @@ class IpAddressBlockList extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Security)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean                   = true
   override def name: String                    = "IP block list"
   override def description: Option[String]     =
@@ -164,6 +166,7 @@ class EndlessHttpResponse extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false
   override def transformsRequest: Boolean        = true

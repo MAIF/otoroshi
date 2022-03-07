@@ -63,6 +63,7 @@ class Robots extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = false
   override def core: Boolean                   = true
   override def name: String                    = "Robots"
   override def description: Option[String]     = "This plugin provides all the necessary tool to handle search engine robots".some

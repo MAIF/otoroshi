@@ -77,6 +77,7 @@ class GzipResponseCompressor extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false
   override def transformsRequest: Boolean        = false

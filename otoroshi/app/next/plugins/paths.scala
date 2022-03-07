@@ -47,6 +47,7 @@ class PublicPrivatePaths extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = false
   override def core: Boolean                   = true
   override def name: String                    = "Public/Private paths"
   override def description: Option[String]     = "This plugin allows or forbid request based on path patterns".some

@@ -77,6 +77,7 @@ class ContextValidation extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Security)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean               = true
   override def name: String                = "Context validator"
   override def description: Option[String] = "This plugin validates the current context".some

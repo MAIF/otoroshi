@@ -37,6 +37,7 @@ object StaticResponseConfig {
 
 class StaticResponse extends NgRequestTransformer {
 
+  override def multiInstance: Boolean = true
   override def core: Boolean = true
   override def name: String                = "Static Response"
   override def description: Option[String] = "This plugin returns static responses".some
@@ -91,18 +92,20 @@ object MockResponse {
   }
 }
 
-case class MockResponsesConfig(responses: Seq[MockResponse] = Seq.empty) {
+case class MockResponsesConfig(responses: Seq[MockResponse] = Seq.empty, passThrough: Boolean = true) {
   def json: JsValue = MockResponsesConfig.format.writes(this)
 }
 
 object MockResponsesConfig {
   val format = new Format[MockResponsesConfig] {
     override def writes(o: MockResponsesConfig): JsValue = Json.obj(
-      "responses" -> JsArray(o.responses.map(_.json))
+      "responses" -> JsArray(o.responses.map(_.json)),
+      "pass_through" -> o.passThrough
     )
     override def reads(json: JsValue): JsResult[MockResponsesConfig] = Try {
       MockResponsesConfig(
-        responses = json.select("responses").asOpt[Seq[JsValue]].map(arr => arr.flatMap(v => MockResponse.format.reads(v).asOpt)).getOrElse(Seq.empty)
+        responses = json.select("responses").asOpt[Seq[JsValue]].map(arr => arr.flatMap(v => MockResponse.format.reads(v).asOpt)).getOrElse(Seq.empty),
+        passThrough = json.select("pass_through").asOpt[Boolean].getOrElse(true)
       )
     } match {
       case Failure(ex) => JsError(ex.getMessage())
@@ -113,6 +116,7 @@ object MockResponsesConfig {
 
 class MockResponses extends NgRequestTransformer {
 
+  override def multiInstance: Boolean = true
   override def core: Boolean = true
   override def name: String                = "Mock Responses"
   override def description: Option[String] = "This plugin returns mock responses".some
@@ -132,7 +136,8 @@ class MockResponses extends NgRequestTransformer {
     config.responses.filter(_.method.toLowerCase == ctx.otoroshiRequest.method.toLowerCase).find { resp =>
       resp.path.wildcard.matches(ctx.otoroshiRequest.path)
     } match {
-      case None => Left(Results.NotFound(Json.obj("error" -> "resource not found !")))
+      case None if !config.passThrough => Left(Results.NotFound(Json.obj("error" -> "resource not found !")))
+      case None if config.passThrough => Left(Results.NotFound(Json.obj("error" -> "resource not found !")))
       case Some(response) => {
         val contentType      = response.headers.get("Content-Type").orElse(response.headers.get("content-type")).getOrElse("application/json")
         val headers          = response.headers.filterNot(_._1.toLowerCase() == "content-type")

@@ -22,6 +22,7 @@ class TcpTunnel extends NgTunnelHandler {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Tunnel)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = false
   override def core: Boolean               = true
   override def name: String                = "TCP Tunnel"
   override def description: Option[String] = "This plugin creates TCP tunnels through otoroshi".some
@@ -88,6 +89,7 @@ class UdpTunnel extends NgTunnelHandler {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Tunnel)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = false
   override def core: Boolean               = true
   override def name: String                = "UDP Tunnel"
   override def description: Option[String] = "This plugin creates UDP tunnels through otoroshi".some

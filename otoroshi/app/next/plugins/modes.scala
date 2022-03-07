@@ -15,6 +15,7 @@ class MaintenanceMode extends NgPreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean               = true
   override def name: String                = "Maintenance mode"
   override def description: Option[String] = "This plugin displays a maintenance page".some
@@ -45,6 +46,7 @@ class GlobalMaintenanceMode extends NgPreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = false
   override def core: Boolean = true
   override def name: String = "Global Maintenance mode"
   override def description: Option[String] = "This plugin displays a maintenance page for every services".some
@@ -78,6 +80,7 @@ class BuildMode extends NgPreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean               = true
   override def name: String                = "Build mode"
   override def description: Option[String] = "This plugin displays a build page".some

@@ -36,6 +36,7 @@ object QueryTransformerConfig {
 
 class QueryTransformer extends NgRequestTransformer {
 
+  override def multiInstance: Boolean = true
   override def core: Boolean = true
   override def name: String                = "Query param transformer"
   override def description: Option[String] = "This plugin can modify the query params of the request".some

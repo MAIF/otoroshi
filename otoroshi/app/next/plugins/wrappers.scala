@@ -24,6 +24,7 @@ class PreRoutingWrapper extends NgPreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
 
+  override def multiInstance: Boolean = true
   override def name: String                = "Pre-routing plugin wrapper"
   override def description: Option[String] =
     "Wraps an old pre-routing plugin for the new router. The configuration is the one for the wrapped plugin.".some
@@ -71,6 +72,7 @@ class AccessValidatorWrapper extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
 
+  override def multiInstance: Boolean = true
   override def name: String                = "Access validator plugin wrapper"
   override def description: Option[String] =
     "Wraps an old access validator plugin for the new router. The configuration is the one for the wrapped plugin.".some
@@ -114,6 +116,7 @@ class RequestSinkWrapper extends NgRequestSink {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
 
+  override def multiInstance: Boolean = true
   override def isSinkAsync: Boolean        = true
   override def name: String                = "Request sink plugin wrapper"
   override def description: Option[String] =
@@ -164,6 +167,7 @@ class RequestTransformerWrapper extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
 
+  override def multiInstance: Boolean = true
   override def usesCallbacks: Boolean            = true
   override def transformsRequest: Boolean        = true
   override def transformsResponse: Boolean       = true
@@ -494,6 +498,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
 
+  override def multiInstance: Boolean = true
   override def usesCallbacks: Boolean            = true
   override def transformsRequest: Boolean        = true
   override def transformsResponse: Boolean       = true

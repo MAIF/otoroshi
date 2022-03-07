@@ -44,6 +44,7 @@ class NgPluginsController(
           "plugin_categories" -> JsArray(plugin.categories.map(_.json)),
           "plugin_steps"      -> JsArray(plugin.steps.map(_.json)),
           "plugin_tags"       -> JsArray(plugin.tags.map(JsString.apply)),
+          "plugin_multi_inst" -> plugin.multiInstance,
         )
     }))
   }

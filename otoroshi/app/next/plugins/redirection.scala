@@ -59,6 +59,7 @@ class Redirection extends NgPreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean                   = true
   override def name: String                    = "Redirection"
   override def description: Option[String]     = "This plugin redirects the current request elsewhere".some

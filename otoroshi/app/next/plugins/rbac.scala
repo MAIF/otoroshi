@@ -64,6 +64,7 @@ class RBAC extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Security)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean                   = true
   override def name: String                    = "RBAC"
   override def description: Option[String]     = "This plugin check if current user/apikey/jwt token has the right role".some

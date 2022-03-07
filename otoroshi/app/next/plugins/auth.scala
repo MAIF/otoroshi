@@ -44,6 +44,7 @@ class AuthModule extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication, NgPluginCategory.Security)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean                   = true
   override def name: String                    = "Authentication"
   override def description: Option[String]     = "This plugin applies an authentication module".some

@@ -104,6 +104,7 @@ class RoutingRestrictions extends NgAccessValidator {
 
   private val configReads: Reads[NgRestrictions] = NgRestrictions.format
 
+  override def multiInstance: Boolean = true
   override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.TrafficControl)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand

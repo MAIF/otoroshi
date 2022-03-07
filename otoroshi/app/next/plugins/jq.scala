@@ -42,7 +42,7 @@ class JQ extends NgRequestTransformer {
   private val library = ImmutableJqLibrary.of()
   private val logger = Logger("otoroshi-plugins-ng-jq")
 
-  override def core: Boolean = true
+  override def multiInstance: Boolean = true
   override def name: String                = "JQ"
   override def description: Option[String] = s"""This plugin let you transform JSON bodies (in requests and responses) using [JQ filters](https://stedolan.github.io/jq/manual/#Basicfilters).""".some
   override def defaultConfig: Option[JsObject] = JQConfig().json.asObject.some

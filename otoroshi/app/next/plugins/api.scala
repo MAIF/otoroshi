@@ -227,6 +227,7 @@ trait NgNamedPlugin extends NamedPlugin { self =>
   def categories: Seq[NgPluginCategory]
   def tags: Seq[String] = Seq.empty
   def steps: Seq[NgStep]
+  def multiInstance: Boolean
   override def pluginType: PluginType         = PluginType.CompositeType
   override def configRoot: Option[String]     = None
   override def configSchema: Option[JsObject] =
@@ -762,6 +763,7 @@ class NgMergedRequestTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrap
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
 
+  override def multiInstance: Boolean = true
   override def transformsRequest: Boolean        = true
   override def isTransformRequestAsync: Boolean  = true
   override def isTransformResponseAsync: Boolean = true
@@ -844,6 +846,7 @@ class NgMergedResponseTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWra
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
 
+  override def multiInstance: Boolean = true
   override def transformsResponse: Boolean       = true
   override def isTransformRequestAsync: Boolean  = true
   override def isTransformResponseAsync: Boolean = true
@@ -925,6 +928,7 @@ class NgMergedPreRouting(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgPr
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
 
+  override def multiInstance: Boolean = true
   override def isPreRouteAsync: Boolean = true
   override def preRoute(
       _ctx: NgPreRoutingContext
@@ -1005,6 +1009,7 @@ class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
 
+  override def multiInstance: Boolean = true
   override def isAccessAsync: Boolean = true
   override def access(_ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     def next(plugins: Seq[NgPluginWrapper[NgAccessValidator]]): Future[NgAccess] = {

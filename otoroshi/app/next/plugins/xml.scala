@@ -57,6 +57,7 @@ class XmlToJsonRequest extends NgRequestTransformer with JsonTransform {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean                   = true
   override def name: String                    = "request body xml-to-json"
   override def description: Option[String]     = "This plugin transform incoming request body from xml to json and may apply a jq transformation".some
@@ -97,6 +98,7 @@ class JsonToXmlRequest extends NgRequestTransformer with JsonTransform {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean                   = true
   override def name: String                    = "request body json-to-xml"
   override def description: Option[String]     = "This plugin transform incoming request body from json to xml and may apply a jq transformation".some
@@ -137,6 +139,7 @@ class XmlToJsonResponse extends NgRequestTransformer with JsonTransform {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean                   = true
   override def name: String                    = "response body xml-to-json"
   override def description: Option[String]     = "This plugin transform response body from xml to json and may apply a jq transformation".some
@@ -177,6 +180,7 @@ class JsonToXmlResponse extends NgRequestTransformer with JsonTransform {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean                   = true
   override def name: String                    = "response body json-to-xml"
   override def description: Option[String]     = "This plugin transform response body from json to xml and may apply a jq transformation".some
@@ -261,6 +265,7 @@ class SOAPAction extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean                   = true
   override def name: String                    = "SOAP action"
   override def description: Option[String]     = "This plugin is able to call SOAP actions and expose it as a rest endpoint".some

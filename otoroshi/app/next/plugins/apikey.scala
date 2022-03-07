@@ -27,6 +27,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Apikey, NgPluginCategory.Security)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
+  override def multiInstance: Boolean = true
   override def core: Boolean                     = true
   override def usesCallbacks: Boolean            = false
   override def transformsRequest: Boolean        = true
