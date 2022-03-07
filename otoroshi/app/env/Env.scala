@@ -22,20 +22,7 @@ import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.events.{OtoroshiEventsActorSupervizer, StartExporters}
 import otoroshi.jobs.updates.Version
-import otoroshi.models.{
-  EntityLocation,
-  OtoroshiAdminType,
-  SimpleOtoroshiAdmin,
-  Team,
-  TeamAccess,
-  TeamId,
-  Tenant,
-  TenantAccess,
-  TenantId,
-  UserRight,
-  UserRights,
-  WebAuthnOtoroshiAdmin
-}
+import otoroshi.models.{EntityLocation, OtoroshiAdminType, SimpleOtoroshiAdmin, Team, TeamAccess, TeamId, Tenant, TenantAccess, TenantId, UserRight, UserRights, WebAuthnOtoroshiAdmin}
 import otoroshi.next.proxy.NgProxyState
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki
@@ -68,6 +55,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.io.Source
 import scala.util.{Failure, Success}
 import otoroshi.script.plugins.Plugins
+import otoroshi.utils.Vaults
 
 case class SidecarConfig(
     serviceId: String,
@@ -891,6 +879,7 @@ class Env(
     .getOrElse("")
 
   lazy val proxyState = new NgProxyState(this)
+  lazy val vaults = new Vaults(this)
 
   lazy val http2ClientProxyEnabled = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.experimental.http2-client-proxy.enabled").getOrElse(false)
   lazy val http2ClientProxyPort = configuration.getOptionalWithFileSupport[Int]("otoroshi.next.experimental.http2-client-proxy.port").getOrElse(8555)

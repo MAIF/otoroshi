@@ -5,6 +5,7 @@ import akka.stream.OverflowStrategy
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.models._
+import otoroshi.next.models.NgTarget.readFrom
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.http.{CacheConnectionSettings, MtlsConfig}
 import otoroshi.utils.syntax.implicits._
@@ -319,6 +320,10 @@ object NgBackend {
         )
     }
   }
+  val fmt = new Format[NgBackend] {
+    override def writes(o: NgBackend): JsValue = o.json
+    override def reads(json: JsValue): JsResult[NgBackend] = JsSuccess(readFromJson(json))
+  }
 }
 
 case class NgMinimalBackend(
@@ -505,6 +510,10 @@ object NgTarget {
       predicate = (obj \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
       ipAddress = (obj \ "ip_address").asOpt[String].filterNot(_.trim.isEmpty)
     )
+  }
+  val fmt = new Format[NgTarget] {
+    override def writes(o: NgTarget): JsValue = o.json
+    override def reads(json: JsValue): JsResult[NgTarget] = JsSuccess(readFrom(json))
   }
 }
 
