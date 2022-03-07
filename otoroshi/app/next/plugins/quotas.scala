@@ -141,6 +141,7 @@ class ApikeyQuotas extends NgAccessValidator {
   override def description: Option[String] = "Increments quotas for the currents apikey. Useful when 'legacy checks' are disabled on a service/globally or when apikey are extracted in a custom fashion.".some
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    // increments calls for apikey
     ctx.attrs
       .get(otoroshi.plugins.Keys.ApiKeyKey)
       .map(_.updateQuotas())

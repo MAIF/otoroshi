@@ -21,7 +21,7 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.BetterDecodedJWT
+import otoroshi.utils.syntax.implicits.{BetterDecodedJWT, BetterSyntax}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

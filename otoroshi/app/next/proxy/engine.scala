@@ -1492,6 +1492,7 @@ class ProxyEngine() extends RequestHandler {
     mat: Materializer
   ): FEither[NgProxyEngineError, RemainingQuotas] = {
     if (config.applyLegacyChecks) {
+      // increments calls for apikey
       val quotas = attrs
         .get(otoroshi.plugins.Keys.ApiKeyKey)
         .map(_.updateQuotas())
@@ -1536,7 +1537,7 @@ class ProxyEngine() extends RequestHandler {
           )
           .map(e => Left(NgResultProxyEngineError(e)))
       }
-
+      // quotasValidationFor increments calls for ip address
       FEither(env.datastores.globalConfigDataStore.quotasValidationFor(remoteAddress).flatMap { r =>
         val (within, secCalls, maybeQuota) = r
         val quota = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
@@ -2868,6 +2869,7 @@ class ProxyEngine() extends RequestHandler {
           300L
         else actualDuration
       }
+      // increments calls for service and globally
       env.analyticsQueue ! AnalyticsQueueEvent(
         route.serviceDescriptor,
         duration,
@@ -3020,6 +3022,7 @@ class ProxyEngine() extends RequestHandler {
           300L
         else actualDuration
       }
+      // increments calls for service and globally
       env.analyticsQueue ! AnalyticsQueueEvent(
         route.serviceDescriptor,
         duration,
