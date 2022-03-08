@@ -78,7 +78,7 @@ class Env(
 
   val logger = Logger("otoroshi-env")
 
-  val merged_configuration: Configuration = (for {
+  private val (merged_configuration: Configuration, merged_configuration_json: JsObject) = (for {
     appConfig <- _configuration.getOptionalWithFileSupport[Configuration]("app")
     otoConfig <- _configuration.getOptionalWithFileSupport[Configuration]("otoroshi")
   } yield {
@@ -98,10 +98,11 @@ class Env(
     val mergeConfig: JsObject      = appConfigJson.deepMerge(otoConfigJson)
     val finalConfigJson1: JsObject =
       wholeConfigJson.deepMerge(Json.obj("otoroshi" -> mergeConfig, "app" -> mergeConfig))
-    Configuration(ConfigFactory.parseString(Json.stringify(finalConfigJson1)))
-  }) getOrElse _configuration
+    (Configuration(ConfigFactory.parseString(Json.stringify(finalConfigJson1))), finalConfigJson1)
+  }) getOrElse (_configuration, Json.parse(_configuration.underlying.root().render(ConfigRenderOptions.concise())).asObject)
 
   val configuration = merged_configuration // _configuration
+  val configurationJson = merged_configuration_json
 
   private lazy val xmasStart =
     DateTime.now().withMonthOfYear(12).withDayOfMonth(20).withMillisOfDay(0)
