@@ -272,10 +272,15 @@ const ReportView = ({ report }) => {
                     <button className={`btn btn-sm btn-${unit === '%' ? 'success' : 'dark'}`} onClick={() => setUnit('%')}>%</button>
                 </div>
             </div>
-            <div className='ms-auto mb-2'>
-                <button className='btn btn-sm btn-success' onClick={() => setSort(sort === 'flow' ? 'duration' : 'flow')}>
+            <div className='justify-content-between mb-2'>
+                {/* <button className='btn btn-sm btn-success' onClick={() => setSort(sort === 'flow' ? 'duration' : 'flow')}>
                     Sort by {sort === 'flow' ? 'duration' : 'flow'}
-                </button>
+                </button> */}
+                <div className='ms-auto mb-2'>
+                    <button className='btn btn-sm btn-success' onClick={() => setSort(sort === 'flow' ? 'duration' : 'flow')}>
+                        Sort by {sort === 'flow' ? 'duration' : 'flow'}
+                    </button>
+                </div>
             </div>
             <div onClick={() => setSelectedStep(-1)}
                 className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${informations.state === 'Successful' ? 'success' : 'danger'}`}>

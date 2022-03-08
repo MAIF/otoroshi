@@ -131,6 +131,27 @@ class MockResponses extends NgRequestTransformer {
 
   override def isTransformRequestAsync: Boolean = false
 
+  override def configSchema: Option[JsObject] = Json.obj(
+    "responses" -> Json.obj(
+      "label" -> "Responses",
+      "array" -> true,
+      "createOption" -> true,
+      "format" -> "form",
+      "type" -> "object",
+      "schema" -> Json.obj(
+        "path" -> Json.obj("type" -> "string"),
+        "method" -> Json.obj("type" -> "string"),
+        "status" -> Json.obj("type" -> "number"),
+        "headers" -> Json.obj("type" -> "object"),
+        "body" -> Json.obj("type" -> "string", "format" -> "code")
+      )
+    ),
+    "pass_through" -> Json.obj(
+      "type" -> "bool",
+      "label" -> "Pass through"
+    )
+  ).some
+
   override def transformRequestSync(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config = ctx.cachedConfig(internalName)(MockResponsesConfig.format).getOrElse(MockResponsesConfig())
     config.responses.filter(_.method.toLowerCase == ctx.otoroshiRequest.method.toLowerCase).find { resp =>
