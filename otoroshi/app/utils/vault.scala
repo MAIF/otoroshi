@@ -193,7 +193,8 @@ class KubernetesVault(name: String, env: Env) extends Vault {
       val global = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
       val c1 = global.scripts.jobConfig.select("KubernetesConfig").asOpt[JsObject]
       val c2 = global.plugins.config.select("KubernetesConfig").asOpt[JsObject]
-      KubernetesConfig.theConfig(c1.orElse(c2).getOrElse(Json.obj()))(env, env.otoroshiExecutionContext)
+      val c3 = c1.orElse(c2).getOrElse(Json.obj())
+      KubernetesConfig.theConfig(c3)(env, env.otoroshiExecutionContext)
     }
     case Some(obj @ JsObject(_)) => KubernetesConfig.theConfig(obj)(env, env.otoroshiExecutionContext)
     case _ => KubernetesConfig.theConfig(KubernetesConfig.defaultConfig)(env, env.otoroshiExecutionContext)

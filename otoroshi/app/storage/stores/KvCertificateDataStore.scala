@@ -54,7 +54,7 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
     cancelRef.set(
       _env.otoroshiActorSystem.scheduler.scheduleAtFixedRate(2.seconds, 2.seconds)(utils.SchedulerHelper.runnable {
         for {
-          certs        <- findAll()
+          // certs        <- findAll()
           last         <- redisCli.get(lastUpdatedKey).map(_.map(_.utf8String).getOrElse("0"))
           lastIcaServer =
             env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true)
@@ -73,7 +73,7 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
             includeJdkCaServerRef.set(lastIcaServer)
             includeJdkCaClientRef.set(lastIcaClient)
             lastTrustedCARef.set(lastTrustedCA)
-            DynamicSSLEngineProvider.setCertificates(certs, env)
+            DynamicSSLEngineProvider.setCertificates(env)
           }
         }
       })
