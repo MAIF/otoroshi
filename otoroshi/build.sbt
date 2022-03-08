@@ -146,6 +146,7 @@ libraryDependencies ++= Seq(
   "io.opentelemetry"                 % "opentelemetry-exporter-logging" % "1.11.0",
   "io.opentelemetry"                 % "opentelemetry-exporter-zipkin"  % "1.11.0",
   "io.opentelemetry"                 % "opentelemetry-exporter-jaeger"  % "1.11.0",
+  "com.amazonaws"                    % "aws-java-sdk-secretsmanager"    % "1.12.173" excludeAll (excludesJackson: _*),
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"          % "5.1.0" % Test,
   // do not update because the feature is deprecated and will be removed

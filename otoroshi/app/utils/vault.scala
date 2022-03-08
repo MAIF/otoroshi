@@ -1,6 +1,10 @@
 package otoroshi.utils
 
 import akka.http.scaladsl.model.Uri
+import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
+import com.amazonaws.handlers.AsyncHandler
+import com.amazonaws.services.secretsmanager.AWSSecretsManagerAsyncClientBuilder
+import com.amazonaws.services.secretsmanager.model.{GetSecretValueRequest, GetSecretValueResult}
 import com.github.blemale.scaffeine.Scaffeine
 import org.joda.time.DateTime
 import otoroshi.env.Env
@@ -12,7 +16,7 @@ import play.api.libs.json._
 import java.util.concurrent.Executors
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationInt, DurationLong}
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 sealed trait CachedVaultSecretStatus {
@@ -208,6 +212,41 @@ class KubernetesVault(name: String, env: Env) extends Vault {
       }.recover {
         case e: Throwable => CachedVaultSecretStatus.SecretFetchError(e.getMessage)
       }
+  }
+}
+
+class AWSVault(name: String, env: Env) extends Vault {
+
+  private val logger = Logger("otoroshi-aws-vault")
+
+  private val accessKey = env.configuration.getOptional[String](s"otoroshi.vaults.${name}.access-key").getOrElse("key")
+  private val accessKeySecret = env.configuration.getOptional[String](s"otoroshi.vaults.${name}.access-key-secret").getOrElse("secret")
+  private val region = env.configuration.getOptional[String](s"otoroshi.vaults.${name}.region").getOrElse("eu-west-3")
+
+  private val secretsManager = AWSSecretsManagerAsyncClientBuilder.standard()
+    .withRegion(region)
+    .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, accessKeySecret)))
+    .build()
+
+  override def get(path: String, options: Map[String, String])(implicit env: Env, ec: ExecutionContext): Future[CachedVaultSecretStatus] = {
+    val promise = Promise.apply[CachedVaultSecretStatus]()
+    val parts = path.split("/").toSeq.filterNot(_.isEmpty)
+    var request = new GetSecretValueRequest()
+    request = request.withSecretId(parts.head)
+    if (parts.size > 1) {
+      request = request.withVersionId(parts.tail.head)
+    }
+    if (parts.size > 2) {
+      request = request.withVersionStage(parts.tail.tail.head)
+    }
+    val handler = new AsyncHandler[GetSecretValueRequest, GetSecretValueResult]() {
+      override def onError(exception: Exception): Unit = promise.trySuccess(CachedVaultSecretStatus.SecretFetchError(exception.getMessage))
+      override def onSuccess(request: GetSecretValueRequest, result: GetSecretValueResult): Unit = {
+        promise.trySuccess(CachedVaultSecretStatus.SecretFetchSuccess(result.getSecretString))
+      }
+    }
+    secretsManager.getSecretValueAsync(request, handler)
+    promise.future
   }
 }
 
