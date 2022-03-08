@@ -1,9 +1,11 @@
 package otoroshi.utils
 
+import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Logger
 
 import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{MatchResult, Matcher, Pattern}
+import scala.concurrent.{ExecutionContext, Future}
 
 case class Regex(originalPattern: String, compiledPattern: Pattern) {
   def matches(value: String): Boolean = compiledPattern.matcher(value).matches()
@@ -52,6 +54,25 @@ class ReplaceAllWith(regex: String) {
       matcher.reset(str)
     }
     str
+  }
+
+  def replaceOnAsync(value: String)(callback: String => Future[String])(implicit ec: ExecutionContext): Future[String] = {
+    var str: String      = value
+    val matcher: Matcher = pattern.matcher(str)
+    def next(): Future[String] = {
+      if (matcher.find()) {
+        val matchResult: MatchResult = matcher.toMatchResult
+        val expression: String       = matchResult.group().substring(2).init
+        callback(expression).flatMap { replacement =>
+          str = str.substring(0, matchResult.start) + replacement + str.substring(matchResult.end)
+          matcher.reset(str)
+          next()
+        }
+      } else {
+        str.vfuture
+      }
+    }
+    next()
   }
 }
 

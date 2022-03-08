@@ -506,33 +506,34 @@ class NgProxyStateLoaderJob extends Job {
     val debug        = config.debug
     val debugHeaders = config.debugHeaders
     for {
-      routes              <- env.datastores.routeDataStore.findAll()
-      routescomp          <- env.datastores.servicesDataStore.findAll()
+      _                   <- env.vaults.renewSecretsInCache()
+      routes              <- env.datastores.routeDataStore.findAllAndFillSecrets()
+      routescomp          <- env.datastores.servicesDataStore.findAllAndFillSecrets()
       genRoutesDomain     <- generateRoutesByDomain(env)
       genRoutesPath       <- generateRoutesByName(env)
       genRandom           <- generateRandomRoutes(env)
-      descriptors         <- env.datastores.serviceDescriptorDataStore.findAll()
+      descriptors         <- env.datastores.serviceDescriptorDataStore.findAllAndFillSecrets()
       fakeRoutes          = if (env.env == "dev") Seq(NgRoute.fake) else Seq.empty
       newRoutes           = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
                             NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
                           ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
-      apikeys             <- env.datastores.apiKeyDataStore.findAll()
-      certs               <- env.datastores.certificatesDataStore.findAll()
-      verifiers           <- env.datastores.globalJwtVerifierDataStore.findAll()
-      modules             <- env.datastores.authConfigsDataStore.findAll()
-      targets             <- env.datastores.targetsDataStore.findAll()
-      backends            <- env.datastores.backendsDataStore.findAll()
-      errorTemplates      <- env.datastores.errorTemplateDataStore.findAll()
-      teams               <- env.datastores.teamDataStore.findAll()
-      tenants             <- env.datastores.tenantDataStore.findAll()
-      serviceGroups       <- env.datastores.serviceGroupDataStore.findAll()
-      dataExporters       <- env.datastores.dataExporterConfigDataStore.findAll()
-      simpleAdmins        <- env.datastores.simpleAdminDataStore.findAll()
-      webauthnAdmins      <- env.datastores.webAuthnAdminDataStore.findAll()
-      backofficeSessions  <- env.datastores.backOfficeUserDataStore.findAll()
-      privateAppsSessions <- env.datastores.privateAppsUserDataStore.findAll()
-      tcpServices         <- env.datastores.tcpServiceDataStore.findAll()
-      scripts             <- env.datastores.scriptDataStore.findAll()
+      apikeys             <- env.datastores.apiKeyDataStore.findAllAndFillSecrets()
+      certs               <- env.datastores.certificatesDataStore.findAllAndFillSecrets()
+      verifiers           <- env.datastores.globalJwtVerifierDataStore.findAllAndFillSecrets()
+      modules             <- env.datastores.authConfigsDataStore.findAllAndFillSecrets()
+      targets             <- env.datastores.targetsDataStore.findAllAndFillSecrets()
+      backends            <- env.datastores.backendsDataStore.findAllAndFillSecrets()
+      errorTemplates      <- env.datastores.errorTemplateDataStore.findAll() // no need for secrets
+      teams               <- env.datastores.teamDataStore.findAllAndFillSecrets()
+      tenants             <- env.datastores.tenantDataStore.findAllAndFillSecrets()
+      serviceGroups       <- env.datastores.serviceGroupDataStore.findAllAndFillSecrets()
+      dataExporters       <- env.datastores.dataExporterConfigDataStore.findAllAndFillSecrets()
+      simpleAdmins        <- env.datastores.simpleAdminDataStore.findAll() // no need for secrets
+      webauthnAdmins      <- env.datastores.webAuthnAdminDataStore.findAll() // no need for secrets
+      backofficeSessions  <- env.datastores.backOfficeUserDataStore.findAll() // no need for secrets
+      privateAppsSessions <- env.datastores.privateAppsUserDataStore.findAll() // no need for secrets
+      tcpServices         <- env.datastores.tcpServiceDataStore.findAllAndFillSecrets()
+      scripts             <- env.datastores.scriptDataStore.findAll() // no need for secrets
       croutes             <- if (env.env == "dev") {
                            NgService
                              .fromOpenApi(
@@ -571,20 +572,20 @@ class NgProxyStateLoaderJob extends Job {
       env.proxyState.updateRoutes((newRoutes ++ croutes).map(_.fillSecrets(NgRoute.fmt, env)))
       env.proxyState.updateTargets(targets)
       env.proxyState.updateBackends(backends)
-      env.proxyState.updateApikeys(apikeys.map(_.fillSecrets(ApiKey._fmt, env)))
-      env.proxyState.updateCertificates(certs.map(_.fillSecrets(Cert._fmt, env)))
-      env.proxyState.updateAuthModules(modules.map(_.fillSecrets(AuthModuleConfig._fmt, env)))
-      env.proxyState.updateJwtVerifiers(verifiers.map(_.fillSecrets(GlobalJwtVerifier._fmt, env)))
+      env.proxyState.updateApikeys(apikeys)
+      env.proxyState.updateCertificates(certs)
+      env.proxyState.updateAuthModules(modules)
+      env.proxyState.updateJwtVerifiers(verifiers)
       env.proxyState.updateErrorTemplates(errorTemplates)
-      env.proxyState.updateServices(descriptors.map(_.fillSecrets(ServiceDescriptor._fmt, env)))
+      env.proxyState.updateServices(descriptors)
       env.proxyState.updateTeams(teams)
       env.proxyState.updateTenants(tenants)
       env.proxyState.updateServiceGroups(serviceGroups)
-      env.proxyState.updateDataExporters(dataExporters.map(_.fillSecrets(DataExporterConfig.format, env)))
+      env.proxyState.updateDataExporters(dataExporters)
       env.proxyState.updateOtoroshiAdmins(simpleAdmins ++ webauthnAdmins)
       env.proxyState.updateBackofficeSessions(backofficeSessions)
       env.proxyState.updatePrivateAppsSessions(privateAppsSessions)
-      env.proxyState.updateTcpServices(tcpServices.map(_.fillSecrets(TcpService.fmt, env)))
+      env.proxyState.updateTcpServices(tcpServices)
       env.proxyState.updateScripts(scripts)
       NgProxyStateLoaderJob.firstSync.compareAndSet(false, true)
       env.metrics.timerUpdate("ng-proxy-state-refresh", System.currentTimeMillis() - start, TimeUnit.MILLISECONDS)
