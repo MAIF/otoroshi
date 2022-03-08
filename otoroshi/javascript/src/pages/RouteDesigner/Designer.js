@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { nextClient, getCategories, getPlugins } from '../../services/BackOfficeServices'
-import { Form } from '@maif/react-forms'
+import { Form, format, type } from '@maif/react-forms'
 import { SelectInput } from '@maif/react-forms/lib/inputs'
 import deepSet from 'set-value'
-import DEFAULT_FLOW from './Graph'
+import { DEFAULT_FLOW, PLUGIN_INFORMATIONS_SCHEMA } from './Graph'
 
 import '../../style/components/_designer.scss'
 import { BackendForm } from '../BackendsPage'
@@ -36,7 +36,7 @@ export default ({ lineId, value }) => {
                         config_schema: format(plugin.config_schema || {}),
                         config: plugin.default_config
                     }))
-                
+
                 setBackends(backends)
                 setCategories(categories.filter(category => category !== 'Tunnel'))
                 setRoute(route)
@@ -49,8 +49,7 @@ export default ({ lineId, value }) => {
                 setNodes([
                     ...DEFAULT_FLOW,
                     ...route.plugins.map(ref => {
-                        const plugin = formatedPlugins.find(p => p.id === ref.plugin) // TODO - s'assurer de ça
-                        console.log(ref.plugin, plugin)
+                        const plugin = formatedPlugins.find(p => p.id === ref.plugin)
                         const onInputStream = (plugin.plugin_steps || []).some(s => ["PreRoute", "ValidateAccess", "TransformRequest"].includes(s))
                         const onOutputStream = (plugin.plugin_steps || []).some(s => ["TransformResponse"].includes(s))
 
@@ -204,14 +203,16 @@ export default ({ lineId, value }) => {
             .then(() => setRoute(newRoute))
     }
 
-    const updatePlugin = (pluginId, config) => {
+    const updatePlugin = (pluginId, item) => {
+        console.log(item)
         nextClient.update(nextClient.ENTITIES.ROUTES, {
             ...route,
             plugins: route.plugins.map(plugin => {
                 if (plugin.plugin === pluginId)
                     return {
                         ...plugin,
-                        config
+                        ...item.informations,
+                        config: item.plugin
                     }
                 return plugin
             })
@@ -398,7 +399,7 @@ export default ({ lineId, value }) => {
                         </div>
                     </div>
                     <div className="col-sm-8" style={{ paddingRight: 0 }}>
-                        <EditView
+                        {selectedNode ? <EditView
                             setRoute={setRoute}
                             selectedNode={selectedNode}
                             setSelectedNode={setSelectedNode}
@@ -408,7 +409,7 @@ export default ({ lineId, value }) => {
                             route={route}
                             plugins={plugins}
                             backends={backends}
-                        />
+                        /> : <UnselectedNode />}
                     </div>
                 </div>
             </div>
@@ -518,27 +519,33 @@ const convertTransformer = obj => {
     return Object.entries(obj).reduce((acc, [key, value]) => {
         return {
             ...acc,
-            [key]: key === "transformer" ? item => ({ label: item[value.label], value: item[value.value] }) :
+            [key]: (key === "transformer" && typeof value === 'object') ? item => ({ label: item[value.label], value: item[value.value] }) :
                 ((typeof value === 'object' && value !== null) ? convertTransformer(value) : value)
         }
     }, {})
 }
 
+const read = (value, path) => {
+    const keys = path.split(".")
+    if (keys.length === 1)
+        return value[path]
+
+    return read(value[keys[0]], keys.slice(1).join("."))
+}
+
+const UnselectedNode = () => <div style={{
+    backgroundColor: "rgb(73, 73, 73)",
+    textAlign: "center",
+    fontStyle: 'italic',
+    padding: '8px',
+    color: "#fff"
+}}>
+    Start by selecting a node
+</div>
 
 const EditView = ({
     selectedNode, setSelectedNode, route, changeValues,
     removeNode, plugins, updatePlugin, setRoute, backends }) => {
-    if (!selectedNode)
-        return <div style={{
-            backgroundColor: "rgb(73, 73, 73)",
-            textAlign: "center",
-            fontStyle: 'italic',
-            padding: '8px',
-            color: "#fff"
-        }}>
-            Start by selecting a node
-        </div>
-
     const [usingExistingBackend, setUsingExistingBackend] = useState(route.backend_ref)
     const [backendConfigRef, setBackendConfigRef] = useState()
 
@@ -550,21 +557,46 @@ const EditView = ({
 
     const { id, flow, config_flow, config_schema, schema, name } = selectedNode
 
-    const formSchema = convertTransformer(schema || config_schema)
+    let formSchema = schema || config_schema
+    let formFlow = flow || config_flow
+
+    if (config_schema) {
+        formSchema = {
+            informations: {
+                type: type.object,
+                format: format.form,
+                collapsable: true,
+                label: 'Informations',
+                schema: PLUGIN_INFORMATIONS_SCHEMA
+            }
+        }
+        formFlow = [
+            'informations'
+        ]
+        if (Object.keys(config_schema).length > 0) {
+            formSchema = {
+                ...formSchema,
+                plugin: {
+                    type: type.object,
+                    format: format.form,
+                    label: null,
+                    schema: { ...convertTransformer(config_schema) },
+                    flow: [...flow || config_flow]
+                }
+            }
+            formFlow = [
+                ...formFlow,
+                {
+                    label: 'Plugin',
+                    flow: ['plugin'],
+                    collapsed: false
+                }
+            ]
+        }
+    }
+
 
     const plugin = ['Backend', 'Frontend'].includes(id) ? DEFAULT_FLOW.find(f => f.id === id) : plugins.find(element => element.id === id || element.id.endsWith(id))
-
-    // console.log(plugin, id, plugins)
-
-    const close = () => setSelectedNode(undefined)
-
-    const read = (value, path) => {
-        const keys = path.split(".")
-        if (keys.length === 1)
-            return value[path]
-
-        return read(value[keys[0]], keys.slice(1).join("."))
-    }
 
     const RemoveComponent = () => <button className='btn btn-sm btn-danger ms-2' onClick={e => {
         e.stopPropagation()
@@ -578,14 +610,24 @@ const EditView = ({
 
     if (!value) {
         const pluginOnFlow = route.plugins.find(p => p.plugin === id)
-        if (pluginOnFlow)
-            value = pluginOnFlow.config
+        if (pluginOnFlow) {
+            const { plugin, config, ...informations } = pluginOnFlow
+            value = {
+                plugin: config,
+                informations
+            }
+        }
     }
 
     if (!value) {
         const defaultPlugin = plugins.find(p => p.id === id)
-        if (defaultPlugin)
-            value = defaultPlugin.config
+        if (defaultPlugin) {
+            const { plugin, config, ...informations } = defaultPlugin
+            value = {
+                plugin: config,
+                informations
+            }
+        }
     }
 
     return <div onClick={e => {
@@ -655,7 +697,7 @@ const EditView = ({
                     <Form
                         value={value}
                         schema={formSchema}
-                        flow={flow || config_flow}
+                        flow={formFlow}
                         onSubmit={item => {
                             console.log(item)
                             try {
@@ -672,12 +714,12 @@ const EditView = ({
                                             const fieldName = `${selectedNode.field ? `${selectedNode.field}.` : ''}${field}`
                                             return { name: fieldName, value: read(item, field) }
                                         }))
-                                close()
+                                setSelectedNode(undefined)
                             } catch (err) {
                                 console.log(err)
                             }
                         }}
-                        footer={({ valid }) => <div className='d-flex mt-2'>
+                        footer={({ valid }) => <div className='d-flex mt-4'>
                             <button className="btn btn-sm btn-success"
                                 style={{ backgroundColor: "#f9b000", borderColor: '#f9b000' }}
                                 onClick={valid}>

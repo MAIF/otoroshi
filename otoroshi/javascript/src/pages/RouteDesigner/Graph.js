@@ -21,7 +21,32 @@ const PREDICATES = [
     'NetworkLocationMatch'
 ]
 
-export default [
+export const PLUGIN_INFORMATIONS_SCHEMA = {
+    enabled: {
+        visibleOnCollapse: true,
+        type: type.bool,
+        label: 'Enabled'
+    },
+    debug: {
+        type: type.bool,
+        label: 'Debug'
+    },
+    include: {
+        label: 'Include',
+        type: type.string,
+        array: true,
+        createOption: true
+    },
+    exclude: {
+        label: 'Exclude',
+        type: type.string,
+        array: true,
+        createOption: true
+    }
+}
+
+
+export const DEFAULT_FLOW = [
     {
         id: 'Frontend',
         plugin_steps: ["PreRoute"],

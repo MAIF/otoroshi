@@ -249,7 +249,6 @@ trait NgNamedPlugin extends NamedPlugin { self =>
                       "type" -> "string",
                       "array" -> "true",
                       "createOption" -> true,
-                      "isMulti" -> true,
                       "label" -> (prefix + key)))
                 } else {
                   values.head match {
@@ -259,8 +258,7 @@ trait NgNamedPlugin extends NamedPlugin { self =>
                           "type"  -> "number",
                           "array" -> "true",
                           "label" -> (prefix + key),
-                          "createOption" -> true,
-                          "isMulti" -> true,
+                          "createOption" -> true
                         )
                       )
                     case _           =>
@@ -269,8 +267,7 @@ trait NgNamedPlugin extends NamedPlugin { self =>
                           "type"  -> "string",
                           "array" -> "true",
                           "label" -> (prefix + key),
-                          "createOption" -> true,
-                          "isMulti" -> true,
+                          "createOption" -> true
                         )
                       )
                   }
