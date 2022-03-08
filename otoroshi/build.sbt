@@ -257,6 +257,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.events.maxSize=0",
   "-Dotoroshi.cluster.mode=Leader",
   "-Dotoroshi.instance.name=dev",
+  "-Dotoroshi.vaults.enabled=true",
   "-Dotoroshi.ssl.fromOutside.clientAuth=Want",
   "-Dotoroshi.inmemory.modern=true"
 )

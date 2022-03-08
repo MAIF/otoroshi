@@ -132,6 +132,7 @@ trait BasicStore[T] {
   def clearFromCache(id: String)(implicit env: Env): Unit
   def clearCache(id: String)(implicit env: Env): Unit
   def countAll()(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def findAllAndFillSecrets()(implicit ec: ExecutionContext, env: Env): Future[Seq[T]]
 }
 
 trait RedisLike {
@@ -301,6 +302,26 @@ trait RedisLikeStore[T] extends BasicStore[T] {
     } else {
       redisLike.del(ids.map(v => keyStr(v)): _*).map(_ > 0)
     }
+  }
+
+  def findAllAndFillSecrets()(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = {
+    redisLike
+      .keys(key("*").key)
+      .flatMap(keys =>
+        if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
+        else redisLike.mget(keys: _*)
+      )
+      .map(seq =>
+        seq.filter(_.isDefined).map(_.get).map(_.utf8String).map { v =>
+          if (env.vaults.enabled && v.contains("${vault://")) {
+            fromJsonSafe(Json.parse(env.vaults.fillSecrets(v)))
+          } else {
+            fromJsonSafe(Json.parse(v))
+          }
+        }.collect {
+          case JsSuccess(i, _) => i
+        }
+      )
   }
 
   def findAll(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] =

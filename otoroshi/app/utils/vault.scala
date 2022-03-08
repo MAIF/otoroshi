@@ -1,6 +1,8 @@
 package otoroshi.utils
 
+import akka.Done
 import akka.http.scaladsl.model.Uri
+import akka.stream.scaladsl.{Sink, Source}
 import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
 import com.amazonaws.handlers.AsyncHandler
 import com.amazonaws.services.secretsmanager.AWSSecretsManagerAsyncClientBuilder
@@ -23,14 +25,14 @@ sealed trait CachedVaultSecretStatus {
   def value: String
 }
 object CachedVaultSecretStatus {
-  case object VaultNotFound extends CachedVaultSecretStatus  { def value: String = "vault-not-found" }
-  case object BadSecretPath extends CachedVaultSecretStatus  { def value: String = "bad-secret-path" }
-  case object SecretNotFound extends CachedVaultSecretStatus { def value: String = "secret-not-found" }
-  case object SecretValueNotFound extends CachedVaultSecretStatus { def value: String = "secret-value-not-found" }
-  case object SecretFetchUnauthorized extends CachedVaultSecretStatus { def value: String = "secret-read-not-authorized" }
-  case object SecretFetchForbidden extends CachedVaultSecretStatus { def value: String = "secret-read-forbidden" }
-  case class  SecretFetchError(error: String) extends CachedVaultSecretStatus { def value: String = s"secret-read-error: ${error}" }
-  case class  SecretFetchSuccess(secret: String) extends CachedVaultSecretStatus { def value: String = secret }
+  case object VaultNotFound extends CachedVaultSecretStatus                      { def value: String = "vault-not-found"              }
+  case object BadSecretPath extends CachedVaultSecretStatus                      { def value: String = "bad-secret-path"              }
+  case object SecretNotFound extends CachedVaultSecretStatus                     { def value: String = "secret-not-found"             }
+  case object SecretValueNotFound extends CachedVaultSecretStatus                { def value: String = "secret-value-not-found"       }
+  case object SecretFetchUnauthorized extends CachedVaultSecretStatus            { def value: String = "secret-read-not-authorized"   }
+  case object SecretFetchForbidden extends CachedVaultSecretStatus               { def value: String = "secret-read-forbidden"        }
+  case class  SecretFetchError(error: String) extends CachedVaultSecretStatus    { def value: String = s"secret-read-error: ${error}" }
+  case class  SecretFetchSuccess(secret: String) extends CachedVaultSecretStatus { def value: String = secret                         }
 }
 case class CachedVaultSecret(key: String, at: DateTime, status: CachedVaultSecretStatus)
 
@@ -186,7 +188,16 @@ class KubernetesVault(name: String, env: Env) extends Vault {
 
   private val logger = Logger("otoroshi-kubernetes-vault")
 
-  private val kubeConfig = KubernetesConfig.theConfig(env.configurationJson.select(s"otoroshi").select("vaults").select(name).asOpt[JsObject].getOrElse(Json.obj()))(env, env.otoroshiExecutionContext)
+  private val kubeConfig = env.configurationJson.select(s"otoroshi").select("vaults").select(name).asOpt[JsValue] match {
+    case Some(JsString("global")) => {
+      val global = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
+      val c1 = global.scripts.jobConfig.select("KubernetesConfig").asOpt[JsObject]
+      val c2 = global.plugins.config.select("KubernetesConfig").asOpt[JsObject]
+      KubernetesConfig.theConfig(c1.orElse(c2).getOrElse(Json.obj()))(env, env.otoroshiExecutionContext)
+    }
+    case Some(obj @ JsObject(_)) => KubernetesConfig.theConfig(obj)(env, env.otoroshiExecutionContext)
+    case _ => KubernetesConfig.theConfig(KubernetesConfig.defaultConfig)(env, env.otoroshiExecutionContext)
+  }
   private val client = new KubernetesClient(kubeConfig, env)
 
   override def get(path: String, options: Map[String, String])(implicit env: Env, ec: ExecutionContext): Future[CachedVaultSecretStatus] = {
@@ -215,7 +226,7 @@ class KubernetesVault(name: String, env: Env) extends Vault {
   }
 }
 
-class AWSVault(name: String, env: Env) extends Vault {
+class AwsVault(name: String, env: Env) extends Vault {
 
   private val logger = Logger("otoroshi-aws-vault")
 
@@ -250,67 +261,113 @@ class AWSVault(name: String, env: Env) extends Vault {
   }
 }
 
-// TODO: optimize findAll + fillSecrets (without Await.result)
 class Vaults(env: Env) {
 
   private val logger = Logger("otoroshi-vaults")
 
+  val enabled: Boolean = env.configuration.getOptional[Boolean]("otoroshi.vaults.enabled").getOrElse(false)
   private val secretsTtl = env.configuration.getOptional[Long]("otoroshi.vaults.secrets-ttl").map(_.milliseconds).getOrElse(5.minutes)
   private val cachedSecrets: Long = env.configuration.getOptional[Long]("otoroshi.vaults.cached-secrets").getOrElse(10000L)
   private val cache = Scaffeine().expireAfterWrite(secretsTtl).maximumSize(cachedSecrets).build[String, CachedVaultSecret]()
   private val expressionReplacer = ReplaceAllWith("\\$\\{vault://([^}]*)\\}")
-  private val vaults: TrieMap[String, Vault] = TrieMap.newBuilder[String, Vault].+=("env" -> new EnvVault("env", env)).result()
+  private val vaults: TrieMap[String, Vault] = new TrieMap[String, Vault]()
   private val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
-  env.configurationJson.select("otoroshi").select("vaults").asOpt[JsObject].map { vaultsConfig =>
-    vaultsConfig.keys.map { key =>
-      vaultsConfig.select(key).asOpt[JsObject].map { vault =>
-        val typ = vault.select("type").asOpt[String].getOrElse("env")
-        if (typ == "env") {
-          vaults.put(key, new EnvVault(key, env))
-        } else if (typ == "hashicorp-vault") {
-          vaults.put(key, new HashicorpVault(key, env))
-        } else if (typ == "azure") {
-          vaults.put(key, new AzureVault(key, env))
-        } else if (typ == "aws") {
-          vaults.put(key, ???)
-        } else if (typ == "kubernetes") {
-          vaults.put(key, new KubernetesVault(key, env))
-        } else {
-          logger.error(s"unknown vault type '${typ}'")
+  if (enabled) {
+    logger.warn("the vaults feature is enable !")
+    logger.warn("be aware that this feature is experimental and might not work as expected.")
+    env.configurationJson.select("otoroshi").select("vaults").asOpt[JsObject].map { vaultsConfig =>
+      vaultsConfig.keys.map { key =>
+        vaultsConfig.select(key).asOpt[JsObject].map { vault =>
+          val typ = vault.select("type").asOpt[String].getOrElse("env")
+          if (typ == "env") {
+            vaults.put(key, new EnvVault(key, env))
+          } else if (typ == "hashicorp-vault") {
+            vaults.put(key, new HashicorpVault(key, env))
+          } else if (typ == "azure") {
+            vaults.put(key, new AzureVault(key, env))
+          } else if (typ == "aws") {
+            vaults.put(key, new AwsVault(key, env))
+          } else if (typ == "kubernetes") {
+            vaults.put(key, new KubernetesVault(key, env))
+          } else {
+            logger.error(s"unknown vault type '${typ}'")
+          }
         }
       }
     }
   }
 
-  def cacheGet(key: String): Option[CachedVaultSecret] = cache.getIfPresent(key)
-  def cachePut(key: String, value: CachedVaultSecret): Unit = cache.put(key, value)
-  def cacheDelete(key: String): Unit = cache.invalidate(key)
-
-  def fillSecrets(source: String): String = {
-    // TODO: log status when not success
-    expressionReplacer.replaceOn(source) { expr =>
-      val uri = Uri(expr)
-      val name = uri.authority.host.toString()
-      val path = uri.path.toString()
-      val options = uri.query().toMap
-      cache.getIfPresent(expr) match {
-        case Some(res) => res.status.value
-        case None => {
-          vaults.get(name) match {
-            case None =>
-              cache.put(expr, CachedVaultSecret(expr, DateTime.now(), CachedVaultSecretStatus.VaultNotFound))
-              CachedVaultSecretStatus.VaultNotFound.value
-            case Some(vault) => {
-              // TODO: populate a cache that will be periodically updated !
-              val status = Await.result(vault.get(path, options)(env, ec), 1.minute)
+  def resolveExpression(expr: String): Future[CachedVaultSecretStatus] = {
+    val uri = Uri(expr)
+    val name = uri.authority.host.toString()
+    val path = uri.path.toString()
+    val options = uri.query().toMap
+    cache.getIfPresent(expr) match {
+      case Some(res) => res.status.vfuture
+      case None => {
+        vaults.get(name) match {
+          case None =>
+            cache.put(expr, CachedVaultSecret(expr, DateTime.now(), CachedVaultSecretStatus.VaultNotFound))
+            CachedVaultSecretStatus.VaultNotFound.vfuture
+          case Some(vault) => {
+            vault.get(path, options)(env, ec).map { status =>
               val secret = CachedVaultSecret(expr, DateTime.now(), status)
               cache.put(expr, secret)
-              status.value
-            }
+              status
+            }(ec)
           }
         }
       }
+    }
+  }
+
+  def renewSecretsInCache(): Future[Done] = {
+    if (enabled) {
+      Source(cache.asMap().values.toList)
+        .filter { secret =>
+          secret.status match {
+            case s@CachedVaultSecretStatus.SecretFetchSuccess(_) if System.currentTimeMillis() - secret.at.toDate.getTime < (secretsTtl.toMillis - 20000) => false
+            case _ => true
+          }
+        }
+        .mapAsync(4) { secret =>
+          resolveExpression(secret.key)
+        }
+        .runWith(Sink.ignore)(env.otoroshiMaterializer)
+    } else {
+      Done.vfuture
+    }
+  }
+
+  def fillSecrets(source: String): String = {
+    if (enabled) {
+      expressionReplacer.replaceOn(source) { expr =>
+        val status = Await.result(resolveExpression(expr), 1.minute)
+        status match {
+          case CachedVaultSecretStatus.SecretFetchSuccess(_) => logger.debug(s"fill secret from '${expr}' successfully")
+          case _ => logger.error(s"filling secret from '${expr}' failed because of '${status.value}'")
+        }
+        status.value
+      }
+    } else {
+      source
+    }
+  }
+
+  def fillSecretsAsync(source: String)(implicit ec: ExecutionContext): Future[String] = {
+    if (enabled) {
+      expressionReplacer.replaceOnAsync(source) { expr =>
+        resolveExpression(expr).map { status =>
+          status match {
+            case CachedVaultSecretStatus.SecretFetchSuccess(_) => logger.info(s"fill secret from '${expr}' successfully")
+            case _ => logger.info(s"filling secret from '${expr}' failed because of '${status.value}'")
+          }
+          status.value
+        }
+      }
+    } else {
+      source.vfuture
     }
   }
 }
