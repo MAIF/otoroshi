@@ -174,7 +174,7 @@ class Commands extends Component {
       .popup(
         'New Certificate',
         (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} caRef={id} />,
-        { style: { width: '100%' } }
+        { style: { width: '100%' }, additionalClass: "modal-xl" }
       )
       .then((form) => {
         if (form) {
@@ -655,7 +655,7 @@ export class CertificatesPage extends Component {
       .popup(
         'New Certificate',
         (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} letsEncrypt={true} />,
-        { style: { width: '100%' } }
+        { style: { width: '100%' }, additionalClass: "modal-xl" }
       )
       .then((form) => {
         if (form) {
@@ -698,7 +698,7 @@ export class CertificatesPage extends Component {
       .popup(
         'New Certificate',
         (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} caRef={id} />,
-        { style: { width: '100%' } }
+        { style: { width: '100%' }, additionalClass: "modal-xl" }
       )
       .then((form) => {
         if (form) {
@@ -755,6 +755,7 @@ export class CertificatesPage extends Component {
     window
       .popup('New Certificate', (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} />, {
         style: { width: '100%' },
+        additionalClass: "modal-xl" 
       })
       .then((form) => {
         if (form) {

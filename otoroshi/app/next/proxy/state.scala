@@ -125,6 +125,7 @@ class NgProxyState(env: Env) {
   def allApikeys(): Seq[ApiKey]                 = apikeys.values.toSeq
   def allJwtVerifiers(): Seq[GlobalJwtVerifier] = jwtVerifiers.values.toSeq
   def allCertificates(): Seq[Cert]              = certificates.values.toSeq
+  def allCertificatesMap(): TrieMap[String, Cert] = certificates
   def allAuthModules(): Seq[AuthModuleConfig]   = authModules.values.toSeq
   def allServices(): Seq[ServiceDescriptor] = services.values.toSeq
   def allTeams(): Seq[Team] = teams.values.toSeq

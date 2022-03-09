@@ -19,6 +19,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.{Materializer, TLSClientAuth}
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
+import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.hash.Hashing
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import otoroshi.env.Env
@@ -1060,10 +1061,18 @@ object DynamicSSLEngineProvider {
     CASE_INSENSITIVE
   )
 
-  val _certificates               = new TrieMap[String, Cert]()
+  // val _certificates               = new TrieMap[String, Cert]()
+  val autogenCerts = Scaffeine().expireAfterWrite(5.minutes).maximumSize(1000).build[String, Cert]()
   val _ocspProjectionCertificates = new TrieMap[java.math.BigInteger, OCSPCertProjection]()
 
-  def certificates: TrieMap[String, Cert] = _certificates.filter(_._2.notRevoked)
+  private def allUnrevokedCertMap: TrieMap[String, Cert] = {
+    val datastoreCerts = getCurrentEnv().proxyState.allCertificatesMap().filter(_._2.notRevoked)
+    val genCerts = autogenCerts.asMap()
+    new TrieMap[String, Cert]().++=(datastoreCerts).++=(genCerts)
+  }
+  private def allUnrevokedCertSeq: Seq[Cert] = allUnrevokedCertMap.values.toSeq
+
+  def certificates: TrieMap[String, Cert] = allUnrevokedCertMap // _certificates.filter(_._2.notRevoked)
 
   private lazy val firstSetupDone           = new AtomicBoolean(false)
   private lazy val currentContextServer     = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, true, Seq.empty))
@@ -1085,15 +1094,16 @@ object DynamicSSLEngineProvider {
   private def setupContext(env: HasMetrics, includeJdkCa: Boolean, trustedCerts: Seq[String]): SSLContext =
     env.metrics.withTimer("otoroshi.core.tls.setup-global-context") {
 
-      val certificates                               = _certificates.filter(_._2.notRevoked)
+      val certificates                               = allUnrevokedCertMap // _certificates.filter(_._2.notRevoked)
       val trustedCertificates: TrieMap[String, Cert] = if (trustedCerts.nonEmpty) {
         new TrieMap[String, Cert]() ++ trustedCerts
-          .flatMap(k => _certificates.get(k))
+          // .flatMap(k => _certificates.get(k))
+          .flatMap(k => allUnrevokedCertMap.get(k))
           .filter(_.notRevoked)
           .map(c => (c.id, c))
           .toMap
       } else {
-        _certificates.filter(_._2.notRevoked)
+        allUnrevokedCertMap // _certificates.filter(_._2.notRevoked)
       }
 
       // println(s"building context with ${trustedCertificates.size} trusted certificates")
@@ -1356,12 +1366,13 @@ object DynamicSSLEngineProvider {
   def sslConfigSettings: SSLConfigSettings = currentSslConfigSettings.get()
 
   def getHostNames(): Seq[String] = {
-    _certificates.values.filter(_.notRevoked).map(_.domain).toSet.toSeq
+    getCurrentEnv().proxyState.allCertificates().filter(_.notRevoked).map(_.domain).distinct
+    // _certificates.values.filter(_.notRevoked).map(_.domain).toSet.toSeq
   }
 
   def addCertificates(certs: Seq[Cert], env: Env): Unit = {
     firstSetupDone.compareAndSet(false, true)
-    certs.filter(_.notRevoked).foreach(crt => _certificates.put(crt.id, crt))
+    certs.filter(_.notRevoked).foreach(crt => autogenCerts.put(crt.id, crt))
     val ctxClient = setupContext(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
@@ -1376,11 +1387,11 @@ object DynamicSSLEngineProvider {
     currentContextServer.set(ctxServer)
   }
 
-  def setCertificates(certs: Seq[Cert], env: Env): Unit = {
+  def setCertificates(env: Env): Unit = {
     firstSetupDone.compareAndSet(false, true)
-    _certificates.clear()
-    certs.filter(_.notRevoked).foreach(crt => _certificates.put(crt.id, crt))
-    certs
+    //_certificates.clear()
+    //certs.filter(_.notRevoked).foreach(crt => _certificates.put(crt.id, crt))
+    allUnrevokedCertSeq
       .filter(r => r.serialNumberLng.isDefined && CertParentHelper.fromOtoroshiRootCa(r.certificate.get))
       .foreach(crt =>
         _ocspProjectionCertificates.put(

@@ -956,7 +956,7 @@ export class ServicePage extends Component {
       .popup(
         'New Certificate',
         (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} host={host} />,
-        { style: { width: '100%' } }
+        { style: { width: '100%' }, additionalClass: "modal-xl" }
       )
       .then((form) => {
         if (form) {
@@ -987,7 +987,7 @@ export class ServicePage extends Component {
         (ok, cancel) => (
           <NewCertificateForm ok={ok} cancel={cancel} host={host} letsEncrypt={true} />
         ),
-        { style: { width: '100%' } }
+        { style: { width: '100%' }, additionalClass: "modal-xl" }
       )
       .then((form) => {
         if (form) {

@@ -167,13 +167,14 @@ class Prompt extends Component {
 
 class Popup extends Component {
   render() {
+    console.log(this.props)
     return (
       <div
         className="modal"
         tabIndex="-1"
         role="dialog"
         style={{ display: 'block', ...this.props.style }}>
-        <div className="modal-dialog" role="document">
+        <div className={"modal-dialog" + (this.props.additionalClass ? (' ' + this.props.additionalClass) : '')} role="document">
           <div className="modal-content">
             <div className="modal-header">
               <h4 className="modal-title">{this.props.title}</h4>
@@ -283,6 +284,7 @@ export function registerPopup() {
     document.body.appendChild(div);
   }
   window.popup = (title, fn, props = {}) => {
+    console.log("props", props)
     return new Promise((success, failure) => {
       ReactDOM.render(
         <Popup
