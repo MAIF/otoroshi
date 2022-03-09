@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { BooleanInput, CodeInput, SelectInput } from '@maif/react-forms/lib/inputs'
-import { tryIt, fetchAllApikeys } from '../../services/BackOfficeServices'
+import { tryIt, fetchAllApikeys, findAllCertificates } from '../../services/BackOfficeServices'
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD']
 
@@ -31,10 +31,13 @@ export const TryIt = ({ route }) => {
         useApikey: false,
         apikey: undefined,
         apikeyFormat: 'basic',
-        apikeyHeader: "Authorization"
+        apikeyHeader: "Authorization",
+        useCertificate: false,
+        client_cert: undefined
     })
 
     const [apikeys, setApikeys] = useState([])
+    const [certificates, setCertificates] = useState([])
     const [rawResponse, setRawResponse] = useState()
     const [response, setReponse] = useState()
     const [responseBody, setResponseBody] = useState()
@@ -50,6 +53,7 @@ export const TryIt = ({ route }) => {
 
     useEffect(() => {
         fetchAllApikeys().then(setApikeys)
+        findAllCertificates().then(setCertificates)
     }, [])
 
     const send = () => {
@@ -68,13 +72,17 @@ export const TryIt = ({ route }) => {
                 setReponse(res)
                 setLoading(false)
 
+                if (res.status > 300)
+                    setSelectedResponseTab('Body')
+
                 try {
                     setResponseBody(JSON.stringify(JSON.parse(atob(res.body_base_64)), null, 4))
                 } catch (err) {
-                    setResponseBody(atob(res.body_base_64))
+                    setResponseBody(atob(res.body_base_64).replace(/\n/g, '').trimStart())
                 }
             })
     }
+
 
     const bytesToSize = bytes => {
         const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
@@ -98,7 +106,11 @@ export const TryIt = ({ route }) => {
     }
 
     const apikeyToHeader = (format, apikey, apikeyHeader) => {
+        if (!(apikey || request.apikey))
+            return request.headers
+
         const { clientId, clientSecret } = apikey || request.apikey
+
         return {
             ...Object.fromEntries(Object.entries(request.headers)
                 .filter(([id, _]) => ![
@@ -107,7 +119,7 @@ export const TryIt = ({ route }) => {
                     'Otoroshi-Client-Secret'].includes(id))),
             ...(format === 'basic' ? {
                 'authorization-header': {
-                    key: apikeyHeader || request.apikeyHeader,
+                    key: apikeyHeader || request.apikeyHeader,
                     value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`
                 }
             } : {
@@ -171,66 +183,93 @@ export const TryIt = ({ route }) => {
                 </div>
                 <i className={`tab fas fa-chevron-${headersStatus}`} onClick={() => setHeadersStatus(headersStatus === 'up' ? 'down' : 'up')} />
             </div>
-            {selectedTab === 'Authorization' && headersStatus === 'down' && <div className='mt-3 d-flex w-50'>
-                <div className='d-flex-between pe-3 me-3' style={{ borderRight: '2px solid #494849' }}>
-                    <span className='me-3'>Enabled</span>
-                    <BooleanInput value={request.useApikey} onChange={() => setRequest({
-                        ...request,
-                        useApikey: !request.useApikey,
-                        headers: Object.fromEntries(Object.entries(request.headers).filter(([id, _]) => !['authorization-header', 'Otoroshi-Client-Id', 'Otoroshi-Client-Secret'].includes(id)))
-                    })} />
-                </div>
-                {request.useApikey && <div className='flex'>
-                    <div className='d-flex-between'>
-                        <span className='me-3'>Apikey</span>
-                        <div className='flex'>
-                            <SelectInput
-                                possibleValues={apikeys}
-                                value={request.apikey}
-                                onChange={k => setRequest({
-                                    ...request,
-                                    apikey: k,
-                                    headers: apikeyToHeader(request.apikeyFormat, k)
-                                })}
-                                transformer={item => ({ value: item, label: item.clientName })}
-                            />
-                        </div>
+            {selectedTab === 'Authorization' && headersStatus === 'down' && <div className='w-50'>
+                <div className='mt-3 d-flex'>
+                    <div className='d-flex-between pe-3 me-3' style={{ flex: .5, borderRight: '2px solid #494849' }}>
+                        <span className='me-3'>Use an apikey</span>
+                        <BooleanInput value={request.useApikey} onChange={() => setRequest({
+                            ...request,
+                            useApikey: !request.useApikey,
+                            headers: apikeyToHeader()
+                        })} />
                     </div>
-                    {request.apikey && <div className='pt-3 mt-3' style={{ borderTop: '2px solid #494849' }}>
+                    {request.useApikey && <div className='flex'>
                         <div className='d-flex-between'>
-                            <span className='me-3'>Apikey format</span>
+                            <span className='me-3'>Apikey</span>
                             <div className='flex'>
                                 <SelectInput
-                                    possibleValues={[
-                                        { value: 'basic', label: 'Basic header' },
-                                        { value: 'credentials', label: 'Client ID/Secret headers' }
-                                    ]}
-                                    value={request.apikeyFormat}
+                                    possibleValues={apikeys}
+                                    value={request.apikey}
                                     onChange={k => setRequest({
                                         ...request,
-                                        apikeyFormat: k,
-                                        headers: apikeyToHeader(k)
+                                        apikey: k,
+                                        headers: apikeyToHeader(request.apikeyFormat, k)
                                     })}
+                                    transformer={item => ({ value: item, label: item.clientName })}
                                 />
                             </div>
                         </div>
-                        {request.apikeyFormat === 'basic' && <div className='d-flex-between mt-3'>
-                            <span className='flex'>Add to header</span>
-                            <input
-                                type="text"
-                                className='form-control flex'
-                                onChange={e => {
-                                    setRequest({
-                                        ...request,
-                                        apikeyHeader: e.target.value,
-                                        headers: apikeyToHeader(request.apikeyFormat, undefined, e.target.value)
-                                    })
-                                }}
-                                value={request.apikeyHeader}
-                            />
+                        {request.apikey && <div className='pt-3 mt-3' style={{ borderTop: '2px solid #494849' }}>
+                            <div className='d-flex-between'>
+                                <span className='me-3'>Apikey format</span>
+                                <div className='flex'>
+                                    <SelectInput
+                                        possibleValues={[
+                                            { value: 'basic', label: 'Basic header' },
+                                            { value: 'credentials', label: 'Client ID/Secret headers' }
+                                        ]}
+                                        value={request.apikeyFormat}
+                                        onChange={k => setRequest({
+                                            ...request,
+                                            apikeyFormat: k,
+                                            headers: apikeyToHeader(k)
+                                        })}
+                                    />
+                                </div>
+                            </div>
+                            {request.apikeyFormat === 'basic' && <div className='d-flex-between mt-3'>
+                                <span className='flex'>Add to header</span>
+                                <input
+                                    type="text"
+                                    className='form-control flex'
+                                    onChange={e => {
+                                        setRequest({
+                                            ...request,
+                                            apikeyHeader: e.target.value,
+                                            headers: apikeyToHeader(request.apikeyFormat, undefined, e.target.value)
+                                        })
+                                    }}
+                                    value={request.apikeyHeader}
+                                />
+                            </div>}
                         </div>}
                     </div>}
-                </div>}
+                </div>
+                <div className='mt-3 d-flex'>
+                    <div className='d-flex-between pe-3 me-3' style={{ flex: .5, borderRight: '2px solid #494849' }}>
+                        <span className='me-3'>Use a certificate client</span>
+                        <BooleanInput value={request.useCertificate} onChange={() => setRequest({
+                            ...request,
+                            useCertificate: !request.useCertificate
+                        })} />
+                    </div>
+                    {request.useCertificate && <div className='flex'>
+                        <div className='d-flex-between'>
+                            <span className='me-3'>Certificate</span>
+                            <div className='flex'>
+                                <SelectInput
+                                    possibleValues={certificates}
+                                    value={request.client_cert}
+                                    onChange={client_cert => setRequest({
+                                        ...request,
+                                        client_cert
+                                    })}
+                                    transformer={item => ({ value: item.id, label: item.name })}
+                                />
+                            </div>
+                        </div>
+                    </div>}
+                </div>
             </div>}
             {selectedTab === 'Headers' && headersStatus === 'down' && <Headers
                 headers={request.headers}
@@ -334,34 +373,30 @@ export const TryIt = ({ route }) => {
             }), {})} />
         }
 
-        {
-            receivedResponse && selectedResponseTab === "Body" && <div className='mt-3'>
-                {responseBody.startsWith('<!') ?
-                    <iframe srcDoc={responseBody} style={{ flex: 1, minHeight: '500px', width: '100%' }} /> :
-                    <CodeInput
-                        readOnly={true}
-                        value={responseBody}
-                        width="-1"
-                    />}
-            </div>
-        }
-        {
-            !receivedResponse && !loading && <div className="d-flex align-items-center justify-content-center">
-                <span>Enter the URL and click Send to get a response</span>
-            </div>
-        }
-        {loading && <div className='d-flex justify-content-center'><i className='fas fa-cog fa-spin' style={{ fontSize: "40px" }} /></div>}
+        {receivedResponse && responseBody && selectedResponseTab === "Body" && <div className='mt-3'>
+            {responseBody.startsWith('<!') ?
+                <iframe srcDoc={responseBody} style={{ flex: 1, minHeight: '750px', width: '100%' }} /> :
+                <CodeInput
+                    readOnly={true}
+                    value={responseBody}
+                    width="-1"
+                />}
+        </div>}
+        {!receivedResponse && !loading && <div className="d-flex align-items-center justify-content-center">
+            <span>Enter the URL and click Send to get a response</span>
+        </div>}
+        {loading &&
+            <div className='d-flex justify-content-center'><i className='fas fa-cog fa-spin' style={{ fontSize: "40px" }} /></div>}
 
-        {
-            receivedResponse && selectedResponseTab === 'Report' && <ReportView
+        {(receivedResponse && selectedResponseTab === 'Report') ?
+            response.report ? <ReportView
                 report={response.report}
                 search={search} setSearch={setSearch}
                 unit={unit} setUnit={setUnit}
                 sort={sort} setSort={setSort}
                 flow={flow} setFlow={setFlow}
-            />
-        }
-    </div >
+            /> : <span className='mt-3'>No report is available</span> : null}
+    </div>
 }
 
 const firstLetterUppercase = str => str.charAt(0).toUpperCase() + str.slice(1)
@@ -524,21 +559,23 @@ const Headers = ({ headers, onKeyChange, onValueChange }) => <div className='mt-
         <span className='flex py-1' style={{ fontWeight: 'bold' }}>VALUE</span>
     </div>
     <div>
-        {Object.entries(headers || {}).map(([id, { key, value }]) => (
-            <div className='d-flex-between' key={id}>
-                <input type="text"
-                    disabled={!onKeyChange}
-                    className='form-control flex mb-1 me-1'
-                    value={key}
-                    placeholder="Key"
-                    onChange={e => onKeyChange(id, e.target.value)} />
-                <input type="text"
-                    disabled={!onKeyChange}
-                    className='form-control flex mb-1 me-1'
-                    value={value}
-                    placeholder="Value"
-                    onChange={e => onValueChange(id, e.target.value)} />
-            </div>
-        ))}
+        {Object.entries(headers || {})
+            .reduce((acc, curr) => curr[1].key.length === 0 ? [...acc, curr] : [curr, ...acc], [])
+            .map(([id, { key, value }]) => (
+                <div className='d-flex-between' key={id}>
+                    <input type="text"
+                        disabled={!onKeyChange}
+                        className='form-control flex mb-1 me-1'
+                        value={key}
+                        placeholder="Key"
+                        onChange={e => onKeyChange(id, e.target.value)} />
+                    <input type="text"
+                        disabled={!onKeyChange}
+                        className='form-control flex mb-1 me-1'
+                        value={value}
+                        placeholder="Value"
+                        onChange={e => onValueChange(id, e.target.value)} />
+                </div>
+            ))}
     </div>
 </div>
