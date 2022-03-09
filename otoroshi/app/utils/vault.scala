@@ -313,9 +313,13 @@ class Vaults(env: Env) {
             CachedVaultSecretStatus.VaultNotFound.vfuture
           case Some(vault) => {
             vault.get(path, options)(env, ec).map { status =>
-              val secret = CachedVaultSecret(expr, DateTime.now(), status)
+              val theStatus = status match {
+                case CachedVaultSecretStatus.SecretFetchSuccess(v) => CachedVaultSecretStatus.SecretFetchSuccess(JsString(v).stringify.substring(1).init)
+                case s => s
+              }
+              val secret = CachedVaultSecret(expr, DateTime.now(), theStatus)
               cache.put(expr, secret)
-              status
+              theStatus
             }(ec)
           }
         }
@@ -341,7 +345,7 @@ class Vaults(env: Env) {
     }
   }
 
-  def fillSecrets(source: String): String = {
+  private def fillSecrets(source: String): String = {
     if (enabled) {
       expressionReplacer.replaceOn(source) { expr =>
         val status = Await.result(resolveExpression(expr), 1.minute)
@@ -361,7 +365,7 @@ class Vaults(env: Env) {
       expressionReplacer.replaceOnAsync(source) { expr =>
         resolveExpression(expr).map { status =>
           status match {
-            case CachedVaultSecretStatus.SecretFetchSuccess(_) => logger.info(s"fill secret from '${expr}' successfully")
+            case CachedVaultSecretStatus.SecretFetchSuccess(_) => logger.debug(s"fill secret from '${expr}' successfully")
             case _ => logger.info(s"filling secret from '${expr}' failed because of '${status.value}'")
           }
           status.value

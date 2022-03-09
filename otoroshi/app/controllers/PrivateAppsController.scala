@@ -65,7 +65,8 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
               val session  = Json.parse(sessionRaw.utf8String)
               val username = (session \ "username").as[String]
               val id       = (session \ "auth").as[String]
-              env.datastores.authConfigsDataStore.findById(id).flatMap {
+              // env.datastores.authConfigsDataStore.findById(id).flatMap {
+              env.proxyState.authModuleAsync(id).flatMap {
                 case Some(auth) => {
                   auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
                     case bam: BasicAuthModule if bam.authConfig.webauthn => {
@@ -227,7 +228,8 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
   def sendSelfUpdateLink(authModuleId: String, username: String) =
     ApiAction.async { ctx =>
       registerSessionForUser(authModuleId, username).flatMap { case (sessionId, host) =>
-        env.datastores.authConfigsDataStore.findById(authModuleId).flatMap {
+        // env.datastores.authConfigsDataStore.findById(authModuleId).flatMap {
+        env.proxyState.authModuleAsync(authModuleId).flatMap {
           case Some(auth) => {
             auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
               case bam: BasicAuthModule if bam.authConfig.webauthn => {

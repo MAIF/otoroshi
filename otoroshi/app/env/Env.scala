@@ -1147,7 +1147,7 @@ class Env(
                   groups = Seq(backOfficeGroup, defaultGroup),
                   simpleAdmins = Seq(admin),
                   teams = Seq(defaultTeam),
-                  tenants = Seq(defaultTenant)
+                  tenants = Seq(defaultTenant),
                 )
 
                 val initialCustomization = configuration

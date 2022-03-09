@@ -512,7 +512,8 @@ class OtoroshiRequestHandler(
           attrs = attrs
         )
       case Some(ref) => {
-        env.datastores.authConfigsDataStore.findById(ref).flatMap {
+        // env.datastores.authConfigsDataStore.findById(ref).flatMap {
+        env.proxyState.authModuleAsync(ref).flatMap {
           case None       =>
             Errors.craftResponseResult(
               "Auth. config. not found on the descriptor",

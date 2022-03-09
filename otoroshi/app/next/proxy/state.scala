@@ -9,7 +9,7 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
 import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, OverrideHost, SOAPAction, SOAPActionConfig}
 import otoroshi.script._
-import otoroshi.ssl.Cert
+import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits._
@@ -110,6 +110,7 @@ class NgProxyState(env: Env) {
   def jwtVerifier(id: String): Option[GlobalJwtVerifier] = jwtVerifiers.get(id)
   def certificate(id: String): Option[Cert]              = certificates.get(id)
   def authModule(id: String): Option[AuthModuleConfig]   = authModules.get(id)
+  def authModuleAsync(id: String): Future[Option[AuthModuleConfig]]   = authModules.get(id).vfuture
   def service(id: String): Option[ServiceDescriptor] = services.get(id)
   def team(id: String): Option[Team] = teams.get(id)
   def tenant(id: String): Option[Tenant] = tenants.get(id)
@@ -508,32 +509,32 @@ class NgProxyStateLoaderJob extends Job {
     val debugHeaders = config.debugHeaders
     for {
       _                   <- env.vaults.renewSecretsInCache()
-      routes              <- env.datastores.routeDataStore.findAllAndFillSecrets()
-      routescomp          <- env.datastores.servicesDataStore.findAllAndFillSecrets()
+      routes              <- env.datastores.routeDataStore.findAllAndFillSecrets()  // secrets OK
+      routescomp          <- env.datastores.servicesDataStore.findAllAndFillSecrets()  // secrets OK
       genRoutesDomain     <- generateRoutesByDomain(env)
       genRoutesPath       <- generateRoutesByName(env)
       genRandom           <- generateRandomRoutes(env)
-      descriptors         <- env.datastores.serviceDescriptorDataStore.findAllAndFillSecrets()
+      descriptors         <- env.datastores.serviceDescriptorDataStore.findAllAndFillSecrets()  // secrets OK
       fakeRoutes          = if (env.env == "dev") Seq(NgRoute.fake) else Seq.empty
       newRoutes           = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
                             NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
                           ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
-      apikeys             <- env.datastores.apiKeyDataStore.findAllAndFillSecrets()
-      certs               <- env.datastores.certificatesDataStore.findAllAndFillSecrets()
-      verifiers           <- env.datastores.globalJwtVerifierDataStore.findAllAndFillSecrets()
-      modules             <- env.datastores.authConfigsDataStore.findAllAndFillSecrets()
-      targets             <- env.datastores.targetsDataStore.findAllAndFillSecrets()
-      backends            <- env.datastores.backendsDataStore.findAllAndFillSecrets()
+      apikeys             <- env.datastores.apiKeyDataStore.findAllAndFillSecrets()  // secrets OK
+      certs               <- env.datastores.certificatesDataStore.findAllAndFillSecrets() // secrets OK
+      verifiers           <- env.datastores.globalJwtVerifierDataStore.findAllAndFillSecrets() // secrets OK
+      modules             <- env.datastores.authConfigsDataStore.findAllAndFillSecrets() // secrets OK
+      targets             <- env.datastores.targetsDataStore.findAllAndFillSecrets() // secrets OK
+      backends            <- env.datastores.backendsDataStore.findAllAndFillSecrets() // secrets OK
       errorTemplates      <- env.datastores.errorTemplateDataStore.findAll() // no need for secrets
-      teams               <- env.datastores.teamDataStore.findAllAndFillSecrets()
-      tenants             <- env.datastores.tenantDataStore.findAllAndFillSecrets()
-      serviceGroups       <- env.datastores.serviceGroupDataStore.findAllAndFillSecrets()
-      dataExporters       <- env.datastores.dataExporterConfigDataStore.findAllAndFillSecrets()
+      teams               <- env.datastores.teamDataStore.findAll() // no need for secrets
+      tenants             <- env.datastores.tenantDataStore.findAll() // no need for secrets
+      serviceGroups       <- env.datastores.serviceGroupDataStore.findAll() // no need for secrets
+      dataExporters       <- env.datastores.dataExporterConfigDataStore.findAllAndFillSecrets() // secrets OK
       simpleAdmins        <- env.datastores.simpleAdminDataStore.findAll() // no need for secrets
       webauthnAdmins      <- env.datastores.webAuthnAdminDataStore.findAll() // no need for secrets
       backofficeSessions  <- env.datastores.backOfficeUserDataStore.findAll() // no need for secrets
       privateAppsSessions <- env.datastores.privateAppsUserDataStore.findAll() // no need for secrets
-      tcpServices         <- env.datastores.tcpServiceDataStore.findAllAndFillSecrets()
+      tcpServices         <- env.datastores.tcpServiceDataStore.findAllAndFillSecrets() // secrets OK
       scripts             <- env.datastores.scriptDataStore.findAll() // no need for secrets
       croutes             <- if (env.env == "dev") {
                            NgService
@@ -570,7 +571,7 @@ class NgProxyStateLoaderJob extends Job {
                              })
                          } else Seq.empty[NgRoute].vfuture
     } yield {
-      env.proxyState.updateRoutes((newRoutes ++ croutes).map(_.fillSecrets(NgRoute.fmt, env)))
+      env.proxyState.updateRoutes(newRoutes ++ croutes)
       env.proxyState.updateTargets(targets)
       env.proxyState.updateBackends(backends)
       env.proxyState.updateApikeys(apikeys)
@@ -588,6 +589,7 @@ class NgProxyStateLoaderJob extends Job {
       env.proxyState.updatePrivateAppsSessions(privateAppsSessions)
       env.proxyState.updateTcpServices(tcpServices)
       env.proxyState.updateScripts(scripts)
+      DynamicSSLEngineProvider.setCertificates(env)
       NgProxyStateLoaderJob.firstSync.compareAndSet(false, true)
       env.metrics.timerUpdate("ng-proxy-state-refresh", System.currentTimeMillis() - start, TimeUnit.MILLISECONDS)
     }

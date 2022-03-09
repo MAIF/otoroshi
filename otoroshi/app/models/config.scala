@@ -7,6 +7,7 @@ import otoroshi.events.Exporters._
 import otoroshi.events._
 import org.joda.time.DateTime
 import otoroshi.events.KafkaConfig
+import otoroshi.next.models.{NgBackend, NgRoute, NgService, NgTarget, StoredNgBackend, StoredNgTarget}
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.script.Script
@@ -821,25 +822,29 @@ trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
 }
 
 case class OtoroshiExport(
-    config: GlobalConfig,
-    descs: Seq[ServiceDescriptor] = Seq.empty,
-    apikeys: Seq[ApiKey] = Seq.empty,
-    groups: Seq[ServiceGroup] = Seq.empty,
-    tmplts: Seq[ErrorTemplate] = Seq.empty,
-    calls: Long = 0,
-    dataIn: Long = 0,
-    dataOut: Long = 0,
-    admins: Seq[WebAuthnOtoroshiAdmin] = Seq.empty,
-    simpleAdmins: Seq[SimpleOtoroshiAdmin] = Seq.empty,
-    jwtVerifiers: Seq[GlobalJwtVerifier] = Seq.empty,
-    authConfigs: Seq[AuthModuleConfig] = Seq.empty,
-    certificates: Seq[Cert] = Seq.empty,
-    clientValidators: Seq[ClientCertificateValidator] = Seq.empty,
-    scripts: Seq[Script] = Seq.empty,
-    tcpServices: Seq[TcpService] = Seq.empty,
-    dataExporters: Seq[DataExporterConfig] = Seq.empty,
-    tenants: Seq[Tenant] = Seq.empty,
-    teams: Seq[Team] = Seq.empty
+  config: GlobalConfig,
+  descs: Seq[ServiceDescriptor] = Seq.empty,
+  apikeys: Seq[ApiKey] = Seq.empty,
+  groups: Seq[ServiceGroup] = Seq.empty,
+  tmplts: Seq[ErrorTemplate] = Seq.empty,
+  calls: Long = 0,
+  dataIn: Long = 0,
+  dataOut: Long = 0,
+  admins: Seq[WebAuthnOtoroshiAdmin] = Seq.empty,
+  simpleAdmins: Seq[SimpleOtoroshiAdmin] = Seq.empty,
+  jwtVerifiers: Seq[GlobalJwtVerifier] = Seq.empty,
+  authConfigs: Seq[AuthModuleConfig] = Seq.empty,
+  certificates: Seq[Cert] = Seq.empty,
+  clientValidators: Seq[ClientCertificateValidator] = Seq.empty,
+  scripts: Seq[Script] = Seq.empty,
+  tcpServices: Seq[TcpService] = Seq.empty,
+  dataExporters: Seq[DataExporterConfig] = Seq.empty,
+  tenants: Seq[Tenant] = Seq.empty,
+  teams: Seq[Team] = Seq.empty,
+  routes: Seq[NgRoute] = Seq.empty,
+  services: Seq[NgService] = Seq.empty,
+  backends: Seq[StoredNgBackend] = Seq.empty,
+  targets: Seq[StoredNgTarget] = Seq.empty,
 ) {
 
   import otoroshi.utils.syntax.implicits._
@@ -1007,7 +1012,11 @@ case class OtoroshiExport(
       "tcpServices"        -> JsArray(tcpServices.map(_.json)),
       "dataExporters"      -> JsArray(dataExporters.map(_.json)),
       "tenants"            -> JsArray(tenants.map(_.json)),
-      "teams"              -> JsArray(teams.map(_.json))
+      "teams"              -> JsArray(teams.map(_.json)),
+      "routes"             -> JsArray(routes.map(_.json)),
+      "services"           -> JsArray(services.map(_.json)),
+      "backends"           -> JsArray(backends.map(_.json)),
+      "targets"            -> JsArray(targets.map(_.json)),
     )
   }
 }

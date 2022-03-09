@@ -1148,14 +1148,14 @@ object DynamicSSLEngineProvider {
       trustedkeyManagerFactory.init(trustedKeyStore, EMPTY_PASSWORD)
 
       logger.debug("SSL Context init ...")
-      val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(m =>
+      val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map { m =>
         KeyManagerCompatibility.keyManager(
           () => certificates.values.toSeq,
           false,
           m.asInstanceOf[X509KeyManager],
           optEnv.get
         ) // new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
-      )
+      }
       val tm: Array[TrustManager] =
         optEnv
           .flatMap(e =>

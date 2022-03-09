@@ -6,6 +6,7 @@ import otoroshi.env.Env
 import otoroshi.models._
 import org.joda.time.DateTime
 import otoroshi.models.{DataExporterConfig, SimpleOtoroshiAdmin, Team, Tenant, WebAuthnOtoroshiAdmin}
+import otoroshi.next.models.{NgBackend, NgRoute, NgService, NgTarget, StoredNgBackend, StoredNgTarget}
 import otoroshi.script.Script
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.tcp.TcpService
@@ -161,6 +162,34 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       super.findById(id)(ec, env)
     }
   }
+  override def findByIdAndFillSecrets(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[GlobalConfig]] = {
+    val staticGlobalScripts: GlobalScripts = env.staticGlobalScripts
+    if (/*env.staticExposedDomainEnabled && */ staticGlobalScripts.enabled) {
+      super
+        .findByIdAndFillSecrets(id)(ec, env)
+        .map(_.map { c =>
+          c.copy(
+            scripts = GlobalScripts(
+              enabled = true,
+              transformersRefs = staticGlobalScripts.transformersRefs ++ c.scripts.transformersRefs,
+              transformersConfig = staticGlobalScripts.transformersConfig.as[JsObject] ++ c.scripts.transformersConfig
+                .as[JsObject],
+              validatorRefs = staticGlobalScripts.validatorRefs ++ c.scripts.validatorRefs,
+              validatorConfig = staticGlobalScripts.validatorConfig.as[JsObject] ++ c.scripts.validatorConfig
+                .as[JsObject],
+              preRouteRefs = staticGlobalScripts.preRouteRefs ++ c.scripts.preRouteRefs,
+              preRouteConfig = staticGlobalScripts.preRouteConfig.as[JsObject] ++ c.scripts.preRouteConfig.as[JsObject],
+              sinkRefs = staticGlobalScripts.sinkRefs ++ c.scripts.sinkRefs,
+              sinkConfig = staticGlobalScripts.sinkConfig.as[JsObject] ++ c.scripts.sinkConfig.as[JsObject],
+              jobRefs = staticGlobalScripts.jobRefs ++ c.scripts.jobRefs,
+              jobConfig = staticGlobalScripts.jobConfig.as[JsObject] ++ c.scripts.jobConfig.as[JsObject]
+            )
+          )
+        })
+    } else {
+      super.findByIdAndFillSecrets(id)(ec, env)
+    }
+  }
 
   override def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig = {
     val ref = configCache.get()
@@ -181,7 +210,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
 
     @inline
     def actualCall() =
-      findById("global").map(_.get).andThen { case Success(conf) =>
+      findByIdAndFillSecrets("global").map(_.get).andThen { case Success(conf) =>
         lastConfigCache.set(time)
         configCache.set(conf)
       }
@@ -208,8 +237,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
-    super.set(value, pxMilliseconds)(ec, env).andThen { case Success(_) =>
-      configCache.set(value)
+    super.set(value, pxMilliseconds)(ec, env).andThen {
+      case Success(_) => value.fillSecrets(GlobalConfig._fmt).map(gc => configCache.set(gc))
     }
   }
 
@@ -230,6 +259,10 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     val dataExporters      = (export \ "dataExporters").asOpt[JsArray].getOrElse(Json.arr())
     val tenants            = (export \ "tenants").asOpt[JsArray].getOrElse(Json.arr())
     val teams              = (export \ "teams").asOpt[JsArray].getOrElse(Json.arr())
+    val routes = (export \ "routes").asOpt[JsArray].getOrElse(Json.arr())
+    val services = (export \ "services").asOpt[JsArray].getOrElse(Json.arr())
+    val backends = (export \ "backends").asOpt[JsArray].getOrElse(Json.arr())
+    val targets = (export \ "targets").asOpt[JsArray].getOrElse(Json.arr())
 
     for {
       _ <- redisCli
@@ -258,6 +291,10 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       _ <- Future.sequence(dataExporters.value.map(DataExporterConfig.fromJsons).map(_.save()))
       _ <- Future.sequence(tenants.value.map(Tenant.fromJsons).map(_.save()))
       _ <- Future.sequence(teams.value.map(Team.fromJsons).map(_.save()))
+      _ <- Future.sequence(routes.value.map(NgRoute.fromJsons).map(_.save()))
+      _ <- Future.sequence(services.value.map(NgService.fromJsons).map(_.save()))
+      _ <- Future.sequence(backends.value.map(StoredNgBackend.fromJsons).map(_.save()))
+      _ <- Future.sequence(targets.value.map(StoredNgTarget.fromJsons).map(_.save()))
     } yield ()
   }
 
@@ -291,6 +328,10 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       dataExporters    <- env.datastores.dataExporterConfigDataStore.findAll()
       tenants          <- env.datastores.tenantDataStore.findAll()
       teams            <- env.datastores.teamDataStore.findAll()
+      routes           <- env.datastores.routeDataStore.findAll()
+      services         <- env.datastores.servicesDataStore.findAll()
+      backends         <- env.datastores.backendsDataStore.findAll()
+      targets          <- env.datastores.targetsDataStore.findAll()
     } yield OtoroshiExport(
       config,
       descs,
@@ -310,7 +351,11 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       tcpServices,
       dataExporters,
       tenants,
-      teams
+      teams,
+      routes,
+      services,
+      backends,
+      targets,
     ).json
   }
 

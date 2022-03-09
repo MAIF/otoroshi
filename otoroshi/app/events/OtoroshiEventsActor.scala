@@ -57,7 +57,7 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
   }
 
   def updateExporters(): Future[Unit] = {
-    env.datastores.dataExporterConfigDataStore.findAll().fast.map { exporters =>
+    env.proxyState.allDataExporters().vfuture.map { exporters =>
       for {
         _ <- Future.sequence(dataExporters.map {
                case (key, c) if !exporters.exists(e => e.id == c.configUnsafe.id || e.id == key) =>

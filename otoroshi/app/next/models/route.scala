@@ -43,6 +43,7 @@ case class NgRoute(
     plugins: NgPlugins
 ) extends EntityLocationSupport {
 
+  def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.routeDataStore.set(this)
   override def internalId: String               = id
   override def theName: String                  = name
   override def theDescription: String           = description
@@ -636,6 +637,13 @@ object NgRoute {
       )
     )
   )
+
+  def fromJsons(value: JsValue): NgRoute =
+    try {
+      fmt.reads(value).get
+    } catch {
+      case e: Throwable => throw e
+    }
 
   val fmt = new Format[NgRoute] {
     override def writes(o: NgRoute): JsValue             = o.json

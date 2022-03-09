@@ -1517,7 +1517,8 @@ class BackOfficeController(
 
   def checkExistingLdapConnection(id: String) =
     BackOfficeActionAuth.async { ctx =>
-      env.datastores.authConfigsDataStore.findById(id).flatMap {
+      // env.datastores.authConfigsDataStore.findById(id).flatMap {
+      env.proxyState.authModuleAsync(id).flatMap {
         case None                                                           => FastFuture.successful(NotFound(Json.obj("error" -> "auth. config. not found !")))
         case Some(module: LdapAuthModuleConfig) if !ctx.canUserRead(module) => ApiActionContext.fforbidden
         case Some(module: LdapAuthModuleConfig)                             => {
