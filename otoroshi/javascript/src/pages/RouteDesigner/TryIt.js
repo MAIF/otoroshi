@@ -6,11 +6,18 @@ const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD']
 
 const CONTENT_TYPE = ['text', 'javascript', 'json', 'html', 'xml']
 
-export const TryIt = ({ route }) => {
+const roundNsTo = ns => Number.parseFloat(round(ns) / 1000000).toFixed(3)
+const round = num => Math.round((num + Number.EPSILON) * 100000) / 100000
 
+export const TryIt = ({ route }) => {
     const [selectedTab, setSelectedTab] = useState('Headers')
     const [selectedResponseTab, setSelectedResponseTab] = useState('Report')
     const [headersStatus, setHeadersStatus] = useState('down')
+
+    const [search, setSearch] = useState("")
+    const [unit, setUnit] = useState('ms')
+    const [sort, setSort] = useState('flow')
+    const [flow, setFlow] = useState('all')
 
     const [request, setRequest] = useState({
         path: '/',
@@ -206,7 +213,7 @@ export const TryIt = ({ route }) => {
                     </div>
                     <div className='d-flex flex-row me-3'>
                         <span className='me-1'>Time:</span>
-                        <span style={{ color: 'var(--bs-success)' }}>{response.report?.duration} ms</span>
+                        <span style={{ color: 'var(--bs-success)' }}>{roundNsTo(response.report?.duration_ns)} ms</span>
                     </div>
                     <div className='d-flex flex-row me-3'>
                         <span className='me-1'>Size:</span>
@@ -235,18 +242,27 @@ export const TryIt = ({ route }) => {
         </div>}
         {loading && <div className='d-flex justify-content-center'><i className='fas fa-cog fa-spin' style={{ fontSize: "40px" }} /></div>}
 
-        {receivedResponse && selectedResponseTab === 'Report' && <ReportView report={response.report} />}
+        {receivedResponse && selectedResponseTab === 'Report' && <ReportView
+            report={response.report}
+            search={search} setSearch={setSearch}
+            unit={unit} setUnit={setUnit}
+            sort={sort} setSort={setSort}
+            flow={flow} setFlow={setFlow}
+        />}
     </div>
 }
 
-const ReportView = ({ report }) => {
+const firstLetterUppercase = str => str.charAt(0).toUpperCase() + str.slice(1)
+
+const ReportView = ({
+    report,
+    search, setSearch,
+    unit, setUnit,
+    sort, setSort,
+    flow, setFlow
+}) => {
     const [selectedStep, setSelectedStep] = useState(-1)
     const [selectedPlugin, setSelectedPlugin] = useState(-1)
-
-    const [search, setSearch] = useState("")
-    const [unit, setUnit] = useState('ms')
-    const [sort, setSort] = useState('flow')
-
     const [steps, setSteps] = useState([])
     const [informations, setInformations] = useState({})
 
@@ -256,9 +272,55 @@ const ReportView = ({ report }) => {
         setInformations(informations)
     }, [report])
 
-    console.log(selectedStep, selectedPlugin, steps)
+    const isOnFlow = step => {
+        if (flow === 'all')
+            return true
+        else if (flow === 'internal')
+            return (step.task || !step.ctx?.plugins) && step.task !== 'call-backend'
+        else // user flow
+            return step.ctx?.plugins?.length > 0 || step.task === 'call-backend'
+    }
 
-    const round = num => Math.round((num + Number.EPSILON) * 10000) / 10000
+    const isMatchingSearchWords = step => search.length <= 0 ? true : (step.task.includes(search) || [...(step?.ctx?.plugins || [])]
+        .find(plugin => search.length <= 0 ? true : plugin.name.includes(search)))
+
+    const isPluginNameMatchingSearch = plugin => search.length <= 0 ? true : plugin.name.includes(search)
+
+    const sortByFlow = (a, b) => sort === 'flow' ? 0 : (a.duration_ns < b.duration_ns ? 1 : -1)
+
+    const durationInPercentage = (pluginDuration, totalDuration) => Number.parseFloat((pluginDuration / totalDuration) * 100).toFixed(3)
+
+    const getNextFlowName = () => firstLetterUppercase(flow === 'all' ? 'internal' : (flow === 'internal' ? 'user' : 'all'))
+    const getNextSortName = () => sort === 'flow' ? 'duration' : 'flow'
+    const getUnitButtonClass = enabled => `btn btn-sm btn-${enabled ? 'success' : 'dark'}`
+
+    const reportDuration = () => {
+        if (flow === 'all')
+            return (unit === 'ms' ? roundNsTo(report.duration_ns) : (unit === 'ns' ? report.duration_ns : 100))
+        else {
+            const value = [...steps]
+                .filter(isOnFlow)
+                .filter(isMatchingSearchWords)
+                .reduce((acc, step) => {
+                    const userPluginsFlow = step.ctx && step.ctx.plugins ?
+                        [...(step.ctx?.plugins || [])]
+                            .filter(isPluginNameMatchingSearch)
+                            .reduce((subAcc, step) => subAcc + step.duration_ns, 0) : 0
+
+                    if (flow === 'user')
+                        return acc + (step.task === 'call-backend' ? step.duration_ns : 0) + userPluginsFlow
+                    else
+                        return acc + step.duration_ns - userPluginsFlow
+                }, 0)
+
+            if (unit === '%')
+                return durationInPercentage(value, report.duration_ns)
+            else if (unit === 'ns')
+                return value
+            else
+                return roundNsTo(value)
+        }
+    }
 
     return <div className='d-flex mt-3'>
         <div className='main-view me-2' style={{ flex: .5, minWidth: '250px' }}>
@@ -267,34 +329,32 @@ const ReportView = ({ report }) => {
                     placeholder="Search a step"
                     onChange={e => setSearch(e.target.value)} />
                 <div className='d-flex-between ms-1'>
-                    <button className={`btn btn-sm btn-${unit === 'ns' ? 'success' : 'dark'}`} onClick={() => setUnit('ns')}>ns</button>
-                    <button className={`btn btn-sm btn-${unit === 'ms' ? 'success' : 'dark'} mx-1`} onClick={() => setUnit('ms')}>ms</button>
-                    <button className={`btn btn-sm btn-${unit === '%' ? 'success' : 'dark'}`} onClick={() => setUnit('%')}>%</button>
+                    <button className={getUnitButtonClass(unit === 'ns')} onClick={() => setUnit('ns')}>ns</button>
+                    <button className={`${getUnitButtonClass(unit === 'ms')} mx-1`} onClick={() => setUnit('ms')}>ms</button>
+                    <button className={getUnitButtonClass(unit === '%')} onClick={() => setUnit('%')}>%</button>
                 </div>
             </div>
-            <div className='justify-content-between mb-2'>
-                {/* <button className='btn btn-sm btn-success' onClick={() => setSort(sort === 'flow' ? 'duration' : 'flow')}>
-                    Sort by {sort === 'flow' ? 'duration' : 'flow'}
-                </button> */}
-                <div className='ms-auto mb-2'>
-                    <button className='btn btn-sm btn-success' onClick={() => setSort(sort === 'flow' ? 'duration' : 'flow')}>
-                        Sort by {sort === 'flow' ? 'duration' : 'flow'}
-                    </button>
-                </div>
+            <div className='d-flex-between mb-2' style={{ width: '100%' }}>
+                <button className='btn btn-sm btn-success' onClick={() => setFlow(flow === 'internal' ? 'user' : (flow === 'user' ? 'all' : 'internal'))}>
+                    {getNextFlowName()} flow
+                </button>
+                <button className='btn btn-sm btn-success' onClick={() => setSort(getNextSortName())}>
+                    Sort by {getNextSortName()}
+                </button>
             </div>
             <div onClick={() => setSelectedStep(-1)}
                 className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${informations.state === 'Successful' ? 'success' : 'danger'}`}>
                 <span>Report</span>
-                <span>{unit === 'ms' ? report.duration : unit === 'ns' ? report.duration_ns : 100} {unit}</span>
+                <span>{reportDuration()} {unit}</span>
             </div>
             {[...steps]
-                .filter(step => search.length <= 0 ? true : (step.task.includes(search) || [...(step?.ctx?.plugins || [])]
-                    .find(plugin => search.length <= 0 ? true : plugin.name.includes(search))))
-                .sort((a, b) => sort === 'flow' ? 0 : (a.duration_ns < b.duration_ns ? 1 : -1))
+                .filter(isOnFlow)
+                .filter(isMatchingSearchWords)
+                .sort(sortByFlow)
                 .map(step => {
                     const name = step.task.replace(/-/g, ' ')
-                    const pourcentage = Number.parseFloat(round(step.duration_ns / report.duration_ns) * 100).toFixed(2)
-                    const hasPlugins = step.ctx?.plugins?.length > 0
+                    const percentage = durationInPercentage(step.duration_ns, report.duration_ns)
+                    const displaySubList = step.ctx?.plugins?.length > 0 && flow !== 'internal'
 
                     return <div key={step.task} style={{ width: '100%' }}>
                         <div onClick={() => {
@@ -303,29 +363,28 @@ const ReportView = ({ report }) => {
                         }}
                             className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep ? 'btn-dark' : ''}`}>
                             <div className='d-flex align-items-center'>
-                                {hasPlugins && <i className={`fas fa-chevron-${step.open ? 'down' : 'right'} me-1`} onClick={() => setSteps(steps.map(s => {
-                                    if (s.task === step.task)
-                                        return { ...s, open: !step.open }
-                                    return s
-                                }))} />}
-                                <span>{name.charAt(0).toUpperCase() + name.slice(1)}</span>
+                                {displaySubList && <i className={`fas fa-chevron-${(step.open || flow === 'user') ? 'down' : 'right'} me-1`}
+                                    onClick={() => setSteps(steps.map(s => s.task === step.task ? ({ ...s, open: !step.open }) : s))} />}
+                                <span>{firstLetterUppercase(name)}</span>
                             </div>
-                            <span style={{ maxWidth: '100px', textAlign: 'right' }}>{unit === 'ms' ? step.duration : unit === 'ns' ? step.duration_ns : pourcentage} {unit}</span>
+                            {(flow !== 'user' || step.task === 'call-backend') && <span style={{ maxWidth: '100px', textAlign: 'right' }}>
+                                {unit === 'ms' ? roundNsTo(step.duration_ns) : unit === 'ns' ? step.duration_ns : percentage} {unit}
+                            </span>}
                         </div>
-                        {step.open && [...step.ctx.plugins]
-                            .filter(plugin => search.length <= 0 ? true : plugin.name.includes(search))
-                            .sort((a, b) => sort === 'flow' ? 0 : (a.duration_ns < b.duration_ns ? 1 : -1))
+                        {(step.open || flow === 'user') && flow !== 'internal' && [...(step?.ctx?.plugins || [])]
+                            .filter(isPluginNameMatchingSearch)
+                            .sort(sortByFlow)
                             .map(plugin => {
                                 const pluginName = plugin.name.replace(/-/g, ' ').split('.').pop()
-                                const pluginPourcentage = Number.parseFloat(round(plugin.duration_ns / report.duration_ns) * 100).toFixed(2)
+                                const pluginPercentage = durationInPercentage(plugin.duration_ns, report.duration_ns)
 
                                 return <div key={plugin.name}
                                     style={{ width: 'calc(100% - 12px)', marginLeft: '12px' }}
                                     onClick={() => setSelectedPlugin(plugin.name)}
                                     className={`d-flex-between mt-1 px-3 py-2 report-step ${(step.task === selectedStep && plugin.name === selectedPlugin) ? 'btn-dark' : ''}`}>
-                                    <span>{pluginName.charAt(0).toUpperCase() + pluginName.slice(1)}</span>
+                                    <span>{firstLetterUppercase(pluginName)}</span>
                                     <span style={{ maxWidth: '100px', textAlign: 'right' }}>
-                                        {unit === 'ms' ? plugin.duration : unit === 'ns' ? plugin.duration_ns : pluginPourcentage} {unit}
+                                        {unit === 'ms' ? roundNsTo(plugin.duration_ns) : unit === 'ns' ? plugin.duration_ns : pluginPercentage} {unit}
                                     </span>
                                 </div>
                             })}
