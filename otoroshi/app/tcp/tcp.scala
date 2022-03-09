@@ -269,6 +269,12 @@ object TcpService {
   def findByPort(port: Int)(implicit ec: ExecutionContext, env: Env): Future[Option[TcpService]] =
     findAll().map(_.find(_.port == port))
 
+  def findAllFromState()(implicit ec: ExecutionContext, env: Env): Future[Seq[TcpService]] =
+    env.proxyState.allTcpServices().vfuture
+
+  def findByPortFromState(port: Int)(implicit ec: ExecutionContext, env: Env): Future[Option[TcpService]] =
+    findAllFromState().map(_.find(_.port == port))
+
   def domainMatch(matchRule: String, domain: String): Boolean = {
     RegexPool(matchRule).matches(domain)
   }
@@ -289,7 +295,7 @@ object TcpService {
     val dataIn    = new AtomicLong(0L)
     val dataOut   = new AtomicLong(0L)
     val targetRef = new AtomicReference[TcpTarget]()
-    TcpService.findByPort(incoming.localAddress.getPort).flatMap {
+    TcpService.findByPortFromState(incoming.localAddress.getPort).flatMap {
       case Some(service) if service.enabled => {
         try {
           log.info(s"local: ${incoming.localAddress}, remote: ${incoming.remoteAddress}")
@@ -448,7 +454,7 @@ object TcpService {
     val dataOut   = new AtomicLong(0L)
     val targetRef = new AtomicReference[TcpTarget]()
     val ref       = new AtomicReference[String]()
-    TcpService.findByPort(incoming.localAddress.getPort).flatMap {
+    TcpService.findByPortFromState(incoming.localAddress.getPort).flatMap {
       case Some(service) if service.enabled && service.sni.enabled => {
         try {
           val fullLayer: Flow[ByteString, ByteString, Future[_]] = Flow.lazyFutureFlow { () =>
@@ -883,7 +889,7 @@ class RunningServers(env: Env) {
   private def updateRunningServers(): Unit = {
     if (running.get() && syncing.compareAndSet(false, true)) {
       TcpService
-        .findAll()
+        .findAllFromState()
         .map { services =>
           val actualServers = runningServers.get()
           val existingPorts = actualServers.map(_.port)

@@ -94,7 +94,8 @@ class AuthController(
           attrs = TypedMap.empty
         )
       case Some(ref) => {
-        env.datastores.authConfigsDataStore.findById(ref).flatMap {
+        //env.datastores.authConfigsDataStore.findById(ref).flatMap {
+        env.proxyState.authModuleAsync(ref).flatMap {
           case None       =>
             Errors.craftResponseResult(
               "Auth. config. not found on the descriptor",
@@ -431,7 +432,8 @@ class AuthController(
           config.backOfficeAuthRef match {
             case None        => FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index))
             case Some(aconf) => {
-              env.datastores.authConfigsDataStore.findById(aconf).flatMap {
+              //env.datastores.authConfigsDataStore.findById(aconf).flatMap {
+              env.proxyState.authModuleAsync(aconf).flatMap {
                 case None        =>
                   FastFuture
                     .successful(NotFound(otoroshi.views.html.oto.error("BackOffice Oauth is not configured", env)))
@@ -469,7 +471,8 @@ class AuthController(
                 }
               }
               case Some(aconf) => {
-                env.datastores.authConfigsDataStore.findById(aconf).flatMap {
+                //env.datastores.authConfigsDataStore.findById(aconf).flatMap {
+                env.proxyState.authModuleAsync(aconf).flatMap {
                   case None        =>
                     FastFuture.successful(
                       NotFound(otoroshi.views.html.oto.error("BackOffice auth is not configured", env))
@@ -571,7 +574,8 @@ class AuthController(
                   FastFuture
                     .successful(NotFound(otoroshi.views.html.oto.error("BackOffice OAuth is not configured", env)))
                 case Some(backOfficeAuth0Config) => {
-                  env.datastores.authConfigsDataStore.findById(backOfficeAuth0Config).flatMap {
+                  // env.datastores.authConfigsDataStore.findById(backOfficeAuth0Config).flatMap {
+                  env.proxyState.authModuleAsync(backOfficeAuth0Config).flatMap {
                     case None        =>
                       FastFuture
                         .successful(NotFound(otoroshi.views.html.oto.error("BackOffice OAuth is not found", env)))

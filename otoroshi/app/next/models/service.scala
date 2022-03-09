@@ -66,6 +66,7 @@ case class NgService(
     plugins: NgPlugins
 ) extends EntityLocationSupport {
 
+  def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.servicesDataStore.set(this)
   override def internalId: String               = id
   override def theName: String                  = name
   override def theDescription: String           = description
@@ -115,6 +116,12 @@ case class NgService(
 }
 
 object NgService {
+  def fromJsons(value: JsValue): NgService =
+    try {
+      fmt.reads(value).get
+    } catch {
+      case e: Throwable => throw e
+    }
   val fmt = new Format[NgService] {
     override def writes(o: NgService): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgService] = Try {

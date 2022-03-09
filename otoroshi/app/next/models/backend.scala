@@ -13,6 +13,7 @@ import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 
 import java.util.concurrent.atomic.AtomicBoolean
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
 
@@ -381,6 +382,12 @@ object NgMinimalBackend {
 }
 
 object StoredNgTarget {
+  def fromJsons(value: JsValue): StoredNgTarget =
+    try {
+      format.reads(value).get
+    } catch {
+      case e: Throwable => throw e
+    }
   val format = new Format[StoredNgTarget] {
     override def reads(json: JsValue): JsResult[StoredNgTarget] = Try {
       StoredNgTarget(
@@ -409,6 +416,7 @@ case class StoredNgTarget(
     metadata: Map[String, String],
     target: NgTarget
 ) extends EntityLocationSupport {
+  def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.targetsDataStore.set(this)
   override def internalId: String               = id
   override def theName: String                  = name
   override def theDescription: String           = description
@@ -518,6 +526,12 @@ object NgTarget {
 }
 
 object StoredNgBackend {
+  def fromJsons(value: JsValue): StoredNgBackend =
+    try {
+      format.reads(value).get
+    } catch {
+      case e: Throwable => throw e
+    }
   val format = new Format[StoredNgBackend] {
     override def reads(json: JsValue): JsResult[StoredNgBackend] = Try {
       StoredNgBackend(
@@ -546,6 +560,7 @@ case class StoredNgBackend(
     metadata: Map[String, String],
     backend: NgBackend
 ) extends EntityLocationSupport {
+  def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.backendsDataStore.set(this)
   override def internalId: String               = id
   override def theName: String                  = name
   override def theDescription: String           = description

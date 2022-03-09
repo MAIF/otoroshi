@@ -56,7 +56,8 @@ case class BackOfficeUser(
   def toJson: JsValue = BackOfficeUser.fmt.writes(this)
 
   def withAuthModuleConfig[A](f: AuthModuleConfig => A)(implicit ec: ExecutionContext, env: Env): Unit = {
-    env.datastores.authConfigsDataStore.findById(authConfigId).map {
+    // env.datastores.authConfigsDataStore.findById(authConfigId).map {
+    env.proxyState.authModuleAsync(authConfigId).map {
       case None       => ()
       case Some(auth) => f(auth)
     }

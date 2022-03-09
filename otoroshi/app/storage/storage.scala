@@ -21,6 +21,7 @@ import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
 import otoroshi.storage.stores.{DataExporterConfigDataStore, TeamDataStore, TenantDataStore}
+import otoroshi.utils.syntax.implicits.BetterSyntax
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
@@ -109,6 +110,7 @@ trait BasicStore[T] {
   def findAllById(ids: Seq[String], force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]]
   def findByKey(id: Key)(implicit ec: ExecutionContext, env: Env): Future[Option[T]]                                = findById(id.key)
   def findById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[T]]
+  def findByIdAndFillSecrets(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[T]]
   def deleteByKey(id: Key)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                = delete(id.key)
   def deleteByIds(ids: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def delete(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
@@ -305,23 +307,43 @@ trait RedisLikeStore[T] extends BasicStore[T] {
   }
 
   def findAllAndFillSecrets()(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = {
-    redisLike
-      .keys(key("*").key)
-      .flatMap(keys =>
-        if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-        else redisLike.mget(keys: _*)
-      )
-      .map(seq =>
-        seq.filter(_.isDefined).map(_.get).map(_.utf8String).map { v =>
-          if (env.vaults.enabled && v.contains("${vault://")) {
-            fromJsonSafe(Json.parse(env.vaults.fillSecrets(v)))
+    if (env.vaults.enabled) {
+      Source.single(key("*").key)
+        .mapAsync(1)(redisLike.keys)
+        .mapAsync(1) { keys =>
+          if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
+          else redisLike.mget(keys: _*)
+        }
+        .map(seq => seq.filter(_.isDefined).map(_.get).map(_.utf8String))
+        .flatMapConcat(values => Source(values.toList))
+        .mapAsync(1) { value =>
+          if (value.contains("${vault://")) {
+            env.vaults.fillSecretsAsync(value).map { filledValue =>
+              fromJsonSafe(Json.parse(filledValue))
+            }
           } else {
-            fromJsonSafe(Json.parse(v))
+            fromJsonSafe(Json.parse(value)).vfuture
           }
-        }.collect {
+        }
+        .collect {
           case JsSuccess(i, _) => i
         }
-      )
+        .runWith(Sink.seq)(env.otoroshiMaterializer)
+    } else {
+      redisLike
+        .keys(key("*").key)
+        .flatMap(keys =>
+          if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
+          else redisLike.mget(keys: _*)
+        )
+        .map(seq =>
+          seq.filter(_.isDefined).map(_.get).map(_.utf8String).map { v =>
+            fromJsonSafe(Json.parse(v))
+          }.collect {
+            case JsSuccess(i, _) => i
+          }
+        )
+    }
   }
 
   def findAll(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] =
@@ -406,6 +428,22 @@ trait RedisLikeStore[T] extends BasicStore[T] {
     }
   def findById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[T]]                               =
     redisLike.get(key(id).key).map(_.flatMap(v => fromJsonSafe(Json.parse(v.utf8String)).asOpt))
+
+  def findByIdAndFillSecrets(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[T]] = {
+    redisLike.get(key(id).key).flatMap {
+      case None => None.vfuture
+      case Some(rawValue) => {
+        val value = rawValue.utf8String
+        if (env.vaults.enabled && value.contains("${vault://")) {
+          env.vaults.fillSecretsAsync(value).map { filledValue =>
+            fromJsonSafe(Json.parse(filledValue)).asOpt
+          }
+        } else {
+          fromJsonSafe(Json.parse(value)).asOpt.vfuture
+        }
+      }
+    }
+  }
 
   def deleteAll()(implicit ec: ExecutionContext, env: Env): Future[Long]                                               =
     redisLike.keys(key("*").key).flatMap { keys =>

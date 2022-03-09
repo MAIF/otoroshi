@@ -197,7 +197,8 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
     }
   }
   def canWriteAuthModule(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    env.datastores.authConfigsDataStore.findById(id).flatMap {
+    // env.datastores.authConfigsDataStore.findById(id).flatMap {
+    env.proxyState.authModuleAsync(id).flatMap {
       case Some(mod) if canUserWrite(mod) => f
       case _                              => fforbidden
     }

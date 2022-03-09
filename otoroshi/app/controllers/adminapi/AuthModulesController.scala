@@ -158,7 +158,8 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
 
   def startRegistration(id: String) =
     ApiAction.async { ctx =>
-      env.datastores.authConfigsDataStore.findById(id).flatMap {
+      // env.datastores.authConfigsDataStore.findById(id).flatMap {
+      env.proxyState.authModuleAsync(id).flatMap {
         case Some(auth) if !ctx.canUserWrite(auth) => ctx.fforbidden
         case Some(auth)                            => {
           auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
@@ -179,7 +180,8 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
 
   def finishRegistration(id: String) =
     ApiAction.async { ctx =>
-      env.datastores.authConfigsDataStore.findById(id).flatMap {
+      // env.datastores.authConfigsDataStore.findById(id).flatMap {
+      env.proxyState.authModuleAsync(id).flatMap {
         case Some(auth) if !ctx.canUserWrite(auth) => ctx.fforbidden
         case Some(auth)                            => {
           auth.authModule(env.datastores.globalConfigDataStore.latest()) match {

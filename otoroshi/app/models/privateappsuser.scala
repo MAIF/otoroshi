@@ -67,7 +67,8 @@ case class PrivateAppsUser(
     )
 
   def withAuthModuleConfig[A](f: AuthModuleConfig => A)(implicit ec: ExecutionContext, env: Env): Unit = {
-    env.datastores.authConfigsDataStore.findById(authConfigId).map {
+    // env.datastores.authConfigsDataStore.findById(authConfigId).map {
+    env.proxyState.authModuleAsync(authConfigId).map {
       case None       => ()
       case Some(auth) => f(auth)
     }
@@ -164,7 +165,8 @@ object PrivateAppsUserHelper {
       case _                     => {
         desc.authConfigRef match {
           case Some(ref) =>
-            env.datastores.authConfigsDataStore.findById(ref).flatMap {
+            // env.datastores.authConfigsDataStore.findById(ref).flatMap {
+            env.proxyState.authModuleAsync(ref).flatMap {
               case None       => FastFuture.successful(None)
               case Some(auth) => isPrivateAppsSessionValidWithAuth(req, desc, auth)
             }
@@ -242,7 +244,8 @@ object PrivateAppsUserHelper {
               "errors.auth.config.ref.not.found"
             )
           case Some(ref) => {
-            env.datastores.authConfigsDataStore.findById(ref).flatMap {
+            // env.datastores.authConfigsDataStore.findById(ref).flatMap {
+            env.proxyState.authModuleAsync(ref).flatMap {
               case None       =>
                 errorResult(
                   InternalServerError,

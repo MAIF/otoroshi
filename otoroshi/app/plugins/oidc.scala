@@ -483,7 +483,8 @@ case class OIDCThirdPartyApiKeyConfig(
               )
               .fleft[A]
           case Some(ref) =>
-            env.datastores.authConfigsDataStore.findById(ref).flatMap {
+            // env.datastores.authConfigsDataStore.findById(ref).flatMap {
+            env.proxyState.authModuleAsync(ref).flatMap {
               case None       =>
                 Errors
                   .craftResponseResult(

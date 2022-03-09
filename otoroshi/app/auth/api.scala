@@ -209,6 +209,7 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
 }
 
 trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
+  def findById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[AuthModuleConfig]]
   def generateLoginToken(maybeTokenValue: Option[String] = None)(implicit ec: ExecutionContext): Future[String]
   def validateLoginToken(token: String)(implicit ec: ExecutionContext): Future[Boolean]
 
