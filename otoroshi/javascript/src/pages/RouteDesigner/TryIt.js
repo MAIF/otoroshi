@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { BooleanInput, CodeInput, SelectInput } from '@maif/react-forms/lib/inputs'
-import { tryIt } from '../../services/BackOfficeServices'
+import { tryIt, fetchAllApikeys } from '../../services/BackOfficeServices'
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD']
 
@@ -27,11 +27,17 @@ export const TryIt = ({ route }) => {
         bodyContent: '',
         contentType: undefined,
         route: undefined,
-        route_id: undefined
+        route_id: undefined,
+        useApikey: false,
+        apikey: undefined,
+        apikeyFormat: 'basic',
+        apikeyHeader: "Authorization"
     })
 
+    const [apikeys, setApikeys] = useState([])
     const [rawResponse, setRawResponse] = useState()
     const [response, setReponse] = useState()
+    const [responseBody, setResponseBody] = useState()
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
@@ -41,6 +47,10 @@ export const TryIt = ({ route }) => {
                 route_id: route.id
             })
     }, [route])
+
+    useEffect(() => {
+        fetchAllApikeys().then(setApikeys)
+    }, [])
 
     const send = () => {
         setLoading(true)
@@ -57,6 +67,12 @@ export const TryIt = ({ route }) => {
             .then(res => {
                 setReponse(res)
                 setLoading(false)
+
+                try {
+                    setResponseBody(JSON.stringify(JSON.parse(atob(res.body_base_64)), null, 4))
+                } catch (err) {
+                    setResponseBody(atob(res.body_base_64))
+                }
             })
     }
 
@@ -80,9 +96,28 @@ export const TryIt = ({ route }) => {
         a.click()
         document.body.removeChild(a)
     }
-    const receivedResponse = rawResponse && response
 
-    console.log(rawResponse)
+    const apikeyToHeader = (format, apikey, apikeyHeader) => {
+        const { clientId, clientSecret } = apikey || request.apikey
+        return {
+            ...Object.fromEntries(Object.entries(request.headers)
+                .filter(([id, _]) => ![
+                    'authorization-header',
+                    'Otoroshi-Client-Id',
+                    'Otoroshi-Client-Secret'].includes(id))),
+            ...(format === 'basic' ? {
+                'authorization-header': {
+                    key: apikeyHeader || request.apikeyHeader,
+                    value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`
+                }
+            } : {
+                'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
+                'Otoroshi-Client-Secret': { key: 'Otoroshi-Client-Secret', value: clientSecret }
+            })
+        }
+    }
+
+    const receivedResponse = rawResponse && response
 
     return <div className='h-100' style={{
         flexDirection: 'column',
@@ -111,7 +146,7 @@ export const TryIt = ({ route }) => {
             </button>
         </div>
         <div style={{
-            height: headersStatus === 'down' ? '225px' : 'initial',
+            height: headersStatus === 'down' ? '400px' : 'initial',
             flexDirection: "column",
             overflowY: 'hidden',
             paddingBottom: headersStatus === 'down' ? '120px' : 0
@@ -119,10 +154,14 @@ export const TryIt = ({ route }) => {
             <div className='d-flex-between mt-3'>
                 <div className='d-flex'>
                     {[
+                        { label: 'Authorization', value: 'Authorization' },
                         { label: 'Headers', value: `Headers (${Object.keys(request.headers || {}).length})` },
                         { label: 'Body', value: 'Body' }
                     ].map(({ label, value }) => (
-                        <button onClick={() => setSelectedTab(label)} className='pb-2 me-3' style={{
+                        <button onClick={() => {
+                            setHeadersStatus('down')
+                            setSelectedTab(label)
+                        }} className='pb-2 me-3' style={{
                             padding: 0,
                             border: 0,
                             borderBottom: selectedTab === label ? '2px solid #f9b000' : 'transparent',
@@ -132,7 +171,68 @@ export const TryIt = ({ route }) => {
                 </div>
                 <i className={`tab fas fa-chevron-${headersStatus}`} onClick={() => setHeadersStatus(headersStatus === 'up' ? 'down' : 'up')} />
             </div>
-            {selectedTab === "Headers" && headersStatus === 'down' && <Headers
+            {selectedTab === 'Authorization' && headersStatus === 'down' && <div className='mt-3 d-flex w-50'>
+                <div className='d-flex-between pe-3 me-3' style={{ borderRight: '2px solid #494849' }}>
+                    <span className='me-3'>Enabled</span>
+                    <BooleanInput value={request.useApikey} onChange={() => setRequest({
+                        ...request,
+                        useApikey: !request.useApikey,
+                        headers: Object.fromEntries(Object.entries(request.headers).filter(([id, _]) => !['authorization-header', 'Otoroshi-Client-Id', 'Otoroshi-Client-Secret'].includes(id)))
+                    })} />
+                </div>
+                {request.useApikey && <div className='flex'>
+                    <div className='d-flex-between'>
+                        <span className='me-3'>Apikey</span>
+                        <div className='flex'>
+                            <SelectInput
+                                possibleValues={apikeys}
+                                value={request.apikey}
+                                onChange={k => setRequest({
+                                    ...request,
+                                    apikey: k,
+                                    headers: apikeyToHeader(request.apikeyFormat, k)
+                                })}
+                                transformer={item => ({ value: item, label: item.clientName })}
+                            />
+                        </div>
+                    </div>
+                    {request.apikey && <div className='pt-3 mt-3' style={{ borderTop: '2px solid #494849' }}>
+                        <div className='d-flex-between'>
+                            <span className='me-3'>Apikey format</span>
+                            <div className='flex'>
+                                <SelectInput
+                                    possibleValues={[
+                                        { value: 'basic', label: 'Basic header' },
+                                        { value: 'credentials', label: 'Client ID/Secret headers' }
+                                    ]}
+                                    value={request.apikeyFormat}
+                                    onChange={k => setRequest({
+                                        ...request,
+                                        apikeyFormat: k,
+                                        headers: apikeyToHeader(k)
+                                    })}
+                                />
+                            </div>
+                        </div>
+                        {request.apikeyFormat === 'basic' && <div className='d-flex-between mt-3'>
+                            <span className='flex'>Add to header</span>
+                            <input
+                                type="text"
+                                className='form-control flex'
+                                onChange={e => {
+                                    setRequest({
+                                        ...request,
+                                        apikeyHeader: e.target.value,
+                                        headers: apikeyToHeader(request.apikeyFormat, undefined, e.target.value)
+                                    })
+                                }}
+                                value={request.apikeyHeader}
+                            />
+                        </div>}
+                    </div>}
+                </div>}
+            </div>}
+            {selectedTab === 'Headers' && headersStatus === 'down' && <Headers
                 headers={request.headers}
                 onKeyChange={(id, v) => {
                     const updatedRequest = {
@@ -189,67 +289,79 @@ export const TryIt = ({ route }) => {
             </div>
             }
         </div>
-        {receivedResponse && <div className='d-flex flex-row mt-3'>
-            <div className='d-flex flex-row justify-content-between flex'>
-                <div>
-                    {[
-                        { label: 'Report', value: 'Report' },
-                        { label: 'Body', value: 'Body' },
-                        { label: 'Cookies', value: 'Cookies' },
-                        { label: 'Headers', value: `Headers (${([...rawResponse.headers] || []).length})` }
-                    ].map(({ label, value }) => (
-                        <button onClick={() => setSelectedResponseTab(label)} className='pb-2 me-3' style={{
-                            padding: 0,
-                            border: 0,
-                            borderBottom: selectedResponseTab === label ? '2px solid #f9b000' : 'transparent',
-                            background: 'none'
-                        }}>{value}</button>
-                    ))}
-                </div>
-                <div className='d-flex flex-row'>
-                    <div className='d-flex flex-row me-3'>
-                        <span className='me-1'>Status:</span>
-                        <span style={{ color: 'var(--bs-success)' }}>{response.status}</span>
+        {
+            receivedResponse && <div className='d-flex flex-row mt-3'>
+                <div className='d-flex flex-row justify-content-between flex'>
+                    <div>
+                        {[
+                            { label: 'Report', value: 'Report' },
+                            { label: 'Body', value: 'Body' },
+                            { label: 'Cookies', value: 'Cookies' },
+                            { label: 'Headers', value: `Headers (${([...rawResponse.headers] || []).length})` }
+                        ].map(({ label, value }) => (
+                            <button onClick={() => setSelectedResponseTab(label)} className='pb-2 me-3' style={{
+                                padding: 0,
+                                border: 0,
+                                borderBottom: selectedResponseTab === label ? '2px solid #f9b000' : 'transparent',
+                                background: 'none'
+                            }}>{value}</button>
+                        ))}
                     </div>
-                    <div className='d-flex flex-row me-3'>
-                        <span className='me-1'>Time:</span>
-                        <span style={{ color: 'var(--bs-success)' }}>{roundNsTo(response.report?.duration_ns)} ms</span>
+                    <div className='d-flex flex-row'>
+                        <div className='d-flex flex-row me-3'>
+                            <span className='me-1'>Status:</span>
+                            <span style={{ color: 'var(--bs-success)' }}>{response.status}</span>
+                        </div>
+                        <div className='d-flex flex-row me-3'>
+                            <span className='me-1'>Time:</span>
+                            <span style={{ color: 'var(--bs-success)' }}>{roundNsTo(response.report?.duration_ns)} ms</span>
+                        </div>
+                        <div className='d-flex flex-row me-3'>
+                            <span className='me-1'>Size:</span>
+                            <span style={{ color: 'var(--bs-success)' }}>{bytesToSize(rawResponse.headers.get("content-length"))}</span>
+                        </div>
+                        <button className="btn btn-sm btn-success"
+                            style={{ backgroundColor: "#f9b000", borderColor: '#f9b000' }}
+                            onClick={saveResponse}>Save Response</button>
                     </div>
-                    <div className='d-flex flex-row me-3'>
-                        <span className='me-1'>Size:</span>
-                        <span style={{ color: 'var(--bs-success)' }}>{bytesToSize(rawResponse.headers.get("content-length"))}</span>
-                    </div>
-                    <button className="btn btn-sm btn-success"
-                        style={{ backgroundColor: "#f9b000", borderColor: '#f9b000' }}
-                        onClick={saveResponse}>Save Response</button>
                 </div>
             </div>
-        </div>}
-        {receivedResponse && selectedResponseTab === "Headers" && <Headers headers={[...rawResponse.headers].reduce((acc, [key, value], index) => ({
-            ...acc,
-            [`${Date.now()}-${index}`]: { key, value }
-        }), {})} />}
+        }
+        {
+            receivedResponse && selectedResponseTab === "Headers" && <Headers headers={[...rawResponse.headers].reduce((acc, [key, value], index) => ({
+                ...acc,
+                [`${Date.now()}-${index}`]: { key, value }
+            }), {})} />
+        }
 
-        {receivedResponse && selectedResponseTab === "Body" && <div className='mt-3'>
-            <CodeInput
-                readOnly={true}
-                value={JSON.stringify(JSON.parse(atob(response.body_base_64)), null, 4)}
-                width="-1"
-            />
-        </div>}
-        {!receivedResponse && !loading && <div className="d-flex align-items-center justify-content-center">
-            <span>Enter the URL and click Send to get a response</span>
-        </div>}
+        {
+            receivedResponse && selectedResponseTab === "Body" && <div className='mt-3'>
+                {responseBody.startsWith('<!') ?
+                    <iframe srcDoc={responseBody} style={{ flex: 1, minHeight: '500px', width: '100%' }} /> :
+                    <CodeInput
+                        readOnly={true}
+                        value={responseBody}
+                        width="-1"
+                    />}
+            </div>
+        }
+        {
+            !receivedResponse && !loading && <div className="d-flex align-items-center justify-content-center">
+                <span>Enter the URL and click Send to get a response</span>
+            </div>
+        }
         {loading && <div className='d-flex justify-content-center'><i className='fas fa-cog fa-spin' style={{ fontSize: "40px" }} /></div>}
 
-        {receivedResponse && selectedResponseTab === 'Report' && <ReportView
-            report={response.report}
-            search={search} setSearch={setSearch}
-            unit={unit} setUnit={setUnit}
-            sort={sort} setSort={setSort}
-            flow={flow} setFlow={setFlow}
-        />}
-    </div>
+        {
+            receivedResponse && selectedResponseTab === 'Report' && <ReportView
+                report={response.report}
+                search={search} setSearch={setSearch}
+                unit={unit} setUnit={setUnit}
+                sort={sort} setSort={setSort}
+                flow={flow} setFlow={setFlow}
+            />
+        }
+    </div >
 }
 
 const firstLetterUppercase = str => str.charAt(0).toUpperCase() + str.slice(1)
