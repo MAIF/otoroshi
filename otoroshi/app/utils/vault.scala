@@ -367,6 +367,7 @@ class Vaults(env: Env) {
             vaults.put(key, new IzanamiVault(key, env))
           } else {
             // TODO: support Google Cloud KMS
+            // TODO: support Alibaba KMS
             // TODO: support square https://github.com/square/keywhiz
             // TODO: support pinterest https://github.com/pinterest/knox
             logger.error(s"unknown vault type '${typ}'")

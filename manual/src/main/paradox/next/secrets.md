@@ -105,7 +105,7 @@ vaults {
 
 ### Hashicorp Vault
 
-a backend for [Hashicorp Vault](https://www.vaultproject.io/)
+a backend for [Hashicorp Vault](https://www.vaultproject.io/). Right now we only support KV engines.
 
 the configuration of this backend should be like
 
@@ -127,7 +127,7 @@ you should define your references like `${vault://hashicorp_vault/secret/path/ke
 
 ### Azure Key Vault
 
-a backend for [Azure Key Vault](https://azure.microsoft.com/en-en/services/key-vault/)
+a backend for [Azure Key Vault](https://azure.microsoft.com/en-en/services/key-vault/). Right now we only support secrets and not keys and certificates.
 
 the configuration of this backend should be like
 
