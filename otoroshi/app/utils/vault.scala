@@ -160,7 +160,7 @@ class AzureVault(name: String, env: Env) extends Vault {
 
   private val logger = Logger("otoroshi-azure-vault")
 
-  private val baseUrl = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.base-url").getOrElse("https://myvault.vault.azure.net/")
+  private val baseUrl = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url").getOrElse("https://myvault.vault.azure.net/")
   private val apiVersion = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.api-version").getOrElse("7.2")
   private val token = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.token").getOrElse("root") // TODO: get it automatically with client_credential flow
 
@@ -288,7 +288,7 @@ class IzanamiVault(name: String, env: Env) extends Vault {
 
   private val logger = Logger("otoroshi-azure-vault")
 
-  private val baseUrl = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.base-url").getOrElse("https://127.0.0.1:9000")
+  private val baseUrl = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url").getOrElse("https://127.0.0.1:9000")
   private val clientId = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client-id").getOrElse("client")
   private val clientSecret = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client-secret").getOrElse("secret")
 
@@ -357,6 +357,7 @@ class Vaults(env: Env) {
           } else if (typ == "hashicorp-vault") {
             vaults.put(key, new HashicorpVault(key, env))
           } else if (typ == "azure") {
+            // TODO: Supports keys and certificates types
             vaults.put(key, new AzureVault(key, env))
           } else if (typ == "aws") {
             vaults.put(key, new AwsVault(key, env))
@@ -365,6 +366,9 @@ class Vaults(env: Env) {
           } else if (typ == "izanami") {
             vaults.put(key, new IzanamiVault(key, env))
           } else {
+            // TODO: support Google Cloud KMS
+            // TODO: support square https://github.com/square/keywhiz
+            // TODO: support pinterest https://github.com/pinterest/knox
             logger.error(s"unknown vault type '${typ}'")
           }
         }
