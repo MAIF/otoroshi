@@ -5,37 +5,39 @@ import { Table } from "../components/inputs";
 import { Location } from '../components/Location'
 import NextSidebar from "../components/NextSidebar";
 import { constraints, Form, format, type } from '@maif/react-forms';
-import Graph from './RouteDesigner/Graph';
+import { DEFAULT_FLOW } from './RouteDesigner/Graph';
 
 export const BackendsPage = ({ setTitle }) => {
     const params = useParams()
     const history = useHistory()
     const match = useRouteMatch()
 
-    const BackendsTable = () => <Table
-        parentProps={{ params }}
-        navigateTo={item => history.push(`/backends/${item.id}`)}
-        selfUrl="backends"
-        defaultTitle="Backends"
-        itemName='Backend'
-        formSchema={null}
-        formFlow={null}
-        columns={[{ title: 'Name', content: item => item.name }]}
-        fetchItems={() => nextClient.find(nextClient.ENTITIES.BACKENDS)}
-        deleteItem={() => nextClient.remove(nextClient.ENTITIES.BACKENDS)}
-        showActions={true}
-        showLink={false}
-        extractKey={item => item.id}
-        rowNavigation={true}
-        hideAddItemAction={true}
-        rawEditUrl={true}
-        injectTopBar={() => <Link
-            className='btn btn-success ms-1'
-            to={'backends/new'}>
-            <i className="fas fa-plus-circle" /> Create new backend
-        </Link>
-        }
-    />
+    const BackendsTable = () => <div className='designer'>
+        <Table
+            parentProps={{ params }}
+            navigateTo={item => history.push(`/backends/${item.id}`)}
+            selfUrl="backends"
+            defaultTitle="Backends"
+            itemName='Backend'
+            formSchema={null}
+            formFlow={null}
+            columns={[{ title: 'Name', content: item => item.name }]}
+            fetchItems={() => nextClient.find(nextClient.ENTITIES.BACKENDS)}
+            deleteItem={() => nextClient.remove(nextClient.ENTITIES.BACKENDS)}
+            showActions={true}
+            showLink={false}
+            extractKey={item => item.id}
+            rowNavigation={true}
+            hideAddItemAction={true}
+            rawEditUrl={true}
+            injectTopBar={() => <Link
+                className='btn btn-success ms-1'
+                to={'backends/new'}>
+                <i className="fas fa-plus-circle" /> Create new backend
+            </Link>
+            }
+        />
+    </div>
 
     useEffect(() => {
         setTitle("Backends")
@@ -59,7 +61,7 @@ export const BackendsPage = ({ setTitle }) => {
                             .then(setValue)
                 }, [p.routebackendIdId])
 
-                return <div style={{ padding: '7px 15px 0 0' }} className="row">
+                return <div style={{ padding: '7px 15px 0 0' }} className="designer row">
                     <NextSidebar isCreation={true} entity={nextClient.ENTITIES.BACKENDS} minimalist={true} />
                     <div className='col-sm-11' style={{ paddingLeft: 0 }}>
                         <BackendForm isCreation={isCreation} value={value} />
@@ -71,7 +73,7 @@ export const BackendsPage = ({ setTitle }) => {
 }
 
 export const BackendForm = ({ isCreation, value, onSubmit, foldable, style = {} }) => {
-    const graph = Graph.find(node => node.id === 'Backend')
+    const graph = DEFAULT_FLOW.find(node => node.id === 'Backend')
     const ref = useRef()
 
     const [show, setShow] = useState(!foldable)

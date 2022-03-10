@@ -15,28 +15,30 @@ export default ({ }) => {
         { title: 'Name', content: item => item.name }
     ];
 
-    return <Table
-        parentProps={{ params }}
-        navigateTo={item => history.push(`/routes/${item.id}?tab=flow`)}
-        selfUrl="routes"
-        defaultTitle="Routes"
-        itemName='Route'
-        formSchema={null}
-        formFlow={null}
-        columns={columns}
-        fetchItems={() => nextClient.find(nextClient.ENTITIES.ROUTES)}
-        deleteItem={item => nextClient.remove(nextClient.ENTITIES.ROUTES, item)}
-        showActions={true}
-        showLink={false}
-        extractKey={item => item.id}
-        rowNavigation={true}
-        hideAddItemAction={true}
-        rawEditUrl={true}
-        injectTopBar={() => <Link
-            className='btn btn-success'
-            to={'routes/new?tab=informations'}>
-            <i className="fas fa-plus-circle" /> Create new route
-        </Link>
-        }
-    />
+    return <div className="designer">
+        <Table
+            parentProps={{ params }}
+            navigateTo={item => history.push(`/routes/${item.id}?tab=flow`)}
+            selfUrl="routes"
+            defaultTitle="Routes"
+            itemName='Route'
+            formSchema={null}
+            formFlow={null}
+            columns={columns}
+            fetchItems={() => nextClient.find(nextClient.ENTITIES.ROUTES)}
+            deleteItem={item => nextClient.remove(nextClient.ENTITIES.ROUTES, item)}
+            showActions={true}
+            showLink={false}
+            extractKey={item => item.id}
+            rowNavigation={true}
+            hideAddItemAction={true}
+            rawEditUrl={true}
+            injectTopBar={() => <Link
+                className='btn btn-success'
+                to={'routes/new?tab=informations'}>
+                <i className="fas fa-plus-circle" /> Create new route
+            </Link>
+            }
+        />
+    </div>
 }

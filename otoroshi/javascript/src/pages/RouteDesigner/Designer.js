@@ -5,8 +5,6 @@ import { Form, format, type } from '@maif/react-forms'
 import { SelectInput } from '@maif/react-forms/lib/inputs'
 import deepSet from 'set-value'
 import { DEFAULT_FLOW, PLUGIN_INFORMATIONS_SCHEMA } from './Graph'
-
-import '../../style/components/_designer.scss'
 import { BackendForm } from '../BackendsPage'
 
 export default ({ lineId, value }) => {
@@ -135,7 +133,8 @@ export default ({ lineId, value }) => {
         cursor: clickable ? 'pointer' : 'initial',
         opacity: (!selectedNode || highlighted) ? 1 : .25,
         backgroundColor: highlighted ? '#f9b000' : '#494948',
-        ...style
+        ...style,
+        textAlign: 'center'
     }} onClick={onClick ? e => {
         e.stopPropagation()
         onClick(e)
@@ -150,7 +149,7 @@ export default ({ lineId, value }) => {
             opacity: highlighted ? 1 : .25,
             marginTop: mt
         }}>
-        <div>{text}</div>
+        <span className='text-center'>{text}</span>
     </div>
 
     const Link = ({ highlighted = true, flex }) => <div className="link" style={{
@@ -176,13 +175,13 @@ export default ({ lineId, value }) => {
                     padding: '4px 12px',
                     borderRadius: '4px',
                     color: "#fff",
-                    whiteSpace: 'nowrap',
+                    whiteSpace: 'wrap',
                     width: "fit-content"
                 }}>
                     {name || id}
                 </span>
             </Dot>
-            {!hideLink && <Link highlighted={highlighted} flex={isLast} />}
+            {!hideLink && <Link highlighted={highlighted} />}
         </>
     }
 
@@ -261,20 +260,6 @@ export default ({ lineId, value }) => {
     }))
         .flat()
 
-    const SaveButton = () => <button
-        className="btn btn-save"
-        type="button"
-        onClick={saveChanges}
-        style={{
-            position: 'absolute',
-            bottom: '12px',
-            right: '12px',
-            zIndex: 100
-        }}>
-        <i className="far fa-paper-plane" style={{ paddingRight: '6px' }} />
-        <span>Update route</span>
-    </button>
-
     console.log(route)
 
     const inputNodes = sortInputStream(nodes
@@ -284,8 +269,7 @@ export default ({ lineId, value }) => {
 
     return (
         <div className="h-100 col-sm-12" onClick={() => setSelectedNode(undefined)}>
-            {!selectedNode && <SaveButton />}
-            <div className="col-sm-4 pe-3" style={{
+            <div className="col-sm-3" style={{
                 paddingLeft: 0,
                 marginRight: 'calc(var(--bs-gutter-x) * 1)'
             }}>
@@ -319,29 +303,55 @@ export default ({ lineId, value }) => {
                         onDrag={onDrag} addNode={addNode} />
                 </div>
             </div>
-            <div className="col-sm-8">
-                <div className="row h-100" style={{
+            <div className="col-sm-9">
+                <div className="row h-100 p-2 me-1" style={{
                     background: 'rgb(60, 60, 60)',
-                    padding: '12px',
                     borderRadius: '4px'
                 }}>
-                    <div className="col-sm-4 pe-3" style={{ display: 'flex', flexDirection: 'column' }}>
-                        <div className="main-view">
-                            <Dot style={{
-                                width: "72px",
-                                height: "36px",
-                                borderRadius: '6px'
-                            }} icon="chevron-down" selectedNode={selectedNode} />
-                            <Link highlighted={!selectedNode} />
-                            {inputNodes.map((value, i) => <NodeElement
-                                element={value}
-                                key={`inNodes${i}`}
-                                selectedNode={selectedNode}
-                                setSelectedNode={setSelectedNode}
-                                isLast={(inputNodes.length - 1) === i}
-                            />)}
-                            <Anchor text="Drop in elements here" highlighted={!selectedNode} />
-                            <Link highlighted={!selectedNode} flex={true} />
+                    <div className='col-sm-4 pe-3 d-flex flex-column'>
+                        <div className='row' style={{ height: '100%' }}>
+                            <div className="col-sm-6" style={{ display: 'flex', flexDirection: 'column' }}>
+                                <div className="main-view">
+                                    <Dot style={{
+                                        width: "72px",
+                                        height: "36px",
+                                        borderRadius: '6px'
+                                    }} icon="chevron-down" selectedNode={selectedNode} />
+                                    <Link highlighted={!selectedNode} />
+                                    {inputNodes.map((value, i) => <NodeElement
+                                        element={value}
+                                        key={`inNodes${i}`}
+                                        selectedNode={selectedNode}
+                                        setSelectedNode={setSelectedNode}
+                                        isLast={(inputNodes.length - 1) === i}
+                                    />)}
+                                    <Anchor text="Drop elements here" highlighted={!selectedNode} />
+                                    <Link highlighted={!selectedNode} flex={true} />
+                                </div>
+                            </div>
+                            <div className="col-sm-6 pe-3" style={{ display: 'flex', flexDirection: 'column' }}>
+                                <div className="main-view">
+                                    <Dot style={{
+                                        width: "72px",
+                                        height: "36px",
+                                        borderRadius: '6px'
+                                    }} icon="chevron-up" selectedNode={selectedNode} />
+                                    <Link highlighted={!selectedNode} />
+                                    {outputNodes.map((value, i) => <NodeElement
+                                        element={value}
+                                        key={`outNodes${i}`}
+                                        setSelectedNode={setSelectedNode}
+                                        selectedNode={selectedNode}
+                                        isLast={(outputNodes.length - 1) === i}
+                                    />)}
+                                    <Anchor
+                                        out={true}
+                                        text="Drop elements here"
+                                        stream="onOutputStream"
+                                        highlighted={!selectedNode} />
+                                    <Link highlighted={!selectedNode} flex={true} />
+                                </div>
+                            </div>
                         </div>
                         <div className="main-view"
                             style={{
@@ -370,34 +380,7 @@ export default ({ lineId, value }) => {
                                 hideLink={arr.length - 1 === i}
                                 disableBorder={true}
                             />)}
-                            {/* <Anchor out={true} flat={true}
-                                text="Drop targets elements here"
-                                stream="onTargetStream"
-                                highlighted={!selectedNode}
-                                mt='auto' /> */}
-                        </div>
-                        <div className="main-view">
-                            <Link highlighted={!selectedNode} />
-                            {outputNodes.map((value, i) => <NodeElement
-                                element={value}
-                                key={`outNodes${i}`}
-                                setSelectedNode={setSelectedNode}
-                                selectedNode={selectedNode}
-                                isLast={(outputNodes.length - 1) === i}
-                            />)}
-                            <Anchor
-                                out={true}
-                                text="Drop out elements here"
-                                stream="onOutputStream"
-                                highlighted={!selectedNode} />
-                            <Link highlighted={!selectedNode} flex={true} />
-                            <Dot style={{
-                                width: "72px",
-                                height: "36px",
-                                borderRadius: '6px'
-                            }} icon="chevron-down" selectedNode={selectedNode} />
-                        </div>
-                    </div>
+                        </div></div>
                     <div className="col-sm-8" style={{ paddingRight: 0 }}>
                         {selectedNode ? <EditView
                             setRoute={setRoute}
@@ -409,7 +392,7 @@ export default ({ lineId, value }) => {
                             route={route}
                             plugins={plugins}
                             backends={backends}
-                        /> : <UnselectedNode />}
+                        /> : <UnselectedNode saveChanges={saveChanges} />}
                     </div>
                 </div>
             </div>
@@ -422,17 +405,12 @@ const Element = ({ element, onDrag, n, addNode }) => (
         e.stopPropagation()
         addNode(element)
     }}>
-        <div className="element-icon group-icon">
-            <span>{n}</span>
-        </div>
-        <div style={{
-            margin: "0 12px",
+        <div className="d-flex-between" style={{
+            padding: "10px",
             textOverflow: 'ellipsis',
             overflow: 'hidden',
-            whiteSpace: 'nowrap',
+            whiteSpace: 'wrap',
             width: '100%',
-            display: 'flex',
-            justifyContent: 'space-between'
         }}>
             {element.name.charAt(0).toUpperCase() + element.name.slice(1)}
             <i className="fas fa-arrow-right" style={{ color: "#494948" }} />
@@ -448,10 +426,7 @@ const Group = ({ group, elements, onDrag, addNode }) => {
             e.stopPropagation()
             setOpen(!open)
         }}>
-            <div className='element-icon group-icon'>
-                <span className="group-size">{elements?.length}</span>
-            </div>
-            <span style={{ color: "#fff", paddingLeft: "12px" }}>{group.charAt(0).toUpperCase() + group.slice(1)}</span>
+            <span style={{ color: "#fff", padding: "10px" }}>{group.charAt(0).toUpperCase() + group.slice(1)}</span>
             <div style={{ marginLeft: 'auto', display: 'flex' }}>
                 <div className="flex-center"
                     onClick={e => {
@@ -464,7 +439,7 @@ const Group = ({ group, elements, onDrag, addNode }) => {
                         borderRadius: "4px",
                         cursor: 'pointer'
                     }}>
-                    <i className="fas fa-chevron-down" size={16} style={{ color: "#fff" }} />
+                    <i className="fas fa-chevron-down mr-2" size={16} style={{ color: "#fff" }} />
                 </div>
             </div>
         </div>
@@ -504,7 +479,7 @@ const SearchBar = ({ handleSearch }) => <div className='group'>
                 type="text"
                 style={{
                     border: 0,
-                    padding: '6px 0px 6px 12px',
+                    padding: '6px 0px 6px 6px',
                     width: '100%',
                     outline: 'none',
                     borderRadius: '4px'
@@ -533,14 +508,15 @@ const read = (value, path) => {
     return read(value[keys[0]], keys.slice(1).join("."))
 }
 
-const UnselectedNode = () => <div style={{
-    backgroundColor: "rgb(73, 73, 73)",
-    textAlign: "center",
-    fontStyle: 'italic',
-    padding: '8px',
-    color: "#fff"
-}}>
-    Start by selecting a node
+const UnselectedNode = ({ saveChanges }) => <div class="d-flex-between dark-background p-1 ps-2">
+    <span style={{
+        textAlign: "center",
+        fontStyle: 'italic'
+    }}>Start by selecting a node</span>
+    <button className="btn btn-sm btn-outline-success" type="button" onClick={saveChanges}>
+        <i className="far fa-paper-plane" style={{ paddingRight: '6px' }} />
+        <span>Update route</span>
+    </button>
 </div>
 
 const EditView = ({
@@ -603,6 +579,7 @@ const EditView = ({
         setSelectedNode(undefined)
         removeNode(id)
     }}>
+        <i className='fas fa-trash me-2'></i>
         Remove this component
     </button>
 
@@ -723,6 +700,7 @@ const EditView = ({
                             <button className="btn btn-sm btn-success"
                                 style={{ backgroundColor: "#f9b000", borderColor: '#f9b000' }}
                                 onClick={valid}>
+                                <i className='fas fa-save me-2'></i>
                                 Update the plugin configuration
                             </button>
                             {!selectedNode.default && <RemoveComponent />}
@@ -740,6 +718,7 @@ const EditView = ({
                                     setRoute(newRoute)
                                 })
                         }}>
+                        <i className='fas fa-save me-2'></i>
                         Update the plugin configuration
                     </button>
                 </>}

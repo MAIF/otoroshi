@@ -28,7 +28,8 @@ body.white-mode,
   @include bright-mode_background-color--darker;
 }
 
-body.white-mode {
+body.white-mode, 
+.white-mode .designer .dark-background {
   @include bright-mode_color--darker;
 }
 
@@ -53,7 +54,8 @@ body.white-mode {
     background-color: #f9b000;
     color: white;
   }
-
+  .designer,
+  .dark-background,
   .navbar-inverse,
   .sidebar,
   //.metric,

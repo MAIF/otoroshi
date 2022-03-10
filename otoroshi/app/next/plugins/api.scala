@@ -21,6 +21,7 @@ import play.api.libs.json._
 import play.api.libs.ws.{WSCookie, WSResponse}
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
 
+import java.lang.reflect.TypeVariable
 import java.security.cert.X509Certificate
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
@@ -234,9 +235,46 @@ trait NgNamedPlugin extends NamedPlugin { self =>
     defaultConfig match {
       case None         => None
       case Some(config) => {
+        def findVals(x: Any): Seq[String] = {
+          import scala.reflect.runtime.universe._
+          val mirror = runtimeMirror(this.getClass.getClassLoader)
+
+          val theType = mirror.classSymbol(x.getClass).toType
+          val xtm = theType.members.collect({case x if x.isTerm => x.asTerm})
+          xtm.filter(m => m.isGetter && !xtm.exists(m.setter == _) && m.name.toString == "configReads")
+            .map(_.typeSignature.resultType.toString)
+            .filter(r => r.contains("play.api.libs.json.Reads"))
+            .map(w => w.split("\\[")(1).replace("]", ""))
+            .toSeq
+        }
+
         def genSchema(jsobj: JsObject, prefix: String): JsObject = {
           jsobj.value.toSeq
             .map {
+              case (key, JsNull)                   =>
+                val types = findVals(this)
+                if (types.nonEmpty) {
+                  val fields = Class.forName(types.head).getDeclaredFields.toSeq
+
+                  val camelKey = "_([a-z\\d])".r.replaceAllIn(key, { m => m.group(1).toUpperCase() })
+
+                  fields.find(_.getName == camelKey) match {
+                    case Some(value) =>
+                      Json.obj(prefix + key -> Json.obj(
+                        "label" -> (prefix + key),
+                        "type" -> (value.getGenericType.toString.toLowerCase match {
+                            case v if v.contains("string") => "string"
+                            case v if v.contains("FiniteDuration") => "number"
+                            case _ => "number"
+                          })
+                      ))
+                    case None =>
+                      Json.obj(prefix + key -> Json.obj("type" -> "string", "label" -> (prefix + key)))
+                  }
+
+                  Json.obj(prefix + key -> Json.obj("type" -> "string", "label" -> (prefix + key)))
+                } else
+                  Json.obj(prefix + key -> Json.obj("type" -> "string", "label" -> (prefix + key)))
               case (key, JsString(_))              =>
                 Json.obj(prefix + key -> Json.obj("type" -> "string", "label" -> (prefix + key)))
               case (key, JsNumber(_))              =>

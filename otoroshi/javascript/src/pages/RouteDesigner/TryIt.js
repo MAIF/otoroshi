@@ -329,8 +329,8 @@ export const TryIt = ({ route }) => {
             }
         </div>
         {
-            receivedResponse && <div className='d-flex flex-row mt-3'>
-                <div className='d-flex flex-row justify-content-between flex'>
+            receivedResponse && <div className='d-flex flex-row-center mt-3'>
+                <div className='d-flex flex-row-center justify-content-between flex'>
                     <div>
                         {[
                             { label: 'Report', value: 'Report' },
@@ -346,16 +346,16 @@ export const TryIt = ({ route }) => {
                             }}>{value}</button>
                         ))}
                     </div>
-                    <div className='d-flex flex-row'>
-                        <div className='d-flex flex-row me-3'>
+                    <div className='d-flex flex-row-center'>
+                        <div className='d-flex flex-row-center me-3'>
                             <span className='me-1'>Status:</span>
                             <span style={{ color: 'var(--bs-success)' }}>{response.status}</span>
                         </div>
-                        <div className='d-flex flex-row me-3'>
+                        <div className='d-flex flex-row-center me-3'>
                             <span className='me-1'>Time:</span>
                             <span style={{ color: 'var(--bs-success)' }}>{roundNsTo(response.report?.duration_ns)} ms</span>
                         </div>
-                        <div className='d-flex flex-row me-3'>
+                        <div className='d-flex flex-row-center me-3'>
                             <span className='me-1'>Size:</span>
                             <span style={{ color: 'var(--bs-success)' }}>{bytesToSize(rawResponse.headers.get("content-length"))}</span>
                         </div>
