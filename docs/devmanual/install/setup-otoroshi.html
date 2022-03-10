@@ -118,6 +118,7 @@
   <li><a href="../next/index.html" class="page">Otoroshi Next</a>
   <ul>
     <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
+    <li><a href="../next/secrets.html" class="page">Secrets management</a></li>
     <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
   </ul></li>
 </ul>
@@ -236,6 +237,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../next/index.html" class="page">Otoroshi Next</a>
   <ul>
     <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
+    <li><a href="../next/secrets.html" class="page">Secrets management</a></li>
     <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
   </ul></li>
 </ul>
@@ -1535,6 +1537,27 @@ otoroshi {
     ttl-only = true
     ttl-only = ${?OTOROSHI_HEALTHCHECK_TTL_ONLY}
   }
+  vaults {
+    enabled = false
+    enabled = ${?OTOROSHI_VAULTS_ENABLED}
+    secrets-ttl = 300000 # 5 minutes
+    secrets-ttl = ${?OTOROSHI_VAULTS_SECRETS_TTL}
+    cached-secrets = 10000
+    cached-secrets = ${?OTOROSHI_VAULTS_CACHED_SECRETS}
+    read-ttl = 10000 # 10 seconds
+    read-ttl = ${?OTOROSHI_VAULTS_READ_TTL}
+    env {
+      type = &quot;env&quot;
+      prefix = ${?OTOROSHI_VAULTS_ENV_PREFIX}
+    }
+    # hashicorpvault {
+    #   type = &quot;hashicorp-vault&quot;
+    #   url = &quot;http://127.0.0.1:8200&quot;
+    #   mount = &quot;kv&quot;
+    #   kv = &quot;v2&quot;
+    #   token = &quot;root&quot;
+    # }
+  }
 }
 
 
@@ -2417,6 +2440,17 @@ otoroshi {
     block-on-red = ${?OTOROSHI_HEALTHCHECK_BLOCK_ON_500}
     ttl = ${?OTOROSHI_HEALTHCHECK_TTL}
     ttl-only = ${?OTOROSHI_HEALTHCHECK_TTL_ONLY}
+  }
+  vaults {
+    enabled = ${?OTOROSHI_VAULTS_ENABLED}
+    secrets-ttl = ${?OTOROSHI_VAULTS_SECRETS_TTL}
+    cached-secrets = ${?OTOROSHI_VAULTS_CACHED_SECRETS}
+    read-ttl = ${?OTOROSHI_VAULTS_READ_TTL}
+    env {
+      prefix = ${?OTOROSHI_VAULTS_ENV_PREFIX}
+    }
+    # hashicorpvault {
+    # }
   }
 }
 http.port = ${?otoroshi.http.port}     # the main http port for the otoroshi server
