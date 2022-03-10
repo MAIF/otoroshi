@@ -346,8 +346,8 @@ class Vaults(env: Env) {
   val enabled: Boolean = env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.vaults.enabled").getOrElse(false)
 
   if (enabled) {
-    logger.warn("the vaults feature is enable !")
-    logger.warn("be aware that this feature is experimental and might not work as expected.")
+    logger.warn("the vaults feature is enabled !")
+    logger.warn("be aware that this feature is EXPERIMENTAL and might not work as expected.")
     env.configurationJson.select("otoroshi").select("vaults").asOpt[JsObject].map { vaultsConfig =>
       vaultsConfig.keys.map { key =>
         vaultsConfig.select(key).asOpt[JsObject].map { vault =>
