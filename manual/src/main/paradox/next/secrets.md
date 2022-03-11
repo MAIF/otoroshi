@@ -58,6 +58,7 @@ the entities that support secrets management are the following
 - `targets`
 - `backends`
 - `tcp_services`
+- `data_exporters`
 
 ## Define a reference to a secret
 

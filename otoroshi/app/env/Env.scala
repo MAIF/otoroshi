@@ -11,6 +11,7 @@ import otoroshi.auth.{AuthModuleConfig, SessionCookieValues}
 import ch.qos.logback.classic.{Level, LoggerContext}
 import otoroshi.cluster._
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
+import otoroshi.next.utils.Vaults
 import otoroshi.events._
 import otoroshi.gateway.{AnalyticsQueue, CircuitBreakersHolder}
 import otoroshi.health.{HealthCheckerActor, StartHealthCheck}
@@ -55,7 +56,6 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.io.Source
 import scala.util.{Failure, Success}
 import otoroshi.script.plugins.Plugins
-import otoroshi.utils.Vaults
 
 case class SidecarConfig(
     serviceId: String,
