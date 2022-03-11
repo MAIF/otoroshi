@@ -462,13 +462,13 @@ class Vaults(env: Env) {
   //   }
   // }
 
-  def fillSecretsAsync(source: String)(implicit ec: ExecutionContext): Future[String] = {
+  def fillSecretsAsync(id: String, source: String)(implicit ec: ExecutionContext): Future[String] = {
     if (enabled) {
       expressionReplacer.replaceOnAsync(source) { expr =>
         resolveExpression(expr).map { status =>
           status match {
-            case CachedVaultSecretStatus.SecretReadSuccess(_) => logger.debug(s"fill secret from '${expr}' successfully")
-            case _ => logger.info(s"filling secret from '${expr}' failed because of '${status.value}'")
+            case CachedVaultSecretStatus.SecretReadSuccess(_) => logger.debug(s"fill secret on '${id}' from '${expr}' successfully")
+            case _ => logger.info(s"filling secret on '${id}' from '${expr}' failed because of '${status.value}'")
           }
           status.value
         }.recover {

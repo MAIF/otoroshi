@@ -311,19 +311,20 @@ trait RedisLikeStore[T] extends BasicStore[T] {
       Source.single(key("*").key)
         .mapAsync(1)(redisLike.keys)
         .mapAsync(1) { keys =>
-          if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-          else redisLike.mget(keys: _*)
+          if (keys.isEmpty) FastFuture.successful(Seq.empty[(Option[ByteString], String)])
+          else redisLike.mget(keys: _*).map(seq => seq.zip(keys))
         }
-        .map(seq => seq.filter(_.isDefined).map(_.get).map(_.utf8String))
+        .map(seq => seq.filter(_._1.isDefined).map(t => (t._1.get.utf8String, t._2)))
         .flatMapConcat(values => Source(values.toList))
-        .mapAsync(1) { value =>
-          if (value.contains("${vault://")) {
-            env.vaults.fillSecretsAsync(value).map { filledValue =>
-              fromJsonSafe(Json.parse(filledValue))
+        .mapAsync(1) {
+          case (value, key) =>
+            if (value.contains("${vault://")) {
+              env.vaults.fillSecretsAsync(key, value).map { filledValue =>
+                fromJsonSafe(Json.parse(filledValue))
+              }
+            } else {
+              fromJsonSafe(Json.parse(value)).vfuture
             }
-          } else {
-            fromJsonSafe(Json.parse(value)).vfuture
-          }
         }
         .collect {
           case JsSuccess(i, _) => i
@@ -435,7 +436,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
       case Some(rawValue) => {
         val value = rawValue.utf8String
         if (env.vaults.enabled && value.contains("${vault://")) {
-          env.vaults.fillSecretsAsync(value).map { filledValue =>
+          env.vaults.fillSecretsAsync(id, value).map { filledValue =>
             fromJsonSafe(Json.parse(filledValue)).asOpt
           }
         } else {

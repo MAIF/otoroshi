@@ -18,7 +18,7 @@ trait Entity { self =>
   def fillSecrets[A](reads: Format[A])(implicit env: Env, ec: ExecutionContext): Future[A] = {
     val jsonstr = json.stringify
     if (env.vaults.enabled && jsonstr.contains("${vault://")) {
-      env.vaults.fillSecretsAsync(jsonstr).map { filled =>
+      env.vaults.fillSecretsAsync(theId, jsonstr).map { filled =>
         reads.reads(filled.parseJson).get
       }
     } else {
