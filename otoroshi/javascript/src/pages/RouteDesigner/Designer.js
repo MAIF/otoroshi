@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import { useParams } from 'react-router'
+import { useParams, useLocation } from 'react-router'
 import { nextClient, getCategories, getPlugins } from '../../services/BackOfficeServices'
 import { Form, format, type } from '@maif/react-forms'
 import { SelectInput } from '@maif/react-forms/lib/inputs'
 import deepSet from 'set-value'
 import { DEFAULT_FLOW, PLUGIN_INFORMATIONS_SCHEMA } from './Graph'
 import { BackendForm } from '../BackendsPage'
+import Loader from './Loader'
 
 export default ({ lineId, value }) => {
     const { routeId } = useParams()
@@ -18,6 +19,9 @@ export default ({ lineId, value }) => {
 
     const [selectedNode, setSelectedNode] = useState()
     const [route, setRoute] = useState(value)
+
+    const [loading, setLoading] = useState(true)
+    const location = useLocation()
 
     useEffect(() => {
         Promise.all([
@@ -58,8 +62,10 @@ export default ({ lineId, value }) => {
                         }
                     })
                 ])
+
+                setLoading(false)
             })
-    }, [])
+    }, [location])
 
     const format = obj => {
         return Object.entries(obj).reduce((acc, [key, value]) => {
@@ -267,7 +273,7 @@ export default ({ lineId, value }) => {
     const targetNodes = nodes.filter(node => node.onTargetStream)
     const outputNodes = nodes.filter(node => (node.plugin_steps || []).some(s => ["TransformResponse"].includes(s)))
 
-    return (
+    return <Loader loading={loading}>
         <div className="h-100 col-sm-12" onClick={() => setSelectedNode(undefined)}>
             <div className="col-sm-3" style={{
                 paddingLeft: 0,
@@ -397,7 +403,7 @@ export default ({ lineId, value }) => {
                 </div>
             </div>
         </div>
-    )
+    </Loader>
 }
 
 const Element = ({ element, onDrag, n, addNode }) => (
@@ -725,5 +731,5 @@ const EditView = ({
             </div>
         }
         {selectedNode.switch && !selectedNode.default && <RemoveComponent />}
-    </div >
+    </div>
 }
