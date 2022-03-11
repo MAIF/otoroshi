@@ -178,7 +178,9 @@ vaults {
   ...
   name_of_the_vault {
     type = "kubernetes"
-    # see the configuration of the kubernetes plugin
+    # see the configuration of the kubernetes plugin, 
+    # by default if the pod if well configured, 
+    # you don't have to setup anything
   }
 }
 ```
