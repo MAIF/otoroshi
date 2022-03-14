@@ -58,6 +58,7 @@ the entities that support secrets management are the following
 - `targets`
 - `backends`
 - `tcp_services`
+- `data_exporters`
 
 ## Define a reference to a secret
 
@@ -177,7 +178,9 @@ vaults {
   ...
   name_of_the_vault {
     type = "kubernetes"
-    # see the configuration of the kubernetes plugin
+    # see the configuration of the kubernetes plugin, 
+    # by default if the pod if well configured, 
+    # you don't have to setup anything
   }
 }
 ```

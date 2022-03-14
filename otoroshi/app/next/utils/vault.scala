@@ -1,4 +1,4 @@
-package otoroshi.utils
+package otoroshi.next.utils
 
 import akka.Done
 import akka.http.scaladsl.model.Uri
@@ -11,6 +11,7 @@ import com.github.blemale.scaffeine.Scaffeine
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.plugins.jobs.kubernetes.{KubernetesClient, KubernetesConfig}
+import otoroshi.utils.ReplaceAllWith
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -18,7 +19,7 @@ import play.api.libs.ws.WSAuthScheme
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationInt, DurationLong}
-import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 sealed trait CachedVaultSecretStatus {
