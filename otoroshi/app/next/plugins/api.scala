@@ -264,7 +264,7 @@ trait NgNamedPlugin extends NamedPlugin { self =>
                         "label" -> (prefix + key),
                         "type" -> (value.getGenericType.toString.toLowerCase match {
                             case v if v.contains("string") => "string"
-                            case v if v.contains("FiniteDuration") => "number"
+                            case v if v.contains("finiteduration") || v.contains("long") => "number"
                             case _ => "number"
                           })
                       ))

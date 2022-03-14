@@ -114,7 +114,7 @@ object NgLargeResponseFaultConfig {
   }
 }
 case class NgLatencyInjectionFaultConfig(ratio: Double, from: FiniteDuration, to: FiniteDuration)
-    extends NgFaultConfig {
+  extends NgFaultConfig {
   def json: JsValue                       = NgLatencyInjectionFaultConfig.format.writes(this)
   def legacy: LatencyInjectionFaultConfig = LatencyInjectionFaultConfig(ratio, from, to)
 }
@@ -172,11 +172,11 @@ object NgBadResponsesFaultConfig {
 }
 
 case class NgChaosConfig(
-    largeRequestFaultConfig: Option[NgLargeRequestFaultConfig] = None,
-    largeResponseFaultConfig: Option[NgLargeResponseFaultConfig] = None,
-    latencyInjectionFaultConfig: Option[NgLatencyInjectionFaultConfig] = None,
-    badResponsesFaultConfig: Option[NgBadResponsesFaultConfig] = None
-) {
+                          largeRequestFaultConfig: Option[NgLargeRequestFaultConfig] = None,
+                          largeResponseFaultConfig: Option[NgLargeResponseFaultConfig] = None,
+                          latencyInjectionFaultConfig: Option[NgLatencyInjectionFaultConfig] = None,
+                          badResponsesFaultConfig: Option[NgBadResponsesFaultConfig] = None
+                        ) {
   def json: JsValue       = NgChaosConfig.format.writes(this)
   def legacy: ChaosConfig = ChaosConfig(
     enabled = true,
@@ -247,10 +247,59 @@ class SnowMonkeyChaos extends NgRequestTransformer {
   override def name: String                      = "Snow Monkey Chaos"
   override def description: Option[String]       = "This plugin introduce some chaos into you life".some
   override def defaultConfig: Option[JsObject]   = NgChaosConfig().json.asObject.some
+  override def configSchema: Option[JsObject] = Json.obj(
+    "large_request_fault" -> Json.obj(
+      "type" -> "object",
+      "format" -> "form",
+      "schema" -> Json.obj(
+        "ratio" -> Json.obj("type" -> "number", "value" -> "null", "constraints" -> Json.arr(Json.obj("type" -> "nullable"))),
+        "additionalRequestSize" -> Json.obj("type" -> "number")
+      )
+    ),
+    "large_response_fault" -> Json.obj(
+      "type" -> "object",
+      "format" -> "form",
+      "schema" -> Json.obj(
+        "ratio" -> Json.obj("type" -> "number", "value" -> "null", "constraints" -> Json.arr(Json.obj("type" -> "nullable"))),
+        "additionalResponseSize" -> Json.obj("type" -> "number")
+      )
+    ),
+    "latency_injection_fault" -> Json.obj(
+      "type" -> "object",
+      "format" -> "form",
+      "schema" -> Json.obj(
+        "ratio" -> Json.obj("type" -> "number", "value" -> "null", "constraints" -> Json.arr(Json.obj("type" -> "nullable"))),
+        "from" -> Json.obj("type" -> "number"),
+        "to" -> Json.obj("type" -> "number")
+      )
+    ),
+    "bad_responses_fault" -> Json.obj(
+      "type" -> "object",
+      "format" -> "form",
+      "schema" -> Json.obj(
+        "ratio" -> Json.obj("type" -> "number", "value" -> "null", "constraints" -> Json.arr(Json.obj("type" -> "nullable"))),
+        "responses" -> Json.obj(
+          "label" -> "Responses",
+          "type" -> "object",
+          "array" -> "true",
+          "createOption" -> true,
+          /*"schema" -> Json.obj(
+            "status" -> Json.obj("type" -> "number", "value" -> 500),
+            "body" -> Json.obj("type" -> "string", "value" -> """{"error":"..."}"""),
+            "headers" -> Json.obj(
+              "array" -> "true",
+              "createOption" -> true,
+              "type" -> "object"
+            )
+          )*/
+        )
+      )
+    )
+  ).some
 
   override def transformRequest(
-      ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+                                 ctx: NgTransformerRequestContext
+                               )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     // val config = ctx.cachedConfig(internalName)(configReads).getOrElse(ChaosConfig(enabled = true))
     val snowMonkey   = snowMonkeyRef.get("singleton", _ => new SnowMonkey()(env))
     val globalConfig = env.datastores.globalConfigDataStore.latest()
@@ -273,8 +322,8 @@ class SnowMonkeyChaos extends NgRequestTransformer {
   }
 
   override def transformResponseSync(
-      ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+                                      ctx: NgTransformerResponseContext
+                                    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     // val config = ctx.cachedConfig(internalName)(configReads).getOrElse(ChaosConfig(enabled = true))
     ctx.attrs.get(SnowMonkeyChaos.ContextKey) match {
       case None                => ctx.otoroshiResponse.right

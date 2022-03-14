@@ -1,10 +1,11 @@
 package otoroshi.next.plugins
 
 import akka.Done
+import akka.http.scaladsl.model.HttpProtocols
 import akka.http.scaladsl.util.FastFuture.EnhancedFuture
 import akka.stream.Materializer
 import otoroshi.env.Env
-import otoroshi.models.Canary
+import otoroshi.models.{AlwaysMatch, Canary}
 import otoroshi.next.models.{NgBackend, NgTarget}
 import otoroshi.next.plugins.api._
 import otoroshi.security.IdGenerator
@@ -86,6 +87,102 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
   override def isPreRouteAsync: Boolean          = true
   override def isTransformRequestAsync: Boolean  = true
   override def isTransformResponseAsync: Boolean = false
+
+  override def configSchema: Option[JsObject] = Json.obj(
+    "traffic" -> Json.obj("type" -> "number", "value" -> 0.2),
+    "root" -> Json.obj("type" -> "string", "value" -> "/"),
+    "targets"  -> Json.obj(
+      "type" -> "object",
+      "format" -> "form",
+      "array" -> true,
+      "schema" -> Json.obj(
+        "id" -> Json.obj("type" -> "string"),
+        "hostname" -> Json.obj("type" -> "string"),
+        "port" -> Json.obj("type" -> "number"),
+        "tls" -> Json.obj("type" -> "bool", "value" -> false),
+        "weight" -> Json.obj("type" -> "number", "value" -> 1),
+        "tls_config" -> Json.obj(
+          "type" -> "object",
+          "format" -> "form",
+          "label" -> "TLS config",
+          "schema" -> Json.obj(
+            "certs" -> Json.obj(
+              "type" -> "string",
+              "format" -> "select",
+              "isMulti" -> true,
+              "optionsFrom" -> "/bo/api/proxy/api/certificates",
+              "transformer" -> Json.obj("value" -> "id", "label" -> "name")
+            )
+          )
+        ),
+        "trusted_certs" -> Json.obj(
+          "type" -> "object",
+          "format" -> "form",
+          "schema" -> Json.obj(
+            "certs" -> Json.obj(
+              "type" -> "string",
+              "format" -> "select",
+              "isMulti" -> true,
+              "optionsFrom" -> "/bo/api/proxy/api/certificates",
+              "transformer" -> Json.obj("value" -> "id", "label" -> "name")
+            )
+          )
+        ),
+        "enabled" -> Json.obj("type" -> "bool", "value" -> false),
+        "loose" -> Json.obj("type" -> "bool", "value" -> false),
+        "trust_all" -> Json.obj("type" -> "bool", "value" -> false),
+        "protocol"  -> Json.obj(
+          "type" -> "string",
+          "format" -> "select",
+          "options" -> Json.arr(HttpProtocols.`HTTP/1.0`.value, HttpProtocols.`HTTP/1.1`.value, HttpProtocols.`HTTP/2.0`.value),
+          "value" -> HttpProtocols.`HTTP/1.1`.value
+        ),
+        "predicate_type" -> Json.obj(
+          "type" -> "string",
+          "format" -> "select",
+          "options" -> Json.arr("AlwaysMatch", "GeolocationMatch", "NetworkLocationMatch")
+        ),
+        "predicate" -> Json.obj(
+          "type" -> "object",
+          "format" -> "form",
+          "conditionalSchema" -> Json.obj(
+            "ref" -> "targets.predicate_type", // TODO - fix react forms lib to accept conditional schema in nested form
+            "switch" -> Json.arr(
+              Json.obj(
+                "default" -> true,
+                "schema" -> Json.obj(
+                  "type" -> Json.obj(
+                  "type" -> "string",
+                  "label" -> "type"
+                  )
+                ),
+                "flow" -> Json.arr("type")
+              ),
+              Json.obj(
+                "condition" -> "GeolocationMatch",
+                "schema" -> Json.obj(
+                  "positions" -> Json.obj("type" -> "string", "array" -> true, "createOption" -> true)
+                ),
+                "flow" -> Json.arr("positions")
+              ),
+              Json.obj(
+                "condition" -> "NetworkLocationMatch",
+                "schema" -> Json.obj(
+                    "provider" -> Json.obj("type" -> "string", "value" -> "*", "label" -> "Provider"),
+                    "region" -> Json.obj("type" -> "string", "value" -> "*", "label" -> "Region"),
+                    "zone" -> Json.obj("type" -> "string", "value" -> "*", "label" -> "Zone"),
+                    "dataCenter" -> Json.obj("type" -> "string", "value" -> "*", "label" -> "Datacenter"),
+                    "rack" -> Json.obj("type" -> "string", "value" -> "*", "label" -> "Rack")
+                ),
+                "flow" -> Json.arr("provider", "region", "zone", "dataCenter", "rack")
+              )
+            )
+          )
+        ),
+        "ip_address" -> Json.obj("type" -> "string")
+      )
+    )
+  ).some
 
   override def preRoute(
       ctx: NgPreRoutingContext

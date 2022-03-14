@@ -3,7 +3,6 @@ package otoroshi.openapi
 import io.github.classgraph._
 import otoroshi.models.Entity
 import otoroshi.utils.syntax.implicits._
-import otoroshi.utils.yaml.Yaml.write
 import play.api.libs.json._
 
 import java.io.File
@@ -54,7 +53,8 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
         "otoroshi.models.EntityLocationSupport",
         "otoroshi.auth.AuthModuleConfig",
         "otoroshi.auth.OAuth2ModuleConfig",
-        "otoroshi.ssl.ClientCertificateValidator"
+        "otoroshi.ssl.ClientCertificateValidator",
+        "otoroshi.next.models.KvStoredNgBackendDataStore"
       )
     )
   lazy val descriptions: Map[String, String] =
@@ -106,7 +106,7 @@ $descs
 // TODO: handle all Unknown data type
 // TODO: handle all ???
 // TODO: handle adt with type field
-class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Seq[String], write: Boolean) {
+class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Seq[String], write: Boolean = false, classNames: Seq[String] = Seq.empty) {
 
   val nullType       =
     Json.obj("$ref" -> s"#/components/schemas/Null") // Json.obj("type" -> "null") needs openapi 3.1.0 support :(
@@ -116,12 +116,16 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
   val scanResult: ScanResult = new ClassGraph()
     .addClassLoader(this.getClass.getClassLoader)
     .enableAllInfo()
-    .whitelistPackages(Seq("otoroshi", "play.api.libs.ws"): _*)
+    .acceptPackages(Seq("otoroshi", "play.api.libs.ws"): _*)
     .scan
 
   val world = scanResult.getAllClassesAsMap.asScala
 
-  val entities = (
+  /*val entities: Seq[ClassInfo] = scanResult.getAllClassesAsMap.asScala
+    .filter(clazz => packages.get.exists(p => clazz._1.startsWith(p)))
+    .values.toSeq.distinct¨*/
+
+  val entities: Seq[ClassInfo] = (world.filter(w => classNames.exists(c => w._1.startsWith(c))).values ++
     scanResult.getClassesImplementing(classOf[Entity].getName).asScala ++
       scanResult.getSubclasses(classOf[Entity].getName).asScala ++
       world.get("otoroshi.models.GlobalConfig") ++
@@ -153,12 +157,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       config: OpenApiGeneratorConfig
   ): JsValue = {
     val finalPath  = s"${clazz.getName}.$name"
-    val simpleName = clazz.getSimpleName match {
-      case "ServiceDescriptor" => "Service"
-      case "ServiceGroup"      => "Service"
-      case v                   => v
-    }
-    config.descriptions.get(s"${clazz.getName}.$name").filterNot(_ == unknownValue) match {
+    config.descriptions.get(finalPath).filterNot(_ == unknownValue) match {
       case None        =>
         notFound.incrementAndGet()
         foundDescriptions.put(finalPath, unknownValue)
@@ -171,7 +170,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
   }
 
   def entityDescription(clazz: String, config: OpenApiGeneratorConfig): JsValue = {
-    val finalPath = s"entity_description.${clazz}"
+    val finalPath = s"entity_description.$clazz"
     config.descriptions.get(finalPath).filterNot(_ == unknownValue) match {
       case None        =>
         notFound.incrementAndGet()
@@ -273,15 +272,16 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       result: TrieMap[String, JsValue],
       config: OpenApiGeneratorConfig
   ): Unit = {
-
-    if (clazz.getName.contains("$")) {
+    if (clazz.getName.contains("$") || config.banned.contains(clazz.getName)) {
       return ()
     }
+    //println(s"Starting visit : ${clazz.getName}", config.banned)
 
     if (clazz.getName.startsWith("otoroshi.")) {
       if (clazz.isInterface) {
         val children = scanResult.getClassesImplementing(clazz.getName).asScala.map(_.getName)
-        children.flatMap(cl => world.get(cl)).map(cl => visitEntity(cl, clazz.some, result, config))
+        children.flatMap(cl => world.get(cl))
+          .foreach(cl => visitEntity(cl, clazz.some, result, config))
         adts = adts :+ Json.obj(
           clazz.getName -> Json.obj(
             "oneOf" -> JsArray(children.map(c => Json.obj("$ref" -> s"#/components/schemas/$c")))
@@ -298,9 +298,32 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         param.getName
       }
 
-      val fields     = (clazz.getFieldInfo.asScala ++ clazz.getDeclaredFieldInfo.asScala).toSet
+      var fields     = (clazz.getFieldInfo.asScala ++ clazz.getDeclaredFieldInfo.asScala).toSet
         .filter(_.isFinal)
         .filter(i => paramNames.contains(i.getName))
+
+      println(clazz.getName, fields.map(_.getName).mkString("|"))
+
+      if (clazz.getName.startsWith("otoroshi.next.plugins")) {
+          val method = clazz.getMethodInfo("configReads").getSingleMethod("configReads")
+          if (method != null) {
+            val name = method.getTypeSignature.getResultType
+              .toString
+              .replace("play.api.libs.json.Reads<", "")
+              .replace(">", "")
+            world.get(name) match {
+              case Some(newClazz) =>
+                fields = (newClazz.getFieldInfo.asScala ++ newClazz.getDeclaredFieldInfo.asScala).toSet
+                  .filter(_.isFinal)
+
+                println(s"Updated : ${clazz.getName}", fields.map(_.getName).mkString("|"))
+              case _ => ()
+            }
+          } else {
+            // pas de configReads donc pas de format
+          }
+      }
+
       var properties = Json.obj()
       var required   = Json.arr()
 
@@ -716,7 +739,12 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               val name               = rest.mkString(" ").split("\\(").head
               val methodName         = name.split("\\.").reverse.head
               val controllerName     = name.split("\\.").reverse.tail.reverse.mkString(".")
-              val controller         = world.get(controllerName).get
+              val controller         = world.getOrElse(controllerName, null)
+
+              if (controller == null) {
+                  return (Json.obj(), Json.obj())
+              }
+
               val method             = controller.getMethodInfo(methodName)
               val isCrud             = controller.implementsInterface("otoroshi.utils.controllers.CrudControllerHelper")
               val isBulk             = controller.implementsInterface("otoroshi.utils.controllers.BulkControllerHelper")
@@ -910,7 +938,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }
   }
 
-  def run(): JsValue = {
+  def run(rawResult: Boolean = false): JsValue = {
     val config = getConfig()
     val result = new TrieMap[String, JsValue]()
 
@@ -925,6 +953,9 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }
 
     val (paths, tags) = scanPaths(config)
+
+    if (rawResult)
+      return JsObject(result)
 
     println("")
     println(s"found ${found.get()} descriptions, not found ${notFound.get()} descriptions")
@@ -1035,9 +1066,9 @@ class OpenApiGeneratorRunner extends App {
       write = true
     )
 
-    val spec = generator.run()
+    generator.run()
 
-    val crdsGenerator = new CrdsGenerator(spec)
-    crdsGenerator.run()
+    /*val crdsGenerator = new CrdsGenerator(spec)
+    crdsGenerator.run()*/
   }
 }

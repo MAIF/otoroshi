@@ -39,6 +39,8 @@ export default ({ lineId, value }) => {
                         config: plugin.default_config
                     }))
 
+                console.log(formatedPlugins)
+
                 setBackends(backends)
                 setCategories(categories.filter(category => category !== 'Tunnel'))
                 setRoute(route)
@@ -73,7 +75,7 @@ export default ({ lineId, value }) => {
             return {
                 ...acc,
                 [key]: key === "label" ? v.charAt(0).toUpperCase() + v.slice(1) :
-                    ((typeof value === 'object' && value !== null && key !== "transformer") ? format(value) : value)
+                    ((typeof value === 'object' && value !== null && key !== "transformer" && !Array.isArray(value)) ? format(value) : value)
             }
         }, {})
     }
@@ -498,10 +500,15 @@ const SearchBar = ({ handleSearch }) => <div className='group'>
 
 const convertTransformer = obj => {
     return Object.entries(obj).reduce((acc, [key, value]) => {
+        let newValue = value
+        if (key === "transformer" && typeof value === 'object')
+            newValue = item => ({ label: item[value.label], value: item[value.value] })
+        else if (typeof value === 'object' && value !== null && !Array.isArray(value))
+            newValue = convertTransformer(value)
+
         return {
             ...acc,
-            [key]: (key === "transformer" && typeof value === 'object') ? item => ({ label: item[value.label], value: item[value.value] }) :
-                ((typeof value === 'object' && value !== null) ? convertTransformer(value) : value)
+            [key]: newValue
         }
     }, {})
 }
@@ -542,6 +549,8 @@ const EditView = ({
     let formSchema = schema || config_schema
     let formFlow = flow || config_flow
 
+    console.log(schema || config_schema)
+
     if (config_schema) {
         formSchema = {
             informations: {
@@ -576,7 +585,6 @@ const EditView = ({
             ]
         }
     }
-
 
     const plugin = ['Backend', 'Frontend'].includes(id) ? DEFAULT_FLOW.find(f => f.id === id) : plugins.find(element => element.id === id || element.id.endsWith(id))
 
