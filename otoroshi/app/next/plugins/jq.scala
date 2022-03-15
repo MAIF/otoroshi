@@ -15,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
-case class JQConfig(request: String = ".", response: String = "") {
+case class JQConfig(request: String = ".", response: String = "") extends NgPluginConfig {
   def json: JsValue = JQConfig.format.writes(this)
 }
 
@@ -37,7 +37,7 @@ object JQConfig {
   }
 }
 
-case class JQRequestConfig(filter: String = ".") {
+case class JQRequestConfig(filter: String = ".") extends NgPluginConfig {
   def json: JsValue = JQRequestConfig.format.writes(this)
 }
 
@@ -57,7 +57,7 @@ object JQRequestConfig {
   }
 }
 
-case class JQResponseConfig(filter: String = ".") {
+case class JQResponseConfig(filter: String = ".") extends NgPluginConfig {
   def json: JsValue = JQResponseConfig.format.writes(this)
 }
 
@@ -85,7 +85,7 @@ class JQ extends NgRequestTransformer {
   override def multiInstance: Boolean = true
   override def name: String                = "JQ"
   override def description: Option[String] = s"""This plugin let you transform JSON bodies (in requests and responses) using [JQ filters](https://stedolan.github.io/jq/manual/#Basicfilters).""".some
-  override def defaultConfig: Option[JsObject] = JQConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = JQConfig().some
 
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
@@ -172,7 +172,7 @@ class JQRequest extends NgRequestTransformer {
   override def multiInstance: Boolean = true
   override def name: String                = "JQ transform request"
   override def description: Option[String] = s"""This plugin let you transform request JSON body using [JQ filters](https://stedolan.github.io/jq/manual/#Basicfilters).""".some
-  override def defaultConfig: Option[JsObject] = JQRequestConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = JQRequestConfig().some
 
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
@@ -229,7 +229,7 @@ class JQResponse extends NgRequestTransformer {
   override def multiInstance: Boolean = true
   override def name: String                = "JQ transform response"
   override def description: Option[String] = s"""This plugin let you transform JSON response using [JQ filters](https://stedolan.github.io/jq/manual/#Basicfilters).""".some
-  override def defaultConfig: Option[JsObject] = JQResponseConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = JQResponseConfig().some
 
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)

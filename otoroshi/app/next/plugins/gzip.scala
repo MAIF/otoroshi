@@ -2,7 +2,7 @@ package otoroshi.next.plugins
 
 import akka.stream.Materializer
 import otoroshi.env.Env
-import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginHttpResponse, NgPluginVisibility, NgRequestTransformer, NgStep, NgTransformerResponseContext}
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginConfig, NgPluginHttpResponse, NgPluginVisibility, NgRequestTransformer, NgStep, NgTransformerResponseContext}
 import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.gzip.GzipConfig.logger
 import otoroshi.utils.syntax.implicits._
@@ -19,7 +19,7 @@ case class NgGzipConfig(
     bufferSize: Int = 8192,
     chunkedThreshold: Int = 102400,
     compressionLevel: Int = 5
-) {
+) extends NgPluginConfig {
   def json: JsValue           = NgGzipConfig.format.writes(this)
   lazy val legacy: GzipConfig = GzipConfig(
     enabled = true,
@@ -87,7 +87,7 @@ class GzipResponseCompressor extends NgRequestTransformer {
   override def isTransformResponseAsync: Boolean = false
   override def name: String                      = "Gzip compression"
   override def description: Option[String]       = "This plugin can compress responses using gzip".some
-  override def defaultConfig: Option[JsObject]   = NgGzipConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgGzipConfig().some
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext

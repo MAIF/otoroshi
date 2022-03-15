@@ -28,6 +28,8 @@ class GlobalPerIpAddressThrottling extends NgAccessValidator {
   override def name: String                = "Global per ip address throttling "
   override def description: Option[String] = "Enforce global per ip address throttling. Useful when 'legacy checks' are disabled on a service/globally".some
 
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+
   def errorResult(
     ctx: NgAccessContext,
     status: Results.Status,
@@ -81,6 +83,7 @@ class GlobalThrottling extends NgAccessValidator {
   override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
   override def multiInstance: Boolean = false
   override def core: Boolean = true
+  override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def name: String                = "Global throttling "
   override def description: Option[String] = "Enforce global throttling. Useful when 'legacy checks' are disabled on a service/globally".some
@@ -136,6 +139,7 @@ class ApikeyQuotas extends NgAccessValidator {
   override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
   override def multiInstance: Boolean = false
   override def core: Boolean = true
+  override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def name: String                = "Apikey quotas"
   override def description: Option[String] = "Increments quotas for the currents apikey. Useful when 'legacy checks' are disabled on a service/globally or when apikey are extracted in a custom fashion.".some

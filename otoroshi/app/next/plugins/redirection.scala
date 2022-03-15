@@ -4,7 +4,7 @@ import akka.Done
 import otoroshi.el.RedirectionExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.models.RedirectionSettings
-import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgPreRouting, NgPreRoutingContext, NgPreRoutingError, NgPreRoutingErrorWithResult, NgStep}
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgPreRouting, NgPreRoutingContext, NgPreRoutingError, NgPreRoutingErrorWithResult, NgStep}
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
 import play.api.libs.json._
 import play.api.mvc.Results
@@ -12,7 +12,7 @@ import play.api.mvc.Results
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
-case class NgRedirectionSettings(code: Int = 303, to: String = "https://www.otoroshi.io") {
+case class NgRedirectionSettings(code: Int = 303, to: String = "https://www.otoroshi.io") extends NgPluginConfig {
   def json: JsValue                    = NgRedirectionSettings.format.writes(this)
   lazy val hasValidCode: Boolean       = legacy.hasValidCode
   lazy val legacy: RedirectionSettings = RedirectionSettings(
@@ -63,7 +63,7 @@ class Redirection extends NgPreRouting {
   override def core: Boolean                   = true
   override def name: String                    = "Redirection"
   override def description: Option[String]     = "This plugin redirects the current request elsewhere".some
-  override def defaultConfig: Option[JsObject] = NgRedirectionSettings().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgRedirectionSettings().some
   override def isPreRouteAsync: Boolean        = false
 
   override def preRouteSync(

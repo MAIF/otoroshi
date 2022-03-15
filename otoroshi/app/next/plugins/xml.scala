@@ -15,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.asScalaBufferConverter
 import scala.util.{Failure, Success, Try}
 
-case class JsonTransformConfig(filter: Option[String] = None) {
+case class JsonTransformConfig(filter: Option[String] = None) extends NgPluginConfig {
   def json: JsValue = JsonTransformConfig.format.writes(this)
 }
 
@@ -61,7 +61,7 @@ class XmlToJsonRequest extends NgRequestTransformer with JsonTransform {
   override def core: Boolean                   = true
   override def name: String                    = "request body xml-to-json"
   override def description: Option[String]     = "This plugin transform incoming request body from xml to json and may apply a jq transformation".some
-  override def defaultConfig: Option[JsObject] = JsonTransformConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = JsonTransformConfig().some
 
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = false
@@ -102,7 +102,7 @@ class JsonToXmlRequest extends NgRequestTransformer with JsonTransform {
   override def core: Boolean                   = true
   override def name: String                    = "request body json-to-xml"
   override def description: Option[String]     = "This plugin transform incoming request body from json to xml and may apply a jq transformation".some
-  override def defaultConfig: Option[JsObject] = JsonTransformConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = JsonTransformConfig().some
 
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = false
@@ -143,7 +143,7 @@ class XmlToJsonResponse extends NgRequestTransformer with JsonTransform {
   override def core: Boolean                   = true
   override def name: String                    = "response body xml-to-json"
   override def description: Option[String]     = "This plugin transform response body from xml to json and may apply a jq transformation".some
-  override def defaultConfig: Option[JsObject] = JsonTransformConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = JsonTransformConfig().some
 
   override def transformsRequest: Boolean = false
   override def transformsResponse: Boolean = true
@@ -184,7 +184,7 @@ class JsonToXmlResponse extends NgRequestTransformer with JsonTransform {
   override def core: Boolean                   = true
   override def name: String                    = "response body json-to-xml"
   override def description: Option[String]     = "This plugin transform response body from json to xml and may apply a jq transformation".some
-  override def defaultConfig: Option[JsObject] = JsonTransformConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = JsonTransformConfig().some
 
   override def transformsRequest: Boolean = false
   override def transformsResponse: Boolean = true
@@ -222,7 +222,7 @@ case class SOAPActionConfig(
   convertRequestBodyToXml: Boolean = true,
   jqRequestFilter: Option[String] = None,
   jqResponseFilter: Option[String] = None,
-) {
+) extends NgPluginConfig {
   def json: JsValue = SOAPActionConfig.format.writes(this)
 }
 
@@ -269,7 +269,7 @@ class SOAPAction extends NgRequestTransformer {
   override def core: Boolean                   = true
   override def name: String                    = "SOAP action"
   override def description: Option[String]     = "This plugin is able to call SOAP actions and expose it as a rest endpoint".some
-  override def defaultConfig: Option[JsObject] = SOAPActionConfig(envelope = "<soap envelope />").json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = SOAPActionConfig(envelope = "<soap envelope />").some
 
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = false

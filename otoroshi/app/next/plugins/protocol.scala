@@ -2,7 +2,7 @@ package otoroshi.next.plugins
 
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginVisibility, NgStep}
+import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgStep}
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.mvc.Results
 
@@ -19,6 +19,7 @@ class DisableHttp10 extends NgAccessValidator {
   override def name: String                = "Disable HTTP/1.0"
   override def description: Option[String] = "This plugin forbids HTTP/1.0 requests".some
   override def isAccessAsync: Boolean      = true
+  override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     if (ctx.request.version == "HTTP/1.0") {

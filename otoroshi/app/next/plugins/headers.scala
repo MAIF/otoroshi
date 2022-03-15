@@ -14,7 +14,7 @@ import play.api.mvc.{Result, Results}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class NgHeaderNamesConfig(names: Seq[String] = Seq.empty) extends AnyVal {
+case class NgHeaderNamesConfig(names: Seq[String] = Seq.empty) extends NgPluginConfig {
   def json: JsValue = NgHeaderNamesConfig.format.writes(this)
 }
 
@@ -32,7 +32,7 @@ object NgHeaderNamesConfig {
   }
 }
 
-case class NgHeaderValuesConfig(headers: Map[String, String] = Map.empty) extends AnyVal {
+case class NgHeaderValuesConfig(headers: Map[String, String] = Map.empty) extends NgPluginConfig {
   def json: JsValue = NgHeaderValuesConfig.format.writes(this)
 }
 
@@ -67,6 +67,7 @@ class OverrideHost extends NgRequestTransformer {
   override def name: String                      = "Override host header"
   override def description: Option[String]       =
     "This plugin override the current Host header with the Host of the backend target".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
@@ -94,7 +95,7 @@ class HeadersValidation extends NgAccessValidator {
   override def core: Boolean                   = true
   override def name: String                    = "Headers validation"
   override def description: Option[String]     = "This plugin validates the values of incoming request headers".some
-  override def defaultConfig: Option[JsObject] = NgHeaderValuesConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderValuesConfig().some
   override def isAccessAsync: Boolean          = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
@@ -144,7 +145,7 @@ class AdditionalHeadersOut extends NgRequestTransformer {
   override def isTransformResponseAsync: Boolean = false
   override def name: String                      = "Additional headers out"
   override def description: Option[String]       = "This plugin adds headers in the otoroshi response".some
-  override def defaultConfig: Option[JsObject]   = NgHeaderValuesConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderValuesConfig().some
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
@@ -184,7 +185,7 @@ class AdditionalHeadersIn extends NgRequestTransformer {
   override def isTransformResponseAsync: Boolean = true
   override def name: String                      = "Additional headers in"
   override def description: Option[String]       = "This plugin adds headers in the incoming otoroshi request".some
-  override def defaultConfig: Option[JsObject]   = NgHeaderValuesConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderValuesConfig().some
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
@@ -225,7 +226,7 @@ class MissingHeadersIn extends NgRequestTransformer {
   override def name: String                      = "Missing headers in"
   override def description: Option[String]       =
     "This plugin adds headers (if missing) in the incoming otoroshi request".some
-  override def defaultConfig: Option[JsObject]   = NgHeaderValuesConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderValuesConfig().some
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
@@ -271,7 +272,7 @@ class MissingHeadersOut extends NgRequestTransformer {
   override def isTransformResponseAsync: Boolean = false
   override def name: String                      = "Missing headers out"
   override def description: Option[String]       = "This plugin adds headers (if missing) in the otoroshi response".some
-  override def defaultConfig: Option[JsObject]   = NgHeaderValuesConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderValuesConfig().some
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
@@ -317,7 +318,7 @@ class RemoveHeadersOut extends NgRequestTransformer {
   override def isTransformResponseAsync: Boolean = false
   override def name: String                      = "Remove headers out"
   override def description: Option[String]       = "This plugin removes headers in the otoroshi response".some
-  override def defaultConfig: Option[JsObject]   = NgHeaderNamesConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderNamesConfig().some
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
@@ -347,7 +348,7 @@ class RemoveHeadersIn extends NgRequestTransformer {
   override def isTransformResponseAsync: Boolean = true
   override def name: String                      = "Remove headers in"
   override def description: Option[String]       = "This plugin removes headers in the incoming otoroshi request".some
-  override def defaultConfig: Option[JsObject]   = NgHeaderNamesConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderNamesConfig().some
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
@@ -378,6 +379,7 @@ class SendOtoroshiHeadersBack extends NgRequestTransformer {
   override def name: String                      = "Send otoroshi headers back"
   override def description: Option[String]       =
     "This plugin adds response header containing useful informations about the current call".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
@@ -449,6 +451,7 @@ class XForwardedHeaders extends NgRequestTransformer {
   override def name: String                      = "X-Forwarded-* headers"
   override def description: Option[String]       =
     "This plugin adds all the X-Forwarder-* headers to the request for the backend target".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext

@@ -2,7 +2,7 @@ package otoroshi.next.plugins
 
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginVisibility, NgStep}
+import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgStep}
 import otoroshi.utils.RegexPool
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -51,7 +51,7 @@ object ContextValidator {
   }
 }
 
-case class ContextValidationConfig(validators: Seq[ContextValidator] = Seq.empty) {
+case class ContextValidationConfig(validators: Seq[ContextValidator] = Seq.empty) extends NgPluginConfig {
   def json: JsValue = ContextValidationConfig.format.writes(this)
 }
 
@@ -81,8 +81,7 @@ class ContextValidation extends NgAccessValidator {
   override def core: Boolean               = true
   override def name: String                = "Context validator"
   override def description: Option[String] = "This plugin validates the current context".some
-
-  override def defaultConfig: Option[JsObject] = ContextValidationConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = ContextValidationConfig().some
 
   private def validate(ctx: NgAccessContext): Boolean = {
     val config = ctx.cachedConfig(internalName)(ContextValidationConfig.format).getOrElse(ContextValidationConfig())

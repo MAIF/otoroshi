@@ -10,7 +10,7 @@ import play.api.mvc.Result
 import scala.concurrent.ExecutionContext
 import scala.util._
 
-case class QueryTransformerConfig(remove: Seq[String] = Seq.empty, rename: Map[String, String] = Map.empty, add: Map[String, List[String]] = Map.empty) {
+case class QueryTransformerConfig(remove: Seq[String] = Seq.empty, rename: Map[String, String] = Map.empty, add: Map[String, List[String]] = Map.empty) extends NgPluginConfig {
   def json: JsValue = QueryTransformerConfig.format.writes(this)
 }
 
@@ -40,7 +40,7 @@ class QueryTransformer extends NgRequestTransformer {
   override def core: Boolean = true
   override def name: String                = "Query param transformer"
   override def description: Option[String] = "This plugin can modify the query params of the request".some
-  override def defaultConfig: Option[JsObject] = QueryTransformerConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = QueryTransformerConfig().some
 
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)

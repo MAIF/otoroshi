@@ -17,7 +17,7 @@ import play.api.mvc.{Result, Results}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class NgIpAddressesConfig(addresses: Seq[String] = Seq.empty) extends AnyVal {
+case class NgIpAddressesConfig(addresses: Seq[String] = Seq.empty) extends NgPluginConfig {
   def json: JsValue = NgIpAddressesConfig.format.writes(this)
 }
 
@@ -48,7 +48,7 @@ class IpAddressAllowedList extends NgAccessValidator {
   override def name: String                    = "IP allowed list"
   override def description: Option[String]     =
     "This plugin verifies the current request ip address is in the allowed list".some
-  override def defaultConfig: Option[JsObject] = NgIpAddressesConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgIpAddressesConfig().some
   override def isAccessAsync: Boolean          = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
@@ -99,7 +99,7 @@ class IpAddressBlockList extends NgAccessValidator {
   override def name: String                    = "IP block list"
   override def description: Option[String]     =
     "This plugin verifies the current request ip address is not in the blocked list".some
-  override def defaultConfig: Option[JsObject] = NgIpAddressesConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgIpAddressesConfig().some
   override def isAccessAsync: Boolean          = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
@@ -137,7 +137,7 @@ class IpAddressBlockList extends NgAccessValidator {
   }
 }
 
-case class NgEndlessHttpResponseConfig(finger: Boolean = false, addresses: Seq[String] = Seq.empty) {
+case class NgEndlessHttpResponseConfig(finger: Boolean = false, addresses: Seq[String] = Seq.empty) extends NgPluginConfig {
   def json: JsValue = NgEndlessHttpResponseConfig.format.writes(this)
 }
 
@@ -176,7 +176,7 @@ class EndlessHttpResponse extends NgRequestTransformer {
   override def isTransformResponseAsync: Boolean = true
   override def name: String                      = "Endless HTTP responses"
   override def description: Option[String]       = "This plugin returns 128 Gb of 0 to the ip addresses is in the list".some
-  override def defaultConfig: Option[JsObject]   = NgEndlessHttpResponseConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgEndlessHttpResponseConfig().some
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext

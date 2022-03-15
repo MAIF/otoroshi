@@ -23,7 +23,7 @@ case class RobotConfig(
   metaContent: String = "noindex,nofollow,noarchive",
   headerEnabled: Boolean = true,
   headerContent: String = "noindex, nofollow, noarchive",
-) {
+) extends NgPluginConfig {
   def json: JsValue = RobotConfig.format.writes(this)
 }
 
@@ -67,7 +67,7 @@ class Robots extends NgRequestTransformer {
   override def core: Boolean                   = true
   override def name: String                    = "Robots"
   override def description: Option[String]     = "This plugin provides all the necessary tool to handle search engine robots".some
-  override def defaultConfig: Option[JsObject] = RobotConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = RobotConfig().some
 
   override def isTransformRequestAsync: Boolean = false
   override def isTransformResponseAsync: Boolean = true

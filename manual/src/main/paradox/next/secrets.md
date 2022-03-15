@@ -64,7 +64,7 @@ the entities that support secrets management are the following
 
 in the previously listed entities, you can define, almost everywhere, references to a secret using the following syntax:
 
-`${vault://vault_name_from_config_file/secret/path}`
+`${vault://name_of_the_vault/secret/of/the/path}`
 
 let say I define a new apikey with the following value as secret `${vault://my_env/apikey_secret}` with the following secrets management configuration
 

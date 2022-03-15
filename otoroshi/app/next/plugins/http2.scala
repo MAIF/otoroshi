@@ -26,6 +26,8 @@ class Http2Caller extends NgRequestTransformer {
   override def transformsRequest: Boolean = true
   override def transformsResponse: Boolean = true
 
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val hasBody = ctx.request.theHasBody
     val bodyF = if (hasBody) ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _) else ByteString.empty.vfuture

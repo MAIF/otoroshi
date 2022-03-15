@@ -44,14 +44,14 @@ class FormsGenerator(spec: JsValue) {
             (prop._2 \ "items" \ "properties").asOpt[JsObject] match {
               case Some(subProperties)  =>
                 val schema = openapiPropertiesToForms(subProperties)
-                informations ++ Json.obj("schema " -> schema, "flow" -> schema.as[JsObject].keys)
+                informations ++ Json.obj("schema" -> schema, "flow" -> schema.as[JsObject].keys)
               case None                 => informations
             }
           else if (`type` == "object")
             (prop._2 \ "properties").asOpt[JsObject] match {
               case Some(subProperties)  =>
                 val schema = openapiPropertiesToForms(subProperties)
-                informations ++ Json.obj("schema " -> schema, "flow" -> schema.as[JsObject].keys)
+                informations ++ Json.obj("schema" -> schema, "flow" -> schema.as[JsObject].keys)
               case None                 => informations
             }
           else

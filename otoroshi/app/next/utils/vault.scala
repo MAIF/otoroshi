@@ -369,6 +369,7 @@ class Vaults(env: Env) {
           } else {
             // TODO: support Google Cloud KMS
             // TODO: support Alibaba KMS
+            // TODO: support vaultwarden
             // TODO: support square https://github.com/square/keywhiz
             // TODO: support pinterest https://github.com/pinterest/knox
             logger.error(s"unknown vault type '${typ}'")
@@ -462,13 +463,13 @@ class Vaults(env: Env) {
   //   }
   // }
 
-  def fillSecretsAsync(source: String)(implicit ec: ExecutionContext): Future[String] = {
+  def fillSecretsAsync(id: String, source: String)(implicit ec: ExecutionContext): Future[String] = {
     if (enabled) {
       expressionReplacer.replaceOnAsync(source) { expr =>
         resolveExpression(expr).map { status =>
           status match {
-            case CachedVaultSecretStatus.SecretReadSuccess(_) => logger.debug(s"fill secret from '${expr}' successfully")
-            case _ => logger.info(s"filling secret from '${expr}' failed because of '${status.value}'")
+            case CachedVaultSecretStatus.SecretReadSuccess(_) => logger.debug(s"fill secret on '${id}' from '${expr}' successfully")
+            case _ => logger.info(s"filling secret on '${id}' from '${expr}' failed because of '${status.value}'")
           }
           status.value
         }.recover {
