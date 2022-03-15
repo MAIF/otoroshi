@@ -166,6 +166,45 @@ vaults {
 
 you should define your references like `${vault://aws_vault/secret_name/secret_version}`. `secret_version` is optional
 
+### Google Cloud Secrets Manager
+
+a backend for [Google Cloud Secrets Manager](https://cloud.google.com/secret-manager)
+
+the configuration of this backend should be like
+
+```conf
+vaults {
+  ...
+  name_of_the_vault {
+    type = "gcloud"
+    url = "https://secretmanager.googleapis.com"
+    apikey = "secret"
+  }
+}
+```
+
+you should define your references like `${vault://gcloud_vault/projects/foo/secrets/bar/versions/the_version}`. `the_version` can be `latest`
+
+### AlibabaCloud Cloud Secrets Manager
+
+a backend for [AlibabaCloud Secrets Manager](https://www.alibabacloud.com/help/en/doc-detail/152001.html)
+
+the configuration of this backend should be like
+
+```conf
+vaults {
+  ...
+  name_of_the_vault {
+    type = "alibaba-cloud"
+    url = "https://kms.eu-central-1.aliyuncs.com"
+    access-key-id = "access-key"
+    access-key-secret = "secret"
+  }
+}
+```
+
+you should define your references like `${vault://alibaba_vault/secret_name}`
+
 
 ### Kubernetes Secrets
 

@@ -8,15 +8,20 @@ import com.amazonaws.handlers.AsyncHandler
 import com.amazonaws.services.secretsmanager.AWSSecretsManagerAsyncClientBuilder
 import com.amazonaws.services.secretsmanager.model.{GetSecretValueRequest, GetSecretValueResult}
 import com.github.blemale.scaffeine.Scaffeine
+import com.google.common.base.Charsets
 import org.joda.time.DateTime
 import otoroshi.env.Env
+import otoroshi.plugins.hmac.HMACUtils
 import otoroshi.plugins.jobs.kubernetes.{KubernetesClient, KubernetesConfig}
 import otoroshi.utils.ReplaceAllWith
+import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSAuthScheme
 
+import java.net.URLEncoder
+import java.util.Base64
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -201,6 +206,91 @@ class AzureVault(name: String, env: Env) extends Vault {
   }
 }
 
+class GoogleSecretManagerVault(name: String, env: Env) extends Vault {
+
+  private val logger = Logger("otoroshi-gcloud-vault")
+  private val baseUrl = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url").getOrElse("https://secretmanager.googleapis.com")
+  private val apikey = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.apikey").getOrElse("secret")
+
+  private def dataUrl(path: String, options: Map[String, String]) = {
+    val opts = if (options.nonEmpty) s"?key=${apikey}&" + options.toSeq.map(v => s"${v._1}=${v._2}").mkString("&") else s"?key=${apikey}"
+    s"${baseUrl}/v1${path}:access${opts}"
+  }
+
+  override def get(path: String, options: Map[String, String])(implicit env: Env, ec: ExecutionContext): Future[CachedVaultSecretStatus] = {
+    val url = dataUrl(path, options)
+    env.Ws.url(url)
+      .withRequestTimeout(1.minute)
+      .withFollowRedirects(false)
+      .get()
+      .map { response =>
+        if (response.status == 200) {
+          response.json.select("payload").select("data").asOpt[String] match {
+            case Some(value) => CachedVaultSecretStatus.SecretReadSuccess(value.fromBase64)
+            case _ => CachedVaultSecretStatus.SecretValueNotFound
+          }
+        } else if (response.status == 401) {
+          CachedVaultSecretStatus.SecretReadUnauthorized
+        } else if (response.status == 403) {
+          CachedVaultSecretStatus.SecretReadForbidden
+        } else {
+          CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
+        }
+      }.recover {
+      case e: Throwable => CachedVaultSecretStatus.SecretReadError(e.getMessage)
+    }
+  }
+}
+
+class AlibabaCloudSecretManagerVault(name: String, env: Env) extends Vault {
+
+  private val logger = Logger("otoroshi-alibaba-cloud-vault")
+  private val baseUrl = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url").getOrElse("https://kms.eu-central-1.aliyuncs.com")
+  private val accessKeyId = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key-id").getOrElse("access-key")
+  private val accessKeySecret = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key-secret").getOrElse("secret")
+
+  def makeStringToSign(opts: String): String = {
+    "GET%2F&" + URLEncoder.encode(opts, Charsets.UTF_8)
+  }
+
+  def makeSignature(stringToSign: String, secret: String): String = {
+    Base64.getEncoder.encodeToString(Signatures.hmac("HmacSHA1", stringToSign, secret))
+  }
+
+  private def dataUrl(path: String, options: Map[String, String]): String = {
+    val opts = if (options.nonEmpty) options.toSeq.map(v => s"${v._1}=${v._2}").mkString("&") else s""
+    val name = path.split("/").filterNot(_.isEmpty).head
+    val timestamp = DateTime.now().toString()
+    val query = s"Action=GetSecretValue&SecretName=${name}&Format=json&AccessKeyId=${accessKeyId}&SignatureMethod=HMAC-SHA1&Timestamp=${timestamp}&SignatureVersion=1.0&${opts}"
+    val signature = makeSignature(query, accessKeySecret)
+    s"${baseUrl}/?${query}&Signature=${signature}"
+  }
+
+  override def get(path: String, options: Map[String, String])(implicit env: Env, ec: ExecutionContext): Future[CachedVaultSecretStatus] = {
+    val url = dataUrl(path, options)
+    env.Ws.url(url)
+      .withRequestTimeout(1.minute)
+      .withFollowRedirects(false)
+      .get()
+      .map { response =>
+        if (response.status == 200) {
+          response.json.select("SecretData").asOpt[String] match {
+            case Some(value) => CachedVaultSecretStatus.SecretReadSuccess(value)
+            case _ => CachedVaultSecretStatus.SecretValueNotFound
+          }
+        } else if (response.status == 401) {
+          CachedVaultSecretStatus.SecretReadUnauthorized
+        } else if (response.status == 403) {
+          CachedVaultSecretStatus.SecretReadForbidden
+        } else {
+          CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
+        }
+      }.recover {
+      case e: Throwable => CachedVaultSecretStatus.SecretReadError(e.getMessage)
+    }
+  }
+}
+
 class KubernetesVault(name: String, env: Env) extends Vault {
 
   private val logger = Logger("otoroshi-kubernetes-vault")
@@ -358,7 +448,6 @@ class Vaults(env: Env) {
           } else if (typ == "hashicorp-vault") {
             vaults.put(key, new HashicorpVault(key, env))
           } else if (typ == "azure") {
-            // TODO: Supports keys and certificates types
             vaults.put(key, new AzureVault(key, env))
           } else if (typ == "aws") {
             vaults.put(key, new AwsVault(key, env))
@@ -366,12 +455,13 @@ class Vaults(env: Env) {
             vaults.put(key, new KubernetesVault(key, env))
           } else if (typ == "izanami") {
             vaults.put(key, new IzanamiVault(key, env))
+          } else if (typ == "gcloud") {
+            vaults.put(key, new GoogleSecretManagerVault(key, env))
+          } else if (typ == "alibaba-cloud") {
+            vaults.put(key, new AlibabaCloudSecretManagerVault(key, env))
           } else {
-            // TODO: support Google Cloud KMS
-            // TODO: support Alibaba KMS
-            // TODO: support vaultwarden
-            // TODO: support square https://github.com/square/keywhiz
-            // TODO: support pinterest https://github.com/pinterest/knox
+            // TODO: support square https://github.com/square/keywhiz ?
+            // TODO: support pinterest https://github.com/pinterest/knox ?
             logger.error(s"unknown vault type '${typ}'")
           }
         }
