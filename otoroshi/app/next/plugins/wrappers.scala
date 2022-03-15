@@ -7,7 +7,7 @@ import akka.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.next.models.NgTarget
-import otoroshi.next.plugins.NgOtoroshiChallengeKeys
+import otoroshi.next.plugins.{NgOtoroshiChallengeKeys, SOAPActionConfig}
 import otoroshi.next.plugins.api._
 import otoroshi.script._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
@@ -29,6 +29,7 @@ class PreRoutingWrapper extends NgPreRouting {
   override def description: Option[String] =
     "Wraps an old pre-routing plugin for the new router. The configuration is the one for the wrapped plugin.".some
   override def isPreRouteAsync: Boolean    = true
+  override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def preRoute(
       ctx: NgPreRoutingContext
@@ -77,6 +78,7 @@ class AccessValidatorWrapper extends NgAccessValidator {
   override def description: Option[String] =
     "Wraps an old access validator plugin for the new router. The configuration is the one for the wrapped plugin.".some
   override def isAccessAsync: Boolean      = true
+  override def defaultConfigObject: Option[NgPluginConfig] = None
 
   def newContextToOld(ctx: NgAccessContext, plugin: AccessValidator): AccessContext = {
     AccessContext(
@@ -121,6 +123,7 @@ class RequestSinkWrapper extends NgRequestSink {
   override def name: String                = "Request sink plugin wrapper"
   override def description: Option[String] =
     "Wraps an old request sink plugin for the new router. The configuration is the one for the wrapped plugin.".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
 
   def newContextToOld(ctx: NgRequestSinkContext, plugin: RequestSink): RequestSinkContext = {
     RequestSinkContext(
@@ -177,6 +180,7 @@ class RequestTransformerWrapper extends NgRequestTransformer {
   override def name: String                      = "Request transformer plugin wrapper"
   override def description: Option[String]       =
     "Wraps an old request transformer plugin for the new router. The configuration is the one for the wrapped plugin.".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def beforeRequest(
       ctx: NgBeforeRequestContext
@@ -507,6 +511,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
   override def isAccessAsync: Boolean            = true
   override def isTransformRequestAsync: Boolean  = true
   override def isTransformResponseAsync: Boolean = true
+  override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def preRoute(
       ctx: NgPreRoutingContext

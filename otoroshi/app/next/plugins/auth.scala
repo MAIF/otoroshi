@@ -13,7 +13,7 @@ import play.api.mvc.Results
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class NgAuthModuleConfig(module: Option[String] = None, passWithApikey: Boolean = false) {
+case class NgAuthModuleConfig(module: Option[String] = None, passWithApikey: Boolean = false) extends NgPluginConfig {
   def json: JsValue = NgAuthModuleConfig.format.writes(this)
 }
 
@@ -48,7 +48,7 @@ class AuthModule extends NgAccessValidator {
   override def core: Boolean                   = true
   override def name: String                    = "Authentication"
   override def description: Option[String]     = "This plugin applies an authentication module".some
-  override def defaultConfig: Option[JsObject] = NgAuthModuleConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgAuthModuleConfig().some
 
   override def isAccessAsync: Boolean = true
 

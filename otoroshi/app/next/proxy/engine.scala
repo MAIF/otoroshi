@@ -311,7 +311,7 @@ class ProxyEngine() extends RequestHandler {
       config     = route.metadata.get("otoroshi-core-apply-legacy-checks") match {
         case Some("false") => _config.copy(applyLegacyChecks = false)
         case Some("true")  => _config.copy(applyLegacyChecks = true)
-        case None => _config
+        case _ => _config
       }
       _          = report.markDoneAndStart("compute-plugins")
       gplugs     = global_plugins__.applyOnIf(env.http2ClientProxyEnabled && route.backend.targets.forall(_.protocol == HttpProtocols.`HTTP/2.0`)) { o =>
@@ -483,7 +483,7 @@ class ProxyEngine() extends RequestHandler {
       config     = route.metadata.get("otoroshi-core-apply-legacy-checks") match {
         case Some("false") => _config.copy(applyLegacyChecks = false)
         case Some("true")  => _config.copy(applyLegacyChecks = true)
-        case None => _config
+        case _ => _config
       }
       _          = report.markDoneAndStart("compute-plugins")
       ctxPlugins = route.contextualPlugins(global_plugins__, pluginMerge, request).seffectOn(_.allPlugins)

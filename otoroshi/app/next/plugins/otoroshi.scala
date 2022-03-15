@@ -22,7 +22,7 @@ import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class NgOtoroshiChallengeConfig(raw: JsValue) {
+case class NgOtoroshiChallengeConfig(raw: JsValue) extends NgPluginConfig {
   lazy val secComVersion: SecComVersion       =
     SecComVersion(raw.select("version").asOpt[String].getOrElse("V2")).getOrElse(SecComVersion.V2)
   lazy val secComTtl: FiniteDuration          = raw.select("ttl").asOpt[Long].map(_.seconds).getOrElse(30.seconds)
@@ -46,7 +46,7 @@ case class NgOtoroshiChallengeConfig(raw: JsValue) {
   )
 }
 
-case class NgOtoroshiInfoConfig(raw: JsValue) {
+case class NgOtoroshiInfoConfig(raw: JsValue) extends NgPluginConfig {
   lazy val secComVersion: SecComInfoTokenVersion = SecComInfoTokenVersion(
     raw.select("version").asOpt[String].getOrElse("Latest")
   ).getOrElse(SecComInfoTokenVersion.Latest)
@@ -89,7 +89,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
   override def name: String                      = "Otoroshi challenge token"
   override def description: Option[String]       =
     "This plugin adds a jwt challenge token to the request to a backend and expects a response with a matching token".some
-  override def defaultConfig: Option[JsObject]   = NgOtoroshiChallengeConfig(Json.obj()).json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgOtoroshiChallengeConfig(Json.obj()).some
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
@@ -342,7 +342,7 @@ class OtoroshiInfos extends NgRequestTransformer {
   override def isTransformResponseAsync: Boolean = true
   override def name: String                      = "Otoroshi info. token"
   override def description: Option[String]       = "This plugin adds a jwt info. token to the request to a backend".some
-  override def defaultConfig: Option[JsObject]   = NgOtoroshiInfoConfig(Json.obj()).json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgOtoroshiInfoConfig(Json.obj()).some
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext

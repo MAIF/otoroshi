@@ -23,7 +23,7 @@ case class NgCanarySettings(
     traffic: Double = 0.2,
     targets: Seq[NgTarget] = Seq.empty[NgTarget],
     root: String = "/"
-) {
+) extends NgPluginConfig {
   def json: JsValue       = NgCanarySettings.format.writes(this)
   lazy val legacy: Canary = Canary(
     enabled = true,
@@ -81,7 +81,7 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
   override def transformsError: Boolean            = false
   override def name: String                        = "Canary mode"
   override def description: Option[String]         = "This plugin can split a portion of the traffic to canary backends".some
-  override def defaultConfig: Option[JsObject]     = NgCanarySettings().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgCanarySettings().some
 
   override def isPreRouteAsync: Boolean          = true
   override def isTransformRequestAsync: Boolean  = true

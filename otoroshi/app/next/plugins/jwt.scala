@@ -13,7 +13,7 @@ import play.api.mvc.Result
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-case class NgJwtVerificationConfig(verifiers: Seq[String] = Seq.empty) extends AnyVal {
+case class NgJwtVerificationConfig(verifiers: Seq[String] = Seq.empty) extends NgPluginConfig {
   def json: JsValue = NgJwtVerificationConfig.format.writes(this)
 }
 
@@ -52,7 +52,7 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
   override def name: String                      = "Jwt verifiers"
   override def description: Option[String]       =
     "This plugin verifies the current request with one or more jwt verifier".some
-  override def defaultConfig: Option[JsObject]   = NgJwtVerificationConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgJwtVerificationConfig().some
 
   override def configSchema: Option[JsObject] = Json.obj(
     "verifiers" -> Json.obj(

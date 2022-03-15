@@ -68,7 +68,7 @@ case class W3CTracingConfig(
     endpoint: String = "http://localhost:3333/spans",
     timeout: Long = 30000,
     baggage: Map[String, String] = Map.empty
-) {
+) extends NgPluginConfig {
   def json: JsValue = W3CTracingConfig.format.writes(this)
 }
 
@@ -170,7 +170,7 @@ class W3CTracing extends NgRequestTransformer {
   override def core: Boolean               = true
   override def name: String                = "W3C Trace Context"
   override def description: Option[String] = "This plugin propagates W3C Trace Context spans and can export it to Jaeger or Zipkin".some
-  override def defaultConfig: Option[JsObject] = W3CTracingConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = W3CTracingConfig().some
 
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config =  ctx.cachedConfig(internalName)(W3CTracingConfig.format).getOrElse(W3CTracingConfig())

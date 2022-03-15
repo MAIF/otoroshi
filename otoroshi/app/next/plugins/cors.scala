@@ -24,7 +24,7 @@ case class NgCorsSettings(
     excludedPatterns: Seq[String] = Seq.empty[String],
     maxAge: Option[FiniteDuration] = None,
     allowCredentials: Boolean = true
-) {
+) extends NgPluginConfig {
   def json: JsValue             = NgCorsSettings.format.writes(this)
   lazy val legacy: CorsSettings = CorsSettings(
     allowOrigin = allowOrigin,
@@ -93,7 +93,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
   override def transformsError: Boolean          = false
   override def name: String                      = "CORS"
   override def description: Option[String]       = "This plugin applies CORS rules".some
-  override def defaultConfig: Option[JsObject]   = NgCorsSettings().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgCorsSettings().some
 
   override def configSchema: Option[JsObject] = (super.configSchema.get ++ Json.obj("max_age" -> Json.obj(
     "type" -> "number",

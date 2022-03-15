@@ -369,6 +369,7 @@ class Vaults(env: Env) {
           } else {
             // TODO: support Google Cloud KMS
             // TODO: support Alibaba KMS
+            // TODO: support vaultwarden
             // TODO: support square https://github.com/square/keywhiz
             // TODO: support pinterest https://github.com/pinterest/knox
             logger.error(s"unknown vault type '${typ}'")

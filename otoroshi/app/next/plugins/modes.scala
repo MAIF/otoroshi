@@ -3,7 +3,7 @@ package otoroshi.next.plugins
 import akka.Done
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgPreRouting, NgPreRoutingContext, NgPreRoutingError, NgPreRoutingErrorWithResult, NgStep}
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgPreRouting, NgPreRoutingContext, NgPreRoutingError, NgPreRoutingErrorWithResult, NgStep}
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.mvc.Results
 
@@ -19,6 +19,7 @@ class MaintenanceMode extends NgPreRouting {
   override def core: Boolean               = true
   override def name: String                = "Maintenance mode"
   override def description: Option[String] = "This plugin displays a maintenance page".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
   override def isPreRouteAsync: Boolean    = true
 
   override def preRoute(
@@ -51,6 +52,8 @@ class GlobalMaintenanceMode extends NgPreRouting {
   override def name: String = "Global Maintenance mode"
   override def description: Option[String] = "This plugin displays a maintenance page for every services. Useful when 'legacy checks' are disabled on a service/globally".some
   override def isPreRouteAsync: Boolean = true
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+
   override def preRoute(
                          ctx: NgPreRoutingContext
                        )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
@@ -85,6 +88,7 @@ class BuildMode extends NgPreRouting {
   override def name: String                = "Build mode"
   override def description: Option[String] = "This plugin displays a build page".some
   override def isPreRouteAsync: Boolean    = true
+  override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def preRoute(
       ctx: NgPreRoutingContext

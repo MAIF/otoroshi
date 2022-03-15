@@ -11,7 +11,7 @@ import play.api.mvc.{Result, Results}
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
-case class StaticResponseConfig(status: Int = 200, headers: Map[String, String] = Map.empty, body: String = "") {
+case class StaticResponseConfig(status: Int = 200, headers: Map[String, String] = Map.empty, body: String = "") extends NgPluginConfig {
   def json: JsValue = StaticResponseConfig.format.writes(this)
 }
 
@@ -41,7 +41,7 @@ class StaticResponse extends NgRequestTransformer {
   override def core: Boolean = true
   override def name: String                = "Static Response"
   override def description: Option[String] = "This plugin returns static responses".some
-  override def defaultConfig: Option[JsObject] = StaticResponseConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = StaticResponseConfig().some
 
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
@@ -64,7 +64,7 @@ class StaticResponse extends NgRequestTransformer {
   }
 }
 
-case class MockResponse(path: String = "/", method: String = "GET", status: Int = 200, headers: Map[String, String] = Map.empty, body: String = "") {
+case class MockResponse(path: String = "/", method: String = "GET", status: Int = 200, headers: Map[String, String] = Map.empty, body: String = "") extends NgPluginConfig {
   def json: JsValue = MockResponse.format.writes(this)
 }
 
@@ -92,7 +92,7 @@ object MockResponse {
   }
 }
 
-case class MockResponsesConfig(responses: Seq[MockResponse] = Seq.empty, passThrough: Boolean = true) {
+case class MockResponsesConfig(responses: Seq[MockResponse] = Seq.empty, passThrough: Boolean = true) extends NgPluginConfig {
   def json: JsValue = MockResponsesConfig.format.writes(this)
 }
 
@@ -120,7 +120,7 @@ class MockResponses extends NgRequestTransformer {
   override def core: Boolean = true
   override def name: String                = "Mock Responses"
   override def description: Option[String] = "This plugin returns mock responses".some
-  override def defaultConfig: Option[JsObject] = MockResponsesConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = MockResponsesConfig().some
 
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)

@@ -176,7 +176,7 @@ case class NgChaosConfig(
     largeResponseFaultConfig: Option[NgLargeResponseFaultConfig] = None,
     latencyInjectionFaultConfig: Option[NgLatencyInjectionFaultConfig] = None,
     badResponsesFaultConfig: Option[NgBadResponsesFaultConfig] = None
-) {
+) extends NgPluginConfig {
   def json: JsValue       = NgChaosConfig.format.writes(this)
   def legacy: ChaosConfig = ChaosConfig(
     enabled = true,
@@ -246,7 +246,7 @@ class SnowMonkeyChaos extends NgRequestTransformer {
   override def isTransformResponseAsync: Boolean = false
   override def name: String                      = "Snow Monkey Chaos"
   override def description: Option[String]       = "This plugin introduce some chaos into you life".some
-  override def defaultConfig: Option[JsObject]   = NgChaosConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgChaosConfig().some
 
   override def transformRequest(
       ctx: NgTransformerRequestContext

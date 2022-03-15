@@ -2,7 +2,7 @@ package otoroshi.next.plugins
 
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginVisibility, NgStep}
+import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgStep}
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -15,7 +15,7 @@ case class NgPublicPrivatePathsConfig(
     strict: Boolean = false,
     publicPatterns: Seq[String] = Seq.empty,
     privatePatterns: Seq[String] = Seq.empty
-) {
+) extends NgPluginConfig {
   def json: JsValue = NgPublicPrivatePathsConfig.format.writes(this)
 }
 
@@ -51,7 +51,7 @@ class PublicPrivatePaths extends NgAccessValidator {
   override def core: Boolean                   = true
   override def name: String                    = "Public/Private paths"
   override def description: Option[String]     = "This plugin allows or forbid request based on path patterns".some
-  override def defaultConfig: Option[JsObject] = NgPublicPrivatePathsConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgPublicPrivatePathsConfig().some
   override def isAccessAsync: Boolean          = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {

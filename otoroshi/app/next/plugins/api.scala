@@ -223,12 +223,18 @@ object NgStep {
   )
 }
 
+trait NgPluginConfig {
+  def json: JsValue
+}
+
 trait NgNamedPlugin extends NamedPlugin { self =>
   def visibility: NgPluginVisibility
   def categories: Seq[NgPluginCategory]
   def tags: Seq[String] = Seq.empty
   def steps: Seq[NgStep]
   def multiInstance: Boolean
+  def defaultConfigObject: Option[NgPluginConfig]
+  override final def defaultConfig: Option[JsObject] = defaultConfigObject.map(_.json.asOpt[JsObject].getOrElse(Json.obj()))
   override def pluginType: PluginType         = PluginType.CompositeType
   override def configRoot: Option[String]     = None
   override def configSchema: Option[JsObject] =
@@ -798,6 +804,7 @@ class NgMergedRequestTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrap
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
 
+  override def defaultConfigObject: Option[NgPluginConfig] = None
   override def multiInstance: Boolean = true
   override def transformsRequest: Boolean        = true
   override def isTransformRequestAsync: Boolean  = true
@@ -880,6 +887,7 @@ class NgMergedResponseTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWra
   override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def multiInstance: Boolean = true
   override def transformsResponse: Boolean       = true
@@ -962,6 +970,7 @@ class NgMergedPreRouting(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgPr
   override def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def multiInstance: Boolean = true
   override def isPreRouteAsync: Boolean = true
@@ -1043,6 +1052,7 @@ class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper
   override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def multiInstance: Boolean = true
   override def isAccessAsync: Boolean = true

@@ -20,6 +20,7 @@ class ForceHttpsTraffic extends NgPreRouting {
   override def name: String                = "Force HTTPS traffic"
   override def description: Option[String] = "This plugin verifies the current request uses HTTPS".some
   override def isPreRouteAsync: Boolean    = false
+  override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def preRouteSync(
       ctx: NgPreRoutingContext

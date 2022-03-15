@@ -38,7 +38,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
   override def isAccessAsync: Boolean            = true
   override def name: String                      = "Apikeys"
   override def description: Option[String]       = "This plugin expects to find an apikey to allow the request to pass".some
-  override def defaultConfig: Option[JsObject]   = NgApikeyCallsConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgApikeyCallsConfig().some
 
   override def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean = {
     val config = configCache.get(ctx.route.id, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
@@ -401,7 +401,7 @@ case class NgApikeyCallsConfig(
     wipeBackendRequest: Boolean = true,
     validate: Boolean = true,
     passWithUser: Boolean = true
-) {
+) extends NgPluginConfig {
   def json: JsValue                  = Json.obj(
     "extractors"           -> extractors.json,
     "routing"              -> routing.json,

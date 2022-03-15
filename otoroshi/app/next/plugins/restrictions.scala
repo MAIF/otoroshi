@@ -2,7 +2,7 @@ package otoroshi.next.plugins
 
 import otoroshi.env.Env
 import otoroshi.models.{RestrictionPath, Restrictions}
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginVisibility, NgStep}
+import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgStep}
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
 import play.api.libs.json._
 
@@ -42,7 +42,7 @@ case class NgRestrictions(
     allowed: Seq[NgRestrictionPath] = Seq.empty,
     forbidden: Seq[NgRestrictionPath] = Seq.empty,
     notFound: Seq[NgRestrictionPath] = Seq.empty
-) {
+) extends NgPluginConfig {
   def json: JsValue        = NgRestrictions.format.writes(this)
   def legacy: Restrictions = Restrictions(
     enabled = true,
@@ -113,7 +113,8 @@ class RoutingRestrictions extends NgAccessValidator {
   override def name: String                    = "Routing Restrictions"
   override def description: Option[String]     =
     "This plugin apply routing restriction `method domain/path` on the current request/route".some
-  override def defaultConfig: Option[JsObject] = NgRestrictions().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgRestrictions().some
+
   override def isAccessAsync: Boolean          = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {

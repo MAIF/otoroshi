@@ -3,7 +3,7 @@ package otoroshi.next.plugins
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, JwtInjection, PrivateAppsUser}
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginVisibility, NgStep}
+import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgStep}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.Results
@@ -21,7 +21,7 @@ case class RBACConfig(
   userPath: Option[String] = None,
   rolePrefix: Option[String] = None,
   roles: String = "roles"
-) {
+) extends NgPluginConfig {
   def json: JsValue = RBACConfig.format.writes(this)
   lazy val prefix: String = rolePrefix.map(v => s"$v:role:").getOrElse("role:")
 }
@@ -68,7 +68,7 @@ class RBAC extends NgAccessValidator {
   override def core: Boolean                   = true
   override def name: String                    = "RBAC"
   override def description: Option[String]     = "This plugin check if current user/apikey/jwt token has the right role".some
-  override def defaultConfig: Option[JsObject] = RBACConfig().json.asObject.some
+  override def defaultConfigObject: Option[NgPluginConfig] = RBACConfig().some
 
   private def matches(roles: Seq[String], config: RBACConfig): Boolean = {
     if (roles.isEmpty) {
