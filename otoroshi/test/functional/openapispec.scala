@@ -1,8 +1,7 @@
 package functional
 
-import openapi.FormsGenerator
 import org.scalatest.{MustMatchers, OptionValues, WordSpec}
-import otoroshi.openapi.{OpenApiGenerator, OpenApiGeneratorRunner}
+import otoroshi.openapi.{FormsGenerator, OpenApiGenerator, OpenApiGeneratorRunner}
 import play.api.libs.json.{JsObject, JsValue, Json}
 
 import java.io.File
@@ -20,8 +19,7 @@ class OpenApiSpec extends WordSpec with MustMatchers with OptionValues {
     write = false,
     classNames = Seq("otoroshi.next.plugins", "otoroshi.next.models")
   )
-  val spec = generator.run()
-  /*println(Json.prettyPrint(JsObject(data)))*/
+  val spec: JsValue = generator.run()
 
   val formsGenerator = new FormsGenerator(spec)
   formsGenerator.run()
