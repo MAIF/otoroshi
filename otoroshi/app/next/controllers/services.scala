@@ -198,6 +198,16 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
     )
   }
 
+  def form() = ApiAction {
+    env.openApiSchema.asForms.get("otoroshi.next.models.NgService") match {
+      case Some(value)  => Ok(Json.obj(
+        "schema" -> value.schema,
+        "flow" -> value.flow
+      ))
+      case _            => NotFound(Json.obj("error" -> "Schema and flow not found"))
+    }
+  }
+
   def fromOpenapi() = ApiAction.async(parse.json) { ctx =>
     (ctx.request.body.select("domain").asOpt[String], ctx.request.body.select("openapi").asOpt[String]) match {
       case (Some(domain), Some(openapi)) => NgService.fromOpenApi(domain, openapi)

@@ -33,12 +33,14 @@ export const PLUGIN_INFORMATIONS_SCHEMA = {
     },
     include: {
         label: 'Include',
+        format: "singleLineCode",
         type: type.string,
         array: true,
         createOption: true
     },
     exclude: {
         label: 'Exclude',
+        format: "singleLineCode",
         type: type.string,
         array: true,
         createOption: true
@@ -46,8 +48,8 @@ export const PLUGIN_INFORMATIONS_SCHEMA = {
 }
 
 
-export const DEFAULT_FLOW = [
-    {
+export const DEFAULT_FLOW = {
+    Frontend: {
         id: 'Frontend',
         plugin_steps: ["PreRoute"],
         description: "Exposition",
@@ -55,40 +57,8 @@ export const DEFAULT_FLOW = [
         default: true,
         field: 'frontend',
         onInputStream: true,
-        schema: {
-            domains: {
-                type: type.string,
-                array: true,
-                label: 'Domains',
-                createOption: true,
-                isMulti: true
-            },
-            strip_path: {
-                type: type.bool,
-                label: 'Strip path',
-                help: 'When matching, strip the matching prefix from the upstream request URL. Defaults to true'
-            },
-            exact: {
-                type: type.bool,
-                label: 'Exact matching'
-            },
-            headers: {
-                type: type.object,
-                label: 'Metadata',
-                defaultValue: {}
-            },
-            methods: {
-                type: type.string,
-                label: 'Methods',
-                format: format.select,
-                options: [
-                    'GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH'
-                ],
-                isMulti: true
-            }
-        }
     },
-    {
+    Backend: {
         icon: 'bullseye',
         id: 'Backend',
         group: 'Targets',
@@ -321,4 +291,4 @@ export const DEFAULT_FLOW = [
             }
         }
     }
-]
+}

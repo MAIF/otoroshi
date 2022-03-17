@@ -91,7 +91,6 @@ trait NamedPlugin { self =>
   def name: String                  = self.getClass.getName
   def description: Option[String]   = None
   def documentation: Option[String] = None
-
   def defaultConfig: Option[JsObject] = None
   def configRoot: Option[String]      =
     defaultConfig match {
@@ -100,7 +99,6 @@ trait NamedPlugin { self =>
       case Some(config) if config.value.isEmpty   => None
       case Some(config) if config.value.size == 1 => config.value.headOption.map(_._1)
     }
-
   def configSchema: Option[JsObject] =
     defaultConfig.flatMap(c => configRoot.map(r => (c \ r).asOpt[JsObject].getOrElse(Json.obj()))) match {
       case None         => None
@@ -755,18 +753,7 @@ class ScriptManager(env: Env) {
 
       import collection.JavaConverters._
       val start                     = System.currentTimeMillis()
-      val confPackages: Seq[String] =
-        env.configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.packages").getOrElse(Seq.empty) ++
-        env.configuration
-          .getOptionalWithFileSupport[String]("otoroshi.plugins.packagesStr")
-          .map(v => v.split(",").map(_.trim).toSeq)
-          .getOrElse(Seq.empty)
-      val allPackages               = Seq("otoroshi", "otoroshi_plugins") ++ confPackages
-      val scanResult: ScanResult    = new ClassGraph()
-        .addClassLoader(env.environment.classLoader)
-        .enableClassInfo()
-        .acceptPackages(allPackages: _*)
-        .scan
+      val scanResult                = env.openApiSchema.scanResult
 
       // val scanResult: ScanResult = new ClassGraph().addClassLoader(env.environment.classLoader).enableAllInfo.blacklistPackages(
       //   "java.*",

@@ -349,6 +349,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val ngServicesController         = wire[NgServicesController]
   lazy val targetsController            = wire[NgTargetsController]
   lazy val backendsController           = wire[NgBackendsController]
+  lazy val frontendsController          = wire[NgFrontendsController]
   lazy val pluginsController            = wire[NgPluginsController]
   lazy val tryItController              = wire[TryItController]
 

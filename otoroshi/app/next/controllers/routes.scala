@@ -148,6 +148,16 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
+  def form() = ApiAction {
+    env.openApiSchema.asForms.get("otoroshi.next.models.NgRoute") match {
+      case Some(value)  => Ok(Json.obj(
+        "schema" -> value.schema,
+        "flow" -> value.flow
+      ))
+      case _            => NotFound(Json.obj("error" -> "Schema and flow not found"))
+    }
+  }
+
   def initiateRoute() = ApiAction {
     Ok(
       NgRoute(

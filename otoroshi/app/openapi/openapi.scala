@@ -1,8 +1,10 @@
 package otoroshi.openapi
 
 import io.github.classgraph._
+import otoroshi.env.Env
 import otoroshi.models.Entity
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
 import play.api.libs.json._
 
 import java.io.File
@@ -106,27 +108,18 @@ $descs
 // TODO: handle all Unknown data type
 // TODO: handle all ???
 // TODO: handle adt with type field
-class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Seq[String], write: Boolean = false, classNames: Seq[String] = Seq.empty) {
+class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Seq[String] = Seq.empty, write: Boolean = false, scanResult: ScanResult) {
+
+  lazy val logger = Logger("otoroshi-openapi-generator").logger
 
   val nullType       =
     Json.obj("$ref" -> s"#/components/schemas/Null") // Json.obj("type" -> "null") needs openapi 3.1.0 support :(
   val openApiVersion = JsString("3.0.3")
   val unknownValue   = "???"
 
-  val scanResult: ScanResult = new ClassGraph()
-    .addClassLoader(this.getClass.getClassLoader)
-    .enableAllInfo()
-    .acceptPackages(Seq("otoroshi", "play.api.libs.ws"): _*)
-    .scan
-
   val world = scanResult.getAllClassesAsMap.asScala
 
-  /*val entities: Seq[ClassInfo] = scanResult.getAllClassesAsMap.asScala
-    .filter(clazz => packages.get.exists(p => clazz._1.startsWith(p)))
-    .values.toSeq.distinct¨*/
-
-  val entities: Seq[ClassInfo] = (world.filter(w => classNames.exists(c => w._1.startsWith(c))).values ++
-    scanResult.getClassesImplementing(classOf[Entity].getName).asScala ++
+  val entities: Seq[ClassInfo] = (scanResult.getClassesImplementing(classOf[Entity].getName).asScala ++
       scanResult.getSubclasses(classOf[Entity].getName).asScala ++
       world.get("otoroshi.models.GlobalConfig") ++
       world.get("otoroshi.ssl.pki.models.GenKeyPairQuery") ++
@@ -138,7 +131,8 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       world.get("otoroshi.models.ErrorTemplate") ++
       world.get("otoroshi.models.Outage") ++
       world.get("otoroshi.models.RemainingQuotas") ++
-      world.get("otoroshi.events.HealthCheckEvent")
+      world.get("otoroshi.events.HealthCheckEvent") ++
+      world.filter(p => p._1.startsWith("otoroshi.next.plugins") || p._1.startsWith("otoroshi.next.models")).values
   ).toSeq.distinct
 
   var adts              = Seq.empty[JsObject]
@@ -275,8 +269,6 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     if (clazz.getName.contains("$") || config.banned.contains(clazz.getName)) {
       return ()
     }
-    //println(s"Starting visit : ${clazz.getName}", config.banned)
-
     if (clazz.getName.startsWith("otoroshi.")) {
       if (clazz.isInterface) {
         val children = scanResult.getClassesImplementing(clazz.getName).asScala.map(_.getName)
@@ -291,37 +283,35 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }
 
     if (!result.contains(clazz.getName)) {
-
       val ctrInfo    = clazz.getDeclaredConstructorInfo.asScala.headOption
       val params     = ctrInfo.map(_.getParameterInfo.toSeq).getOrElse(Seq.empty)
       val paramNames = params.map { param =>
         param.getName
       }
-
       var fields     = (clazz.getFieldInfo.asScala ++ clazz.getDeclaredFieldInfo.asScala).toSet
         .filter(_.isFinal)
         .filter(i => paramNames.contains(i.getName))
 
-      println(clazz.getName, fields.map(_.getName).mkString("|"))
-
       if (clazz.getName.startsWith("otoroshi.next.plugins")) {
-          val method = clazz.getMethodInfo("configReads").getSingleMethod("configReads")
-          if (method != null) {
-            val name = method.getTypeSignature.getResultType
-              .toString
-              .replace("play.api.libs.json.Reads<", "")
-              .replace(">", "")
-            world.get(name) match {
-              case Some(newClazz) =>
-                fields = (newClazz.getFieldInfo.asScala ++ newClazz.getDeclaredFieldInfo.asScala).toSet
-                  .filter(_.isFinal)
-
-                println(s"Updated : ${clazz.getName}", fields.map(_.getName).mkString("|"))
-              case _ => ()
-            }
-          } else {
-            // pas de configReads donc pas de format
+        try {
+          val c = Class.forName(clazz.getName)
+          val m = c.getDeclaredMethod("defaultConfigObject")
+          m.setAccessible(true)
+          val res = m.invoke(c.getDeclaredConstructor().newInstance())
+          res match {
+            case value: Option[_] =>
+              world.get(value.get.getClass.getName) match {
+                case Some(newClazz) =>
+                  fields = (newClazz.getFieldInfo.asScala ++ newClazz.getDeclaredFieldInfo.asScala).toSet
+                    .filter(_.isFinal)
+                case _ => ()
+              }
+            case _ =>
           }
+        } catch {
+          case _: Throwable => ()
+            // logger.debug(s"failed for ${clazz.getName}")
+        }
       }
 
       var properties = Json.obj()
@@ -382,7 +372,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
                 Json.obj("type" -> "integer", "format" -> "int64").some
               case Some(v) => Json.obj("$ref" -> s"#/components/schemas/$valueName").some
               case _       =>
-                println("fuuuuu opt", name, valueName)
+                logger.debug(s"fuuuuu opt, $name, $valueName")
                 None
             }
           }
@@ -391,7 +381,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             Json.obj("$ref" -> s"#/components/schemas/$valueName").some
           }
           case _                                                  =>
-            println(s"${clazz.getName}.$name: $typ (unexpected 1)")
+            logger.debug(s"${clazz.getName}.$name: $typ (unexpected 1)")
             None
         }
       }
@@ -503,11 +493,11 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
                 fieldName -> r.deepMerge(Json.obj("description" -> getFieldDescription(clazz, name, typ, config)))
               )
             }
-          // case c: TypeVariableSignature => println(s"  $name: $typ ${c.toStringWithTypeBound} (var)")
-          // case c: ArrayTypeSignature    => println(s"  $name: $typ ${c.getTypeSignatureStr} ${c.getElementTypeSignature.toString} (arr)")
-          // case c: ReferenceTypeSignature => println(s"  $name: $typ (ref)")
+          // case c: TypeVariableSignature => logger.debug(s"  $name: $typ ${c.toStringWithTypeBound} (var)")
+          // case c: ArrayTypeSignature    => logger.debug(s"  $name: $typ ${c.getTypeSignatureStr} ${c.getElementTypeSignature.toString} (arr)")
+          // case c: ReferenceTypeSignature => logger.debug(s"  $name: $typ (ref)")
           case _                                                                                                 =>
-            println(s"${clazz.getName}.$name: $typ (unexpected 2)")
+            logger.debug(s"${clazz.getName}.$name: $typ (unexpected 2)")
         }
       }
 
@@ -520,10 +510,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         .foldLeft(Json.obj())((a, b) => a.deepMerge(b))
       val toMerge        = toMergeParent.deepMerge(toMergeParents.deepMerge(toMergeSelf))
       if (clazz.getName.startsWith("otoroshi.auth")) {
-        // println(clazz.getName + " - " + parent.map(p => p.getName).getOrElse("") + " - " + clazz.getInterfaces.asScala.map(_.getName).mkString(", "))
+        // logger.debug(clazz.getName + " - " + parent.map(p => p.getName).getOrElse("") + " - " + clazz.getInterfaces.asScala.map(_.getName).mkString(", "))
       }
       if (toMerge != Json.obj()) {
-        //println(s"found some stuff to merge for ${clazz.getName} - ${parent.map(p => p.getName).getOrElse("")}")//- ${toMerge.prettify}")
+        //logger.debug(s"found some stuff to merge for ${clazz.getName} - ${parent.map(p => p.getName).getOrElse("")}")//- ${toMerge.prettify}")
       }
       result.put(
         clazz.getName,
@@ -916,7 +906,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               )
             }
             case _ =>
-              // println(s"bad definition: $line")
+              // logger.debug(s"bad definition: $line")
               Json.obj()
           }
         }
@@ -938,7 +928,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }
   }
 
-  def run(rawResult: Boolean = false): JsValue = {
+  def run(): JsValue = {
     val config = getConfig()
     val result = new TrieMap[String, JsValue]()
 
@@ -954,15 +944,12 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
 
     val (paths, tags) = scanPaths(config)
 
-    if (rawResult)
-      return JsObject(result)
-
-    println("")
-    println(s"found ${found.get()} descriptions, not found ${notFound.get()} descriptions")
-    println(s"found ${resFound.get()} response types, not found ${resNotFound.get()} response types")
-    println(s"found ${inFound.get()} input types, not found ${inNotFound.get()} input types")
-    println("")
-    println(s"total found ${found.get() + resFound.get() + inFound
+    logger.debug("")
+    logger.debug(s"found ${found.get()} descriptions, not found ${notFound.get()} descriptions")
+    logger.debug(s"found ${resFound.get()} response types, not found ${resNotFound.get()} response types")
+    logger.debug(s"found ${inFound.get()} input types, not found ${inNotFound.get()} input types")
+    logger.debug("")
+    logger.debug(s"total found ${found.get() + resFound.get() + inFound
       .get()}, not found ${notFound.get() + resNotFound.get() + inNotFound.get()}")
 
     val spec = Json.obj(
@@ -1001,10 +988,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     )
 
     if (write) {
-      println("")
+      logger.debug("")
       specFiles.foreach { specFile =>
         val file = new File(specFile)
-        println(s"writing spec to: '${file.getAbsolutePath}'")
+        logger.debug(s"writing spec to: '${file.getAbsolutePath}'")
         Files.write(file.toPath, spec.prettify.split("\n").toList.asJava, StandardCharsets.UTF_8)
       }
       OpenApiGeneratorConfig(
@@ -1014,7 +1001,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           // "add_schemas" -> (config.add_schemas ++ adts.foldLeft(Json.obj())(_ ++ _))
         )
       ).write()
-      println("")
+      logger.debug("")
     }
 
     spec
@@ -1051,7 +1038,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         )
       ).write()
     } else {
-      println("No old spec file found !!!!")
+      logger.debug("No old spec file found !!!!")
     }
   }
 }
@@ -1059,10 +1046,17 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
 class OpenApiGeneratorRunner extends App {
 
   def generate() = {
+    val scanResult = new ClassGraph()
+      .addClassLoader(this.getClass.getClassLoader)
+      .enableAllInfo()
+      .acceptPackages(Seq("otoroshi", "otoroshi_plugins", "play.api.libs.ws"): _*)
+      .scan
+
     val generator = new OpenApiGenerator(
       "./conf/routes",
       "./app/openapi/openapi-cfg.json",
       Seq("./public/openapi.json", "../manual/src/main/paradox/code/openapi.json"),
+      scanResult = scanResult,
       write = true
     )
 

@@ -28,9 +28,11 @@ export default ({ lineId, value }) => {
             nextClient.find(nextClient.ENTITIES.BACKENDS),
             nextClient.fetch(nextClient.ENTITIES.ROUTES, routeId),
             getCategories(),
-            getPlugins()
+            getPlugins(),
+            nextClient.form(nextClient.ENTITIES.FRONTENDS),
+            nextClient.form(nextClient.ENTITIES.BACKENDS),
         ])
-            .then(([backends, route, categories, plugins]) => {
+            .then(([backends, route, categories, plugins, frontendForm, backendForm]) => {
                 const formatedPlugins = plugins
                     .filter(plugin => !plugin.plugin_steps.includes('Sink') && !plugin.plugin_steps.includes('HandlesTunnel'))
                     .map(plugin => ({
@@ -38,8 +40,6 @@ export default ({ lineId, value }) => {
                         config_schema: format(plugin.config_schema || {}),
                         config: plugin.default_config
                     }))
-
-                console.log(formatedPlugins)
 
                 setBackends(backends)
                 setCategories(categories.filter(category => category !== 'Tunnel'))
@@ -51,7 +51,16 @@ export default ({ lineId, value }) => {
                 })))
 
                 setNodes([
-                    ...DEFAULT_FLOW,
+                    {
+                        ...DEFAULT_FLOW.Frontend,
+                        ...frontendForm,
+                        schema: format(frontendForm.schema)
+                    },
+                    {
+                        ...DEFAULT_FLOW.Backend,
+                        ...backendForm,
+                        schema: format(backendForm.schema)
+                    },
                     ...route.plugins.map(ref => {
                         const plugin = formatedPlugins.find(p => p.id === ref.plugin)
                         const onInputStream = (plugin.plugin_steps || []).some(s => ["PreRoute", "ValidateAccess", "TransformRequest"].includes(s))
@@ -67,14 +76,17 @@ export default ({ lineId, value }) => {
 
                 setLoading(false)
             })
-    }, [location])
+    }, [location.pathname])
 
     const format = obj => {
         return Object.entries(obj).reduce((acc, [key, value]) => {
-            const v = key === "label" ? value.replace(/_/g, ' ') : value
+            const isLabelField = key === "label"
+            const v = isLabelField ? value.replace(/_/g, ' ') : value
+            const [prefix, ...sequences] = isLabelField ? v.split(/(?=[A-Z])/) : []
+
             return {
                 ...acc,
-                [key]: key === "label" ? v.charAt(0).toUpperCase() + v.slice(1) :
+                [key]: isLabelField ? prefix.charAt(0).toUpperCase() + prefix.slice(1) + " " + sequences.join(" ").toLowerCase() :
                     ((typeof value === 'object' && value !== null && key !== "transformer" && !Array.isArray(value)) ? format(value) : value)
             }
         }, {})
@@ -211,7 +223,6 @@ export default ({ lineId, value }) => {
     }
 
     const updatePlugin = (pluginId, item) => {
-        console.log(item)
         nextClient.update(nextClient.ENTITIES.ROUTES, {
             ...route,
             plugins: route.plugins.map(plugin => {
@@ -267,8 +278,6 @@ export default ({ lineId, value }) => {
         TransformRequest: []
     }))
         .flat()
-
-    console.log(route)
 
     const inputNodes = sortInputStream(nodes
         .filter(node => (node.plugin_steps || []).some(s => ["PreRoute", "ValidateAccess", "TransformRequest"].includes(s))))
@@ -521,7 +530,7 @@ const read = (value, path) => {
     return read(value[keys[0]], keys.slice(1).join("."))
 }
 
-const UnselectedNode = ({ saveChanges }) => <div class="d-flex-between dark-background p-1 ps-2">
+const UnselectedNode = ({ saveChanges }) => <div className="d-flex-between dark-background p-1 ps-2">
     <span style={{
         textAlign: "center",
         fontStyle: 'italic'
@@ -531,6 +540,31 @@ const UnselectedNode = ({ saveChanges }) => <div class="d-flex-between dark-back
         <span>Update route</span>
     </button>
 </div>
+
+const camelToSnakeCase = str => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
+
+const reservedCamelWords = [
+    "isMulti", "optionsFrom", "createOption", "onCreateOption",
+    "defaultKeyValue", "defaultValue", "className", "onChange", "itemRender", "conditionalSchema"
+]
+
+const camelToSnake = obj => {
+    return Object.fromEntries(Object.entries(obj).map(([key, value]) => {
+        const isFlowField = key === "flow"
+        return [
+            reservedCamelWords.includes(key) ? key : camelToSnakeCase(key),
+            isFlowField ? value.map(step => camelToSnakeFlow(step)) :
+                ((typeof value === 'object' && value !== null && !Array.isArray(value)) ? camelToSnake(value) : value)
+        ]
+    }))
+}
+
+const camelToSnakeFlow = step => {
+    return typeof step === 'object' ? {
+        ...step,
+        flow: step.flow.map(f => camelToSnakeFlow(f))
+    } : camelToSnakeCase(step)
+}
 
 const EditView = ({
     selectedNode, setSelectedNode, route, changeValues,
@@ -548,8 +582,6 @@ const EditView = ({
 
     let formSchema = schema || config_schema
     let formFlow = flow || config_flow
-
-    console.log(schema || config_schema)
 
     if (config_schema) {
         formSchema = {
@@ -572,7 +604,7 @@ const EditView = ({
                     format: format.form,
                     label: null,
                     schema: { ...convertTransformer(config_schema) },
-                    flow: [...flow || config_flow]
+                    flow: [...flow || config_flow].map(step => camelToSnakeFlow(step))
                 }
             }
             formFlow = [
@@ -586,7 +618,10 @@ const EditView = ({
         }
     }
 
-    const plugin = ['Backend', 'Frontend'].includes(id) ? DEFAULT_FLOW.find(f => f.id === id) : plugins.find(element => element.id === id || element.id.endsWith(id))
+    formSchema = camelToSnake(formSchema)
+    formFlow = formFlow.map(step => camelToSnakeFlow(step))
+
+    const plugin = ['Backend', 'Frontend'].includes(id) ? DEFAULT_FLOW[id] : plugins.find(element => element.id === id || element.id.endsWith(id))
 
     const RemoveComponent = () => <button className='btn btn-sm btn-danger ms-2' onClick={e => {
         e.stopPropagation()
@@ -620,6 +655,10 @@ const EditView = ({
             }
         }
     }
+
+    // console.log("FLOW", formFlow)
+    console.log("SCHEMA", formSchema.plugin)
+    console.log("VALUE", value)
 
     return <div onClick={e => {
         e.stopPropagation()
@@ -690,7 +729,6 @@ const EditView = ({
                         schema={formSchema}
                         flow={formFlow}
                         onSubmit={item => {
-                            console.log(item)
                             try {
                                 if (config_schema)
                                     updatePlugin(id, item)

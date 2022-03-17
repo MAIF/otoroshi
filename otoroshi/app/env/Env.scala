@@ -11,6 +11,7 @@ import otoroshi.auth.{AuthModuleConfig, SessionCookieValues}
 import ch.qos.logback.classic.{Level, LoggerContext}
 import otoroshi.cluster._
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
+import io.github.classgraph.ClassGraph
 import otoroshi.next.utils.Vaults
 import otoroshi.events._
 import otoroshi.gateway.{AnalyticsQueue, CircuitBreakersHolder}
@@ -25,6 +26,7 @@ import otoroshi.events.{OtoroshiEventsActorSupervizer, StartExporters}
 import otoroshi.jobs.updates.Version
 import otoroshi.models.{EntityLocation, OtoroshiAdminType, SimpleOtoroshiAdmin, Team, TeamAccess, TeamId, Tenant, TenantAccess, TenantId, UserRight, UserRights, WebAuthnOtoroshiAdmin}
 import otoroshi.next.proxy.NgProxyState
+import otoroshi.openapi.{ClassGraphScanner, FormsGenerator, OpenApiGenerator, OpenapiToJson}
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.storage.DataStores
@@ -672,6 +674,13 @@ class Env(
       configuration.getOptionalWithFileSupport[String]("otoroshi.headers.client.cert.chain").get
   }
 
+  val confPackages: Seq[String] =
+    configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.packages").getOrElse(Seq.empty) ++
+      configuration
+        .getOptionalWithFileSupport[String]("otoroshi.plugins.packagesStr")
+        .map(v => v.split(",").map(_.trim).toSeq)
+        .getOrElse(Seq.empty)
+
   logger.info(s"Otoroshi version ${otoroshiVersion}")
   // logger.info(s"Scala version ${scala.util.Properties.versionNumberString} / ${scala.tools.nsc.Properties.versionNumberString}")
   if (!testing) {
@@ -804,9 +813,11 @@ class Env(
     }
   }
 
-  val scriptingEnabled = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.scripts.enabled").getOrElse(false)
-  val scriptCompiler   = new ScriptCompiler(this)
-  val scriptManager    = new ScriptManager(this).start()
+  lazy val openApiSchema    = new ClassGraphScanner().run(confPackages)
+
+  val scriptingEnabled      = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.scripts.enabled").getOrElse(false)
+  val scriptCompiler        = new ScriptCompiler(this)
+  val scriptManager         = new ScriptManager(this).start()
 
   if (scriptingEnabled) logger.warn("Scripting is enabled on this Otoroshi instance !")
 

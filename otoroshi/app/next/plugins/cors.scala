@@ -94,16 +94,6 @@ class Cors extends NgRequestTransformer with NgPreRouting {
   override def name: String                      = "CORS"
   override def description: Option[String]       = "This plugin applies CORS rules".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgCorsSettings().some
-
-  override def configSchema: Option[JsObject] = (super.configSchema.get ++ Json.obj("max_age" -> Json.obj(
-    "type" -> "number",
-    "value" -> JsNull,
-    "constraints" -> Json.arr(
-      Json.obj("type" -> "nullable")
-    ),
-    "label" -> "Max age"
-  ))).some
-
   override def preRoute(
       ctx: NgPreRoutingContext
   )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {

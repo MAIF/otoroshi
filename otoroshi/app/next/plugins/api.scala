@@ -237,136 +237,17 @@ trait NgNamedPlugin extends NamedPlugin { self =>
   override final def defaultConfig: Option[JsObject] = defaultConfigObject.map(_.json.asOpt[JsObject].getOrElse(Json.obj()))
   override def pluginType: PluginType         = PluginType.CompositeType
   override def configRoot: Option[String]     = None
-  override def configSchema: Option[JsObject] =
-    defaultConfig match {
-      case None         => None
-      case Some(config) => {
-        def findVals(x: Any): Seq[String] = {
-          import scala.reflect.runtime.universe._
-          val mirror = runtimeMirror(this.getClass.getClassLoader)
-
-          val theType = mirror.classSymbol(x.getClass).toType
-          val xtm = theType.members.collect({case x if x.isTerm => x.asTerm})
-          xtm.filter(m => m.isGetter && !xtm.exists(m.setter == _) && m.name.toString == "configReads")
-            .map(_.typeSignature.resultType.toString)
-            .filter(r => r.contains("play.api.libs.json.Reads"))
-            .map(w => w.split("\\[")(1).replace("]", ""))
-            .toSeq
-        }
-
-        def genSchema(jsobj: JsObject, prefix: String): JsObject = {
-          jsobj.value.toSeq
-            .map {
-              case (key, JsNull)                   =>
-                val types = findVals(this)
-                if (types.nonEmpty) {
-                  val fields = Class.forName(types.head).getDeclaredFields.toSeq
-
-                  val camelKey = "_([a-z\\d])".r.replaceAllIn(key, { m => m.group(1).toUpperCase() })
-
-                  fields.find(_.getName == camelKey) match {
-                    case Some(value) =>
-                      Json.obj(prefix + key -> Json.obj(
-                        "label" -> (prefix + key),
-                        "type" -> (value.getGenericType.toString.toLowerCase match {
-                            case v if v.contains("string") => "string"
-                            case v if v.contains("finiteduration") || v.contains("long") => "number"
-                            case _ => "number"
-                          })
-                      ))
-                    case None =>
-                      Json.obj(prefix + key -> Json.obj("type" -> "string", "label" -> (prefix + key)))
-                  }
-
-                  Json.obj(prefix + key -> Json.obj("type" -> "string", "label" -> (prefix + key)))
-                } else
-                  Json.obj(prefix + key -> Json.obj("type" -> "string", "label" -> (prefix + key)))
-              case (key, JsString(_))              =>
-                Json.obj(prefix + key -> Json.obj("type" -> "string", "label" -> (prefix + key)))
-              case (key, JsNumber(_))              =>
-                Json.obj(prefix + key -> Json.obj("type" -> "number", "label" -> (prefix + key)))
-              case (key, JsBoolean(_))             =>
-                Json.obj(prefix + key -> Json.obj("type" -> "bool", "label" -> (prefix + key)))
-              case (key, JsArray(values))          => {
-                if (values.isEmpty) {
-                    Json.obj(prefix + key -> Json.obj(
-                      "type" -> "string",
-                      "array" -> "true",
-                      "createOption" -> true,
-                      "label" -> (prefix + key)))
-                } else {
-                  values.head match {
-                    case JsNumber(_) =>
-                      Json.obj(
-                        prefix + key -> Json.obj(
-                          "type"  -> "number",
-                          "array" -> "true",
-                          "label" -> (prefix + key),
-                          "createOption" -> true
-                        )
-                      )
-                    case _           =>
-                      Json.obj(
-                        prefix + key -> Json.obj(
-                          "type"  -> "string",
-                          "array" -> "true",
-                          "label" -> (prefix + key),
-                          "createOption" -> true
-                        )
-                      )
-                  }
-                }
-              }
-              case ("mtlsConfig", a @ JsObject(_)) => genSchema(a, prefix + "mtlsConfig.")
-              case ("mtls", a @ JsObject(_))       => genSchema(a, prefix + "mtls.")
-              case ("filter", a @ JsObject(_))     => genSchema(a, prefix + "filter.")
-              case ("not", a @ JsObject(_))        => genSchema(a, prefix + "not.")
-              case (key, a @ JsObject(_))              =>
-                if (a.value.isEmpty)
-                  Json.obj(prefix + key -> Json.obj(
-                    "type" -> "object",
-                    "label" -> (prefix + key)
-                  ))
-                else
-                  Json.obj(prefix + key -> Json.obj(
-                    "type" -> "object",
-                    "format" -> "form",
-                    "label" -> (prefix + key)
-                  ).as[JsObject].deepMerge(Json.obj("schema" -> genSchema(a, ""))))
-              case (key, JsNull)                   => Json.obj()
-            }
-            .foldLeft(Json.obj())(_ ++ _)
-        }
-        Some(genSchema(config, ""))
-      }
-    }
-  override def configFlow: Seq[String]        =
-    defaultConfig match {
-      case None         => Seq.empty
-      case Some(config) => {
-        def genFlow(jsobj: JsObject, prefix: String): Seq[String] = {
-          jsobj.value.toSeq.flatMap {
-            case ("mtlsConfig", a @ JsObject(_)) => genFlow(a, prefix + "mtlsConfig.")
-            case ("mtls", a @ JsObject(_))       => genFlow(a, prefix + "mtls.")
-            case ("filter", a @ JsObject(_))     => genFlow(a, prefix + "filter.")
-            case ("not", a @ JsObject(_))        => genFlow(a, prefix + "not.")
-            case (key, value)                    => Seq(prefix + key)
-          }
-        }
-        genFlow(config, "")
-      }
-    }
   override def jsonDescription(): JsObject    =
     Try {
       Json.obj(
         "name"          -> name,
         "description"   -> description.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "defaultConfig" -> defaultConfig.getOrElse(JsNull).as[JsValue],
-        "configSchema"  -> configSchema.getOrElse(JsNull).as[JsValue],
-        "configFlow"    -> JsArray(configFlow.map(JsString.apply))
+        // "configSchema"  -> configSchema.getOrElse(JsNull).as[JsValue],
+        // "configFlow"    -> JsArray(configFlow.map(JsString.apply))
       )
     } match {
-      case Failure(ex) => Json.obj()
+      case Failure(_) => Json.obj()
       case Success(s)  => s
     }
 }

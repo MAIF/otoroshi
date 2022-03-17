@@ -429,6 +429,7 @@ GET     /api/data-exporter-configs                          otoroshi.controllers
 POST    /api/data-exporter-configs                          otoroshi.controllers.adminapi.DataExporterConfigController.createAction()
 
 ## NgRoutes
+GET     /api/experimental/routes/_form                      otoroshi.next.controllers.adminapi.NgRoutesController.form()
 GET     /api/experimental/routes/_template                  otoroshi.next.controllers.adminapi.NgRoutesController.initiateRoute()
 POST    /api/experimental/routes/_bulk                      otoroshi.next.controllers.adminapi.NgRoutesController.bulkCreateAction()
 PUT     /api/experimental/routes/_bulk                      otoroshi.next.controllers.adminapi.NgRoutesController.bulkUpdateAction()
@@ -442,6 +443,7 @@ GET     /api/experimental/routes                            otoroshi.next.contro
 POST    /api/experimental/routes                            otoroshi.next.controllers.adminapi.NgRoutesController.createAction()
 
 ## NgServices
+GET     /api/experimental/services/_form                otoroshi.next.controllers.adminapi.NgServicesController.form()
 POST    /api/experimental/services/_openapi             otoroshi.next.controllers.adminapi.NgServicesController.fromOpenapi()
 GET     /api/experimental/services/_template            otoroshi.next.controllers.adminapi.NgServicesController.initiateService()
 POST    /api/experimental/services/_bulk                otoroshi.next.controllers.adminapi.NgServicesController.bulkCreateAction()
@@ -456,6 +458,7 @@ GET     /api/experimental/services                      otoroshi.next.controller
 POST    /api/experimental/services                      otoroshi.next.controllers.adminapi.NgServicesController.createAction()
 
 ## Targets
+GET     /api/experimental/targets/_form                    otoroshi.next.controllers.adminapi.NgTargetsController.form()
 GET     /api/experimental/targets/_template                otoroshi.next.controllers.adminapi.NgTargetsController.initiateStoredNgTarget()
 POST    /api/experimental/targets/_bulk                    otoroshi.next.controllers.adminapi.NgTargetsController.bulkCreateAction()
 PUT     /api/experimental/targets/_bulk                    otoroshi.next.controllers.adminapi.NgTargetsController.bulkUpdateAction()
@@ -469,6 +472,7 @@ GET     /api/experimental/targets                          otoroshi.next.control
 POST    /api/experimental/targets                          otoroshi.next.controllers.adminapi.NgTargetsController.createAction()
 
 ## Backends
+GET     /api/experimental/backends/_form                    otoroshi.next.controllers.adminapi.NgBackendsController.form()
 GET     /api/experimental/backends/_template                otoroshi.next.controllers.adminapi.NgBackendsController.initiateStoredNgBackend()
 POST    /api/experimental/backends/_bulk                    otoroshi.next.controllers.adminapi.NgBackendsController.bulkCreateAction()
 PUT     /api/experimental/backends/_bulk                    otoroshi.next.controllers.adminapi.NgBackendsController.bulkUpdateAction()
@@ -480,6 +484,9 @@ PUT     /api/experimental/backends/:id                      otoroshi.next.contro
 PATCH   /api/experimental/backends/:id                      otoroshi.next.controllers.adminapi.NgBackendsController.patchEntityAction(id)
 GET     /api/experimental/backends                          otoroshi.next.controllers.adminapi.NgBackendsController.findAllEntitiesAction()
 POST    /api/experimental/backends                          otoroshi.next.controllers.adminapi.NgBackendsController.createAction()
+
+## Frontends
+GET     /api/experimental/frontends/_form                     otoroshi.next.controllers.adminapi.NgFrontendsController.form()
 
 ## Plugins
 GET     /api/experimental/plugins/categories                otoroshi.next.controllers.NgPluginsController.categories()

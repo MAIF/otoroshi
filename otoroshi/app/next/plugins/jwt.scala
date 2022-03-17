@@ -56,12 +56,12 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
 
   override def configSchema: Option[JsObject] = Json.obj(
     "verifiers" -> Json.obj(
-      "type" -> "string",
       "format" -> "select",
-      "optionsFrom" -> "/bo/api/proxy/api/verifiers",
-      "transformer" -> Json.obj("value" -> "id", "label" -> "name"),
+      "array" -> false,
+      "type" -> "string",
       "isMulti" -> true,
-      "label" -> "verifiers"
+      "optionsFrom" -> "/bo/api/proxy/api/verifiers",
+      "transformer" -> Json.obj("value" -> "id", "label" -> "name")
     )
   ).some
 

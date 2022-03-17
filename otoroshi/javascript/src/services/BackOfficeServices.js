@@ -1789,14 +1789,16 @@ const fetchWrapper = (url, method = 'GET', body) => fetch(`/bo/api/proxy/api/exp
 export const nextClient = {
   ENTITIES: {
     ROUTES: 'routes',
-    BACKENDS: 'backends'
+    BACKENDS: 'backends',
+    FRONTENDS: 'frontends'
   },
   find: entity => fetchWrapper(`/${entity}`),
   create: (entity, content) => fetchWrapper(`/${entity}`, 'POST', content),
   update: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
   fetch: (entity, entityId) => fetchWrapper(`/${entity}/${entityId}`),
   remove: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'DELETE'),
-  template: entity => fetchWrapper(`/${entity}/_template`)
+  template: entity          => fetchWrapper(`/${entity}/_template`),
+  form: entity              => fetchWrapper(`/${entity}/_form`)
 }
 
 export const getPlugins = () => fetchWrapper('/plugins/all')

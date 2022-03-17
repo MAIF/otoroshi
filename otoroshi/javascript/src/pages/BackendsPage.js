@@ -5,7 +5,6 @@ import { Table } from "../components/inputs";
 import { Location } from '../components/Location'
 import NextSidebar from "../components/NextSidebar";
 import { constraints, Form, format, type } from '@maif/react-forms';
-import { DEFAULT_FLOW } from './RouteDesigner/Graph';
 
 export const BackendsPage = ({ setTitle }) => {
     const params = useParams()
@@ -73,10 +72,13 @@ export const BackendsPage = ({ setTitle }) => {
 }
 
 export const BackendForm = ({ isCreation, value, onSubmit, foldable, style = {} }) => {
-    const graph = DEFAULT_FLOW.find(node => node.id === 'Backend')
     const ref = useRef()
-
     const [show, setShow] = useState(!foldable)
+
+    const [form, setForm] = useState({
+        schema: {},
+        flow: []
+    })
 
     const schema = {
         id: {
@@ -96,19 +98,7 @@ export const BackendForm = ({ isCreation, value, onSubmit, foldable, style = {} 
             label: 'Backend',
             help: '',
             type: type.object,
-            format: format.form,
-            schema: Object.fromEntries(Object.entries(graph.schema).map(([key, value]) => {
-                if (!value.label)
-                    return [key, { ...value, label: key.charAt(0).toUpperCase() + key.slice(1) }]
-                return [key, value]
-            })),
-            flow: [
-                'load_balancing',
-                'root',
-                'rewrite',
-                'targets',
-                'client'
-            ]
+            format: format.form
         },
         metadata: {
             type: type.object,
@@ -140,8 +130,6 @@ export const BackendForm = ({ isCreation, value, onSubmit, foldable, style = {} 
         }
     }
 
-    console.log(schema)
-
     const flow = [
         'name',
         'description',
@@ -158,6 +146,20 @@ export const BackendForm = ({ isCreation, value, onSubmit, foldable, style = {} 
         }
     ]
 
+    useEffect(() => {
+        nextClient.form(nextClient.ENTITIES.BACKENDS)
+            .then(res => setForm({
+                schema: {
+                    ...schema,
+                    backend: {
+                        ...schema.backend,
+                        ...res
+                    }
+                },
+                flow
+            }))
+    }, [])
+
     return <div className='designer-form' style={{
         ...style,
         minHeight: show ? 'calc(100vh - 85px)' : 'initial'
@@ -171,8 +173,8 @@ export const BackendForm = ({ isCreation, value, onSubmit, foldable, style = {} 
         </div>
         {show && <>
             <Form
-                schema={schema}
-                flow={flow}
+                schema={form.schema}
+                flow={form.flow}
                 value={value}
                 ref={ref}
                 onSubmit={item => {
