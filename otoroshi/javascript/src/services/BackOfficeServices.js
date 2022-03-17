@@ -1797,10 +1797,18 @@ export const nextClient = {
   update: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
   fetch: (entity, entityId) => fetchWrapper(`/${entity}/${entityId}`),
   remove: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'DELETE'),
-  template: entity          => fetchWrapper(`/${entity}/_template`),
-  form: entity              => fetchWrapper(`/${entity}/_form`)
+  template: entity => fetchWrapper(`/${entity}/_template`),
+  form: entity => fetchWrapper(`/${entity}/_form`)
 }
 
 export const getPlugins = () => fetchWrapper('/plugins/all')
+
+export const getOldPlugins = () => fetch('/bo/api/proxy/api/scripts/_list', {
+  credentials: 'include',
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json'
+  }
+}).then(r => r.json())
 
 export const getCategories = () => fetchWrapper('/plugins/categories')

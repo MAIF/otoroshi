@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useLocation } from 'react-router'
-import { nextClient, getCategories, getPlugins } from '../../services/BackOfficeServices'
+import { nextClient, getCategories, getPlugins, getOldPlugins } from '../../services/BackOfficeServices'
 import { Form, format, type } from '@maif/react-forms'
 import { SelectInput } from '@maif/react-forms/lib/inputs'
 import deepSet from 'set-value'
@@ -29,20 +29,25 @@ export default ({ lineId, value }) => {
             nextClient.fetch(nextClient.ENTITIES.ROUTES, routeId),
             getCategories(),
             getPlugins(),
+            getOldPlugins(),
             nextClient.form(nextClient.ENTITIES.FRONTENDS),
             nextClient.form(nextClient.ENTITIES.BACKENDS),
         ])
-            .then(([backends, route, categories, plugins, frontendForm, backendForm]) => {
-                const formatedPlugins = plugins
+            .then(([backends, route, categories, plugins, oldPlugins, frontendForm, backendForm]) => {
+                // TODO - voir avec Mathieu pour ajouter des plugins_steps, config_schema et config_flow, plugin_categories sur les anciens plugins
+                const formatedPlugins = [...plugins, ...oldPlugins.map(p => ({ ...p, plugin_steps: [], plugin_categories: [] }))]
                     .filter(plugin => !plugin.plugin_steps.includes('Sink') && !plugin.plugin_steps.includes('HandlesTunnel'))
                     .map(plugin => ({
                         ...plugin,
-                        config_schema: format(plugin.config_schema || {}),
+                        config_schema: format(plugin.config_schema || plugin.configSchema || {}),
                         config: plugin.default_config
                     }))
 
                 setBackends(backends)
-                setCategories(categories.filter(category => category !== 'Tunnel'))
+                setCategories([
+                    ...categories.filter(category => category !== 'Tunnel'),
+                    'Ancien plugins'
+                ])
                 setRoute(route)
 
                 setPlugins(formatedPlugins.map(p => ({
@@ -177,7 +182,7 @@ export default ({ lineId, value }) => {
         flex: flex ? 1 : 'initial'
     }}></div>
 
-    const NodeElement = ({ element, setSelectedNode, hideLink, selectedNode, isLast, disableBorder }) => {
+    const NodeElement = ({ element, setSelectedNode, hideLink, selectedNode, bold, disableBorder }) => {
         const { id, name } = element
         const highlighted = selectedNode && selectedNode.id === id
 
@@ -185,7 +190,8 @@ export default ({ lineId, value }) => {
             <Dot clickable={true}
                 selectedNode={selectedNode}
                 style={{
-                    border: disableBorder ? 0 : 1
+                    border: disableBorder ? 0 : 1,
+                    fontWeight: bold ? 'bold' : 'normal'
                 }}
                 onClick={e => {
                     e.stopPropagation()
@@ -328,14 +334,38 @@ export default ({ lineId, value }) => {
                     <div className='col-sm-4 pe-3 d-flex flex-column'>
                         <div className='row' style={{ height: '100%' }}>
                             <div className="col-sm-6" style={{ display: 'flex', flexDirection: 'column' }}>
-                                <div className="main-view">
+                                <div className="main-view"
+                                    style={{ position: 'relative' }}>
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: '-16px',
+                                        height: '36px',
+                                        backgroundColor: selectedNode && selectedNode.id === "Frontend" ? "#f9b000" : "rgb(73, 73, 72)",
+                                        opacity: !selectedNode || (selectedNode && selectedNode.id === "Frontend") ? 1 : .25
+                                    }}>
+                                        <i className="fas fa-user" style={{
+                                            fontSize: '30px',
+                                            color: "#fff",
+                                            margin: '3px'
+                                        }} />
+                                    </div>
+                                    {inputNodes.slice(0, 1)
+                                        .map((value, i) => <NodeElement
+                                            element={value}
+                                            key={`inNodes${i}`}
+                                            selectedNode={selectedNode}
+                                            setSelectedNode={setSelectedNode}
+                                            isLast={(inputNodes.length - 1) === i}
+                                            bold={true}
+                                        />)}
                                     <Dot style={{
                                         width: "72px",
                                         height: "36px",
                                         borderRadius: '6px'
                                     }} icon="chevron-down" selectedNode={selectedNode} />
                                     <Link highlighted={!selectedNode} />
-                                    {inputNodes.map((value, i) => <NodeElement
+                                    {inputNodes.slice(1).map((value, i) => <NodeElement
                                         element={value}
                                         key={`inNodes${i}`}
                                         selectedNode={selectedNode}
@@ -378,7 +408,7 @@ export default ({ lineId, value }) => {
                                 position: 'relative',
                                 opacity: !selectedNode ? 1 : !selectedNode.onTargetStream ? .25 : 1
                             }}>
-                            <i className="fas fa-globe-americas"
+                            <i className="fas fa-bullseye"
                                 style={{
                                     position: 'absolute',
                                     top: '-3px',
@@ -387,8 +417,7 @@ export default ({ lineId, value }) => {
                                     color: "#fff",
                                     backgroundColor: "#f9b000",
                                     borderRadius: "50%"
-                                }}>
-                            </i>
+                                }} />
                             {targetNodes.map((value, i, arr) => <NodeElement
                                 element={value}
                                 key={`targetNodes${i}`}
@@ -396,6 +425,7 @@ export default ({ lineId, value }) => {
                                 setSelectedNode={setSelectedNode}
                                 hideLink={arr.length - 1 === i}
                                 disableBorder={true}
+                                bold={true}
                             />)}
                         </div></div>
                     <div className="col-sm-8" style={{ paddingRight: 0 }}>
@@ -589,6 +619,7 @@ const EditView = ({
                 type: type.object,
                 format: format.form,
                 collapsable: true,
+                collapsed: Object.keys(config_schema).length > 0,
                 label: 'Informations',
                 schema: PLUGIN_INFORMATIONS_SCHEMA
             }
