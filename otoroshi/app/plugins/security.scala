@@ -2,6 +2,7 @@ package otoroshi.plugins.security
 
 import akka.stream.Materializer
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext}
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import play.api.mvc.{Result, Results}
@@ -12,6 +13,10 @@ import scala.concurrent.{ExecutionContext, Future}
 class SecurityTxt extends RequestTransformer {
 
   override def name: String = "Security Txt"
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
   override def defaultConfig: Option[JsObject] =
     Some(

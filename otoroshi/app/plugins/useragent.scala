@@ -2,10 +2,10 @@ package otoroshi.plugins.useragent
 
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-
 import akka.stream.Materializer
 import com.blueconic.browscap.{UserAgentParser, UserAgentService}
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.plugins.Keys
 import otoroshi.script._
 import play.api.Logger
@@ -69,6 +69,10 @@ class UserAgentExtractor extends PreRouting {
 
   override def name: String = "User-Agent details extractor"
 
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+
   override def defaultConfig: Option[JsObject] =
     Some(
       Json.obj(
@@ -115,6 +119,10 @@ class UserAgentInfoEndpoint extends RequestTransformer {
 
   override def name: String = "User-Agent endpoint"
 
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+
   override def defaultConfig: Option[JsObject] = None
 
   override def description: Option[String] =
@@ -142,6 +150,10 @@ class UserAgentInfoEndpoint extends RequestTransformer {
 class UserAgentInfoHeader extends RequestTransformer {
 
   override def name: String = "User-Agent header"
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
   override def defaultConfig: Option[JsObject] =
     Some(

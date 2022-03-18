@@ -4,6 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, GwError}
 import otoroshi.models._
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.TypedMap
 import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
@@ -87,12 +88,22 @@ case class AccessContext(
 ) extends ContextWithConfig
 
 object DefaultValidator extends AccessValidator {
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  def categories: Seq[NgPluginCategory] = Seq.empty
+  def steps: Seq[NgStep] = Seq.empty
+
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     FastFuture.successful(true)
   }
 }
 
 object CompilingValidator extends AccessValidator {
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  def categories: Seq[NgPluginCategory] = Seq.empty
+  def steps: Seq[NgStep] = Seq.empty
+
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.attrs.put(otoroshi.plugins.Keys.GwErrorKey -> GwError("not ready yet, plugin is loading ..."))
     FastFuture.successful(false)

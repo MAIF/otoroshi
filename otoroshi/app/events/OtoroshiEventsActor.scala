@@ -17,6 +17,7 @@ import otoroshi.events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
 import otoroshi.models._
 import org.joda.time.DateTime
 import otoroshi.models.{DataExporterConfig, Exporter, ExporterRef, FileSettings}
+import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
@@ -664,11 +665,13 @@ class DataExporterUpdateJob extends Job {
 
   private val logger = Logger("otoroshi-data-exporter-update-job")
 
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+
   override def uniqueId: JobId = JobId("io.otoroshi.core.events.DataExporterUpdateJob")
 
   override def name: String = "Otoroshi data exporter update job"
 
-  override def visibility: JobVisibility = JobVisibility.Internal
+  override def jobVisibility: JobVisibility = JobVisibility.Internal
 
   override def kind: JobKind = JobKind.ScheduledEvery
 

@@ -4,6 +4,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestBodyContext, TransformerRequestContext}
 import otoroshi.utils.body.BodyUtils
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
@@ -139,6 +140,10 @@ class Log4ShellFilter extends RequestTransformer {
          |```
     """.stripMargin
     )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
   def containsBadValue(value: String): Boolean = {
     if (value.contains("${")) {

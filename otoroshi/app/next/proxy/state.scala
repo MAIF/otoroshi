@@ -5,7 +5,7 @@ import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.next.models._
-import otoroshi.next.plugins.api.NgPluginHelper
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginHelper}
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
 import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, OverrideHost, SOAPAction, SOAPActionConfig}
 import otoroshi.script._
@@ -230,11 +230,13 @@ class NgProxyStateLoaderJob extends Job {
 
   private val fakeRoutesCount = 10 //10000 // 300000
 
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+
   override def uniqueId: JobId = JobId("io.otoroshi.next.core.jobs.NgProxyStateLoaderJob")
 
   override def name: String = "proxy state loader job"
 
-  override def visibility: JobVisibility = JobVisibility.Internal
+  override def jobVisibility: JobVisibility = JobVisibility.Internal
 
   override def kind: JobKind = JobKind.ScheduledEvery
 
@@ -605,11 +607,13 @@ class NgInternalStateMonitor extends Job {
 
   private val logger = Logger("otoroshi-internal-state-monitor")
 
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+
   override def uniqueId: JobId = JobId("io.otoroshi.next.core.jobs.NgInternalStateMonitor")
 
   override def name: String = "internal state size monitor"
 
-  override def visibility: JobVisibility = JobVisibility.Internal
+  override def jobVisibility: JobVisibility = JobVisibility.Internal
 
   override def kind: JobKind = JobKind.ScheduledEvery
 

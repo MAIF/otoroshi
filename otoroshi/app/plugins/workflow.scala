@@ -1,11 +1,11 @@
 package otoroshi.plugins.workflow
 
 import java.util.concurrent.atomic.AtomicBoolean
-
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.workflow.{WorkFlow, WorkFlowRequest, WorkFlowSpec}
@@ -76,7 +76,9 @@ class WorkflowJob extends Job {
 
   override def description: Option[String] = "Periodically run a custom workflow".some
 
-  override def visibility: JobVisibility = JobVisibility.UserLand
+  override def jobVisibility: JobVisibility = JobVisibility.UserLand
+
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
 
   override def kind: JobKind = JobKind.ScheduledEvery
 
@@ -147,6 +149,10 @@ class WorkflowEndpoint extends RequestTransformer {
       """.stripMargin
     )
   }
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext

@@ -3,28 +3,11 @@ package otoroshi.models
 import akka.stream.scaladsl.{Sink, Source}
 import com.google.common.hash.Hashing
 import otoroshi.env.Env
-import otoroshi.events.Exporters.{
-  ConsoleExporter,
-  CustomExporter,
-  ElasticExporter,
-  FileAppenderExporter,
-  GenericMailerExporter,
-  KafkaExporter,
-  MetricsExporter,
-  PulsarExporter,
-  WebhookExporter
-}
+import otoroshi.events.Exporters.{ConsoleExporter, CustomExporter, ElasticExporter, FileAppenderExporter, GenericMailerExporter, KafkaExporter, MetricsExporter, PulsarExporter, WebhookExporter}
 import otoroshi.events._
+import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
-import otoroshi.utils.mailer.{
-  ConsoleMailerSettings,
-  GenericMailerSettings,
-  MailerSettings,
-  MailgunSettings,
-  MailjetSettings,
-  NoneMailerSettings,
-  SendgridSettings
-}
+import otoroshi.utils.mailer.{ConsoleMailerSettings, GenericMailerSettings, MailerSettings, MailgunSettings, MailjetSettings, NoneMailerSettings, SendgridSettings}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
@@ -407,11 +390,13 @@ class DataExporterConfigMigrationJob extends Job {
 
   private val logger = Logger("otoroshi-data-exporter-config-migration-job")
 
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+
   override def uniqueId: JobId = JobId("io.otoroshi.core.models.DataExporterConfigMigrationJob")
 
   override def name: String = "Otoroshi data exporter config migration job"
 
-  override def visibility: JobVisibility = JobVisibility.Internal
+  override def jobVisibility: JobVisibility = JobVisibility.Internal
 
   override def kind: JobKind = JobKind.ScheduledOnce
 

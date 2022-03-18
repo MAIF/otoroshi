@@ -5,6 +5,7 @@ import akka.stream.Materializer
 import com.google.common.base.Charsets
 import otoroshi.auth.Oauth1AuthModule.encodeURI
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits.BetterSyntax
@@ -122,6 +123,10 @@ class OAuth1CallerPlugin extends RequestTransformer {
   }
 
   override def configRoot: Option[String] = "OAuth1Caller".some
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
   private def signRequest(
       verb: String,

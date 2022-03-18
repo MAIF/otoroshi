@@ -4,12 +4,12 @@ import java.io.File
 import java.net.InetAddress
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.{IOResult, Materializer}
 import akka.stream.scaladsl.FileIO
 import com.maxmind.geoip2.DatabaseReader
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.plugins.Keys
 import otoroshi.script._
 import play.api.Logger
@@ -55,6 +55,10 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
       |```
     """.stripMargin
     )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val config  = ctx.configFor("GeolocationInfo")
@@ -124,6 +128,10 @@ class IpStackGeolocationInfoExtractor extends PreRouting {
       |```
     """.stripMargin)
 
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val config        = ctx.configFor("GeolocationInfo")
     val timeout: Long = (config \ "timeout").asOpt[Long].getOrElse(2000)
@@ -174,6 +182,10 @@ class GeolocationInfoHeader extends RequestTransformer {
     """.stripMargin
     )
 
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
@@ -207,6 +219,10 @@ class GeolocationInfoEndpoint extends RequestTransformer {
         |`/.well-known/otoroshi/plugins/geolocation`
       """.stripMargin
     )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext

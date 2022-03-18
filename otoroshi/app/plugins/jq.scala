@@ -5,6 +5,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.utils.body.BodyUtils
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
@@ -63,6 +64,10 @@ class JqBodyTransformer extends RequestTransformer {
         |```
     """.stripMargin
     )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
 
   def shouldApply(included: Seq[String], excluded: Seq[String], uri: String): Boolean = {
     val isExcluded =

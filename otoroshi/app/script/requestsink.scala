@@ -4,6 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.config.ConfigUtils
 import play.api.libs.json._
@@ -95,6 +96,14 @@ case class RequestSinkContext(
   override def globalConfig: JsValue = config
 }
 
-object DefaultRequestSink extends RequestSink
+object DefaultRequestSink extends RequestSink {
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  def categories: Seq[NgPluginCategory] = Seq.empty
+  def steps: Seq[NgStep] = Seq.empty
+}
 
-object CompilingRequestSink extends RequestSink
+object CompilingRequestSink extends RequestSink {
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  def categories: Seq[NgPluginCategory] = Seq.empty
+  def steps: Seq[NgStep] = Seq.empty
+}

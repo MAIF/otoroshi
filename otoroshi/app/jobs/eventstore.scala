@@ -1,15 +1,14 @@
 package otoroshi.jobs.updates
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-
 import otoroshi.env.Env
 import otoroshi.plugins.jobs.kubernetes.KubernetesConfig
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
 import play.api.Logger
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import otoroshi.utils.syntax.implicits._
-
 import otoroshi.events.impl._
+import otoroshi.next.plugins.api.NgPluginCategory
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -24,6 +23,8 @@ class EventstoreCheckerJob extends Job {
 
   private val logger = Logger("otoroshi-jobs-eventstore-checker")
 
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+
   override def uniqueId: JobId = JobId("io.otoroshi.core.jobs.EventstoreCheckerJob")
 
   override def name: String = "Eventstore checker"
@@ -33,7 +34,7 @@ class EventstoreCheckerJob extends Job {
   override def description: Option[String] =
     s"""This job will check if the elastic eventstore is connected""".stripMargin.some
 
-  override def visibility: JobVisibility = JobVisibility.Internal
+  override def jobVisibility: JobVisibility = JobVisibility.Internal
 
   override def kind: JobKind = JobKind.ScheduledEvery
 

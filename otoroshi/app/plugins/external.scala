@@ -9,6 +9,7 @@ import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor, WSProxyServerJson}
 import org.apache.commons.codec.binary.Hex
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{AccessContext, AccessValidator}
 import otoroshi.utils.http.MtlsConfig
 import play.api.libs.json._
@@ -117,6 +118,10 @@ class ExternalHttpValidator extends AccessValidator {
         )
       )
     )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
 
   private val digester = MessageDigest.getInstance("SHA-1")
 

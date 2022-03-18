@@ -4,6 +4,7 @@ import java.security.cert.X509Certificate
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.utils.RegexPool
 import otoroshi.utils.http.{DN, MtlsConfig}
@@ -21,6 +22,10 @@ class HasClientCertValidator extends AccessValidator {
   override def name: String = "Client Certificate Only"
 
   override def description: Option[String] = Some("Check if a client certificate is present in the request")
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
 
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
@@ -40,6 +45,10 @@ class HasClientCertMatchingApikeyValidator extends AccessValidator {
       |You can set the client cert. DN in an apikey metadata named `allowed-client-cert-dn`
       |""".stripMargin
     )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
 
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
@@ -104,6 +113,10 @@ class HasClientCertMatchingValidator extends AccessValidator {
       |}
       |```
     """.stripMargin)
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
 
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain
@@ -225,6 +238,10 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
         )
       )
     )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
 
   private val cache = new TrieMap[String, (Long, JsValue)]
 
@@ -402,6 +419,10 @@ class ClientCertChainHeader extends RequestTransformer {
       )
     )
   }
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext

@@ -3,6 +3,7 @@ package otoroshi.plugins.jwt
 import otoroshi.env.Env
 import otoroshi.models.PrivateAppsUser
 import org.joda.time.DateTime
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.plugins.JsonPathUtils
 import otoroshi.script.{PreRouting, PreRoutingContext, PreRoutingError}
 import otoroshi.utils.syntax.implicits._
@@ -66,6 +67,10 @@ class JwtUserExtractor extends PreRouting {
     "iat",
     "jti"
   )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
+  def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val config        = ctx.configFor("JwtUserExtractor")

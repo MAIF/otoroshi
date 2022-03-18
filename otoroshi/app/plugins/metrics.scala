@@ -5,6 +5,7 @@ import akka.stream.Materializer
 import otoroshi.env.Env
 import io.prometheus.client.{Collector, CollectorRegistry}
 import io.prometheus.client.exporter.common.TextFormat
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.utils.RegexPool
 import otoroshi.utils.string.Implicits._
@@ -19,6 +20,10 @@ import scala.util.Try
 class ServiceMetrics extends RequestTransformer {
 
   override def name: String = "Service Metrics"
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Monitoring)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
 
   override def defaultConfig: Option[JsObject] =
     Some(
@@ -192,6 +197,10 @@ class PrometheusEndpoint extends RequestSink {
 
   override def name: String = "Prometheus Endpoint"
 
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Monitoring)
+  def steps: Seq[NgStep] = Seq(NgStep.Sink)
+
   override def defaultConfig: Option[JsObject] =
     Some(
       Json.obj(
@@ -347,6 +356,10 @@ class PrometheusServiceMetrics extends RequestTransformer {
         |```
       """.stripMargin
     )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Monitoring)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext

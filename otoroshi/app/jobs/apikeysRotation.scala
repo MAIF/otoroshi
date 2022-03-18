@@ -3,6 +3,7 @@ package otoroshi.jobs.apikeys
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
 import play.api.Logger
 import otoroshi.utils.syntax.implicits._
@@ -14,11 +15,13 @@ class ApikeysSecretsRotationJob extends Job {
 
   private val logger = Logger("otoroshi-apikeys-secrets-rotation-job")
 
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+
   override def uniqueId: JobId = JobId("io.otoroshi.core.jobs.ApikeysSecretsRotationJob")
 
   override def name: String = "Otoroshi apikeys secrets rotation job"
 
-  override def visibility: JobVisibility = JobVisibility.Internal
+  override def jobVisibility: JobVisibility = JobVisibility.Internal
 
   override def kind: JobKind = JobKind.ScheduledEvery
 

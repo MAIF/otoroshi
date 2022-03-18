@@ -3,6 +3,7 @@ package otoroshi.plugins.static
 import akka.stream.Materializer
 import akka.util.ByteString
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.{JsNull, JsObject, Json}
@@ -13,6 +14,10 @@ import scala.concurrent.{ExecutionContext, Future}
 class StaticResponse extends RequestTransformer {
 
   override def name: String = "Static Response"
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
   override def defaultConfig: Option[JsObject] =
     Some(

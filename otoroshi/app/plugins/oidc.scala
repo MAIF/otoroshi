@@ -11,6 +11,7 @@ import com.auth0.jwt.JWT
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models._
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.syntax.implicits._
@@ -107,6 +108,10 @@ class OIDCHeaders extends RequestTransformer {
       "accesstoken.jwt"
     )
 
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+
   private def extract(payload: JsValue, name: String, jwt: Boolean): String = {
     (payload \ name).asOpt[String] match {
       case None               => "--"
@@ -195,6 +200,10 @@ class OIDCAccessTokenValidator extends AccessValidator {
     enabled = true,
     oidcConfigRef = "some-oidc-auth-module-id".some
   )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
 
   override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     val conf       = ctx.configFor("OIDCAccessTokenValidators")
@@ -297,6 +306,10 @@ class OIDCAccessTokenAsApikey extends PreRouting {
     enabled = true,
     oidcConfigRef = "some-oidc-auth-module-id".some
   )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val conf       = ctx.configFor("OIDCAccessTokenAsApikey")

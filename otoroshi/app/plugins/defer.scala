@@ -4,6 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import otoroshi.env.Env
 import org.joda.time.DateTime
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{RequestTransformer, TransformerRequestContext, _}
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Result
@@ -40,6 +41,10 @@ class DeferPlugin extends RequestTransformer {
         |```
       """.stripMargin
     )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
