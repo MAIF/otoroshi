@@ -367,7 +367,7 @@ object Exporters {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         Option(clientRef.get()).flatMap(cli => exporter[KafkaConfig].map(conf => (cli, conf))).map { case (cli, conf) =>
           Source(events.toList)
-            .mapAsync(10)(evt => cli.publish(evt)(env, conf))
+            .mapAsync(10)(evt => cli.publish(evt)(env, conf.copy(sendEvents = true)))
             .runWith(Sink.ignore)(env.analyticsMaterializer)
             .map(_ => ExportResult.ExportResultSuccess)
         } getOrElse {
