@@ -5,6 +5,7 @@ import { Table } from "../components/inputs";
 import { Location } from '../components/Location'
 import NextSidebar from "../components/NextSidebar";
 import { constraints, Form, format, type } from '@maif/react-forms';
+import { camelToSnake, camelToSnakeFlow, toUpperCaseLabels } from '../util';
 
 export const BackendsPage = ({ setTitle }) => {
     const params = useParams()
@@ -148,16 +149,22 @@ export const BackendForm = ({ isCreation, value, onSubmit, foldable, style = {} 
 
     useEffect(() => {
         nextClient.form(nextClient.ENTITIES.BACKENDS)
-            .then(res => setForm({
-                schema: {
-                    ...schema,
-                    backend: {
-                        ...schema.backend,
-                        ...res
-                    }
-                },
-                flow
-            }))
+            .then(res => {
+                const formSchema = camelToSnake(toUpperCaseLabels(res.schema))
+                const formFlow = res.flow.map(step => camelToSnakeFlow(step))
+
+                setForm({
+                    schema: {
+                        ...schema,
+                        backend: {
+                            ...schema.backend,
+                            schema: formSchema,
+                            flow: formFlow
+                        }
+                    },
+                    flow
+                })
+            })
     }, [])
 
     return <div className='designer-form' style={{

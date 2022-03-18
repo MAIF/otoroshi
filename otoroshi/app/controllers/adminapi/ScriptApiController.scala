@@ -51,6 +51,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
 
   def findAllScriptsList() =
     ApiAction.async { ctx =>
+      println(env.openApiSchema.asForms.map(_._1).mkString("\n"))
       val transformersNames = env.scriptManager.transformersNames
       val validatorsNames   = env.scriptManager.validatorsNames
       val preRouteNames     = env.scriptManager.preRouteNames
@@ -190,7 +191,15 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
             case JsNull => false
             case _      => true
           }
-        Ok(JsArray(allClasses))
+        Ok(JsArray(allClasses.map(clazz => {
+          val form             = env.openApiSchema.asForms.get((clazz \ "id").as[String].replace("cp:", ""))
+          val schema: JsObject = form.map(_.schema).getOrElse(Json.obj())
+          val flow             = JsArray(form.map(_.flow).getOrElse(Set.empty).map(JsString.apply).toSeq)
+          clazz.as[JsObject].deepMerge(Json.obj(
+            "config_schema"  -> schema,
+            "config_flow"           -> flow
+          ))
+        })))
       }
     }
 

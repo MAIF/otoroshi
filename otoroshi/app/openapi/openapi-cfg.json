@@ -1,5 +1,5 @@
 {
-  "banned": [ "otoroshi.controllers.BackOfficeController$SearchedService", "otoroshi.models.EntityLocationSupport", "otoroshi.auth.AuthModuleConfig", "otoroshi.auth.OAuth2ModuleConfig", "otoroshi.ssl.ClientCertificateValidator", "otoroshi.next.models.KvStoredNgBackendDataStore", "otoroshi.storage.RedisLikeWrapper" ],
+  "banned": [ "otoroshi.controllers.BackOfficeController$SearchedService", "otoroshi.models.EntityLocationSupport", "otoroshi.auth.AuthModuleConfig", "otoroshi.auth.OAuth2ModuleConfig", "otoroshi.ssl.ClientCertificateValidator", "otoroshi.next.models.KvStoredNgBackendDataStore", "otoroshi.storage.RedisLikeWrapper", "otoroshi.plugins.log4j.Log4jExpressionPart"],
   "descriptions": {
     "entity_description.otoroshi.auth.BasicAuthModuleConfig": "???",
     "entity_description.otoroshi.auth.BasicAuthUser": "???",

@@ -63,6 +63,14 @@ class FormsGenerator(spec: TrieMap[String, JsValue]){
               else
                 informations ++ Json.obj("format" -> "singleLineCode")
             }
+            else if((informations \ "type").as[String] == "number") {
+              informations ++ Json.obj(
+                // "value" -> "undefined",
+                "constraints" -> Json.arr(Json.obj(
+                  "type" -> "nullable"
+                ))
+              )
+            }
             else
               informations
             )

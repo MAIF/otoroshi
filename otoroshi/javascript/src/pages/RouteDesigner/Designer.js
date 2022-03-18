@@ -7,6 +7,7 @@ import deepSet from 'set-value'
 import { DEFAULT_FLOW, PLUGIN_INFORMATIONS_SCHEMA } from './Graph'
 import { BackendForm } from '../BackendsPage'
 import Loader from './Loader'
+import { camelToSnake, camelToSnakeFlow, toUpperCaseLabels } from '../../util'
 
 export default ({ lineId, value }) => {
     const { routeId } = useParams()
@@ -35,11 +36,12 @@ export default ({ lineId, value }) => {
         ])
             .then(([backends, route, categories, plugins, oldPlugins, frontendForm, backendForm]) => {
                 // TODO - voir avec Mathieu pour ajouter des plugins_steps, config_schema et config_flow, plugin_categories sur les anciens plugins
-                const formatedPlugins = [...plugins, ...oldPlugins.map(p => ({ ...p, plugin_steps: [], plugin_categories: [] }))]
+                // TODO - remove TransformRequest from list
+                const formatedPlugins = [...plugins, ...oldPlugins.map(p => ({ ...p, plugin_steps: ["TransformRequest"], plugin_categories: ["Ancien plugins"] }))]
                     .filter(plugin => !plugin.plugin_steps.includes('Sink') && !plugin.plugin_steps.includes('HandlesTunnel'))
                     .map(plugin => ({
                         ...plugin,
-                        config_schema: format(plugin.config_schema || plugin.configSchema || {}),
+                        config_schema: toUpperCaseLabels(plugin.config_schema || plugin.configSchema || {}),
                         config: plugin.default_config
                     }))
 
@@ -59,12 +61,12 @@ export default ({ lineId, value }) => {
                     {
                         ...DEFAULT_FLOW.Frontend,
                         ...frontendForm,
-                        schema: format(frontendForm.schema)
+                        schema: toUpperCaseLabels(frontendForm.schema)
                     },
                     {
                         ...DEFAULT_FLOW.Backend,
                         ...backendForm,
-                        schema: format(backendForm.schema)
+                        schema: toUpperCaseLabels(backendForm.schema)
                     },
                     ...route.plugins.map(ref => {
                         const plugin = formatedPlugins.find(p => p.id === ref.plugin)
@@ -82,20 +84,6 @@ export default ({ lineId, value }) => {
                 setLoading(false)
             })
     }, [location.pathname])
-
-    const format = obj => {
-        return Object.entries(obj).reduce((acc, [key, value]) => {
-            const isLabelField = key === "label"
-            const v = isLabelField ? value.replace(/_/g, ' ') : value
-            const [prefix, ...sequences] = isLabelField ? v.split(/(?=[A-Z])/) : []
-
-            return {
-                ...acc,
-                [key]: isLabelField ? prefix.charAt(0).toUpperCase() + prefix.slice(1) + " " + sequences.join(" ").toLowerCase() :
-                    ((typeof value === 'object' && value !== null && key !== "transformer" && !Array.isArray(value)) ? format(value) : value)
-            }
-        }, {})
-    }
 
     const allowDrop = e => e.preventDefault()
     const onDrag = (e, element) => e.dataTransfer.setData("newElement", JSON.stringify(element))
@@ -142,6 +130,27 @@ export default ({ lineId, value }) => {
                     }
                 ]
             })
+            // otoroshi.next.plugins.wrappers.PreRoutingWrapper
+            // otoroshi.next.plugins.wrappers.AccessValidatorWrapper
+            // otoroshi.next.plugins.wrappers.RequestSinkWrapper
+            // otoroshi.next.plugins.wrappers.RequestTransformerWrapper
+            // otoroshi.next.plugins.wrappers.CompositeWrapper
+            // {
+            //     "plugin": "cp:otoroshi.next.plugins.wrappers.PreRoutingWrapper",
+            //     "enabled": true,
+            //     "include": [],
+            //     "exclude": [],
+            //     "config": {
+            //       "plugin": "cp:otoroshi.plugins.jwt.JwtUserExtractor",
+            //       "JwtUserExtractor": {
+            //         "verifier" : "$ref",
+            //         "strict"   : true,
+            //         "namePath" : "name",
+            //         "emailPath": "email",
+            //         "metaPath" : null
+            //       }
+            //     }
+            //   }
 
             setNodes([...nodes, node])
 
@@ -570,31 +579,6 @@ const UnselectedNode = ({ saveChanges }) => <div className="d-flex-between dark-
         <span>Update route</span>
     </button>
 </div>
-
-const camelToSnakeCase = str => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
-
-const reservedCamelWords = [
-    "isMulti", "optionsFrom", "createOption", "onCreateOption",
-    "defaultKeyValue", "defaultValue", "className", "onChange", "itemRender", "conditionalSchema"
-]
-
-const camelToSnake = obj => {
-    return Object.fromEntries(Object.entries(obj).map(([key, value]) => {
-        const isFlowField = key === "flow"
-        return [
-            reservedCamelWords.includes(key) ? key : camelToSnakeCase(key),
-            isFlowField ? value.map(step => camelToSnakeFlow(step)) :
-                ((typeof value === 'object' && value !== null && !Array.isArray(value)) ? camelToSnake(value) : value)
-        ]
-    }))
-}
-
-const camelToSnakeFlow = step => {
-    return typeof step === 'object' ? {
-        ...step,
-        flow: step.flow.map(f => camelToSnakeFlow(f))
-    } : camelToSnakeCase(step)
-}
 
 const EditView = ({
     selectedNode, setSelectedNode, route, changeValues,

@@ -132,7 +132,9 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       world.get("otoroshi.models.Outage") ++
       world.get("otoroshi.models.RemainingQuotas") ++
       world.get("otoroshi.events.HealthCheckEvent") ++
-      world.filter(p => p._1.startsWith("otoroshi.next.plugins") || p._1.startsWith("otoroshi.next.models")).values
+      world.filter(p =>
+        p._1.startsWith("otoroshi.next.plugins") ||
+        p._1.startsWith("otoroshi.next.models") || p._1.startsWith("otoroshi.plugins")).values
   ).toSeq.distinct
 
   var adts              = Seq.empty[JsObject]
