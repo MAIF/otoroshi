@@ -24,7 +24,7 @@ class JwtApikeyExtractor extends PreRouting {
     s"""This plugin extract an apikey from a JWT token signed by the apikey secret. It uses the service descriptor configuration.""".stripMargin.some
   }
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Apikey)
   def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
 
@@ -212,7 +212,7 @@ class BasicAuthApikeyExtractor extends PreRouting {
     s"""This plugin extract an apikey from a Basic Auth header. It uses the service descriptor configuration.""".stripMargin.some
   }
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Apikey)
   def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
 
@@ -277,7 +277,7 @@ class CustomHeadersApikeyExtractor extends PreRouting {
     s"""This plugin extract an apikey from custom headers. It uses the service descriptor configuration.""".stripMargin.some
   }
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Apikey)
   def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
 
@@ -329,7 +329,7 @@ class ClientIdApikeyExtractor extends PreRouting {
     s"""This plugin extract a client_id only apikey from custom headers. It uses the service descriptor configuration.""".stripMargin.some
   }
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Apikey)
   def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
 

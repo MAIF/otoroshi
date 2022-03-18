@@ -45,6 +45,7 @@ object KafkaConfig {
         "keystore"   -> o.keystore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "truststore" -> o.truststore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "topic"      -> o.topic,
+        "sendEvents" -> o.sendEvents,
         "mtlsConfig" -> o.mtlsConfig.json
       )
 
