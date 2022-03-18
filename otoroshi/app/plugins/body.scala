@@ -20,6 +20,7 @@ import otoroshi.utils.json.JsonImplicits._
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.future.Implicits._
 import kaleidoscope._
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.RegexPool
 
 import scala.concurrent.duration._
@@ -190,6 +191,10 @@ class BodyLogger extends RequestTransformer {
       |```
     """.stripMargin
     )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Logging)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
 
   private val ref = new AtomicReference[(RedisClientMasterSlaves, ActorSystem)]()
 

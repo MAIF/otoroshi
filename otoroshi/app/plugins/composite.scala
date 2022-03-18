@@ -4,21 +4,8 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import otoroshi.env.Env
-import otoroshi.script.{
-  AccessContext,
-  AccessValidator,
-  HttpRequest,
-  HttpResponse,
-  PluginType,
-  PreRouting,
-  PreRoutingContext,
-  RequestTransformer,
-  TransformerErrorContext,
-  TransformerRequestBodyContext,
-  TransformerRequestContext,
-  TransformerResponseBodyContext,
-  TransformerResponseContext
-}
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
+import otoroshi.script.{AccessContext, AccessValidator, HttpRequest, HttpResponse, PluginType, PreRouting, PreRoutingContext, RequestTransformer, TransformerErrorContext, TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseBodyContext, TransformerResponseContext}
 import play.api.mvc.Result
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -30,6 +17,10 @@ class CompositePlugin extends PreRouting with AccessValidator with RequestTransf
   val logger = Logger("CompositePlugin")
 
   override def deprecated: Boolean = true
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  def categories: Seq[NgPluginCategory] = Seq.empty
+  def steps: Seq[NgStep] = Seq.empty
 
   override def pluginType: PluginType = PluginType.CompositeType
 

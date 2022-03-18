@@ -5,6 +5,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.Target
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.http.RequestImplicits._
@@ -186,6 +187,10 @@ class DiscoverySelfRegistrationSink extends RequestSink {
 
   override def name: String = "Global self registration endpoints (service discovery)"
 
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  def steps: Seq[NgStep] = Seq(NgStep.Sink)
+
   override def defaultConfig: Option[JsObject] = {
     Some(
       Json.obj(
@@ -236,6 +241,10 @@ class DiscoverySelfRegistrationTransformer extends RequestTransformer {
   private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
 
   override def name: String = "Self registration endpoints (service discovery)"
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
   override def defaultConfig: Option[JsObject] = {
     Some(
@@ -312,6 +321,10 @@ class DiscoveryTargetsSelector extends PreRouting {
 
   override def name: String = "Service discovery target selector (service discovery)"
 
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+
   override def defaultConfig: Option[JsObject] = {
     Some(
       Json.obj(
@@ -368,7 +381,7 @@ case class DiscoveryJobServiceId(id: String)
 case class DiscoveryJobRegistrationId(id: String)
 trait DiscoveryJob extends Job {
 
-  override def visibility: JobVisibility                                       = JobVisibility.UserLand
+  override def jobVisibility: JobVisibility                                    = JobVisibility.UserLand
   override def kind: JobKind                                                   = JobKind.Autonomous
   override def starting: JobStarting                                           = JobStarting.Automatically
   override def instantiation(ctx: JobContext, env: Env): JobInstantiation      =

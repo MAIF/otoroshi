@@ -4,6 +4,7 @@ import akka.stream.Materializer
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.ServiceDescriptor
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
@@ -105,6 +106,10 @@ class OAuth2Caller extends RequestTransformer {
     .some
 
   override def configRoot: Option[String] = "OAuth2Caller".some
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
   def getToken(key: String, config: OAuth2CallerConfig)(implicit
       env: Env,
@@ -273,6 +278,10 @@ class BasicAuthCaller extends RequestTransformer {
     .some
 
   override def configRoot: Option[String] = "BasicAuthCaller".some
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext

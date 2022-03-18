@@ -17,6 +17,7 @@ import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import otoroshi.models._
 import org.joda.time.DateTime
 import otoroshi.models.{DataExporterConfig, SimpleOtoroshiAdmin, Team, Tenant}
+import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
 import otoroshi.ssl.pki.models.GenCsrQuery
@@ -45,6 +46,8 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   private val lastWatchStopped = new AtomicBoolean(true)
   private val lastWatchSync    = new AtomicLong(0L)
 
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
+
   override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob")
 
   override def name: String = "Kubernetes Otoroshi CRDs Controller"
@@ -65,7 +68,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
       """.stripMargin
     )
 
-  override def visibility: JobVisibility = JobVisibility.UserLand
+  override def jobVisibility: JobVisibility = JobVisibility.UserLand
 
   override def kind: JobKind = JobKind.ScheduledEvery
 

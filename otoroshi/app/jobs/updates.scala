@@ -1,6 +1,7 @@
 package otoroshi.jobs.updates
 
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -19,6 +20,8 @@ class SoftwareUpdatesJobs extends Job {
 
   private val logger = Logger("otoroshi-jobs-software-updates")
 
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+
   override def uniqueId: JobId = JobId("io.otoroshi.core.jobs.SoftwareUpdatesJobs")
 
   override def name: String = "Kubernetes to Otoroshi certs. synchronizer"
@@ -28,7 +31,7 @@ class SoftwareUpdatesJobs extends Job {
   override def description: Option[String] =
     s"""This job will check if a new version of otoroshi is available""".stripMargin.some
 
-  override def visibility: JobVisibility = JobVisibility.Internal
+  override def jobVisibility: JobVisibility = JobVisibility.Internal
 
   override def kind: JobKind = JobKind.ScheduledEvery
 

@@ -292,7 +292,7 @@ class PluginDocumentationGenerator(docPath: String) {
       .map(_.asInstanceOf[NamedPlugin])
       .filterNot(_.core)
       .filterNot(_.deprecated)
-      .filterNot(p => p.isInstanceOf[Job] && p.asInstanceOf[Job].visibility == JobVisibility.Internal)
+      .filterNot(p => p.isInstanceOf[Job] && p.asInstanceOf[Job].jobVisibility == JobVisibility.Internal)
       .map { pl =>
         makePluginPage(pl, root)
       }
@@ -331,7 +331,7 @@ class PluginDocumentationGenerator(docPath: String) {
       .map(_.asInstanceOf[NamedPlugin])
       .filterNot(_.core)
       .filterNot(_.deprecated)
-      .filterNot(p => p.isInstanceOf[Job] && p.asInstanceOf[Job].visibility == JobVisibility.Internal)
+      .filterNot(p => p.isInstanceOf[Job] && p.asInstanceOf[Job].jobVisibility == JobVisibility.Internal)
       .map { pl =>
         makePluginContent(pl).replace("\n## ", "\n### ").replace("\n# ", "\n## ")
       }

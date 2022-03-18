@@ -9,6 +9,7 @@ import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.{DataInOut, GatewayEvent, Header, Location}
 import otoroshi.models.RemainingQuotas
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
@@ -37,6 +38,10 @@ trait RequestHandler extends StartableAndStoppable with NamedPlugin {
 class ForwardTrafficHandler extends RequestHandler {
 
   override def name: String = "Forward traffic"
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  def categories: Seq[NgPluginCategory] = Seq.empty
+  def steps: Seq[NgStep] = Seq.empty
 
   override def description: Option[String] =
     "This plugin can be use to perform a raw traffic forward to an URL without passing through otoroshi routing".some

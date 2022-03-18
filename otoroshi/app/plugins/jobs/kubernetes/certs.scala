@@ -1,10 +1,10 @@
 package otoroshi.plugins.jobs.kubernetes
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
-
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -236,7 +236,7 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
       """.stripMargin
     )
 
-  override def visibility: JobVisibility = JobVisibility.UserLand
+  override def jobVisibility: JobVisibility = JobVisibility.UserLand
 
   override def kind: JobKind = JobKind.ScheduledEvery
 
@@ -324,12 +324,16 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
       logger.info(s"watching already ...")
     }
   }
+
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
 }
 
 class OtoroshiToKubernetesCertSyncJob extends Job {
 
   private val logger      = Logger("otoroshi-plugins-otoroshi-certs-to-kubernetes-secrets-job")
   private val stopCommand = new AtomicBoolean(false)
+
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
 
   override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.kubernetes.OtoroshiCertToKubernetesSecretsSyncJob")
 
@@ -351,7 +355,7 @@ class OtoroshiToKubernetesCertSyncJob extends Job {
       """.stripMargin
     )
 
-  override def visibility: JobVisibility = JobVisibility.UserLand
+  override def jobVisibility: JobVisibility = JobVisibility.UserLand
 
   override def kind: JobKind = JobKind.ScheduledEvery
 

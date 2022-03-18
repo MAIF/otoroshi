@@ -13,6 +13,7 @@ import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import otoroshi.models._
 import org.joda.time.DateTime
+import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
 import otoroshi.utils.{RegexPool, TypedMap}
@@ -39,6 +40,8 @@ class KubernetesIngressControllerJob extends Job {
 
   private val logger = Logger("otoroshi-plugins-kubernetes-ingress-controller-job")
 
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
+
   override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob")
 
   override def name: String = "Kubernetes Ingress Controller"
@@ -59,7 +62,7 @@ class KubernetesIngressControllerJob extends Job {
       """.stripMargin
     )
 
-  override def visibility: JobVisibility = JobVisibility.UserLand
+  override def jobVisibility: JobVisibility = JobVisibility.UserLand
 
   override def kind: JobKind = JobKind.ScheduledEvery
 

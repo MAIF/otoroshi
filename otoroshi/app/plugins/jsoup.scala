@@ -6,6 +6,7 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpResponse, RequestTransformer, TransformerResponseBodyContext, TransformerResponseContext}
 import play.api.mvc.Result
 import otoroshi.utils.syntax.implicits._
@@ -38,6 +39,10 @@ class HtmlPatcher extends RequestTransformer {
         |```
     """.stripMargin
     )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
 
   private def parseElement(elementStr: String): Option[Element] = {
     if (elementStr.trim().isEmpty()) {

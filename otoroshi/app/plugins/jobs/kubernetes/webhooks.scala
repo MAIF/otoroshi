@@ -5,6 +5,7 @@ import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.models.{DataExporterConfig, SimpleOtoroshiAdmin, Team, Tenant}
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{RequestOrigin, RequestSink, RequestSinkContext, Script}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.syntax.implicits._
@@ -28,6 +29,10 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
       s"""This plugin exposes a webhook to kubernetes to handle manifests validation
     """.stripMargin
     )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
   override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     val config = KubernetesConfig.theConfig(ctx)
@@ -276,6 +281,10 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
       s"""This plugin exposes a webhook to kubernetes to inject otoroshi-sidecar in pods
     """.stripMargin
     )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
   override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     val config = KubernetesConfig.theConfig(ctx)

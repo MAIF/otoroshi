@@ -3,7 +3,6 @@ package otoroshi.plugins.biscuit
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 import java.util.Base64
-
 import akka.http.scaladsl.util.FastFuture
 import com.clevercloud.biscuit.crypto._
 import com.clevercloud.biscuit.token.builder.Check
@@ -13,6 +12,7 @@ import com.clevercloud.biscuit.token.builder.parser.Parser
 import com.clevercloud.biscuit.token.{Biscuit, Verifier}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits._
@@ -225,6 +225,10 @@ class BiscuitExtractor extends PreRouting {
     """.stripMargin.some
   }
 
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+
   // TODO: check if it's a bug, first letter is missing in parsed rule (lient_id instead of client_id)
   // val ruleTuple = Parser.rule("client_id($id) <- client_id(#authority, $id) @ []").get()
   val client_id_rule = com.clevercloud.biscuit.token.builder.Utils.rule(
@@ -400,6 +404,10 @@ class BiscuitValidator extends AccessValidator {
        |```
     """.stripMargin.some
   }
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
 
   override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     val config = BiscuitHelper.readConfig("BiscuitValidator", ctx)

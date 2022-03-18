@@ -5,6 +5,7 @@ import akka.http.scaladsl.util.FastFuture._
 import otoroshi.env.Env
 import otoroshi.models.{RemainingQuotas, ServiceDescriptor}
 import org.joda.time.DateTime
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{AccessContext, AccessValidator}
 import play.api.libs.json.{JsObject, Json}
 
@@ -51,6 +52,10 @@ class InstanceQuotas extends AccessValidator {
                                                     |}
                                                     |```
                                                   """.stripMargin)
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
 
   override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     val config = ctx.configFor("InstanceQuotas")
@@ -161,6 +166,10 @@ class ServiceQuotas extends AccessValidator {
                                                      |  }
                                                      |}
                                                      |```""")
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
 
   private def totalCallsKey(name: String)(implicit env: Env): String   =
     s"${env.storageRoot}:plugins:services-public-quotas:global:$name"

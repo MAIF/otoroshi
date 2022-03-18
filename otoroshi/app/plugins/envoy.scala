@@ -1,21 +1,14 @@
 package otoroshi.plugins.envoy
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
-
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.ServiceDescriptor
-import otoroshi.script.{
-  AfterRequestContext,
-  BeforeRequestContext,
-  HttpRequest,
-  RequestTransformer,
-  TransformerRequestBodyContext,
-  TransformerRequestContext
-}
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
+import otoroshi.script.{AfterRequestContext, BeforeRequestContext, HttpRequest, RequestTransformer, TransformerRequestBodyContext, TransformerRequestContext}
 import play.api.libs.json.{JsArray, JsNull, JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Result, Results}
 import otoroshi.utils.syntax.implicits._
@@ -29,6 +22,10 @@ class EnvoyControlPlane extends RequestTransformer {
   private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
 
   override def name: String = "Envoy Control Plane (experimental)"
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
   override def defaultConfig: Option[JsObject] =
     Json

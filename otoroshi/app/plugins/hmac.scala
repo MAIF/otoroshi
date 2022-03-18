@@ -3,6 +3,7 @@ package otoroshi.plugins.hmac
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits.BetterSyntax
@@ -94,6 +95,10 @@ class HMACCallerPlugin extends RequestTransformer {
 
   override def configRoot: Option[String] = "HMACCallerPlugin".some
 
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+
   override def transformRequestWithCtx(
       context: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
@@ -172,6 +177,10 @@ class HMACValidator extends AccessValidator {
   )
 
   override def configRoot: Option[String] = "HMACAccessValidator".some
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
 
   private def checkHMACSignature(authorization: String, context: AccessContext, secret: String) = {
     val params = authorization

@@ -1,10 +1,10 @@
 package otoroshi.script
 
 import java.util.concurrent.atomic.AtomicReference
-
 import akka.actor.{Actor, ActorRef, Props}
 import otoroshi.env.Env
 import otoroshi.events.{AnalyticEvent, OtoroshiEvent}
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import play.api.Logger
 
 object InternalEventListenerActor {
@@ -51,6 +51,14 @@ trait OtoroshiEventListener extends StartableAndStoppable with NamedPlugin with 
   def pluginType: PluginType = PluginType.EventListenerType
 }
 
-object DefaultOtoroshiEventListener extends OtoroshiEventListener
+object DefaultOtoroshiEventListener extends OtoroshiEventListener {
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  def categories: Seq[NgPluginCategory] = Seq.empty
+  def steps: Seq[NgStep] = Seq.empty
+}
 
-object CompilingOtoroshiEventListener extends OtoroshiEventListener
+object CompilingOtoroshiEventListener extends OtoroshiEventListener {
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  def categories: Seq[NgPluginCategory] = Seq.empty
+  def steps: Seq[NgStep] = Seq.empty
+}

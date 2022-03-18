@@ -9,6 +9,7 @@ import otoroshi.env.Env
 import otoroshi.events.AuditEvent
 import otoroshi.models.{ServiceDescriptor, Target}
 import org.joda.time.DateTime
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.utils.UrlSanitizer
 import otoroshi.utils.http.HeadersHelper
@@ -249,6 +250,10 @@ class MirroringPlugin extends RequestTransformer {
            |}
            |```
          """.stripMargin)
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
 
   private val inFlightRequests = new TrieMap[String, RequestContext]()
 

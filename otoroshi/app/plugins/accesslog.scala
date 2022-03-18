@@ -7,6 +7,7 @@ import otoroshi.env.Env
 import otoroshi.events._
 import org.joda.time.DateTime
 import otoroshi.events.KafkaWrapper
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpResponse, RequestTransformer, TransformerErrorContext, TransformerResponseContext}
 import otoroshi.utils.RegexPool
 import play.api.Logger
@@ -130,6 +131,10 @@ class AccessLog extends RequestTransformer {
       |```
     """.stripMargin
     )
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Logging)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
@@ -290,6 +295,10 @@ class AccessLogJson extends RequestTransformer {
       |}
       |```
     """.stripMargin)
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Logging)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
@@ -506,6 +515,10 @@ class KafkaAccessLog extends RequestTransformer {
       |}
       |```
     """.stripMargin)
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Logging)
+  def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
 
   override def stop(env: Env): Future[Unit] = {
     kafkaWrapperCache.foreach(_._2.close())

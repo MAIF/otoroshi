@@ -1,7 +1,6 @@
 package otoroshi.health
 
 import java.util.concurrent.TimeUnit
-
 import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
@@ -12,6 +11,7 @@ import otoroshi.events.HealthCheckEvent
 import otoroshi.gateway.Retry
 import otoroshi.models.{SecComVersion, ServiceDescriptor, Target}
 import org.joda.time.DateTime
+import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
 import play.api.Logger
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
@@ -20,7 +20,6 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.{Failure, Success}
-
 import scala.concurrent.duration._
 import otoroshi.utils.syntax.implicits._
 
@@ -239,11 +238,13 @@ class HealthCheckJob extends Job {
 
   private val logger = Logger("otoroshi-healthcheck-job")
 
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+
   override def uniqueId: JobId = JobId("io.otoroshi.core.health.HealthCheckJob")
 
   override def name: String = "Otoroshi health check job"
 
-  override def visibility: JobVisibility = JobVisibility.Internal
+  override def jobVisibility: JobVisibility = JobVisibility.Internal
 
   override def kind: JobKind = JobKind.ScheduledEvery
 
@@ -278,11 +279,13 @@ class HealthCheckLocalCacheJob extends Job {
 
   private val logger = Logger("otoroshi-healthcheck-local-cache-job")
 
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+
   override def uniqueId: JobId = JobId("io.otoroshi.core.health.HealthCheckLocalCacheJob")
 
   override def name: String = "Otoroshi health check local cache job"
 
-  override def visibility: JobVisibility = JobVisibility.Internal
+  override def jobVisibility: JobVisibility = JobVisibility.Internal
 
   override def kind: JobKind = JobKind.ScheduledEvery
 

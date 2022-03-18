@@ -2,6 +2,7 @@ package otoroshi.plugins.users
 
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.plugins.JsonPathUtils
 import otoroshi.script.{AccessContext, AccessValidator}
 import play.api.Logger
@@ -14,6 +15,10 @@ class HasAllowedUsersValidator extends AccessValidator {
   private val logger = Logger("otoroshi-plugins-hasallowedusersvalidator")
 
   override def name: String = "Allowed users only"
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
 
   override def defaultConfig: Option[JsObject] =
     Some(

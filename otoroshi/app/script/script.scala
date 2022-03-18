@@ -21,7 +21,7 @@ import otoroshi.gateway.GwError
 
 import javax.script._
 import otoroshi.models._
-import otoroshi.next.plugins.api.NgPlugin
+import otoroshi.next.plugins.api.{NgPlugin, NgPluginCategory, NgPluginVisibility, NgStep}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
@@ -160,7 +160,9 @@ trait NamedPlugin { self =>
         genFlow(config, "")
       }
     }
-
+  def visibility: NgPluginVisibility
+  def categories: Seq[NgPluginCategory]
+  def steps: Seq[NgStep]
   def jsonDescription(): JsObject =
     Try {
       Json.obj(
@@ -545,9 +547,17 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
   }
 }
 
-object DefaultRequestTransformer extends RequestTransformer
+object DefaultRequestTransformer extends RequestTransformer {
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  def categories: Seq[NgPluginCategory] = Seq.empty
+  def steps: Seq[NgStep] = Seq.empty
+}
 
 object CompilingRequestTransformer extends RequestTransformer {
+
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  def categories: Seq[NgPluginCategory] = Seq.empty
+  def steps: Seq[NgStep] = Seq.empty
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
