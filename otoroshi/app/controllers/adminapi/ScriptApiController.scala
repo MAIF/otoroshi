@@ -51,7 +51,6 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
 
   def findAllScriptsList() =
     ApiAction.async { ctx =>
-      println(env.openApiSchema.asForms.map(_._1).mkString("\n"))
       val transformersNames = env.scriptManager.transformersNames
       val validatorsNames   = env.scriptManager.validatorsNames
       val preRouteNames     = env.scriptManager.preRouteNames
@@ -122,13 +121,19 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
               "id"          -> s"cp:$c",
               "name"        -> c,
               "description" -> JsNull,
-              "pluginType"  -> PluginType.CompositeType.name
+              "pluginType"  -> PluginType.CompositeType.name,
             )
           case Right(instance) =>
             instance.jsonDescription ++ Json.obj(
               "id"         -> s"cp:$c",
               "name"       -> instance.name,
-              "pluginType" -> instance.pluginType.name
+              "pluginType" -> instance.pluginType.name,
+              "config_schema"  -> instance.configSchema.getOrElse(JsNull).as[JsValue],
+              "config_flow"    -> JsArray(instance.configFlow.map(JsString.apply)),
+
+              "plugin_visibility" -> instance.visibility.json,
+              "plugin_categories" -> JsArray(instance.categories.map(_.json)),
+              "plugin_steps"      -> JsArray(instance.steps.map(_.json)),
             )
         }
       }
@@ -163,6 +168,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
                 "pluginType"  -> PluginType.CompositeType.name
               )
             case (c, Right(instance)) =>
+              println(c.id, c.name)
               Json.obj(
                 "id"            -> c.id,
                 "name"          -> JsString(Option(c.name).map(_.trim).filter(_.nonEmpty).getOrElse(instance.name)),
@@ -201,15 +207,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
             case JsNull => false
             case _      => true
           }
-        Ok(JsArray(allClasses.map(clazz => {
-          val form             = env.openApiSchema.asForms.get((clazz \ "id").as[String].replace("cp:", ""))
-          val schema: JsObject = form.map(_.schema).getOrElse(Json.obj())
-          val flow             = JsArray(form.map(_.flow).getOrElse(Set.empty).map(JsString.apply).toSeq)
-          clazz.as[JsObject].deepMerge(Json.obj(
-            "config_schema"  -> schema,
-            "config_flow"           -> flow
-          ))
-        })))
+        Ok(JsArray(allClasses))
       }
     }
 

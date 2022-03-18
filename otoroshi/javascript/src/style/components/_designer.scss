@@ -66,6 +66,7 @@
         background-color: #f9b000;
     }
 
+    .search-group-header,
     .group-header {
         background-color: #494948;
         display: flex;
@@ -82,8 +83,7 @@
         align-items: center;
         justify-content: center;
     }
-
-    .group-header>i:first-child {
+    .group-header i:first-child {
         background-color: #f9b000;
         min-width: 42px;
         height: 42px;

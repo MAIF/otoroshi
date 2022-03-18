@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react'
 import { useParams, useLocation } from 'react-router'
 import { nextClient, getCategories, getPlugins, getOldPlugins } from '../../services/BackOfficeServices'
 import { Form, format, type } from '@maif/react-forms'
-import { SelectInput } from '@maif/react-forms/lib/inputs'
+import { CodeInput, SelectInput } from '@maif/react-forms/lib/inputs'
 import deepSet from 'set-value'
-import { DEFAULT_FLOW, PLUGIN_INFORMATIONS_SCHEMA } from './Graph'
+import { DEFAULT_FLOW, EXCLUDED_PLUGINS, PLUGIN_INFORMATIONS_SCHEMA } from './Graph'
 import { BackendForm } from '../BackendsPage'
 import Loader from './Loader'
 import { camelToSnake, camelToSnakeFlow, toUpperCaseLabels } from '../../util'
@@ -37,8 +37,12 @@ export default ({ lineId, value }) => {
             .then(([backends, route, categories, plugins, oldPlugins, frontendForm, backendForm]) => {
                 // TODO - voir avec Mathieu pour ajouter des plugins_steps, config_schema et config_flow, plugin_categories sur les anciens plugins
                 // TODO - remove TransformRequest from list
-                const formatedPlugins = [...plugins, ...oldPlugins.map(p => ({ ...p, plugin_steps: ["TransformRequest"], plugin_categories: ["Ancien plugins"] }))]
-                    .filter(plugin => !plugin.plugin_steps.includes('Sink') && !plugin.plugin_steps.includes('HandlesTunnel'))
+                const formatedPlugins = [...plugins, ...oldPlugins.map(p => ({
+                    ...p,
+                    plugin_categories: [...p.plugin_categories, "Old plugins"],
+                    legacy: true
+                }))]
+                    .filter(filterSpecificPlugin)
                     .map(plugin => ({
                         ...plugin,
                         config_schema: toUpperCaseLabels(plugin.config_schema || plugin.configSchema || {}),
@@ -61,7 +65,10 @@ export default ({ lineId, value }) => {
                     {
                         ...DEFAULT_FLOW.Frontend,
                         ...frontendForm,
-                        schema: toUpperCaseLabels(frontendForm.schema)
+                        schema: {
+                            ...toUpperCaseLabels(frontendForm.schema),
+                            ...DEFAULT_FLOW.Frontend.schema
+                        }
                     },
                     {
                         ...DEFAULT_FLOW.Backend,
@@ -81,9 +88,23 @@ export default ({ lineId, value }) => {
                     })
                 ])
 
+                console.log({
+                    ...DEFAULT_FLOW.Frontend,
+                    ...frontendForm,
+                    schema: {
+                        ...toUpperCaseLabels(frontendForm.schema),
+                        ...DEFAULT_FLOW.Frontend.schema
+                    }
+                })
+
                 setLoading(false)
             })
     }, [location.pathname])
+
+    const filterSpecificPlugin = plugin => !plugin.plugin_steps.includes('Sink') &&
+        !plugin.plugin_steps.includes('HandlesTunnel') &&
+        !EXCLUDED_PLUGINS.plugin_visibility.includes(plugin.plugin_visibility) &&
+        !EXCLUDED_PLUGINS.ids.includes(plugin.id.replace('cp:', ''))
 
     const allowDrop = e => e.preventDefault()
     const onDrag = (e, element) => e.dataTransfer.setData("newElement", JSON.stringify(element))
@@ -153,11 +174,6 @@ export default ({ lineId, value }) => {
             //   }
 
             setNodes([...nodes, node])
-
-            if (node.switch)
-                changeValues([
-                    { name: node.property, value: true }
-                ])
 
             setSelectedNode(node)
         }
@@ -237,9 +253,11 @@ export default ({ lineId, value }) => {
             .then(() => setRoute(newRoute))
     }
 
-    const updatePlugin = (pluginId, item) => {
+    const updatePlugin = (pluginId, item, updatedField) => {
         nextClient.update(nextClient.ENTITIES.ROUTES, {
             ...route,
+            frontend: updatedField === 'Frontend' ? item : route.frontend,
+            backend: updatedField === 'Backend' ? item : route.backend,
             plugins: route.plugins.map(plugin => {
                 if (plugin.plugin === pluginId)
                     return {
@@ -442,7 +460,6 @@ export default ({ lineId, value }) => {
                             setRoute={setRoute}
                             selectedNode={selectedNode}
                             setSelectedNode={setSelectedNode}
-                            changeValues={changeValues}
                             updatePlugin={updatePlugin}
                             removeNode={removeNode}
                             route={route}
@@ -478,26 +495,15 @@ const Group = ({ group, elements, onDrag, addNode }) => {
     const [open, setOpen] = useState(false)
 
     return <div className="group">
-        <div className="group-header" style={{ cursor: 'pointer' }} onClick={e => {
+        <div className="search-group-header" style={{ cursor: 'pointer' }} onClick={e => {
             e.stopPropagation()
             setOpen(!open)
         }}>
+            <i className={`fas fa-chevron-${open ? 'down' : 'right'} ms-3`} size={16} style={{ color: "#fff" }} onClick={e => {
+                e.stopPropagation()
+                setOpen(!open)
+            }} />
             <span style={{ color: "#fff", padding: "10px" }}>{group.charAt(0).toUpperCase() + group.slice(1)}</span>
-            <div style={{ marginLeft: 'auto', display: 'flex' }}>
-                <div className="flex-center"
-                    onClick={e => {
-                        e.stopPropagation()
-                        setOpen(!open)
-                    }}
-                    style={{
-                        width: '22px',
-                        height: '22px',
-                        borderRadius: "4px",
-                        cursor: 'pointer'
-                    }}>
-                    <i className="fas fa-chevron-down mr-2" size={16} style={{ color: "#fff" }} />
-                </div>
-            </div>
         </div>
         {open && <>
             <PluginsStack elements={elements} onDrag={onDrag} addNode={addNode} />
@@ -581,9 +587,18 @@ const UnselectedNode = ({ saveChanges }) => <div className="d-flex-between dark-
 </div>
 
 const EditView = ({
-    selectedNode, setSelectedNode, route, changeValues,
+    selectedNode, setSelectedNode, route,
     removeNode, plugins, updatePlugin, setRoute, backends }) => {
+
     const [usingExistingBackend, setUsingExistingBackend] = useState(route.backend_ref)
+    const [asJsonFormat, toggleJsonFormat] = useState(selectedNode.legacy)
+    const [form, setForm] = useState({
+        schema: {},
+        flow: [],
+        value: {},
+        originalValue: {}
+    })
+    const [saveable, setSaveable] = useState(false)
     const [backendConfigRef, setBackendConfigRef] = useState()
 
     useEffect(() => {
@@ -594,203 +609,254 @@ const EditView = ({
 
     const { id, flow, config_flow, config_schema, schema, name } = selectedNode
 
-    let formSchema = schema || config_schema
-    let formFlow = flow || config_flow
-
-    if (config_schema) {
-        formSchema = {
-            informations: {
-                type: type.object,
-                format: format.form,
-                collapsable: true,
-                collapsed: Object.keys(config_schema).length > 0,
-                label: 'Informations',
-                schema: PLUGIN_INFORMATIONS_SCHEMA
-            }
-        }
-        formFlow = [
-            'informations'
-        ]
-        if (Object.keys(config_schema).length > 0) {
-            formSchema = {
-                ...formSchema,
-                plugin: {
-                    type: type.object,
-                    format: format.form,
-                    label: null,
-                    schema: { ...convertTransformer(config_schema) },
-                    flow: [...flow || config_flow].map(step => camelToSnakeFlow(step))
-                }
-            }
-            formFlow = [
-                ...formFlow,
-                {
-                    label: 'Plugin',
-                    flow: ['plugin'],
-                    collapsed: false
-                }
-            ]
-        }
-    }
-
-    formSchema = camelToSnake(formSchema)
-    formFlow = formFlow.map(step => camelToSnakeFlow(step))
-
     const plugin = ['Backend', 'Frontend'].includes(id) ? DEFAULT_FLOW[id] : plugins.find(element => element.id === id || element.id.endsWith(id))
 
-    const RemoveComponent = () => <button className='btn btn-sm btn-danger ms-2' onClick={e => {
+    const onRemove = e => {
         e.stopPropagation()
         setSelectedNode(undefined)
         removeNode(id)
-    }}>
-        <i className='fas fa-trash me-2'></i>
-        Remove this component
-    </button>
-
-    let value = route[selectedNode.field]
-
-    if (!value) {
-        const pluginOnFlow = route.plugins.find(p => p.plugin === id)
-        if (pluginOnFlow) {
-            const { plugin, config, ...informations } = pluginOnFlow
-            value = {
-                plugin: config,
-                informations
-            }
-        }
     }
 
-    if (!value) {
-        const defaultPlugin = plugins.find(p => p.id === id)
-        if (defaultPlugin) {
-            const { plugin, config, ...informations } = defaultPlugin
-            value = {
-                plugin: config,
-                informations
+    useEffect(() => {
+        let formSchema = schema || config_schema
+        let formFlow = flow || config_flow
+
+        if (config_schema) {
+            formSchema = {
+                informations: {
+                    type: type.object,
+                    format: format.form,
+                    collapsable: true,
+                    collapsed: Object.keys(config_schema).length > 0,
+                    label: 'Informations',
+                    schema: PLUGIN_INFORMATIONS_SCHEMA
+                }
+            }
+            formFlow = [
+                'informations'
+            ]
+            if (Object.keys(config_schema).length > 0) {
+                formSchema = {
+                    ...formSchema,
+                    plugin: {
+                        type: type.object,
+                        format: format.form,
+                        label: null,
+                        schema: { ...convertTransformer(config_schema) },
+                        flow: [...flow || config_flow].map(step => camelToSnakeFlow(step))
+                    }
+                }
+                formFlow = [
+                    ...formFlow,
+                    {
+                        label: 'Plugin',
+                        flow: ['plugin'],
+                        collapsed: false
+                    }
+                ]
             }
         }
+
+        formSchema = camelToSnake(formSchema)
+        formFlow = formFlow.map(step => camelToSnakeFlow(step))
+
+        let value = route[selectedNode.field]
+
+        if (!value) {
+            const pluginOnFlow = route.plugins.find(p => p.plugin === id)
+            if (pluginOnFlow) {
+                const { plugin, config, ...informations } = pluginOnFlow
+                value = {
+                    plugin: config,
+                    informations
+                }
+            }
+        }
+
+        if (!value) {
+            const defaultPlugin = plugins.find(p => p.id === id)
+            if (defaultPlugin) {
+                const { plugin, config, ...informations } = defaultPlugin
+                value = {
+                    plugin: config,
+                    informations
+                }
+            }
+        }
+        setForm({
+            schema: formSchema,
+            flow: formFlow,
+            value,
+            originalValue: value,
+            unsavedForm: value
+        })
+        setSaveable(false)
+
+        toggleJsonFormat(selectedNode.legacy)
+    }, [selectedNode])
+
+    const onValidate = item => {
+        updatePlugin(id, unstringify(item), selectedNode.id)
     }
 
-    // console.log("FLOW", formFlow)
-    console.log("SCHEMA", formSchema.plugin)
-    console.log("VALUE", value)
+    // console.log("SCHEMA", form.schema.plugin)
+    // console.log("VALUE", form.value)
 
     return <div onClick={e => {
         e.stopPropagation()
     }} className="plugins-stack">
-        <div className="group-header" style={{
+        <div className="group-header d-flex-between" style={{
             borderBottom: '1px solid #f9b000',
             borderRight: 0
         }}>
-            <i className={`fas fa-${plugin.icon || 'bars'} group-icon`}
-                style={{
-                    color: "#fff",
-                    borderBottomLeftRadius: 0
-                }} />
-            <span style={{ color: "#fff", paddingLeft: "12px" }}>{name || id}</span>
-        </div>
-        {selectedNode.switch ?
-            <div style={{
-                backgroundColor: "#494949",
-                padding: "12px"
-            }}>
-                <p className='form-description' style={{ margin: 0 }}>{selectedNode.description}</p>
+            <div className='d-flex-between'>
+                <i className={`fas fa-${plugin.icon || 'bars'} group-icon`}
+                    style={{
+                        color: "#fff",
+                        borderBottomLeftRadius: 0
+                    }} />
+                <span style={{ color: "#fff", paddingLeft: "12px" }}>{name || id}</span>
             </div>
-            : <div style={{
-                backgroundColor: "#494949"
-            }}>
-                <p className='form-description' style={{
-                    marginBottom: selectedNode.description ? 'inherit' : 0,
-                    padding: selectedNode.description ? '12px' : 0
-                }}>{selectedNode.description}</p>
-                {id === "Backend" && <div style={{ padding: "12px", backgroundColor: "#404040" }}>
-                    <div className={`d-flex ${usingExistingBackend ? 'mb-3' : ''}`}>
-                        <button className='btn btn-sm'
-                            onClick={() => {
-                                setBackendConfigRef(undefined)
-                                setUsingExistingBackend(false)
-                                setRoute({
-                                    ...route,
-                                    backend_ref: undefined
-                                })
-                            }}
-                            style={{
-                                padding: "6px 12px",
-                                backgroundColor: usingExistingBackend ? "#494849" : "#f9b000",
-                                color: "#fff"
-                            }}>Create a new backend</button>
-                        <button className='btn btn-sm' onClick={() => setUsingExistingBackend(true)} style={{
-                            padding: "6px 12px",
-                            backgroundColor: usingExistingBackend ? "#f9b000" : "#494849",
-                            color: "#fff"
-                        }}>Select an existing backend</button>
-                    </div>
-                    {usingExistingBackend && <SelectInput
-                        id="backend_select"
-                        value={route.backend_ref}
-                        placeholder="Select an existing backend"
-                        label=""
-                        onChange={backend_ref => setRoute({
-                            ...route,
-                            backend_ref
-                        })}
-                        possibleValues={backends}
-                        transformer={item => ({ label: item.name, value: item.id })}
-                    />}
-                </div>}
-                {(!usingExistingBackend || id !== "Backend") ? <div style={{ padding: '0 12px 12px' }}>
+            {!selectedNode.legacy && Object.keys(form.value || {}).length > 0 && <div className='mr-2'>
+                <button className='btn btn-sm'
+                    onClick={() => toggleJsonFormat(false)}
+                    style={{
+                        padding: "6px 12px",
+                        backgroundColor: asJsonFormat ? "#373735" : "#f9b000",
+                        color: "#fff"
+                    }}>FORM</button>
+                <button className='btn btn-sm' onClick={() => toggleJsonFormat(true)} style={{
+                    padding: "6px 12px",
+                    backgroundColor: asJsonFormat ? "#f9b000" : "#373735",
+                    color: "#fff"
+                }}>RAW JSON</button>
+            </div>}
+        </div>
+        <div style={{
+            backgroundColor: "#494949"
+        }}>
+            <p className='form-description' style={{
+                marginBottom: selectedNode.description ? 'inherit' : 0,
+                padding: selectedNode.description ? '12px' : 0
+            }}>{selectedNode.description}</p>
+            {id === "Backend" && <BackendSelector
+                backends={backends}
+                setBackendConfigRef={setBackendConfigRef}
+                setUsingExistingBackend={setUsingExistingBackend}
+                setRoute={setRoute}
+                usingExistingBackend={usingExistingBackend}
+                route={route}
+            />}
+            {(!usingExistingBackend || id !== "Backend") ? <div style={{ padding: '0 12px 12px' }}>
+                {asJsonFormat ? <>
+                    <CodeInput
+                        width="100%"
+                        value={stringify(form.value)}
+                        onChange={value => {
+                            setSaveable(stringify(form.originalValue) !== stringify(unstringify(value)))
+                            setForm({ ...form, value })
+                        }}
+                    />
+                    <EditViewActions valid={() => onValidate(form.value)} selectedNode={selectedNode} onRemove={onRemove} saveable={saveable} />
+                </>
+                    :
                     <Form
-                        value={value}
-                        schema={formSchema}
-                        flow={formFlow}
-                        onSubmit={item => {
-                            try {
-                                if (config_schema)
-                                    updatePlugin(id, item)
-                                else
-                                    changeValues((flow || config_flow || Object.keys(schema || config_schema))
-                                        .reduce((acc, curr) => {
-                                            if (curr.flow)
-                                                return [...acc, ...curr.flow]
-                                            return [...acc, curr]
-                                        }, [])
-                                        .map(field => {
-                                            const fieldName = `${selectedNode.field ? `${selectedNode.field}.` : ''}${field}`
-                                            return { name: fieldName, value: read(item, field) }
-                                        }))
-                                setSelectedNode(undefined)
-                            } catch (err) {
-                                console.log(err)
+                        value={unstringify(form.value)}
+                        schema={form.schema}
+                        options={{
+                            watch: unsaved => {
+                                if (unsaved && Object.keys(unsaved).length > 0)
+                                    setSaveable(JSON.stringify(unsaved, null, 4) !== stringify(form.originalValue))
                             }
                         }}
-                        footer={({ valid }) => <div className='d-flex mt-4'>
-                            <button className="btn btn-sm btn-success"
-                                style={{ backgroundColor: "#f9b000", borderColor: '#f9b000' }}
-                                onClick={valid}>
-                                <i className='fas fa-save me-2'></i>
-                                Update the plugin configuration
-                            </button>
-                            {!selectedNode.default && <RemoveComponent />}
-                        </div>}
-                    />
-                </div> : <>
-                    {backendConfigRef && <BackendForm isCreation={false} value={backendConfigRef} style={{
-                        maxWidth: '100%'
-                    }} foldable={true} />}
-                    <button className="btn btn-sm btn-success m-3"
-                        style={{ backgroundColor: "#f9b000", borderColor: '#f9b000' }}
-                        onClick={() => {
-                            nextClient.update(nextClient.ENTITIES.ROUTES, route)
-                                .then(newRoute => {
-                                    setRoute(newRoute)
-                                })
-                        }}>
-                        <i className='fas fa-save me-2'></i>
-                        Update the plugin configuration
-                    </button>
-                </>}
-            </div>
-        }
-        {selectedNode.switch && !selectedNode.default && <RemoveComponent />}
+                        flow={form.formFlow}
+                        onSubmit={onValidate}
+                        footer={({ valid }) => <EditViewActions valid={valid} selectedNode={selectedNode} onRemove={onRemove} saveable={saveable} />}
+                    />}
+            </div> : <>
+                {backendConfigRef && <BackendForm isCreation={false} value={backendConfigRef} style={{
+                    maxWidth: '100%'
+                }} foldable={true} />}
+                <button className="btn btn-sm btn-success m-3"
+                    style={{ backgroundColor: "#f9b000", borderColor: '#f9b000' }}
+                    onClick={() => {
+                        nextClient.update(nextClient.ENTITIES.ROUTES, route)
+                            .then(newRoute => {
+                                setRoute(newRoute)
+                            })
+                    }}>
+                    <i className='fas fa-save me-2'></i>
+                    Update the plugin configuration
+                </button>
+            </>}
+        </div>
+        {(usingExistingBackend && id === "Backend") && !selectedNode.default && <RemoveComponent onRemove={onRemove} />}
     </div>
 }
+
+const stringify = item => typeof item === 'object' ? JSON.stringify(item, null, 4) : item
+const unstringify = item => {
+    if (typeof item === 'object')
+        return item
+    else {
+        try {
+            return JSON.parse(item)
+        } catch (_) {
+            return item
+        }
+    }
+}
+
+const RemoveComponent = ({ onRemove }) => <button className='btn btn-sm btn-danger ms-2' onClick={onRemove}>
+    <i className='fas fa-trash me-2'></i>
+    Remove this component
+</button>
+
+const EditViewActions = ({ valid, selectedNode, onRemove, saveable }) => <div className='d-flex mt-4'>
+    <button className="btn btn-sm btn-success"
+        style={{ backgroundColor: "#f9b000", borderColor: '#f9b000' }}
+        onClick={valid}
+        disabled={!saveable}>
+        <i className='fas fa-save me-2' />
+        Update the plugin configuration
+    </button>
+    {!selectedNode.default && <RemoveComponent onRemove={onRemove} />}
+</div>
+
+const BackendSelector = ({ setBackendConfigRef, setUsingExistingBackend, setRoute, usingExistingBackend, route, backends }) => (
+    <div style={{ padding: "12px", backgroundColor: "#404040" }}>
+        <div className={`d-flex ${usingExistingBackend ? 'mb-3' : ''}`}>
+            <button className='btn btn-sm'
+                onClick={() => {
+                    setBackendConfigRef(undefined)
+                    setUsingExistingBackend(false)
+                    setRoute({
+                        ...route,
+                        backend_ref: undefined
+                    })
+                }}
+                style={{
+                    padding: "6px 12px",
+                    backgroundColor: usingExistingBackend ? "#494849" : "#f9b000",
+                    color: "#fff"
+                }}>Create a new backend</button>
+            <button className='btn btn-sm' onClick={() => setUsingExistingBackend(true)} style={{
+                padding: "6px 12px",
+                backgroundColor: usingExistingBackend ? "#f9b000" : "#494849",
+                color: "#fff"
+            }}>Select an existing backend</button>
+        </div>
+        {usingExistingBackend && <SelectInput
+            id="backend_select"
+            value={route.backend_ref}
+            placeholder="Select an existing backend"
+            label=""
+            onChange={backend_ref => setRoute({
+                ...route,
+                backend_ref
+            })}
+            possibleValues={backends}
+            transformer={item => ({ label: item.name, value: item.id })}
+        />}
+    </div>
+)

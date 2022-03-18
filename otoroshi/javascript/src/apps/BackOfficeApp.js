@@ -150,10 +150,10 @@ class BackOfficeAppContainer extends Component {
     return (
       <div>
         <ReloadNewVersion />
-        {this.state.env && [
-          <UpdateOtoroshiVersion env={this.state.env} />,
-          <TopBar {...this.props} changePassword={this.state.env.changePassword} />,
-        ]}
+        {this.state.env && <>
+          <UpdateOtoroshiVersion env={this.state.env} />
+          <TopBar {...this.props} changePassword={this.state.env.changePassword} />
+        </>}
         <div className="container-fluid">
           <div className="row">
             <div className={classNameSidebar} id="sidebar">

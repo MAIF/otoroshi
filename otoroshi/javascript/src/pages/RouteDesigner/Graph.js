@@ -47,20 +47,33 @@ export const PLUGIN_INFORMATIONS_SCHEMA = {
     }
 }
 
+export const EXCLUDED_PLUGINS = {
+    plugin_visibility: ['internal'],
+    ids: ['otoroshi.next.proxy.ProxyEngine']
+}
 
 export const DEFAULT_FLOW = {
     Frontend: {
         id: 'Frontend',
+        icon: 'eye',
         plugin_steps: ["PreRoute"],
         description: "Exposition",
-        icon: 'eye',
         default: true,
         field: 'frontend',
         onInputStream: true,
+        schema: {
+            domains: {
+                type: type.string,
+                format: 'select',
+                label: 'Domains',
+                createOption: true,
+                isMulti: true
+            }
+        }
     },
     Backend: {
-        icon: 'bullseye',
         id: 'Backend',
+        icon: 'bullseye',
         group: 'Targets',
         default: true,
         onTargetStream: true,

@@ -28,8 +28,8 @@ class NgFrontendsController(val ApiAction: ApiAction, val cc: ControllerComponen
             "isMulti" -> true,
             "array"   -> false,
             "format"  -> "select",
-            "options" ->  Json.arr(
-              "GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"
+            "options" ->  JsArray(
+              Seq("GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH").map(JsString)
             )
           )
         )),
