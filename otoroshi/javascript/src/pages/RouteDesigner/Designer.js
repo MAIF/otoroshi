@@ -35,8 +35,6 @@ export default ({ lineId, value }) => {
             nextClient.form(nextClient.ENTITIES.BACKENDS),
         ])
             .then(([backends, route, categories, plugins, oldPlugins, frontendForm, backendForm]) => {
-                // TODO - voir avec Mathieu pour ajouter des plugins_steps, config_schema et config_flow, plugin_categories sur les anciens plugins
-                // TODO - remove TransformRequest from list
                 const formatedPlugins = [...plugins, ...oldPlugins.map(p => ({
                     ...p,
                     plugin_categories: [...p.plugin_categories, "Old plugins"],
@@ -46,7 +44,7 @@ export default ({ lineId, value }) => {
                     .map(plugin => ({
                         ...plugin,
                         config_schema: toUpperCaseLabels(plugin.config_schema || plugin.configSchema || {}),
-                        config: plugin.default_config
+                        config: plugin.default_config || plugin.defaultConfig
                     }))
 
                 setBackends(backends)
@@ -262,7 +260,7 @@ export default ({ lineId, value }) => {
                 if (plugin.plugin === pluginId)
                     return {
                         ...plugin,
-                        ...item.informations,
+                        ...item.status,
                         config: item.plugin
                     }
                 return plugin
@@ -609,6 +607,8 @@ const EditView = ({
 
     const { id, flow, config_flow, config_schema, schema, name } = selectedNode
 
+    console.log(selectedNode)
+
     const plugin = ['Backend', 'Frontend'].includes(id) ? DEFAULT_FLOW[id] : plugins.find(element => element.id === id || element.id.endsWith(id))
 
     const onRemove = e => {
@@ -623,7 +623,7 @@ const EditView = ({
 
         if (config_schema) {
             formSchema = {
-                informations: {
+                status: {
                     type: type.object,
                     format: format.form,
                     collapsable: true,
@@ -633,7 +633,7 @@ const EditView = ({
                 }
             }
             formFlow = [
-                'informations'
+                'status'
             ]
             if (Object.keys(config_schema).length > 0) {
                 formSchema = {
@@ -665,10 +665,10 @@ const EditView = ({
         if (!value) {
             const pluginOnFlow = route.plugins.find(p => p.plugin === id)
             if (pluginOnFlow) {
-                const { plugin, config, ...informations } = pluginOnFlow
+                const { plugin, config, ...status } = pluginOnFlow
                 value = {
                     plugin: config,
-                    informations
+                    status
                 }
             }
         }
@@ -676,10 +676,10 @@ const EditView = ({
         if (!value) {
             const defaultPlugin = plugins.find(p => p.id === id)
             if (defaultPlugin) {
-                const { plugin, config, ...informations } = defaultPlugin
+                const { plugin, config, ...status } = defaultPlugin
                 value = {
                     plugin: config,
-                    informations
+                    status
                 }
             }
         }
@@ -699,8 +699,8 @@ const EditView = ({
         updatePlugin(id, unstringify(item), selectedNode.id)
     }
 
-    // console.log("SCHEMA", form.schema.plugin)
-    // console.log("VALUE", form.value)
+    console.log("SCHEMA", form.schema.plugin)
+    console.log("VALUE", form.value)
 
     return <div onClick={e => {
         e.stopPropagation()
@@ -717,7 +717,7 @@ const EditView = ({
                     }} />
                 <span style={{ color: "#fff", paddingLeft: "12px" }}>{name || id}</span>
             </div>
-            {!selectedNode.legacy && Object.keys(form.value || {}).length > 0 && <div className='mr-2'>
+            {!selectedNode.legacy && <div className='mr-2'>
                 <button className='btn btn-sm'
                     onClick={() => toggleJsonFormat(false)}
                     style={{
@@ -735,10 +735,7 @@ const EditView = ({
         <div style={{
             backgroundColor: "#494949"
         }}>
-            <p className='form-description' style={{
-                marginBottom: selectedNode.description ? 'inherit' : 0,
-                padding: selectedNode.description ? '12px' : 0
-            }}>{selectedNode.description}</p>
+            <Description text={selectedNode.description} />
             {id === "Backend" && <BackendSelector
                 backends={backends}
                 setBackendConfigRef={setBackendConfigRef}
@@ -750,6 +747,8 @@ const EditView = ({
             {(!usingExistingBackend || id !== "Backend") ? <div style={{ padding: '0 12px 12px' }}>
                 {asJsonFormat ? <>
                     <CodeInput
+                        showGutter={false}
+                        mode="json"
                         width="100%"
                         value={stringify(form.value)}
                         onChange={value => {
@@ -805,6 +804,28 @@ const unstringify = item => {
             return item
         }
     }
+}
+
+const Description = ({ text }) => {
+    const [showMore, setShowMore] = useState(false)
+
+    const textLength = text ? text.length : 0
+    const maxLength = 120
+    const overflows = textLength > maxLength
+
+    return <>
+        <p className='form-description' style={{
+            marginBottom: text ? 'inherit' : 0,
+            padding: text ? '12px' : 0,
+            paddingBottom: overflows || !text ? 0 : '12px'
+        }}>
+            {text.slice(0, showMore ? textLength : maxLength)} {overflows && !showMore ? "..." : ''}
+        </p>
+        {overflows && <button className='btn btn-sm btn-success me-3 mb-3' onClick={() => setShowMore(!showMore)}
+            style={{ marginLeft: 'auto', display: 'block' }}>
+            {showMore ? 'Show less' : 'Show more description'}
+        </button>}
+    </>
 }
 
 const RemoveComponent = ({ onRemove }) => <button className='btn btn-sm btn-danger ms-2' onClick={onRemove}>
