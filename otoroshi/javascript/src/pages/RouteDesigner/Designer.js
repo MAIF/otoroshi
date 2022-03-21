@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useParams, useLocation } from 'react-router'
 import { nextClient, getCategories, getPlugins, getOldPlugins } from '../../services/BackOfficeServices'
 import { Form, format, type } from '@maif/react-forms'
 import { CodeInput, SelectInput } from '@maif/react-forms/lib/inputs'
 import deepSet from 'set-value'
-import { DEFAULT_FLOW, EXCLUDED_PLUGINS, PLUGIN_INFORMATIONS_SCHEMA } from './Graph'
+import { DEFAULT_FLOW, EXCLUDED_PLUGINS, LEGACY_PLUGINS_WRAPPER, PLUGIN_INFORMATIONS_SCHEMA } from './Graph'
 import { BackendForm } from '../BackendsPage'
 import Loader from './Loader'
 import { camelToSnake, camelToSnakeFlow, toUpperCaseLabels } from '../../util'
@@ -86,15 +86,6 @@ export default ({ lineId, value }) => {
                     })
                 ])
 
-                console.log({
-                    ...DEFAULT_FLOW.Frontend,
-                    ...frontendForm,
-                    schema: {
-                        ...toUpperCaseLabels(frontendForm.schema),
-                        ...DEFAULT_FLOW.Frontend.schema
-                    }
-                })
-
                 setLoading(false)
             })
     }, [location.pathname])
@@ -144,32 +135,14 @@ export default ({ lineId, value }) => {
                 plugins: [
                     ...route.plugins,
                     {
-                        plugin: node.id,
-                        config: node.config
+                        plugin: node.legacy ? LEGACY_PLUGINS_WRAPPER[node.pluginType] : node.id,
+                        config: {
+                            ...node.config,
+                            plugin: node.legacy ? node.id : undefined
+                        }
                     }
                 ]
             })
-            // otoroshi.next.plugins.wrappers.PreRoutingWrapper
-            // otoroshi.next.plugins.wrappers.AccessValidatorWrapper
-            // otoroshi.next.plugins.wrappers.RequestSinkWrapper
-            // otoroshi.next.plugins.wrappers.RequestTransformerWrapper
-            // otoroshi.next.plugins.wrappers.CompositeWrapper
-            // {
-            //     "plugin": "cp:otoroshi.next.plugins.wrappers.PreRoutingWrapper",
-            //     "enabled": true,
-            //     "include": [],
-            //     "exclude": [],
-            //     "config": {
-            //       "plugin": "cp:otoroshi.plugins.jwt.JwtUserExtractor",
-            //       "JwtUserExtractor": {
-            //         "verifier" : "$ref",
-            //         "strict"   : true,
-            //         "namePath" : "name",
-            //         "emailPath": "email",
-            //         "metaPath" : null
-            //       }
-            //     }
-            //   }
 
             setNodes([...nodes, node])
 
@@ -596,6 +569,8 @@ const EditView = ({
         value: {},
         originalValue: {}
     })
+
+    const [test, setTest] = useState()
     const [saveable, setSaveable] = useState(false)
     const [backendConfigRef, setBackendConfigRef] = useState()
 
@@ -663,7 +638,7 @@ const EditView = ({
         let value = route[selectedNode.field]
 
         if (!value) {
-            const pluginOnFlow = route.plugins.find(p => p.plugin === id)
+            const pluginOnFlow = route.plugins.find(p => p.plugin === id || p.config.plugin === id)
             if (pluginOnFlow) {
                 const { plugin, config, ...status } = pluginOnFlow
                 value = {
@@ -690,6 +665,7 @@ const EditView = ({
             originalValue: value,
             unsavedForm: value
         })
+        setTest(value)
         setSaveable(false)
 
         toggleJsonFormat(selectedNode.legacy)
@@ -725,7 +701,11 @@ const EditView = ({
                         backgroundColor: asJsonFormat ? "#373735" : "#f9b000",
                         color: "#fff"
                     }}>FORM</button>
-                <button className='btn btn-sm' onClick={() => toggleJsonFormat(true)} style={{
+                <button className='btn btn-sm' onClick={() => {
+                    if (stringify(test) !== stringify(form.value))
+                        setForm({ ...form, value: test })
+                    toggleJsonFormat(true)
+                }} style={{
                     padding: "6px 12px",
                     backgroundColor: asJsonFormat ? "#f9b000" : "#373735",
                     color: "#fff"
@@ -764,8 +744,12 @@ const EditView = ({
                         schema={form.schema}
                         options={{
                             watch: unsaved => {
-                                if (unsaved && Object.keys(unsaved).length > 0)
-                                    setSaveable(JSON.stringify(unsaved, null, 4) !== stringify(form.originalValue))
+                                if (unsaved && Object.keys(unsaved).length > 0) {
+                                    const hasChanged = stringify(unsaved) !== stringify(form.originalValue)
+                                    setSaveable(hasChanged)
+                                    if (stringify(unsaved) !== stringify(test))
+                                        setTest(unsaved)
+                                }
                             }
                         }}
                         flow={form.formFlow}

@@ -148,7 +148,7 @@ class OpenapiToJson(spec: JsValue) {
         }
       } catch {
         case _: Throwable =>
-          println(s"$reference not found")
+          // println(s"$reference not found")
           Json.obj()
       }
     } else
