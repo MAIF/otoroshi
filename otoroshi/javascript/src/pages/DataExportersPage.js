@@ -764,6 +764,7 @@ const possibleExporterConfigFormValues = {
       'truststore',
       'mtlsConfig.mtls',
       'mtlsConfig.trustAll',
+      'mtlsConfig.loose',
       'mtlsConfig.certs',
       'mtlsConfig.trustedCerts',
       'topic',
@@ -819,6 +820,11 @@ const possibleExporterConfigFormValues = {
         type: 'bool',
         display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
         props: { label: 'TrustAll' },
+      },
+      'mtlsConfig.loose': {
+        type: 'bool',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
+        props: { label: 'loose' },
       },
       'mtlsConfig.certs': {
         type: 'array',
