@@ -120,7 +120,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   def initiateCertificate() =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
-        env.datastores.certificatesDataStore.template.map { cert =>
+        env.datastores.certificatesDataStore.nakedTemplate(env).map { cert =>
           val finalCert =
             cert.copy(location = cert.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
           Ok(process(finalCert.toJson, ctx.request))
@@ -321,7 +321,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
               _.save()
             )
           case "certificates" =>
-            env.datastores.certificatesDataStore.template
+            env.datastores.certificatesDataStore.nakedTemplate(env)
               .flatMap(cert =>
                 patchTemplate[Cert](
                   cert
@@ -522,7 +522,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           )
         case "Certificate"       =>
           env.datastores.certificatesDataStore
-            .template(ec, env)
+            .nakedTemplate(env)
             .map(c => Cert.fromJsons(c.json.as[JsObject].deepMerge(resource)).json)
         case "Tenant"            =>
           FastFuture.successful(

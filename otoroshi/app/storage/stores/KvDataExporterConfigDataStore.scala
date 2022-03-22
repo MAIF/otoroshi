@@ -2,27 +2,15 @@ package otoroshi.storage.stores
 
 import otoroshi.env.Env
 import otoroshi.events.{KafkaConfig, PulsarConfig}
-import otoroshi.models.{
-  DataExporterConfig,
-  DataExporterConfigFiltering,
-  DataExporterConfigType,
-  EntityLocation,
-  FileSettings,
-  MetricsSettings
-}
+import otoroshi.models.{DataExporterConfig, DataExporterConfigFiltering, DataExporterConfigType, EntityLocation, FileSettings, MetricsSettings}
 import otoroshi.models._
+import otoroshi.script.Script
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.mailer.{
-  ConsoleMailerSettings,
-  GenericMailerSettings,
-  MailgunSettings,
-  MailjetSettings,
-  NoneMailerSettings,
-  SendgridSettings
-}
+import otoroshi.utils.mailer.{ConsoleMailerSettings, GenericMailerSettings, MailgunSettings, MailjetSettings, NoneMailerSettings, SendgridSettings}
 import play.api.libs.json.{Format, Json}
 import otoroshi.security.IdGenerator
+import otoroshi.utils.syntax.implicits.BetterJsReadable
 
 import scala.concurrent.duration.DurationInt
 
@@ -36,7 +24,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
   override def extractId(value: DataExporterConfig): String = value.id
 
   def template(modType: Option[String]): DataExporterConfig = {
-    modType match {
+    val defaultTemplate = modType match {
       case Some("webhook")        =>
         DataExporterConfig(
           typ = DataExporterConfigType.Webhook,
@@ -247,6 +235,11 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           filtering = DataExporterConfigFiltering(),
           config = ConsoleMailerSettings()
         )
+    }
+    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.dataExporter.map { template =>
+      DataExporterConfig.format.reads(defaultTemplate.json.asObject.deepMerge(template)).get
+    }.getOrElse {
+      defaultTemplate
     }
   }
 }

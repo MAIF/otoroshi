@@ -6,6 +6,7 @@ import otoroshi.models._
 import otoroshi.next.models._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.controllers._
+import otoroshi.utils.syntax.implicits.BetterJsReadable
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -161,16 +162,19 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   def initiateStoredNgBackend() = ApiAction {
-    Ok(
-      StoredNgBackend(
-        location = EntityLocation.default,
-        id = s"backend_${IdGenerator.uuid}",
-        name = "New backend",
-        description = "A new backend",
-        tags = Seq.empty,
-        metadata = Map.empty,
-        backend = NgBackend.empty
-      ).json
+    val defaultBackend = StoredNgBackend(
+      location = EntityLocation.default,
+      id = s"backend_${IdGenerator.uuid}",
+      name = "New backend",
+      description = "A new backend",
+      tags = Seq.empty,
+      metadata = Map.empty,
+      backend = NgBackend.empty
     )
+    env.datastores.globalConfigDataStore.latest().templates.backend.map { template =>
+      Ok(defaultBackend.json.asObject.deepMerge(template))
+    }.getOrElse {
+      Ok(defaultBackend.json)
+    }
   }
 }

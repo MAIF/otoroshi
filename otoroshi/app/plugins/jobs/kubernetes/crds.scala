@@ -387,7 +387,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       case "service-descriptor" => env.datastores.serviceDescriptorDataStore.template(env).json.asObject
       case "service-group"      => env.datastores.serviceGroupDataStore.template(env).json.asObject
       case "apikey"             => env.datastores.apiKeyDataStore.template(env).json.asObject
-      case "certificate"        => env.datastores.certificatesDataStore.nakedTemplate(env).json.asObject
+      case "certificate"        => env.datastores.certificatesDataStore.syncTemplate(env).json.asObject
       case "auth-module"        =>
         env.datastores.authConfigsDataStore.template(source.select("type").asOpt[String], env).json.asObject
       case "tcp-service"        => env.datastores.tcpServiceDataStore.template(env).json.asObject

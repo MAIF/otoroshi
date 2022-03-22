@@ -159,50 +159,53 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   def initiateRoute() = ApiAction {
-    Ok(
-      NgRoute(
-        location = EntityLocation.default,
-        id = s"route_${IdGenerator.uuid}",
-        name = "New route",
-        description = "A new route",
-        tags = Seq.empty,
-        metadata = Map.empty,
-        enabled = true,
-        debugFlow = true,
-        exportReporting = false,
-        groups = Seq("default"),
-        frontend = NgFrontend(
-          domains = Seq(NgDomainAndPath("new-route.oto.tools")),
-          headers = Map.empty,
-          query = Map.empty,
-          methods = Seq.empty,
-          stripPath = true,
-          exact = false
+    val defaultRoute = NgRoute(
+      location = EntityLocation.default,
+      id = s"route_${IdGenerator.uuid}",
+      name = "New route",
+      description = "A new route",
+      tags = Seq.empty,
+      metadata = Map.empty,
+      enabled = true,
+      debugFlow = true,
+      exportReporting = false,
+      groups = Seq("default"),
+      frontend = NgFrontend(
+        domains = Seq(NgDomainAndPath("new-route.oto.tools")),
+        headers = Map.empty,
+        query = Map.empty,
+        methods = Seq.empty,
+        stripPath = true,
+        exact = false
+      ),
+      backend = NgBackend(
+        targets = Seq(
+          NgTarget(
+            id = "target_1",
+            hostname = "mirror.otoroshi.io",
+            port = 443,
+            tls = true
+          )
         ),
-        backend = NgBackend(
-          targets = Seq(
-            NgTarget(
-              id = "target_1",
-              hostname = "mirror.otoroshi.io",
-              port = 443,
-              tls = true
-            )
-          ),
-          targetRefs = Seq.empty,
-          root = "/",
-          rewrite = false,
-          loadBalancing = RoundRobin,
-          client = NgClientConfig.default
-        ),
-        plugins = NgPlugins(
-          Seq(
-            NgPluginInstance(
-              plugin = NgPluginHelper.pluginId[OverrideHost]
-            )
+        targetRefs = Seq.empty,
+        root = "/",
+        rewrite = false,
+        loadBalancing = RoundRobin,
+        client = NgClientConfig.default
+      ),
+      plugins = NgPlugins(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
           )
         )
-      ).json
+      )
     )
+    env.datastores.globalConfigDataStore.latest().templates.route.map { template =>
+      Ok(defaultRoute.json.asObject.deepMerge(template))
+    }.getOrElse {
+      Ok(defaultRoute.json)
+    }
   }
 
   def domainsAndCertificates() = ApiAction { ctx =>

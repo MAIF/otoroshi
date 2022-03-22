@@ -17,6 +17,7 @@ import otoroshi.gateway.{Errors, Retry}
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{DynamicSSLEngineProvider, PemUtils}
 import otoroshi.storage.BasicStore
+import otoroshi.tcp.TcpService
 import otoroshi.utils
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
@@ -2249,11 +2250,17 @@ object Implicits {
 }
 
 trait GlobalJwtVerifierDataStore extends BasicStore[GlobalJwtVerifier] {
-  def template(env: Env): GlobalJwtVerifier =
-    GlobalJwtVerifier(
+  def template(env: Env): GlobalJwtVerifier = {
+    val defaultJwt = GlobalJwtVerifier(
       id = IdGenerator.namedId("jwt_verifier", env),
       name = "New jwt verifier",
       desc = "New jwt verifier",
       metadata = Map.empty
     )
+    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.verifier.map { template =>
+      GlobalJwtVerifier._fmt.reads(defaultJwt.json.asObject.deepMerge(template)).get
+    }.getOrElse {
+      defaultJwt
+    }
+  }
 }

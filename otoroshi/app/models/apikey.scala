@@ -21,7 +21,7 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{BetterDecodedJWT, BetterSyntax}
+import otoroshi.utils.syntax.implicits.{BetterDecodedJWT, BetterJsReadable, BetterSyntax}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -394,20 +394,34 @@ object ApiKey {
 }
 
 trait ApiKeyDataStore extends BasicStore[ApiKey] {
-  def initiateNewApiKey(groupId: String, env: Env): ApiKey =
-    ApiKey(
+  def initiateNewApiKey(groupId: String, env: Env): ApiKey = {
+    val defaultApikey = ApiKey(
       clientId = IdGenerator.namedToken("apki", 16, env),     // IdGenerator.token(16),
       clientSecret = IdGenerator.namedToken("apks", 64, env), // IdGenerator.token(64),
       clientName = "client-name-apikey",
       authorizedEntities = Seq(ServiceGroupIdentifier(groupId))
     )
-  def template(env: Env): ApiKey =
-    ApiKey(
+    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.apikey.map { template =>
+      ApiKey._fmt.reads(defaultApikey.json.asObject.deepMerge(template)).get
+    }.getOrElse {
+      defaultApikey
+    }
+  }
+
+  def template(env: Env): ApiKey = {
+    val defaultApikey = ApiKey(
       clientId = IdGenerator.namedToken("apki", 16, env),     // IdGenerator.token(16),
       clientSecret = IdGenerator.namedToken("apks", 64, env), // IdGenerator.token(64),
       clientName = "client-name-apikey",
       authorizedEntities = Seq.empty
     )
+    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.apikey.map { template =>
+      ApiKey._fmt.reads(defaultApikey.json.asObject.deepMerge(template)).get
+    }.getOrElse {
+      defaultApikey
+    }
+  }
+
   def remainingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]
   def resetQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]
   def updateQuotas(apiKey: ApiKey, increment: Long = 1L)(implicit

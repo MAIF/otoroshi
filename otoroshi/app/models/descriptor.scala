@@ -39,7 +39,7 @@ import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits.BetterSyntax
+import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
 import otoroshi.utils.infotoken.InfoTokenHelper
 
 case class ServiceDescriptorQuery(
@@ -2196,7 +2196,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
         case Some(location) => (location.subdomain, location.env, location.domain)
       }
     } getOrElse ("myservice", "prod", env.domain)
-    ServiceDescriptor(
+    val defaultDescriptor = ServiceDescriptor(
       id = IdGenerator.namedId("service", env),
       name = "my-service",
       description = "a service",
@@ -2225,6 +2225,11 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       missingOnlyHeadersOut = Map.empty,
       stripPath = true
     )
+    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.descriptor.map { template =>
+      ServiceDescriptor._fmt.reads(defaultDescriptor.json.asObject.deepMerge(template)).get
+    }.getOrElse {
+      defaultDescriptor
+    }
   }
   def updateMetrics(
       id: String,

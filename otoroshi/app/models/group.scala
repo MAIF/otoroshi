@@ -5,6 +5,7 @@ import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.BasicStore
+import otoroshi.utils.syntax.implicits.BetterJsReadable
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -75,12 +76,18 @@ object ServiceGroup {
 
 trait ServiceGroupDataStore extends BasicStore[ServiceGroup] {
   def template(env: Env): ServiceGroup         = initiateNewGroup(env)
-  def initiateNewGroup(env: Env): ServiceGroup =
-    ServiceGroup(
+  def initiateNewGroup(env: Env): ServiceGroup = {
+    val defaultGroup = ServiceGroup(
       id = IdGenerator.namedId("group", env),
       name = "product-group",
       description = "group for product",
       metadata = Map.empty,
       tags = Seq.empty
     )
+    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.group.map { template =>
+      ServiceGroup._fmt.reads(defaultGroup.json.asObject.deepMerge(template)).get
+    }.getOrElse {
+      defaultGroup
+    }
+  }
 }

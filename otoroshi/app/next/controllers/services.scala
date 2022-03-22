@@ -8,7 +8,7 @@ import otoroshi.next.plugins.OverrideHost
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.controllers._
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
+import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -148,54 +148,57 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   def initiateService() = ApiAction {
-    Ok(
-      NgService(
-        location = EntityLocation.default,
-        id = s"ng-service_${IdGenerator.uuid}",
-        name = "New service",
-        description = "A new service",
-        tags = Seq.empty,
-        metadata = Map.empty,
-        enabled = true,
-        debugFlow = false,
-        exportReporting = false,
-        groups = Seq("default"),
-        client = NgClientConfig.default,
-        routes = Seq(
-          NgMinimalRoute(
-            frontend = NgFrontend(
-              domains = Seq(NgDomainAndPath("new-route.oto.tools")),
-              headers = Map.empty,
-              query = Map.empty,
-              methods = Seq.empty,
-              stripPath = true,
-              exact = false
+    val defaultService = NgService(
+      location = EntityLocation.default,
+      id = s"ng-service_${IdGenerator.uuid}",
+      name = "New service",
+      description = "A new service",
+      tags = Seq.empty,
+      metadata = Map.empty,
+      enabled = true,
+      debugFlow = false,
+      exportReporting = false,
+      groups = Seq("default"),
+      client = NgClientConfig.default,
+      routes = Seq(
+        NgMinimalRoute(
+          frontend = NgFrontend(
+            domains = Seq(NgDomainAndPath("new-route.oto.tools")),
+            headers = Map.empty,
+            query = Map.empty,
+            methods = Seq.empty,
+            stripPath = true,
+            exact = false
+          ),
+          backend = NgMinimalBackend(
+            targets = Seq(
+              NgTarget(
+                id = "target_1",
+                hostname = "mirror.otoroshi.io",
+                port = 443,
+                tls = true
+              )
             ),
-            backend = NgMinimalBackend(
-              targets = Seq(
-                NgTarget(
-                  id = "target_1",
-                  hostname = "mirror.otoroshi.io",
-                  port = 443,
-                  tls = true
-                )
-              ),
-              targetRefs = Seq.empty,
-              root = "/",
-              rewrite = false,
-              loadBalancing = RoundRobin
-            )
-          )
-        ),
-        plugins = NgPlugins(
-          Seq(
-            NgPluginInstance(
-              plugin = NgPluginHelper.pluginId[OverrideHost]
-            )
+            targetRefs = Seq.empty,
+            root = "/",
+            rewrite = false,
+            loadBalancing = RoundRobin
           )
         )
-      ).json
+      ),
+      plugins = NgPlugins(
+        Seq(
+          NgPluginInstance(
+            plugin = NgPluginHelper.pluginId[OverrideHost]
+          )
+        )
+      )
     )
+    env.datastores.globalConfigDataStore.latest().templates.service.map { template =>
+      Ok(defaultService.json.asObject.deepMerge(template))
+    }.getOrElse {
+      Ok(defaultService.json)
+    }
   }
 
   def form() = ApiAction {
