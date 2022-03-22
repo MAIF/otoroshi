@@ -22,11 +22,10 @@ class OpenApiSpec extends AnyWordSpec with Matchers with OptionValues {
     "./app/openapi/openapi-cfg.json",
     Seq("./public/openapi.json", "../manual/src/main/paradox/code/openapi.json"),
     scanResult = scanResult,
-    write = false
+    write = true
   )
 
   val spec = generator.run()
 
   new CrdsGenerator(spec).run()
-  // new FormsGenerator(spec).run()
 }
