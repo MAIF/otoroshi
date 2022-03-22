@@ -89,7 +89,11 @@ class CrdsGenerator(spec: JsValue = Json.obj()) {
       "singular" -> "data-exporter",
       "entity"   -> "otoroshi.models.DataExporterConfig"
     ),
-    "Admin"             -> Json.obj("plural" -> "admins", "singular" -> "admin", "entity" -> "otoroshi.models.SimpleOtoroshiAdmin")
+    "Admin"             -> Json.obj("plural" -> "admins", "singular" -> "admin", "entity" -> "otoroshi.models.SimpleOtoroshiAdmin"),
+    "Route" -> Json.obj("plural" -> "routes", "singular" -> "route", "entity" -> "otoroshi.next.models.NgRoute"),
+    "Service" -> Json.obj("plural" -> "services", "singular" -> "service", "entity" -> "otoroshi.next.models.NgService"),
+    "Backend" -> Json.obj("plural" -> "backends", "singular" -> "backend", "entity" -> "otoroshi.next.models.NgBackend"),
+    "Target" -> Json.obj("plural" -> "targets", "singular" -> "target", "entity" -> "otoroshi.next.models.NgTarget"),
   )
 
   def run(): Unit = {
