@@ -4,14 +4,14 @@ import io.github.classgraph.ClassGraph
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.{MustMatchers, OptionValues}
-import otoroshi.openapi.{FormsGenerator, OpenApiGenerator}
+import otoroshi.openapi.{CrdsGenerator, FormsGenerator, OpenApiGenerator}
 import play.api.libs.json.JsValue
 
 class OpenApiSpec extends AnyWordSpec with Matchers with OptionValues {
-  //val runner = new OpenApiGeneratorRunner()
-  //runner.generate()
+  // val runner = new OpenApiGeneratorRunner()
+  // runner.generate()
 
- /* val scanResult = new ClassGraph()
+ val scanResult = new ClassGraph()
     .addClassLoader(this.getClass.getClassLoader)
     .enableAllInfo()
     .acceptPackages(Seq("otoroshi", "otoroshi_plugins", "play.api.libs.ws"): _*)
@@ -27,6 +27,6 @@ class OpenApiSpec extends AnyWordSpec with Matchers with OptionValues {
 
   val spec = generator.run()
 
-  val formsGenerator = new FormsGenerator(spec)
-  formsGenerator.run()*/
+  new CrdsGenerator(spec).run()
+  // new FormsGenerator(spec).run()
 }

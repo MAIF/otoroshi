@@ -227,6 +227,16 @@ class NgProxyState(env: Env) {
   def updateScripts(values: Seq[Script]): Unit = {
     scripts.addAll(values.map(v => (v.id, v))).remAll(scripts.keySet.toSeq.diff(values.map(_.id)))
   }
+
+  def updateNgBackends(values: Seq[StoredNgBackend]): Unit = {
+    ngbackends.addAll(values.map(v => (v.id, v))).remAll(ngbackends.keySet.toSeq.diff(values.map(_.id)))
+  }
+  def updateNgTargets(values: Seq[StoredNgTarget]): Unit = {
+    ngtargets.addAll(values.map(v => (v.id, v))).remAll(ngtargets.keySet.toSeq.diff(values.map(_.id)))
+  }
+  def updateNgServices(values: Seq[NgService]): Unit = {
+    ngservices.addAll(values.map(v => (v.id, v))).remAll(ngservices.keySet.toSeq.diff(values.map(_.id)))
+  }
 }
 
 object NgProxyStateLoaderJob {
@@ -598,6 +608,9 @@ class NgProxyStateLoaderJob extends Job {
       env.proxyState.updatePrivateAppsSessions(privateAppsSessions)
       env.proxyState.updateTcpServices(tcpServices)
       env.proxyState.updateScripts(scripts)
+      env.proxyState.updateNgBackends(backends)
+      env.proxyState.updateNgTargets(targets)
+      env.proxyState.updateNgServices(routescomp)
       DynamicSSLEngineProvider.setCertificates(env)
       NgProxyStateLoaderJob.firstSync.compareAndSet(false, true)
       env.metrics.timerUpdate("ng-proxy-state-refresh", System.currentTimeMillis() - start, TimeUnit.MILLISECONDS)

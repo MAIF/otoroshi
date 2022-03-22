@@ -11,6 +11,7 @@ import otoroshi.env.Env
 import otoroshi.models._
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script
 import otoroshi.script._
 import otoroshi.security.IdGenerator
@@ -530,6 +531,11 @@ object Attrs {
 }
 
 class Transformer1 extends RequestTransformer {
+
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep] = Seq.empty
+
   override def transformRequestWithCtx(
       context: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
@@ -548,6 +554,11 @@ class Transformer1 extends RequestTransformer {
 }
 
 class Transformer2 extends RequestTransformer {
+
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep] = Seq.empty
+
   override def transformRequestWithCtx(
       context: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
@@ -569,6 +580,11 @@ class Transformer2 extends RequestTransformer {
 }
 
 class Transformer3 extends RequestTransformer {
+
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep] = Seq.empty
+
   override def transformRequestWithCtx(
       context: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, script.HttpRequest]] = {
@@ -582,6 +598,11 @@ class Transformer3 extends RequestTransformer {
 }
 
 class Validator1 extends AccessValidator {
+
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep] = Seq.empty
+
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     TransformersCounters.counterValidator.incrementAndGet()
     FastFuture.successful(true)
