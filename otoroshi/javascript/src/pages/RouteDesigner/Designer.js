@@ -819,7 +819,7 @@ const Description = ({ text }) => {
             padding: text ? '12px' : 0,
             paddingBottom: overflows || !text ? 0 : '12px'
         }}>
-            {text.slice(0, showMore ? textLength : maxLength)} {overflows && !showMore ? "..." : ''}
+            {text ? text.slice(0, showMore ? textLength : maxLength) : ''} {overflows && !showMore ? "..." : ''}
         </p>
         {overflows && <button className='btn btn-sm btn-success me-3 mb-3' onClick={() => setShowMore(!showMore)}
             style={{ marginLeft: 'auto', display: 'block' }}>
