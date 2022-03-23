@@ -17267,17 +17267,17 @@
         "properties" : {
           "compressionLevel" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "The compression level (1 to 9)",
             "type" : "integer"
           },
           "bufferSize" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Compressor buffer size",
             "type" : "integer"
           },
           "chunkedThreshold" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Chunk size",
             "type" : "integer"
           },
           "excludedPatterns" : {
@@ -17285,21 +17285,21 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The excluded path patterns"
           },
           "whiteList" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Allowed mimetypes list"
           },
           "blackList" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Blocked mimetypes list"
           }
         }
       },
@@ -17383,7 +17383,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The list of verifiers id"
           }
         }
       },
@@ -17449,11 +17449,11 @@
         "type" : "object",
         "properties" : {
           "request" : {
-            "description" : "???",
+            "description" : "JQ filter for request",
             "type" : "string"
           },
           "response" : {
-            "description" : "???",
+            "description" : "JQ filter for response",
             "type" : "string"
           }
         }
@@ -17513,14 +17513,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The list of allowed methods"
           },
           "forbidden" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The list of forbidden methods"
           }
         }
       },
@@ -17550,7 +17550,7 @@
         "type" : "object",
         "properties" : {
           "allowCredentials" : {
-            "description" : "???",
+            "description" : "Allowed credentials",
             "type" : "boolean"
           },
           "maxAge" : {
@@ -17559,10 +17559,10 @@
             }, {
               "type" : "number"
             } ],
-            "description" : "???"
+            "description" : "cors max age"
           },
           "allowOrigin" : {
-            "description" : "???",
+            "description" : "Allowed cors origins",
             "type" : "string"
           },
           "allowMethods" : {
@@ -17570,28 +17570,28 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Allowed cors methods"
           },
           "excludedPatterns" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Paths without cors"
           },
           "allowHeaders" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Allowed cors headers"
           },
           "exposeHeaders" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Exposed cors headers"
           }
         }
       },
@@ -17673,23 +17673,23 @@
         "type" : "object",
         "properties" : {
           "extractors" : {
-            "description" : "???",
+            "description" : "Configuration of the apikey extraction modes",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractors"
           },
           "passWithUser" : {
-            "description" : "???",
+            "description" : "Let the request pass if a user is connected",
             "type" : "boolean"
           },
           "wipeBackendRequest" : {
-            "description" : "???",
+            "description" : "Removes the apikeys from the request to not forward it to the backend",
             "type" : "boolean"
           },
           "validate" : {
-            "description" : "???",
+            "description" : "Enabled quotas validation",
             "type" : "boolean"
           },
           "routing" : {
-            "description" : "???",
+            "description" : "Use apikey for routing",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyMatcher"
           }
         }
@@ -17699,24 +17699,24 @@
         "type" : "object",
         "properties" : {
           "attrs" : {
-            "description" : "???",
+            "description" : "The current request attributes",
             "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
           },
           "config" : {
-            "description" : "???",
+            "description" : "The current plugin config.",
             "type" : "object"
           },
           "descriptor" : {
-            "description" : "???",
+            "description" : "The current service descriptor",
             "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptor"
           },
           "index" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "The current plugin index",
             "type" : "integer"
           },
           "globalConfig" : {
-            "description" : "???",
+            "description" : "The current global config",
             "type" : "object"
           },
           "apikey" : {
@@ -17725,10 +17725,10 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
             } ],
-            "description" : "???"
+            "description" : "The current apikey"
           },
           "snowflake" : {
-            "description" : "???",
+            "description" : "The current request snowflake",
             "type" : "string"
           },
           "user" : {
@@ -17737,7 +17737,7 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.models.PrivateAppsUser"
             } ],
-            "description" : "???"
+            "description" : "The current user"
           }
         }
       },
@@ -17746,7 +17746,7 @@
         "type" : "object",
         "properties" : {
           "filter" : {
-            "description" : "???",
+            "description" : "JQ filter for response",
             "type" : "string"
           }
         }
@@ -17860,10 +17860,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Id of the auth. module"
           },
           "passWithApikey" : {
-            "description" : "???",
+            "description" : "let the request pass if an apikey is present",
             "type" : "boolean"
           }
         }
@@ -17904,7 +17904,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The headers added to the request"
           }
         }
       },
@@ -18015,28 +18015,28 @@
         "type" : "object",
         "properties" : {
           "globalConfig" : {
-            "description" : "???",
+            "description" : "The current global config",
             "type" : "object"
           },
           "snowflake" : {
-            "description" : "???",
+            "description" : "The current request snowflake",
             "type" : "string"
           },
           "descriptor" : {
-            "description" : "???",
+            "description" : "The current service descriptor",
             "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptor"
           },
           "config" : {
-            "description" : "???",
+            "description" : "The current plugin config.",
             "type" : "object"
           },
           "index" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "The current plugin index",
             "type" : "integer"
           },
           "attrs" : {
-            "description" : "???",
+            "description" : "The current request attributes",
             "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
           }
         }
@@ -18050,7 +18050,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The list of allowed ip addresses of cidr blocks"
           }
         }
       },
@@ -18319,10 +18319,10 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.MockResponse"
             },
-            "description" : "???"
+            "description" : "Possible responses"
           },
           "passThrough" : {
-            "description" : "???",
+            "description" : "Pass the call if no mocked response found",
             "type" : "boolean"
           }
         }
@@ -18509,7 +18509,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "JQ filter for response"
           }
         }
       },
@@ -18717,7 +18717,7 @@
         "type" : "object",
         "properties" : {
           "filter" : {
-            "description" : "???",
+            "description" : "JQ filter for response",
             "type" : "string"
           }
         }
@@ -19317,7 +19317,7 @@
         "type" : "object",
         "properties" : {
           "filter" : {
-            "description" : "???",
+            "description" : "JQ filter for request",
             "type" : "string"
           }
         }
@@ -19622,7 +19622,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Headers added to the request if missing"
           }
         }
       },
@@ -20229,12 +20229,12 @@
         "type" : "object",
         "properties" : {
           "within" : {
-            "description" : "???",
+            "description" : "Is it within the quotas",
             "type" : "boolean"
           },
           "secCalls" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Number of calls per second",
             "type" : "integer"
           }
         }
@@ -20340,7 +20340,7 @@
             "type" : "string"
           },
           "target" : {
-            "description" : "The actual tagrte",
+            "description" : "The actual target",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgTarget"
           }
         }
@@ -20384,7 +20384,7 @@
         "type" : "object",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "Is it enabled",
             "type" : "boolean"
           },
           "clientIdHeaderName" : {
@@ -20393,7 +20393,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Header name to extract client id"
           },
           "clientSecretHeaderName" : {
             "oneOf" : [ {
@@ -20401,7 +20401,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Header name to extract client secret"
           }
         }
       },
@@ -21290,14 +21290,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The list of allowed methods"
           },
           "forbidden" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The list of forbidden methods"
           }
         }
       },
@@ -21658,11 +21658,11 @@
         "properties" : {
           "traffic" : {
             "format" : "double",
-            "description" : "???",
+            "description" : "Which percentage of the traffic goes to the canary target",
             "type" : "number"
           },
           "root" : {
-            "description" : "???",
+            "description" : "The root path for target",
             "type" : "string"
           },
           "targets" : {
@@ -21670,7 +21670,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.models.NgTarget"
             },
-            "description" : "???"
+            "description" : "The canary targets"
           }
         }
       },
@@ -22254,10 +22254,10 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.MockResponse"
             },
-            "description" : "???"
+            "description" : "Possible responses"
           },
           "passThrough" : {
-            "description" : "???",
+            "description" : "Pass the call if no mocked response found",
             "type" : "boolean"
           }
         }
@@ -22413,11 +22413,11 @@
         "type" : "object",
         "properties" : {
           "path" : {
-            "description" : "???",
+            "description" : "The path being tested on the current context",
             "type" : "string"
           },
           "value" : {
-            "description" : "???",
+            "description" : "The expected value",
             "type" : "object"
           }
         }
@@ -22643,7 +22643,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.ContextValidator"
             },
-            "description" : "???"
+            "description" : "The validators to pass on the current context"
           }
         }
       },
@@ -22680,7 +22680,7 @@
         "type" : "object",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "Is it enabled",
             "type" : "boolean"
           },
           "headerName" : {
@@ -22689,7 +22689,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The name of the header to extract"
           },
           "queryName" : {
             "oneOf" : [ {
@@ -22697,7 +22697,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The name of the query param to extract"
           }
         }
       },
@@ -22757,11 +22757,11 @@
         "type" : "object",
         "properties" : {
           "request" : {
-            "description" : "???",
+            "description" : "JQ filter for request",
             "type" : "string"
           },
           "response" : {
-            "description" : "???",
+            "description" : "JQ filter for response",
             "type" : "string"
           }
         }
@@ -22886,7 +22886,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "JQ filter for transformation"
           }
         }
       },
@@ -24388,7 +24388,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The headers value being checked"
           }
         }
       },
@@ -25025,7 +25025,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.ContextValidator"
             },
-            "description" : "???"
+            "description" : "The validators to pass on the current context"
           }
         }
       },
@@ -25484,7 +25484,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The headers added to the response"
           }
         }
       },
@@ -25707,7 +25707,7 @@
         "type" : "object",
         "properties" : {
           "filter" : {
-            "description" : "???",
+            "description" : "JQ filter for request",
             "type" : "string"
           }
         }
@@ -26242,10 +26242,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The name of the cookies to extract"
           },
           "keyPairSigned" : {
-            "description" : "???",
+            "description" : "Is it asymmetricaly signed",
             "type" : "boolean"
           },
           "queryName" : {
@@ -26254,18 +26254,18 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The name of the query param to extract"
           },
           "secretSigned" : {
-            "description" : "???",
+            "description" : "Is it symmetricaly signed",
             "type" : "boolean"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "Is it enabled",
             "type" : "boolean"
           },
           "includeRequestAttrs" : {
-            "description" : "???",
+            "description" : "Does the jwt token need to include current request attributes to work",
             "type" : "boolean"
           },
           "headerName" : {
@@ -26274,7 +26274,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The name of the header to extract"
           }
         }
       },
@@ -26499,20 +26499,20 @@
         "type" : "object",
         "properties" : {
           "path" : {
-            "description" : "???",
+            "description" : "The path for the response",
             "type" : "string"
           },
           "body" : {
-            "description" : "???",
+            "description" : "The body of the response",
             "type" : "string"
           },
           "status" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "The status of the response",
             "type" : "integer"
           },
           "method" : {
-            "description" : "???",
+            "description" : "The method for the response",
             "type" : "string"
           },
           "headers" : {
@@ -26520,7 +26520,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The headers of the response"
           }
         }
       },
@@ -26603,7 +26603,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The name of the header to extract"
           },
           "queryName" : {
             "oneOf" : [ {
@@ -26611,10 +26611,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The name of the query param to extract"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "Is it enabled",
             "type" : "boolean"
           }
         }
@@ -27027,7 +27027,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Headers added to the response if missing"
           }
         }
       },
@@ -27615,7 +27615,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The list of blocked ip addresses of cidr blocks"
           }
         }
       },
@@ -27997,7 +27997,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "JQ filter for request"
           }
         }
       },
@@ -28257,7 +28257,7 @@
         "type" : "object",
         "properties" : {
           "finger" : {
-            "description" : "???",
+            "description" : "Using emoji instead of 0 in the response",
             "type" : "boolean"
           },
           "addresses" : {
@@ -28265,7 +28265,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "IP address that will get endless responses"
           }
         }
       },
@@ -28417,19 +28417,19 @@
         "type" : "object",
         "properties" : {
           "basic" : {
-            "description" : "???",
+            "description" : "basic auth extractor config.",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractorBasic"
           },
           "customHeaders" : {
-            "description" : "???",
+            "description" : "custom headers extractor config.",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractorCustomHeaders"
           },
           "clientId" : {
-            "description" : "???",
+            "description" : "client id only extractor config.",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractorClientId"
           },
           "jwt" : {
-            "description" : "???",
+            "description" : "jwt extractor config.",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractorJwt"
           }
         }
@@ -28762,23 +28762,23 @@
         "type" : "object",
         "properties" : {
           "extractors" : {
-            "description" : "???",
+            "description" : "Configuration of the apikey extraction modes",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractors"
           },
           "passWithUser" : {
-            "description" : "???",
+            "description" : "Let the request pass if a user is connected",
             "type" : "boolean"
           },
           "wipeBackendRequest" : {
-            "description" : "???",
+            "description" : "Removes the apikeys from the request to not forward it to the backend",
             "type" : "boolean"
           },
           "validate" : {
-            "description" : "???",
+            "description" : "Enabled quotas validation",
             "type" : "boolean"
           },
           "routing" : {
-            "description" : "???",
+            "description" : "Use apikey for routing",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyMatcher"
           }
         }
