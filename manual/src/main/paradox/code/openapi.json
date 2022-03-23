@@ -17361,15 +17361,15 @@
         "properties" : {
           "ratio" : {
             "format" : "double",
-            "description" : "???",
+            "description" : "The ratio of requests impacted",
             "type" : "number"
           },
           "from" : {
-            "description" : "???",
+            "description" : "Lower bound of latency injection",
             "type" : "number"
           },
           "to" : {
-            "description" : "???",
+            "description" : "Upper bound of latency injection",
             "type" : "number"
           }
         }
@@ -17403,17 +17403,17 @@
         "properties" : {
           "compressionLevel" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "The compression level (1 to 9)",
             "type" : "integer"
           },
           "bufferSize" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Compressor buffer size",
             "type" : "integer"
           },
           "chunkedThreshold" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Chunk size",
             "type" : "integer"
           },
           "excludedPatterns" : {
@@ -17421,21 +17421,21 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The excluded path patterns"
           },
           "whiteList" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Allowed mimetypes list"
           },
           "blackList" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Blocked mimetypes list"
           }
         }
       },
@@ -17468,26 +17468,26 @@
         "properties" : {
           "stop_ns" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Stop time in nanoseconds",
             "type" : "integer"
           },
           "start" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Start time",
             "type" : "integer"
           },
           "kind" : {
-            "description" : "???",
+            "description" : "The kind of plugin sequence",
             "type" : "string"
           },
           "stop" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Stop time",
             "type" : "integer"
           },
           "start_ns" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Start time in nanoseconds",
             "type" : "integer"
           },
           "plugins" : {
@@ -17495,11 +17495,11 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.proxy.NgReportPluginSequenceItem"
             },
-            "description" : "???"
+            "description" : "The possible plugins"
           },
           "size" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "The number of plugins",
             "type" : "integer"
           }
         }
@@ -17611,7 +17611,7 @@
         "type" : "object",
         "properties" : {
           "strict" : {
-            "description" : "???",
+            "description" : "apikey only",
             "type" : "boolean"
           },
           "publicPatterns" : {
@@ -17619,14 +17619,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Paths that should not have user or apikey to pass"
           },
           "privatePatterns" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Paths that should have user or apikey to pass"
           }
         }
       },
@@ -17914,11 +17914,11 @@
         "properties" : {
           "code" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "The error code",
             "type" : "integer"
           },
           "contentType" : {
-            "description" : "???",
+            "description" : "The error content-type",
             "type" : "string"
           },
           "headers" : {
@@ -17926,7 +17926,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The error headers"
           }
         }
       },
@@ -17948,7 +17948,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginWrapper.NgSimplePluginWrapper<otoroshi.next.plugins.api.NgRequestTransformer>"
             },
-            "description" : "???"
+            "description" : "The current merged plugins"
           }
         }
       },
@@ -17957,11 +17957,11 @@
         "type" : "object",
         "properties" : {
           "attrs" : {
-            "description" : "???",
+            "description" : "The current request attributes",
             "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
           },
           "otoroshiResponse" : {
-            "description" : "???",
+            "description" : "The current otoroshi response",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginHttpResponse"
           },
           "apikey" : {
@@ -17970,22 +17970,22 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
             } ],
-            "description" : "???"
+            "description" : "The current apikey"
           },
           "snowflake" : {
-            "description" : "???",
+            "description" : "The current request snowflake",
             "type" : "string"
           },
           "report" : {
-            "description" : "???",
+            "description" : "The current execution report",
             "$ref" : "#/components/schemas/otoroshi.next.proxy.NgExecutionReport"
           },
           "route" : {
-            "description" : "???",
+            "description" : "The current matched route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
           },
           "sequence" : {
-            "description" : "???",
+            "description" : "The current plugin sequence",
             "$ref" : "#/components/schemas/otoroshi.next.proxy.NgReportPluginSequence"
           },
           "user" : {
@@ -17994,18 +17994,18 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.models.PrivateAppsUser"
             } ],
-            "description" : "???"
+            "description" : "The current request user"
           },
           "config" : {
-            "description" : "???",
+            "description" : "The current plugin config",
             "type" : "object"
           },
           "rawResponse" : {
-            "description" : "???",
+            "description" : "The current backend response",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginHttpResponse"
           },
           "globalConfig" : {
-            "description" : "???",
+            "description" : "The current global config",
             "type" : "object"
           }
         }
@@ -18158,23 +18158,23 @@
         "type" : "object",
         "properties" : {
           "attrs" : {
-            "description" : "???",
+            "description" : "The current request attributes",
             "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
           },
           "snowflake" : {
-            "description" : "???",
+            "description" : "The current request snowflake",
             "type" : "string"
           },
           "config" : {
-            "description" : "???",
+            "description" : "The current plugin config",
             "type" : "object"
           },
           "globalConfig" : {
-            "description" : "???",
+            "description" : "The current global config",
             "type" : "object"
           },
           "route" : {
-            "description" : "???",
+            "description" : "The current matched route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
           }
         }
@@ -18242,26 +18242,26 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
             } ],
-            "description" : "???"
+            "description" : "The current apikey"
           },
           "route" : {
-            "description" : "???",
+            "description" : "The current matched route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
           },
           "otoroshiRequest" : {
-            "description" : "???",
+            "description" : "The current otoroshi request",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginHttpRequest"
           },
           "config" : {
-            "description" : "???",
+            "description" : "The current plugin config",
             "type" : "object"
           },
           "snowflake" : {
-            "description" : "???",
+            "description" : "The current request snowflake",
             "type" : "string"
           },
           "attrs" : {
-            "description" : "???",
+            "description" : "The current request attributes",
             "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
           },
           "user" : {
@@ -18270,22 +18270,22 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.models.PrivateAppsUser"
             } ],
-            "description" : "???"
+            "description" : "The current request user"
           },
           "rawRequest" : {
-            "description" : "???",
+            "description" : "The current request",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginHttpRequest"
           },
           "globalConfig" : {
-            "description" : "???",
+            "description" : "The current global config",
             "type" : "object"
           },
           "sequence" : {
-            "description" : "???",
+            "description" : "The current plugin sequence",
             "$ref" : "#/components/schemas/otoroshi.next.proxy.NgReportPluginSequence"
           },
           "report" : {
-            "description" : "???",
+            "description" : "The current execution report",
             "$ref" : "#/components/schemas/otoroshi.next.proxy.NgExecutionReport"
           }
         }
@@ -18727,7 +18727,7 @@
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "Internal value",
             "type" : "object"
           }
         }
@@ -18865,15 +18865,15 @@
         "type" : "object",
         "properties" : {
           "id" : {
-            "description" : "???",
+            "description" : "Report id",
             "type" : "string"
           },
           "reporting" : {
-            "description" : "???",
+            "description" : "Reporting enabled",
             "type" : "boolean"
           },
           "creation" : {
-            "description" : "???",
+            "description" : "Date of creation",
             "type" : "number"
           }
         }
@@ -19815,7 +19815,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "JQ filter to transform request body"
           }
         }
       },
@@ -19912,38 +19912,38 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on none metadata keys being present"
           },
           "allMetaKeysIn" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on all metadata keys being present"
           },
           "allMetaIn" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on all metadata being present"
           },
           "noneMetaIn" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on none metadata being present"
           },
           "oneTagIn" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on one tag being present"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "Tags and metadata matching enabled",
             "type" : "boolean"
           },
           "oneMetaIn" : {
@@ -19951,28 +19951,28 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on none metadata being present"
           },
           "allTagsIn" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on all tags being present"
           },
           "oneMetaKeyIn" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on one metadata being present"
           },
           "noneTagIn" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on none tags being present"
           }
         }
       },
@@ -20048,7 +20048,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "JQ filter to transform response body"
           }
         }
       },
@@ -20350,31 +20350,31 @@
         "type" : "object",
         "properties" : {
           "attrs" : {
-            "description" : "???",
+            "description" : "The current request attributes",
             "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
           },
           "globalConfig" : {
-            "description" : "???",
+            "description" : "The current global config",
             "type" : "object"
           },
           "report" : {
-            "description" : "???",
+            "description" : "The current execution report",
             "$ref" : "#/components/schemas/otoroshi.next.proxy.NgExecutionReport"
           },
           "sequence" : {
-            "description" : "???",
+            "description" : "The current plugin sequence",
             "$ref" : "#/components/schemas/otoroshi.next.proxy.NgReportPluginSequence"
           },
           "route" : {
-            "description" : "???",
+            "description" : "The current matched route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
           },
           "snowflake" : {
-            "description" : "???",
+            "description" : "The current request snowflake",
             "type" : "string"
           },
           "config" : {
-            "description" : "???",
+            "description" : "The current plugin config",
             "type" : "object"
           }
         }
@@ -20461,7 +20461,7 @@
         "type" : "object",
         "properties" : {
           "allowCredentials" : {
-            "description" : "???",
+            "description" : "Allowed credentials",
             "type" : "boolean"
           },
           "maxAge" : {
@@ -20470,10 +20470,10 @@
             }, {
               "type" : "number"
             } ],
-            "description" : "???"
+            "description" : "cors max age"
           },
           "allowOrigin" : {
-            "description" : "???",
+            "description" : "Allowed cors origins",
             "type" : "string"
           },
           "allowMethods" : {
@@ -20481,28 +20481,28 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Allowed cors methods"
           },
           "excludedPatterns" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Paths without cors"
           },
           "allowHeaders" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Allowed cors headers"
           },
           "exposeHeaders" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Exposed cors headers"
           }
         }
       },
@@ -20977,7 +20977,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Name of removed headers in request"
           }
         }
       },
@@ -20986,27 +20986,27 @@
         "type" : "object",
         "properties" : {
           "robotTxtContent" : {
-            "description" : "???",
+            "description" : "Content of /robots.txt",
             "type" : "string"
           },
           "metaContent" : {
-            "description" : "???",
+            "description" : "content of the <meta name='robots' /> tag",
             "type" : "string"
           },
           "robotEnabled" : {
-            "description" : "???",
+            "description" : "/robots.txt enabled",
             "type" : "boolean"
           },
           "headerContent" : {
-            "description" : "???",
+            "description" : "Content of the X-Robots-Tag headers",
             "type" : "string"
           },
           "headerEnabled" : {
-            "description" : "???",
+            "description" : "Header enabled",
             "type" : "boolean"
           },
           "metaEnabled" : {
-            "description" : "???",
+            "description" : "Meta tag enabled",
             "type" : "boolean"
           }
         }
@@ -21058,7 +21058,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginWrapper.NgSimplePluginWrapper<otoroshi.next.plugins.api.NgAccessValidator>"
             },
-            "description" : "???"
+            "description" : "The current merged plugins"
           }
         }
       },
@@ -21720,7 +21720,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Name of removed headers in response"
           }
         }
       },
@@ -22125,11 +22125,11 @@
         "type" : "object",
         "properties" : {
           "method" : {
-            "description" : "???",
+            "description" : "The http method (can be *)",
             "type" : "string"
           },
           "path" : {
-            "description" : "???",
+            "description" : "The request path (can include domain)",
             "type" : "string"
           }
         }
@@ -22178,14 +22178,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Remove query params"
           },
           "rename" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Rename query params to"
           }
         }
       },
@@ -22428,7 +22428,7 @@
         "properties" : {
           "status" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "status of the response",
             "type" : "integer"
           },
           "headers" : {
@@ -22436,10 +22436,10 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "headers of the response"
           },
           "body" : {
-            "description" : "???",
+            "description" : "Body of the response",
             "type" : "string"
           }
         }
@@ -22499,7 +22499,7 @@
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "Internal value",
             "type" : "object"
           }
         }
@@ -22524,7 +22524,7 @@
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "Internal value",
             "type" : "object"
           }
         }
@@ -22830,7 +22830,7 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgLargeRequestFaultConfig"
             } ],
-            "description" : "???"
+            "description" : "Config. for large request body faults"
           },
           "largeResponseFaultConfig" : {
             "oneOf" : [ {
@@ -22838,7 +22838,7 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgLargeResponseFaultConfig"
             } ],
-            "description" : "???"
+            "description" : "Config. for large response faults"
           },
           "latencyInjectionFaultConfig" : {
             "oneOf" : [ {
@@ -22846,7 +22846,7 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgLatencyInjectionFaultConfig"
             } ],
-            "description" : "???"
+            "description" : "Config. for latency injection faults"
           },
           "badResponsesFaultConfig" : {
             "oneOf" : [ {
@@ -22854,7 +22854,7 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgBadResponsesFaultConfig"
             } ],
-            "description" : "???"
+            "description" : "Config. for bad responses faults"
           }
         }
       },
@@ -22924,7 +22924,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Value of the headers"
           }
         }
       },
@@ -23411,11 +23411,11 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The response headers"
           },
           "status" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "The response status",
             "type" : "integer"
           }
         }
@@ -23760,15 +23760,15 @@
         "type" : "object",
         "properties" : {
           "url" : {
-            "description" : "???",
+            "description" : "The request url",
             "type" : "string"
           },
           "method" : {
-            "description" : "???",
+            "description" : "The request method",
             "type" : "string"
           },
           "version" : {
-            "description" : "???",
+            "description" : "The request http version",
             "type" : "string"
           },
           "backend" : {
@@ -23777,14 +23777,14 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.next.models.NgTarget"
             } ],
-            "description" : "???"
+            "description" : "The current route backend"
           },
           "headers" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The request headers"
           }
         }
       },
@@ -24246,14 +24246,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Remove query params"
           },
           "rename" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Rename query params to"
           }
         }
       },
@@ -24358,7 +24358,7 @@
         "properties" : {
           "status" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Status of the response",
             "type" : "integer"
           },
           "headers" : {
@@ -24366,10 +24366,10 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Headers of the response"
           },
           "body" : {
-            "description" : "???",
+            "description" : "Body of the response",
             "type" : "string"
           }
         }
@@ -24568,7 +24568,7 @@
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "Internal value",
             "type" : "object"
           }
         }
@@ -24582,15 +24582,15 @@
         "type" : "object",
         "properties" : {
           "config" : {
-            "description" : "???",
+            "description" : "The current plugin config",
             "type" : "object"
           },
           "otoroshiResponse" : {
-            "description" : "???",
+            "description" : "The current otoroshi response",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginHttpResponse"
           },
           "report" : {
-            "description" : "???",
+            "description" : "The current execution report",
             "$ref" : "#/components/schemas/otoroshi.next.proxy.NgExecutionReport"
           },
           "maybeCauseId" : {
@@ -24599,10 +24599,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The current cause"
           },
           "message" : {
-            "description" : "???",
+            "description" : "The current error message",
             "type" : "string"
           },
           "apikey" : {
@@ -24611,23 +24611,23 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
             } ],
-            "description" : "???"
+            "description" : "The current apikey"
           },
           "route" : {
-            "description" : "???",
+            "description" : "The current matched route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
           },
           "callAttempts" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "The current call attempts",
             "type" : "integer"
           },
           "globalConfig" : {
-            "description" : "???",
+            "description" : "The current global config",
             "type" : "object"
           },
           "attrs" : {
-            "description" : "???",
+            "description" : "The current request attributes",
             "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
           },
           "user" : {
@@ -24636,10 +24636,10 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.models.PrivateAppsUser"
             } ],
-            "description" : "???"
+            "description" : "The current request user"
           },
           "snowflake" : {
-            "description" : "???",
+            "description" : "The current request snowflake",
             "type" : "string"
           }
         }
@@ -24870,7 +24870,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "JQ filter to transform response body"
           },
           "jqRequestFilter" : {
             "oneOf" : [ {
@@ -24878,14 +24878,14 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "JQ filter to transform request body"
           },
           "preserveQuery" : {
-            "description" : "???",
+            "description" : "Preserve query params",
             "type" : "boolean"
           },
           "convertRequestBodyToXml" : {
-            "description" : "???",
+            "description" : "Convert json body to xml",
             "type" : "boolean"
           },
           "charset" : {
@@ -24894,7 +24894,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The body charset"
           },
           "url" : {
             "oneOf" : [ {
@@ -24902,7 +24902,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "SOAP endpoint"
           },
           "action" : {
             "oneOf" : [ {
@@ -24910,10 +24910,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The soap action if one"
           },
           "envelope" : {
-            "description" : "???",
+            "description" : "The soap envelope to call",
             "type" : "string"
           }
         }
@@ -24977,11 +24977,11 @@
         "properties" : {
           "code" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Redirection status code used",
             "type" : "integer"
           },
           "to" : {
-            "description" : "???",
+            "description" : "The redirection url",
             "type" : "string"
           }
         }
@@ -25260,23 +25260,23 @@
         "type" : "object",
         "properties" : {
           "config" : {
-            "description" : "???",
+            "description" : "The current plugin config",
             "type" : "object"
           },
           "snowflake" : {
-            "description" : "???",
+            "description" : "The current request snowflake",
             "type" : "string"
           },
           "route" : {
-            "description" : "???",
+            "description" : "The current matched route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
           },
           "attrs" : {
-            "description" : "???",
+            "description" : "The current request attributes",
             "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
           },
           "globalConfig" : {
-            "description" : "???",
+            "description" : "The current global config",
             "type" : "object"
           }
         }
@@ -25458,7 +25458,7 @@
         "properties" : {
           "ratio" : {
             "format" : "double",
-            "description" : "???",
+            "description" : "bad response ratio",
             "type" : "number"
           },
           "responses" : {
@@ -25466,7 +25466,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgBadResponse"
             },
-            "description" : "???"
+            "description" : "possible response"
           }
         }
       },
@@ -25722,7 +25722,7 @@
         "type" : "object",
         "properties" : {
           "allowLast" : {
-            "description" : "???",
+            "description" : "Evaluates allowed paths after forbidden and not found",
             "type" : "boolean"
           },
           "allowed" : {
@@ -25730,21 +25730,21 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgRestrictionPath"
             },
-            "description" : "???"
+            "description" : "Allowed paths"
           },
           "forbidden" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgRestrictionPath"
             },
-            "description" : "???"
+            "description" : "Forbidden paths"
           },
           "notFound" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgRestrictionPath"
             },
-            "description" : "???"
+            "description" : "Not found paths"
           }
         }
       },
@@ -25951,19 +25951,19 @@
         "type" : "object",
         "properties" : {
           "route" : {
-            "description" : "???",
+            "description" : "The current matched route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
           },
           "snowflake" : {
-            "description" : "???",
+            "description" : "The current request snowflake",
             "type" : "string"
           },
           "attrs" : {
-            "description" : "???",
+            "description" : "The current request attributes",
             "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
           },
           "config" : {
-            "description" : "???",
+            "description" : "The current plugin config",
             "type" : "object"
           }
         }
@@ -25973,7 +25973,7 @@
         "type" : "object",
         "properties" : {
           "roles" : {
-            "description" : "???",
+            "description" : "roles field name",
             "type" : "string"
           },
           "allow" : {
@@ -25981,10 +25981,10 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Allowed roles"
           },
           "allowAll" : {
-            "description" : "???",
+            "description" : "Needs to have all allowed roles",
             "type" : "boolean"
           },
           "rolePrefix" : {
@@ -25993,7 +25993,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Optional value that will prefix roles in tokens"
           },
           "jwtPath" : {
             "oneOf" : [ {
@@ -26001,7 +26001,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Where to find role field in jwt token user"
           },
           "apikeyPath" : {
             "oneOf" : [ {
@@ -26009,14 +26009,14 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Where to find role field in an apikey"
           },
           "deny" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Denied roles"
           },
           "userPath" : {
             "oneOf" : [ {
@@ -26024,10 +26024,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Where to find role field in a user"
           },
           "denyAll" : {
-            "description" : "???",
+            "description" : "Needs to have all denied roles",
             "type" : "boolean"
           }
         }
@@ -26179,7 +26179,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "JQ filter to transform response body"
           },
           "jqRequestFilter" : {
             "oneOf" : [ {
@@ -26187,14 +26187,14 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "JQ filter to transform request body"
           },
           "preserveQuery" : {
-            "description" : "???",
+            "description" : "Preserve query params",
             "type" : "boolean"
           },
           "convertRequestBodyToXml" : {
-            "description" : "???",
+            "description" : "Convert json body to xml",
             "type" : "boolean"
           },
           "charset" : {
@@ -26203,7 +26203,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The body charset"
           },
           "url" : {
             "oneOf" : [ {
@@ -26211,7 +26211,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "SOAP endpoint"
           },
           "action" : {
             "oneOf" : [ {
@@ -26219,10 +26219,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The soap action if one"
           },
           "envelope" : {
-            "description" : "???",
+            "description" : "The soap envelope to call",
             "type" : "string"
           }
         }
@@ -26391,10 +26391,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The id of the auth. module"
           },
           "passWithApikey" : {
-            "description" : "???",
+            "description" : "Pass the request if an apikey is present",
             "type" : "boolean"
           }
         }
@@ -26409,7 +26409,7 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgLargeRequestFaultConfig"
             } ],
-            "description" : "???"
+            "description" : "Config. for large request body faults"
           },
           "largeResponseFaultConfig" : {
             "oneOf" : [ {
@@ -26417,7 +26417,7 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgLargeResponseFaultConfig"
             } ],
-            "description" : "???"
+            "description" : "Config. for large response faults"
           },
           "latencyInjectionFaultConfig" : {
             "oneOf" : [ {
@@ -26425,7 +26425,7 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgLatencyInjectionFaultConfig"
             } ],
-            "description" : "???"
+            "description" : "Config. for latency injection faults"
           },
           "badResponsesFaultConfig" : {
             "oneOf" : [ {
@@ -26433,7 +26433,7 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgBadResponsesFaultConfig"
             } ],
-            "description" : "???"
+            "description" : "Config. for bad responses faults"
           }
         }
       },
@@ -26744,7 +26744,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Id of the jwt verifiers"
           }
         }
       },
@@ -26753,16 +26753,16 @@
         "type" : "object",
         "properties" : {
           "kind" : {
-            "description" : "???",
+            "description" : "Kind of distributed tracing collector (jaeger, zipkin)",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.W3CTracingConfigKind"
           },
           "endpoint" : {
-            "description" : "???",
+            "description" : "Endpoint of distributed tracing collection",
             "type" : "string"
           },
           "timeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Request timeout",
             "type" : "integer"
           },
           "baggage" : {
@@ -26770,7 +26770,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Support baggage"
           }
         }
       },
@@ -26783,7 +26783,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginWrapper.NgSimplePluginWrapper<otoroshi.next.plugins.api.NgPreRouting>"
             },
-            "description" : "???"
+            "description" : "The current merged plugins"
           }
         }
       },
@@ -26897,7 +26897,7 @@
         "type" : "object",
         "properties" : {
           "finger" : {
-            "description" : "???",
+            "description" : "Using emoji instead of 0 in the response",
             "type" : "boolean"
           },
           "addresses" : {
@@ -26905,7 +26905,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "IP address that will get endless responses"
           }
         }
       },
@@ -27128,7 +27128,7 @@
         "type" : "object",
         "properties" : {
           "config" : {
-            "description" : "???",
+            "description" : "Internal component",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.W3CTracingConfig"
           }
         }
@@ -27201,7 +27201,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Name of the headers"
           }
         }
       },
@@ -27411,12 +27411,12 @@
         "properties" : {
           "ratio" : {
             "format" : "double",
-            "description" : "???",
+            "description" : "The ratio of requests impacted",
             "type" : "number"
           },
           "additionalRequestSize" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Amount of bytes added of the request body",
             "type" : "integer"
           }
         }
@@ -27459,7 +27459,7 @@
         "type" : "object",
         "properties" : {
           "roles" : {
-            "description" : "???",
+            "description" : "roles field name",
             "type" : "string"
           },
           "allow" : {
@@ -27467,10 +27467,10 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Allowed roles"
           },
           "allowAll" : {
-            "description" : "???",
+            "description" : "Needs to have all allowed roles",
             "type" : "boolean"
           },
           "rolePrefix" : {
@@ -27479,7 +27479,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Optional value that will prefix roles in tokens"
           },
           "jwtPath" : {
             "oneOf" : [ {
@@ -27487,7 +27487,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Where to find role field in jwt token user"
           },
           "apikeyPath" : {
             "oneOf" : [ {
@@ -27495,14 +27495,14 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Where to find role field in an apikey"
           },
           "deny" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Denied roles"
           },
           "userPath" : {
             "oneOf" : [ {
@@ -27510,10 +27510,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Where to find role field in a user"
           },
           "denyAll" : {
-            "description" : "???",
+            "description" : "Needs to have all denied roles",
             "type" : "boolean"
           }
         }
@@ -27529,11 +27529,11 @@
         "properties" : {
           "traffic" : {
             "format" : "double",
-            "description" : "???",
+            "description" : "Traffic ratio for canary targets",
             "type" : "number"
           },
           "root" : {
-            "description" : "???",
+            "description" : "Root for canary targets",
             "type" : "string"
           },
           "targets" : {
@@ -27541,7 +27541,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.models.NgTarget"
             },
-            "description" : "???"
+            "description" : "Canary targets"
           }
         }
       },
@@ -27687,11 +27687,11 @@
         "type" : "object",
         "properties" : {
           "config" : {
-            "description" : "???",
+            "description" : "The current plugin config",
             "type" : "object"
           },
           "route" : {
-            "description" : "???",
+            "description" : "The current matched route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
           },
           "user" : {
@@ -27700,18 +27700,18 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.models.PrivateAppsUser"
             } ],
-            "description" : "???"
+            "description" : "The current request user"
           },
           "globalConfig" : {
-            "description" : "???",
+            "description" : "The current global config",
             "type" : "object"
           },
           "sequence" : {
-            "description" : "???",
+            "description" : "The current plugin sequence",
             "$ref" : "#/components/schemas/otoroshi.next.proxy.NgReportPluginSequence"
           },
           "attrs" : {
-            "description" : "???",
+            "description" : "The current request attributes",
             "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
           },
           "apikey" : {
@@ -27720,14 +27720,14 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
             } ],
-            "description" : "???"
+            "description" : "The current apikey"
           },
           "report" : {
-            "description" : "???",
+            "description" : "The current execution report",
             "$ref" : "#/components/schemas/otoroshi.next.proxy.NgExecutionReport"
           },
           "snowflake" : {
-            "description" : "???",
+            "description" : "The current request snowflake",
             "type" : "string"
           }
         }
@@ -27780,12 +27780,12 @@
         "properties" : {
           "ratio" : {
             "format" : "double",
-            "description" : "???",
+            "description" : "The ratio of responses impacted",
             "type" : "number"
           },
           "additionalResponseSize" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Amount of bytes added of the response body",
             "type" : "integer"
           }
         }
@@ -27842,7 +27842,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Ip addresses targeted"
           }
         }
       },
@@ -28012,7 +28012,7 @@
         "properties" : {
           "status" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Status of the response",
             "type" : "integer"
           },
           "headers" : {
@@ -28020,10 +28020,10 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Headers of the response"
           },
           "body" : {
-            "description" : "???",
+            "description" : "Body of the response",
             "type" : "string"
           }
         }
@@ -28038,7 +28038,7 @@
         "type" : "object",
         "properties" : {
           "strict" : {
-            "description" : "???",
+            "description" : "apikey only",
             "type" : "boolean"
           },
           "publicPatterns" : {
@@ -28046,14 +28046,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Paths that should not have user or apikey to pass"
           },
           "privatePatterns" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Paths that should have user or apikey to pass"
           }
         }
       },
@@ -28083,38 +28083,38 @@
         "properties" : {
           "start" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Start time",
             "type" : "integer"
           },
           "in" : {
-            "description" : "???",
+            "description" : "Context in",
             "type" : "object"
           },
           "plugin" : {
-            "description" : "???",
+            "description" : "Plugin id",
             "type" : "string"
           },
           "stop_ns" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Stop time in nanoseconds",
             "type" : "integer"
           },
           "name" : {
-            "description" : "???",
+            "description" : "Plugin name",
             "type" : "string"
           },
           "out" : {
-            "description" : "???",
+            "description" : "Context out",
             "type" : "object"
           },
           "stop" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Stop time",
             "type" : "integer"
           },
           "start_ns" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Start time in nanoseconds",
             "type" : "integer"
           }
         }
@@ -28146,19 +28146,19 @@
         "type" : "object",
         "properties" : {
           "config" : {
-            "description" : "???",
+            "description" : "The current plugin config",
             "type" : "object"
           },
           "route" : {
-            "description" : "???",
+            "description" : "The current matched route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
           },
           "attrs" : {
-            "description" : "???",
+            "description" : "The current request attributes",
             "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
           },
           "snowflake" : {
-            "description" : "???",
+            "description" : "The current request snowflake",
             "type" : "string"
           }
         }
@@ -28168,7 +28168,7 @@
         "type" : "object",
         "properties" : {
           "allowLast" : {
-            "description" : "???",
+            "description" : "Evaluates allowed paths after forbidden and not found",
             "type" : "boolean"
           },
           "allowed" : {
@@ -28176,21 +28176,21 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgRestrictionPath"
             },
-            "description" : "???"
+            "description" : "Allowed paths"
           },
           "forbidden" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgRestrictionPath"
             },
-            "description" : "???"
+            "description" : "Forbidden paths"
           },
           "notFound" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgRestrictionPath"
             },
-            "description" : "???"
+            "description" : "Not found paths"
           }
         }
       },
@@ -28291,16 +28291,16 @@
         "type" : "object",
         "properties" : {
           "kind" : {
-            "description" : "???",
+            "description" : "Kind of distributed tracing collector (jaeger, zipkin)",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.W3CTracingConfigKind"
           },
           "endpoint" : {
-            "description" : "???",
+            "description" : "Endpoint of distributed tracing collection",
             "type" : "string"
           },
           "timeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Request timeout",
             "type" : "integer"
           },
           "baggage" : {
@@ -28308,7 +28308,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Support baggage"
           }
         }
       },
@@ -28354,27 +28354,27 @@
         "type" : "object",
         "properties" : {
           "robotTxtContent" : {
-            "description" : "???",
+            "description" : "Content of /robots.txt",
             "type" : "string"
           },
           "metaContent" : {
-            "description" : "???",
+            "description" : "content of the <meta name='robots' /> tag",
             "type" : "string"
           },
           "robotEnabled" : {
-            "description" : "???",
+            "description" : "/robots.txt enabled",
             "type" : "boolean"
           },
           "headerContent" : {
-            "description" : "???",
+            "description" : "Content of the X-Robots-Tag headers",
             "type" : "string"
           },
           "headerEnabled" : {
-            "description" : "???",
+            "description" : "Header enabled",
             "type" : "boolean"
           },
           "metaEnabled" : {
-            "description" : "???",
+            "description" : "Meta tag enabled",
             "type" : "boolean"
           }
         }
@@ -28480,11 +28480,11 @@
         "properties" : {
           "code" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Redirection status code used",
             "type" : "integer"
           },
           "to" : {
-            "description" : "???",
+            "description" : "The redirection url",
             "type" : "string"
           }
         }
@@ -28563,28 +28563,28 @@
         "type" : "object",
         "properties" : {
           "message" : {
-            "description" : "???",
+            "description" : "The error message",
             "type" : "string"
           },
           "status" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "The error http status code",
             "type" : "integer"
           },
           "attrs" : {
-            "description" : "???",
+            "description" : "The current request attributes",
             "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
           },
           "origin" : {
-            "description" : "???",
+            "description" : "The request origin",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgRequestOrigin"
           },
           "snowflake" : {
-            "description" : "???",
+            "description" : "The current request snowflake",
             "type" : "string"
           },
           "config" : {
-            "description" : "???",
+            "description" : "The current plugin config",
             "type" : "object"
           }
         }
@@ -28642,7 +28642,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginWrapper.NgSimplePluginWrapper<otoroshi.next.plugins.api.NgRequestTransformer>"
             },
-            "description" : "???"
+            "description" : "The current merged plugins"
           }
         }
       },
