@@ -17219,7 +17219,7 @@
         }
       },
       "otoroshi.next.models.NgContextualPlugins" : {
-        "description" : "???",
+        "description" : "The plugins that will be triggered for the current request",
         "type" : "object",
         "properties" : {
           "_env" : {
@@ -17243,7 +17243,7 @@
         "properties" : { }
       },
       "otoroshi.next.models.KvStoredNgTargetDataStore" : {
-        "description" : "???",
+        "description" : "Datastore for targets",
         "type" : "object",
         "properties" : {
           "_env" : {
@@ -19787,7 +19787,7 @@
         }
       },
       "otoroshi.next.models.KvNgRouteDataStore" : {
-        "description" : "???",
+        "description" : "Datastore for routes",
         "type" : "object",
         "properties" : {
           "redisCli" : {
@@ -19890,7 +19890,7 @@
         }
       },
       "otoroshi.next.models.KvNgServiceDataStore" : {
-        "description" : "???",
+        "description" : "Datastore for services",
         "type" : "object",
         "properties" : {
           "_env" : {

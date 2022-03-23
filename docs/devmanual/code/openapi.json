@@ -1696,7 +1696,7 @@
     "/api/experimental/routes/_form" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "The form description of the current controllers entity",
         "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.form",
         "parameters" : [ ],
         "security" : [ {
@@ -1738,7 +1738,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/The form description of the current controllers entity"
                 }
               }
             }
@@ -1853,7 +1853,7 @@
     "/api/experimental/services/_form" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "The form description of the current controllers entity",
         "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.form",
         "parameters" : [ ],
         "security" : [ {
@@ -1895,7 +1895,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/The form description of the current controllers entity"
                 }
               }
             }
@@ -6216,7 +6216,7 @@
     "/api/experimental/targets/_form" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "The form description of the current controllers entity",
         "operationId" : "otoroshi.next.controllers.adminapi.NgTargetsController.form",
         "parameters" : [ ],
         "security" : [ {
@@ -6258,7 +6258,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/The form description of the current controllers entity"
                 }
               }
             }
@@ -7710,7 +7710,7 @@
     "/api/experimental/frontends/_form" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "The form description of the current controllers entity",
         "operationId" : "otoroshi.next.controllers.adminapi.NgFrontendsController.form",
         "parameters" : [ ],
         "security" : [ {
@@ -7752,7 +7752,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/The form description of the current controllers entity"
                 }
               }
             }
@@ -10162,7 +10162,7 @@
     "/api/experimental/backends/_form" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "The form description of the current controllers entity",
         "operationId" : "otoroshi.next.controllers.adminapi.NgBackendsController.form",
         "parameters" : [ ],
         "security" : [ {
@@ -10204,7 +10204,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/The form description of the current controllers entity"
                 }
               }
             }
@@ -17190,7 +17190,7 @@
         }
       },
       "otoroshi.storage.drivers.rediscala.RedisClusterStore" : {
-        "description" : "???",
+        "description" : "Specific redis mode storage implementation",
         "type" : "object",
         "properties" : { }
       },
@@ -17219,15 +17219,15 @@
         }
       },
       "otoroshi.next.models.NgContextualPlugins" : {
-        "description" : "???",
+        "description" : "The plugins that will be triggered for the current request",
         "type" : "object",
         "properties" : {
           "_env" : {
-            "description" : "???",
+            "description" : "The current env",
             "$ref" : "#/components/schemas/otoroshi.env.Env"
           },
           "nextPluginsMerge" : {
-            "description" : "???",
+            "description" : "Try to merge synchronous and contiguous plugins",
             "type" : "boolean"
           }
         }
@@ -17243,15 +17243,15 @@
         "properties" : { }
       },
       "otoroshi.next.models.KvStoredNgTargetDataStore" : {
-        "description" : "???",
+        "description" : "Datastore for targets",
         "type" : "object",
         "properties" : {
           "_env" : {
-            "description" : "???",
+            "description" : "The current env",
             "$ref" : "#/components/schemas/otoroshi.env.Env"
           },
           "redisCli" : {
-            "description" : "???",
+            "description" : "The current datastore access",
             "$ref" : "#/components/schemas/otoroshi.storage.RedisLike"
           }
         }
@@ -17596,7 +17596,7 @@
         }
       },
       "otoroshi.storage.RedisLike" : {
-        "description" : "???",
+        "description" : "A redis like representation of a datastore",
         "type" : "object",
         "properties" : { }
       },
@@ -17784,7 +17784,7 @@
         }
       },
       "otoroshi.storage.drivers.leveldb.LevelDbRedis" : {
-        "description" : "???",
+        "description" : "Mongo DB storage implementation",
         "type" : "object",
         "properties" : { }
       },
@@ -17807,7 +17807,7 @@
             "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.KubernetesConfig"
           },
           "env" : {
-            "description" : "???",
+            "description" : "The current env",
             "$ref" : "#/components/schemas/otoroshi.env.Env"
           }
         }
@@ -17891,7 +17891,7 @@
         }
       },
       "otoroshi.storage.drivers.lettuce.LettuceRedis" : {
-        "description" : "???",
+        "description" : "Redis storage implementation",
         "type" : "object",
         "properties" : { }
       },
@@ -18291,11 +18291,11 @@
         }
       },
       "otoroshi.storage.drivers.mongo.MongoRedis" : {
-        "description" : "???",
+        "description" : "Mongo DB storage implementation",
         "type" : "object",
         "properties" : {
           "dbName" : {
-            "description" : "???",
+            "description" : "The current db name",
             "type" : "string"
           }
         }
@@ -18487,14 +18487,14 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
             },
-            "description" : "???"
+            "description" : "Current matched route"
           },
           "path" : {
-            "description" : "???",
+            "description" : "Current matched path",
             "type" : "string"
           },
           "noMoreSegments" : {
-            "description" : "???",
+            "description" : "Is the path fully matched",
             "type" : "boolean"
           }
         }
@@ -19457,7 +19457,7 @@
         }
       },
       "otoroshi.models.DefaultTemplates" : {
-        "description" : "???",
+        "description" : "The template that will be merged with newly created entities",
         "type" : "object",
         "properties" : {
           "team" : {
@@ -19466,7 +19466,7 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "the template for the team entities"
           },
           "script" : {
             "oneOf" : [ {
@@ -19474,7 +19474,7 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "the template for the script entities"
           },
           "apikey" : {
             "oneOf" : [ {
@@ -19482,7 +19482,7 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "the template for the apikey entities"
           },
           "group" : {
             "oneOf" : [ {
@@ -19490,7 +19490,7 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "the template for the group entities"
           },
           "tcpService" : {
             "oneOf" : [ {
@@ -19498,7 +19498,7 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "the template for the tcpService entities"
           },
           "verifier" : {
             "oneOf" : [ {
@@ -19506,7 +19506,7 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "the template for the verifier entities"
           },
           "service" : {
             "oneOf" : [ {
@@ -19514,7 +19514,7 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "the template for the service entities"
           },
           "target" : {
             "oneOf" : [ {
@@ -19522,7 +19522,7 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "the template for the target entities"
           },
           "certificate" : {
             "oneOf" : [ {
@@ -19530,7 +19530,7 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "the template for the certificate entities"
           },
           "dataExporter" : {
             "oneOf" : [ {
@@ -19538,7 +19538,7 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "the template for the dataExporter entities"
           },
           "route" : {
             "oneOf" : [ {
@@ -19546,7 +19546,7 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "the template for the route entities"
           },
           "backend" : {
             "oneOf" : [ {
@@ -19554,7 +19554,7 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "the template for the backend entities"
           },
           "template" : {
             "oneOf" : [ {
@@ -19562,7 +19562,7 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "the template for the template entities"
           },
           "tenant" : {
             "oneOf" : [ {
@@ -19570,7 +19570,7 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "the template for the tenant entities"
           },
           "authConfig" : {
             "oneOf" : [ {
@@ -19578,7 +19578,7 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "the template for the authConfig entities"
           },
           "descriptor" : {
             "oneOf" : [ {
@@ -19586,7 +19586,7 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "the template for the descriptor entities"
           }
         }
       },
@@ -19640,7 +19640,7 @@
             "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.KubernetesClient"
           },
           "env" : {
-            "description" : "???",
+            "description" : "The current env",
             "$ref" : "#/components/schemas/otoroshi.env.Env"
           }
         }
@@ -19731,7 +19731,7 @@
         "properties" : { }
       },
       "otoroshi.storage.drivers.rediscala.RedisLFStore" : {
-        "description" : "???",
+        "description" : "Specific redis mode storage implementation",
         "type" : "object",
         "properties" : { }
       },
@@ -19787,15 +19787,15 @@
         }
       },
       "otoroshi.next.models.KvNgRouteDataStore" : {
-        "description" : "???",
+        "description" : "Datastore for routes",
         "type" : "object",
         "properties" : {
           "redisCli" : {
-            "description" : "???",
+            "description" : "The current datastore access",
             "$ref" : "#/components/schemas/otoroshi.storage.RedisLike"
           },
           "_env" : {
-            "description" : "???",
+            "description" : "The current env",
             "$ref" : "#/components/schemas/otoroshi.env.Env"
           }
         }
@@ -19890,15 +19890,15 @@
         }
       },
       "otoroshi.next.models.KvNgServiceDataStore" : {
-        "description" : "???",
+        "description" : "Datastore for services",
         "type" : "object",
         "properties" : {
           "_env" : {
-            "description" : "???",
+            "description" : "The current env",
             "$ref" : "#/components/schemas/otoroshi.env.Env"
           },
           "redisCli" : {
-            "description" : "???",
+            "description" : "The current datastore access",
             "$ref" : "#/components/schemas/otoroshi.storage.RedisLike"
           }
         }
@@ -20128,7 +20128,7 @@
         }
       },
       "otoroshi.storage.drivers.lettuce.LettuceRedisStandaloneAndSentinels" : {
-        "description" : "???",
+        "description" : "Redis sentinel storage implementation",
         "type" : "object",
         "properties" : { }
       },
@@ -21246,7 +21246,7 @@
         "properties" : { }
       },
       "otoroshi.utils.TypedMap" : {
-        "description" : "???",
+        "description" : "A map with typed keys",
         "type" : "object",
         "properties" : { }
       },
@@ -21307,7 +21307,7 @@
         "properties" : { }
       },
       "otoroshi.storage.drivers.rediscala.RedisSentinelLFStore" : {
-        "description" : "???",
+        "description" : "Specific redis mode storage implementation",
         "type" : "object",
         "properties" : { }
       },
@@ -21597,15 +21597,15 @@
         "type" : "object",
         "properties" : {
           "route" : {
-            "description" : "???",
+            "description" : "The current route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
           },
           "domain" : {
-            "description" : "???",
+            "description" : "The current domain of the route",
             "type" : "string"
           },
           "path" : {
-            "description" : "???",
+            "description" : "The current of the route",
             "type" : "string"
           }
         }
@@ -21616,11 +21616,11 @@
         "properties" : { }
       },
       "otoroshi.storage.drivers.reactivepg.ReactivePgRedis" : {
-        "description" : "???",
+        "description" : "Postgresql storage implementation",
         "type" : "object",
         "properties" : {
           "avoidJsonPath" : {
-            "description" : "???",
+            "description" : "Avoid using jsonpath operators",
             "type" : "boolean"
           }
         }
@@ -21725,11 +21725,11 @@
         }
       },
       "otoroshi.env.Env" : {
-        "description" : "???",
+        "description" : "The main otoroshi technical context containing everything to make otoroshi work",
         "type" : "object",
         "properties" : {
           "circuitBeakersHolder" : {
-            "description" : "???",
+            "description" : "The current instance of circuit breakers holder",
             "$ref" : "#/components/schemas/otoroshi.gateway.CircuitBreakersHolder"
           }
         }
@@ -21864,7 +21864,7 @@
             "description" : "Optional CleverCloud configuration"
           },
           "templates" : {
-            "description" : "???",
+            "description" : "The otoroshi default templates for entities",
             "$ref" : "#/components/schemas/otoroshi.models.DefaultTemplates"
           },
           "endlessIpAddresses" : {
@@ -22232,7 +22232,7 @@
         }
       },
       "otoroshi.storage.drivers.rediscala.RedisSentinelStore" : {
-        "description" : "???",
+        "description" : "Specific redis mode storage implementation",
         "type" : "object",
         "properties" : { }
       },
@@ -22530,11 +22530,11 @@
         }
       },
       "otoroshi.utils.http.DN" : {
-        "description" : "???",
+        "description" : "A representation of a Distinguished Name",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "The raw textual value of a DN",
             "type" : "string"
           }
         }
@@ -22545,7 +22545,7 @@
         "properties" : { }
       },
       "otoroshi.storage.drivers.rediscala.RedisCPStore" : {
-        "description" : "???",
+        "description" : "Specific redis mode storage implementation",
         "type" : "object",
         "properties" : { }
       },
@@ -23045,7 +23045,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Domain name prefix"
           },
           "triggerPath" : {
             "oneOf" : [ {
@@ -23789,11 +23789,11 @@
         }
       },
       "otoroshi.storage.drivers.rediscala.RedisCommandsStore" : {
-        "description" : "???",
+        "description" : "Specific redis mode storage implementation",
         "type" : "object",
         "properties" : {
           "cluster" : {
-            "description" : "???",
+            "description" : "Is redis clustered",
             "type" : "boolean"
           }
         }
@@ -24150,7 +24150,7 @@
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "Internal representation",
             "type" : "object"
           }
         }
@@ -24489,7 +24489,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.models.NgPluginInstance"
             },
-            "description" : "???"
+            "description" : "All the NgPluginInstance"
           }
         }
       },
@@ -24997,21 +24997,21 @@
         }
       },
       "otoroshi.storage.drivers.inmemory.SwappableInMemoryRedis" : {
-        "description" : "???",
+        "description" : "In-memory storage implementation",
         "type" : "object",
         "properties" : {
           "env" : {
-            "description" : "???",
+            "description" : "The current env",
             "$ref" : "#/components/schemas/otoroshi.env.Env"
           }
         }
       },
       "otoroshi.storage.drivers.inmemory.ModernSwappableInMemoryRedis" : {
-        "description" : "???",
+        "description" : "In-memory storage implementation",
         "type" : "object",
         "properties" : {
           "env" : {
-            "description" : "???",
+            "description" : "The current env",
             "$ref" : "#/components/schemas/otoroshi.env.Env"
           }
         }
@@ -25149,7 +25149,7 @@
         }
       },
       "otoroshi.storage.drivers.cassandra.NewCassandraRedis" : {
-        "description" : "???",
+        "description" : "Cassandra storage implementation",
         "type" : "object",
         "properties" : { }
       },
@@ -25671,11 +25671,11 @@
         "type" : "object",
         "properties" : {
           "debug" : {
-            "description" : "???",
+            "description" : "Is the plugin in debug mode",
             "type" : "boolean"
           },
           "config" : {
-            "description" : "???",
+            "description" : "The config. of the plugin",
             "type" : "object"
           },
           "exclude" : {
@@ -25683,21 +25683,21 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Excluded paths"
           },
           "include" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Included paths"
           },
           "plugin" : {
-            "description" : "???",
+            "description" : "The id of the plugin",
             "type" : "string"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "Is the plugin enabled",
             "type" : "boolean"
           }
         }
@@ -26310,7 +26310,7 @@
         "properties" : { }
       },
       "otoroshi.utils.ConcurrentMutableTypedMap" : {
-        "description" : "???",
+        "description" : "A concurrent map with typed keys",
         "type" : "object",
         "properties" : { }
       },
@@ -26377,7 +26377,7 @@
         }
       },
       "otoroshi.gateway.CircuitBreakersHolder" : {
-        "description" : "???",
+        "description" : "Internal component to hold current circuit breakers and their configuration",
         "type" : "object",
         "properties" : { }
       },
@@ -27737,15 +27737,15 @@
         "type" : "object",
         "properties" : {
           "route" : {
-            "description" : "???",
+            "description" : "Current matched route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
           },
           "path" : {
-            "description" : "???",
+            "description" : "Current matched path",
             "type" : "string"
           },
           "noMoreSegments" : {
-            "description" : "???",
+            "description" : "Is the path fully matched",
             "type" : "boolean"
           }
         }
@@ -28317,17 +28317,17 @@
         "type" : "object",
         "properties" : {
           "target" : {
-            "description" : "???",
+            "description" : "The current target",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgTarget"
           },
           "attempts" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Circuit breaker attemps",
             "type" : "integer"
           },
           "cbStart" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Time start of circuit breaker usage",
             "type" : "integer"
           }
         }
@@ -28554,7 +28554,7 @@
         }
       },
       "otoroshi.storage.drivers.rediscala.RedisMCPStore" : {
-        "description" : "???",
+        "description" : "Specific redis mode storage implementation",
         "type" : "object",
         "properties" : { }
       },
@@ -28629,7 +28629,7 @@
         "properties" : { }
       },
       "otoroshi.storage.drivers.lettuce.LettuceRedisCluster" : {
-        "description" : "???",
+        "description" : "Redis cluster storage implementation",
         "type" : "object",
         "properties" : { }
       },
