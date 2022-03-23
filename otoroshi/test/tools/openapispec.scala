@@ -1,11 +1,10 @@
-package functional
+package tools
 
 import io.github.classgraph.ClassGraph
-import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.OptionValues
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.{MustMatchers, OptionValues}
-import otoroshi.openapi.{CrdsGenerator, FormsGenerator, OpenApiGenerator}
-import play.api.libs.json.JsValue
+import org.scalatest.wordspec.AnyWordSpec
+import otoroshi.openapi.{CrdsGenerator, OpenApiGenerator}
 
 class OpenApiSpec extends AnyWordSpec with Matchers with OptionValues {
   // val runner = new OpenApiGeneratorRunner()

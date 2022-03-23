@@ -1,4 +1,4 @@
-package functional
+package tools
 
 import org.scalatest.{MustMatchers, OptionValues, WordSpec}
 import otoroshi.next.doc.NgPluginDocumentationGenerator

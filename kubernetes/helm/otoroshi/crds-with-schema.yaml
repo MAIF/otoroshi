@@ -2474,56 +2474,56 @@ spec:
                     description: "the kind of exporter"
                     type: "string"
               templates:
-                description: "???"
+                description: "The otoroshi default templates for entities"
                 type: "object"
                 properties:
                   template:
-                    description: "???"
+                    description: "the template for the template entities"
                     type: "object"
                   apikey:
-                    description: "???"
+                    description: "the template for the apikey entities"
                     type: "object"
                   dataExporter:
-                    description: "???"
+                    description: "the template for the dataExporter entities"
                     type: "object"
                   authConfig:
-                    description: "???"
+                    description: "the template for the authConfig entities"
                     type: "object"
                   certificate:
-                    description: "???"
+                    description: "the template for the certificate entities"
                     type: "object"
                   tcpService:
-                    description: "???"
+                    description: "the template for the tcpService entities"
                     type: "object"
                   team:
-                    description: "???"
+                    description: "the template for the team entities"
                     type: "object"
                   descriptor:
-                    description: "???"
+                    description: "the template for the descriptor entities"
                     type: "object"
                   script:
-                    description: "???"
+                    description: "the template for the script entities"
                     type: "object"
                   target:
-                    description: "???"
+                    description: "the template for the target entities"
                     type: "object"
                   route:
-                    description: "???"
+                    description: "the template for the route entities"
                     type: "object"
                   verifier:
-                    description: "???"
+                    description: "the template for the verifier entities"
                     type: "object"
                   service:
-                    description: "???"
+                    description: "the template for the service entities"
                     type: "object"
                   backend:
-                    description: "???"
+                    description: "the template for the backend entities"
                     type: "object"
                   tenant:
-                    description: "???"
+                    description: "the template for the tenant entities"
                     type: "object"
                   group:
-                    description: "???"
+                    description: "the template for the group entities"
                     type: "object"
               enableEmbeddedMetrics:
                 description: "Enable embedded metrics"
