@@ -338,7 +338,7 @@
     "entity_description.otoroshi.plugins.clientcert.ClientCertChainHeader": "Plugin that can pass client certificates as header to the backends",
     "entity_description.otoroshi.plugins.clientcert.HasClientCertMatchingApikeyValidator": "Plugin that validates client certificates",
     "entity_description.otoroshi.plugins.clientcert.HasClientCertMatchingHttpValidator": "Plugin that validates client certificates",
-    "entity_description.otoroshi.plugins.clientcert.HasClientCertMatchingValidator":"Plugin that validates client certificates",
+    "entity_description.otoroshi.plugins.clientcert.HasClientCertMatchingValidator": "Plugin that validates client certificates",
     "entity_description.otoroshi.plugins.clientcert.HasClientCertValidator": "Plugin that validates client certificates",
     "entity_description.otoroshi.plugins.clientcert.SubIss": "Internal api",
     "entity_description.otoroshi.plugins.composite.CompositePlugin": "Internal api",

@@ -17053,12 +17053,12 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob" : {
-        "description" : "???",
+        "description" : "Plugin to sync kubernetes ingresses with otoroshi",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.models.NgRouteDataStore" : {
-        "description" : "???",
+        "description" : "The datastore for routes",
         "type" : "object",
         "properties" : { }
       },
@@ -17117,17 +17117,17 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesSecret" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "kubernetes resource of kind secret",
             "type" : "object"
           }
         }
       },
       "otoroshi.plugins.apikeys.BiscuitConf" : {
-        "description" : "???",
+        "description" : "Configuration for the biscuit plugin",
         "type" : "object",
         "properties" : {
           "checks" : {
@@ -17135,10 +17135,10 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Biscuit checks"
           },
           "sealedToken" : {
-            "description" : "???",
+            "description" : "Is it a sealed token",
             "type" : "boolean"
           },
           "facts" : {
@@ -17146,7 +17146,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Biscuit facts"
           },
           "privkey" : {
             "oneOf" : [ {
@@ -17154,7 +17154,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Biscuit private key"
           },
           "secret" : {
             "oneOf" : [ {
@@ -17162,14 +17162,14 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Biscuit secret"
           },
           "rules" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Biscuit rules"
           }
         }
       },
@@ -17233,12 +17233,12 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesEntity" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.ApikeyQuotas" : {
-        "description" : "???",
+        "description" : "Plugin to apply quotas en apikeys",
         "type" : "object",
         "properties" : { }
       },
@@ -17257,12 +17257,12 @@
         }
       },
       "otoroshi.plugins.core.apikeys.JwtApikeyExtractor" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.GzipResponseCompressor" : {
-        "description" : "???",
+        "description" : "Plugin for gzip compression",
         "type" : "object",
         "properties" : {
           "compressionLevel" : {
@@ -17324,11 +17324,11 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesIngressClassParameters" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "kubernetes resource of kind ingressclass parameter",
             "type" : "object"
           }
         }
@@ -17356,7 +17356,7 @@
         }
       },
       "otoroshi.next.plugins.NgLatencyInjectionFaultConfig" : {
-        "description" : "???",
+        "description" : "Configuration for SnowMonkeyChaos",
         "type" : "object",
         "properties" : {
           "ratio" : {
@@ -17375,7 +17375,7 @@
         }
       },
       "otoroshi.next.plugins.JwtVerification" : {
-        "description" : "???",
+        "description" : "Plugin to verify jwt token",
         "type" : "object",
         "properties" : {
           "verifiers" : {
@@ -17388,17 +17388,17 @@
         }
       },
       "otoroshi.plugins.log4j.Log4jExpressionText" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "value" : {
-            "description" : "???",
+            "description" : "A parsed text for log4jshell evaluation",
             "type" : "string"
           }
         }
       },
       "otoroshi.next.plugins.NgGzipConfig" : {
-        "description" : "???",
+        "description" : "Configuration for Gzip",
         "type" : "object",
         "properties" : {
           "compressionLevel" : {
@@ -17440,12 +17440,12 @@
         }
       },
       "otoroshi.next.plugins.W3CTracingConfigKind" : {
-        "description" : "???",
+        "description" : "Configuration for W3CTracing",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.JQConfig" : {
-        "description" : "???",
+        "description" : "Configuration for JQ",
         "type" : "object",
         "properties" : {
           "request" : {
@@ -17463,7 +17463,7 @@
         "description" : "team id"
       },
       "otoroshi.next.proxy.NgReportPluginSequence" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "stop_ns" : {
@@ -17505,7 +17505,7 @@
         }
       },
       "otoroshi.next.plugins.NgAllowedMethodsConfig" : {
-        "description" : "???",
+        "description" : "Configuration for AllowHttpMethods",
         "type" : "object",
         "properties" : {
           "allowed" : {
@@ -17546,7 +17546,7 @@
         }
       },
       "otoroshi.next.plugins.Cors" : {
-        "description" : "???",
+        "description" : "Plugin to use cors",
         "type" : "object",
         "properties" : {
           "allowCredentials" : {
@@ -17607,7 +17607,7 @@
         }
       },
       "otoroshi.next.plugins.PublicPrivatePaths" : {
-        "description" : "???",
+        "description" : "Plugin to define public and private paths",
         "type" : "object",
         "properties" : {
           "strict" : {
@@ -17648,28 +17648,28 @@
         }
       },
       "otoroshi.plugins.quotas.ServiceQuotasConfig" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "throttlingQuota" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Calls quota per second",
             "type" : "integer"
           },
           "dailyQuota" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Daily calls quota",
             "type" : "integer"
           },
           "monthlyQuota" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Monthly calls quota",
             "type" : "integer"
           }
         }
       },
       "otoroshi.next.plugins.ApikeyCalls" : {
-        "description" : "???",
+        "description" : "Plugin to use apikeys",
         "type" : "object",
         "properties" : {
           "extractors" : {
@@ -17695,7 +17695,7 @@
         }
       },
       "otoroshi.script.AccessContext" : {
-        "description" : "???",
+        "description" : "Context for AccessValidation plugins",
         "type" : "object",
         "properties" : {
           "attrs" : {
@@ -17742,7 +17742,7 @@
         }
       },
       "otoroshi.next.plugins.JQResponseConfig" : {
-        "description" : "???",
+        "description" : "Configuration for JQResponse",
         "type" : "object",
         "properties" : {
           "filter" : {
@@ -17789,21 +17789,21 @@
         "properties" : { }
       },
       "otoroshi.plugins.geoloc.IpStackGeolocationInfoExtractor" : {
-        "description" : "???",
+        "description" : "Plugin that extracts geolocation based on ipstack",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.metrics.PrometheusServiceMetrics" : {
-        "description" : "???",
+        "description" : "Plugin to collect service metrics",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesClient" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "config" : {
-            "description" : "???",
+            "description" : "The current client config.",
             "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.KubernetesConfig"
           },
           "env" : {
@@ -17851,7 +17851,7 @@
         }
       },
       "otoroshi.next.plugins.AuthModule" : {
-        "description" : "???",
+        "description" : "Plugin to use auth. modules",
         "type" : "object",
         "properties" : {
           "module" : {
@@ -17869,7 +17869,7 @@
         }
       },
       "otoroshi.plugins.clientcert.HasClientCertValidator" : {
-        "description" : "???",
+        "description" : "Plugin that validates client certificates",
         "type" : "object",
         "properties" : { }
       },
@@ -17896,7 +17896,7 @@
         "properties" : { }
       },
       "otoroshi.next.plugins.AdditionalHeadersIn" : {
-        "description" : "???",
+        "description" : "Plugin that add headers on a request",
         "type" : "object",
         "properties" : {
           "headers" : {
@@ -17909,7 +17909,7 @@
         }
       },
       "otoroshi.next.plugins.api.NgPreRoutingErrorRaw" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "code" : {
@@ -17931,7 +17931,7 @@
         }
       },
       "otoroshi.next.plugins.api.NgPluginHelper" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -17940,7 +17940,7 @@
         "description" : "PEM encoded certificate"
       },
       "otoroshi.next.plugins.api.NgMergedResponseTransformer" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "plugins" : {
@@ -17953,7 +17953,7 @@
         }
       },
       "otoroshi.next.plugins.api.NgTransformerResponseContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "attrs" : {
@@ -18011,7 +18011,7 @@
         }
       },
       "otoroshi.script.PreRoutingContext" : {
-        "description" : "???",
+        "description" : "Context for preroutes plugins",
         "type" : "object",
         "properties" : {
           "globalConfig" : {
@@ -18042,7 +18042,7 @@
         }
       },
       "otoroshi.next.plugins.IpAddressAllowedList" : {
-        "description" : "???",
+        "description" : "Plugin to allow only some ip addresses",
         "type" : "object",
         "properties" : {
           "addresses" : {
@@ -18055,7 +18055,7 @@
         }
       },
       "otoroshi.plugins.apikeys.ApikeyAuthModule" : {
-        "description" : "???",
+        "description" : "Plugin that authenticate a website based on apikeys",
         "type" : "object",
         "properties" : { }
       },
@@ -18095,11 +18095,11 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesNamespace" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "kubernetes resource of kind namespace",
             "type" : "object"
           }
         }
@@ -18154,7 +18154,7 @@
         }
       },
       "otoroshi.next.plugins.api.NgAfterRequestContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "attrs" : {
@@ -18195,12 +18195,12 @@
         }
       },
       "otoroshi.plugins.loggers.ResponseBodyEvent" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "status" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "The response status",
             "type" : "integer"
           },
           "headers" : {
@@ -18208,32 +18208,32 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The response headers"
           },
           "url" : {
-            "description" : "???",
+            "description" : "The request url",
             "type" : "string"
           },
           "reqId" : {
-            "description" : "???",
+            "description" : "The request id",
             "type" : "string"
           },
           "from" : {
-            "description" : "???",
+            "description" : "The incoming request ip address",
             "type" : "string"
           },
           "ua" : {
-            "description" : "???",
+            "description" : "The user agent",
             "type" : "string"
           },
           "method" : {
-            "description" : "???",
+            "description" : "The request method",
             "type" : "string"
           }
         }
       },
       "otoroshi.next.plugins.api.NgTransformerRequestContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "apikey" : {
@@ -18311,7 +18311,7 @@
         }
       },
       "otoroshi.next.plugins.MockResponses" : {
-        "description" : "???",
+        "description" : "Plugin to mock responses",
         "type" : "object",
         "properties" : {
           "responses" : {
@@ -18337,7 +18337,7 @@
         "properties" : { }
       },
       "otoroshi.next.models.NgTreeRouter_Test" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -18389,7 +18389,7 @@
         }
       },
       "otoroshi.next.plugins.api.NgNamedPlugin" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -18414,7 +18414,7 @@
         }
       },
       "otoroshi.plugins.workflow.WorkflowEndpoint" : {
-        "description" : "???",
+        "description" : "Experimental plugin",
         "type" : "object",
         "properties" : { }
       },
@@ -18469,17 +18469,17 @@
         } ]
       },
       "otoroshi.plugins.discovery.SelfRegistrationConfig" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "Configuration for self registration",
             "type" : "object"
           }
         }
       },
       "otoroshi.next.models.NgMatchedRoutes" : {
-        "description" : "???",
+        "description" : "A set of matched routes in the new router",
         "type" : "object",
         "properties" : {
           "routes" : {
@@ -18500,7 +18500,7 @@
         }
       },
       "otoroshi.next.plugins.JsonToXmlResponse" : {
-        "description" : "???",
+        "description" : "Plugin to transform json body to xml",
         "type" : "object",
         "properties" : {
           "filter" : {
@@ -18688,7 +18688,7 @@
         }
       },
       "otoroshi.next.plugins.Keys" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -18713,7 +18713,7 @@
         }
       },
       "otoroshi.next.plugins.JQResponse" : {
-        "description" : "???",
+        "description" : "Plugin to transform body with JQ filters",
         "type" : "object",
         "properties" : {
           "filter" : {
@@ -18723,7 +18723,7 @@
         }
       },
       "otoroshi.next.plugins.OtoroshiInfos" : {
-        "description" : "???",
+        "description" : "Plugin for otoroshi info token",
         "type" : "object",
         "properties" : {
           "raw" : {
@@ -18851,7 +18851,7 @@
         }
       },
       "otoroshi.plugins.authcallers.OAuth2Kind" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -18861,7 +18861,7 @@
         "description" : "Version of the challenge token"
       },
       "otoroshi.next.proxy.NgExecutionReport" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "id" : {
@@ -18879,7 +18879,7 @@
         }
       },
       "otoroshi.plugins.authcallers.OAuth2Caller" : {
-        "description" : "???",
+        "description" : "Plugin that can call an oauth2 client_credentials flow or password flow backend",
         "type" : "object",
         "properties" : { }
       },
@@ -18898,7 +18898,7 @@
         }
       },
       "otoroshi.next.plugins.api.NgPlugin" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -18909,7 +18909,7 @@
         }
       },
       "otoroshi.plugins.izanami.IzanamiCanaryRoutingConfigRoute" : {
-        "description" : "???",
+        "description" : "Configuration for IzanamiCanary",
         "type" : "object",
         "properties" : {
           "variants" : {
@@ -18917,26 +18917,26 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The possible variant"
           },
           "wildcard" : {
-            "description" : "???",
+            "description" : "Wildcard match",
             "type" : "boolean"
           },
           "default" : {
-            "description" : "???",
+            "description" : "The default variant",
             "type" : "string"
           },
           "regex" : {
-            "description" : "???",
+            "description" : "Regex match",
             "type" : "boolean"
           },
           "exact" : {
-            "description" : "???",
+            "description" : "Exact match",
             "type" : "boolean"
           },
           "route" : {
-            "description" : "???",
+            "description" : "The route path",
             "type" : "string"
           }
         }
@@ -19036,7 +19036,7 @@
         }
       },
       "otoroshi.plugins.oidc.OIDCAccessTokenValidator" : {
-        "description" : "???",
+        "description" : "Plugin to validate OIDC token ",
         "type" : "object",
         "properties" : { }
       },
@@ -19077,11 +19077,11 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesPod" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "kubernetes resource of kind pod",
             "type" : "object"
           }
         }
@@ -19294,7 +19294,7 @@
         }
       },
       "otoroshi.plugins.quotas.InstanceQuotas" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -19313,7 +19313,7 @@
         }
       },
       "otoroshi.next.plugins.JQRequest" : {
-        "description" : "???",
+        "description" : "Plugin to transform body with JQ filters",
         "type" : "object",
         "properties" : {
           "filter" : {
@@ -19409,7 +19409,7 @@
         }
       },
       "otoroshi.plugins.discovery.DiscoverySelfRegistrationTransformer" : {
-        "description" : "???",
+        "description" : "Plugin that add services discovery to otoroshi",
         "type" : "object",
         "properties" : { }
       },
@@ -19605,7 +19605,7 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -19614,7 +19614,7 @@
         "description" : ""
       },
       "otoroshi.next.plugins.MissingHeadersIn" : {
-        "description" : "???",
+        "description" : "Plugin to add headers to a request",
         "type" : "object",
         "properties" : {
           "headers" : {
@@ -19627,16 +19627,16 @@
         }
       },
       "otoroshi.plugins.clientcert.HasClientCertMatchingHttpValidator" : {
-        "description" : "???",
+        "description" : "Plugin that validates client certificates",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.jobs.kubernetes.ClientSupport" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "client" : {
-            "description" : "???",
+            "description" : "The actual kubernetes client",
             "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.KubernetesClient"
           },
           "env" : {
@@ -19646,7 +19646,7 @@
         }
       },
       "otoroshi.plugins.core.DefaultPlugins" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -19726,7 +19726,7 @@
         }
       },
       "otoroshi.plugins.static.StaticResponse" : {
-        "description" : "???",
+        "description" : "Plugin that serves static responses",
         "type" : "object",
         "properties" : { }
       },
@@ -19736,17 +19736,17 @@
         "properties" : { }
       },
       "otoroshi.plugins.apikeys.CertificateAsApikey" : {
-        "description" : "???",
+        "description" : "Plugin to use a certificate as an apikey",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.oidc.OIDCThirdPartyApiKeyConfigMode" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.api.NgCachedConfigContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -19806,7 +19806,7 @@
         "properties" : { }
       },
       "otoroshi.next.plugins.XmlToJsonRequest" : {
-        "description" : "???",
+        "description" : "Plugin to transform xml body into json",
         "type" : "object",
         "properties" : {
           "filter" : {
@@ -19820,7 +19820,7 @@
         }
       },
       "otoroshi.plugins.discovery.DiscoveryHelper" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -19904,7 +19904,7 @@
         }
       },
       "otoroshi.next.plugins.NgApikeyMatcher" : {
-        "description" : "???",
+        "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
           "noneMetaKeysIn" : {
@@ -19977,7 +19977,7 @@
         }
       },
       "otoroshi.plugins.apikeys.HasAllowedApiKeyValidator" : {
-        "description" : "???",
+        "description" : "Plugin that validates apikey",
         "type" : "object",
         "properties" : { }
       },
@@ -20029,17 +20029,17 @@
         }
       },
       "otoroshi.next.plugins.api.NgPreRouting" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.oauth1.OAuth1CallerPlugin" : {
-        "description" : "???",
+        "description" : "Plugin to call OAuth1 protected backends",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.XmlToJsonResponse" : {
-        "description" : "???",
+        "description" : "Plugin to transform xml body into json",
         "type" : "object",
         "properties" : {
           "filter" : {
@@ -20058,27 +20058,27 @@
         "description" : "Type of data exporter"
       },
       "otoroshi.plugins.jobs.kubernetes.FailedCrdParsing" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "crd" : {
-            "description" : "???",
+            "description" : "The failed crd",
             "type" : "object"
           },
           "namespace" : {
-            "description" : "???",
+            "description" : "The namespace of the error",
             "type" : "string"
           },
           "pluralName" : {
-            "description" : "???",
+            "description" : "The plural name of the resources",
             "type" : "string"
           },
           "error" : {
-            "description" : "???",
+            "description" : "The actual error",
             "type" : "string"
           },
           "customizedSpec" : {
-            "description" : "???",
+            "description" : "The spec to customize",
             "type" : "object"
           }
         }
@@ -20133,29 +20133,29 @@
         "properties" : { }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesToOtoroshiCertSyncJob" : {
-        "description" : "???",
+        "description" : "Plugin to sync otoroshi certificates with kubernetes",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.api.NgStep" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.clientcert.SubIss" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "sn" : {
-            "description" : "???",
+            "description" : "The serial number of the current issuer",
             "type" : "string"
           },
           "subject" : {
-            "description" : "???",
+            "description" : "The subject DN",
             "$ref" : "#/components/schemas/otoroshi.utils.http.DN"
           },
           "issuer" : {
-            "description" : "???",
+            "description" : "The issuer DN",
             "$ref" : "#/components/schemas/otoroshi.utils.http.DN"
           }
         }
@@ -20225,7 +20225,7 @@
         "description" : "Proxy server"
       },
       "otoroshi.next.plugins.GlobalPerIpAddressThrottlingQuotas" : {
-        "description" : "???",
+        "description" : "Plugin for ip address quotas",
         "type" : "object",
         "properties" : {
           "within" : {
@@ -20240,11 +20240,11 @@
         }
       },
       "otoroshi.plugins.loggers.BodyLoggerConfig" : {
-        "description" : "???",
+        "description" : "Configuration for BodyLogger",
         "type" : "object",
         "properties" : {
           "json" : {
-            "description" : "???",
+            "description" : "The current config",
             "type" : "object"
           }
         }
@@ -20346,7 +20346,7 @@
         }
       },
       "otoroshi.next.plugins.api.NgPreRoutingContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "attrs" : {
@@ -20380,7 +20380,7 @@
         }
       },
       "otoroshi.next.plugins.NgApikeyExtractorCustomHeaders" : {
-        "description" : "???",
+        "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
           "enabled" : {
@@ -20431,22 +20431,22 @@
         }
       },
       "otoroshi.plugins.users.HasAllowedUsersValidator" : {
-        "description" : "???",
+        "description" : "Plugin that validates current user",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesOpenshiftDnsOperatorServer" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "kubernetes resource of kind OpenshiftOperatorServer",
             "type" : "object"
           }
         }
       },
       "otoroshi.next.models.NgTreeRouter" : {
-        "description" : "???",
+        "description" : "A very efficient router with a tree structure",
         "type" : "object",
         "properties" : { }
       },
@@ -20457,7 +20457,7 @@
         }
       },
       "otoroshi.next.plugins.NgCorsSettings" : {
-        "description" : "???",
+        "description" : "Configuration for Cors",
         "type" : "object",
         "properties" : {
           "allowCredentials" : {
@@ -20922,40 +20922,40 @@
         }
       },
       "otoroshi.next.plugins.UdpTunnel" : {
-        "description" : "???",
+        "description" : "Plugin to have udp tunnels over websockets",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.izanami.IzanamiCanaryConfig" : {
-        "description" : "???",
+        "description" : "Configuration for IzanamiCanary",
         "type" : "object",
         "properties" : {
           "izanamiClientId" : {
-            "description" : "???",
+            "description" : "Izanami client id",
             "type" : "string"
           },
           "configId" : {
-            "description" : "???",
+            "description" : "Id of the target izanami configuration",
             "type" : "string"
           },
           "experimentId" : {
-            "description" : "???",
+            "description" : "Id of the target izanami experiment",
             "type" : "string"
           },
           "mtls" : {
-            "description" : "???",
+            "description" : "Izanami server tls config",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
           },
           "izanamiUrl" : {
-            "description" : "???",
+            "description" : "Izanami server url",
             "type" : "string"
           },
           "timeout" : {
-            "description" : "???",
+            "description" : "Timeout when talking to the izanami server",
             "type" : "number"
           },
           "izanamiClientSecret" : {
-            "description" : "???",
+            "description" : "Izanami client secret",
             "type" : "string"
           },
           "routeConfig" : {
@@ -20964,12 +20964,12 @@
             }, {
               "type" : "object"
             } ],
-            "description" : "???"
+            "description" : "The actual routing config"
           }
         }
       },
       "otoroshi.next.plugins.RemoveHeadersIn" : {
-        "description" : "???",
+        "description" : "Plugin to remove headers from request",
         "type" : "object",
         "properties" : {
           "names" : {
@@ -20982,7 +20982,7 @@
         }
       },
       "otoroshi.next.plugins.RobotConfig" : {
-        "description" : "???",
+        "description" : "Configuration for Robots",
         "type" : "object",
         "properties" : {
           "robotTxtContent" : {
@@ -21012,17 +21012,17 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesSupport" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.metrics.PrometheusEndpoint" : {
-        "description" : "???",
+        "description" : "Plugin to expose metrics collected by PrometheusServiceMetrics",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.wrappers.PreRoutingWrapper" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -21050,7 +21050,7 @@
         "description" : "Admin kind"
       },
       "otoroshi.next.plugins.api.NgMergedAccessValidator" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "plugins" : {
@@ -21063,7 +21063,7 @@
         }
       },
       "otoroshi.plugins.log4j.Log4jExpressionParser" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -21209,11 +21209,11 @@
         } ]
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesCertSecret" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "json representation of a KubernetesCertSecret",
             "type" : "object"
           }
         }
@@ -21236,12 +21236,12 @@
         }
       },
       "otoroshi.plugins.geoloc.MaxMindGeolocationHelper" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.jobs.kubernetes.IngressSupport" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -21277,12 +21277,12 @@
         }
       },
       "otoroshi.plugins.hmac.HMACCallerPlugin" : {
-        "description" : "???",
+        "description" : "Plugin that can call an hmac protected backend",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.AllowHttpMethods" : {
-        "description" : "???",
+        "description" : "Plugin that only allow calls with specific http methods",
         "type" : "object",
         "properties" : {
           "allowed" : {
@@ -21302,7 +21302,7 @@
         }
       },
       "otoroshi.plugins.apikeys.ClientCredentialFlow" : {
-        "description" : "???",
+        "description" : "Plugin that provide the OAuth2 client_credentials flow",
         "type" : "object",
         "properties" : { }
       },
@@ -21312,12 +21312,12 @@
         "properties" : { }
       },
       "otoroshi.next.plugins.JsonTransform" : {
-        "description" : "???",
+        "description" : "Plugin to transform json response",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "globalConfigs" : {
@@ -21325,124 +21325,124 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.GlobalConfig>"
             },
-            "description" : "???"
+            "description" : "template for entities globalConfigs"
           },
           "tenants" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.Tenant>"
             },
-            "description" : "???"
+            "description" : "template for entities tenants"
           },
           "serviceGroups" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.ServiceGroup>"
             },
-            "description" : "???"
+            "description" : "template for entities serviceGroups"
           },
           "targets" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.next.models.StoredNgTarget>"
             },
-            "description" : "???"
+            "description" : "template for entities targets"
           },
           "teams" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.Team>"
             },
-            "description" : "???"
+            "description" : "template for entities teams"
           },
           "serviceDescriptors" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.ServiceDescriptor>"
             },
-            "description" : "???"
+            "description" : "template for entities serviceDescriptors"
           },
           "certificates" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.ssl.Cert>"
             },
-            "description" : "???"
+            "description" : "template for entities certificates"
           },
           "services" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.next.models.NgService>"
             },
-            "description" : "???"
+            "description" : "template for entities services"
           },
           "authModules" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.auth.AuthModuleConfig>"
             },
-            "description" : "???"
+            "description" : "template for entities authModules"
           },
           "dataExporters" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.DataExporterConfig>"
             },
-            "description" : "???"
+            "description" : "template for entities dataExporters"
           },
           "scripts" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.script.Script>"
             },
-            "description" : "???"
+            "description" : "template for entities scripts"
           },
           "jwtVerifiers" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.GlobalJwtVerifier>"
             },
-            "description" : "???"
+            "description" : "template for entities jwtVerifiers"
           },
           "backends" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.next.models.StoredNgBackend>"
             },
-            "description" : "???"
+            "description" : "template for entities backends"
           },
           "apiKeys" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.ApiKey>"
             },
-            "description" : "???"
+            "description" : "template for entities apiKeys"
           },
           "tcpServices" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.tcp.TcpService>"
             },
-            "description" : "???"
+            "description" : "template for entities tcpServices"
           },
           "simpleAdmins" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.SimpleOtoroshiAdmin>"
             },
-            "description" : "???"
+            "description" : "template for entities simpleAdmins"
           },
           "routes" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.next.models.NgRoute>"
             },
-            "description" : "???"
+            "description" : "template for entities routes"
           }
         }
       },
       "otoroshi.plugins.jobs.kubernetes.OtoroshiResourcesContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "routes" : {
@@ -21450,119 +21450,119 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
             },
-            "description" : "???"
+            "description" : "template for entities routes"
           },
           "apiKeys" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
             },
-            "description" : "???"
+            "description" : "template for entities apiKeys"
           },
           "backends" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.models.StoredNgBackend"
             },
-            "description" : "???"
+            "description" : "template for entities backends"
           },
           "scripts" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.script.Script"
             },
-            "description" : "???"
+            "description" : "template for entities scripts"
           },
           "jwtVerifiers" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.models.GlobalJwtVerifier"
             },
-            "description" : "???"
+            "description" : "template for entities jwtVerifiers"
           },
           "tenants" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.models.Tenant"
             },
-            "description" : "???"
+            "description" : "template for entities tenants"
           },
           "dataExporters" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfig"
             },
-            "description" : "???"
+            "description" : "template for entities dataExporters"
           },
           "teams" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.models.Team"
             },
-            "description" : "???"
+            "description" : "template for entities teams"
           },
           "services" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
             },
-            "description" : "???"
+            "description" : "template for entities services"
           },
           "serviceDescriptors" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptor"
             },
-            "description" : "???"
+            "description" : "template for entities serviceDescriptors"
           },
           "globalConfigs" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.models.GlobalConfig"
             },
-            "description" : "???"
+            "description" : "template for entities globalConfigs"
           },
           "authModules" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.auth.AuthModuleConfig"
             },
-            "description" : "???"
+            "description" : "template for entities authModules"
           },
           "tcpServices" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.tcp.TcpService"
             },
-            "description" : "???"
+            "description" : "template for entities tcpServices"
           },
           "certificates" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.ssl.Cert"
             },
-            "description" : "???"
+            "description" : "template for entities certificates"
           },
           "simpleAdmins" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
             },
-            "description" : "???"
+            "description" : "template for entities simpleAdmins"
           },
           "targets" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.models.StoredNgTarget"
             },
-            "description" : "???"
+            "description" : "template for entities targets"
           },
           "serviceGroups" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.models.ServiceGroup"
             },
-            "description" : "???"
+            "description" : "template for entities serviceGroups"
           }
         }
       },
@@ -21593,7 +21593,7 @@
         }
       },
       "otoroshi.next.models.NgRouteDomainAndPathWrapper" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "route" : {
@@ -21611,7 +21611,7 @@
         }
       },
       "otoroshi.plugins.biscuit.BiscuitToken" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -21648,12 +21648,12 @@
         }
       },
       "otoroshi.next.plugins.wrappers.RequestSinkWrapper" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.CanaryMode" : {
-        "description" : "???",
+        "description" : "Plugin for canary mode",
         "type" : "object",
         "properties" : {
           "traffic" : {
@@ -21675,44 +21675,44 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiResource" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "kubernetes resources for otoroshi",
             "type" : "object"
           }
         }
       },
       "otoroshi.plugins.clientcert.HasClientCertMatchingApikeyValidator" : {
-        "description" : "???",
+        "description" : "Plugin that validates client certificates",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.authcallers.BasicAuthCallerConfig" : {
-        "description" : "???",
+        "description" : "Configuration for BasicAuthCaller",
         "type" : "object",
         "properties" : {
           "username" : {
-            "description" : "???",
+            "description" : "Expected username",
             "type" : "string"
           },
           "password" : {
-            "description" : "???",
+            "description" : "Expected password",
             "type" : "string"
           },
           "headerName" : {
-            "description" : "???",
+            "description" : "Expected header name",
             "type" : "string"
           },
           "headerValueFormat" : {
-            "description" : "???",
+            "description" : "Expected header format (to handle 'Basic ')",
             "type" : "string"
           }
         }
       },
       "otoroshi.next.plugins.RemoveHeadersOut" : {
-        "description" : "???",
+        "description" : "Plugin to remove headers from response",
         "type" : "object",
         "properties" : {
           "names" : {
@@ -21735,12 +21735,12 @@
         }
       },
       "otoroshi.next.plugins.api.NgPreRoutingErrorWithResult" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.jwt.JwtUserExtractor" : {
-        "description" : "???",
+        "description" : "Plugin to extract user from jwt token",
         "type" : "object",
         "properties" : { }
       },
@@ -21821,7 +21821,7 @@
         "properties" : { }
       },
       "otoroshi.next.plugins.ForceHttpsTraffic" : {
-        "description" : "???",
+        "description" : "Plugin to force https",
         "type" : "object",
         "properties" : { }
       },
@@ -22066,7 +22066,7 @@
         }
       },
       "otoroshi.next.plugins.BuildMode" : {
-        "description" : "???",
+        "description" : "Plugin for build more",
         "type" : "object",
         "properties" : { }
       },
@@ -22077,7 +22077,7 @@
         }
       },
       "otoroshi.plugins.discovery.DiscoverySelfRegistrationSink" : {
-        "description" : "???",
+        "description" : "Plugin that add services discovery to otoroshi",
         "type" : "object",
         "properties" : { }
       },
@@ -22101,7 +22101,7 @@
         }
       },
       "otoroshi.next.plugins.api.NgPluginCategory" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -22121,7 +22121,7 @@
         }
       },
       "otoroshi.next.plugins.NgRestrictionPath" : {
-        "description" : "???",
+        "description" : "Configuration for NgRestrictions",
         "type" : "object",
         "properties" : {
           "method" : {
@@ -22135,7 +22135,7 @@
         }
       },
       "otoroshi.next.plugins.NgFaultConfig" : {
-        "description" : "???",
+        "description" : "Configuration for SnowMonkeyChaos",
         "type" : "object",
         "properties" : { }
       },
@@ -22146,31 +22146,31 @@
         }
       },
       "otoroshi.next.plugins.ReadOnlyCalls" : {
-        "description" : "???",
+        "description" : "Plugin for readonly calls",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.jobs.kubernetes.CRDContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "kubernetes" : {
-            "description" : "???",
+            "description" : "Resources from kubernetes",
             "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext"
           },
           "otoroshi" : {
-            "description" : "???",
+            "description" : "Resources from otoroshi",
             "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoroshiResourcesContext"
           }
         }
       },
       "otoroshi.next.plugins.api.NgPreRoutingError" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.QueryTransformerConfig" : {
-        "description" : "???",
+        "description" : "Configuration for QueryTransformer",
         "type" : "object",
         "properties" : {
           "remove" : {
@@ -22237,7 +22237,7 @@
         "properties" : { }
       },
       "otoroshi.next.models.StoredNgTargetDataStore" : {
-        "description" : "???",
+        "description" : "The datastore for targets",
         "type" : "object",
         "properties" : { }
       },
@@ -22246,7 +22246,7 @@
         "enum" : [ "AllServicesPerGroup", "OneServicePerGroup" ]
       },
       "otoroshi.next.plugins.MockResponsesConfig" : {
-        "description" : "???",
+        "description" : "Configuration for MockResponses",
         "type" : "object",
         "properties" : {
           "responses" : {
@@ -22409,7 +22409,7 @@
         }
       },
       "otoroshi.next.plugins.ContextValidator" : {
-        "description" : "???",
+        "description" : "Plugin for context validation",
         "type" : "object",
         "properties" : {
           "path" : {
@@ -22423,7 +22423,7 @@
         }
       },
       "otoroshi.next.plugins.NgBadResponse" : {
-        "description" : "???",
+        "description" : "Configuration for SnowMonkeyChaos",
         "type" : "object",
         "properties" : {
           "status" : {
@@ -22445,7 +22445,7 @@
         }
       },
       "otoroshi.plugins.useragent.UserAgentInfoEndpoint" : {
-        "description" : "???",
+        "description" : "Plugin that return user-agent infos on an endpoint",
         "type" : "object",
         "properties" : { }
       },
@@ -22480,22 +22480,22 @@
         }
       },
       "otoroshi.plugins.metrics.ServiceMetrics" : {
-        "description" : "???",
+        "description" : "Plugin to collect service metrics",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.core.apikeys.BasicAuthApikeyExtractor" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.izanami.IzanamiCanary" : {
-        "description" : "???",
+        "description" : "Plugin that can route on different target paths based on an izanami experiment",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.NgOtoroshiChallengeConfig" : {
-        "description" : "???",
+        "description" : "Configuration for OtoroshiChallenge",
         "type" : "object",
         "properties" : {
           "raw" : {
@@ -22505,22 +22505,22 @@
         }
       },
       "otoroshi.plugins.mirror.MirroringPlugin" : {
-        "description" : "???",
+        "description" : "Plugin to mirror calls",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesEndpoint" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "kubernetes resource of kind endpoint",
             "type" : "object"
           }
         }
       },
       "otoroshi.next.plugins.NgOtoroshiInfoConfig" : {
-        "description" : "???",
+        "description" : "Configuration for OtoroshiInfos",
         "type" : "object",
         "properties" : {
           "raw" : {
@@ -22540,7 +22540,7 @@
         }
       },
       "otoroshi.plugins.cache.ResponseCache" : {
-        "description" : "???",
+        "description" : "Plugin that can cache http responses",
         "type" : "object",
         "properties" : { }
       },
@@ -22550,7 +22550,7 @@
         "properties" : { }
       },
       "otoroshi.plugins.JsonPathUtils" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -22635,7 +22635,7 @@
         } ]
       },
       "otoroshi.next.plugins.ContextValidation" : {
-        "description" : "???",
+        "description" : "Plugin for context validation",
         "type" : "object",
         "properties" : {
           "validators" : {
@@ -22648,22 +22648,22 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesValidatingWebhookConfiguration" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "kubernetes resource of kind validating webhook configuration",
             "type" : "object"
           }
         }
       },
       "otoroshi.next.plugins.api.NgTunnelHandler" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.izanami.IzanamiCanaryRoutingConfig" : {
-        "description" : "???",
+        "description" : "Configuration for IzanamiCanary",
         "type" : "object",
         "properties" : {
           "routes" : {
@@ -22671,12 +22671,12 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.izanami.IzanamiCanaryRoutingConfigRoute"
             },
-            "description" : "???"
+            "description" : "Possible routes"
           }
         }
       },
       "otoroshi.next.plugins.NgApikeyExtractorBasic" : {
-        "description" : "???",
+        "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
           "enabled" : {
@@ -22702,7 +22702,7 @@
         }
       },
       "otoroshi.plugins.log4j.Log4jExpression" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "parts" : {
@@ -22710,7 +22710,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.plugins.log4j.Log4jExpressionPart"
             },
-            "description" : "???"
+            "description" : "parts of a log4j expression"
           }
         }
       },
@@ -22738,7 +22738,7 @@
         }
       },
       "otoroshi.plugins.discovery.DiscoveryTargetsSelector" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -22753,7 +22753,7 @@
         }
       },
       "otoroshi.next.plugins.JQ" : {
-        "description" : "???",
+        "description" : "Plugin to transform body with JQ filters",
         "type" : "object",
         "properties" : {
           "request" : {
@@ -22821,7 +22821,7 @@
         }
       },
       "otoroshi.next.plugins.SnowMonkeyChaos" : {
-        "description" : "???",
+        "description" : "Plugin to induce chaos",
         "type" : "object",
         "properties" : {
           "largeRequestFaultConfig" : {
@@ -22859,7 +22859,7 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesIngressSyncJob" : {
-        "description" : "???",
+        "description" : "Plugin to sync kubernetes ingresses with otoroshi",
         "type" : "object",
         "properties" : { }
       },
@@ -22877,7 +22877,7 @@
         }
       },
       "otoroshi.next.plugins.JsonTransformConfig" : {
-        "description" : "???",
+        "description" : "Configuration for JsonTransform",
         "type" : "object",
         "properties" : {
           "filter" : {
@@ -22891,7 +22891,7 @@
         }
       },
       "otoroshi.plugins.biscuit.vavr_implicits" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -22901,22 +22901,22 @@
         "properties" : { }
       },
       "otoroshi.plugins.jq.JqBodyTransformer" : {
-        "description" : "???",
+        "description" : "Plugin to transform http body using jq filters",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.discovery.DiscoveryJobServiceId" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "id" : {
-            "description" : "???",
+            "description" : "A registration id",
             "type" : "string"
           }
         }
       },
       "otoroshi.next.plugins.NgHeaderValuesConfig" : {
-        "description" : "???",
+        "description" : "Configuration for headers plugins",
         "type" : "object",
         "properties" : {
           "headers" : {
@@ -22929,25 +22929,25 @@
         }
       },
       "otoroshi.next.plugins.wrappers.AccessValidatorWrapper" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.MaintenanceMode" : {
-        "description" : "???",
+        "description" : "Plugin for maintainance mode",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesConfig" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "endpoint" : {
-            "description" : "???",
+            "description" : "Kube API endpoint",
             "type" : "string"
           },
           "templates" : {
-            "description" : "???",
+            "description" : "Templates for created entities",
             "type" : "object"
           },
           "token" : {
@@ -22956,23 +22956,23 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Kube API access token"
           },
           "restartDependantDeployments" : {
-            "description" : "???",
+            "description" : "If enabled, deployments dependant to otoroshi managed secrets (apikeys, certs) will be automatically restarted as secrets are updated",
             "type" : "boolean"
           },
           "watchGracePeriodSeconds" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "The number of second to wait between receiving a change event and the actual sync",
             "type" : "integer"
           },
           "crds" : {
-            "description" : "???",
+            "description" : "Enabled crds integration",
             "type" : "boolean"
           },
           "watch" : {
-            "description" : "???",
+            "description" : "Enabled resources watch",
             "type" : "boolean"
           },
           "labels" : {
@@ -22980,27 +22980,27 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Kubernetes entities with those labels will be query"
           },
           "openshiftDnsOperatorCoreDnsName" : {
-            "description" : "???",
+            "description" : "DNS operator name",
             "type" : "string"
           },
           "syncIntervalSeconds" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Number of seconds between syncs",
             "type" : "integer"
           },
           "kubeDnsOperatorCoreDnsName" : {
-            "description" : "???",
+            "description" : "Kube dns name",
             "type" : "string"
           },
           "defaultGroup" : {
-            "description" : "???",
+            "description" : "Otoroshi groups where ingress services will be created",
             "type" : "string"
           },
           "kubeDnsOperatorCoreDnsNamespace" : {
-            "description" : "???",
+            "description" : "Kube dns namespace",
             "type" : "string"
           },
           "triggerKey" : {
@@ -23009,15 +23009,15 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "--"
           },
           "otoroshiNamespace" : {
-            "description" : "???",
+            "description" : "The namespace where otoroshi is deployed",
             "type" : "string"
           },
           "watchTimeoutSeconds" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "The timeout to call a watch resources",
             "type" : "integer"
           },
           "openshiftDnsOperatorCleanupDomains" : {
@@ -23025,18 +23025,18 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Cleanup DNS operator based on domains"
           },
           "namespaces" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Kubernetes namespaces that will be query"
           },
           "openshiftDnsOperatorCoreDnsPort" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "DNS operator port number",
             "type" : "integer"
           },
           "coreDnsEnv" : {
@@ -23053,7 +23053,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "--"
           },
           "image" : {
             "oneOf" : [ {
@@ -23061,14 +23061,14 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Sidecar image"
           },
           "coreDnsConfigMapName" : {
-            "description" : "???",
+            "description" : "The name of the coredns config-map",
             "type" : "string"
           },
           "clusterDomain" : {
-            "description" : "???",
+            "description" : "The current kubernetes cluster domain",
             "type" : "string"
           },
           "caCert" : {
@@ -23077,10 +23077,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The kubernetes cacert"
           },
           "trust" : {
-            "description" : "???",
+            "description" : "Trust Kube CA",
             "type" : "boolean"
           },
           "ingressClasses" : {
@@ -23088,7 +23088,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Ingress classes watched by otoroshi ingress controller"
           },
           "userPassword" : {
             "oneOf" : [ {
@@ -23096,18 +23096,18 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Optional username/password to access kube api"
           },
           "syncDaikokuApikeysOnly" : {
-            "description" : "???",
+            "description" : "Sync only daikoku apikeys",
             "type" : "boolean"
           },
           "openshiftDnsOperatorCleanup" : {
-            "description" : "???",
+            "description" : "Cleanup DNS operator",
             "type" : "boolean"
           },
           "kubeSystemNamespace" : {
-            "description" : "???",
+            "description" : "The namespace containing coredns",
             "type" : "string"
           },
           "ingressEndpointIp" : {
@@ -23116,33 +23116,33 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "--"
           },
           "namespacesLabels" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Kubernetes namespaces with those labels that will be query"
           },
           "openshiftDnsOperatorCleanupNames" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Cleanup DNS operator based on names"
           },
           "kubeDnsOperatorCoreDnsPort" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Kube dns port number",
             "type" : "integer"
           },
           "mutatingWebhookName" : {
-            "description" : "???",
+            "description" : "Sidecar webhook name",
             "type" : "string"
           },
           "kubeLeader" : {
-            "description" : "???",
+            "description" : "Use kubernetes to select a leader",
             "type" : "boolean"
           },
           "ingressEndpointHostname" : {
@@ -23151,30 +23151,30 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "--"
           },
           "openshiftDnsOperatorIntegration" : {
-            "description" : "???",
+            "description" : "Enable the openshift operator integration",
             "type" : "boolean"
           },
           "validatingWebhookName" : {
-            "description" : "???",
+            "description" : "The name of the validating webhook",
             "type" : "string"
           },
           "coreDnsDeploymentName" : {
-            "description" : "???",
+            "description" : "The name of the coredns deployment",
             "type" : "string"
           },
           "ingresses" : {
-            "description" : "???",
+            "description" : "Enable ingress controller",
             "type" : "boolean"
           },
           "useProxyState" : {
-            "description" : "???",
+            "description" : "Use proxy state instead of loading everything from datastore",
             "type" : "boolean"
           },
           "coreDnsIntegrationDryRun" : {
-            "description" : "???",
+            "description" : "Do not modify coredns config automatically",
             "type" : "boolean"
           },
           "ingressEndpointPublishedService" : {
@@ -23183,27 +23183,27 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "--"
           },
           "corednsPort" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Port of coredns",
             "type" : "integer"
           },
           "coreDnsIntegration" : {
-            "description" : "???",
+            "description" : "Enable coredns integration",
             "type" : "boolean"
           },
           "otoroshiServiceName" : {
-            "description" : "???",
+            "description" : "The service name for otoroshi",
             "type" : "string"
           },
           "meshDomain" : {
-            "description" : "???",
+            "description" : "The domain used for service mesh",
             "type" : "string"
           },
           "kubeDnsOperatorIntegration" : {
-            "description" : "???",
+            "description" : "Enable the legacy kubedns operator integration",
             "type" : "boolean"
           },
           "triggerHost" : {
@@ -23212,10 +23212,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "--"
           },
           "openshiftDnsOperatorCoreDnsNamespace" : {
-            "description" : "???",
+            "description" : "DNS operator namespace",
             "type" : "string"
           }
         }
@@ -23249,11 +23249,11 @@
         }
       },
       "otoroshi.plugins.cache.ResponseCacheFilterConfig" : {
-        "description" : "???",
+        "description" : "Configuration for ResponseCache",
         "type" : "object",
         "properties" : {
           "json" : {
-            "description" : "???",
+            "description" : "Config for response cache filter",
             "type" : "object"
           }
         }
@@ -23291,58 +23291,58 @@
         }
       },
       "otoroshi.plugins.workflow.WorkflowJob" : {
-        "description" : "???",
+        "description" : "Experimental plugin",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesConfigMap" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "kubernetes resource of kind config map",
             "type" : "object"
           }
         }
       },
       "otoroshi.plugins.apikeys.ClientCredentialService" : {
-        "description" : "???",
+        "description" : "Plugin that provide the OAuth2 client_credentials flow",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.DisableHttp10" : {
-        "description" : "???",
+        "description" : "Plugin to disable HTTP/1.0",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesOpenshiftDnsOperator" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "kubernetes resource of kind OpenshiftOperator",
             "type" : "object"
           }
         }
       },
       "otoroshi.plugins.loggers.RequestBodyEvent" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "ua" : {
-            "description" : "???",
+            "description" : "The user agent",
             "type" : "string"
           },
           "reqId" : {
-            "description" : "???",
+            "description" : "The request id",
             "type" : "string"
           },
           "url" : {
-            "description" : "???",
+            "description" : "The request url",
             "type" : "string"
           },
           "from" : {
-            "description" : "???",
+            "description" : "The incoming request ip address",
             "type" : "string"
           },
           "headers" : {
@@ -23350,10 +23350,10 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The request headers"
           },
           "method" : {
-            "description" : "???",
+            "description" : "The request method",
             "type" : "string"
           }
         }
@@ -23403,7 +23403,7 @@
         }
       },
       "otoroshi.next.plugins.api.NgPluginHttpResponse" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "headers" : {
@@ -23457,12 +23457,12 @@
         }
       },
       "otoroshi.plugins.oidc.OIDCHeaders" : {
-        "description" : "???",
+        "description" : "Plugin to pass OIDC related info as headers",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.apikeys.ApiKeyAllowedOnThisServiceValidator" : {
-        "description" : "???",
+        "description" : "Plugin that validates apikey for specific services",
         "type" : "object",
         "properties" : { }
       },
@@ -23651,7 +23651,7 @@
         }
       },
       "otoroshi.plugins.useragent.UserAgentExtractor" : {
-        "description" : "???",
+        "description" : "Plugin that extract user-agent related infos",
         "type" : "object",
         "properties" : { }
       },
@@ -23728,7 +23728,7 @@
         } ]
       },
       "otoroshi.next.plugins.TcpTunnel" : {
-        "description" : "???",
+        "description" : "Plugin to have tcp tunnels over websockets",
         "type" : "object",
         "properties" : { }
       },
@@ -23756,7 +23756,7 @@
         }
       },
       "otoroshi.next.plugins.api.NgPluginHttpRequest" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "url" : {
@@ -23937,27 +23937,27 @@
         }
       },
       "otoroshi.next.plugins.api.NgAccessValidator" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.cache.ResponseCacheConfig" : {
-        "description" : "???",
+        "description" : "Configuration for ResponseCache",
         "type" : "object",
         "properties" : {
           "json" : {
-            "description" : "???",
+            "description" : "Config for response cache",
             "type" : "object"
           }
         }
       },
       "otoroshi.next.plugins.api.NgRequestTransformer" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.biscuit.BiscuitValidator" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -24017,12 +24017,12 @@
         }
       },
       "otoroshi.plugins.apikeys.ClientCredentialFlowExtractor" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.log4j.Log4ShellFilter" : {
-        "description" : "???",
+        "description" : "Plugin to mitigate Log4Shell attacks",
         "type" : "object",
         "properties" : { }
       },
@@ -24146,7 +24146,7 @@
         }
       },
       "otoroshi.next.models.NgPluginInstanceConfig" : {
-        "description" : "???",
+        "description" : "The current configuration for a plugin",
         "type" : "object",
         "properties" : {
           "raw" : {
@@ -24228,17 +24228,17 @@
         }
       },
       "otoroshi.plugins.geoloc.GeolocationInfoEndpoint" : {
-        "description" : "???",
+        "description" : "Plugin that send geolocation infos to the client through an endpoint",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.models.NgTreeNodePath" : {
-        "description" : "???",
+        "description" : "A node of the tree router",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.QueryTransformer" : {
-        "description" : "???",
+        "description" : "Plugin to transform query string",
         "type" : "object",
         "properties" : {
           "remove" : {
@@ -24348,12 +24348,12 @@
         }
       },
       "otoroshi.plugins.core.apikeys.ClientIdApikeyExtractor" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.StaticResponseConfig" : {
-        "description" : "???",
+        "description" : "Configuration for StaticResponse",
         "type" : "object",
         "properties" : {
           "status" : {
@@ -24375,12 +24375,12 @@
         }
       },
       "otoroshi.plugins.useragent.UserAgentInfoHeader" : {
-        "description" : "???",
+        "description" : "Plugin that pass user-agent infos in headers",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.HeadersValidation" : {
-        "description" : "???",
+        "description" : "Plugin to validate headers",
         "type" : "object",
         "properties" : {
           "headers" : {
@@ -24481,7 +24481,7 @@
         }
       },
       "otoroshi.next.models.NgPlugins" : {
-        "description" : "???",
+        "description" : "A set of NgPluginInstance",
         "type" : "object",
         "properties" : {
           "slots" : {
@@ -24494,22 +24494,22 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesIngressClass" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "kubernetes resource of kind ingressclass",
             "type" : "object"
           }
         }
       },
       "otoroshi.next.plugins.Http2Caller" : {
-        "description" : "???",
+        "description" : "Experimental plugin",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob" : {
-        "description" : "???",
+        "description" : "Plugin to import entities from kubernetes CRDs",
         "type" : "object",
         "properties" : { }
       },
@@ -24532,39 +24532,39 @@
         }
       },
       "otoroshi.plugins.mirror.RequestContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "descriptor" : {
-            "description" : "???",
+            "description" : "Current descriptor",
             "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptor"
           },
           "id" : {
-            "description" : "???",
+            "description" : "The id of the request",
             "type" : "string"
           },
           "config" : {
-            "description" : "???",
+            "description" : "Current plugin config",
             "$ref" : "#/components/schemas/otoroshi.plugins.mirror.MirroringPluginConfig"
           }
         }
       },
       "otoroshi.plugins.biscuit.PreRoutingVerifierContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "ctx" : {
-            "description" : "???",
+            "description" : "Current context",
             "$ref" : "#/components/schemas/otoroshi.script.PreRoutingContext"
           },
           "apk" : {
-            "description" : "???",
+            "description" : "Current apikey",
             "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
           }
         }
       },
       "otoroshi.next.plugins.OtoroshiChallenge" : {
-        "description" : "???",
+        "description" : "Plugin for otoroshi challenge",
         "type" : "object",
         "properties" : {
           "raw" : {
@@ -24578,7 +24578,7 @@
         "description" : "Plugin scala code"
       },
       "otoroshi.next.plugins.api.NgTransformerErrorContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "config" : {
@@ -24704,17 +24704,17 @@
         }
       },
       "otoroshi.plugins.loggers.BodyLoggerFilterConfig" : {
-        "description" : "???",
+        "description" : "Configuration for BodyLogger",
         "type" : "object",
         "properties" : {
           "json" : {
-            "description" : "???",
+            "description" : "The current config",
             "type" : "object"
           }
         }
       },
       "otoroshi.plugins.external.ExternalHttpValidator" : {
-        "description" : "???",
+        "description" : "Plugin that validates call based on an external http service",
         "type" : "object",
         "properties" : { }
       },
@@ -24794,12 +24794,12 @@
         }
       },
       "otoroshi.plugins.composite.CompositePlugin" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.wrappers.CompositeWrapper" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -24861,7 +24861,7 @@
         }
       },
       "otoroshi.next.plugins.SOAPActionConfig" : {
-        "description" : "???",
+        "description" : "Configuration for SOAPAction",
         "type" : "object",
         "properties" : {
           "jqResponseFilter" : {
@@ -24972,7 +24972,7 @@
         }
       },
       "otoroshi.next.plugins.Redirection" : {
-        "description" : "???",
+        "description" : "Plugin to perform redirections",
         "type" : "object",
         "properties" : {
           "code" : {
@@ -24987,11 +24987,11 @@
         }
       },
       "otoroshi.plugins.discovery.DiscoveryJobRegistrationId" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "id" : {
-            "description" : "???",
+            "description" : "A service id",
             "type" : "string"
           }
         }
@@ -25017,7 +25017,7 @@
         }
       },
       "otoroshi.next.plugins.ContextValidationConfig" : {
-        "description" : "???",
+        "description" : "Configuration for ContextValidation",
         "type" : "object",
         "properties" : {
           "validators" : {
@@ -25030,11 +25030,11 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesDeployment" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "kubernetes resource of kind deployment",
             "type" : "object"
           }
         }
@@ -25116,7 +25116,7 @@
         }
       },
       "otoroshi.next.plugins.GlobalThrottling" : {
-        "description" : "???",
+        "description" : "Plugin for throttling",
         "type" : "object",
         "properties" : { }
       },
@@ -25169,7 +25169,7 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -25192,7 +25192,7 @@
         }
       },
       "otoroshi.plugins.clientcert.HasClientCertMatchingValidator" : {
-        "description" : "???",
+        "description" : "Plugin that validates client certificates",
         "type" : "object",
         "properties" : { }
       },
@@ -25230,12 +25230,12 @@
         }
       },
       "otoroshi.next.plugins.NgOtoroshiChallengeKeys" : {
-        "description" : "???",
+        "description" : "Configuration for OtoroshiChallenge",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.wrappers.RequestTransformerWrapper" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -25256,7 +25256,7 @@
         } ]
       },
       "otoroshi.next.plugins.api.NgBeforeRequestContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "config" : {
@@ -25282,17 +25282,17 @@
         }
       },
       "otoroshi.plugins.jsoup.HtmlPatcher" : {
-        "description" : "???",
+        "description" : "Plugin to transform html response body",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.api.NgRequestSink" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.apikeys.ClientCredentialFlowBody" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "scope" : {
@@ -25301,22 +25301,22 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Scope of the request"
           },
           "clientId" : {
-            "description" : "???",
+            "description" : "The request client id",
             "type" : "string"
           },
           "clientSecret" : {
-            "description" : "???",
+            "description" : "The request client secret",
             "type" : "string"
           },
           "grantType" : {
-            "description" : "???",
+            "description" : "The grand type (client_credentials)",
             "type" : "string"
           },
           "bearerKind" : {
-            "description" : "???",
+            "description" : "The kind of bearer",
             "type" : "string"
           }
         }
@@ -25394,66 +25394,66 @@
         }
       },
       "otoroshi.plugins.metrics.PrometheusSupport" : {
-        "description" : "???",
+        "description" : "Plugin to collect service metrics",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.izanami.IzanamiProxyConfig" : {
-        "description" : "???",
+        "description" : "Configuration for IzanamiProxy",
         "type" : "object",
         "properties" : {
           "izanamiClientId" : {
-            "description" : "???",
+            "description" : "Izanami client id",
             "type" : "string"
           },
           "path" : {
-            "description" : "???",
+            "description" : "Izanami server path",
             "type" : "string"
           },
           "mtls" : {
-            "description" : "???",
+            "description" : "Izanami server tls config",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
           },
           "featuresEnabled" : {
-            "description" : "???",
+            "description" : "Is features proxy enabled",
             "type" : "boolean"
           },
           "featuresWithContextEnabled" : {
-            "description" : "???",
+            "description" : "Is contextual features enabled ?",
             "type" : "boolean"
           },
           "izanamiClientSecret" : {
-            "description" : "???",
+            "description" : "Izanami client secret",
             "type" : "string"
           },
           "timeout" : {
-            "description" : "???",
+            "description" : "Timeout when talking to the izanami server",
             "type" : "number"
           },
           "configurationEnabled" : {
-            "description" : "???",
+            "description" : "Is configuration proxy enabled",
             "type" : "boolean"
           },
           "featurePattern" : {
-            "description" : "???",
+            "description" : "the searched pattern for features",
             "type" : "string"
           },
           "izanamiUrl" : {
-            "description" : "???",
+            "description" : "Izanami server url",
             "type" : "string"
           },
           "autoContext" : {
-            "description" : "???",
+            "description" : "Automatically pass the current user and/or apikey as context",
             "type" : "boolean"
           },
           "configPattern" : {
-            "description" : "???",
+            "description" : "the searched pattern for config",
             "type" : "string"
           }
         }
       },
       "otoroshi.next.plugins.NgBadResponsesFaultConfig" : {
-        "description" : "???",
+        "description" : "Configuration for SnowMonkeyChaos",
         "type" : "object",
         "properties" : {
           "ratio" : {
@@ -25471,12 +25471,12 @@
         }
       },
       "otoroshi.plugins.accesslog.KafkaAccessLog" : {
-        "description" : "???",
+        "description" : "Plugin that log access in a kafka topic",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.AdditionalHeadersOut" : {
-        "description" : "???",
+        "description" : "Plugin that add headers on a response",
         "type" : "object",
         "properties" : {
           "headers" : {
@@ -25489,7 +25489,7 @@
         }
       },
       "otoroshi.plugins.core.apikeys.CustomHeadersApikeyExtractor" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -25508,7 +25508,7 @@
         }
       },
       "otoroshi.plugins.envoy.EnvoyControlPlane" : {
-        "description" : "???",
+        "description" : "Experimental plugin",
         "type" : "object",
         "properties" : { }
       },
@@ -25528,7 +25528,7 @@
         }
       },
       "otoroshi.plugins.oidc.ThirdPartyApiKeyConfig" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -25561,7 +25561,7 @@
         }
       },
       "otoroshi.plugins.oidc.OIDCThirdPartyApiKeyConfig" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "excludedPatterns" : {
@@ -25569,27 +25569,27 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "deprecated"
           },
           "headerName" : {
-            "description" : "???",
+            "description" : "deprecated",
             "type" : "string"
           },
           "localVerificationOnly" : {
-            "description" : "???",
+            "description" : "deprecated",
             "type" : "boolean"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "deprecated",
             "type" : "boolean"
           },
           "ttl" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "deprecated",
             "type" : "integer"
           },
           "uniqueApiKey" : {
-            "description" : "???",
+            "description" : "deprecated",
             "type" : "boolean"
           },
           "rolesPath" : {
@@ -25597,19 +25597,19 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "deprecated"
           },
           "mode" : {
-            "description" : "???",
+            "description" : "deprecated",
             "$ref" : "#/components/schemas/otoroshi.plugins.oidc.OIDCThirdPartyApiKeyConfigMode"
           },
           "quotasEnabled" : {
-            "description" : "???",
+            "description" : "deprecated",
             "type" : "boolean"
           },
           "monthlyQuota" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "deprecated",
             "type" : "integer"
           },
           "scopes" : {
@@ -25617,23 +25617,23 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "deprecated"
           },
           "roles" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "deprecated"
           },
           "throttlingQuota" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "deprecated",
             "type" : "integer"
           },
           "dailyQuota" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "deprecated",
             "type" : "integer"
           },
           "oidcConfigRef" : {
@@ -25642,12 +25642,12 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "deprecated"
           }
         }
       },
       "otoroshi.plugins.geoloc.GeolocationInfoHeader" : {
-        "description" : "???",
+        "description" : "Plugin that send geolocation infos to the backend through a header",
         "type" : "object",
         "properties" : { }
       },
@@ -25662,12 +25662,12 @@
         }
       },
       "otoroshi.next.models.NgServiceDataStore" : {
-        "description" : "???",
+        "description" : "The datastore for services",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.models.NgPluginInstance" : {
-        "description" : "???",
+        "description" : "The current configuration and target for a plugin",
         "type" : "object",
         "properties" : {
           "debug" : {
@@ -25703,7 +25703,7 @@
         }
       },
       "otoroshi.next.plugins.JQRequestConfig" : {
-        "description" : "???",
+        "description" : "Configuration for JQRequest",
         "type" : "object",
         "properties" : {
           "filter" : {
@@ -25713,12 +25713,12 @@
         }
       },
       "otoroshi.plugins.hmac.HMACValidator" : {
-        "description" : "???",
+        "description" : "Plugin that can validate an hmac call",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.NgRestrictions" : {
-        "description" : "???",
+        "description" : "Plugin to apply routing restrictions",
         "type" : "object",
         "properties" : {
           "allowLast" : {
@@ -25777,12 +25777,12 @@
         }
       },
       "otoroshi.next.plugins.SendOtoroshiHeadersBack" : {
-        "description" : "???",
+        "description" : "Plugin to enrich response header with otoroshi infos",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.accesslog.AccessLogJson" : {
-        "description" : "???",
+        "description" : "Plugin that log access in json",
         "type" : "object",
         "properties" : { }
       },
@@ -25887,12 +25887,12 @@
         }
       },
       "otoroshi.next.plugins.api.NgRouteMatcher" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.NoopSpanExporter" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -25942,12 +25942,12 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesIngressToDescriptor" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.api.NgRouteMatcherContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "route" : {
@@ -25969,7 +25969,7 @@
         }
       },
       "otoroshi.next.plugins.RBAC" : {
-        "description" : "???",
+        "description" : "Plugin to apply RBAC",
         "type" : "object",
         "properties" : {
           "roles" : {
@@ -26170,7 +26170,7 @@
         }
       },
       "otoroshi.next.plugins.SOAPAction" : {
-        "description" : "???",
+        "description" : "Plugin to call SOAP service",
         "type" : "object",
         "properties" : {
           "jqResponseFilter" : {
@@ -26228,12 +26228,12 @@
         }
       },
       "otoroshi.next.models.StoredNgBackendDataStore" : {
-        "description" : "???",
+        "description" : "The datastore for backend",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.NgApikeyExtractorJwt" : {
-        "description" : "???",
+        "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
           "cookieName" : {
@@ -26305,7 +26305,7 @@
         }
       },
       "otoroshi.next.plugins.XForwardedHeaders" : {
-        "description" : "???",
+        "description" : "Plugin to add X-Forwarded headers in a request",
         "type" : "object",
         "properties" : { }
       },
@@ -26315,31 +26315,31 @@
         "properties" : { }
       },
       "otoroshi.plugins.biscuit.PubKeyBiscuitToken" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "token" : {
-            "description" : "???",
+            "description" : "the current token",
             "type" : "string"
           }
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesService" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "kubernetes resource of kind service",
             "type" : "object"
           }
         }
       },
       "otoroshi.plugins.jobs.kubernetes.OtoResHolder" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "Internal api",
             "type" : "object"
           }
         }
@@ -26367,11 +26367,11 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesMutatingWebhookConfiguration" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "kubernetes resource of kind mutating webhook configuration",
             "type" : "object"
           }
         }
@@ -26382,7 +26382,7 @@
         "properties" : { }
       },
       "otoroshi.next.plugins.NgAuthModuleConfig" : {
-        "description" : "???",
+        "description" : "Configuration for AuthModule",
         "type" : "object",
         "properties" : {
           "module" : {
@@ -26400,7 +26400,7 @@
         }
       },
       "otoroshi.next.plugins.NgChaosConfig" : {
-        "description" : "???",
+        "description" : "Configuration for SnowMonkeyChaos",
         "type" : "object",
         "properties" : {
           "largeRequestFaultConfig" : {
@@ -26480,22 +26480,22 @@
         "description" : "Proxy server"
       },
       "otoroshi.plugins.loggers.BodyLogger" : {
-        "description" : "???",
+        "description" : "Plugin to log http bodies",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.biscuit.AccessValidatorContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "ctx" : {
-            "description" : "???",
+            "description" : "Current context",
             "$ref" : "#/components/schemas/otoroshi.script.AccessContext"
           }
         }
       },
       "otoroshi.next.plugins.MockResponse" : {
-        "description" : "???",
+        "description" : "Plugin to mock responses",
         "type" : "object",
         "properties" : {
           "path" : {
@@ -26529,7 +26529,7 @@
         "description" : "PEM encoded certificate"
       },
       "otoroshi.next.plugins.GlobalMaintenanceMode" : {
-        "description" : "???",
+        "description" : "Plugin for maintainance mode",
         "type" : "object",
         "properties" : { }
       },
@@ -26594,7 +26594,7 @@
         }
       },
       "otoroshi.next.plugins.NgApikeyExtractorClientId" : {
-        "description" : "???",
+        "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
           "headerName" : {
@@ -26626,11 +26626,11 @@
         }
       },
       "otoroshi.plugins.mirror.MirroringPluginConfig" : {
-        "description" : "???",
+        "description" : "Configuration for MirroringPlugin",
         "type" : "object",
         "properties" : {
           "conf" : {
-            "description" : "???",
+            "description" : "Current conf",
             "type" : "object"
           }
         }
@@ -26670,7 +26670,7 @@
         }
       },
       "otoroshi.plugins.biscuit.BiscuitConfig" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "facts" : {
@@ -26678,7 +26678,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Biscuit facts"
           },
           "publicKey" : {
             "oneOf" : [ {
@@ -26686,7 +26686,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Biscuit public key for validation"
           },
           "secret" : {
             "oneOf" : [ {
@@ -26694,21 +26694,21 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Biscuit secret"
           },
           "resources" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Biscuit resources"
           },
           "enforce" : {
-            "description" : "???",
+            "description" : "Enforce biscuit validation",
             "type" : "boolean"
           },
           "extractorName" : {
-            "description" : "???",
+            "description" : "The name for the location",
             "type" : "string"
           },
           "checks" : {
@@ -26716,10 +26716,10 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Biscuit checks"
           },
           "extractor" : {
-            "description" : "???",
+            "description" : "Biscuit location (header, cookie, query)",
             "type" : "string"
           },
           "rules" : {
@@ -26727,16 +26727,16 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Biscuit rules"
           },
           "sealedToken" : {
-            "description" : "???",
+            "description" : "Is it a sealed token",
             "type" : "boolean"
           }
         }
       },
       "otoroshi.next.plugins.NgJwtVerificationConfig" : {
-        "description" : "???",
+        "description" : "Configuration for JwtVerification",
         "type" : "object",
         "properties" : {
           "verifiers" : {
@@ -26749,7 +26749,7 @@
         }
       },
       "otoroshi.next.plugins.W3CTracingConfig" : {
-        "description" : "???",
+        "description" : "Configuration for W3CTracing",
         "type" : "object",
         "properties" : {
           "kind" : {
@@ -26775,7 +26775,7 @@
         }
       },
       "otoroshi.next.plugins.api.NgMergedPreRouting" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "plugins" : {
@@ -26788,7 +26788,7 @@
         }
       },
       "otoroshi.next.plugins.api.NgPluginWrapper" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -26808,7 +26808,7 @@
         }
       },
       "otoroshi.plugins.geoloc.IpStackGeolocationHelper" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -26893,7 +26893,7 @@
         }
       },
       "otoroshi.next.plugins.NgEndlessHttpResponseConfig" : {
-        "description" : "???",
+        "description" : "Configuration for EndlessHttpResponse",
         "type" : "object",
         "properties" : {
           "finger" : {
@@ -26928,7 +26928,7 @@
         "description" : "Body composed of stringified JSON lines, each one representing an entity"
       },
       "otoroshi.plugins.discovery.DiscoveryJob" : {
-        "description" : "???",
+        "description" : "Plugin that add services discovery to otoroshi",
         "type" : "object",
         "properties" : { }
       },
@@ -26941,23 +26941,23 @@
         "description" : "value used by the openapi generator when no matching type found. Should be fixed in a near future."
       },
       "otoroshi.plugins.authcallers.OAuth2CallerConfig" : {
-        "description" : "???",
+        "description" : "Configuration for OAuth2Caller",
         "type" : "object",
         "properties" : {
           "method" : {
-            "description" : "???",
+            "description" : "Http method to talk with the id server",
             "type" : "string"
           },
           "url" : {
-            "description" : "???",
+            "description" : "Url of the id server",
             "type" : "string"
           },
           "tlsConfig" : {
-            "description" : "???",
+            "description" : "Current tls config to talk to the id server",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
           },
           "kind" : {
-            "description" : "???",
+            "description" : "client_credentials or password",
             "$ref" : "#/components/schemas/otoroshi.plugins.authcallers.OAuth2Kind"
           },
           "password" : {
@@ -26966,14 +26966,14 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Optional password for password flow"
           },
           "cacheTokenSeconds" : {
-            "description" : "???",
+            "description" : "How long will the token be cached before reaching out to the id server",
             "type" : "number"
           },
           "headerValueFormat" : {
-            "description" : "???",
+            "description" : "The header format to pass the token",
             "type" : "string"
           },
           "user" : {
@@ -26982,14 +26982,14 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Optional user for password flow"
           },
           "headerName" : {
-            "description" : "???",
+            "description" : "The header name to pass the token",
             "type" : "string"
           },
           "clientSecret" : {
-            "description" : "???",
+            "description" : "The client secret",
             "type" : "string"
           },
           "scope" : {
@@ -26998,14 +26998,14 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Optional request scope"
           },
           "jsonPayload" : {
-            "description" : "???",
+            "description" : "Use a json payload instead of a urlformencoded one",
             "type" : "boolean"
           },
           "clientId" : {
-            "description" : "???",
+            "description" : "The client id",
             "type" : "string"
           },
           "audience" : {
@@ -27014,12 +27014,12 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "An optional audiance"
           }
         }
       },
       "otoroshi.next.plugins.MissingHeadersOut" : {
-        "description" : "???",
+        "description" : "Plugin to add headers to a response",
         "type" : "object",
         "properties" : {
           "headers" : {
@@ -27032,17 +27032,17 @@
         }
       },
       "otoroshi.plugins.oidc.ThirdPartyApiKeyConfigType" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.authcallers.BasicAuthCaller" : {
-        "description" : "???",
+        "description" : "Plugin that can call a basic auth. backend",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.Keys" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -27124,7 +27124,7 @@
         }
       },
       "otoroshi.next.plugins.SdkWrapper" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "config" : {
@@ -27153,11 +27153,11 @@
         }
       },
       "otoroshi.plugins.mirror.MirroringEvent" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "ctx" : {
-            "description" : "???",
+            "description" : "Current request context",
             "$ref" : "#/components/schemas/otoroshi.plugins.mirror.RequestContext"
           }
         }
@@ -27178,22 +27178,22 @@
         }
       },
       "otoroshi.plugins.external.ExternalHttpValidatorConfig" : {
-        "description" : "???",
+        "description" : "Configuration for ExternalHttpValidator",
         "type" : "object",
         "properties" : {
           "config" : {
-            "description" : "???",
+            "description" : "Configuration for external http validation",
             "type" : "object"
           }
         }
       },
       "otoroshi.plugins.geoloc.MaxMindGeolocationInfoExtractor" : {
-        "description" : "???",
+        "description" : "Plugin that extracts geolocation based on maxmind db",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.NgHeaderNamesConfig" : {
-        "description" : "???",
+        "description" : "Configuration for headers plugins",
         "type" : "object",
         "properties" : {
           "names" : {
@@ -27361,12 +27361,12 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesCRDsJob" : {
-        "description" : "???",
+        "description" : "Plugin to import entities from kubernetes CRDs",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.api.NgPluginVisibility" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -27406,7 +27406,7 @@
         }
       },
       "otoroshi.next.plugins.NgLargeRequestFaultConfig" : {
-        "description" : "???",
+        "description" : "Configuration for SnowMonkeyChaos",
         "type" : "object",
         "properties" : {
           "ratio" : {
@@ -27455,7 +27455,7 @@
         }
       },
       "otoroshi.next.plugins.RBACConfig" : {
-        "description" : "???",
+        "description" : "Configuration for RBAC",
         "type" : "object",
         "properties" : {
           "roles" : {
@@ -27519,12 +27519,12 @@
         }
       },
       "otoroshi.plugins.biscuit.VerificationContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.NgCanarySettings" : {
-        "description" : "???",
+        "description" : "Configuration for CanaryMode",
         "type" : "object",
         "properties" : {
           "traffic" : {
@@ -27592,22 +27592,22 @@
         }
       },
       "otoroshi.plugins.hmac.HMACUtils" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.authcallers.ForceRetryException" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.models.RoutingStrategy" : {
-        "description" : "???",
+        "description" : "The routing strategy",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.IpAddressBlockList" : {
-        "description" : "???",
+        "description" : "Plugin to block only some ip addresses",
         "type" : "object",
         "properties" : {
           "addresses" : {
@@ -27620,11 +27620,11 @@
         }
       },
       "otoroshi.plugins.biscuit.SealedBiscuitToken" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "token" : {
-            "description" : "???",
+            "description" : "the current token",
             "type" : "string"
           }
         }
@@ -27650,17 +27650,17 @@
         }
       },
       "otoroshi.next.plugins.api.NgRequestOrigin" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.quotas.ServiceQuotas" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesCertSyncJob" : {
-        "description" : "???",
+        "description" : "Plugin to sync kubernetes certificates with otoroshi",
         "type" : "object",
         "properties" : { }
       },
@@ -27683,7 +27683,7 @@
         }
       },
       "otoroshi.next.plugins.api.NgAccessContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "config" : {
@@ -27733,7 +27733,7 @@
         }
       },
       "otoroshi.next.models.NgMatchedRoute" : {
-        "description" : "???",
+        "description" : "A matched route in the new router",
         "type" : "object",
         "properties" : {
           "route" : {
@@ -27775,7 +27775,7 @@
         }
       },
       "otoroshi.next.plugins.NgLargeResponseFaultConfig" : {
-        "description" : "???",
+        "description" : "Configuration for SnowMonkeyChaos",
         "type" : "object",
         "properties" : {
           "ratio" : {
@@ -27791,7 +27791,7 @@
         }
       },
       "otoroshi.next.plugins.api.NgPluginConfig" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -27815,7 +27815,7 @@
         }
       },
       "otoroshi.plugins.oidc.OIDCAccessTokenAsApikey" : {
-        "description" : "???",
+        "description" : "Plugin to use OIDC token as apikey",
         "type" : "object",
         "properties" : { }
       },
@@ -27834,7 +27834,7 @@
         }
       },
       "otoroshi.next.plugins.NgIpAddressesConfig" : {
-        "description" : "???",
+        "description" : "Configuration for ip address related plugins",
         "type" : "object",
         "properties" : {
           "addresses" : {
@@ -27867,11 +27867,11 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.KubernetesIngress" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "raw" : {
-            "description" : "???",
+            "description" : "kubernetes resource of kind ingress",
             "type" : "object"
           }
         }
@@ -27988,7 +27988,7 @@
         }
       },
       "otoroshi.next.plugins.JsonToXmlRequest" : {
-        "description" : "???",
+        "description" : "Plugin to transform json body to xml",
         "type" : "object",
         "properties" : {
           "filter" : {
@@ -28002,12 +28002,12 @@
         }
       },
       "otoroshi.plugins.defer.DeferPlugin" : {
-        "description" : "???",
+        "description" : "Plugin that defers http responses",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.StaticResponse" : {
-        "description" : "???",
+        "description" : "Plugin to return static responses",
         "type" : "object",
         "properties" : {
           "status" : {
@@ -28029,12 +28029,12 @@
         }
       },
       "otoroshi.next.plugins.OverrideHost" : {
-        "description" : "???",
+        "description" : "Plugin to override backend host header",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.NgPublicPrivatePathsConfig" : {
-        "description" : "???",
+        "description" : "Configuration for PublicPrivatePaths",
         "type" : "object",
         "properties" : {
           "strict" : {
@@ -28073,12 +28073,12 @@
         }
       },
       "otoroshi.plugins.clientcert.ClientCertChainHeader" : {
-        "description" : "???",
+        "description" : "Plugin that can pass client certificates as header to the backends",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.proxy.NgReportPluginSequenceItem" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "start" : {
@@ -28120,7 +28120,7 @@
         }
       },
       "otoroshi.plugins.security.SecurityTxt" : {
-        "description" : "???",
+        "description" : "Plugin that serves /.well-known/security.txt resources",
         "type" : "object",
         "properties" : { }
       },
@@ -28142,7 +28142,7 @@
         }
       },
       "otoroshi.next.plugins.api.NgTunnelHandlerContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "config" : {
@@ -28164,7 +28164,7 @@
         }
       },
       "otoroshi.next.plugins.RoutingRestrictions" : {
-        "description" : "???",
+        "description" : "Configuration for NgRestrictions",
         "type" : "object",
         "properties" : {
           "allowLast" : {
@@ -28195,7 +28195,7 @@
         }
       },
       "otoroshi.next.plugins.GlobalPerIpAddressThrottling" : {
-        "description" : "???",
+        "description" : "Plugin for ip address throttling",
         "type" : "object",
         "properties" : { }
       },
@@ -28204,7 +28204,7 @@
         "description" : "Audit trail event"
       },
       "otoroshi.plugins.izanami.IzanamiProxy" : {
-        "description" : "???",
+        "description" : "Plugin to proxy izanami",
         "type" : "object",
         "properties" : { }
       },
@@ -28253,7 +28253,7 @@
         }
       },
       "otoroshi.next.plugins.EndlessHttpResponse" : {
-        "description" : "???",
+        "description" : "Plugin for endless response",
         "type" : "object",
         "properties" : {
           "finger" : {
@@ -28275,7 +28275,7 @@
         "description" : "Version of the info token"
       },
       "otoroshi.plugins.biscuit.BiscuitHelper" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -28287,7 +28287,7 @@
         }
       },
       "otoroshi.next.plugins.W3CTracing" : {
-        "description" : "???",
+        "description" : "Plugin to have distributed tracing",
         "type" : "object",
         "properties" : {
           "kind" : {
@@ -28313,7 +28313,7 @@
         }
       },
       "otoroshi.next.models.NgSelectedBackendTarget" : {
-        "description" : "???",
+        "description" : "The current target",
         "type" : "object",
         "properties" : {
           "target" : {
@@ -28350,7 +28350,7 @@
         } ]
       },
       "otoroshi.next.plugins.Robots" : {
-        "description" : "???",
+        "description" : "Plugin to handle search engine bots",
         "type" : "object",
         "properties" : {
           "robotTxtContent" : {
@@ -28413,7 +28413,7 @@
         "description" : "no value object, used to represent a None option value"
       },
       "otoroshi.next.plugins.NgApikeyExtractors" : {
-        "description" : "???",
+        "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
           "basic" : {
@@ -28475,7 +28475,7 @@
         }
       },
       "otoroshi.next.plugins.NgRedirectionSettings" : {
-        "description" : "???",
+        "description" : "Configuration for Redirection",
         "type" : "object",
         "properties" : {
           "code" : {
@@ -28559,7 +28559,7 @@
         "properties" : { }
       },
       "otoroshi.next.plugins.api.NgRequestSinkContext" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "message" : {
@@ -28590,17 +28590,17 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.OtoroshiToKubernetesCertSyncJob" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.biscuit.BiscuitExtractor" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.api.NgAccess" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -28611,7 +28611,7 @@
         }
       },
       "otoroshi.plugins.jobs.kubernetes.OtoAnnotationConfig" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "annotations" : {
@@ -28619,12 +28619,12 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Internal api"
           }
         }
       },
       "otoroshi.plugins.accesslog.AccessLog" : {
-        "description" : "???",
+        "description" : "Plugin that log access",
         "type" : "object",
         "properties" : { }
       },
@@ -28634,7 +28634,7 @@
         "properties" : { }
       },
       "otoroshi.next.plugins.api.NgMergedRequestTransformer" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : {
           "plugins" : {
@@ -28753,12 +28753,12 @@
         }
       },
       "otoroshi.plugins.useragent.UserAgentHelper" : {
-        "description" : "???",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.next.plugins.NgApikeyCallsConfig" : {
-        "description" : "???",
+        "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
           "extractors" : {
