@@ -2055,6 +2055,7 @@ class ProxyEngine() extends RequestHandler {
             val containsNamedParams = allPaths.exists(_.contains("/:"))
             val containsRegexNamedParams = allPaths.exists(_.contains("/$"))
             if (!containsWildcard && !containsNamedParams && !containsRegexNamedParams && allPaths.size == 1 && allPaths.contains("/")) {
+              logger.warn("cleanup uri stripping")
               rawUri
             } else {
               // WARNING: this one can cause issue as here path segments can be stripped for the bad reasons

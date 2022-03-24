@@ -217,7 +217,8 @@ case class NgTreeNodePath(
         mptree match {
           case None if endsWithSlash && routes.isEmpty              => None
           case None if endsWithSlash && routes.nonEmpty             =>
-            NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.isEmpty).some
+            // NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.isEmpty).some
+            NgMatchedRoutes(routes, path, pathParams, noMoreSegments = segments.isEmpty).some
           case None if !endsWithSlash                               => {
             // here is one of the worst case scenario where the user wants to use '/api/999' to match calls on '/api/999-foo'
             segmentStartsWithCache.get(
@@ -232,7 +233,9 @@ case class NgTreeNodePath(
                   .flatMap(key => tree.get(key))
                 mSubTree match {
                   case None if routes.isEmpty => None
-                  case None                   => NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = false).some
+                  case None                   =>
+                    // NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = false).some
+                    NgMatchedRoutes(routes, path, pathParams, noMoreSegments = false).some
                   case Some(ptree)            =>
                     ptree.find(segments.tail, endsWithSlash, s"$path/$head", pathParams) match {
                       case None if routes.isEmpty => None
