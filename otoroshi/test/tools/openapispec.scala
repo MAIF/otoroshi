@@ -7,8 +7,6 @@ import org.scalatest.wordspec.AnyWordSpec
 import otoroshi.openapi.{CrdsGenerator, OpenApiGenerator}
 
 class OpenApiSpec extends AnyWordSpec with Matchers with OptionValues {
-  // val runner = new OpenApiGeneratorRunner()
-  // runner.generate()
 
  val scanResult = new ClassGraph()
     .addClassLoader(this.getClass.getClassLoader)
@@ -19,7 +17,11 @@ class OpenApiSpec extends AnyWordSpec with Matchers with OptionValues {
   val generator = new OpenApiGenerator(
     "./conf/routes",
     "./app/openapi/openapi-cfg.json",
-    Seq("./public/openapi.json", "../manual/src/main/paradox/code/openapi.json"),
+    Seq(
+      "./public/openapi.json",
+      "./app/openapi/openapi.json",
+      "../manual/src/main/paradox/code/openapi.json"
+    ),
     scanResult = scanResult,
     write = true
   )
