@@ -15,7 +15,7 @@ import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.future.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 class ServiceMetrics extends RequestTransformer {
 
@@ -180,6 +180,7 @@ class ServiceMetrics extends RequestTransformer {
 
 object PrometheusSupport {
 
+  // TODO - voir avec Mahtieu
   private[metrics] val registry = new CollectorRegistry()
 
   def register[T <: Collector](collector: T): T = {
@@ -369,8 +370,11 @@ class PrometheusServiceMetrics extends RequestTransformer {
     val config         = ctx.configFor("PrometheusServiceMetrics")
     val includeUri     = (config \ "includeUri").asOpt[Boolean].getOrElse(false)
 
+    println(config, includeUri)
+
     requestCounterGlobal.inc()
     reqDurationGlobal.observe(duration)
+
     if (includeUri) {
       reqDurationHistogramWithUri
         .labels(

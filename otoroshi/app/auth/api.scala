@@ -217,7 +217,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
   def getUserForToken(token: String)(implicit ec: ExecutionContext): Future[Option[JsValue]]
 
   def template(modType: Option[String], env: Env): AuthModuleConfig = {
-    modType match {
+    val defaultModule = modType match {
       case Some("oauth2")        =>
         GenericOauth2ModuleConfig(
           id = IdGenerator.namedId("auth_mod", env),
@@ -296,6 +296,11 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues()
         )
+    }
+    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.authConfig.map { template =>
+      AuthModuleConfig._fmt.reads(defaultModule.json.asObject.deepMerge(template)).get
+    }.getOrElse {
+      defaultModule
     }
   }
 }

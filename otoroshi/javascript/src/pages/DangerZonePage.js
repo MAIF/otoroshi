@@ -1009,6 +1009,13 @@ export class DangerZonePage extends Component {
         help: 'The percentage of monthly calls before sending alerts',
       },
     },
+    templates: {
+      type: 'code',
+      props: {
+        label: '',
+        mode: 'json',
+      }
+    },
     metadata: {
       type: 'object',
       props: { label: 'Metadata' },
@@ -1107,6 +1114,8 @@ export class DangerZonePage extends Component {
     'autoCert.caRef',
     'autoCert.allowed',
     'autoCert.notAllowed',
+    '>>>Default templates',
+    'templates',
     '>>>Global metadata',
     'tags',
     'metadata',

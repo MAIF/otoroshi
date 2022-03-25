@@ -11,6 +11,7 @@ class FormsGenerator(spec: TrieMap[String, JsValue]){
   )
 
   def run(): Map[String, Form] = {
+    println(spec)
     convertSchemasToForms(JsObject(spec).fields)
   }
 

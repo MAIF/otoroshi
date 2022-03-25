@@ -991,18 +991,30 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
 
     if (write) {
       logger.debug("")
-      specFiles.foreach { specFile =>
-        val file = new File(specFile)
-        logger.debug(s"writing spec to: '${file.getAbsolutePath}'")
-        Files.write(file.toPath, spec.prettify.split("\n").toList.asJava, StandardCharsets.UTF_8)
-      }
-      OpenApiGeneratorConfig(
+      val cfg = OpenApiGeneratorConfig(
         config.filePath,
         config.raw.asObject ++ Json.obj(
           "descriptions" -> JsObject(foundDescriptions.mapValues(JsString.apply))
           // "add_schemas" -> (config.add_schemas ++ adts.foldLeft(Json.obj())(_ ++ _))
         )
-      ).write()
+      )
+      specFiles.foreach { specFile =>
+        val prettyJson = spec.prettify
+        val file = new File(specFile)
+        logger.debug(s"writing spec to: '${file.getAbsolutePath}'")
+        if (file.exists()) {
+          val jsonRaw = Files.readString(file.toPath)
+          val json = Json.parse(jsonRaw)
+          if (spec != json) {
+            Files.write(file.toPath, prettyJson.split("\n").toList.asJava, StandardCharsets.UTF_8)
+            cfg.write()
+          }
+        } else {
+          Files.write(file.toPath, prettyJson.split("\n").toList.asJava, StandardCharsets.UTF_8)
+          cfg.write()
+        }
+      }
+      // cfg.write()
       logger.debug("")
     }
 
@@ -1042,29 +1054,5 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     } else {
       logger.debug("No old spec file found !!!!")
     }
-  }
-}
-
-class OpenApiGeneratorRunner extends App {
-
-  def generate() = {
-    val scanResult = new ClassGraph()
-      .addClassLoader(this.getClass.getClassLoader)
-      .enableAllInfo()
-      .acceptPackages(Seq("otoroshi", "otoroshi_plugins", "play.api.libs.ws"): _*)
-      .scan
-
-    val generator = new OpenApiGenerator(
-      "./conf/routes",
-      "./app/openapi/openapi-cfg.json",
-      Seq("./public/openapi.json", "../manual/src/main/paradox/code/openapi.json"),
-      scanResult = scanResult,
-      write = true
-    )
-
-    generator.run()
-
-    /*val crdsGenerator = new CrdsGenerator(spec)
-    crdsGenerator.run()*/
   }
 }

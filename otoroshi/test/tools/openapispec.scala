@@ -1,17 +1,14 @@
-package functional
+package tools
 
 import io.github.classgraph.ClassGraph
-import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.OptionValues
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.{MustMatchers, OptionValues}
-import otoroshi.openapi.{FormsGenerator, OpenApiGenerator}
-import play.api.libs.json.JsValue
+import org.scalatest.wordspec.AnyWordSpec
+import otoroshi.openapi.{CrdsGenerator, OpenApiGenerator}
 
 class OpenApiSpec extends AnyWordSpec with Matchers with OptionValues {
-  //val runner = new OpenApiGeneratorRunner()
-  //runner.generate()
 
- /* val scanResult = new ClassGraph()
+ val scanResult = new ClassGraph()
     .addClassLoader(this.getClass.getClassLoader)
     .enableAllInfo()
     .acceptPackages(Seq("otoroshi", "otoroshi_plugins", "play.api.libs.ws"): _*)
@@ -20,13 +17,16 @@ class OpenApiSpec extends AnyWordSpec with Matchers with OptionValues {
   val generator = new OpenApiGenerator(
     "./conf/routes",
     "./app/openapi/openapi-cfg.json",
-    Seq("./public/openapi.json", "../manual/src/main/paradox/code/openapi.json"),
+    Seq(
+      "./public/openapi.json",
+      "./app/openapi/openapi.json",
+      "../manual/src/main/paradox/code/openapi.json"
+    ),
     scanResult = scanResult,
-    write = false
+    write = true
   )
 
   val spec = generator.run()
 
-  val formsGenerator = new FormsGenerator(spec)
-  formsGenerator.run()*/
+  new CrdsGenerator(spec).run()
 }

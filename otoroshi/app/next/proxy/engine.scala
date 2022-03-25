@@ -2050,8 +2050,18 @@ class ProxyEngine() extends RequestHandler {
       attrs.get(Keys.MatchedRouteKey) match {
         case Some(mroute) =>
           if (mroute.path.nonEmpty) {
-            val mpath = mroute.path.substring(1)
-            rawUri.replaceFirst(mpath, "") // handles wildcard
+            val allPaths = route.frontend.domains.map(_.path)
+            val containsWildcard = allPaths.exists(_.contains("*"))
+            val containsNamedParams = allPaths.exists(_.contains("/:"))
+            val containsRegexNamedParams = allPaths.exists(_.contains("/$"))
+            if (!containsWildcard && !containsNamedParams && !containsRegexNamedParams && allPaths.size == 1 && allPaths.contains("/")) {
+              logger.warn("cleanup uri stripping")
+              rawUri
+            } else {
+              // WARNING: this one can cause issue as here path segments can be stripped for the bad reasons
+              val mpath = mroute.path.substring(1)
+              rawUri.replaceFirst(mpath, "") // handles wildcard
+            }
           } else {
             rawUri
           }

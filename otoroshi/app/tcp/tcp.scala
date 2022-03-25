@@ -16,7 +16,7 @@ import otoroshi.env.Env
 import otoroshi.events.{DataInOut, Location, TcpEvent}
 
 import javax.net.ssl._
-import otoroshi.models.IpFiltering
+import otoroshi.models.{IpFiltering, ServiceDescriptor}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
@@ -969,8 +969,8 @@ class RunningServers(env: Env) {
 }
 
 sealed trait TcpServiceDataStore extends BasicStore[TcpService] {
-  def template(env: Env): TcpService =
-    TcpService(
+  def template(env: Env): TcpService = {
+    val defaultService = TcpService(
       id = IdGenerator.namedId("tcp_service", env),
       enabled = true,
       tls = TlsMode.Disabled,
@@ -993,6 +993,12 @@ sealed trait TcpServiceDataStore extends BasicStore[TcpService] {
         )
       )
     )
+    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.tcpService.map { template =>
+      TcpService.fmt.reads(defaultService.json.asObject.deepMerge(template)).get
+    }.getOrElse {
+      defaultService
+    }
+  }
 }
 
 class KvTcpServiceDataStoreDataStore(redisCli: RedisLike, env: Env)

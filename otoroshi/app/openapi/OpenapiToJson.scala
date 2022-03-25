@@ -1,11 +1,14 @@
 package otoroshi.openapi
 
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
 import play.api.libs.json._
+
 import scala.collection.concurrent.TrieMap
 
 class OpenapiToJson(spec: JsValue) {
 
+  val logger = Logger("otoroshi-openapi-to-json")
   val openAPIV3SchemaPath = "openAPIV3Schema/properties/spec/properties"
   val nullType            = "#/components/schemas/Null"
   val otoroshiSchemaType  = "#/components/schemas/otoroshi."
@@ -148,7 +151,11 @@ class OpenapiToJson(spec: JsValue) {
         }
       } catch {
         case _: Throwable =>
+<<<<<<< HEAD
           // println(s"$reference not found")
+=======
+          logger.debug(s"$reference not found")
+>>>>>>> 10ec94b84a57238ee6ea662694227d2fea6fd76e
           Json.obj()
       }
     } else

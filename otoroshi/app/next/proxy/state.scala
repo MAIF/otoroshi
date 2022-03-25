@@ -36,6 +36,9 @@ class NgProxyState(env: Env) {
   private val apikeys             = new TrieMap[String, ApiKey]()
   private val targets             = new TrieMap[String, NgTarget]()
   private val backends            = new TrieMap[String, NgBackend]()
+  private val ngservices          = new TrieMap[String, NgService]()
+  private val ngbackends          = new TrieMap[String, StoredNgBackend]()
+  private val ngtargets           = new TrieMap[String, StoredNgTarget]()
   private val jwtVerifiers        = new TrieMap[String, GlobalJwtVerifier]()
   private val certificates        = new TrieMap[String, Cert]()
   private val authModules         = new TrieMap[String, AuthModuleConfig]()
@@ -138,6 +141,10 @@ class NgProxyState(env: Env) {
   def allPrivateAppsSessions(): Seq[PrivateAppsUser] = privateAppsSessions.values.toSeq
   def allTcpServices(): Seq[TcpService] = tcpServices.values.toSeq
 
+  def allNgServices(): Seq[NgService] = ngservices.values.toSeq
+  def allBackends(): Seq[StoredNgBackend] = ngbackends.values.toSeq
+  def allTargets(): Seq[StoredNgTarget] = ngtargets.values.toSeq
+
   def updateRoutes(values: Seq[NgRoute]): Unit = {
     routes.addAll(values.map(v => (v.id, v))).remAll(routes.keySet.toSeq.diff(values.map(_.id)))
     val routesByDomainRaw: Map[String, Seq[NgRoute]] = values
@@ -219,6 +226,16 @@ class NgProxyState(env: Env) {
 
   def updateScripts(values: Seq[Script]): Unit = {
     scripts.addAll(values.map(v => (v.id, v))).remAll(scripts.keySet.toSeq.diff(values.map(_.id)))
+  }
+
+  def updateNgBackends(values: Seq[StoredNgBackend]): Unit = {
+    ngbackends.addAll(values.map(v => (v.id, v))).remAll(ngbackends.keySet.toSeq.diff(values.map(_.id)))
+  }
+  def updateNgTargets(values: Seq[StoredNgTarget]): Unit = {
+    ngtargets.addAll(values.map(v => (v.id, v))).remAll(ngtargets.keySet.toSeq.diff(values.map(_.id)))
+  }
+  def updateNgServices(values: Seq[NgService]): Unit = {
+    ngservices.addAll(values.map(v => (v.id, v))).remAll(ngservices.keySet.toSeq.diff(values.map(_.id)))
   }
 }
 
@@ -591,6 +608,9 @@ class NgProxyStateLoaderJob extends Job {
       env.proxyState.updatePrivateAppsSessions(privateAppsSessions)
       env.proxyState.updateTcpServices(tcpServices)
       env.proxyState.updateScripts(scripts)
+      env.proxyState.updateNgBackends(backends)
+      env.proxyState.updateNgTargets(targets)
+      env.proxyState.updateNgServices(routescomp)
       DynamicSSLEngineProvider.setCertificates(env)
       NgProxyStateLoaderJob.firstSync.compareAndSet(false, true)
       env.metrics.timerUpdate("ng-proxy-state-refresh", System.currentTimeMillis() - start, TimeUnit.MILLISECONDS)

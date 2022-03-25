@@ -473,6 +473,75 @@ object TlsSettings {
   }
 }
 
+case class DefaultTemplates(
+  route: Option[JsObject] = Json.obj().some, // Option[NgRoute],
+  service: Option[JsObject] = Json.obj().some, // Option[NgService],
+  backend: Option[JsObject] = Json.obj().some, // Option[NgBackend],
+  target: Option[JsObject] = Json.obj().some, // Option[NgTarget],
+  descriptor: Option[JsObject] = Json.obj().some, // Option[ServiceDescriptor],
+  apikey: Option[JsObject] = Json.obj().some, // Option[ApiKey],
+  group: Option[JsObject] = Json.obj().some, // Option[ServiceGroup],
+  template: Option[JsObject] = Json.obj().some, // Option[ErrorTemplate],
+  verifier: Option[JsObject] = Json.obj().some, // Option[GlobalJwtVerifier],
+  authConfig: Option[JsObject] = Json.obj().some, // Option[AuthModuleConfig],
+  certificate: Option[JsObject] = Json.obj().some, // Option[Cert],
+  script: Option[JsObject] = Json.obj().some, // Option[Script],
+  tcpService: Option[JsObject] = Json.obj().some, // Option[TcpService],
+  dataExporter: Option[JsObject] = Json.obj().some, // Option[DataExporterConfig],
+  tenant: Option[JsObject] = Json.obj().some, // Option[Tenant],
+  team: Option[JsObject] = Json.obj().some, // Option[Team],
+) {
+  def json: JsValue = DefaultTemplates.format.writes(this)
+}
+
+object DefaultTemplates {
+  val format = new Format[DefaultTemplates] {
+    override def reads(json: JsValue): JsResult[DefaultTemplates] = {
+      Try {
+        DefaultTemplates(
+          route = json.select("route").asOpt[JsObject],
+          service = json.select("service").asOpt[JsObject],
+          backend = json.select("backend").asOpt[JsObject],
+          target = json.select("target").asOpt[JsObject],
+          descriptor = json.select("descriptor").asOpt[JsObject],
+          apikey = json.select("apikey").asOpt[JsObject],
+          group = json.select("group").asOpt[JsObject],
+          template = json.select("template").asOpt[JsObject],
+          verifier = json.select("verifier").asOpt[JsObject],
+          authConfig = json.select("authConfig").asOpt[JsObject],
+          certificate = json.select("certificate").asOpt[JsObject],
+          script = json.select("script").asOpt[JsObject],
+          tcpService = json.select("tcpService").asOpt[JsObject],
+          dataExporter = json.select("dataExporter").asOpt[JsObject],
+          tenant = json.select("tenant").asOpt[JsObject],
+          team = json.select("team").asOpt[JsObject],
+        )
+      } match {
+        case Failure(e)  => JsError(e.getMessage)
+        case Success(ac) => JsSuccess(ac)
+      }
+    }
+    override def writes(o: DefaultTemplates): JsValue = Json.obj(
+      "route" -> o.route.getOrElse(JsNull).asValue,
+      "service" -> o.service.getOrElse(JsNull).asValue,
+      "backend" -> o.backend.getOrElse(JsNull).asValue,
+      "target" -> o.target.getOrElse(JsNull).asValue,
+      "descriptor" -> o.descriptor.getOrElse(JsNull).asValue,
+      "apikey" -> o.apikey.getOrElse(JsNull).asValue,
+      "group" -> o.group.getOrElse(JsNull).asValue,
+      "template" -> o.template.getOrElse(JsNull).asValue,
+      "verifier" -> o.verifier.getOrElse(JsNull).asValue,
+      "authConfig" -> o.authConfig.getOrElse(JsNull).asValue,
+      "certificate" -> o.certificate.getOrElse(JsNull).asValue,
+      "script" -> o.script.getOrElse(JsNull).asValue,
+      "tcpService" -> o.tcpService.getOrElse(JsNull).asValue,
+      "dataExporter" -> o.dataExporter.getOrElse(JsNull).asValue,
+      "tenant" -> o.tenant.getOrElse(JsNull).asValue,
+      "team" -> o.team.getOrElse(JsNull).asValue,
+    )
+  }
+}
+
 case class GlobalConfig(
     letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
     lines: Seq[String] = Seq("prod"),
@@ -517,6 +586,7 @@ case class GlobalConfig(
     tlsSettings: TlsSettings = TlsSettings(),
     quotasSettings: QuotasAlmostExceededSettings = QuotasAlmostExceededSettings(false, 0.8, 0.8),
     plugins: Plugins = Plugins(),
+    templates: DefaultTemplates = DefaultTemplates(),
     tags: Seq[String] = Seq.empty,
     metadata: Map[String, String] = Map.empty
 ) extends Entity {
@@ -651,7 +721,8 @@ object GlobalConfig {
         "tlsSettings"             -> o.tlsSettings.json,
         "quotasSettings"          -> o.quotasSettings.json,
         "plugins"                 -> o.plugins.json,
-        "metadata"                -> o.metadata
+        "metadata"                -> o.metadata,
+        "templates"               -> o.templates.json,
       )
     }
     override def reads(json: JsValue): JsResult[GlobalConfig] =
@@ -780,6 +851,10 @@ object GlobalConfig {
           plugins = Plugins.format
             .reads((json \ "plugins").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(Plugins()),
+          templates = json.select("templates").asOpt[String]
+            .flatMap(str => DefaultTemplates.format.reads(Json.parse(str)).asOpt)
+            .orElse(json.select("templates").asOpt(DefaultTemplates.format))
+            .getOrElse(DefaultTemplates()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
         )

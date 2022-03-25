@@ -6,6 +6,7 @@ import otoroshi.models._
 import otoroshi.next.models._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.controllers._
+import otoroshi.utils.syntax.implicits.BetterJsReadable
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -158,21 +159,24 @@ class NgTargetsController(val ApiAction: ApiAction, val cc: ControllerComponents
   }
 
   def initiateStoredNgTarget() = ApiAction {
-    Ok(
-      StoredNgTarget(
-        location = EntityLocation.default,
-        id = s"target_${IdGenerator.uuid}",
-        name = "New target",
-        description = "A new target",
-        tags = Seq.empty,
-        metadata = Map.empty,
-        target = NgTarget(
-          id = "target_1",
-          hostname = "mirror.otoroshi.io",
-          port = 443,
-          tls = true
-        )
-      ).json
+    val defaultTarget = StoredNgTarget(
+      location = EntityLocation.default,
+      id = s"target_${IdGenerator.uuid}",
+      name = "New target",
+      description = "A new target",
+      tags = Seq.empty,
+      metadata = Map.empty,
+      target = NgTarget(
+        id = "target_1",
+        hostname = "mirror.otoroshi.io",
+        port = 443,
+        tls = true
+      )
     )
+    env.datastores.globalConfigDataStore.latest().templates.target.map { template =>
+      Ok(defaultTarget.json.asObject.deepMerge(template))
+    }.getOrElse {
+      Ok(defaultTarget.json)
+    }
   }
 }

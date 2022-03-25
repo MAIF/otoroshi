@@ -1523,8 +1523,8 @@ object Script {
 }
 
 trait ScriptDataStore extends BasicStore[Script] {
-  def template(env: Env): Script =
-    Script(
+  def template(env: Env): Script = {
+    val defaultScript = Script(
       id = IdGenerator.namedId("script", env),
       name = "New request transformer",
       desc = "New request transformer",
@@ -1562,6 +1562,12 @@ trait ScriptDataStore extends BasicStore[Script] {
       `type` = PluginType.TransformerType,
       metadata = Map.empty
     )
+    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.script.map { template =>
+      Script._fmt.reads(defaultScript.json.asObject.deepMerge(template)).get
+    }.getOrElse {
+      defaultScript
+    }
+  }
 }
 
 class KvScriptDataStore(redisCli: RedisLike, _env: Env) extends ScriptDataStore with RedisLikeStore[Script] {

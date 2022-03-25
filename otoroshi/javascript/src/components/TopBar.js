@@ -479,14 +479,14 @@ export class TopBar extends Component {
       <nav className="navbar navbar-expand-lg fixed-top">
         <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
             <div className="d-flex flex-column flex-md-row w-100">
-              <div className="px-2 mb-2 mb-md-0 d-flex justify-content-between align-items-center navbar-header">
+              <div className="px-2 mb-2 mb-md-0 d-flex justify-content-between justify-content-lg-center align-items-center navbar-header">
 
               <button 
                   className="btn btn-menu ms-3 navbar-toggler" 
                   type="button" 
                   data-bs-toggle="collapse" 
-                  data-bs-target="#collapseSidebar" 
-                  aria-controls="collapseSidebar" 
+                  data-bs-target="#sidebar" 
+                  aria-controls="sidebar" 
                   aria-expanded="false" >
                   <span className="navbar-toggler-icon">Menu</span>
                 </button>

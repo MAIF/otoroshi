@@ -636,7 +636,7 @@ object Cert {
 
 trait CertificateDataStore extends BasicStore[Cert] {
 
-  def nakedTemplate(env: Env): Cert = {
+  def syncTemplate(env: Env): Cert = {
     Cert(
       id = IdGenerator.namedId("cert", env),
       name = "a new certificate",
@@ -648,23 +648,33 @@ trait CertificateDataStore extends BasicStore[Cert] {
     )
   }
 
+  def nakedTemplate(env: Env): Future[Cert] = {
+    val defaultCert = syncTemplate(env)
+    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.certificate.map { template =>
+      Cert._fmt.reads(defaultCert.json.asObject.deepMerge(template)).get
+    }.getOrElse {
+      defaultCert
+    }.vfuture
+  }
+
   def template(implicit ec: ExecutionContext, env: Env): Future[Cert] = {
-    env.pki
-      .genSelfSignedCert(
-        GenCsrQuery(
-          hosts = Seq("www.oto.tools"),
-          subject = Some("C=FR, OU=Foo, O=Bar")
-        )
-      )
-      .map { c =>
-        c.toOption.get.toCert.copy(
-          id = IdGenerator.namedId("cert", env),
-          name = "a new certificate",
-          description = "a new certificate",
-          chain = "",
-          privateKey = ""
-        )
-      }
+    nakedTemplate(env)
+    // env.pki
+    //   .genSelfSignedCert(
+    //     GenCsrQuery(
+    //       hosts = Seq("www.oto.tools"),
+    //       subject = Some("C=FR, OU=Foo, O=Bar")
+    //     )
+    //   )
+    //   .map { c =>
+    //     c.toOption.get.toCert.copy(
+    //       id = IdGenerator.namedId("cert", env),
+    //       name = "a new certificate",
+    //       description = "a new certificate",
+    //       chain = "",
+    //       privateKey = ""
+    //     )
+    //   }
   }
 
   def renewCertificates()(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
