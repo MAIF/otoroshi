@@ -26,13 +26,13 @@ export const camelToSnakeFlow = step => {
 export const toUpperCaseLabels = obj => {
     return Object.entries(obj).reduce((acc, [key, value]) => {
         const isLabelField = key === "label"
-        const v = isLabelField ? value.replace(/_/g, ' ') : value
-        const [prefix, ...sequences] = isLabelField ? v.split(/(?=[A-Z])/) : []
+        const v = (isLabelField && value) ? value.replace(/_/g, ' ') : value
+        const [prefix, ...sequences] = isLabelField ? (v ? v.split(/(?=[A-Z])/) : []) : []
 
         return {
             ...acc,
-            [key]: isLabelField ? prefix.charAt(0).toUpperCase() + prefix.slice(1) + " " + sequences.join(" ").toLowerCase() :
-                ((typeof value === 'object' && value !== null && key !== "transformer" && !Array.isArray(value)) ? toUpperCaseLabels(value) : value)
+            [key]: !value ? null : (isLabelField ? prefix.charAt(0).toUpperCase() + prefix.slice(1) + " " + sequences.join(" ").toLowerCase() :
+                ((typeof value === 'object' && value !== null && key !== "transformer" && !Array.isArray(value)) ? toUpperCaseLabels(value) : value))
         }
     }, {})
 }

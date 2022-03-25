@@ -1,13 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, useLocation } from 'react-router'
 import { nextClient, getCategories, getPlugins, getOldPlugins } from '../../services/BackOfficeServices'
-import { Form, format, type } from '@maif/react-forms'
-import { CodeInput, SelectInput } from '@maif/react-forms/lib/inputs'
-import deepSet from 'set-value'
+import { Form, format, type, CodeInput, SelectInput } from '@maif/react-forms'
 import { DEFAULT_FLOW, EXCLUDED_PLUGINS, LEGACY_PLUGINS_WRAPPER, PLUGIN_INFORMATIONS_SCHEMA } from './Graph'
 import { BackendForm } from '../BackendsPage'
 import Loader from './Loader'
 import { camelToSnake, camelToSnakeFlow, toUpperCaseLabels } from '../../util'
+import { isEqual } from 'lodash'
 
 export default ({ lineId, value }) => {
     const { routeId } = useParams()
@@ -37,7 +36,6 @@ export default ({ lineId, value }) => {
             .then(([backends, route, categories, plugins, oldPlugins, frontendForm, backendForm]) => {
                 const formatedPlugins = [...plugins, ...oldPlugins.map(p => ({
                     ...p,
-                    plugin_categories: [...p.plugin_categories, "Old plugins"],
                     legacy: true
                 }))]
                     .filter(filterSpecificPlugin)
@@ -49,7 +47,7 @@ export default ({ lineId, value }) => {
 
                 setBackends(backends)
                 setCategories([
-                    ...categories.filter(category => category !== 'Tunnel'),
+                    ...categories.filter(category => !['Tunnel', 'Job'].includes(category)),
                     'Ancien plugins'
                 ])
                 setRoute(route)
@@ -63,18 +61,20 @@ export default ({ lineId, value }) => {
                     {
                         ...DEFAULT_FLOW.Frontend,
                         ...frontendForm,
-                        schema: {
-                            ...toUpperCaseLabels(frontendForm.schema),
-                            ...DEFAULT_FLOW.Frontend.schema
-                        }
+                        config_schema: toUpperCaseLabels({
+                            ...frontendForm.schema,
+                            ...DEFAULT_FLOW.Frontend.config_schema
+                        }),
+                        config_flow: DEFAULT_FLOW.Frontend.config_flow
                     },
                     {
                         ...DEFAULT_FLOW.Backend,
                         ...backendForm,
-                        schema: toUpperCaseLabels(backendForm.schema)
+                        config_schema: toUpperCaseLabels(DEFAULT_FLOW.Backend.config_schema(backendForm.schema)),
+                        config_flow: DEFAULT_FLOW.Backend.config_flow
                     },
                     ...route.plugins.map(ref => {
-                        const plugin = formatedPlugins.find(p => p.id === ref.plugin)
+                        const plugin = formatedPlugins.find(p => p.id === ref.plugin || p.id === ref.config.plugin)
                         const onInputStream = (plugin.plugin_steps || []).some(s => ["PreRoute", "ValidateAccess", "TransformRequest"].includes(s))
                         const onOutputStream = (plugin.plugin_steps || []).some(s => ["TransformResponse"].includes(s))
 
@@ -215,27 +215,19 @@ export default ({ lineId, value }) => {
             })))
     }
 
-    const changeValues = ops => {
-        const newRoute = ops.reduce((newRoute, { name, value }) => {
-            return deepSet(_.cloneDeep(newRoute), name, value)
-        }, route)
-
-        nextClient.update(nextClient.ENTITIES.ROUTES, newRoute)
-            .then(() => setRoute(newRoute))
-    }
-
     const updatePlugin = (pluginId, item, updatedField) => {
-        nextClient.update(nextClient.ENTITIES.ROUTES, {
+        return nextClient.update(nextClient.ENTITIES.ROUTES, {
             ...route,
             frontend: updatedField === 'Frontend' ? item : route.frontend,
             backend: updatedField === 'Backend' ? item : route.backend,
             plugins: route.plugins.map(plugin => {
-                if (plugin.plugin === pluginId)
+                if (plugin.plugin === pluginId || plugin.config.plugin === pluginId)
                     return {
                         ...plugin,
                         ...item.status,
                         config: item.plugin
                     }
+
                 return plugin
             })
         })
@@ -574,6 +566,8 @@ const EditView = ({
     const [saveable, setSaveable] = useState(false)
     const [backendConfigRef, setBackendConfigRef] = useState()
 
+    console.log(saveable)
+
     useEffect(() => {
         if (route.backend_ref)
             nextClient.fetch(nextClient.ENTITIES.BACKENDS, route.backend_ref)
@@ -581,8 +575,6 @@ const EditView = ({
     }, [route.backend_ref])
 
     const { id, flow, config_flow, config_schema, schema, name } = selectedNode
-
-    console.log(selectedNode)
 
     const plugin = ['Backend', 'Frontend'].includes(id) ? DEFAULT_FLOW[id] : plugins.find(element => element.id === id || element.id.endsWith(id))
 
@@ -594,7 +586,7 @@ const EditView = ({
 
     useEffect(() => {
         let formSchema = schema || config_schema
-        let formFlow = flow || config_flow
+        let formFlow = config_flow || flow
 
         if (config_schema) {
             formSchema = {
@@ -618,7 +610,7 @@ const EditView = ({
                         format: format.form,
                         label: null,
                         schema: { ...convertTransformer(config_schema) },
-                        flow: [...flow || config_flow].map(step => camelToSnakeFlow(step))
+                        flow: [...config_flow || flow].map(step => camelToSnakeFlow(step))
                     }
                 }
                 formFlow = [
@@ -673,6 +665,10 @@ const EditView = ({
 
     const onValidate = item => {
         updatePlugin(id, unstringify(item), selectedNode.id)
+            .then(() => {
+                setForm({ ...form, originalValue: item })
+                setSaveable(false)
+            })
     }
 
     console.log("SCHEMA", form.schema.plugin)
@@ -702,7 +698,7 @@ const EditView = ({
                         color: "#fff"
                     }}>FORM</button>
                 <button className='btn btn-sm' onClick={() => {
-                    if (stringify(test) !== stringify(form.value))
+                    if (!isEqual(test, form.value))
                         setForm({ ...form, value: test })
                     toggleJsonFormat(true)
                 }} style={{
@@ -732,7 +728,7 @@ const EditView = ({
                         width="100%"
                         value={stringify(form.value)}
                         onChange={value => {
-                            setSaveable(stringify(form.originalValue) !== stringify(unstringify(value)))
+                            setSaveable(!isEqual(form.originalValue, value))
                             setForm({ ...form, value })
                         }}
                     />
@@ -745,9 +741,12 @@ const EditView = ({
                         options={{
                             watch: unsaved => {
                                 if (unsaved && Object.keys(unsaved).length > 0) {
-                                    const hasChanged = stringify(unsaved) !== stringify(form.originalValue)
+                                    const hasChanged = !isEqual(unsaved, form.originalValue)
+                                    console.log(unsaved)
+                                    console.log(form.originalValue)
+                                    console.log(isEqual)
                                     setSaveable(hasChanged)
-                                    if (stringify(unsaved) !== stringify(test))
+                                    if (!isEqual(unsaved, test))
                                         setTest(unsaved)
                                 }
                             }

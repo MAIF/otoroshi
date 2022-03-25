@@ -370,8 +370,6 @@ class PrometheusServiceMetrics extends RequestTransformer {
     val config         = ctx.configFor("PrometheusServiceMetrics")
     val includeUri     = (config \ "includeUri").asOpt[Boolean].getOrElse(false)
 
-    println(config, includeUri)
-
     requestCounterGlobal.inc()
     reqDurationGlobal.observe(duration)
 

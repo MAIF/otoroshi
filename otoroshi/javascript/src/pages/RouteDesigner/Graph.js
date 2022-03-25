@@ -1,25 +1,5 @@
-import { type, format, constraints } from '@maif/react-forms';
-
-const LOAD_BALANCING = [
-    'RoundRobin',
-    'Random',
-    'Sticky',
-    'IpAddressHash',
-    'BestResponseTime',
-    'WeightedBestResponseTime'
-];
-
-const HTTP_PROTOCOLS = [
-    'HTTP/1.0',
-    'HTTP/1.1',
-    'HTTP/2.0'
-];
-
-const PREDICATES = [
-    'AlwaysMatch',
-    'GeolocationMatch',
-    'NetworkLocationMatch'
-]
+import React from 'react'
+import { type, format, constraints, SingleLineCode } from '@maif/react-forms';
 
 export const PLUGIN_INFORMATIONS_SCHEMA = {
     enabled: {
@@ -74,15 +54,22 @@ export const DEFAULT_FLOW = {
         default: true,
         field: 'frontend',
         onInputStream: true,
-        schema: {
+        config_schema: {
             domains: {
                 type: type.string,
-                format: 'select',
-                label: 'Domains',
-                createOption: true,
-                isMulti: true
+                array: true,
+                format: 'singleLineCode',
+                label: 'Domains'
             }
-        }
+        },
+        config_flow: [
+            'domains',
+            'stripPath',
+            'exact',
+            'headers',
+            'methods',
+            'query',
+        ]
     },
     Backend: {
         id: 'Backend',
@@ -90,6 +77,85 @@ export const DEFAULT_FLOW = {
         group: 'Targets',
         default: true,
         onTargetStream: true,
-        field: 'backend'
+        field: 'backend',
+        config_schema: generatedSchema => ({
+            ...generatedSchema,
+            targets: {
+                ...generatedSchema.targets,
+                schema: {
+                    custom_target: {
+                        label: 'Target',
+                        type: 'string',
+                        render: ({ value, onChange, setValue, index }) => {
+                            return <SingleLineCode
+                                value={value}
+                                onChange={e => {
+                                    // TODO - not working, fix react-forms to support setValue with dotted notation
+                                    try {
+                                        const hasProtocol = ['http://', 'https://', 'udp://', 'tcp://']
+                                            .filter((p) => e.toLowerCase().startsWith(p)).length > 0;
+                                        if (hasProtocol) {
+                                            const parts = e.split('://');
+                                            const scheme = parts[0];
+                                            const afterScheme = parts[1];
+                                            const afterSchemeParts = afterScheme.split('/');
+                                            const domain = afterSchemeParts[0];
+                                            afterSchemeParts.shift();
+                                            const pathname = '/' + afterSchemeParts.join('/');
+                                            const url = `${scheme}://${domain}`
+
+                                            console.log(url)
+                                            onChange(url)
+
+                                            if (url.indexOf('://') > -1)
+                                                setValue('hostname', afterScheme);
+
+                                            console.log(pathname)
+                                            setValue('root', pathname);
+                                        } else {
+                                            onChange(e)
+                                        }
+                                    } catch (ex) {
+                                        console.log(ex)
+                                        onChange(e)
+                                    }
+                                }} />
+                        }
+                    },
+                    expert_mode: {
+                        type: 'bool',
+                        label: null,
+                        render: ({ value, onChange }) => {
+                            return <button className='btn btn-sm btn-success me-3 mb-3' onClick={() => onChange(!value)}>
+                                {!!value ? 'Show less' : 'Show more'}
+                            </button>
+                        }
+                    },
+                    ...Object.fromEntries(Object.entries(generatedSchema.targets.schema).map(([key, value]) => {
+                        return [key, {
+                            ...value,
+                            visible: {
+                                ref: 'plugin',
+                                test: (v, idx) => !!v.targets[idx].value?.expert_mode
+                            }
+                        }]
+                    }))
+                },
+                flow: [
+                    'custom_target',
+                    'expert_mode',
+                    ...generatedSchema.targets.flow
+                ]
+            }
+        }),
+        config_flow: [
+            "root",
+            "targets",
+            "healthCheck",
+            "targetRefs",
+            "client",
+            "rewrite",
+            "loadBalancing"
+        ]
     }
 }
