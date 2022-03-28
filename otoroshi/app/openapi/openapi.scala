@@ -400,9 +400,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
+            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, c.getTypeStr, typ).foreach { r =>
               properties = properties ++ Json.obj(
-                fieldName -> r.deepMerge(
+                finalFieldName -> r.deepMerge(
                   Json.obj(
                     "description" -> getFieldDescription(clazz, name, typ, config)
                   )
@@ -418,9 +419,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
+            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
-                fieldName -> Json.obj(
+                finalFieldName -> Json.obj(
                   "type"                 -> "object",
                   "additionalProperties" -> r,
                   "description"          -> getFieldDescription(clazz, name, typ, config)
@@ -436,9 +438,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
+            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
-                fieldName -> Json.obj(
+                finalFieldName -> Json.obj(
                   "type"        -> "array",
                   "items"       -> r,
                   "description" -> getFieldDescription(clazz, name, typ, config)
@@ -454,9 +457,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
+            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
-                fieldName -> Json.obj(
+                finalFieldName -> Json.obj(
                   "type"        -> "array",
                   "items"       -> r,
                   "description" -> getFieldDescription(clazz, name, typ, config)
@@ -471,9 +475,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
+            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
-                fieldName -> Json.obj(
+                finalFieldName -> Json.obj(
                   "oneOf"       -> Json.arr(
                     nullType,
                     r
@@ -490,9 +495,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
+            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, valueName, typ).map { r =>
               properties = properties ++ Json.obj(
-                fieldName -> r.deepMerge(Json.obj("description" -> getFieldDescription(clazz, name, typ, config)))
+                finalFieldName -> r.deepMerge(Json.obj("description" -> getFieldDescription(clazz, name, typ, config)))
               )
             }
           // case c: TypeVariableSignature => logger.debug(s"  $name: $typ ${c.toStringWithTypeBound} (var)")

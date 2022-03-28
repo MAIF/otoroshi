@@ -17226,7 +17226,7 @@
             "description" : "The current env",
             "$ref" : "#/components/schemas/otoroshi.env.Env"
           },
-          "nextPluginsMerge" : {
+          "next_plugins_merge" : {
             "description" : "Try to merge synchronous and contiguous plugins",
             "type" : "boolean"
           }
@@ -17250,7 +17250,7 @@
             "description" : "The current env",
             "$ref" : "#/components/schemas/otoroshi.env.Env"
           },
-          "redisCli" : {
+          "redis_cli" : {
             "description" : "The current datastore access",
             "$ref" : "#/components/schemas/otoroshi.storage.RedisLike"
           }
@@ -17265,36 +17265,36 @@
         "description" : "Plugin for gzip compression",
         "type" : "object",
         "properties" : {
-          "compressionLevel" : {
+          "compression_level" : {
             "format" : "int32",
             "description" : "The compression level (1 to 9)",
             "type" : "integer"
           },
-          "bufferSize" : {
+          "buffer_size" : {
             "format" : "int32",
             "description" : "Compressor buffer size",
             "type" : "integer"
           },
-          "chunkedThreshold" : {
+          "chunked_threshold" : {
             "format" : "int32",
             "description" : "Chunk size",
             "type" : "integer"
           },
-          "excludedPatterns" : {
+          "excluded_patterns" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "The excluded path patterns"
           },
-          "whiteList" : {
+          "white_list" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Allowed mimetypes list"
           },
-          "blackList" : {
+          "black_list" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -17345,7 +17345,7 @@
             "description" : "The backend of the route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgMinimalBackend"
           },
-          "backendRef" : {
+          "backend_ref" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -17401,36 +17401,36 @@
         "description" : "Configuration for Gzip",
         "type" : "object",
         "properties" : {
-          "compressionLevel" : {
+          "compression_level" : {
             "format" : "int32",
             "description" : "The compression level (1 to 9)",
             "type" : "integer"
           },
-          "bufferSize" : {
+          "buffer_size" : {
             "format" : "int32",
             "description" : "Compressor buffer size",
             "type" : "integer"
           },
-          "chunkedThreshold" : {
+          "chunked_threshold" : {
             "format" : "int32",
             "description" : "Chunk size",
             "type" : "integer"
           },
-          "excludedPatterns" : {
+          "excluded_patterns" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "The excluded path patterns"
           },
-          "whiteList" : {
+          "white_list" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Allowed mimetypes list"
           },
-          "blackList" : {
+          "black_list" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -17549,11 +17549,11 @@
         "description" : "Plugin to use cors",
         "type" : "object",
         "properties" : {
-          "allowCredentials" : {
+          "allow_credentials" : {
             "description" : "Allowed credentials",
             "type" : "boolean"
           },
-          "maxAge" : {
+          "max_age" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -17561,32 +17561,32 @@
             } ],
             "description" : "cors max age"
           },
-          "allowOrigin" : {
+          "allow_origin" : {
             "description" : "Allowed cors origins",
             "type" : "string"
           },
-          "allowMethods" : {
+          "allow_methods" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Allowed cors methods"
           },
-          "excludedPatterns" : {
+          "excluded_patterns" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Paths without cors"
           },
-          "allowHeaders" : {
+          "allow_headers" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Allowed cors headers"
           },
-          "exposeHeaders" : {
+          "expose_headers" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -17614,14 +17614,14 @@
             "description" : "apikey only",
             "type" : "boolean"
           },
-          "publicPatterns" : {
+          "public_patterns" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Paths that should not have user or apikey to pass"
           },
-          "privatePatterns" : {
+          "private_patterns" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -17676,11 +17676,11 @@
             "description" : "Configuration of the apikey extraction modes",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractors"
           },
-          "passWithUser" : {
+          "pass_with_user" : {
             "description" : "Let the request pass if a user is connected",
             "type" : "boolean"
           },
-          "wipeBackendRequest" : {
+          "wipe_backend_request" : {
             "description" : "Removes the apikeys from the request to not forward it to the backend",
             "type" : "boolean"
           },
@@ -17862,7 +17862,7 @@
             } ],
             "description" : "Id of the auth. module"
           },
-          "passWithApikey" : {
+          "pass_with_apikey" : {
             "description" : "let the request pass if an apikey is present",
             "type" : "boolean"
           }
@@ -17917,7 +17917,7 @@
             "description" : "The error code",
             "type" : "integer"
           },
-          "contentType" : {
+          "content_type" : {
             "description" : "The error content-type",
             "type" : "string"
           },
@@ -17960,7 +17960,7 @@
             "description" : "The current request attributes",
             "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
           },
-          "otoroshiResponse" : {
+          "otoroshi_response" : {
             "description" : "The current otoroshi response",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginHttpResponse"
           },
@@ -18000,11 +18000,11 @@
             "description" : "The current plugin config",
             "type" : "object"
           },
-          "rawResponse" : {
+          "raw_response" : {
             "description" : "The current backend response",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginHttpResponse"
           },
-          "globalConfig" : {
+          "global_config" : {
             "description" : "The current global config",
             "type" : "object"
           }
@@ -18169,7 +18169,7 @@
             "description" : "The current plugin config",
             "type" : "object"
           },
-          "globalConfig" : {
+          "global_config" : {
             "description" : "The current global config",
             "type" : "object"
           },
@@ -18248,7 +18248,7 @@
             "description" : "The current matched route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
           },
-          "otoroshiRequest" : {
+          "otoroshi_request" : {
             "description" : "The current otoroshi request",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginHttpRequest"
           },
@@ -18272,11 +18272,11 @@
             } ],
             "description" : "The current request user"
           },
-          "rawRequest" : {
+          "raw_request" : {
             "description" : "The current request",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginHttpRequest"
           },
-          "globalConfig" : {
+          "global_config" : {
             "description" : "The current global config",
             "type" : "object"
           },
@@ -18321,7 +18321,7 @@
             },
             "description" : "Possible responses"
           },
-          "passThrough" : {
+          "pass_through" : {
             "description" : "Pass the call if no mocked response found",
             "type" : "boolean"
           }
@@ -18493,7 +18493,7 @@
             "description" : "Current matched path",
             "type" : "string"
           },
-          "noMoreSegments" : {
+          "no_more_segments" : {
             "description" : "Is the path fully matched",
             "type" : "boolean"
           }
@@ -19790,7 +19790,7 @@
         "description" : "Datastore for routes",
         "type" : "object",
         "properties" : {
-          "redisCli" : {
+          "redis_cli" : {
             "description" : "The current datastore access",
             "$ref" : "#/components/schemas/otoroshi.storage.RedisLike"
           },
@@ -19897,7 +19897,7 @@
             "description" : "The current env",
             "$ref" : "#/components/schemas/otoroshi.env.Env"
           },
-          "redisCli" : {
+          "redis_cli" : {
             "description" : "The current datastore access",
             "$ref" : "#/components/schemas/otoroshi.storage.RedisLike"
           }
@@ -19907,35 +19907,35 @@
         "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
-          "noneMetaKeysIn" : {
+          "none_meta_keys_in" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Matching on none metadata keys being present"
           },
-          "allMetaKeysIn" : {
+          "all_meta_keys_in" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Matching on all metadata keys being present"
           },
-          "allMetaIn" : {
+          "all_meta_in" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
             "description" : "Matching on all metadata being present"
           },
-          "noneMetaIn" : {
+          "none_meta_in" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
             "description" : "Matching on none metadata being present"
           },
-          "oneTagIn" : {
+          "one_tag_in" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -19946,28 +19946,28 @@
             "description" : "Tags and metadata matching enabled",
             "type" : "boolean"
           },
-          "oneMetaIn" : {
+          "one_meta_in" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
             "description" : "Matching on none metadata being present"
           },
-          "allTagsIn" : {
+          "all_tags_in" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Matching on all tags being present"
           },
-          "oneMetaKeyIn" : {
+          "one_meta_key_in" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Matching on one metadata being present"
           },
-          "noneTagIn" : {
+          "none_tag_in" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -20232,7 +20232,7 @@
             "description" : "Is it within the quotas",
             "type" : "boolean"
           },
-          "secCalls" : {
+          "sec_calls" : {
             "format" : "int64",
             "description" : "Number of calls per second",
             "type" : "integer"
@@ -20353,7 +20353,7 @@
             "description" : "The current request attributes",
             "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
           },
-          "globalConfig" : {
+          "global_config" : {
             "description" : "The current global config",
             "type" : "object"
           },
@@ -20387,7 +20387,7 @@
             "description" : "Is it enabled",
             "type" : "boolean"
           },
-          "clientIdHeaderName" : {
+          "client_id_header_name" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -20395,7 +20395,7 @@
             } ],
             "description" : "Header name to extract client id"
           },
-          "clientSecretHeaderName" : {
+          "client_secret_header_name" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -20460,11 +20460,11 @@
         "description" : "Configuration for Cors",
         "type" : "object",
         "properties" : {
-          "allowCredentials" : {
+          "allow_credentials" : {
             "description" : "Allowed credentials",
             "type" : "boolean"
           },
-          "maxAge" : {
+          "max_age" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -20472,32 +20472,32 @@
             } ],
             "description" : "cors max age"
           },
-          "allowOrigin" : {
+          "allow_origin" : {
             "description" : "Allowed cors origins",
             "type" : "string"
           },
-          "allowMethods" : {
+          "allow_methods" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Allowed cors methods"
           },
-          "excludedPatterns" : {
+          "excluded_patterns" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Paths without cors"
           },
-          "allowHeaders" : {
+          "allow_headers" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Allowed cors headers"
           },
-          "exposeHeaders" : {
+          "expose_headers" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -20985,27 +20985,27 @@
         "description" : "Configuration for Robots",
         "type" : "object",
         "properties" : {
-          "robotTxtContent" : {
+          "robot_txt_content" : {
             "description" : "Content of /robots.txt",
             "type" : "string"
           },
-          "metaContent" : {
+          "meta_content" : {
             "description" : "content of the <meta name='robots' /> tag",
             "type" : "string"
           },
-          "robotEnabled" : {
+          "robot_enabled" : {
             "description" : "/robots.txt enabled",
             "type" : "boolean"
           },
-          "headerContent" : {
+          "header_content" : {
             "description" : "Content of the X-Robots-Tag headers",
             "type" : "string"
           },
-          "headerEnabled" : {
+          "header_enabled" : {
             "description" : "Header enabled",
             "type" : "boolean"
           },
-          "metaEnabled" : {
+          "meta_enabled" : {
             "description" : "Meta tag enabled",
             "type" : "boolean"
           }
@@ -21748,7 +21748,7 @@
         "description" : "A routing primitive representing how a request is matched and where the request is forwarded",
         "type" : "object",
         "properties" : {
-          "debugFlow" : {
+          "debug_flow" : {
             "description" : "Enable report debugging",
             "type" : "boolean"
           },
@@ -21764,7 +21764,7 @@
             "description" : "The ud of the route",
             "type" : "string"
           },
-          "exportReporting" : {
+          "export_reporting" : {
             "description" : "Export the execution reporting through standard data exporter",
             "type" : "boolean"
           },
@@ -21797,7 +21797,7 @@
             },
             "description" : "The groups of the route"
           },
-          "backendRef" : {
+          "backend_ref" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -22225,7 +22225,7 @@
             "description" : "Match on exact path ?",
             "type" : "boolean"
           },
-          "stripPath" : {
+          "strip_path" : {
             "description" : "Is path stripped from backend request",
             "type" : "boolean"
           }
@@ -22256,7 +22256,7 @@
             },
             "description" : "Possible responses"
           },
-          "passThrough" : {
+          "pass_through" : {
             "description" : "Pass the call if no mocked response found",
             "type" : "boolean"
           }
@@ -22683,7 +22683,7 @@
             "description" : "Is it enabled",
             "type" : "boolean"
           },
-          "headerName" : {
+          "header_name" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -22691,7 +22691,7 @@
             } ],
             "description" : "The name of the header to extract"
           },
-          "queryName" : {
+          "query_name" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -22824,7 +22824,7 @@
         "description" : "Plugin to induce chaos",
         "type" : "object",
         "properties" : {
-          "largeRequestFaultConfig" : {
+          "large_request_fault_config" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -22832,7 +22832,7 @@
             } ],
             "description" : "Config. for large request body faults"
           },
-          "largeResponseFaultConfig" : {
+          "large_response_fault_config" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -22840,7 +22840,7 @@
             } ],
             "description" : "Config. for large response faults"
           },
-          "latencyInjectionFaultConfig" : {
+          "latency_injection_fault_config" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -22848,7 +22848,7 @@
             } ],
             "description" : "Config. for latency injection faults"
           },
-          "badResponsesFaultConfig" : {
+          "bad_responses_fault_config" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -23273,11 +23273,11 @@
             },
             "description" : "The targets of the backend"
           },
-          "loadBalancing" : {
+          "load_balancing" : {
             "description" : "Loadbalancing config og the backend",
             "$ref" : "#/components/schemas/otoroshi.models.LoadBalancing"
           },
-          "targetRefs" : {
+          "target_refs" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -23685,12 +23685,12 @@
         "description" : "Custom timeouts per path",
         "type" : "object",
         "properties" : {
-          "connectionTimeout" : {
+          "connection_timeout" : {
             "format" : "int64",
             "description" : "Timeout at connection",
             "type" : "integer"
           },
-          "callAndStreamTimeout" : {
+          "call_and_stream_timeout" : {
             "format" : "int64",
             "description" : "Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)",
             "type" : "integer"
@@ -23699,17 +23699,17 @@
             "description" : "path on which this configuration works",
             "type" : "string"
           },
-          "callTimeout" : {
+          "call_timeout" : {
             "format" : "int64",
             "description" : "Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)",
             "type" : "integer"
           },
-          "idleTimeout" : {
+          "idle_timeout" : {
             "format" : "int64",
             "description" : "Timeout on idle connection",
             "type" : "integer"
           },
-          "globalTimeout" : {
+          "global_timeout" : {
             "format" : "int64",
             "description" : "Specify how long the global call (with retries) should last at most in milliseconds",
             "type" : "integer"
@@ -24295,11 +24295,11 @@
             },
             "description" : "The routes of the service"
           },
-          "debugFlow" : {
+          "debug_flow" : {
             "description" : "Enable report debugging",
             "type" : "boolean"
           },
-          "exportReporting" : {
+          "export_reporting" : {
             "description" : "Export the execution reporting through standard data exporter",
             "type" : "boolean"
           },
@@ -24585,7 +24585,7 @@
             "description" : "The current plugin config",
             "type" : "object"
           },
-          "otoroshiResponse" : {
+          "otoroshi_response" : {
             "description" : "The current otoroshi response",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginHttpResponse"
           },
@@ -24593,7 +24593,7 @@
             "description" : "The current execution report",
             "$ref" : "#/components/schemas/otoroshi.next.proxy.NgExecutionReport"
           },
-          "maybeCauseId" : {
+          "maybe_cause_id" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -24617,12 +24617,12 @@
             "description" : "The current matched route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
           },
-          "callAttempts" : {
+          "call_attempts" : {
             "format" : "int32",
             "description" : "The current call attempts",
             "type" : "integer"
           },
-          "globalConfig" : {
+          "global_config" : {
             "description" : "The current global config",
             "type" : "object"
           },
@@ -24722,53 +24722,53 @@
         "description" : "Settings for the http client when http request is forwarded",
         "type" : "object",
         "properties" : {
-          "idleTimeout" : {
+          "idle_timeout" : {
             "format" : "int64",
             "description" : "Timeout on idle connection",
             "type" : "integer"
           },
-          "sampleInterval" : {
+          "sample_interval" : {
             "format" : "int64",
             "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
             "type" : "integer"
           },
-          "cacheConnectionSettings" : {
+          "cache_connection_settings" : {
             "description" : "Cached connection settings",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgCacheConnectionSettings"
           },
-          "callAndStreamTimeout" : {
+          "call_and_stream_timeout" : {
             "format" : "int64",
             "description" : "Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)",
             "type" : "integer"
           },
-          "customTimeouts" : {
+          "custom_timeouts" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.models.NgCustomTimeouts"
             },
             "description" : "Custom timeouts per path"
           },
-          "connectionTimeout" : {
+          "connection_timeout" : {
             "format" : "int64",
             "description" : "Timeout at connection",
             "type" : "integer"
           },
-          "callTimeout" : {
+          "call_timeout" : {
             "format" : "int64",
             "description" : "Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)",
             "type" : "integer"
           },
-          "globalTimeout" : {
+          "global_timeout" : {
             "format" : "int64",
             "description" : "Specify how long the global call (with retries) should last at most in milliseconds",
             "type" : "integer"
           },
-          "retryInitialDelay" : {
+          "retry_initial_delay" : {
             "format" : "int64",
             "description" : "Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor",
             "type" : "integer"
           },
-          "backoffFactor" : {
+          "backoff_factor" : {
             "format" : "int64",
             "description" : "Specify the factor to multiply the delay for each retry",
             "type" : "integer"
@@ -24786,7 +24786,7 @@
             "description" : "Specify how many times the client will try to fetch the result of the request after an error before giving up.",
             "type" : "integer"
           },
-          "maxErrors" : {
+          "max_errors" : {
             "format" : "int32",
             "description" : "Specify how many errors can pass before opening the circuit breaker",
             "type" : "integer"
@@ -24864,7 +24864,7 @@
         "description" : "Configuration for SOAPAction",
         "type" : "object",
         "properties" : {
-          "jqResponseFilter" : {
+          "jq_response_filter" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -24872,7 +24872,7 @@
             } ],
             "description" : "JQ filter to transform response body"
           },
-          "jqRequestFilter" : {
+          "jq_request_filter" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -24880,11 +24880,11 @@
             } ],
             "description" : "JQ filter to transform request body"
           },
-          "preserveQuery" : {
+          "preserve_query" : {
             "description" : "Preserve query params",
             "type" : "boolean"
           },
-          "convertRequestBodyToXml" : {
+          "convert_request_body_to_xml" : {
             "description" : "Convert json body to xml",
             "type" : "boolean"
           },
@@ -25275,7 +25275,7 @@
             "description" : "The current request attributes",
             "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
           },
-          "globalConfig" : {
+          "global_config" : {
             "description" : "The current global config",
             "type" : "object"
           }
@@ -25721,7 +25721,7 @@
         "description" : "Plugin to apply routing restrictions",
         "type" : "object",
         "properties" : {
-          "allowLast" : {
+          "allow_last" : {
             "description" : "Evaluates allowed paths after forbidden and not found",
             "type" : "boolean"
           },
@@ -25739,7 +25739,7 @@
             },
             "description" : "Forbidden paths"
           },
-          "notFound" : {
+          "not_found" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgRestrictionPath"
@@ -25983,11 +25983,11 @@
             },
             "description" : "Allowed roles"
           },
-          "allowAll" : {
+          "allow_all" : {
             "description" : "Needs to have all allowed roles",
             "type" : "boolean"
           },
-          "rolePrefix" : {
+          "role_prefix" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -25995,7 +25995,7 @@
             } ],
             "description" : "Optional value that will prefix roles in tokens"
           },
-          "jwtPath" : {
+          "jwt_path" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -26003,7 +26003,7 @@
             } ],
             "description" : "Where to find role field in jwt token user"
           },
-          "apikeyPath" : {
+          "apikey_path" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -26018,7 +26018,7 @@
             },
             "description" : "Denied roles"
           },
-          "userPath" : {
+          "user_path" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -26026,7 +26026,7 @@
             } ],
             "description" : "Where to find role field in a user"
           },
-          "denyAll" : {
+          "deny_all" : {
             "description" : "Needs to have all denied roles",
             "type" : "boolean"
           }
@@ -26087,11 +26087,11 @@
             "description" : "Loose verification",
             "type" : "boolean"
           },
-          "trustAll" : {
+          "trust_all" : {
             "description" : "Trust any certificate",
             "type" : "boolean"
           },
-          "trustedCerts" : {
+          "trusted_certs" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -26173,7 +26173,7 @@
         "description" : "Plugin to call SOAP service",
         "type" : "object",
         "properties" : {
-          "jqResponseFilter" : {
+          "jq_response_filter" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -26181,7 +26181,7 @@
             } ],
             "description" : "JQ filter to transform response body"
           },
-          "jqRequestFilter" : {
+          "jq_request_filter" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -26189,11 +26189,11 @@
             } ],
             "description" : "JQ filter to transform request body"
           },
-          "preserveQuery" : {
+          "preserve_query" : {
             "description" : "Preserve query params",
             "type" : "boolean"
           },
-          "convertRequestBodyToXml" : {
+          "convert_request_body_to_xml" : {
             "description" : "Convert json body to xml",
             "type" : "boolean"
           },
@@ -26236,7 +26236,7 @@
         "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
-          "cookieName" : {
+          "cookie_name" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -26244,11 +26244,11 @@
             } ],
             "description" : "The name of the cookies to extract"
           },
-          "keyPairSigned" : {
+          "key_pair_signed" : {
             "description" : "Is it asymmetricaly signed",
             "type" : "boolean"
           },
-          "queryName" : {
+          "query_name" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -26256,7 +26256,7 @@
             } ],
             "description" : "The name of the query param to extract"
           },
-          "secretSigned" : {
+          "secret_signed" : {
             "description" : "Is it symmetricaly signed",
             "type" : "boolean"
           },
@@ -26264,11 +26264,11 @@
             "description" : "Is it enabled",
             "type" : "boolean"
           },
-          "includeRequestAttrs" : {
+          "include_request_attrs" : {
             "description" : "Does the jwt token need to include current request attributes to work",
             "type" : "boolean"
           },
-          "headerName" : {
+          "header_name" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -26393,7 +26393,7 @@
             } ],
             "description" : "The id of the auth. module"
           },
-          "passWithApikey" : {
+          "pass_with_apikey" : {
             "description" : "Pass the request if an apikey is present",
             "type" : "boolean"
           }
@@ -26403,7 +26403,7 @@
         "description" : "Configuration for SnowMonkeyChaos",
         "type" : "object",
         "properties" : {
-          "largeRequestFaultConfig" : {
+          "large_request_fault_config" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -26411,7 +26411,7 @@
             } ],
             "description" : "Config. for large request body faults"
           },
-          "largeResponseFaultConfig" : {
+          "large_response_fault_config" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -26419,7 +26419,7 @@
             } ],
             "description" : "Config. for large response faults"
           },
-          "latencyInjectionFaultConfig" : {
+          "latency_injection_fault_config" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -26427,7 +26427,7 @@
             } ],
             "description" : "Config. for latency injection faults"
           },
-          "badResponsesFaultConfig" : {
+          "bad_responses_fault_config" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -26557,7 +26557,7 @@
             "description" : "The root path of the backend or the full rewrite path",
             "type" : "string"
           },
-          "healthCheck" : {
+          "health_check" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -26569,7 +26569,7 @@
             "description" : "Client config. of the backend",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgClientConfig"
           },
-          "loadBalancing" : {
+          "load_balancing" : {
             "description" : "Loadbalancing config og the backend",
             "$ref" : "#/components/schemas/otoroshi.models.LoadBalancing"
           },
@@ -26577,7 +26577,7 @@
             "description" : "Does the backend performs a full url rewrite ?",
             "type" : "boolean"
           },
-          "targetRefs" : {
+          "target_refs" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -26597,7 +26597,7 @@
         "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
-          "headerName" : {
+          "header_name" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -26605,7 +26605,7 @@
             } ],
             "description" : "The name of the header to extract"
           },
-          "queryName" : {
+          "query_name" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -26796,7 +26796,7 @@
         "description" : "The settings for http cached connection at host level",
         "type" : "object",
         "properties" : {
-          "queueSize" : {
+          "queue_size" : {
             "format" : "int32",
             "description" : "How much request can be queue before dropping it",
             "type" : "integer"
@@ -27414,7 +27414,7 @@
             "description" : "The ratio of requests impacted",
             "type" : "number"
           },
-          "additionalRequestSize" : {
+          "additional_request_size" : {
             "format" : "int32",
             "description" : "Amount of bytes added of the request body",
             "type" : "integer"
@@ -27469,11 +27469,11 @@
             },
             "description" : "Allowed roles"
           },
-          "allowAll" : {
+          "allow_all" : {
             "description" : "Needs to have all allowed roles",
             "type" : "boolean"
           },
-          "rolePrefix" : {
+          "role_prefix" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -27481,7 +27481,7 @@
             } ],
             "description" : "Optional value that will prefix roles in tokens"
           },
-          "jwtPath" : {
+          "jwt_path" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -27489,7 +27489,7 @@
             } ],
             "description" : "Where to find role field in jwt token user"
           },
-          "apikeyPath" : {
+          "apikey_path" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -27504,7 +27504,7 @@
             },
             "description" : "Denied roles"
           },
-          "userPath" : {
+          "user_path" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -27512,7 +27512,7 @@
             } ],
             "description" : "Where to find role field in a user"
           },
-          "denyAll" : {
+          "deny_all" : {
             "description" : "Needs to have all denied roles",
             "type" : "boolean"
           }
@@ -27702,7 +27702,7 @@
             } ],
             "description" : "The current request user"
           },
-          "globalConfig" : {
+          "global_config" : {
             "description" : "The current global config",
             "type" : "object"
           },
@@ -27744,7 +27744,7 @@
             "description" : "Current matched path",
             "type" : "string"
           },
-          "noMoreSegments" : {
+          "no_more_segments" : {
             "description" : "Is the path fully matched",
             "type" : "boolean"
           }
@@ -27783,7 +27783,7 @@
             "description" : "The ratio of responses impacted",
             "type" : "number"
           },
-          "additionalResponseSize" : {
+          "additional_response_size" : {
             "format" : "int32",
             "description" : "Amount of bytes added of the response body",
             "type" : "integer"
@@ -28041,14 +28041,14 @@
             "description" : "apikey only",
             "type" : "boolean"
           },
-          "publicPatterns" : {
+          "public_patterns" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Paths that should not have user or apikey to pass"
           },
-          "privatePatterns" : {
+          "private_patterns" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -28167,7 +28167,7 @@
         "description" : "Configuration for NgRestrictions",
         "type" : "object",
         "properties" : {
-          "allowLast" : {
+          "allow_last" : {
             "description" : "Evaluates allowed paths after forbidden and not found",
             "type" : "boolean"
           },
@@ -28185,7 +28185,7 @@
             },
             "description" : "Forbidden paths"
           },
-          "notFound" : {
+          "not_found" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.next.plugins.NgRestrictionPath"
@@ -28325,7 +28325,7 @@
             "description" : "Circuit breaker attemps",
             "type" : "integer"
           },
-          "cbStart" : {
+          "cb_start" : {
             "format" : "int64",
             "description" : "Time start of circuit breaker usage",
             "type" : "integer"
@@ -28353,27 +28353,27 @@
         "description" : "Plugin to handle search engine bots",
         "type" : "object",
         "properties" : {
-          "robotTxtContent" : {
+          "robot_txt_content" : {
             "description" : "Content of /robots.txt",
             "type" : "string"
           },
-          "metaContent" : {
+          "meta_content" : {
             "description" : "content of the <meta name='robots' /> tag",
             "type" : "string"
           },
-          "robotEnabled" : {
+          "robot_enabled" : {
             "description" : "/robots.txt enabled",
             "type" : "boolean"
           },
-          "headerContent" : {
+          "header_content" : {
             "description" : "Content of the X-Robots-Tag headers",
             "type" : "string"
           },
-          "headerEnabled" : {
+          "header_enabled" : {
             "description" : "Header enabled",
             "type" : "boolean"
           },
-          "metaEnabled" : {
+          "meta_enabled" : {
             "description" : "Meta tag enabled",
             "type" : "boolean"
           }
@@ -28420,11 +28420,11 @@
             "description" : "basic auth extractor config.",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractorBasic"
           },
-          "customHeaders" : {
+          "custom_headers" : {
             "description" : "custom headers extractor config.",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractorCustomHeaders"
           },
-          "clientId" : {
+          "client_id" : {
             "description" : "client id only extractor config.",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractorClientId"
           },
@@ -28698,7 +28698,7 @@
         "description" : "A target where incoming requests will be forwarded",
         "type" : "object",
         "properties" : {
-          "ipAddress" : {
+          "ip_address" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
             }, {
@@ -28714,7 +28714,7 @@
             "description" : "Predicate to choose this target",
             "$ref" : "#/components/schemas/otoroshi.models.TargetPredicate"
           },
-          "tlsConfig" : {
+          "tls_config" : {
             "description" : "TLS settings to contact this target",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgTlsConfig"
           },
@@ -28765,11 +28765,11 @@
             "description" : "Configuration of the apikey extraction modes",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractors"
           },
-          "passWithUser" : {
+          "pass_with_user" : {
             "description" : "Let the request pass if a user is connected",
             "type" : "boolean"
           },
-          "wipeBackendRequest" : {
+          "wipe_backend_request" : {
             "description" : "Removes the apikeys from the request to not forward it to the backend",
             "type" : "boolean"
           },

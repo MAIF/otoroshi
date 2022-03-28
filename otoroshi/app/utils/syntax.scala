@@ -111,6 +111,10 @@ object implicits {
     def fromBase64: String       = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
     def sha256: String           = Hex.encodeHexString(BetterString.digest256.digest(obj.getBytes(StandardCharsets.UTF_8)))
     def sha512: String           = Hex.encodeHexString(BetterString.digest512.digest(obj.getBytes(StandardCharsets.UTF_8)))
+    def camelToSnake: String     = {
+      obj.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase
+      // obj.replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2").replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase
+    }
   }
   implicit class BetterBoolean(private val obj: Boolean)               extends AnyVal {
     def json: JsValue = JsBoolean(obj)
