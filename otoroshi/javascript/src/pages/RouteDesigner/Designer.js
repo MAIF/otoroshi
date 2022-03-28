@@ -8,6 +8,68 @@ import Loader from './Loader'
 import { camelToSnake, camelToSnakeFlow, toUpperCaseLabels } from '../../util'
 import { isEqual } from 'lodash'
 
+const Dot = ({ icon, children, clickable, onClick, highlighted, selectedNode, style = {} }) => <div className='dot' style={{
+    cursor: clickable ? 'pointer' : 'initial',
+    opacity: (!selectedNode || highlighted) ? 1 : .25,
+    backgroundColor: highlighted ? '#f9b000' : '#494948',
+    ...style,
+    textAlign: 'center'
+}} onClick={onClick ? e => {
+    e.stopPropagation()
+    onClick(e)
+} : e => e.stopPropagation()}>
+    {icon && <i className={`fas fa-${icon}`} style={{ color: "#fff", fontSize: 20 }} />}
+    {children && children}
+</div>
+
+const NodeElement = ({ element, setSelectedNode, hideLink, selectedNode, bold, disableBorder }) => {
+    const { id, name, index } = element
+    const highlighted = selectedNode && selectedNode.id === id && (selectedNode.plugin_multi_inst ? selectedNode.index === index : true)
+
+    return <>
+        <Dot clickable={true}
+            selectedNode={selectedNode}
+            style={{
+                border: disableBorder ? 0 : 1,
+                fontWeight: bold ? 'bold' : 'normal'
+            }}
+            onClick={e => {
+                e.stopPropagation()
+                setSelectedNode(element)
+            }} highlighted={highlighted}>
+            <span style={{
+                padding: '4px 12px',
+                borderRadius: '4px',
+                color: "#fff",
+                whiteSpace: 'wrap',
+                width: "fit-content"
+            }}>
+                {name || id}
+            </span>
+        </Dot>
+        {!hideLink && <Link highlighted={highlighted} />}
+    </>
+}
+
+const Anchor = ({ text, highlighted = true, mt = 'initial', addNode }) => <div className='anchor'
+    onDragOver={e => e.preventDefault()}
+    onDrop={(ev) => {
+        ev.preventDefault()
+        const node = JSON.parse(ev.dataTransfer.getData("newElement"))
+        addNode(node)
+    }}
+    style={{
+        opacity: highlighted ? 1 : .25,
+        marginTop: mt
+    }}>
+    <span className='text-center'>{text}</span>
+</div>
+
+const Link = ({ highlighted = true, flex }) => <div className="link" style={{
+    opacity: highlighted ? 1 : .25,
+    flex: flex ? 1 : 'initial'
+}}></div>
+
 export default ({ lineId, value }) => {
     const { routeId } = useParams()
 
@@ -84,7 +146,7 @@ export default ({ lineId, value }) => {
                             onInputStream
                         }
                     })
-                ])
+                ].map((node, i) => ({ ...node, index: i })))
 
                 setLoading(false)
             })
@@ -95,37 +157,33 @@ export default ({ lineId, value }) => {
         !EXCLUDED_PLUGINS.plugin_visibility.includes(plugin.plugin_visibility) &&
         !EXCLUDED_PLUGINS.ids.includes(plugin.id.replace('cp:', ''))
 
-    const allowDrop = e => e.preventDefault()
     const onDrag = (e, element) => e.dataTransfer.setData("newElement", JSON.stringify(element))
-    const onDrop = (ev) => {
-        ev.preventDefault()
 
-        const node = JSON.parse(ev.dataTransfer.getData("newElement"))
-
-        addNode(node)
-    }
-
-    const removeNode = id => {
-        setNodes(nodes.filter(node => node.id !== id))
+    const removeNode = (id, index) => {
+        setNodes(nodes.filter((node, i) => node.id !== id && i !== index))
         setRoute({
             ...route,
             plugins: route.plugins.filter(plugin => !plugin.plugin.endsWith(id))
         })
 
-        setPlugins(plugins.map(plugin => {
-            if (plugin.id === id)
+        setPlugins(plugins.map((plugin, i) => {
+            if (plugin.id === id && i === index)
                 return { ...plugin, selected: undefined }
             return plugin
         }))
     }
 
     const addNode = node => {
-        if ((node.plugin_steps || []).some(s => ["TransformResponse"].includes(s)) ||
-            node.onTargetStream ||
-            (node.plugin_steps || []).some(s => ["PreRoute", "ValidateAccess", "TransformRequest"].includes(s))) {
+        const newNode = {
+            ...node,
+            index: nodes.length
+        }
+        if ((newNode.plugin_steps || []).some(s => ["TransformResponse"].includes(s)) ||
+            newNode.onTargetStream ||
+            (newNode.plugin_steps || []).some(s => ["PreRoute", "ValidateAccess", "TransformRequest"].includes(s))) {
 
             setPlugins(plugins.map(p => {
-                if (p.id === node.id)
+                if (p.id === newNode.id)
                     p.selected = !p.plugin_multi_inst
                 return p
             }))
@@ -135,76 +193,19 @@ export default ({ lineId, value }) => {
                 plugins: [
                     ...route.plugins,
                     {
-                        plugin: node.legacy ? LEGACY_PLUGINS_WRAPPER[node.pluginType] : node.id,
+                        plugin: newNode.legacy ? LEGACY_PLUGINS_WRAPPER[newNode.pluginType] : newNode.id,
                         config: {
-                            ...node.config,
-                            plugin: node.legacy ? node.id : undefined
+                            ...newNode.config,
+                            plugin: newNode.legacy ? newNode.id : undefined
                         }
                     }
                 ]
             })
 
-            setNodes([...nodes, node])
+            setNodes([...nodes, newNode])
 
-            setSelectedNode(node)
+            setSelectedNode(newNode)
         }
-    }
-
-    const Dot = ({ icon, children, clickable, onClick, highlighted, selectedNode, style = {} }) => <div className='dot' style={{
-        cursor: clickable ? 'pointer' : 'initial',
-        opacity: (!selectedNode || highlighted) ? 1 : .25,
-        backgroundColor: highlighted ? '#f9b000' : '#494948',
-        ...style,
-        textAlign: 'center'
-    }} onClick={onClick ? e => {
-        e.stopPropagation()
-        onClick(e)
-    } : e => e.stopPropagation()}>
-        {icon && <i className={`fas fa-${icon}`} style={{ color: "#fff", fontSize: 20 }} />}
-        {children && children}
-    </div>
-
-    const Anchor = ({ text, highlighted = true, mt = 'initial' }) => <div className='anchor'
-        onDragOver={allowDrop} onDrop={onDrop}
-        style={{
-            opacity: highlighted ? 1 : .25,
-            marginTop: mt
-        }}>
-        <span className='text-center'>{text}</span>
-    </div>
-
-    const Link = ({ highlighted = true, flex }) => <div className="link" style={{
-        opacity: highlighted ? 1 : .25,
-        flex: flex ? 1 : 'initial'
-    }}></div>
-
-    const NodeElement = ({ element, setSelectedNode, hideLink, selectedNode, bold, disableBorder }) => {
-        const { id, name } = element
-        const highlighted = selectedNode && selectedNode.id === id
-
-        return <>
-            <Dot clickable={true}
-                selectedNode={selectedNode}
-                style={{
-                    border: disableBorder ? 0 : 1,
-                    fontWeight: bold ? 'bold' : 'normal'
-                }}
-                onClick={e => {
-                    e.stopPropagation()
-                    setSelectedNode(element)
-                }} highlighted={highlighted}>
-                <span style={{
-                    padding: '4px 12px',
-                    borderRadius: '4px',
-                    color: "#fff",
-                    whiteSpace: 'wrap',
-                    width: "fit-content"
-                }}>
-                    {name || id}
-                </span>
-            </Dot>
-            {!hideLink && <Link highlighted={highlighted} />}
-        </>
     }
 
     const handleSearch = search => {
@@ -362,7 +363,7 @@ export default ({ lineId, value }) => {
                                         setSelectedNode={setSelectedNode}
                                         isLast={(inputNodes.length - 1) === i}
                                     />)}
-                                    <Anchor text="Drop elements here" highlighted={!selectedNode} />
+                                    <Anchor text="Drop elements here" highlighted={!selectedNode} addNode={addNode} />
                                     <Link highlighted={!selectedNode} flex={true} />
                                 </div>
                             </div>
@@ -383,6 +384,7 @@ export default ({ lineId, value }) => {
                                     />)}
                                     <Anchor
                                         out={true}
+                                        addNode={addNode}
                                         text="Drop elements here"
                                         stream="onOutputStream"
                                         highlighted={!selectedNode} />
@@ -566,22 +568,20 @@ const EditView = ({
     const [saveable, setSaveable] = useState(false)
     const [backendConfigRef, setBackendConfigRef] = useState()
 
-    console.log(saveable)
-
     useEffect(() => {
         if (route.backend_ref)
             nextClient.fetch(nextClient.ENTITIES.BACKENDS, route.backend_ref)
                 .then(setBackendConfigRef)
     }, [route.backend_ref])
 
-    const { id, flow, config_flow, config_schema, schema, name } = selectedNode
+    const { id, flow, config_flow, config_schema, schema, name, index } = selectedNode
 
     const plugin = ['Backend', 'Frontend'].includes(id) ? DEFAULT_FLOW[id] : plugins.find(element => element.id === id || element.id.endsWith(id))
 
     const onRemove = e => {
         e.stopPropagation()
         setSelectedNode(undefined)
-        removeNode(id)
+        removeNode(id, index)
     }
 
     useEffect(() => {
@@ -671,8 +671,8 @@ const EditView = ({
             })
     }
 
-    console.log("SCHEMA", form.schema.plugin)
-    console.log("VALUE", form.value)
+    // console.log("SCHEMA", form.schema.plugin)
+    // console.log("VALUE", form.value)
 
     return <div onClick={e => {
         e.stopPropagation()
@@ -742,9 +742,6 @@ const EditView = ({
                             watch: unsaved => {
                                 if (unsaved && Object.keys(unsaved).length > 0) {
                                     const hasChanged = !isEqual(unsaved, form.originalValue)
-                                    console.log(unsaved)
-                                    console.log(form.originalValue)
-                                    console.log(isEqual)
                                     setSaveable(hasChanged)
                                     if (!isEqual(unsaved, test))
                                         setTest(unsaved)

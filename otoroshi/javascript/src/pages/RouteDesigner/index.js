@@ -26,9 +26,10 @@ export default (props) => {
                 const [value, setValue] = useState({})
 
                 useEffect(() => {
-                    if (p.routeId === 'new')
+                    if (p.routeId === 'new') {
                         nextClient.template(nextClient.ENTITIES.ROUTES)
                             .then(setValue)
+                    }
                     else
                         nextClient.fetch(nextClient.ENTITIES.ROUTES, p.routeId)
                             .then(setValue)

@@ -105,6 +105,7 @@ export const Informations = (props) => {
                 value={props.value}
                 ref={ref}
                 onSubmit={item => {
+                    console.log(item, props)
                     if (props.isCreation)
                         nextClient.create(nextClient.ENTITIES.ROUTES, item)
                             .then(() => history.push(`/routes/${item.id}?tab=flow`))

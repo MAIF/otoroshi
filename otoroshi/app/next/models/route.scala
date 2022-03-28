@@ -671,7 +671,9 @@ object NgRoute {
         plugins = NgPlugins.readFrom(json.select("plugins"))
       )
     } match {
-      case Failure(exception) => JsError(exception.getMessage)
+      case Failure(exception) =>
+        println(exception)
+        JsError(exception.getMessage)
       case Success(route)     => JsSuccess(route)
     }
   }
