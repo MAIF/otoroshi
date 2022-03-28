@@ -110,7 +110,7 @@ export const Informations = (props) => {
                         nextClient.create(nextClient.ENTITIES.ROUTES, item)
                             .then(() => history.push(`/routes/${item.id}?tab=flow`))
                     else
-                        nextClient.update(nextClient.ENTITIES.BACKENDS, item)
+                        nextClient.update(nextClient.ENTITIES.ROUTES, item)
                 }}
                 footer={() => null}
             />

@@ -34,7 +34,7 @@ export class Location extends Component {
           (team) => possibleTeams.map((pt) => pt.id).indexOf(team) > -1
         ).length === 0;
       if (availableTeams && (noTeams || badTeams)) {
-        console.log(possibleTeams);
+
         const all = possibleTeams.filter((t) => t.id === '*')[0];
         const first = possibleTeams[0].id;
         const team = all ? all : first;
