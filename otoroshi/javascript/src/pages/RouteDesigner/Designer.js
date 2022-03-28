@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useParams, useLocation } from 'react-router'
 import { nextClient, getCategories, getPlugins, getOldPlugins } from '../../services/BackOfficeServices'
 import { Form, format, type, CodeInput, SelectInput } from '@maif/react-forms'
@@ -146,7 +146,7 @@ export default ({ lineId, value }) => {
                             onInputStream
                         }
                     })
-                ].map((node, i) => ({ ...node, index: i })))
+                ].map((node, i) => ({ ...node, index: i - 2 })))
 
                 setLoading(false)
             })
@@ -154,6 +154,7 @@ export default ({ lineId, value }) => {
 
     const filterSpecificPlugin = plugin => !plugin.plugin_steps.includes('Sink') &&
         !plugin.plugin_steps.includes('HandlesTunnel') &&
+        !['job', 'sink'].includes(plugin.pluginType) &&
         !EXCLUDED_PLUGINS.plugin_visibility.includes(plugin.plugin_visibility) &&
         !EXCLUDED_PLUGINS.ids.includes(plugin.id.replace('cp:', ''))
 
@@ -216,13 +217,13 @@ export default ({ lineId, value }) => {
             })))
     }
 
-    const updatePlugin = (pluginId, item, updatedField) => {
+    const updatePlugin = (pluginId, index, item, updatedField) => {
         return nextClient.update(nextClient.ENTITIES.ROUTES, {
             ...route,
             frontend: updatedField === 'Frontend' ? item : route.frontend,
             backend: updatedField === 'Backend' ? item : route.backend,
-            plugins: route.plugins.map(plugin => {
-                if (plugin.plugin === pluginId || plugin.config.plugin === pluginId)
+            plugins: route.plugins.map((plugin, i) => {
+                if ((plugin.plugin === pluginId || plugin.config.plugin === pluginId) && i === index)
                     return {
                         ...plugin,
                         ...item.status,
@@ -564,6 +565,7 @@ const EditView = ({
         originalValue: {}
     })
 
+    const ref = useRef()
     const [test, setTest] = useState()
     const [saveable, setSaveable] = useState(false)
     const [backendConfigRef, setBackendConfigRef] = useState()
@@ -630,7 +632,7 @@ const EditView = ({
         let value = route[selectedNode.field]
 
         if (!value) {
-            const pluginOnFlow = route.plugins.find(p => p.plugin === id || p.config.plugin === id)
+            const pluginOnFlow = route.plugins.find((p, i) => (p.plugin === id || p.config.plugin === id) && i === index)
             if (pluginOnFlow) {
                 const { plugin, config, ...status } = pluginOnFlow
                 value = {
@@ -664,7 +666,7 @@ const EditView = ({
     }, [selectedNode])
 
     const onValidate = item => {
-        updatePlugin(id, unstringify(item), selectedNode.id)
+        updatePlugin(id, index, unstringify(item), selectedNode.id)
             .then(() => {
                 setForm({ ...form, originalValue: item })
                 setSaveable(false)
@@ -672,7 +674,7 @@ const EditView = ({
     }
 
     // console.log("SCHEMA", form.schema.plugin)
-    // console.log("VALUE", form.value)
+    console.log("VALUE", form.value)
 
     return <div onClick={e => {
         e.stopPropagation()
@@ -698,8 +700,8 @@ const EditView = ({
                         color: "#fff"
                     }}>FORM</button>
                 <button className='btn btn-sm' onClick={() => {
-                    if (!isEqual(test, form.value))
-                        setForm({ ...form, value: test })
+                    if (!isEqual(ref.current.rawData(), form.value))
+                        setForm({ ...form, value: ref.current.rawData() })
                     toggleJsonFormat(true)
                 }} style={{
                     padding: "6px 12px",
@@ -736,6 +738,7 @@ const EditView = ({
                 </>
                     :
                     <Form
+                        ref={ref}
                         value={unstringify(form.value)}
                         schema={form.schema}
                         options={{
