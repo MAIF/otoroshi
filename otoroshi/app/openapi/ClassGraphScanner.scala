@@ -56,12 +56,11 @@ class ClassGraphScanner {
     if (hasWritten || !flatFile.exists()) {
       val flat = new JsObject(flattenedOpenapiSchema)
       Files.writeString(flatFile.toPath, flat.prettify)
+      new CrdsGenerator(openApiSchema).run()
     }
     if (hasWritten || !formFile.exists()) {
       val forms = new JsObject(asForms.mapValues(_.json))
       Files.writeString(formFile.toPath, forms.prettify)
-    }
-    if (hasWritten) {
       new CrdsGenerator(openApiSchema).run()
     }
     OpenApiSchema(
