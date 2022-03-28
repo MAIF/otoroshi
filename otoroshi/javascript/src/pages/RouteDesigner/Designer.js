@@ -204,7 +204,6 @@ export default ({ lineId, value }) => {
             })
 
             setNodes([...nodes, newNode])
-
             setSelectedNode(newNode)
         }
     }
@@ -632,26 +631,19 @@ const EditView = ({
         let value = route[selectedNode.field]
 
         if (!value) {
-            const pluginOnFlow = route.plugins.find((p, i) => (p.plugin === id || p.config.plugin === id) && i === index)
-            if (pluginOnFlow) {
-                const { plugin, config, ...status } = pluginOnFlow
+            const node = (route.plugins.find((p, i) => (p.plugin === id || p.config.plugin === id) && i === index)) || plugins.find(p => p.id === id)
+            if (node)
                 value = {
-                    plugin: config,
-                    status
+                    plugin: node.config,
+                    status: {
+                        enabled: node.enabled || true,
+                        debug: node.debug || false,
+                        include: node.include || [],
+                        exclude: node.exclude || []
+                    }
                 }
-            }
         }
 
-        if (!value) {
-            const defaultPlugin = plugins.find(p => p.id === id)
-            if (defaultPlugin) {
-                const { plugin, config, ...status } = defaultPlugin
-                value = {
-                    plugin: config,
-                    status
-                }
-            }
-        }
         setForm({
             schema: formSchema,
             flow: formFlow,
@@ -673,7 +665,7 @@ const EditView = ({
             })
     }
 
-    // console.log("SCHEMA", form.schema.plugin)
+    console.log("SCHEMA", form.schema.plugin)
     console.log("VALUE", form.value)
 
     return <div onClick={e => {

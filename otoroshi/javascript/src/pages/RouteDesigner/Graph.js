@@ -57,6 +57,9 @@ export const DEFAULT_FLOW = {
         config_schema: {
             domains: {
                 type: type.string,
+                props: {
+                    mode: "json",
+                },
                 array: true,
                 format: 'singleLineCode',
                 label: 'Domains'

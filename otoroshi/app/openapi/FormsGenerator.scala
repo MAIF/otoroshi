@@ -51,7 +51,10 @@ class FormsGenerator(spec: TrieMap[String, JsValue]){
 
         if (label == "raw" && `type` == "object") {
           informations = informations ++ Json.obj(
-            "format" -> "code"
+            "format" -> "code",
+            "props" -> Json.obj(
+              "mode" -> "json"
+            )
           )
         }
 
@@ -83,10 +86,14 @@ class FormsGenerator(spec: TrieMap[String, JsValue]){
             }
           else
             if ((informations \ "type").as[String] == "string" && enum.isEmpty) {
-              if (label == "body")
-                informations ++ Json.obj("format" -> "code")
-              else
-                informations ++ Json.obj("format" -> "singleLineCode")
+              if (label == "body") {
+                informations ++ Json.obj("format" -> "code", "props" -> Json.obj(
+                  "mode" -> "json"
+                ))
+              } else
+                informations ++ Json.obj("format" -> "singleLineCode", "props" -> Json.obj(
+                  "mode" -> "json"
+                ))
             }
             else if((informations \ "type").as[String] == "number") {
               informations ++ Json.obj(
