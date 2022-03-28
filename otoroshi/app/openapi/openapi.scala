@@ -930,7 +930,9 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }
   }
 
-  def run(): JsValue = {
+  def run(): JsValue = runAndMaybeWrite()._1
+
+  def runAndMaybeWrite(): (JsValue, Boolean) = {
     val config = getConfig()
     val result = new TrieMap[String, JsValue]()
 
@@ -989,6 +991,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       )
     )
 
+    var hasWritten = false
     if (write) {
       logger.debug("")
       val cfg = OpenApiGeneratorConfig(
@@ -1008,17 +1011,19 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           if (spec != json) {
             Files.write(file.toPath, prettyJson.split("\n").toList.asJava, StandardCharsets.UTF_8)
             cfg.write()
+            hasWritten = true
           }
         } else {
           Files.write(file.toPath, prettyJson.split("\n").toList.asJava, StandardCharsets.UTF_8)
           cfg.write()
+          hasWritten = true
         }
       }
       // cfg.write()
       logger.debug("")
     }
 
-    spec
+    (spec, hasWritten)
   }
 
   def readOldSpec(oldSpecPath: String): Unit = {
