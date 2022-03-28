@@ -400,9 +400,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
+            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, c.getTypeStr, typ).foreach { r =>
               properties = properties ++ Json.obj(
-                fieldName -> r.deepMerge(
+                finalFieldName -> r.deepMerge(
                   Json.obj(
                     "description" -> getFieldDescription(clazz, name, typ, config)
                   )
@@ -418,9 +419,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
+            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
-                fieldName -> Json.obj(
+                finalFieldName -> Json.obj(
                   "type"                 -> "object",
                   "additionalProperties" -> r,
                   "description"          -> getFieldDescription(clazz, name, typ, config)
@@ -436,9 +438,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
+            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
-                fieldName -> Json.obj(
+                finalFieldName -> Json.obj(
                   "type"        -> "array",
                   "items"       -> r,
                   "description" -> getFieldDescription(clazz, name, typ, config)
@@ -454,9 +457,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
+            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
-                fieldName -> Json.obj(
+                finalFieldName -> Json.obj(
                   "type"        -> "array",
                   "items"       -> r,
                   "description" -> getFieldDescription(clazz, name, typ, config)
@@ -471,9 +475,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
+            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
-                fieldName -> Json.obj(
+                finalFieldName -> Json.obj(
                   "oneOf"       -> Json.arr(
                     nullType,
                     r
@@ -490,9 +495,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
+            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, valueName, typ).map { r =>
               properties = properties ++ Json.obj(
-                fieldName -> r.deepMerge(Json.obj("description" -> getFieldDescription(clazz, name, typ, config)))
+                finalFieldName -> r.deepMerge(Json.obj("description" -> getFieldDescription(clazz, name, typ, config)))
               )
             }
           // case c: TypeVariableSignature => logger.debug(s"  $name: $typ ${c.toStringWithTypeBound} (var)")
@@ -930,7 +936,9 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }
   }
 
-  def run(): JsValue = {
+  def run(): JsValue = runAndMaybeWrite()._1
+
+  def runAndMaybeWrite(): (JsValue, Boolean) = {
     val config = getConfig()
     val result = new TrieMap[String, JsValue]()
 
@@ -989,6 +997,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       )
     )
 
+    var hasWritten = false
     if (write) {
       logger.debug("")
       val cfg = OpenApiGeneratorConfig(
@@ -1008,17 +1017,19 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           if (spec != json) {
             Files.write(file.toPath, prettyJson.split("\n").toList.asJava, StandardCharsets.UTF_8)
             cfg.write()
+            hasWritten = true
           }
         } else {
           Files.write(file.toPath, prettyJson.split("\n").toList.asJava, StandardCharsets.UTF_8)
           cfg.write()
+          hasWritten = true
         }
       }
       // cfg.write()
       logger.debug("")
     }
 
-    spec
+    (spec, hasWritten)
   }
 
   def readOldSpec(oldSpecPath: String): Unit = {

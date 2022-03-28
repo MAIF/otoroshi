@@ -3249,7 +3249,7 @@ spec:
             description: "A backend representation with it's targets, load balancing\
               \ and general settings"
             properties:
-              targetRefs:
+              target_refs:
                 type: "array"
                 items:
                   type: "string"
@@ -3257,43 +3257,21 @@ spec:
               root:
                 description: "The root path of the backend or the full rewrite path"
                 type: "string"
-              healthCheck:
-                description: "Healthcheck config og the backend"
-                type: "object"
-                properties:
-                  enabled:
-                    description: "Whether or not healthcheck is enabled on the current\
-                      \ service descriptor"
-                    type: "boolean"
-                  url:
-                    description: "The URL to check"
-                    type: "string"
               client:
                 description: "Client config. of the backend"
                 type: "object"
                 properties:
-                  sampleInterval:
-                    format: "int64"
-                    description: "Specify the sliding window time for the circuit\
-                      \ breaker in milliseconds, after this time, error count will\
-                      \ be reseted"
-                    type: "integer"
-                  backoffFactor:
-                    format: "int64"
-                    description: "Specify the factor to multiply the delay for each\
-                      \ retry"
-                    type: "integer"
-                  customTimeouts:
+                  custom_timeouts:
                     description: "Custom timeouts per path"
                     type: "array"
                     items:
                       type: "object"
                       properties:
-                        connectionTimeout:
+                        connection_timeout:
                           format: "int64"
                           description: "Timeout at connection"
                           type: "integer"
-                        callAndStreamTimeout:
+                        call_and_stream_timeout:
                           format: "int64"
                           description: "Specify how long each call should last at\
                             \ most in milliseconds (hard timeout, connection will\
@@ -3302,37 +3280,52 @@ spec:
                         path:
                           description: "path on which this configuration works"
                           type: "string"
-                        callTimeout:
+                        call_timeout:
                           format: "int64"
                           description: "Specify how long each call should last at\
                             \ most in milliseconds (soft timeout as it's enforced\
                             \ by the circuit breaker)"
                           type: "integer"
-                        idleTimeout:
+                        idle_timeout:
                           format: "int64"
                           description: "Timeout on idle connection"
                           type: "integer"
-                        globalTimeout:
+                        global_timeout:
                           format: "int64"
                           description: "Specify how long the global call (with retries)\
                             \ should last at most in milliseconds"
                           type: "integer"
-                  callAndStreamTimeout:
+                  global_timeout:
                     format: "int64"
-                    description: "Specify how long each call should last at most in\
-                      \ milliseconds (hard timeout, connection will be closed after\
-                      \ that duration)"
+                    description: "Specify how long the global call (with retries)\
+                      \ should last at most in milliseconds"
                     type: "integer"
-                  retryInitialDelay:
+                  max_errors:
+                    format: "int32"
+                    description: "Specify how many errors can pass before opening\
+                      \ the circuit breaker"
+                    type: "integer"
+                  retry_initial_delay:
                     format: "int64"
                     description: "Specify the delay between two retries. Each retry,\
                       \ the delay is multiplied by the backoff factor"
                     type: "integer"
-                  callTimeout:
+                  backoff_factor:
+                    format: "int64"
+                    description: "Specify the factor to multiply the delay for each\
+                      \ retry"
+                    type: "integer"
+                  sample_interval:
+                    format: "int64"
+                    description: "Specify the sliding window time for the circuit\
+                      \ breaker in milliseconds, after this time, error count will\
+                      \ be reseted"
+                    type: "integer"
+                  call_and_stream_timeout:
                     format: "int64"
                     description: "Specify how long each call should last at most in\
-                      \ milliseconds (soft timeout as it's enforced by the circuit\
-                      \ breaker)"
+                      \ milliseconds (hard timeout, connection will be closed after\
+                      \ that duration)"
                     type: "integer"
                   retries:
                     format: "int32"
@@ -3343,25 +3336,21 @@ spec:
                     type: "object"
                     x-kubernetes-preserve-unknown-fields: true
                     description: "Web proxy settings for http client"
-                  maxErrors:
-                    format: "int32"
-                    description: "Specify how many errors can pass before opening\
-                      \ the circuit breaker"
+                  call_timeout:
+                    format: "int64"
+                    description: "Specify how long each call should last at most in\
+                      \ milliseconds (soft timeout as it's enforced by the circuit\
+                      \ breaker)"
                     type: "integer"
-                  idleTimeout:
+                  idle_timeout:
                     format: "int64"
                     description: "Timeout on idle connection"
-                    type: "integer"
-                  globalTimeout:
-                    format: "int64"
-                    description: "Specify how long the global call (with retries)\
-                      \ should last at most in milliseconds"
                     type: "integer"
                   cacheConnectionSettings:
                     description: "Cached connection settings"
                     type: "object"
                     properties:
-                      queueSize:
+                      queue_size:
                         format: "int32"
                         description: "How much request can be queue before dropping\
                           \ it"
@@ -3369,10 +3358,21 @@ spec:
                       enabled:
                         description: "Is cached connection enabled"
                         type: "boolean"
-                  connectionTimeout:
+                  connection_timeout:
                     format: "int64"
                     description: "Timeout at connection"
                     type: "integer"
+              health_check:
+                description: "Healthcheck config og the backend"
+                type: "object"
+                properties:
+                  enabled:
+                    description: "Whether or not healthcheck is enabled on the current\
+                      \ service descriptor"
+                    type: "boolean"
+                  url:
+                    description: "The URL to check"
+                    type: "string"
               loadBalancing:
                 description: "Loadbalancing config og the backend"
                 type: "object"
@@ -3441,10 +3441,6 @@ spec:
                       format: "int32"
                       description: "port of the target"
                       type: "integer"
-                    ipAddress:
-                      description: "Target ip address. Usefull to make manual DNS\
-                        \ resolution without breaking SNI"
-                      type: "string"
                     weight:
                       format: "int32"
                       description: "The weight of the target when choosing"
@@ -3454,6 +3450,10 @@ spec:
                       type: "boolean"
                     id:
                       description: "id of the target"
+                      type: "string"
+                    ip_address:
+                      description: "Target ip address. Usefull to make manual DNS\
+                        \ resolution without breaking SNI"
                       type: "string"
                     tlsConfig:
                       description: "TLS settings to contact this target"
@@ -3470,10 +3470,10 @@ spec:
                         loose:
                           description: "Loose verification"
                           type: "boolean"
-                        trustAll:
+                        trust_all:
                           description: "Trust any certificate"
                           type: "boolean"
-                        trustedCerts:
+                        trusted_certs:
                           type: "array"
                           items:
                             type: "string"
@@ -4564,10 +4564,6 @@ spec:
                 format: "int32"
                 description: "port of the target"
                 type: "integer"
-              ipAddress:
-                description: "Target ip address. Usefull to make manual DNS resolution\
-                  \ without breaking SNI"
-                type: "string"
               weight:
                 format: "int32"
                 description: "The weight of the target when choosing"
@@ -4577,6 +4573,10 @@ spec:
                 type: "boolean"
               id:
                 description: "id of the target"
+                type: "string"
+              ip_address:
+                description: "Target ip address. Usefull to make manual DNS resolution\
+                  \ without breaking SNI"
                 type: "string"
               tlsConfig:
                 description: "TLS settings to contact this target"
@@ -4593,10 +4593,10 @@ spec:
                   loose:
                     description: "Loose verification"
                     type: "boolean"
-                  trustAll:
+                  trust_all:
                     description: "Trust any certificate"
                     type: "boolean"
-                  trustedCerts:
+                  trusted_certs:
                     type: "array"
                     items:
                       type: "string"
@@ -4921,9 +4921,9 @@ spec:
                 additionalProperties:
                   type: "string"
                 description: "The metadata of the route"
-              debugFlow:
-                description: "Enable report debugging"
-                type: "boolean"
+              backend_ref:
+                description: "The backend id of the route (if one)"
+                type: "string"
               groups:
                 type: "array"
                 items:
@@ -4947,26 +4947,26 @@ spec:
               enabled:
                 description: "Is the route enabled"
                 type: "boolean"
+              export_reporting:
+                description: "Export the execution reporting through standard data\
+                  \ exporter"
+                type: "boolean"
               tags:
                 type: "array"
                 items:
                   type: "string"
                 description: "The tags of the route"
-              backendRef:
-                description: "The backend id of the route (if one)"
-                type: "string"
+              debug_flow:
+                description: "Enable report debugging"
+                type: "boolean"
               name:
                 description: "The name of the route"
                 type: "string"
-              exportReporting:
-                description: "Export the execution reporting through standard data\
-                  \ exporter"
-                type: "boolean"
               backend:
                 description: "The backend of the route"
                 type: "object"
                 properties:
-                  targetRefs:
+                  target_refs:
                     type: "array"
                     items:
                       type: "string"
@@ -4975,43 +4975,21 @@ spec:
                     description: "The root path of the backend or the full rewrite\
                       \ path"
                     type: "string"
-                  healthCheck:
-                    description: "Healthcheck config og the backend"
-                    type: "object"
-                    properties:
-                      enabled:
-                        description: "Whether or not healthcheck is enabled on the\
-                          \ current service descriptor"
-                        type: "boolean"
-                      url:
-                        description: "The URL to check"
-                        type: "string"
                   client:
                     description: "Client config. of the backend"
                     type: "object"
                     properties:
-                      sampleInterval:
-                        format: "int64"
-                        description: "Specify the sliding window time for the circuit\
-                          \ breaker in milliseconds, after this time, error count\
-                          \ will be reseted"
-                        type: "integer"
-                      backoffFactor:
-                        format: "int64"
-                        description: "Specify the factor to multiply the delay for\
-                          \ each retry"
-                        type: "integer"
-                      customTimeouts:
+                      custom_timeouts:
                         description: "Custom timeouts per path"
                         type: "array"
                         items:
                           type: "object"
                           properties:
-                            connectionTimeout:
+                            connection_timeout:
                               format: "int64"
                               description: "Timeout at connection"
                               type: "integer"
-                            callAndStreamTimeout:
+                            call_and_stream_timeout:
                               format: "int64"
                               description: "Specify how long each call should last\
                                 \ at most in milliseconds (hard timeout, connection\
@@ -5020,37 +4998,52 @@ spec:
                             path:
                               description: "path on which this configuration works"
                               type: "string"
-                            callTimeout:
+                            call_timeout:
                               format: "int64"
                               description: "Specify how long each call should last\
                                 \ at most in milliseconds (soft timeout as it's enforced\
                                 \ by the circuit breaker)"
                               type: "integer"
-                            idleTimeout:
+                            idle_timeout:
                               format: "int64"
                               description: "Timeout on idle connection"
                               type: "integer"
-                            globalTimeout:
+                            global_timeout:
                               format: "int64"
                               description: "Specify how long the global call (with\
                                 \ retries) should last at most in milliseconds"
                               type: "integer"
-                      callAndStreamTimeout:
+                      global_timeout:
                         format: "int64"
-                        description: "Specify how long each call should last at most\
-                          \ in milliseconds (hard timeout, connection will be closed\
-                          \ after that duration)"
+                        description: "Specify how long the global call (with retries)\
+                          \ should last at most in milliseconds"
                         type: "integer"
-                      retryInitialDelay:
+                      max_errors:
+                        format: "int32"
+                        description: "Specify how many errors can pass before opening\
+                          \ the circuit breaker"
+                        type: "integer"
+                      retry_initial_delay:
                         format: "int64"
                         description: "Specify the delay between two retries. Each\
                           \ retry, the delay is multiplied by the backoff factor"
                         type: "integer"
-                      callTimeout:
+                      backoff_factor:
+                        format: "int64"
+                        description: "Specify the factor to multiply the delay for\
+                          \ each retry"
+                        type: "integer"
+                      sample_interval:
+                        format: "int64"
+                        description: "Specify the sliding window time for the circuit\
+                          \ breaker in milliseconds, after this time, error count\
+                          \ will be reseted"
+                        type: "integer"
+                      call_and_stream_timeout:
                         format: "int64"
                         description: "Specify how long each call should last at most\
-                          \ in milliseconds (soft timeout as it's enforced by the\
-                          \ circuit breaker)"
+                          \ in milliseconds (hard timeout, connection will be closed\
+                          \ after that duration)"
                         type: "integer"
                       retries:
                         format: "int32"
@@ -5062,25 +5055,21 @@ spec:
                         type: "object"
                         x-kubernetes-preserve-unknown-fields: true
                         description: "Web proxy settings for http client"
-                      maxErrors:
-                        format: "int32"
-                        description: "Specify how many errors can pass before opening\
-                          \ the circuit breaker"
+                      call_timeout:
+                        format: "int64"
+                        description: "Specify how long each call should last at most\
+                          \ in milliseconds (soft timeout as it's enforced by the\
+                          \ circuit breaker)"
                         type: "integer"
-                      idleTimeout:
+                      idle_timeout:
                         format: "int64"
                         description: "Timeout on idle connection"
-                        type: "integer"
-                      globalTimeout:
-                        format: "int64"
-                        description: "Specify how long the global call (with retries)\
-                          \ should last at most in milliseconds"
                         type: "integer"
                       cacheConnectionSettings:
                         description: "Cached connection settings"
                         type: "object"
                         properties:
-                          queueSize:
+                          queue_size:
                             format: "int32"
                             description: "How much request can be queue before dropping\
                               \ it"
@@ -5088,10 +5077,21 @@ spec:
                           enabled:
                             description: "Is cached connection enabled"
                             type: "boolean"
-                      connectionTimeout:
+                      connection_timeout:
                         format: "int64"
                         description: "Timeout at connection"
                         type: "integer"
+                  health_check:
+                    description: "Healthcheck config og the backend"
+                    type: "object"
+                    properties:
+                      enabled:
+                        description: "Whether or not healthcheck is enabled on the\
+                          \ current service descriptor"
+                        type: "boolean"
+                      url:
+                        description: "The URL to check"
+                        type: "string"
                   loadBalancing:
                     description: "Loadbalancing config og the backend"
                     type: "object"
@@ -5160,10 +5160,6 @@ spec:
                           format: "int32"
                           description: "port of the target"
                           type: "integer"
-                        ipAddress:
-                          description: "Target ip address. Usefull to make manual\
-                            \ DNS resolution without breaking SNI"
-                          type: "string"
                         weight:
                           format: "int32"
                           description: "The weight of the target when choosing"
@@ -5173,6 +5169,10 @@ spec:
                           type: "boolean"
                         id:
                           description: "id of the target"
+                          type: "string"
+                        ip_address:
+                          description: "Target ip address. Usefull to make manual\
+                            \ DNS resolution without breaking SNI"
                           type: "string"
                         tlsConfig:
                           description: "TLS settings to contact this target"
@@ -5189,10 +5189,10 @@ spec:
                             loose:
                               description: "Loose verification"
                               type: "boolean"
-                            trustAll:
+                            trust_all:
                               description: "Trust any certificate"
                               type: "boolean"
-                            trustedCerts:
+                            trusted_certs:
                               type: "array"
                               items:
                                 type: "string"
@@ -5212,9 +5212,6 @@ spec:
                     additionalProperties:
                       type: "string"
                     description: "the headers that will be matched"
-                  stripPath:
-                    description: "Is path stripped from backend request"
-                    type: "boolean"
                   methods:
                     type: "array"
                     items:
@@ -5237,6 +5234,9 @@ spec:
                         raw:
                           description: "the raw value of the domain and path"
                           type: "string"
+                  strip_path:
+                    description: "Is path stripped from backend request"
+                    type: "boolean"
 ---
 apiVersion: "apiextensions.k8s.io/v1"
 kind: "CustomResourceDefinition"
@@ -5284,17 +5284,23 @@ spec:
             type: "object"
             description: "A composition of multiple routes with the same plugins"
             properties:
+              debug_flow:
+                description: "Enable report debugging"
+                type: "boolean"
               routes:
                 description: "The routes of the service"
                 type: "array"
                 items:
                   type: "object"
                   properties:
+                    backend_ref:
+                      description: "The backend id of the route (if one)"
+                      type: "string"
                     backend:
                       description: "The backend of the route"
                       type: "object"
                       properties:
-                        targetRefs:
+                        target_refs:
                           type: "array"
                           items:
                             type: "string"
@@ -5371,10 +5377,6 @@ spec:
                                 format: "int32"
                                 description: "port of the target"
                                 type: "integer"
-                              ipAddress:
-                                description: "Target ip address. Usefull to make manual\
-                                  \ DNS resolution without breaking SNI"
-                                type: "string"
                               weight:
                                 format: "int32"
                                 description: "The weight of the target when choosing"
@@ -5384,6 +5386,10 @@ spec:
                                 type: "boolean"
                               id:
                                 description: "id of the target"
+                                type: "string"
+                              ip_address:
+                                description: "Target ip address. Usefull to make manual\
+                                  \ DNS resolution without breaking SNI"
                                 type: "string"
                               tlsConfig:
                                 description: "TLS settings to contact this target"
@@ -5400,10 +5406,10 @@ spec:
                                   loose:
                                     description: "Loose verification"
                                     type: "boolean"
-                                  trustAll:
+                                  trust_all:
                                     description: "Trust any certificate"
                                     type: "boolean"
-                                  trustedCerts:
+                                  trusted_certs:
                                     type: "array"
                                     items:
                                       type: "string"
@@ -5421,9 +5427,6 @@ spec:
                           additionalProperties:
                             type: "string"
                           description: "the headers that will be matched"
-                        stripPath:
-                          description: "Is path stripped from backend request"
-                          type: "boolean"
                         methods:
                           type: "array"
                           items:
@@ -5446,9 +5449,9 @@ spec:
                               raw:
                                 description: "the raw value of the domain and path"
                                 type: "string"
-                    backendRef:
-                      description: "The backend id of the route (if one)"
-                      type: "string"
+                        strip_path:
+                          description: "Is path stripped from backend request"
+                          type: "boolean"
               metadata:
                 type: "object"
                 additionalProperties:
@@ -5457,16 +5460,9 @@ spec:
               name:
                 description: "The name of the service"
                 type: "string"
-              exportReporting:
-                description: "Export the execution reporting through standard data\
-                  \ exporter"
-                type: "boolean"
               description:
                 description: "The description of the service"
                 type: "string"
-              debugFlow:
-                description: "Enable report debugging"
-                type: "boolean"
               groups:
                 type: "array"
                 items:
@@ -5476,28 +5472,17 @@ spec:
                 description: "The client config of the service"
                 type: "object"
                 properties:
-                  sampleInterval:
-                    format: "int64"
-                    description: "Specify the sliding window time for the circuit\
-                      \ breaker in milliseconds, after this time, error count will\
-                      \ be reseted"
-                    type: "integer"
-                  backoffFactor:
-                    format: "int64"
-                    description: "Specify the factor to multiply the delay for each\
-                      \ retry"
-                    type: "integer"
-                  customTimeouts:
+                  custom_timeouts:
                     description: "Custom timeouts per path"
                     type: "array"
                     items:
                       type: "object"
                       properties:
-                        connectionTimeout:
+                        connection_timeout:
                           format: "int64"
                           description: "Timeout at connection"
                           type: "integer"
-                        callAndStreamTimeout:
+                        call_and_stream_timeout:
                           format: "int64"
                           description: "Specify how long each call should last at\
                             \ most in milliseconds (hard timeout, connection will\
@@ -5506,37 +5491,52 @@ spec:
                         path:
                           description: "path on which this configuration works"
                           type: "string"
-                        callTimeout:
+                        call_timeout:
                           format: "int64"
                           description: "Specify how long each call should last at\
                             \ most in milliseconds (soft timeout as it's enforced\
                             \ by the circuit breaker)"
                           type: "integer"
-                        idleTimeout:
+                        idle_timeout:
                           format: "int64"
                           description: "Timeout on idle connection"
                           type: "integer"
-                        globalTimeout:
+                        global_timeout:
                           format: "int64"
                           description: "Specify how long the global call (with retries)\
                             \ should last at most in milliseconds"
                           type: "integer"
-                  callAndStreamTimeout:
+                  global_timeout:
                     format: "int64"
-                    description: "Specify how long each call should last at most in\
-                      \ milliseconds (hard timeout, connection will be closed after\
-                      \ that duration)"
+                    description: "Specify how long the global call (with retries)\
+                      \ should last at most in milliseconds"
                     type: "integer"
-                  retryInitialDelay:
+                  max_errors:
+                    format: "int32"
+                    description: "Specify how many errors can pass before opening\
+                      \ the circuit breaker"
+                    type: "integer"
+                  retry_initial_delay:
                     format: "int64"
                     description: "Specify the delay between two retries. Each retry,\
                       \ the delay is multiplied by the backoff factor"
                     type: "integer"
-                  callTimeout:
+                  backoff_factor:
+                    format: "int64"
+                    description: "Specify the factor to multiply the delay for each\
+                      \ retry"
+                    type: "integer"
+                  sample_interval:
+                    format: "int64"
+                    description: "Specify the sliding window time for the circuit\
+                      \ breaker in milliseconds, after this time, error count will\
+                      \ be reseted"
+                    type: "integer"
+                  call_and_stream_timeout:
                     format: "int64"
                     description: "Specify how long each call should last at most in\
-                      \ milliseconds (soft timeout as it's enforced by the circuit\
-                      \ breaker)"
+                      \ milliseconds (hard timeout, connection will be closed after\
+                      \ that duration)"
                     type: "integer"
                   retries:
                     format: "int32"
@@ -5547,25 +5547,21 @@ spec:
                     type: "object"
                     x-kubernetes-preserve-unknown-fields: true
                     description: "Web proxy settings for http client"
-                  maxErrors:
-                    format: "int32"
-                    description: "Specify how many errors can pass before opening\
-                      \ the circuit breaker"
+                  call_timeout:
+                    format: "int64"
+                    description: "Specify how long each call should last at most in\
+                      \ milliseconds (soft timeout as it's enforced by the circuit\
+                      \ breaker)"
                     type: "integer"
-                  idleTimeout:
+                  idle_timeout:
                     format: "int64"
                     description: "Timeout on idle connection"
-                    type: "integer"
-                  globalTimeout:
-                    format: "int64"
-                    description: "Specify how long the global call (with retries)\
-                      \ should last at most in milliseconds"
                     type: "integer"
                   cacheConnectionSettings:
                     description: "Cached connection settings"
                     type: "object"
                     properties:
-                      queueSize:
+                      queue_size:
                         format: "int32"
                         description: "How much request can be queue before dropping\
                           \ it"
@@ -5573,7 +5569,7 @@ spec:
                       enabled:
                         description: "Is cached connection enabled"
                         type: "boolean"
-                  connectionTimeout:
+                  connection_timeout:
                     format: "int64"
                     description: "Timeout at connection"
                     type: "integer"
@@ -5594,6 +5590,10 @@ spec:
                     type: "string"
               enabled:
                 description: "Is the service enabled"
+                type: "boolean"
+              export_reporting:
+                description: "Export the execution reporting through standard data\
+                  \ exporter"
                 type: "boolean"
               tags:
                 type: "array"
