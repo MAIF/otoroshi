@@ -277,6 +277,11 @@
     "description" : "Datastore for targets",
     "type" : "object",
     "properties" : {
+      "redis_cli" : {
+        "description" : "The current datastore access",
+        "type" : "object",
+        "properties" : { }
+      },
       "_env" : {
         "description" : "The current env",
         "type" : "object",
@@ -287,11 +292,6 @@
             "properties" : { }
           }
         }
-      },
-      "redisCli" : {
-        "description" : "The current datastore access",
-        "type" : "object",
-        "properties" : { }
       }
     }
   },
@@ -395,20 +395,6 @@
             "description" : "The root path of the backend or the full rewrite path",
             "type" : "string"
           },
-          "loadBalancing" : {
-            "description" : "Loadbalancing config og the backend",
-            "type" : "object",
-            "properties" : {
-              "type" : {
-                "type" : "string",
-                "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-              },
-              "ratio" : {
-                "type" : "number",
-                "format" : "double"
-              }
-            }
-          },
           "targets" : {
             "description" : "The targets of the backend",
             "type" : "array",
@@ -496,15 +482,7 @@
                   "description" : "Does the target uses TLS",
                   "type" : "boolean"
                 },
-                "id" : {
-                  "description" : "id of the target",
-                  "type" : "string"
-                },
-                "ip_address" : {
-                  "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                  "type" : "string"
-                },
-                "tlsConfig" : {
+                "tls_config" : {
                   "description" : "TLS settings to contact this target",
                   "type" : "object",
                   "properties" : {
@@ -535,6 +513,14 @@
                       "description" : "Trusted cert. ids"
                     }
                   }
+                },
+                "id" : {
+                  "description" : "id of the target",
+                  "type" : "string"
+                },
+                "ip_address" : {
+                  "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                  "type" : "string"
                 }
               }
             }
@@ -542,6 +528,20 @@
           "rewrite" : {
             "description" : "Does the backend performs a full url rewrite ?",
             "type" : "boolean"
+          },
+          "load_balancing" : {
+            "description" : "Loadbalancing config og the backend",
+            "type" : "object",
+            "properties" : {
+              "type" : {
+                "type" : "string",
+                "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+              },
+              "ratio" : {
+                "type" : "number",
+                "format" : "double"
+              }
+            }
           }
         }
       },
@@ -987,7 +987,7 @@
         },
         "description" : "Exposed cors headers"
       },
-      "allowOrigin" : {
+      "allow_origin" : {
         "description" : "Allowed cors origins",
         "type" : "string"
       }
@@ -1230,24 +1230,6 @@
         "description" : "Configuration of the apikey extraction modes",
         "type" : "object",
         "properties" : {
-          "clientId" : {
-            "description" : "client id only extractor config.",
-            "type" : "object",
-            "properties" : {
-              "query_name" : {
-                "description" : "The name of the query param to extract",
-                "type" : "string"
-              },
-              "header_name" : {
-                "description" : "The name of the header to extract",
-                "type" : "string"
-              },
-              "enabled" : {
-                "description" : "Is it enabled",
-                "type" : "boolean"
-              }
-            }
-          },
           "jwt" : {
             "description" : "jwt extractor config.",
             "type" : "object",
@@ -1300,7 +1282,25 @@
               }
             }
           },
-          "customHeaders" : {
+          "client_id" : {
+            "description" : "client id only extractor config.",
+            "type" : "object",
+            "properties" : {
+              "query_name" : {
+                "description" : "The name of the query param to extract",
+                "type" : "string"
+              },
+              "header_name" : {
+                "description" : "The name of the header to extract",
+                "type" : "string"
+              },
+              "enabled" : {
+                "description" : "Is it enabled",
+                "type" : "boolean"
+              }
+            }
+          },
+          "custom_headers" : {
             "description" : "custom headers extractor config.",
             "type" : "object",
             "properties" : {
@@ -4250,7 +4250,7 @@
         "description" : "The error code",
         "type" : "integer"
       },
-      "contentType" : {
+      "content_type" : {
         "description" : "The error content-type",
         "type" : "string"
       },
@@ -4374,7 +4374,7 @@
           }
         }
       },
-      "globalConfig" : {
+      "global_config" : {
         "description" : "The current global config",
         "type" : "object"
       },
@@ -4521,6 +4521,21 @@
                     "description" : "Specify the factor to multiply the delay for each retry",
                     "type" : "integer"
                   },
+                  "cache_connection_settings" : {
+                    "description" : "Cached connection settings",
+                    "type" : "object",
+                    "properties" : {
+                      "queue_size" : {
+                        "format" : "int32",
+                        "description" : "How much request can be queue before dropping it",
+                        "type" : "integer"
+                      },
+                      "enabled" : {
+                        "description" : "Is cached connection enabled",
+                        "type" : "boolean"
+                      }
+                    }
+                  },
                   "sample_interval" : {
                     "format" : "int64",
                     "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -4552,21 +4567,6 @@
                     "description" : "Timeout on idle connection",
                     "type" : "integer"
                   },
-                  "cacheConnectionSettings" : {
-                    "description" : "Cached connection settings",
-                    "type" : "object",
-                    "properties" : {
-                      "queue_size" : {
-                        "format" : "int32",
-                        "description" : "How much request can be queue before dropping it",
-                        "type" : "integer"
-                      },
-                      "enabled" : {
-                        "description" : "Is cached connection enabled",
-                        "type" : "boolean"
-                      }
-                    }
-                  },
                   "connection_timeout" : {
                     "format" : "int64",
                     "description" : "Timeout at connection",
@@ -4585,20 +4585,6 @@
                   "url" : {
                     "description" : "The URL to check",
                     "type" : "string"
-                  }
-                }
-              },
-              "loadBalancing" : {
-                "description" : "Loadbalancing config og the backend",
-                "type" : "object",
-                "properties" : {
-                  "type" : {
-                    "type" : "string",
-                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                  },
-                  "ratio" : {
-                    "type" : "number",
-                    "format" : "double"
                   }
                 }
               },
@@ -4689,15 +4675,7 @@
                       "description" : "Does the target uses TLS",
                       "type" : "boolean"
                     },
-                    "id" : {
-                      "description" : "id of the target",
-                      "type" : "string"
-                    },
-                    "ip_address" : {
-                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                      "type" : "string"
-                    },
-                    "tlsConfig" : {
+                    "tls_config" : {
                       "description" : "TLS settings to contact this target",
                       "type" : "object",
                       "properties" : {
@@ -4728,6 +4706,14 @@
                           "description" : "Trusted cert. ids"
                         }
                       }
+                    },
+                    "id" : {
+                      "description" : "id of the target",
+                      "type" : "string"
+                    },
+                    "ip_address" : {
+                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                      "type" : "string"
                     }
                   }
                 }
@@ -4735,6 +4721,20 @@
               "rewrite" : {
                 "description" : "Does the backend performs a full url rewrite ?",
                 "type" : "boolean"
+              },
+              "load_balancing" : {
+                "description" : "Loadbalancing config og the backend",
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                  },
+                  "ratio" : {
+                    "type" : "number",
+                    "format" : "double"
+                  }
+                }
               }
             }
           },
@@ -4789,24 +4789,6 @@
                 "type" : "boolean"
               }
             }
-          }
-        }
-      },
-      "otoroshiResponse" : {
-        "description" : "The current otoroshi response",
-        "type" : "object",
-        "properties" : {
-          "headers" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "The response headers"
-          },
-          "status" : {
-            "format" : "int32",
-            "description" : "The response status",
-            "type" : "integer"
           }
         }
       },
@@ -4994,8 +4976,26 @@
           }
         }
       },
-      "rawResponse" : {
-        "description" : "The current backend response",
+      "report" : {
+        "description" : "The current execution report",
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "description" : "Report id",
+            "type" : "string"
+          },
+          "reporting" : {
+            "description" : "Reporting enabled",
+            "type" : "boolean"
+          },
+          "creation" : {
+            "description" : "Date of creation",
+            "type" : "number"
+          }
+        }
+      },
+      "otoroshi_response" : {
+        "description" : "The current otoroshi response",
         "type" : "object",
         "properties" : {
           "headers" : {
@@ -5012,21 +5012,21 @@
           }
         }
       },
-      "report" : {
-        "description" : "The current execution report",
+      "raw_response" : {
+        "description" : "The current backend response",
         "type" : "object",
         "properties" : {
-          "id" : {
-            "description" : "Report id",
-            "type" : "string"
+          "headers" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "The response headers"
           },
-          "reporting" : {
-            "description" : "Reporting enabled",
-            "type" : "boolean"
-          },
-          "creation" : {
-            "description" : "Date of creation",
-            "type" : "number"
+          "status" : {
+            "format" : "int32",
+            "description" : "The response status",
+            "type" : "integer"
           }
         }
       },
@@ -7595,7 +7595,7 @@
         "description" : "The current request snowflake",
         "type" : "string"
       },
-      "globalConfig" : {
+      "global_config" : {
         "description" : "The current global config",
         "type" : "object"
       },
@@ -7742,6 +7742,21 @@
                     "description" : "Specify the factor to multiply the delay for each retry",
                     "type" : "integer"
                   },
+                  "cache_connection_settings" : {
+                    "description" : "Cached connection settings",
+                    "type" : "object",
+                    "properties" : {
+                      "queue_size" : {
+                        "format" : "int32",
+                        "description" : "How much request can be queue before dropping it",
+                        "type" : "integer"
+                      },
+                      "enabled" : {
+                        "description" : "Is cached connection enabled",
+                        "type" : "boolean"
+                      }
+                    }
+                  },
                   "sample_interval" : {
                     "format" : "int64",
                     "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -7773,21 +7788,6 @@
                     "description" : "Timeout on idle connection",
                     "type" : "integer"
                   },
-                  "cacheConnectionSettings" : {
-                    "description" : "Cached connection settings",
-                    "type" : "object",
-                    "properties" : {
-                      "queue_size" : {
-                        "format" : "int32",
-                        "description" : "How much request can be queue before dropping it",
-                        "type" : "integer"
-                      },
-                      "enabled" : {
-                        "description" : "Is cached connection enabled",
-                        "type" : "boolean"
-                      }
-                    }
-                  },
                   "connection_timeout" : {
                     "format" : "int64",
                     "description" : "Timeout at connection",
@@ -7806,20 +7806,6 @@
                   "url" : {
                     "description" : "The URL to check",
                     "type" : "string"
-                  }
-                }
-              },
-              "loadBalancing" : {
-                "description" : "Loadbalancing config og the backend",
-                "type" : "object",
-                "properties" : {
-                  "type" : {
-                    "type" : "string",
-                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                  },
-                  "ratio" : {
-                    "type" : "number",
-                    "format" : "double"
                   }
                 }
               },
@@ -7910,15 +7896,7 @@
                       "description" : "Does the target uses TLS",
                       "type" : "boolean"
                     },
-                    "id" : {
-                      "description" : "id of the target",
-                      "type" : "string"
-                    },
-                    "ip_address" : {
-                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                      "type" : "string"
-                    },
-                    "tlsConfig" : {
+                    "tls_config" : {
                       "description" : "TLS settings to contact this target",
                       "type" : "object",
                       "properties" : {
@@ -7949,6 +7927,14 @@
                           "description" : "Trusted cert. ids"
                         }
                       }
+                    },
+                    "id" : {
+                      "description" : "id of the target",
+                      "type" : "string"
+                    },
+                    "ip_address" : {
+                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                      "type" : "string"
                     }
                   }
                 }
@@ -7956,6 +7942,20 @@
               "rewrite" : {
                 "description" : "Does the backend performs a full url rewrite ?",
                 "type" : "boolean"
+              },
+              "load_balancing" : {
+                "description" : "Loadbalancing config og the backend",
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                  },
+                  "ratio" : {
+                    "type" : "number",
+                    "format" : "double"
+                  }
+                }
               }
             }
           },
@@ -8165,7 +8165,7 @@
           }
         }
       },
-      "rawRequest" : {
+      "raw_request" : {
         "description" : "The current request",
         "type" : "object",
         "properties" : {
@@ -8265,15 +8265,7 @@
                 "description" : "Does the target uses TLS",
                 "type" : "boolean"
               },
-              "id" : {
-                "description" : "id of the target",
-                "type" : "string"
-              },
-              "ip_address" : {
-                "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                "type" : "string"
-              },
-              "tlsConfig" : {
+              "tls_config" : {
                 "description" : "TLS settings to contact this target",
                 "type" : "object",
                 "properties" : {
@@ -8304,6 +8296,14 @@
                     "description" : "Trusted cert. ids"
                   }
                 }
+              },
+              "id" : {
+                "description" : "id of the target",
+                "type" : "string"
+              },
+              "ip_address" : {
+                "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                "type" : "string"
               }
             }
           },
@@ -8317,7 +8317,7 @@
           }
         }
       },
-      "globalConfig" : {
+      "global_config" : {
         "description" : "The current global config",
         "type" : "object"
       },
@@ -8464,6 +8464,21 @@
                     "description" : "Specify the factor to multiply the delay for each retry",
                     "type" : "integer"
                   },
+                  "cache_connection_settings" : {
+                    "description" : "Cached connection settings",
+                    "type" : "object",
+                    "properties" : {
+                      "queue_size" : {
+                        "format" : "int32",
+                        "description" : "How much request can be queue before dropping it",
+                        "type" : "integer"
+                      },
+                      "enabled" : {
+                        "description" : "Is cached connection enabled",
+                        "type" : "boolean"
+                      }
+                    }
+                  },
                   "sample_interval" : {
                     "format" : "int64",
                     "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -8495,21 +8510,6 @@
                     "description" : "Timeout on idle connection",
                     "type" : "integer"
                   },
-                  "cacheConnectionSettings" : {
-                    "description" : "Cached connection settings",
-                    "type" : "object",
-                    "properties" : {
-                      "queue_size" : {
-                        "format" : "int32",
-                        "description" : "How much request can be queue before dropping it",
-                        "type" : "integer"
-                      },
-                      "enabled" : {
-                        "description" : "Is cached connection enabled",
-                        "type" : "boolean"
-                      }
-                    }
-                  },
                   "connection_timeout" : {
                     "format" : "int64",
                     "description" : "Timeout at connection",
@@ -8528,20 +8528,6 @@
                   "url" : {
                     "description" : "The URL to check",
                     "type" : "string"
-                  }
-                }
-              },
-              "loadBalancing" : {
-                "description" : "Loadbalancing config og the backend",
-                "type" : "object",
-                "properties" : {
-                  "type" : {
-                    "type" : "string",
-                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                  },
-                  "ratio" : {
-                    "type" : "number",
-                    "format" : "double"
                   }
                 }
               },
@@ -8632,15 +8618,7 @@
                       "description" : "Does the target uses TLS",
                       "type" : "boolean"
                     },
-                    "id" : {
-                      "description" : "id of the target",
-                      "type" : "string"
-                    },
-                    "ip_address" : {
-                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                      "type" : "string"
-                    },
-                    "tlsConfig" : {
+                    "tls_config" : {
                       "description" : "TLS settings to contact this target",
                       "type" : "object",
                       "properties" : {
@@ -8671,6 +8649,14 @@
                           "description" : "Trusted cert. ids"
                         }
                       }
+                    },
+                    "id" : {
+                      "description" : "id of the target",
+                      "type" : "string"
+                    },
+                    "ip_address" : {
+                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                      "type" : "string"
                     }
                   }
                 }
@@ -8678,6 +8664,20 @@
               "rewrite" : {
                 "description" : "Does the backend performs a full url rewrite ?",
                 "type" : "boolean"
+              },
+              "load_balancing" : {
+                "description" : "Loadbalancing config og the backend",
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                  },
+                  "ratio" : {
+                    "type" : "number",
+                    "format" : "double"
+                  }
+                }
               }
             }
           },
@@ -8919,7 +8919,25 @@
           }
         }
       },
-      "otoroshiRequest" : {
+      "report" : {
+        "description" : "The current execution report",
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "description" : "Report id",
+            "type" : "string"
+          },
+          "reporting" : {
+            "description" : "Reporting enabled",
+            "type" : "boolean"
+          },
+          "creation" : {
+            "description" : "Date of creation",
+            "type" : "number"
+          }
+        }
+      },
+      "otoroshi_request" : {
         "description" : "The current otoroshi request",
         "type" : "object",
         "properties" : {
@@ -9019,15 +9037,7 @@
                 "description" : "Does the target uses TLS",
                 "type" : "boolean"
               },
-              "id" : {
-                "description" : "id of the target",
-                "type" : "string"
-              },
-              "ip_address" : {
-                "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                "type" : "string"
-              },
-              "tlsConfig" : {
+              "tls_config" : {
                 "description" : "TLS settings to contact this target",
                 "type" : "object",
                 "properties" : {
@@ -9058,6 +9068,14 @@
                     "description" : "Trusted cert. ids"
                   }
                 }
+              },
+              "id" : {
+                "description" : "id of the target",
+                "type" : "string"
+              },
+              "ip_address" : {
+                "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                "type" : "string"
               }
             }
           },
@@ -9068,24 +9086,6 @@
           "url" : {
             "description" : "The request url",
             "type" : "string"
-          }
-        }
-      },
-      "report" : {
-        "description" : "The current execution report",
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "description" : "Report id",
-            "type" : "string"
-          },
-          "reporting" : {
-            "description" : "Reporting enabled",
-            "type" : "boolean"
-          },
-          "creation" : {
-            "description" : "Date of creation",
-            "type" : "number"
           }
         }
       },
@@ -9760,6 +9760,21 @@
                       "description" : "Specify the factor to multiply the delay for each retry",
                       "type" : "integer"
                     },
+                    "cache_connection_settings" : {
+                      "description" : "Cached connection settings",
+                      "type" : "object",
+                      "properties" : {
+                        "queue_size" : {
+                          "format" : "int32",
+                          "description" : "How much request can be queue before dropping it",
+                          "type" : "integer"
+                        },
+                        "enabled" : {
+                          "description" : "Is cached connection enabled",
+                          "type" : "boolean"
+                        }
+                      }
+                    },
                     "sample_interval" : {
                       "format" : "int64",
                       "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -9791,21 +9806,6 @@
                       "description" : "Timeout on idle connection",
                       "type" : "integer"
                     },
-                    "cacheConnectionSettings" : {
-                      "description" : "Cached connection settings",
-                      "type" : "object",
-                      "properties" : {
-                        "queue_size" : {
-                          "format" : "int32",
-                          "description" : "How much request can be queue before dropping it",
-                          "type" : "integer"
-                        },
-                        "enabled" : {
-                          "description" : "Is cached connection enabled",
-                          "type" : "boolean"
-                        }
-                      }
-                    },
                     "connection_timeout" : {
                       "format" : "int64",
                       "description" : "Timeout at connection",
@@ -9824,20 +9824,6 @@
                     "url" : {
                       "description" : "The URL to check",
                       "type" : "string"
-                    }
-                  }
-                },
-                "loadBalancing" : {
-                  "description" : "Loadbalancing config og the backend",
-                  "type" : "object",
-                  "properties" : {
-                    "type" : {
-                      "type" : "string",
-                      "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                    },
-                    "ratio" : {
-                      "type" : "number",
-                      "format" : "double"
                     }
                   }
                 },
@@ -9928,15 +9914,7 @@
                         "description" : "Does the target uses TLS",
                         "type" : "boolean"
                       },
-                      "id" : {
-                        "description" : "id of the target",
-                        "type" : "string"
-                      },
-                      "ip_address" : {
-                        "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                        "type" : "string"
-                      },
-                      "tlsConfig" : {
+                      "tls_config" : {
                         "description" : "TLS settings to contact this target",
                         "type" : "object",
                         "properties" : {
@@ -9967,6 +9945,14 @@
                             "description" : "Trusted cert. ids"
                           }
                         }
+                      },
+                      "id" : {
+                        "description" : "id of the target",
+                        "type" : "string"
+                      },
+                      "ip_address" : {
+                        "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                        "type" : "string"
                       }
                     }
                   }
@@ -9974,6 +9960,20 @@
                 "rewrite" : {
                   "description" : "Does the backend performs a full url rewrite ?",
                   "type" : "boolean"
+                },
+                "load_balancing" : {
+                  "description" : "Loadbalancing config og the backend",
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                    },
+                    "ratio" : {
+                      "type" : "number",
+                      "format" : "double"
+                    }
+                  }
                 }
               }
             },
@@ -14680,6 +14680,11 @@
     "description" : "Datastore for routes",
     "type" : "object",
     "properties" : {
+      "redis_cli" : {
+        "description" : "The current datastore access",
+        "type" : "object",
+        "properties" : { }
+      },
       "_env" : {
         "description" : "The current env",
         "type" : "object",
@@ -14690,11 +14695,6 @@
             "properties" : { }
           }
         }
-      },
-      "redisCli" : {
-        "description" : "The current datastore access",
-        "type" : "object",
-        "properties" : { }
       }
     }
   },
@@ -14790,6 +14790,11 @@
     "description" : "Datastore for services",
     "type" : "object",
     "properties" : {
+      "redis_cli" : {
+        "description" : "The current datastore access",
+        "type" : "object",
+        "properties" : { }
+      },
       "_env" : {
         "description" : "The current env",
         "type" : "object",
@@ -14800,11 +14805,6 @@
             "properties" : { }
           }
         }
-      },
-      "redisCli" : {
-        "description" : "The current datastore access",
-        "type" : "object",
-        "properties" : { }
       }
     }
   },
@@ -15398,15 +15398,7 @@
             "description" : "Does the target uses TLS",
             "type" : "boolean"
           },
-          "id" : {
-            "description" : "id of the target",
-            "type" : "string"
-          },
-          "ip_address" : {
-            "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-            "type" : "string"
-          },
-          "tlsConfig" : {
+          "tls_config" : {
             "description" : "TLS settings to contact this target",
             "type" : "object",
             "properties" : {
@@ -15437,6 +15429,14 @@
                 "description" : "Trusted cert. ids"
               }
             }
+          },
+          "id" : {
+            "description" : "id of the target",
+            "type" : "string"
+          },
+          "ip_address" : {
+            "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+            "type" : "string"
           }
         }
       }
@@ -15530,7 +15530,7 @@
           }
         }
       },
-      "globalConfig" : {
+      "global_config" : {
         "description" : "The current global config",
         "type" : "object"
       },
@@ -15677,6 +15677,21 @@
                     "description" : "Specify the factor to multiply the delay for each retry",
                     "type" : "integer"
                   },
+                  "cache_connection_settings" : {
+                    "description" : "Cached connection settings",
+                    "type" : "object",
+                    "properties" : {
+                      "queue_size" : {
+                        "format" : "int32",
+                        "description" : "How much request can be queue before dropping it",
+                        "type" : "integer"
+                      },
+                      "enabled" : {
+                        "description" : "Is cached connection enabled",
+                        "type" : "boolean"
+                      }
+                    }
+                  },
                   "sample_interval" : {
                     "format" : "int64",
                     "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -15708,21 +15723,6 @@
                     "description" : "Timeout on idle connection",
                     "type" : "integer"
                   },
-                  "cacheConnectionSettings" : {
-                    "description" : "Cached connection settings",
-                    "type" : "object",
-                    "properties" : {
-                      "queue_size" : {
-                        "format" : "int32",
-                        "description" : "How much request can be queue before dropping it",
-                        "type" : "integer"
-                      },
-                      "enabled" : {
-                        "description" : "Is cached connection enabled",
-                        "type" : "boolean"
-                      }
-                    }
-                  },
                   "connection_timeout" : {
                     "format" : "int64",
                     "description" : "Timeout at connection",
@@ -15741,20 +15741,6 @@
                   "url" : {
                     "description" : "The URL to check",
                     "type" : "string"
-                  }
-                }
-              },
-              "loadBalancing" : {
-                "description" : "Loadbalancing config og the backend",
-                "type" : "object",
-                "properties" : {
-                  "type" : {
-                    "type" : "string",
-                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                  },
-                  "ratio" : {
-                    "type" : "number",
-                    "format" : "double"
                   }
                 }
               },
@@ -15845,15 +15831,7 @@
                       "description" : "Does the target uses TLS",
                       "type" : "boolean"
                     },
-                    "id" : {
-                      "description" : "id of the target",
-                      "type" : "string"
-                    },
-                    "ip_address" : {
-                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                      "type" : "string"
-                    },
-                    "tlsConfig" : {
+                    "tls_config" : {
                       "description" : "TLS settings to contact this target",
                       "type" : "object",
                       "properties" : {
@@ -15884,6 +15862,14 @@
                           "description" : "Trusted cert. ids"
                         }
                       }
+                    },
+                    "id" : {
+                      "description" : "id of the target",
+                      "type" : "string"
+                    },
+                    "ip_address" : {
+                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                      "type" : "string"
                     }
                   }
                 }
@@ -15891,6 +15877,20 @@
               "rewrite" : {
                 "description" : "Does the backend performs a full url rewrite ?",
                 "type" : "boolean"
+              },
+              "load_balancing" : {
+                "description" : "Loadbalancing config og the backend",
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                  },
+                  "ratio" : {
+                    "type" : "number",
+                    "format" : "double"
+                  }
+                }
               }
             }
           },
@@ -16090,7 +16090,7 @@
         },
         "description" : "Exposed cors headers"
       },
-      "allowOrigin" : {
+      "allow_origin" : {
         "description" : "Allowed cors origins",
         "type" : "string"
       }
@@ -18411,11 +18411,11 @@
     "description" : "Configuration for Robots",
     "type" : "object",
     "properties" : {
-      "robotTxtContent" : {
+      "robot_txt_content" : {
         "description" : "Content of /robots.txt",
         "type" : "string"
       },
-      "metaContent" : {
+      "meta_content" : {
         "description" : "content of the <meta name='robots' /> tag",
         "type" : "string"
       },
@@ -18423,7 +18423,7 @@
         "description" : "/robots.txt enabled",
         "type" : "boolean"
       },
-      "headerContent" : {
+      "header_content" : {
         "description" : "Content of the X-Robots-Tag headers",
         "type" : "string"
       },
@@ -21363,20 +21363,6 @@
                         "description" : "The root path of the backend or the full rewrite path",
                         "type" : "string"
                       },
-                      "loadBalancing" : {
-                        "description" : "Loadbalancing config og the backend",
-                        "type" : "object",
-                        "properties" : {
-                          "type" : {
-                            "type" : "string",
-                            "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                          },
-                          "ratio" : {
-                            "type" : "number",
-                            "format" : "double"
-                          }
-                        }
-                      },
                       "targets" : {
                         "description" : "The targets of the backend",
                         "type" : "array",
@@ -21464,15 +21450,7 @@
                               "description" : "Does the target uses TLS",
                               "type" : "boolean"
                             },
-                            "id" : {
-                              "description" : "id of the target",
-                              "type" : "string"
-                            },
-                            "ip_address" : {
-                              "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                              "type" : "string"
-                            },
-                            "tlsConfig" : {
+                            "tls_config" : {
                               "description" : "TLS settings to contact this target",
                               "type" : "object",
                               "properties" : {
@@ -21503,6 +21481,14 @@
                                   "description" : "Trusted cert. ids"
                                 }
                               }
+                            },
+                            "id" : {
+                              "description" : "id of the target",
+                              "type" : "string"
+                            },
+                            "ip_address" : {
+                              "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                              "type" : "string"
                             }
                           }
                         }
@@ -21510,6 +21496,20 @@
                       "rewrite" : {
                         "description" : "Does the backend performs a full url rewrite ?",
                         "type" : "boolean"
+                      },
+                      "load_balancing" : {
+                        "description" : "Loadbalancing config og the backend",
+                        "type" : "object",
+                        "properties" : {
+                          "type" : {
+                            "type" : "string",
+                            "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                          },
+                          "ratio" : {
+                            "type" : "number",
+                            "format" : "double"
+                          }
+                        }
                       }
                     }
                   },
@@ -21648,6 +21648,21 @@
                   "description" : "Specify the factor to multiply the delay for each retry",
                   "type" : "integer"
                 },
+                "cache_connection_settings" : {
+                  "description" : "Cached connection settings",
+                  "type" : "object",
+                  "properties" : {
+                    "queue_size" : {
+                      "format" : "int32",
+                      "description" : "How much request can be queue before dropping it",
+                      "type" : "integer"
+                    },
+                    "enabled" : {
+                      "description" : "Is cached connection enabled",
+                      "type" : "boolean"
+                    }
+                  }
+                },
                 "sample_interval" : {
                   "format" : "int64",
                   "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -21678,21 +21693,6 @@
                   "format" : "int64",
                   "description" : "Timeout on idle connection",
                   "type" : "integer"
-                },
-                "cacheConnectionSettings" : {
-                  "description" : "Cached connection settings",
-                  "type" : "object",
-                  "properties" : {
-                    "queue_size" : {
-                      "format" : "int32",
-                      "description" : "How much request can be queue before dropping it",
-                      "type" : "integer"
-                    },
-                    "enabled" : {
-                      "description" : "Is cached connection enabled",
-                      "type" : "boolean"
-                    }
-                  }
                 },
                 "connection_timeout" : {
                   "format" : "int64",
@@ -22290,15 +22290,7 @@
                   "description" : "Does the target uses TLS",
                   "type" : "boolean"
                 },
-                "id" : {
-                  "description" : "id of the target",
-                  "type" : "string"
-                },
-                "ip_address" : {
-                  "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                  "type" : "string"
-                },
-                "tlsConfig" : {
+                "tls_config" : {
                   "description" : "TLS settings to contact this target",
                   "type" : "object",
                   "properties" : {
@@ -22329,6 +22321,14 @@
                       "description" : "Trusted cert. ids"
                     }
                   }
+                },
+                "id" : {
+                  "description" : "id of the target",
+                  "type" : "string"
+                },
+                "ip_address" : {
+                  "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                  "type" : "string"
                 }
               }
             }
@@ -22433,6 +22433,21 @@
                       "description" : "Specify the factor to multiply the delay for each retry",
                       "type" : "integer"
                     },
+                    "cache_connection_settings" : {
+                      "description" : "Cached connection settings",
+                      "type" : "object",
+                      "properties" : {
+                        "queue_size" : {
+                          "format" : "int32",
+                          "description" : "How much request can be queue before dropping it",
+                          "type" : "integer"
+                        },
+                        "enabled" : {
+                          "description" : "Is cached connection enabled",
+                          "type" : "boolean"
+                        }
+                      }
+                    },
                     "sample_interval" : {
                       "format" : "int64",
                       "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -22464,21 +22479,6 @@
                       "description" : "Timeout on idle connection",
                       "type" : "integer"
                     },
-                    "cacheConnectionSettings" : {
-                      "description" : "Cached connection settings",
-                      "type" : "object",
-                      "properties" : {
-                        "queue_size" : {
-                          "format" : "int32",
-                          "description" : "How much request can be queue before dropping it",
-                          "type" : "integer"
-                        },
-                        "enabled" : {
-                          "description" : "Is cached connection enabled",
-                          "type" : "boolean"
-                        }
-                      }
-                    },
                     "connection_timeout" : {
                       "format" : "int64",
                       "description" : "Timeout at connection",
@@ -22497,20 +22497,6 @@
                     "url" : {
                       "description" : "The URL to check",
                       "type" : "string"
-                    }
-                  }
-                },
-                "loadBalancing" : {
-                  "description" : "Loadbalancing config og the backend",
-                  "type" : "object",
-                  "properties" : {
-                    "type" : {
-                      "type" : "string",
-                      "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                    },
-                    "ratio" : {
-                      "type" : "number",
-                      "format" : "double"
                     }
                   }
                 },
@@ -22601,15 +22587,7 @@
                         "description" : "Does the target uses TLS",
                         "type" : "boolean"
                       },
-                      "id" : {
-                        "description" : "id of the target",
-                        "type" : "string"
-                      },
-                      "ip_address" : {
-                        "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                        "type" : "string"
-                      },
-                      "tlsConfig" : {
+                      "tls_config" : {
                         "description" : "TLS settings to contact this target",
                         "type" : "object",
                         "properties" : {
@@ -22640,6 +22618,14 @@
                             "description" : "Trusted cert. ids"
                           }
                         }
+                      },
+                      "id" : {
+                        "description" : "id of the target",
+                        "type" : "string"
+                      },
+                      "ip_address" : {
+                        "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                        "type" : "string"
                       }
                     }
                   }
@@ -22647,6 +22633,20 @@
                 "rewrite" : {
                   "description" : "Does the backend performs a full url rewrite ?",
                   "type" : "boolean"
+                },
+                "load_balancing" : {
+                  "description" : "Loadbalancing config og the backend",
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                    },
+                    "ratio" : {
+                      "type" : "number",
+                      "format" : "double"
+                    }
+                  }
                 }
               }
             },
@@ -22826,6 +22826,21 @@
                       "description" : "Specify the factor to multiply the delay for each retry",
                       "type" : "integer"
                     },
+                    "cache_connection_settings" : {
+                      "description" : "Cached connection settings",
+                      "type" : "object",
+                      "properties" : {
+                        "queue_size" : {
+                          "format" : "int32",
+                          "description" : "How much request can be queue before dropping it",
+                          "type" : "integer"
+                        },
+                        "enabled" : {
+                          "description" : "Is cached connection enabled",
+                          "type" : "boolean"
+                        }
+                      }
+                    },
                     "sample_interval" : {
                       "format" : "int64",
                       "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -22857,21 +22872,6 @@
                       "description" : "Timeout on idle connection",
                       "type" : "integer"
                     },
-                    "cacheConnectionSettings" : {
-                      "description" : "Cached connection settings",
-                      "type" : "object",
-                      "properties" : {
-                        "queue_size" : {
-                          "format" : "int32",
-                          "description" : "How much request can be queue before dropping it",
-                          "type" : "integer"
-                        },
-                        "enabled" : {
-                          "description" : "Is cached connection enabled",
-                          "type" : "boolean"
-                        }
-                      }
-                    },
                     "connection_timeout" : {
                       "format" : "int64",
                       "description" : "Timeout at connection",
@@ -22890,20 +22890,6 @@
                     "url" : {
                       "description" : "The URL to check",
                       "type" : "string"
-                    }
-                  }
-                },
-                "loadBalancing" : {
-                  "description" : "Loadbalancing config og the backend",
-                  "type" : "object",
-                  "properties" : {
-                    "type" : {
-                      "type" : "string",
-                      "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                    },
-                    "ratio" : {
-                      "type" : "number",
-                      "format" : "double"
                     }
                   }
                 },
@@ -22994,15 +22980,7 @@
                         "description" : "Does the target uses TLS",
                         "type" : "boolean"
                       },
-                      "id" : {
-                        "description" : "id of the target",
-                        "type" : "string"
-                      },
-                      "ip_address" : {
-                        "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                        "type" : "string"
-                      },
-                      "tlsConfig" : {
+                      "tls_config" : {
                         "description" : "TLS settings to contact this target",
                         "type" : "object",
                         "properties" : {
@@ -23033,6 +23011,14 @@
                             "description" : "Trusted cert. ids"
                           }
                         }
+                      },
+                      "id" : {
+                        "description" : "id of the target",
+                        "type" : "string"
+                      },
+                      "ip_address" : {
+                        "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                        "type" : "string"
                       }
                     }
                   }
@@ -23040,6 +23026,20 @@
                 "rewrite" : {
                   "description" : "Does the backend performs a full url rewrite ?",
                   "type" : "boolean"
+                },
+                "load_balancing" : {
+                  "description" : "Loadbalancing config og the backend",
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                    },
+                    "ratio" : {
+                      "type" : "number",
+                      "format" : "double"
+                    }
+                  }
                 }
               }
             },
@@ -26405,6 +26405,21 @@
                     "description" : "Specify the factor to multiply the delay for each retry",
                     "type" : "integer"
                   },
+                  "cache_connection_settings" : {
+                    "description" : "Cached connection settings",
+                    "type" : "object",
+                    "properties" : {
+                      "queue_size" : {
+                        "format" : "int32",
+                        "description" : "How much request can be queue before dropping it",
+                        "type" : "integer"
+                      },
+                      "enabled" : {
+                        "description" : "Is cached connection enabled",
+                        "type" : "boolean"
+                      }
+                    }
+                  },
                   "sample_interval" : {
                     "format" : "int64",
                     "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -26436,21 +26451,6 @@
                     "description" : "Timeout on idle connection",
                     "type" : "integer"
                   },
-                  "cacheConnectionSettings" : {
-                    "description" : "Cached connection settings",
-                    "type" : "object",
-                    "properties" : {
-                      "queue_size" : {
-                        "format" : "int32",
-                        "description" : "How much request can be queue before dropping it",
-                        "type" : "integer"
-                      },
-                      "enabled" : {
-                        "description" : "Is cached connection enabled",
-                        "type" : "boolean"
-                      }
-                    }
-                  },
                   "connection_timeout" : {
                     "format" : "int64",
                     "description" : "Timeout at connection",
@@ -26469,20 +26469,6 @@
                   "url" : {
                     "description" : "The URL to check",
                     "type" : "string"
-                  }
-                }
-              },
-              "loadBalancing" : {
-                "description" : "Loadbalancing config og the backend",
-                "type" : "object",
-                "properties" : {
-                  "type" : {
-                    "type" : "string",
-                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                  },
-                  "ratio" : {
-                    "type" : "number",
-                    "format" : "double"
                   }
                 }
               },
@@ -26573,15 +26559,7 @@
                       "description" : "Does the target uses TLS",
                       "type" : "boolean"
                     },
-                    "id" : {
-                      "description" : "id of the target",
-                      "type" : "string"
-                    },
-                    "ip_address" : {
-                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                      "type" : "string"
-                    },
-                    "tlsConfig" : {
+                    "tls_config" : {
                       "description" : "TLS settings to contact this target",
                       "type" : "object",
                       "properties" : {
@@ -26612,6 +26590,14 @@
                           "description" : "Trusted cert. ids"
                         }
                       }
+                    },
+                    "id" : {
+                      "description" : "id of the target",
+                      "type" : "string"
+                    },
+                    "ip_address" : {
+                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                      "type" : "string"
                     }
                   }
                 }
@@ -26619,6 +26605,20 @@
               "rewrite" : {
                 "description" : "Does the backend performs a full url rewrite ?",
                 "type" : "boolean"
+              },
+              "load_balancing" : {
+                "description" : "Loadbalancing config og the backend",
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                  },
+                  "ratio" : {
+                    "type" : "number",
+                    "format" : "double"
+                  }
+                }
               }
             }
           },
@@ -26819,15 +26819,7 @@
               "description" : "Does the target uses TLS",
               "type" : "boolean"
             },
-            "id" : {
-              "description" : "id of the target",
-              "type" : "string"
-            },
-            "ip_address" : {
-              "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-              "type" : "string"
-            },
-            "tlsConfig" : {
+            "tls_config" : {
               "description" : "TLS settings to contact this target",
               "type" : "object",
               "properties" : {
@@ -26858,6 +26850,14 @@
                   "description" : "Trusted cert. ids"
                 }
               }
+            },
+            "id" : {
+              "description" : "id of the target",
+              "type" : "string"
+            },
+            "ip_address" : {
+              "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+              "type" : "string"
             }
           }
         }
@@ -27083,6 +27083,21 @@
                 "description" : "Specify the factor to multiply the delay for each retry",
                 "type" : "integer"
               },
+              "cache_connection_settings" : {
+                "description" : "Cached connection settings",
+                "type" : "object",
+                "properties" : {
+                  "queue_size" : {
+                    "format" : "int32",
+                    "description" : "How much request can be queue before dropping it",
+                    "type" : "integer"
+                  },
+                  "enabled" : {
+                    "description" : "Is cached connection enabled",
+                    "type" : "boolean"
+                  }
+                }
+              },
               "sample_interval" : {
                 "format" : "int64",
                 "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -27114,21 +27129,6 @@
                 "description" : "Timeout on idle connection",
                 "type" : "integer"
               },
-              "cacheConnectionSettings" : {
-                "description" : "Cached connection settings",
-                "type" : "object",
-                "properties" : {
-                  "queue_size" : {
-                    "format" : "int32",
-                    "description" : "How much request can be queue before dropping it",
-                    "type" : "integer"
-                  },
-                  "enabled" : {
-                    "description" : "Is cached connection enabled",
-                    "type" : "boolean"
-                  }
-                }
-              },
               "connection_timeout" : {
                 "format" : "int64",
                 "description" : "Timeout at connection",
@@ -27147,20 +27147,6 @@
               "url" : {
                 "description" : "The URL to check",
                 "type" : "string"
-              }
-            }
-          },
-          "loadBalancing" : {
-            "description" : "Loadbalancing config og the backend",
-            "type" : "object",
-            "properties" : {
-              "type" : {
-                "type" : "string",
-                "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-              },
-              "ratio" : {
-                "type" : "number",
-                "format" : "double"
               }
             }
           },
@@ -27251,15 +27237,7 @@
                   "description" : "Does the target uses TLS",
                   "type" : "boolean"
                 },
-                "id" : {
-                  "description" : "id of the target",
-                  "type" : "string"
-                },
-                "ip_address" : {
-                  "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                  "type" : "string"
-                },
-                "tlsConfig" : {
+                "tls_config" : {
                   "description" : "TLS settings to contact this target",
                   "type" : "object",
                   "properties" : {
@@ -27290,6 +27268,14 @@
                       "description" : "Trusted cert. ids"
                     }
                   }
+                },
+                "id" : {
+                  "description" : "id of the target",
+                  "type" : "string"
+                },
+                "ip_address" : {
+                  "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                  "type" : "string"
                 }
               }
             }
@@ -27297,6 +27283,20 @@
           "rewrite" : {
             "description" : "Does the backend performs a full url rewrite ?",
             "type" : "boolean"
+          },
+          "load_balancing" : {
+            "description" : "Loadbalancing config og the backend",
+            "type" : "object",
+            "properties" : {
+              "type" : {
+                "type" : "string",
+                "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+              },
+              "ratio" : {
+                "type" : "number",
+                "format" : "double"
+              }
+            }
           }
         }
       },
@@ -31134,20 +31134,6 @@
                             "description" : "The root path of the backend or the full rewrite path",
                             "type" : "string"
                           },
-                          "loadBalancing" : {
-                            "description" : "Loadbalancing config og the backend",
-                            "type" : "object",
-                            "properties" : {
-                              "type" : {
-                                "type" : "string",
-                                "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                              },
-                              "ratio" : {
-                                "type" : "number",
-                                "format" : "double"
-                              }
-                            }
-                          },
                           "targets" : {
                             "description" : "The targets of the backend",
                             "type" : "array",
@@ -31235,15 +31221,7 @@
                                   "description" : "Does the target uses TLS",
                                   "type" : "boolean"
                                 },
-                                "id" : {
-                                  "description" : "id of the target",
-                                  "type" : "string"
-                                },
-                                "ip_address" : {
-                                  "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                                  "type" : "string"
-                                },
-                                "tlsConfig" : {
+                                "tls_config" : {
                                   "description" : "TLS settings to contact this target",
                                   "type" : "object",
                                   "properties" : {
@@ -31274,6 +31252,14 @@
                                       "description" : "Trusted cert. ids"
                                     }
                                   }
+                                },
+                                "id" : {
+                                  "description" : "id of the target",
+                                  "type" : "string"
+                                },
+                                "ip_address" : {
+                                  "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                                  "type" : "string"
                                 }
                               }
                             }
@@ -31281,6 +31267,20 @@
                           "rewrite" : {
                             "description" : "Does the backend performs a full url rewrite ?",
                             "type" : "boolean"
+                          },
+                          "load_balancing" : {
+                            "description" : "Loadbalancing config og the backend",
+                            "type" : "object",
+                            "properties" : {
+                              "type" : {
+                                "type" : "string",
+                                "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                              },
+                              "ratio" : {
+                                "type" : "number",
+                                "format" : "double"
+                              }
+                            }
                           }
                         }
                       },
@@ -31419,6 +31419,21 @@
                       "description" : "Specify the factor to multiply the delay for each retry",
                       "type" : "integer"
                     },
+                    "cache_connection_settings" : {
+                      "description" : "Cached connection settings",
+                      "type" : "object",
+                      "properties" : {
+                        "queue_size" : {
+                          "format" : "int32",
+                          "description" : "How much request can be queue before dropping it",
+                          "type" : "integer"
+                        },
+                        "enabled" : {
+                          "description" : "Is cached connection enabled",
+                          "type" : "boolean"
+                        }
+                      }
+                    },
                     "sample_interval" : {
                       "format" : "int64",
                       "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -31449,21 +31464,6 @@
                       "format" : "int64",
                       "description" : "Timeout on idle connection",
                       "type" : "integer"
-                    },
-                    "cacheConnectionSettings" : {
-                      "description" : "Cached connection settings",
-                      "type" : "object",
-                      "properties" : {
-                        "queue_size" : {
-                          "format" : "int32",
-                          "description" : "How much request can be queue before dropping it",
-                          "type" : "integer"
-                        },
-                        "enabled" : {
-                          "description" : "Is cached connection enabled",
-                          "type" : "boolean"
-                        }
-                      }
                     },
                     "connection_timeout" : {
                       "format" : "int64",
@@ -32061,15 +32061,7 @@
                       "description" : "Does the target uses TLS",
                       "type" : "boolean"
                     },
-                    "id" : {
-                      "description" : "id of the target",
-                      "type" : "string"
-                    },
-                    "ip_address" : {
-                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                      "type" : "string"
-                    },
-                    "tlsConfig" : {
+                    "tls_config" : {
                       "description" : "TLS settings to contact this target",
                       "type" : "object",
                       "properties" : {
@@ -32100,6 +32092,14 @@
                           "description" : "Trusted cert. ids"
                         }
                       }
+                    },
+                    "id" : {
+                      "description" : "id of the target",
+                      "type" : "string"
+                    },
+                    "ip_address" : {
+                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                      "type" : "string"
                     }
                   }
                 }
@@ -32204,6 +32204,21 @@
                           "description" : "Specify the factor to multiply the delay for each retry",
                           "type" : "integer"
                         },
+                        "cache_connection_settings" : {
+                          "description" : "Cached connection settings",
+                          "type" : "object",
+                          "properties" : {
+                            "queue_size" : {
+                              "format" : "int32",
+                              "description" : "How much request can be queue before dropping it",
+                              "type" : "integer"
+                            },
+                            "enabled" : {
+                              "description" : "Is cached connection enabled",
+                              "type" : "boolean"
+                            }
+                          }
+                        },
                         "sample_interval" : {
                           "format" : "int64",
                           "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -32235,21 +32250,6 @@
                           "description" : "Timeout on idle connection",
                           "type" : "integer"
                         },
-                        "cacheConnectionSettings" : {
-                          "description" : "Cached connection settings",
-                          "type" : "object",
-                          "properties" : {
-                            "queue_size" : {
-                              "format" : "int32",
-                              "description" : "How much request can be queue before dropping it",
-                              "type" : "integer"
-                            },
-                            "enabled" : {
-                              "description" : "Is cached connection enabled",
-                              "type" : "boolean"
-                            }
-                          }
-                        },
                         "connection_timeout" : {
                           "format" : "int64",
                           "description" : "Timeout at connection",
@@ -32268,20 +32268,6 @@
                         "url" : {
                           "description" : "The URL to check",
                           "type" : "string"
-                        }
-                      }
-                    },
-                    "loadBalancing" : {
-                      "description" : "Loadbalancing config og the backend",
-                      "type" : "object",
-                      "properties" : {
-                        "type" : {
-                          "type" : "string",
-                          "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                        },
-                        "ratio" : {
-                          "type" : "number",
-                          "format" : "double"
                         }
                       }
                     },
@@ -32372,15 +32358,7 @@
                             "description" : "Does the target uses TLS",
                             "type" : "boolean"
                           },
-                          "id" : {
-                            "description" : "id of the target",
-                            "type" : "string"
-                          },
-                          "ip_address" : {
-                            "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                            "type" : "string"
-                          },
-                          "tlsConfig" : {
+                          "tls_config" : {
                             "description" : "TLS settings to contact this target",
                             "type" : "object",
                             "properties" : {
@@ -32411,6 +32389,14 @@
                                 "description" : "Trusted cert. ids"
                               }
                             }
+                          },
+                          "id" : {
+                            "description" : "id of the target",
+                            "type" : "string"
+                          },
+                          "ip_address" : {
+                            "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                            "type" : "string"
                           }
                         }
                       }
@@ -32418,6 +32404,20 @@
                     "rewrite" : {
                       "description" : "Does the backend performs a full url rewrite ?",
                       "type" : "boolean"
+                    },
+                    "load_balancing" : {
+                      "description" : "Loadbalancing config og the backend",
+                      "type" : "object",
+                      "properties" : {
+                        "type" : {
+                          "type" : "string",
+                          "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                        },
+                        "ratio" : {
+                          "type" : "number",
+                          "format" : "double"
+                        }
+                      }
                     }
                   }
                 },
@@ -32597,6 +32597,21 @@
                           "description" : "Specify the factor to multiply the delay for each retry",
                           "type" : "integer"
                         },
+                        "cache_connection_settings" : {
+                          "description" : "Cached connection settings",
+                          "type" : "object",
+                          "properties" : {
+                            "queue_size" : {
+                              "format" : "int32",
+                              "description" : "How much request can be queue before dropping it",
+                              "type" : "integer"
+                            },
+                            "enabled" : {
+                              "description" : "Is cached connection enabled",
+                              "type" : "boolean"
+                            }
+                          }
+                        },
                         "sample_interval" : {
                           "format" : "int64",
                           "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -32628,21 +32643,6 @@
                           "description" : "Timeout on idle connection",
                           "type" : "integer"
                         },
-                        "cacheConnectionSettings" : {
-                          "description" : "Cached connection settings",
-                          "type" : "object",
-                          "properties" : {
-                            "queue_size" : {
-                              "format" : "int32",
-                              "description" : "How much request can be queue before dropping it",
-                              "type" : "integer"
-                            },
-                            "enabled" : {
-                              "description" : "Is cached connection enabled",
-                              "type" : "boolean"
-                            }
-                          }
-                        },
                         "connection_timeout" : {
                           "format" : "int64",
                           "description" : "Timeout at connection",
@@ -32661,20 +32661,6 @@
                         "url" : {
                           "description" : "The URL to check",
                           "type" : "string"
-                        }
-                      }
-                    },
-                    "loadBalancing" : {
-                      "description" : "Loadbalancing config og the backend",
-                      "type" : "object",
-                      "properties" : {
-                        "type" : {
-                          "type" : "string",
-                          "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                        },
-                        "ratio" : {
-                          "type" : "number",
-                          "format" : "double"
                         }
                       }
                     },
@@ -32765,15 +32751,7 @@
                             "description" : "Does the target uses TLS",
                             "type" : "boolean"
                           },
-                          "id" : {
-                            "description" : "id of the target",
-                            "type" : "string"
-                          },
-                          "ip_address" : {
-                            "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                            "type" : "string"
-                          },
-                          "tlsConfig" : {
+                          "tls_config" : {
                             "description" : "TLS settings to contact this target",
                             "type" : "object",
                             "properties" : {
@@ -32804,6 +32782,14 @@
                                 "description" : "Trusted cert. ids"
                               }
                             }
+                          },
+                          "id" : {
+                            "description" : "id of the target",
+                            "type" : "string"
+                          },
+                          "ip_address" : {
+                            "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                            "type" : "string"
                           }
                         }
                       }
@@ -32811,6 +32797,20 @@
                     "rewrite" : {
                       "description" : "Does the backend performs a full url rewrite ?",
                       "type" : "boolean"
+                    },
+                    "load_balancing" : {
+                      "description" : "Loadbalancing config og the backend",
+                      "type" : "object",
+                      "properties" : {
+                        "type" : {
+                          "type" : "string",
+                          "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                        },
+                        "ratio" : {
+                          "type" : "number",
+                          "format" : "double"
+                        }
+                      }
                     }
                   }
                 },
@@ -37395,20 +37395,6 @@
         "description" : "The root path of the backend or the full rewrite path",
         "type" : "string"
       },
-      "loadBalancing" : {
-        "description" : "Loadbalancing config og the backend",
-        "type" : "object",
-        "properties" : {
-          "type" : {
-            "type" : "string",
-            "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-          },
-          "ratio" : {
-            "type" : "number",
-            "format" : "double"
-          }
-        }
-      },
       "targets" : {
         "description" : "The targets of the backend",
         "type" : "array",
@@ -37496,15 +37482,7 @@
               "description" : "Does the target uses TLS",
               "type" : "boolean"
             },
-            "id" : {
-              "description" : "id of the target",
-              "type" : "string"
-            },
-            "ip_address" : {
-              "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-              "type" : "string"
-            },
-            "tlsConfig" : {
+            "tls_config" : {
               "description" : "TLS settings to contact this target",
               "type" : "object",
               "properties" : {
@@ -37535,6 +37513,14 @@
                   "description" : "Trusted cert. ids"
                 }
               }
+            },
+            "id" : {
+              "description" : "id of the target",
+              "type" : "string"
+            },
+            "ip_address" : {
+              "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+              "type" : "string"
             }
           }
         }
@@ -37542,6 +37528,20 @@
       "rewrite" : {
         "description" : "Does the backend performs a full url rewrite ?",
         "type" : "boolean"
+      },
+      "load_balancing" : {
+        "description" : "Loadbalancing config og the backend",
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+          },
+          "ratio" : {
+            "type" : "number",
+            "format" : "double"
+          }
+        }
       }
     }
   },
@@ -38755,15 +38755,7 @@
             "description" : "Does the target uses TLS",
             "type" : "boolean"
           },
-          "id" : {
-            "description" : "id of the target",
-            "type" : "string"
-          },
-          "ip_address" : {
-            "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-            "type" : "string"
-          },
-          "tlsConfig" : {
+          "tls_config" : {
             "description" : "TLS settings to contact this target",
             "type" : "object",
             "properties" : {
@@ -38794,6 +38786,14 @@
                 "description" : "Trusted cert. ids"
               }
             }
+          },
+          "id" : {
+            "description" : "id of the target",
+            "type" : "string"
+          },
+          "ip_address" : {
+            "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+            "type" : "string"
           }
         }
       },
@@ -39125,6 +39125,21 @@
                 "description" : "Specify the factor to multiply the delay for each retry",
                 "type" : "integer"
               },
+              "cache_connection_settings" : {
+                "description" : "Cached connection settings",
+                "type" : "object",
+                "properties" : {
+                  "queue_size" : {
+                    "format" : "int32",
+                    "description" : "How much request can be queue before dropping it",
+                    "type" : "integer"
+                  },
+                  "enabled" : {
+                    "description" : "Is cached connection enabled",
+                    "type" : "boolean"
+                  }
+                }
+              },
               "sample_interval" : {
                 "format" : "int64",
                 "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -39156,21 +39171,6 @@
                 "description" : "Timeout on idle connection",
                 "type" : "integer"
               },
-              "cacheConnectionSettings" : {
-                "description" : "Cached connection settings",
-                "type" : "object",
-                "properties" : {
-                  "queue_size" : {
-                    "format" : "int32",
-                    "description" : "How much request can be queue before dropping it",
-                    "type" : "integer"
-                  },
-                  "enabled" : {
-                    "description" : "Is cached connection enabled",
-                    "type" : "boolean"
-                  }
-                }
-              },
               "connection_timeout" : {
                 "format" : "int64",
                 "description" : "Timeout at connection",
@@ -39189,20 +39189,6 @@
               "url" : {
                 "description" : "The URL to check",
                 "type" : "string"
-              }
-            }
-          },
-          "loadBalancing" : {
-            "description" : "Loadbalancing config og the backend",
-            "type" : "object",
-            "properties" : {
-              "type" : {
-                "type" : "string",
-                "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-              },
-              "ratio" : {
-                "type" : "number",
-                "format" : "double"
               }
             }
           },
@@ -39293,15 +39279,7 @@
                   "description" : "Does the target uses TLS",
                   "type" : "boolean"
                 },
-                "id" : {
-                  "description" : "id of the target",
-                  "type" : "string"
-                },
-                "ip_address" : {
-                  "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                  "type" : "string"
-                },
-                "tlsConfig" : {
+                "tls_config" : {
                   "description" : "TLS settings to contact this target",
                   "type" : "object",
                   "properties" : {
@@ -39332,6 +39310,14 @@
                       "description" : "Trusted cert. ids"
                     }
                   }
+                },
+                "id" : {
+                  "description" : "id of the target",
+                  "type" : "string"
+                },
+                "ip_address" : {
+                  "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                  "type" : "string"
                 }
               }
             }
@@ -39339,6 +39325,20 @@
           "rewrite" : {
             "description" : "Does the backend performs a full url rewrite ?",
             "type" : "boolean"
+          },
+          "load_balancing" : {
+            "description" : "Loadbalancing config og the backend",
+            "type" : "object",
+            "properties" : {
+              "type" : {
+                "type" : "string",
+                "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+              },
+              "ratio" : {
+                "type" : "number",
+                "format" : "double"
+              }
+            }
           }
         }
       },
@@ -39669,20 +39669,6 @@
                   "description" : "The root path of the backend or the full rewrite path",
                   "type" : "string"
                 },
-                "loadBalancing" : {
-                  "description" : "Loadbalancing config og the backend",
-                  "type" : "object",
-                  "properties" : {
-                    "type" : {
-                      "type" : "string",
-                      "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                    },
-                    "ratio" : {
-                      "type" : "number",
-                      "format" : "double"
-                    }
-                  }
-                },
                 "targets" : {
                   "description" : "The targets of the backend",
                   "type" : "array",
@@ -39770,15 +39756,7 @@
                         "description" : "Does the target uses TLS",
                         "type" : "boolean"
                       },
-                      "id" : {
-                        "description" : "id of the target",
-                        "type" : "string"
-                      },
-                      "ip_address" : {
-                        "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                        "type" : "string"
-                      },
-                      "tlsConfig" : {
+                      "tls_config" : {
                         "description" : "TLS settings to contact this target",
                         "type" : "object",
                         "properties" : {
@@ -39809,6 +39787,14 @@
                             "description" : "Trusted cert. ids"
                           }
                         }
+                      },
+                      "id" : {
+                        "description" : "id of the target",
+                        "type" : "string"
+                      },
+                      "ip_address" : {
+                        "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                        "type" : "string"
                       }
                     }
                   }
@@ -39816,6 +39802,20 @@
                 "rewrite" : {
                   "description" : "Does the backend performs a full url rewrite ?",
                   "type" : "boolean"
+                },
+                "load_balancing" : {
+                  "description" : "Loadbalancing config og the backend",
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                    },
+                    "ratio" : {
+                      "type" : "number",
+                      "format" : "double"
+                    }
+                  }
                 }
               }
             },
@@ -39954,6 +39954,21 @@
             "description" : "Specify the factor to multiply the delay for each retry",
             "type" : "integer"
           },
+          "cache_connection_settings" : {
+            "description" : "Cached connection settings",
+            "type" : "object",
+            "properties" : {
+              "queue_size" : {
+                "format" : "int32",
+                "description" : "How much request can be queue before dropping it",
+                "type" : "integer"
+              },
+              "enabled" : {
+                "description" : "Is cached connection enabled",
+                "type" : "boolean"
+              }
+            }
+          },
           "sample_interval" : {
             "format" : "int64",
             "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -39984,21 +39999,6 @@
             "format" : "int64",
             "description" : "Timeout on idle connection",
             "type" : "integer"
-          },
-          "cacheConnectionSettings" : {
-            "description" : "Cached connection settings",
-            "type" : "object",
-            "properties" : {
-              "queue_size" : {
-                "format" : "int32",
-                "description" : "How much request can be queue before dropping it",
-                "type" : "integer"
-              },
-              "enabled" : {
-                "description" : "Is cached connection enabled",
-                "type" : "boolean"
-              }
-            }
           },
           "connection_timeout" : {
             "format" : "int64",
@@ -45041,7 +45041,7 @@
         "description" : "The current request snowflake",
         "type" : "string"
       },
-      "globalConfig" : {
+      "global_config" : {
         "description" : "The current global config",
         "type" : "object"
       },
@@ -45188,6 +45188,21 @@
                     "description" : "Specify the factor to multiply the delay for each retry",
                     "type" : "integer"
                   },
+                  "cache_connection_settings" : {
+                    "description" : "Cached connection settings",
+                    "type" : "object",
+                    "properties" : {
+                      "queue_size" : {
+                        "format" : "int32",
+                        "description" : "How much request can be queue before dropping it",
+                        "type" : "integer"
+                      },
+                      "enabled" : {
+                        "description" : "Is cached connection enabled",
+                        "type" : "boolean"
+                      }
+                    }
+                  },
                   "sample_interval" : {
                     "format" : "int64",
                     "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -45219,21 +45234,6 @@
                     "description" : "Timeout on idle connection",
                     "type" : "integer"
                   },
-                  "cacheConnectionSettings" : {
-                    "description" : "Cached connection settings",
-                    "type" : "object",
-                    "properties" : {
-                      "queue_size" : {
-                        "format" : "int32",
-                        "description" : "How much request can be queue before dropping it",
-                        "type" : "integer"
-                      },
-                      "enabled" : {
-                        "description" : "Is cached connection enabled",
-                        "type" : "boolean"
-                      }
-                    }
-                  },
                   "connection_timeout" : {
                     "format" : "int64",
                     "description" : "Timeout at connection",
@@ -45252,20 +45252,6 @@
                   "url" : {
                     "description" : "The URL to check",
                     "type" : "string"
-                  }
-                }
-              },
-              "loadBalancing" : {
-                "description" : "Loadbalancing config og the backend",
-                "type" : "object",
-                "properties" : {
-                  "type" : {
-                    "type" : "string",
-                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                  },
-                  "ratio" : {
-                    "type" : "number",
-                    "format" : "double"
                   }
                 }
               },
@@ -45356,15 +45342,7 @@
                       "description" : "Does the target uses TLS",
                       "type" : "boolean"
                     },
-                    "id" : {
-                      "description" : "id of the target",
-                      "type" : "string"
-                    },
-                    "ip_address" : {
-                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                      "type" : "string"
-                    },
-                    "tlsConfig" : {
+                    "tls_config" : {
                       "description" : "TLS settings to contact this target",
                       "type" : "object",
                       "properties" : {
@@ -45395,6 +45373,14 @@
                           "description" : "Trusted cert. ids"
                         }
                       }
+                    },
+                    "id" : {
+                      "description" : "id of the target",
+                      "type" : "string"
+                    },
+                    "ip_address" : {
+                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                      "type" : "string"
                     }
                   }
                 }
@@ -45402,6 +45388,20 @@
               "rewrite" : {
                 "description" : "Does the backend performs a full url rewrite ?",
                 "type" : "boolean"
+              },
+              "load_balancing" : {
+                "description" : "Loadbalancing config og the backend",
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                  },
+                  "ratio" : {
+                    "type" : "number",
+                    "format" : "double"
+                  }
+                }
               }
             }
           },
@@ -45456,24 +45456,6 @@
                 "type" : "boolean"
               }
             }
-          }
-        }
-      },
-      "otoroshiResponse" : {
-        "description" : "The current otoroshi response",
-        "type" : "object",
-        "properties" : {
-          "headers" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "The response headers"
-          },
-          "status" : {
-            "format" : "int32",
-            "description" : "The response status",
-            "type" : "integer"
           }
         }
       },
@@ -45687,6 +45669,24 @@
       "maybe_cause_id" : {
         "description" : "The current cause",
         "type" : "string"
+      },
+      "otoroshi_response" : {
+        "description" : "The current otoroshi response",
+        "type" : "object",
+        "properties" : {
+          "headers" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "The response headers"
+          },
+          "status" : {
+            "format" : "int32",
+            "description" : "The response status",
+            "type" : "integer"
+          }
+        }
       },
       "message" : {
         "description" : "The current error message",
@@ -45916,6 +45916,21 @@
         "description" : "Specify the factor to multiply the delay for each retry",
         "type" : "integer"
       },
+      "cache_connection_settings" : {
+        "description" : "Cached connection settings",
+        "type" : "object",
+        "properties" : {
+          "queue_size" : {
+            "format" : "int32",
+            "description" : "How much request can be queue before dropping it",
+            "type" : "integer"
+          },
+          "enabled" : {
+            "description" : "Is cached connection enabled",
+            "type" : "boolean"
+          }
+        }
+      },
       "sample_interval" : {
         "format" : "int64",
         "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -45946,21 +45961,6 @@
         "format" : "int64",
         "description" : "Timeout on idle connection",
         "type" : "integer"
-      },
-      "cacheConnectionSettings" : {
-        "description" : "Cached connection settings",
-        "type" : "object",
-        "properties" : {
-          "queue_size" : {
-            "format" : "int32",
-            "description" : "How much request can be queue before dropping it",
-            "type" : "integer"
-          },
-          "enabled" : {
-            "description" : "Is cached connection enabled",
-            "type" : "boolean"
-          }
-        }
       },
       "connection_timeout" : {
         "format" : "int64",
@@ -47207,7 +47207,7 @@
         "description" : "The current request snowflake",
         "type" : "string"
       },
-      "globalConfig" : {
+      "global_config" : {
         "description" : "The current global config",
         "type" : "object"
       },
@@ -47354,6 +47354,21 @@
                     "description" : "Specify the factor to multiply the delay for each retry",
                     "type" : "integer"
                   },
+                  "cache_connection_settings" : {
+                    "description" : "Cached connection settings",
+                    "type" : "object",
+                    "properties" : {
+                      "queue_size" : {
+                        "format" : "int32",
+                        "description" : "How much request can be queue before dropping it",
+                        "type" : "integer"
+                      },
+                      "enabled" : {
+                        "description" : "Is cached connection enabled",
+                        "type" : "boolean"
+                      }
+                    }
+                  },
                   "sample_interval" : {
                     "format" : "int64",
                     "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -47385,21 +47400,6 @@
                     "description" : "Timeout on idle connection",
                     "type" : "integer"
                   },
-                  "cacheConnectionSettings" : {
-                    "description" : "Cached connection settings",
-                    "type" : "object",
-                    "properties" : {
-                      "queue_size" : {
-                        "format" : "int32",
-                        "description" : "How much request can be queue before dropping it",
-                        "type" : "integer"
-                      },
-                      "enabled" : {
-                        "description" : "Is cached connection enabled",
-                        "type" : "boolean"
-                      }
-                    }
-                  },
                   "connection_timeout" : {
                     "format" : "int64",
                     "description" : "Timeout at connection",
@@ -47418,20 +47418,6 @@
                   "url" : {
                     "description" : "The URL to check",
                     "type" : "string"
-                  }
-                }
-              },
-              "loadBalancing" : {
-                "description" : "Loadbalancing config og the backend",
-                "type" : "object",
-                "properties" : {
-                  "type" : {
-                    "type" : "string",
-                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                  },
-                  "ratio" : {
-                    "type" : "number",
-                    "format" : "double"
                   }
                 }
               },
@@ -47522,15 +47508,7 @@
                       "description" : "Does the target uses TLS",
                       "type" : "boolean"
                     },
-                    "id" : {
-                      "description" : "id of the target",
-                      "type" : "string"
-                    },
-                    "ip_address" : {
-                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                      "type" : "string"
-                    },
-                    "tlsConfig" : {
+                    "tls_config" : {
                       "description" : "TLS settings to contact this target",
                       "type" : "object",
                       "properties" : {
@@ -47561,6 +47539,14 @@
                           "description" : "Trusted cert. ids"
                         }
                       }
+                    },
+                    "id" : {
+                      "description" : "id of the target",
+                      "type" : "string"
+                    },
+                    "ip_address" : {
+                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                      "type" : "string"
                     }
                   }
                 }
@@ -47568,6 +47554,20 @@
               "rewrite" : {
                 "description" : "Does the backend performs a full url rewrite ?",
                 "type" : "boolean"
+              },
+              "load_balancing" : {
+                "description" : "Loadbalancing config og the backend",
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                  },
+                  "ratio" : {
+                    "type" : "number",
+                    "format" : "double"
+                  }
+                }
               }
             }
           },
@@ -48729,6 +48729,21 @@
                     "description" : "Specify the factor to multiply the delay for each retry",
                     "type" : "integer"
                   },
+                  "cache_connection_settings" : {
+                    "description" : "Cached connection settings",
+                    "type" : "object",
+                    "properties" : {
+                      "queue_size" : {
+                        "format" : "int32",
+                        "description" : "How much request can be queue before dropping it",
+                        "type" : "integer"
+                      },
+                      "enabled" : {
+                        "description" : "Is cached connection enabled",
+                        "type" : "boolean"
+                      }
+                    }
+                  },
                   "sample_interval" : {
                     "format" : "int64",
                     "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -48760,21 +48775,6 @@
                     "description" : "Timeout on idle connection",
                     "type" : "integer"
                   },
-                  "cacheConnectionSettings" : {
-                    "description" : "Cached connection settings",
-                    "type" : "object",
-                    "properties" : {
-                      "queue_size" : {
-                        "format" : "int32",
-                        "description" : "How much request can be queue before dropping it",
-                        "type" : "integer"
-                      },
-                      "enabled" : {
-                        "description" : "Is cached connection enabled",
-                        "type" : "boolean"
-                      }
-                    }
-                  },
                   "connection_timeout" : {
                     "format" : "int64",
                     "description" : "Timeout at connection",
@@ -48793,20 +48793,6 @@
                   "url" : {
                     "description" : "The URL to check",
                     "type" : "string"
-                  }
-                }
-              },
-              "loadBalancing" : {
-                "description" : "Loadbalancing config og the backend",
-                "type" : "object",
-                "properties" : {
-                  "type" : {
-                    "type" : "string",
-                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                  },
-                  "ratio" : {
-                    "type" : "number",
-                    "format" : "double"
                   }
                 }
               },
@@ -48897,15 +48883,7 @@
                       "description" : "Does the target uses TLS",
                       "type" : "boolean"
                     },
-                    "id" : {
-                      "description" : "id of the target",
-                      "type" : "string"
-                    },
-                    "ip_address" : {
-                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                      "type" : "string"
-                    },
-                    "tlsConfig" : {
+                    "tls_config" : {
                       "description" : "TLS settings to contact this target",
                       "type" : "object",
                       "properties" : {
@@ -48936,6 +48914,14 @@
                           "description" : "Trusted cert. ids"
                         }
                       }
+                    },
+                    "id" : {
+                      "description" : "id of the target",
+                      "type" : "string"
+                    },
+                    "ip_address" : {
+                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                      "type" : "string"
                     }
                   }
                 }
@@ -48943,6 +48929,20 @@
               "rewrite" : {
                 "description" : "Does the backend performs a full url rewrite ?",
                 "type" : "boolean"
+              },
+              "load_balancing" : {
+                "description" : "Loadbalancing config og the backend",
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                  },
+                  "ratio" : {
+                    "type" : "number",
+                    "format" : "double"
+                  }
+                }
               }
             }
           },
@@ -52131,6 +52131,21 @@
             "description" : "Specify the factor to multiply the delay for each retry",
             "type" : "integer"
           },
+          "cache_connection_settings" : {
+            "description" : "Cached connection settings",
+            "type" : "object",
+            "properties" : {
+              "queue_size" : {
+                "format" : "int32",
+                "description" : "How much request can be queue before dropping it",
+                "type" : "integer"
+              },
+              "enabled" : {
+                "description" : "Is cached connection enabled",
+                "type" : "boolean"
+              }
+            }
+          },
           "sample_interval" : {
             "format" : "int64",
             "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -52162,21 +52177,6 @@
             "description" : "Timeout on idle connection",
             "type" : "integer"
           },
-          "cacheConnectionSettings" : {
-            "description" : "Cached connection settings",
-            "type" : "object",
-            "properties" : {
-              "queue_size" : {
-                "format" : "int32",
-                "description" : "How much request can be queue before dropping it",
-                "type" : "integer"
-              },
-              "enabled" : {
-                "description" : "Is cached connection enabled",
-                "type" : "boolean"
-              }
-            }
-          },
           "connection_timeout" : {
             "format" : "int64",
             "description" : "Timeout at connection",
@@ -52195,20 +52195,6 @@
           "url" : {
             "description" : "The URL to check",
             "type" : "string"
-          }
-        }
-      },
-      "loadBalancing" : {
-        "description" : "Loadbalancing config og the backend",
-        "type" : "object",
-        "properties" : {
-          "type" : {
-            "type" : "string",
-            "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-          },
-          "ratio" : {
-            "type" : "number",
-            "format" : "double"
           }
         }
       },
@@ -52299,15 +52285,7 @@
               "description" : "Does the target uses TLS",
               "type" : "boolean"
             },
-            "id" : {
-              "description" : "id of the target",
-              "type" : "string"
-            },
-            "ip_address" : {
-              "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-              "type" : "string"
-            },
-            "tlsConfig" : {
+            "tls_config" : {
               "description" : "TLS settings to contact this target",
               "type" : "object",
               "properties" : {
@@ -52338,6 +52316,14 @@
                   "description" : "Trusted cert. ids"
                 }
               }
+            },
+            "id" : {
+              "description" : "id of the target",
+              "type" : "string"
+            },
+            "ip_address" : {
+              "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+              "type" : "string"
             }
           }
         }
@@ -52345,6 +52331,20 @@
       "rewrite" : {
         "description" : "Does the backend performs a full url rewrite ?",
         "type" : "boolean"
+      },
+      "load_balancing" : {
+        "description" : "Loadbalancing config og the backend",
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+          },
+          "ratio" : {
+            "type" : "number",
+            "format" : "double"
+          }
+        }
       }
     }
   },
@@ -56134,15 +56134,7 @@
               "description" : "Does the target uses TLS",
               "type" : "boolean"
             },
-            "id" : {
-              "description" : "id of the target",
-              "type" : "string"
-            },
-            "ip_address" : {
-              "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-              "type" : "string"
-            },
-            "tlsConfig" : {
+            "tls_config" : {
               "description" : "TLS settings to contact this target",
               "type" : "object",
               "properties" : {
@@ -56173,6 +56165,14 @@
                   "description" : "Trusted cert. ids"
                 }
               }
+            },
+            "id" : {
+              "description" : "id of the target",
+              "type" : "string"
+            },
+            "ip_address" : {
+              "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+              "type" : "string"
             }
           }
         }
@@ -56435,7 +56435,7 @@
           }
         }
       },
-      "globalConfig" : {
+      "global_config" : {
         "description" : "The current global config",
         "type" : "object"
       },
@@ -56582,6 +56582,21 @@
                     "description" : "Specify the factor to multiply the delay for each retry",
                     "type" : "integer"
                   },
+                  "cache_connection_settings" : {
+                    "description" : "Cached connection settings",
+                    "type" : "object",
+                    "properties" : {
+                      "queue_size" : {
+                        "format" : "int32",
+                        "description" : "How much request can be queue before dropping it",
+                        "type" : "integer"
+                      },
+                      "enabled" : {
+                        "description" : "Is cached connection enabled",
+                        "type" : "boolean"
+                      }
+                    }
+                  },
                   "sample_interval" : {
                     "format" : "int64",
                     "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -56613,21 +56628,6 @@
                     "description" : "Timeout on idle connection",
                     "type" : "integer"
                   },
-                  "cacheConnectionSettings" : {
-                    "description" : "Cached connection settings",
-                    "type" : "object",
-                    "properties" : {
-                      "queue_size" : {
-                        "format" : "int32",
-                        "description" : "How much request can be queue before dropping it",
-                        "type" : "integer"
-                      },
-                      "enabled" : {
-                        "description" : "Is cached connection enabled",
-                        "type" : "boolean"
-                      }
-                    }
-                  },
                   "connection_timeout" : {
                     "format" : "int64",
                     "description" : "Timeout at connection",
@@ -56646,20 +56646,6 @@
                   "url" : {
                     "description" : "The URL to check",
                     "type" : "string"
-                  }
-                }
-              },
-              "loadBalancing" : {
-                "description" : "Loadbalancing config og the backend",
-                "type" : "object",
-                "properties" : {
-                  "type" : {
-                    "type" : "string",
-                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                  },
-                  "ratio" : {
-                    "type" : "number",
-                    "format" : "double"
                   }
                 }
               },
@@ -56750,15 +56736,7 @@
                       "description" : "Does the target uses TLS",
                       "type" : "boolean"
                     },
-                    "id" : {
-                      "description" : "id of the target",
-                      "type" : "string"
-                    },
-                    "ip_address" : {
-                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                      "type" : "string"
-                    },
-                    "tlsConfig" : {
+                    "tls_config" : {
                       "description" : "TLS settings to contact this target",
                       "type" : "object",
                       "properties" : {
@@ -56789,6 +56767,14 @@
                           "description" : "Trusted cert. ids"
                         }
                       }
+                    },
+                    "id" : {
+                      "description" : "id of the target",
+                      "type" : "string"
+                    },
+                    "ip_address" : {
+                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                      "type" : "string"
                     }
                   }
                 }
@@ -56796,6 +56782,20 @@
               "rewrite" : {
                 "description" : "Does the backend performs a full url rewrite ?",
                 "type" : "boolean"
+              },
+              "load_balancing" : {
+                "description" : "Loadbalancing config og the backend",
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                  },
+                  "ratio" : {
+                    "type" : "number",
+                    "format" : "double"
+                  }
+                }
               }
             }
           },
@@ -57298,6 +57298,21 @@
                     "description" : "Specify the factor to multiply the delay for each retry",
                     "type" : "integer"
                   },
+                  "cache_connection_settings" : {
+                    "description" : "Cached connection settings",
+                    "type" : "object",
+                    "properties" : {
+                      "queue_size" : {
+                        "format" : "int32",
+                        "description" : "How much request can be queue before dropping it",
+                        "type" : "integer"
+                      },
+                      "enabled" : {
+                        "description" : "Is cached connection enabled",
+                        "type" : "boolean"
+                      }
+                    }
+                  },
                   "sample_interval" : {
                     "format" : "int64",
                     "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -57329,21 +57344,6 @@
                     "description" : "Timeout on idle connection",
                     "type" : "integer"
                   },
-                  "cacheConnectionSettings" : {
-                    "description" : "Cached connection settings",
-                    "type" : "object",
-                    "properties" : {
-                      "queue_size" : {
-                        "format" : "int32",
-                        "description" : "How much request can be queue before dropping it",
-                        "type" : "integer"
-                      },
-                      "enabled" : {
-                        "description" : "Is cached connection enabled",
-                        "type" : "boolean"
-                      }
-                    }
-                  },
                   "connection_timeout" : {
                     "format" : "int64",
                     "description" : "Timeout at connection",
@@ -57362,20 +57362,6 @@
                   "url" : {
                     "description" : "The URL to check",
                     "type" : "string"
-                  }
-                }
-              },
-              "loadBalancing" : {
-                "description" : "Loadbalancing config og the backend",
-                "type" : "object",
-                "properties" : {
-                  "type" : {
-                    "type" : "string",
-                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                  },
-                  "ratio" : {
-                    "type" : "number",
-                    "format" : "double"
                   }
                 }
               },
@@ -57466,15 +57452,7 @@
                       "description" : "Does the target uses TLS",
                       "type" : "boolean"
                     },
-                    "id" : {
-                      "description" : "id of the target",
-                      "type" : "string"
-                    },
-                    "ip_address" : {
-                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                      "type" : "string"
-                    },
-                    "tlsConfig" : {
+                    "tls_config" : {
                       "description" : "TLS settings to contact this target",
                       "type" : "object",
                       "properties" : {
@@ -57505,6 +57483,14 @@
                           "description" : "Trusted cert. ids"
                         }
                       }
+                    },
+                    "id" : {
+                      "description" : "id of the target",
+                      "type" : "string"
+                    },
+                    "ip_address" : {
+                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                      "type" : "string"
                     }
                   }
                 }
@@ -57512,6 +57498,20 @@
               "rewrite" : {
                 "description" : "Does the backend performs a full url rewrite ?",
                 "type" : "boolean"
+              },
+              "load_balancing" : {
+                "description" : "Loadbalancing config og the backend",
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                  },
+                  "ratio" : {
+                    "type" : "number",
+                    "format" : "double"
+                  }
+                }
               }
             }
           },
@@ -58253,6 +58253,21 @@
                     "description" : "Specify the factor to multiply the delay for each retry",
                     "type" : "integer"
                   },
+                  "cache_connection_settings" : {
+                    "description" : "Cached connection settings",
+                    "type" : "object",
+                    "properties" : {
+                      "queue_size" : {
+                        "format" : "int32",
+                        "description" : "How much request can be queue before dropping it",
+                        "type" : "integer"
+                      },
+                      "enabled" : {
+                        "description" : "Is cached connection enabled",
+                        "type" : "boolean"
+                      }
+                    }
+                  },
                   "sample_interval" : {
                     "format" : "int64",
                     "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted",
@@ -58284,21 +58299,6 @@
                     "description" : "Timeout on idle connection",
                     "type" : "integer"
                   },
-                  "cacheConnectionSettings" : {
-                    "description" : "Cached connection settings",
-                    "type" : "object",
-                    "properties" : {
-                      "queue_size" : {
-                        "format" : "int32",
-                        "description" : "How much request can be queue before dropping it",
-                        "type" : "integer"
-                      },
-                      "enabled" : {
-                        "description" : "Is cached connection enabled",
-                        "type" : "boolean"
-                      }
-                    }
-                  },
                   "connection_timeout" : {
                     "format" : "int64",
                     "description" : "Timeout at connection",
@@ -58317,20 +58317,6 @@
                   "url" : {
                     "description" : "The URL to check",
                     "type" : "string"
-                  }
-                }
-              },
-              "loadBalancing" : {
-                "description" : "Loadbalancing config og the backend",
-                "type" : "object",
-                "properties" : {
-                  "type" : {
-                    "type" : "string",
-                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                  },
-                  "ratio" : {
-                    "type" : "number",
-                    "format" : "double"
                   }
                 }
               },
@@ -58421,15 +58407,7 @@
                       "description" : "Does the target uses TLS",
                       "type" : "boolean"
                     },
-                    "id" : {
-                      "description" : "id of the target",
-                      "type" : "string"
-                    },
-                    "ip_address" : {
-                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-                      "type" : "string"
-                    },
-                    "tlsConfig" : {
+                    "tls_config" : {
                       "description" : "TLS settings to contact this target",
                       "type" : "object",
                       "properties" : {
@@ -58460,6 +58438,14 @@
                           "description" : "Trusted cert. ids"
                         }
                       }
+                    },
+                    "id" : {
+                      "description" : "id of the target",
+                      "type" : "string"
+                    },
+                    "ip_address" : {
+                      "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+                      "type" : "string"
                     }
                   }
                 }
@@ -58467,6 +58453,20 @@
               "rewrite" : {
                 "description" : "Does the backend performs a full url rewrite ?",
                 "type" : "boolean"
+              },
+              "load_balancing" : {
+                "description" : "Loadbalancing config og the backend",
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                  },
+                  "ratio" : {
+                    "type" : "number",
+                    "format" : "double"
+                  }
+                }
               }
             }
           },
@@ -58812,15 +58812,7 @@
             "description" : "Does the target uses TLS",
             "type" : "boolean"
           },
-          "id" : {
-            "description" : "id of the target",
-            "type" : "string"
-          },
-          "ip_address" : {
-            "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-            "type" : "string"
-          },
-          "tlsConfig" : {
+          "tls_config" : {
             "description" : "TLS settings to contact this target",
             "type" : "object",
             "properties" : {
@@ -58851,6 +58843,14 @@
                 "description" : "Trusted cert. ids"
               }
             }
+          },
+          "id" : {
+            "description" : "id of the target",
+            "type" : "string"
+          },
+          "ip_address" : {
+            "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+            "type" : "string"
           }
         }
       }
@@ -59726,11 +59726,11 @@
     "description" : "Plugin to handle search engine bots",
     "type" : "object",
     "properties" : {
-      "robotTxtContent" : {
+      "robot_txt_content" : {
         "description" : "Content of /robots.txt",
         "type" : "string"
       },
-      "metaContent" : {
+      "meta_content" : {
         "description" : "content of the <meta name='robots' /> tag",
         "type" : "string"
       },
@@ -59738,7 +59738,7 @@
         "description" : "/robots.txt enabled",
         "type" : "boolean"
       },
-      "headerContent" : {
+      "header_content" : {
         "description" : "Content of the X-Robots-Tag headers",
         "type" : "string"
       },
@@ -59799,24 +59799,6 @@
     "description" : "Configuration for ApikeyCalls",
     "type" : "object",
     "properties" : {
-      "clientId" : {
-        "description" : "client id only extractor config.",
-        "type" : "object",
-        "properties" : {
-          "query_name" : {
-            "description" : "The name of the query param to extract",
-            "type" : "string"
-          },
-          "header_name" : {
-            "description" : "The name of the header to extract",
-            "type" : "string"
-          },
-          "enabled" : {
-            "description" : "Is it enabled",
-            "type" : "boolean"
-          }
-        }
-      },
       "jwt" : {
         "description" : "jwt extractor config.",
         "type" : "object",
@@ -59869,7 +59851,25 @@
           }
         }
       },
-      "customHeaders" : {
+      "client_id" : {
+        "description" : "client id only extractor config.",
+        "type" : "object",
+        "properties" : {
+          "query_name" : {
+            "description" : "The name of the query param to extract",
+            "type" : "string"
+          },
+          "header_name" : {
+            "description" : "The name of the header to extract",
+            "type" : "string"
+          },
+          "enabled" : {
+            "description" : "Is it enabled",
+            "type" : "boolean"
+          }
+        }
+      },
+      "custom_headers" : {
         "description" : "custom headers extractor config.",
         "type" : "object",
         "properties" : {
@@ -60431,15 +60431,7 @@
         "description" : "Does the target uses TLS",
         "type" : "boolean"
       },
-      "id" : {
-        "description" : "id of the target",
-        "type" : "string"
-      },
-      "ip_address" : {
-        "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
-        "type" : "string"
-      },
-      "tlsConfig" : {
+      "tls_config" : {
         "description" : "TLS settings to contact this target",
         "type" : "object",
         "properties" : {
@@ -60470,6 +60462,14 @@
             "description" : "Trusted cert. ids"
           }
         }
+      },
+      "id" : {
+        "description" : "id of the target",
+        "type" : "string"
+      },
+      "ip_address" : {
+        "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI",
+        "type" : "string"
       }
     }
   },
@@ -60573,24 +60573,6 @@
         "description" : "Configuration of the apikey extraction modes",
         "type" : "object",
         "properties" : {
-          "clientId" : {
-            "description" : "client id only extractor config.",
-            "type" : "object",
-            "properties" : {
-              "query_name" : {
-                "description" : "The name of the query param to extract",
-                "type" : "string"
-              },
-              "header_name" : {
-                "description" : "The name of the header to extract",
-                "type" : "string"
-              },
-              "enabled" : {
-                "description" : "Is it enabled",
-                "type" : "boolean"
-              }
-            }
-          },
           "jwt" : {
             "description" : "jwt extractor config.",
             "type" : "object",
@@ -60643,7 +60625,25 @@
               }
             }
           },
-          "customHeaders" : {
+          "client_id" : {
+            "description" : "client id only extractor config.",
+            "type" : "object",
+            "properties" : {
+              "query_name" : {
+                "description" : "The name of the query param to extract",
+                "type" : "string"
+              },
+              "header_name" : {
+                "description" : "The name of the header to extract",
+                "type" : "string"
+              },
+              "enabled" : {
+                "description" : "Is it enabled",
+                "type" : "boolean"
+              }
+            }
+          },
+          "custom_headers" : {
             "description" : "custom headers extractor config.",
             "type" : "object",
             "properties" : {

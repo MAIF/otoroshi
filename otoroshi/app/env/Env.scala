@@ -813,7 +813,7 @@ class Env(
     }
   }
 
-  lazy val openApiSchema    = new ClassGraphScanner().run(confPackages, this)
+  val openApiSchema    = new ClassGraphScanner().run(confPackages, this)
 
   val scriptingEnabled      = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.scripts.enabled").getOrElse(false)
   val scriptCompiler        = new ScriptCompiler(this)

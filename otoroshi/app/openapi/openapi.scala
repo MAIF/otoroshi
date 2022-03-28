@@ -1008,19 +1008,18 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         )
       )
       specFiles.foreach { specFile =>
-        val prettyJson = spec.prettify
+        val prettyJson = spec.prettify.trim
         val file = new File(specFile)
         logger.debug(s"writing spec to: '${file.getAbsolutePath}'")
         if (file.exists()) {
-          val jsonRaw = Files.readString(file.toPath)
-          val json = Json.parse(jsonRaw)
-          if (spec != json) {
-            Files.write(file.toPath, prettyJson.split("\n").toList.asJava, StandardCharsets.UTF_8)
+          val jsonRaw = Files.readString(file.toPath).trim
+          if (prettyJson.sha256 != jsonRaw.sha256) {
+            Files.writeString(file.toPath, prettyJson, StandardCharsets.UTF_8)
             cfg.write()
             hasWritten = true
           }
         } else {
-          Files.write(file.toPath, prettyJson.split("\n").toList.asJava, StandardCharsets.UTF_8)
+          Files.writeString(file.toPath, prettyJson, StandardCharsets.UTF_8)
           cfg.write()
           hasWritten = true
         }
