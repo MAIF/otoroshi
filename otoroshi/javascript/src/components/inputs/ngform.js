@@ -789,7 +789,9 @@ export class NgFormPlayground extends Component {
                 foo: {
                   type: "string",
                   of: null,
-                  constraints: [],
+                  constraints: [
+                    yup.string().required().matches("bar")
+                  ],
                   renderer: null,
                   component: null,
                   props: {
