@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import _ from 'lodash';
+import Select from 'react-select';
 import { OffSwitch, OnSwitch } from './BooleanInput';
 
 class NgFormRenderer extends Component {
@@ -12,7 +13,7 @@ class NgFormRenderer extends Component {
       );
     } else {
       return (
-        <div style={{ outline: '1px solid red', padding: 5, margin: 5, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ outline: '1px solid yellow', padding: 5, margin: 5, display: 'flex', flexDirection: 'column' }}>
           {this.props.children}
         </div>
       );
@@ -52,11 +53,11 @@ class NgStep extends Component {
     } else if (type === "date") {
       return components.DateRenderer;
     } else if (type === "select") {
-      return components.None;
+      return components.SelectRenderer;
     } else if (type === "array-select") {
-      return components.None;
+      return components.ArraySelectRenderer;
     } else if (type === "object-select") {
-      return components.None;
+      return components.ObjectSelectRenderer;
     } else if (type === "code") {
       return components.TextRenderer;
     } else if (type === "single-line-of-code") {
@@ -68,7 +69,7 @@ class NgStep extends Component {
     } else if (type === "form") {
       return NgForm;
     } else {
-      return NgRendererNotFound;
+      return components.RendererNotFound;
     }
   }
 
@@ -78,13 +79,13 @@ class NgStep extends Component {
   }
 
   renderer = () => {
-    if (this.props.component) {
-      return this.props.components;
-    } else if (this.props.renderer) {
-      if (_.isString(this.props.renderer)) {
-        return this.rendererFor(this.props.renderer, this.props.components);
+    if (this.props.schema.component) {
+      return this.props.schema.components;
+    } else if (this.props.schema.renderer) {
+      if (_.isString(this.props.schema.renderer)) {
+        return this.rendererFor(this.props.schema.renderer, this.props.components);
       } else {
-        return this.props.renderer;
+        return this.props.schema.renderer;
       }
     } else {
       return this.rendererFor(this.props.schema.type, this.props.components);
@@ -351,9 +352,141 @@ class NgObjectRenderer extends Component {
   }
 }
 
-class NgArraySelectRenderer extends Component {}
-class NgObjectSelectRenderer extends Component {}
-class NgSelectRenderer extends Component {}
+class NgArraySelectRenderer extends Component {
+  state = {};
+  // TODO: http load
+  render() {
+    const schema = this.props.schema;
+    const props = schema.props || {};
+    return (
+      <>
+        <label>{props.label}</label>
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          {this.props.value && this.props.value.map((value, idx) => {
+            return (
+              <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
+                <Select
+                  name={`selector-${this.props.name}`}
+                  value={value}
+                  isLoading={this.state.loading}
+                  disabled={props.disabled}
+                  placeholder={props.placeholder}
+                  optionRenderer={props.optionRenderer}
+                  options={props.options}
+                  style={{ width: '100%' }}
+                  onChange={(e) => {
+                    const newArray = this.props.value ? [...this.props.value] : [];
+                    newArray.splice(idx, 1, e.value);
+                    this.props.onChange(newArray);
+                  }} />
+                <button type="button" style={{ maxWidth: 70 }} onClick={e => {
+                  const newArray = this.props.value ? [...this.props.value] : [];
+                  newArray.splice(idx, 1);
+                  this.props.onChange(newArray);
+                }}>remove</button>
+              </div>
+            );
+          })}
+          <button type="button" style={{ maxWidth: 70 }} onClick={e => {
+            const newArray = this.props.value ? [...this.props.value, ''] : [''];
+            this.props.onChange(newArray);
+          }}>add</button>
+        </div>
+      </>
+    );
+  }
+}
+
+class NgObjectSelectRenderer extends Component {
+  state = {};
+  // TODO: http load
+  render() {
+    const schema = this.props.schema;
+    const props = schema.props || {};
+    return (
+      <>
+        <label>{props.label}</label>
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          {this.props.value && Object.keys(this.props.value).map(key => [key, this.props.key]).map((raw, idx) => {
+            const [key, value] = raw;
+            return (
+              <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
+                <input 
+                  type="text" 
+                  placeholder={props.placeholderKey} 
+                  title={props.help} 
+                  value={key} 
+                  onChange={e => {
+                    const newObject = this.props.value ? {...this.props.value} : {};
+                    const old = newObject[key];
+                    delete newObject[key];
+                    newObject[e.target.value] = old;
+                    this.props.onChange(newObject);
+                  }} 
+                  style={{ width: '50%' }}
+                  {...props}
+                />
+                <Select
+                  name={`selector-${this.props.name}`}
+                  value={value}
+                  isLoading={this.state.loading}
+                  disabled={props.disabled}
+                  placeholder={props.placeholder}
+                  optionRenderer={props.optionRenderer}
+                  options={props.options}
+                  style={{ width: '100%' }}
+                  onChange={(e) => {
+                    const newObject = this.props.value ? {...this.props.value} : {};
+                    newObject[key] = e.value;
+                    this.props.onChange(newObject);
+                  }} />
+                <button type="button" style={{ maxWidth: 70 }} onClick={e => {
+                  const newObject = this.props.value ? {...this.props.value} : {};
+                  delete newObject[key];
+                  this.props.onChange(newObject);
+                }}>remove</button>
+              </div>
+            );
+          })}
+          <button type="button" style={{ maxWidth: 70 }} onClick={e => {
+            const newObject = {...this.props.value};
+            newObject[''] = '';
+            this.props.onChange(newObject);
+          }}>add</button>
+        </div>
+      </>
+    );
+  }
+}
+
+class NgSelectRenderer extends Component {
+  state = {}
+  // TODO: http load
+  componentDidMount() {
+    if (this.props.optionsFrom) {
+
+    }
+  }
+  render() {
+    const schema = this.props.schema;
+    const props = schema.props || {};
+    return (
+      <>
+        <label>{props.label}</label>
+        <Select
+          name={`selector-${this.props.name}`}
+          value={this.props.value}
+          isLoading={this.state.loading}
+          disabled={props.disabled}
+          placeholder={props.placeholder}
+          optionRenderer={props.optionRenderer}
+          options={props.options}
+          onChange={(e) => this.props.onChange(e.value)} 
+        />
+      </>
+    );
+  }
+}
 
 export class NgForm extends Component {
 
@@ -372,6 +505,7 @@ export class NgForm extends Component {
     DateRenderer: NgDateRenderer,
     FormRenderer: NgFormRenderer,
     HiddenRenderer: NgHiddenRenderer,
+    RendererNotFound: NgRendererNotFound
   };
 
   static setTheme = (theme) => {
@@ -534,7 +668,7 @@ export class NgFormPlayground extends Component {
                 },
                 bar: {
                   type: "form",
-                  flow: ["foo", "arr", "obj"],
+                  flow: ["foo", "select", "arr", "selectarr", "obj", "selectobj"],
                   schema: {
                     foo: {
                       type: "string",
@@ -547,6 +681,57 @@ export class NgFormPlayground extends Component {
                         help: "The foo",
                         disabled: false,
                         label: 'Foo',
+                      }
+                    },
+                    select: {
+                      type: "string",
+                      of: null,
+                      constraints: [],
+                      renderer: "select",
+                      component: null,
+                      props: {
+                        placeholder: 'select',
+                        help: "The select",
+                        disabled: false,
+                        label: 'select',
+                        options: [
+                          { label: "GET", value: "get" },
+                          { label: "POST", value: "post" },
+                        ]
+                      }
+                    },
+                    selectarr: {
+                      type: "array",
+                      of: "string",
+                      constraints: [],
+                      renderer: "array-select",
+                      component: null,
+                      props: {
+                        placeholder: 'selectarr',
+                        help: "The selectarr",
+                        disabled: false,
+                        label: 'selectarr',
+                        options: [
+                          { label: "GET", value: "get" },
+                          { label: "POST", value: "post" },
+                        ]
+                      }
+                    },
+                    selectobj: {
+                      type: "object",
+                      of: "string",
+                      constraints: [],
+                      renderer: "object-select",
+                      component: null,
+                      props: {
+                        placeholder: 'selectobj',
+                        help: "The selectobj",
+                        disabled: false,
+                        label: 'selectobj',
+                        options: [
+                          { label: "GET", value: "get" },
+                          { label: "POST", value: "post" },
+                        ]
                       }
                     },
                     arr: {
