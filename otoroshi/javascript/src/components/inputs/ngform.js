@@ -4,7 +4,11 @@ import Select from 'react-select';
 import { OffSwitch, OnSwitch } from './BooleanInput';
 import * as yup from 'yup';
 
+import { SingleLineCode } from '@maif/react-forms/lib/inputs/SingleLineCode'
+import { CodeInput } from '@maif/react-forms/lib/inputs/CodeInput'
+
 class NgFormRenderer extends Component {
+  state = { folded: this.props.collapsable && this.props.collasped }
   render() {
     if (this.props.root) {
       return (
@@ -13,12 +17,26 @@ class NgFormRenderer extends Component {
         </form>
       );
     } else {
-      return (
-        <div style={{ outline: '1px solid yellow', padding: 5, margin: 5, display: 'flex', flexDirection: 'column' }}>
-          <h3>{this.props.label || this.props.name}</h3>
-          {this.props.children}
-        </div>
-      );
+      if (this.props.collapsable) {
+        return (
+          <div style={{ outline: '1px solid yellow', padding: 5, margin: 5, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3>{this.props.label || this.props.name}</h3>
+              <button type="button" className="btn btn-xs btn-info" onClick={e => this.setState({ folded: !this.state.folded })}>{this.state.folded ? 'unfold' : 'fold'}</button>
+            </div>
+            {!this.state.folded && this.props.children}
+          </div>
+        );
+      } else {
+        return (
+          <div style={{ outline: '1px solid yellow', padding: 5, margin: 5, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3>{this.props.label || this.props.name}</h3>
+            </div>
+            {this.props.children}
+          </div>
+        );
+      }
     }
   }
 }
@@ -61,9 +79,9 @@ class NgStep extends Component {
     } else if (type === "object-select") {
       return components.ObjectSelectRenderer;
     } else if (type === "code") {
-      return components.TextRenderer;
+      return components.CodeRenderer;
     } else if (type === "single-line-of-code") {
-      return components.StringRenderer;
+      return components.SingleCodeLineRenderer;
     } else if (type === "text") {
       return components.TextRenderer;
     } else if (type === "hidden") {
@@ -153,10 +171,44 @@ class NgStep extends Component {
         <Renderer 
           validation={validation} 
           {...this.props} 
+          collapsable={this.props.schema.collapsable}
+          collasped={this.props.schema.collasped}
           schema={this.props.schema.schema || this.props.schema} 
           flow={this.props.schema.flow || this.props.flow} 
         />
       </ValidationRenderer>
+    );
+  }
+}
+
+class NgSingleCodeLineRenderer extends Component {
+  render() {
+    const schema = this.props.schema;
+    const props = schema.props || {};
+    return (
+      <>
+        <label className="form-label">{props.label}</label>
+        <SingleLineCode 
+          value={this.props.value} 
+          onChange={e => this.props.onChange(e)} 
+        />
+      </>
+    );
+  }
+}
+
+class NgCodeRenderer extends Component {
+  render() {
+    const schema = this.props.schema;
+    const props = schema.props || {};
+    return (
+      <>
+        <label className="form-label">{props.label}</label>
+        <CodeInput 
+          value={this.props.value} 
+          onChange={e => this.props.onChange(e)} 
+        />
+      </>
     );
   }
 }
@@ -167,9 +219,10 @@ class NgStringRenderer extends Component {
     const props = schema.props || {};
     return (
       <>
-        <label>{props.label}</label>
+        <label className="form-label">{props.label}</label>
         <input 
           type="text" 
+          className="form-control"
           placeholder={props.placeholder} 
           title={props.help} 
           value={this.props.value} 
@@ -187,9 +240,10 @@ class NgNumberRenderer extends Component {
     const props = schema.props || {};
     return (
       <>
-        <label>{props.label}</label>
+        <label className="form-label">{props.label}</label>
         <input 
           type="number" 
+          className="form-control"
           placeholder={props.placeholder} 
           title={props.help} 
           value={this.props.value} 
@@ -207,9 +261,10 @@ class NgHiddenRenderer extends Component {
     const props = schema.props || {};
     return (
       <>
-        <label>{props.label}</label>
+        <label className="form-label">{props.label}</label>
         <input 
           type="hidden" 
+          className="form-control"
           placeholder={props.placeholder} 
           title={props.help} 
           value={this.props.value} 
@@ -227,9 +282,10 @@ class NgTextRenderer extends Component {
     const props = schema.props || {};
     return (
       <>
-        <label>{props.label}</label>
+        <label className="form-label">{props.label}</label>
         <textarea 
           placeholder={props.placeholder} 
+          className="form-control"
           title={props.help} 
           onChange={e => this.props.onChange(e.target.value)} 
           {...props}
@@ -247,9 +303,10 @@ class NgDateRenderer extends Component {
     const props = schema.props || {};
     return (
       <>
-        <label>{props.label}</label>
+        <label className="form-label">{props.label}</label>
         <input 
           type="date" 
+          className="form-control"
           placeholder={props.placeholder} 
           title={props.help} 
           value={this.props.value} 
@@ -293,13 +350,14 @@ class NgArrayRenderer extends Component {
     const ItemRenderer = schema.itemRenderer;
     return (
       <>
-        <label>{props.label}</label>
+        <label className="form-label">{props.label}</label>
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           {this.props.value && this.props.value.map((value, idx) => {
             return (
               <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
                 {!ItemRenderer && <input 
                   type="text" 
+                  className="form-control"
                   placeholder={props.placeholder} 
                   title={props.help} 
                   value={value} 
@@ -320,7 +378,7 @@ class NgArrayRenderer extends Component {
                   }} 
                   {...props}
                 />}
-                <button type="button" style={{ maxWidth: 70 }} onClick={e => {
+                <button type="button" className="btn btn-xs btn-danger" style={{ maxWidth: 70 }} onClick={e => {
                   const newArray = this.props.value ? [...this.props.value] : [];
                   newArray.splice(idx, 1);
                   this.props.onChange(newArray);
@@ -328,7 +386,7 @@ class NgArrayRenderer extends Component {
               </div>
             );
           })}
-          <button type="button" style={{ maxWidth: 70 }} onClick={e => {
+          <button type="button" className="btn btn-xs btn-success" style={{ maxWidth: 70 }} onClick={e => {
             const newArray = this.props.value ? [...this.props.value, ''] : [''];
             this.props.onChange(newArray);
           }}>add</button>
@@ -345,7 +403,7 @@ class NgObjectRenderer extends Component {
     const ItemRenderer = schema.itemRenderer;
     return (
       <>
-        <label>{props.label}</label>
+        <label className="form-label">{props.label}</label>
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           {this.props.value && Object.keys(this.props.value).map(key => [key, this.props.key]).map((raw, idx) => {
             const [key, value] = raw;
@@ -353,6 +411,7 @@ class NgObjectRenderer extends Component {
               <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
                 <input 
                   type="text" 
+                  className="form-control"
                   placeholder={props.placeholderKey} 
                   title={props.help} 
                   value={key} 
@@ -368,6 +427,7 @@ class NgObjectRenderer extends Component {
                 />
                 {!ItemRenderer && <input 
                   type="text" 
+                  className="form-control"
                   placeholder={props.placeholderValue} 
                   title={props.help} 
                   value={value} 
@@ -388,7 +448,7 @@ class NgObjectRenderer extends Component {
                   }} 
                   {...props}
                 />}
-                <button type="button" style={{ maxWidth: 70 }} onClick={e => {
+                <button type="button" className="btn btn-xs btn-danger" style={{ maxWidth: 70 }} onClick={e => {
                   const newObject = this.props.value ? {...this.props.value} : {};
                   delete newObject[key];
                   this.props.onChange(newObject);
@@ -396,7 +456,7 @@ class NgObjectRenderer extends Component {
               </div>
             );
           })}
-          <button type="button" style={{ maxWidth: 70 }} onClick={e => {
+          <button type="button"className="btn btn-xs btn-success"  style={{ maxWidth: 70 }} onClick={e => {
             const newObject = {...this.props.value};
             newObject[''] = '';
             this.props.onChange(newObject);
@@ -435,7 +495,7 @@ class NgArraySelectRenderer extends Component {
     const props = schema.props || {};
     return (
       <>
-        <label>{props.label}</label>
+        <label className="form-label">{props.label}</label>
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           {this.props.value && this.props.value.map((value, idx) => {
             return (
@@ -454,7 +514,7 @@ class NgArraySelectRenderer extends Component {
                     newArray.splice(idx, 1, e.value);
                     this.props.onChange(newArray);
                   }} />
-                <button type="button" style={{ maxWidth: 70 }} onClick={e => {
+                <button type="button" className="btn btn-xs btn-danger" style={{ maxWidth: 70 }} onClick={e => {
                   const newArray = this.props.value ? [...this.props.value] : [];
                   newArray.splice(idx, 1);
                   this.props.onChange(newArray);
@@ -462,7 +522,7 @@ class NgArraySelectRenderer extends Component {
               </div>
             );
           })}
-          <button type="button" style={{ maxWidth: 70 }} onClick={e => {
+          <button type="button" className="btn btn-xs btn-success" style={{ maxWidth: 70 }} onClick={e => {
             const newArray = this.props.value ? [...this.props.value, ''] : [''];
             this.props.onChange(newArray);
           }}>add</button>
@@ -500,7 +560,7 @@ class NgObjectSelectRenderer extends Component {
     const props = schema.props || {};
     return (
       <>
-        <label>{props.label}</label>
+        <label className="form-label">{props.label}</label>
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           {this.props.value && Object.keys(this.props.value).map(key => [key, this.props.key]).map((raw, idx) => {
             const [key, value] = raw;
@@ -535,7 +595,7 @@ class NgObjectSelectRenderer extends Component {
                     newObject[key] = e.value;
                     this.props.onChange(newObject);
                   }} />
-                <button type="button" style={{ maxWidth: 70 }} onClick={e => {
+                <button type="button" className="btn btn-xs btn-danger" style={{ maxWidth: 70 }} onClick={e => {
                   const newObject = this.props.value ? {...this.props.value} : {};
                   delete newObject[key];
                   this.props.onChange(newObject);
@@ -543,7 +603,7 @@ class NgObjectSelectRenderer extends Component {
               </div>
             );
           })}
-          <button type="button" style={{ maxWidth: 70 }} onClick={e => {
+          <button type="button" className="btn btn-xs btn-success" style={{ maxWidth: 70 }} onClick={e => {
             const newObject = {...this.props.value};
             newObject[''] = '';
             this.props.onChange(newObject);
@@ -582,7 +642,7 @@ class NgSelectRenderer extends Component {
     const props = schema.props || {};
     return (
       <>
-        <label>{props.label}</label>
+        <label className="form-label">{props.label}</label>
         <Select
           name={`selector-${this.props.name}`}
           value={this.props.value}
@@ -633,7 +693,9 @@ export class NgForm extends Component {
     FormRenderer: NgFormRenderer,
     HiddenRenderer: NgHiddenRenderer,
     RendererNotFound: NgRendererNotFound,
-    ValidationRenderer: NgValidationRenderer
+    ValidationRenderer: NgValidationRenderer,
+    SingleCodeLineRenderer: NgSingleCodeLineRenderer,
+    CodeRenderer: NgCodeRenderer,
   };
 
   static setTheme = (theme) => {
@@ -755,6 +817,8 @@ export class NgForm extends Component {
         renderer: schema.array ? null : renderer,
         schema: schema.schema,
         flow: schema.flow,
+        collapsable: schema.collapsable,
+        collasped: schema.collasped,
         label: schema.label,
         // itemRenderer: schema.array ? renderer : null, // TODO: support string renderers
         props: {
@@ -764,7 +828,6 @@ export class NgForm extends Component {
           disabled: schema.disabled,
         }
       }
-      // console.log(schema, config)
       return config;
     } else {
       return schema;
@@ -1074,7 +1137,6 @@ export class NgFormPlaygroundOtoroshi extends Component {
           .filter(key  => this.state.forms[key].flow.length > 0)
           // .filter(name => name.indexOf('otoroshi.next.plugins.ApikeyCalls') === 0)
           .map(key => {
-            // console.log(this.state.forms[key].schema)
             return (
               <li key={key}>
                 <h3>{key}</h3>
@@ -1094,74 +1156,3 @@ export class NgFormPlaygroundOtoroshi extends Component {
     )
   }
 }
-
-
-/*
-
-import { Form } from './Form';
-
-export class NgFormTest extends Component {
-
-  state = { value: this.props.value }
-
-  onChange = (value) => {
-    this.setState({ value });
-    if (this.props.onChange) {
-      this.props.onChange(value);
-    }
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    if (!_.isEqual(prevProps.value, this.props.value) || !_.isEqual(this.props.value, this.state.value) ) {
-      this.setState({ value: this.props.value });
-    }
-  }
-
-  computeFlow = (rawFlow) => {
-    return rawFlow;
-  }
-
-  computeSchema = (rawSchema) => {
-    const schema = {};
-    Object.keys(rawSchema).map(key => {
-      const itemSchema = rawSchema[key];
-      schema[key] = {
-        type: itemSchema.array ? 'array' : itemSchema.type,
-        props: {
-          label: itemSchema.label
-        }
-      };
-    })
-    return schema;
-  }
-
-  componentDidCatch(error, errorInfo) {
-    this.setState({ error, errorInfo })
-    console.log(error, errorInfo)
-  }
-
-  render() {
-    if (this.state.error) {
-      return (
-        <>
-          <h2 style={{ color: 'red' }}>error</h2>
-          <pre>
-            <code>
-              {JSON.stringify(this.state.error, null, 2)}
-            </code>
-          </pre>
-        </>
-      );
-    }
-    const flow = this.computeFlow(this.props.flow, this.props.schema);
-    const schema = this.computeSchema(this.props.schema);
-    return (
-      <Form
-        value={this.state.value}
-        onChange={(value) => this.setState({ value })}
-        flow={flow}
-        schema={schema}
-      />
-    )
-  }
-}*/
