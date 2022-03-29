@@ -75,7 +75,33 @@ class NgStep extends Component {
   }
 
   validate = (value) => {
-    // TODO: handle type checking if mandatory
+    const constraints = this.props.schema.constraints || [];
+    if (this.props.schema.typechecks) {
+      if (this.props.schema.type === "string") {
+        constraints.push(yup.string().optional())
+      } else if (this.props.schema.type === "number") {
+        constraints.push(yup.number().optional())
+      } else if (this.props.schema.type === "bool" || this.props.schema.type === "boolean") {
+        constraints.push(yup.boolean().optional())
+      } else if (this.props.schema.type === "array") {
+        //constraints.push(yup.array().of())
+      } else if (this.props.schema.type === "object") {
+        // constraints.push(yup.object().of())
+      } 
+    }
+    if (this.props.schema.required) {
+      if (this.props.schema.type === "string") {
+        constraints.push(yup.string().required())
+      } else if (this.props.schema.type === "number") {
+        constraints.push(yup.number().required())
+      } else if (this.props.schema.type === "bool" || this.props.schema.type === "boolean") {
+        constraints.push(yup.boolean().required())
+      } else if (this.props.schema.type === "array") {
+        //constraints.push(yup.array().of())
+      } else if (this.props.schema.type === "object") {
+        // constraints.push(yup.object().of())
+      } 
+    }
     if (this.props.schema.constraints && this.props.schema.constraints.length > 0) {
       const res = { __valid: true, __errors: [] }
       this.props.schema.constraints.map(validator => {
@@ -382,9 +408,29 @@ class NgObjectRenderer extends Component {
 
 class NgArraySelectRenderer extends Component {
   state = {};
-  // TODO: http load
+  componentDidMount() {
+    const schema = this.props.schema || {};
+    const props = schema.props || {};
+    if (props.optionsFrom) {
+      this.setState({ loading: true }, () => {
+        fetch(this.props.schema.props.optionsFrom, {
+          method: 'GET',
+          credentials: 'include',
+        }).then(r => r.json()).then(r => {
+          this.setState({ loading: false })
+          if (props.optionsTransformer) {
+            this.setState({ options: props.optionsTransformer(r) })
+          } else {
+            this.setState({ options: r })
+          }
+        }).catch(e => {
+          this.setState({ loading: false })
+        }) 
+      })
+    }
+  }
   render() {
-    const schema = this.props.schema;
+    const schema = this.props.schema || {};
     const props = schema.props || {};
     return (
       <>
@@ -400,7 +446,7 @@ class NgArraySelectRenderer extends Component {
                   disabled={props.disabled}
                   placeholder={props.placeholder}
                   optionRenderer={props.optionRenderer}
-                  options={props.options}
+                  options={this.state.options || props.options}
                   style={{ width: '100%' }}
                   onChange={(e) => {
                     const newArray = this.props.value ? [...this.props.value] : [];
@@ -427,9 +473,29 @@ class NgArraySelectRenderer extends Component {
 
 class NgObjectSelectRenderer extends Component {
   state = {};
-  // TODO: http load
+  componentDidMount() {
+    const schema = this.props.schema || {};
+    const props = schema.props || {};
+    if (props.optionsFrom) {
+      this.setState({ loading: true }, () => {
+        fetch(this.props.schema.props.optionsFrom, {
+          method: 'GET',
+          credentials: 'include',
+        }).then(r => r.json()).then(r => {
+          this.setState({ loading: false })
+          if (props.optionsTransformer) {
+            this.setState({ options: props.optionsTransformer(r) })
+          } else {
+            this.setState({ options: r })
+          }
+        }).catch(e => {
+          this.setState({ loading: false })
+        }) 
+      })
+    }
+  }
   render() {
-    const schema = this.props.schema;
+    const schema = this.props.schema || {};
     const props = schema.props || {};
     return (
       <>
@@ -461,7 +527,7 @@ class NgObjectSelectRenderer extends Component {
                   disabled={props.disabled}
                   placeholder={props.placeholder}
                   optionRenderer={props.optionRenderer}
-                  options={props.options}
+                  options={this.state.options || props.options}
                   style={{ width: '100%' }}
                   onChange={(e) => {
                     const newObject = this.props.value ? {...this.props.value} : {};
@@ -488,15 +554,30 @@ class NgObjectSelectRenderer extends Component {
 }
 
 class NgSelectRenderer extends Component {
-  state = {}
-  // TODO: http load
+  state = {};
   componentDidMount() {
-    if (this.props.optionsFrom) {
-
+    const schema = this.props.schema || {};
+    const props = schema.props || {};
+    if (props.optionsFrom) {
+      this.setState({ loading: true }, () => {
+        fetch(this.props.schema.props.optionsFrom, {
+          method: 'GET',
+          credentials: 'include',
+        }).then(r => r.json()).then(r => {
+          this.setState({ loading: false })
+          if (props.optionsTransformer) {
+            this.setState({ options: props.optionsTransformer(r) })
+          } else {
+            this.setState({ options: r })
+          }
+        }).catch(e => {
+          this.setState({ loading: false })
+        }) 
+      })
     }
   }
   render() {
-    const schema = this.props.schema;
+    const schema = this.props.schema || {};
     const props = schema.props || {};
     return (
       <>
@@ -508,7 +589,7 @@ class NgSelectRenderer extends Component {
           disabled={props.disabled}
           placeholder={props.placeholder}
           optionRenderer={props.optionRenderer}
-          options={props.options}
+          options={this.state.options || props.options}
           onChange={(e) => this.props.onChange(e.value)} 
         />
       </>
