@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import _ from 'lodash';
 import Select from 'react-select';
 import { OffSwitch, OnSwitch } from './BooleanInput';
+import * as yup from 'yup';
 
 class NgFormRenderer extends Component {
   render() {
@@ -74,8 +75,32 @@ class NgStep extends Component {
   }
 
   validate = (value) => {
-    // TODO: handle validation
-    return { valid: true, errors: { } };
+    // TODO: handle type checking if mandatory
+    if (this.props.schema.constraints && this.props.schema.constraints.length > 0) {
+      const res = { __valid: true, __errors: [] }
+      this.props.schema.constraints.map(validator => {
+        if (validator.validateSync) {
+          try {
+            validator.validateSync(value);
+          } catch(e) {
+            res.__valid = false
+            res.__errors.push(e.message)
+          }
+        } else {
+          const r = validator(value);
+          if (!r.valid) {
+            res.__valid = false;
+          }
+          res.__errors = [...res.__errors, ...r.errors ]
+        }
+      })
+      this.props.setValidation(this.props.path, res);
+      return res;
+    } else {
+      const res = { __valid: true, __errors: [] };
+      this.props.setValidation(this.props.path, res);
+      return res;
+    }
   }
 
   renderer = () => {
@@ -95,13 +120,16 @@ class NgStep extends Component {
   render() {
     const Renderer = this.renderer();
     const validation = this.validate(this.props.value);
+    const ValidationRenderer = this.props.components.ValidationRenderer;
     return (
-      <Renderer 
-        validation={validation} 
-        {...this.props} 
-        schema={this.props.schema.schema || this.props.schema} 
-        flow={this.props.schema.flow || this.props.flow} 
-      />
+      <ValidationRenderer validation={validation} >
+        <Renderer 
+          validation={validation} 
+          {...this.props} 
+          schema={this.props.schema.schema || this.props.schema} 
+          flow={this.props.schema.flow || this.props.flow} 
+        />
+      </ValidationRenderer>
     );
   }
 }
@@ -488,6 +516,24 @@ class NgSelectRenderer extends Component {
   }
 }
 
+class NgValidationRenderer extends Component {
+  render() {
+    if (this.props.validation.__valid) {
+      return this.props.children;
+    } else {
+      console.log(this.props.name, this.props.validation)
+      return (
+        <div style={{ outline: '1px solid red', display: 'flex', flexDirection: 'column' }}>
+          {this.props.children}
+          <>
+            {this.props.validation.__errors.map(err => <p style={{ color: 'red', marginBottom: 0 }}>{err.message || err}</p>)}
+          </>
+        </div>
+      );
+    };
+  }
+}
+
 export class NgForm extends Component {
 
   static DefaultTheme = {
@@ -505,57 +551,129 @@ export class NgForm extends Component {
     DateRenderer: NgDateRenderer,
     FormRenderer: NgFormRenderer,
     HiddenRenderer: NgHiddenRenderer,
-    RendererNotFound: NgRendererNotFound
+    RendererNotFound: NgRendererNotFound,
+    ValidationRenderer: NgValidationRenderer
   };
 
   static setTheme = (theme) => {
     NgForm.DefaultTheme = theme;
   };
 
+  state = { validation: { valid: true, graph: {}}};
+  tasks = [];
+
   componentDidMount() {
-    const value = this.props.value ? (_.isFunction(this.props.value) ? this.props.value() : this.props.value) : null;
+    const value = this.getValue();
     this.rootOnChange(value);
+    this.interval = setInterval(() => this.handleTasks(), 100);
   }
 
-  validate = (value) => {
-    // TODO: handle validation
-    return { valid: true, errors: { } };
+  componentWillUnmount() {
+    if (this.interval) {
+      clearInterval(this.interval);
+    }
+  }
+
+  isValid = (graph) => {
+    return !(JSON.stringify(graph).indexOf('"__valid":false') > -1);
+  }
+
+  handleTasks = () => {
+    if (this.tasks.length > 0) {
+      const tasks = _.cloneDeep(this.tasks);
+      this.tasks = [];
+      let currentValidation = _.cloneDeep(this.state.validation);
+      const handleNext = () => {
+        const task = tasks.pop();
+        if (task) {
+          const { path, validation } = task;
+          let current = currentValidation.graph;
+          path.map(segment => {
+            if (!current[segment]) {
+              current[segment] = {};
+            }
+            current = current[segment];
+          });
+          current.__valid = validation.__valid;
+          current.__errors = validation.__errors;
+          if (!current.__valid) {
+            currentValidation.valid = false;
+          }
+          handleNext();
+        } else {
+          currentValidation.valid = this.isValid(currentValidation.graph);
+          if (!_.isEqual(currentValidation, this.state.validation)) {
+            this.setState({ validation: currentValidation });
+            this.rootOnChange(this.getValue());
+          }
+        }
+      }
+      handleNext();
+    }
+  }
+
+  getValue = () => {
+    return this.props.value ? (_.isFunction(this.props.value) ? this.props.value() : this.props.value) : null;
+  }
+
+  validation = () => {
+    if (this.props.root) {
+      return this.state.validation;
+    } else {
+      return this.props.validation;
+    }
   }
 
   rootOnChange = (value) => {
-    const validation = this.validate(value);
+    const validation = this.validation();
     if (this.props.onChange) this.props.onChange(value, validation);
     if (this.props.onValidationChange) this.props.onValidationChange(validation);
   }
 
+  setValidation = (path, validation) => {
+    if (this.props.root) {
+      this.tasks.push({ path, validation });
+    } else {
+      this.props.setValidation(path, validation);
+    }
+  }
+
   render() {
-    const value = this.props.value ? (_.isFunction(this.props.value) ? this.props.value() : this.props.value) : null;
+    const value = this.getValue();
     const flow = _.isFunction(this.props.flow) ? this.props.flow(value) : this.props.flow;
     const schema = _.isFunction(this.props.schema) ? this.props.schema(value) : this.props.schema;
     const propsComponents = _.isFunction(this.props.components) ? this.props.components(value) : this.props.components;
     const components = { ...NgForm.DefaultTheme, ...propsComponents }; // TODO: get theme from context also
     const FormRenderer = components.FormRenderer;
     const StepNotFound = components.StepNotFound;
-    const validation = this.props.validation || this.validate(value);
+    const root = !!this.props.root;
+    const validation = root ? this.state.validation : this.props.validation;
     return (
       <FormRenderer {...this.props}>
         {flow.map(name => {
           const stepSchema = schema[name];
           if (stepSchema) {
-            return <NgStep
-              key={name}
-              name={name} 
-              validation={validation}
-              components={components}
-              schema={stepSchema} 
-              value={value ? value[name] : null}
-              onChange={e => {
-                const newValue = value ? { ...value, [name]: e } : { [name]: e };
-                this.rootOnChange(newValue);
-              }}
-              rootValue={value} 
-              rootOnChange={this.rootOnChange}
-            />
+            const visible = ('visible' in stepSchema) ? (_.isFunction(stepSchema.visible) ? stepSchema.visible(value) : stepSchema.visible) : true;
+            if (visible) {
+              return <NgStep
+                key={name}
+                name={name} 
+                path={root ? [name] : [...this.props.path, name]}
+                validation={validation}
+                setValidation={this.setValidation}
+                components={components}
+                schema={stepSchema} 
+                value={value ? value[name] : null}
+                onChange={e => {
+                  const newValue = value ? { ...value, [name]: e } : { [name]: e };
+                  this.rootOnChange(newValue);
+                }}
+                rootValue={value} 
+                rootOnChange={this.rootOnChange}
+              />
+            } else {
+              return null;
+            }
           } else {
             return <StepNotFound name={name} />
           }
@@ -567,7 +685,7 @@ export class NgForm extends Component {
 
 export class NgFormState extends Component {
 
-  state = { value: this.props.defaultValue || {}, validation: { valid: true, errors: [] } };
+  state = { value: this.props.defaultValue || {}, validation: null };
 
   onChange = (value, validation) => {
     this.setState({ value, validation }, () => {
@@ -609,7 +727,7 @@ export class NgFormPlayground extends Component {
           root 
           style={{ display: 'flex', flexDirection: 'column', width: '100%' }}
           value={this.state.value || {}}
-          flow={["name", "email", "done", "embed"]}
+          flow={["name", "email", "age", "done", "embed"]} 
           schema={{
             name: {
               type: "string",
@@ -635,6 +753,21 @@ export class NgFormPlayground extends Component {
                 help: "Just your email",
                 disabled: false,
                 label: 'Email',
+              }
+            },
+            age: {
+              type: "number",
+              of: null,
+              constraints: [
+                yup.number().required().positive().integer().min(18).max(9999)
+              ],
+              renderer: null,
+              component: null,
+              props: {
+                placeholder: 'Your age',
+                help: "Just your age",
+                disabled: false,
+                label: 'Age',
               }
             },
             done: {
