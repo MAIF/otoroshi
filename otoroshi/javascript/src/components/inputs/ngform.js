@@ -602,7 +602,6 @@ class NgValidationRenderer extends Component {
     if (this.props.validation.__valid) {
       return this.props.children;
     } else {
-      console.log(this.props.name, this.props.validation)
       return (
         <div style={{ outline: '1px solid red', display: 'flex', flexDirection: 'column' }}>
           {this.props.children}
@@ -808,8 +807,8 @@ export class NgFormPlayground extends Component {
           root 
           style={{ display: 'flex', flexDirection: 'column', width: '100%' }}
           value={this.state.value || {}}
-          flow={["name", "email", "age", "done", "embed"]} 
-          schema={{
+          flow={(state) => state.done ? ["name", "email", "age", "done"] : ["name", "email", "age", "done", "embed"]} 
+          schema={(state) => ({
             name: {
               type: "string",
               of: null,
@@ -980,7 +979,7 @@ export class NgFormPlayground extends Component {
                 }
               }
             }
-          }}
+          })}
           onChange={(value, validation) => {
             this.setState({ value, validation })
           }}
