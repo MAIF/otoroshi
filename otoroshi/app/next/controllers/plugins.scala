@@ -23,6 +23,22 @@ class NgPluginsController(
     Ok(JsArray(NgStep.all.map(_.json)))
   }
 
+  def form() = ApiAction { ctx =>
+    (for {
+      name <- ctx.request.getQueryString("name")
+      form <- env.openApiSchema.asForms.get(name)
+    } yield {
+      Ok(form.json)
+    }) getOrElse {
+      NotFound(Json.obj("error" -> s"form not found"))
+    }
+  }
+
+  def forms() = ApiAction { ctx =>
+    val forms = new JsObject(env.openApiSchema.asForms.mapValues(_.json))
+    Ok(forms)
+  }
+
   def plugins() = ApiAction {
     val plugins = env.scriptManager.ngNames.filterNot(_.contains(".NgMerged")).flatMap(name => env.scriptManager.getAnyScript[NgNamedPlugin](s"cp:$name").toOption.map(o => (name, o)))
 

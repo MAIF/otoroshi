@@ -3315,6 +3315,18 @@ spec:
                     description: "Specify the factor to multiply the delay for each\
                       \ retry"
                     type: "integer"
+                  cache_connection_settings:
+                    description: "Cached connection settings"
+                    type: "object"
+                    properties:
+                      queue_size:
+                        format: "int32"
+                        description: "How much request can be queue before dropping\
+                          \ it"
+                        type: "integer"
+                      enabled:
+                        description: "Is cached connection enabled"
+                        type: "boolean"
                   sample_interval:
                     format: "int64"
                     description: "Specify the sliding window time for the circuit\
@@ -3346,18 +3358,6 @@ spec:
                     format: "int64"
                     description: "Timeout on idle connection"
                     type: "integer"
-                  cacheConnectionSettings:
-                    description: "Cached connection settings"
-                    type: "object"
-                    properties:
-                      queue_size:
-                        format: "int32"
-                        description: "How much request can be queue before dropping\
-                          \ it"
-                        type: "integer"
-                      enabled:
-                        description: "Is cached connection enabled"
-                        type: "boolean"
                   connection_timeout:
                     format: "int64"
                     description: "Timeout at connection"
@@ -3373,15 +3373,6 @@ spec:
                   url:
                     description: "The URL to check"
                     type: "string"
-              loadBalancing:
-                description: "Loadbalancing config og the backend"
-                type: "object"
-                properties:
-                  type:
-                    type: "string"
-                  ratio:
-                    type: "number"
-                    format: "double"
               targets:
                 description: "The targets of the backend"
                 type: "array"
@@ -3448,14 +3439,7 @@ spec:
                     tls:
                       description: "Does the target uses TLS"
                       type: "boolean"
-                    id:
-                      description: "id of the target"
-                      type: "string"
-                    ip_address:
-                      description: "Target ip address. Usefull to make manual DNS\
-                        \ resolution without breaking SNI"
-                      type: "string"
-                    tlsConfig:
+                    tls_config:
                       description: "TLS settings to contact this target"
                       type: "object"
                       properties:
@@ -3478,9 +3462,25 @@ spec:
                           items:
                             type: "string"
                           description: "Trusted cert. ids"
+                    id:
+                      description: "id of the target"
+                      type: "string"
+                    ip_address:
+                      description: "Target ip address. Usefull to make manual DNS\
+                        \ resolution without breaking SNI"
+                      type: "string"
               rewrite:
                 description: "Does the backend performs a full url rewrite ?"
                 type: "boolean"
+              load_balancing:
+                description: "Loadbalancing config og the backend"
+                type: "object"
+                properties:
+                  type:
+                    type: "string"
+                  ratio:
+                    type: "number"
+                    format: "double"
 ---
 apiVersion: "apiextensions.k8s.io/v1"
 kind: "CustomResourceDefinition"
@@ -4571,14 +4571,7 @@ spec:
               tls:
                 description: "Does the target uses TLS"
                 type: "boolean"
-              id:
-                description: "id of the target"
-                type: "string"
-              ip_address:
-                description: "Target ip address. Usefull to make manual DNS resolution\
-                  \ without breaking SNI"
-                type: "string"
-              tlsConfig:
+              tls_config:
                 description: "TLS settings to contact this target"
                 type: "object"
                 properties:
@@ -4601,6 +4594,13 @@ spec:
                     items:
                       type: "string"
                     description: "Trusted cert. ids"
+              id:
+                description: "id of the target"
+                type: "string"
+              ip_address:
+                description: "Target ip address. Usefull to make manual DNS resolution\
+                  \ without breaking SNI"
+                type: "string"
 ---
 apiVersion: "apiextensions.k8s.io/v1"
 kind: "CustomResourceDefinition"
@@ -5033,6 +5033,18 @@ spec:
                         description: "Specify the factor to multiply the delay for\
                           \ each retry"
                         type: "integer"
+                      cache_connection_settings:
+                        description: "Cached connection settings"
+                        type: "object"
+                        properties:
+                          queue_size:
+                            format: "int32"
+                            description: "How much request can be queue before dropping\
+                              \ it"
+                            type: "integer"
+                          enabled:
+                            description: "Is cached connection enabled"
+                            type: "boolean"
                       sample_interval:
                         format: "int64"
                         description: "Specify the sliding window time for the circuit\
@@ -5065,18 +5077,6 @@ spec:
                         format: "int64"
                         description: "Timeout on idle connection"
                         type: "integer"
-                      cacheConnectionSettings:
-                        description: "Cached connection settings"
-                        type: "object"
-                        properties:
-                          queue_size:
-                            format: "int32"
-                            description: "How much request can be queue before dropping\
-                              \ it"
-                            type: "integer"
-                          enabled:
-                            description: "Is cached connection enabled"
-                            type: "boolean"
                       connection_timeout:
                         format: "int64"
                         description: "Timeout at connection"
@@ -5092,15 +5092,6 @@ spec:
                       url:
                         description: "The URL to check"
                         type: "string"
-                  loadBalancing:
-                    description: "Loadbalancing config og the backend"
-                    type: "object"
-                    properties:
-                      type:
-                        type: "string"
-                      ratio:
-                        type: "number"
-                        format: "double"
                   targets:
                     description: "The targets of the backend"
                     type: "array"
@@ -5167,14 +5158,7 @@ spec:
                         tls:
                           description: "Does the target uses TLS"
                           type: "boolean"
-                        id:
-                          description: "id of the target"
-                          type: "string"
-                        ip_address:
-                          description: "Target ip address. Usefull to make manual\
-                            \ DNS resolution without breaking SNI"
-                          type: "string"
-                        tlsConfig:
+                        tls_config:
                           description: "TLS settings to contact this target"
                           type: "object"
                           properties:
@@ -5197,9 +5181,25 @@ spec:
                               items:
                                 type: "string"
                               description: "Trusted cert. ids"
+                        id:
+                          description: "id of the target"
+                          type: "string"
+                        ip_address:
+                          description: "Target ip address. Usefull to make manual\
+                            \ DNS resolution without breaking SNI"
+                          type: "string"
                   rewrite:
                     description: "Does the backend performs a full url rewrite ?"
                     type: "boolean"
+                  load_balancing:
+                    description: "Loadbalancing config og the backend"
+                    type: "object"
+                    properties:
+                      type:
+                        type: "string"
+                      ratio:
+                        type: "number"
+                        format: "double"
               id:
                 description: "The ud of the route"
                 type: "string"
@@ -5309,15 +5309,6 @@ spec:
                           description: "The root path of the backend or the full rewrite\
                             \ path"
                           type: "string"
-                        loadBalancing:
-                          description: "Loadbalancing config og the backend"
-                          type: "object"
-                          properties:
-                            type:
-                              type: "string"
-                            ratio:
-                              type: "number"
-                              format: "double"
                         targets:
                           description: "The targets of the backend"
                           type: "array"
@@ -5384,14 +5375,7 @@ spec:
                               tls:
                                 description: "Does the target uses TLS"
                                 type: "boolean"
-                              id:
-                                description: "id of the target"
-                                type: "string"
-                              ip_address:
-                                description: "Target ip address. Usefull to make manual\
-                                  \ DNS resolution without breaking SNI"
-                                type: "string"
-                              tlsConfig:
+                              tls_config:
                                 description: "TLS settings to contact this target"
                                 type: "object"
                                 properties:
@@ -5414,10 +5398,26 @@ spec:
                                     items:
                                       type: "string"
                                     description: "Trusted cert. ids"
+                              id:
+                                description: "id of the target"
+                                type: "string"
+                              ip_address:
+                                description: "Target ip address. Usefull to make manual\
+                                  \ DNS resolution without breaking SNI"
+                                type: "string"
                         rewrite:
                           description: "Does the backend performs a full url rewrite\
                             \ ?"
                           type: "boolean"
+                        load_balancing:
+                          description: "Loadbalancing config og the backend"
+                          type: "object"
+                          properties:
+                            type:
+                              type: "string"
+                            ratio:
+                              type: "number"
+                              format: "double"
                     frontend:
                       description: "The frontend of the route"
                       type: "object"
@@ -5526,6 +5526,18 @@ spec:
                     description: "Specify the factor to multiply the delay for each\
                       \ retry"
                     type: "integer"
+                  cache_connection_settings:
+                    description: "Cached connection settings"
+                    type: "object"
+                    properties:
+                      queue_size:
+                        format: "int32"
+                        description: "How much request can be queue before dropping\
+                          \ it"
+                        type: "integer"
+                      enabled:
+                        description: "Is cached connection enabled"
+                        type: "boolean"
                   sample_interval:
                     format: "int64"
                     description: "Specify the sliding window time for the circuit\
@@ -5557,18 +5569,6 @@ spec:
                     format: "int64"
                     description: "Timeout on idle connection"
                     type: "integer"
-                  cacheConnectionSettings:
-                    description: "Cached connection settings"
-                    type: "object"
-                    properties:
-                      queue_size:
-                        format: "int32"
-                        description: "How much request can be queue before dropping\
-                          \ it"
-                        type: "integer"
-                      enabled:
-                        description: "Is cached connection enabled"
-                        type: "boolean"
                   connection_timeout:
                     format: "int64"
                     description: "Timeout at connection"
