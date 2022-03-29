@@ -25,9 +25,10 @@ export const camelToSnakeFlow = step => {
 
 export const toUpperCaseLabels = obj => {
     return Object.entries(obj).reduce((acc, [key, value]) => {
-        const isLabelField = key === "label"
+        const isLabelField = key === 'label'
         const v = (isLabelField && value) ? value.replace(/_/g, ' ') : value
         const [prefix, ...sequences] = isLabelField ? (v ? v.split(/(?=[A-Z])/) : []) : []
+
 
         return {
             ...acc,

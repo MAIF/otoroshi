@@ -89,7 +89,7 @@ export const DEFAULT_FLOW = {
                     custom_target: {
                         label: 'Target',
                         type: 'string',
-                        render: ({ value, onChange, setValue, index }) => {
+                        render: ({ value, onChange, setValue }) => {
                             return <SingleLineCode
                                 value={value}
                                 onChange={e => {

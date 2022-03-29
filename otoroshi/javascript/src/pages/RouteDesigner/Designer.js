@@ -560,7 +560,7 @@ const EditView = ({
     const [form, setForm] = useState({
         schema: {},
         flow: [],
-        value: {},
+        value: undefined,
         originalValue: {}
     })
 
@@ -716,7 +716,7 @@ const EditView = ({
             />}
             {(!usingExistingBackend || id !== "Backend") ? <div style={{ padding: '0 12px 12px' }}>
                 {asJsonFormat ? <>
-                    <CodeInput
+                    {form.value && <CodeInput
                         showGutter={false}
                         mode="json"
                         width="100%"
@@ -725,7 +725,7 @@ const EditView = ({
                             setSaveable(!isEqual(form.originalValue, value))
                             setForm({ ...form, value })
                         }}
-                    />
+                    />}
                     <EditViewActions valid={() => onValidate(form.value)} selectedNode={selectedNode} onRemove={onRemove} saveable={saveable} />
                 </>
                     :

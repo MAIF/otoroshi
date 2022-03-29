@@ -66,6 +66,10 @@
         background-color: #f9b000;
     }
 
+    div[class^='nestedform__border'] {
+        background-color: rgb(73, 73, 72);
+    }
+
     .search-group-header,
     .group-header {
         background-color: #494948;
