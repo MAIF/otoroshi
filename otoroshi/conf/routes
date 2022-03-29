@@ -492,6 +492,8 @@ GET     /api/experimental/frontends/_form                     otoroshi.next.cont
 GET     /api/experimental/plugins/categories                otoroshi.next.controllers.NgPluginsController.categories()
 GET     /api/experimental/plugins/steps                     otoroshi.next.controllers.NgPluginsController.steps()
 GET     /api/experimental/plugins/all                       otoroshi.next.controllers.NgPluginsController.plugins()
+GET     /api/experimental/forms                             otoroshi.next.controllers.NgPluginsController.forms()
+GET     /api/experimental/forms/_single                     otoroshi.next.controllers.NgPluginsController.form()
 
 GET     /api/stats/global                                     otoroshi.controllers.adminapi.AnalyticsController.globalStats(from: Option[String], to: Option[String])
 GET     /api/status/global                                    otoroshi.controllers.adminapi.AnalyticsController.globalStatus(from: Option[String], to: Option[String])

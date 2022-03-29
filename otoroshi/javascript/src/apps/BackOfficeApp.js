@@ -56,6 +56,7 @@ import { createTooltip } from '../tooltips';
 import { TenantsPage } from '../pages/TenantsPage';
 import { TeamsPage } from '../pages/TeamsPage';
 import { Toasts } from '../components/Toasts';
+import { NgFormPlayground } from '../components/inputs/ngform';
 
 class BackOfficeAppContainer extends Component {
   constructor(props) {
@@ -265,6 +266,14 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/backends"
                           component={(props) => <BackendsPage
+                            globalEnv={this.state.env}
+                            setTitle={(t) => DynamicTitle.setContent(t)}
+                            getTitle={() => DynamicTitle.getContent()}
+                            {...props} />}
+                        />
+                        <Route
+                          path="/ngforms"
+                          component={(props) => <NgFormPlayground
                             globalEnv={this.state.env}
                             setTitle={(t) => DynamicTitle.setContent(t)}
                             getTitle={() => DynamicTitle.getContent()}

@@ -1,13 +1,13 @@
 import React, { Component } from 'react';
 import { Help } from './Help';
 
-const OnSwitch = (props) => (
+export const OnSwitch = (props) => (
   <div className="content-switch-button-on" onClick={props.onChange}>
     <div className="switch-button-on" />
   </div>
 );
 
-const OffSwitch = (props) => (
+export const OffSwitch = (props) => (
   <div className="content-switch-button-off" onClick={props.onChange}>
     <div className="switch-button-off" />
   </div>

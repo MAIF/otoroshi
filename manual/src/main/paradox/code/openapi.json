@@ -23,88 +23,88 @@
   } ],
   "tags" : [ {
     "name" : "admin-sessions",
-    "description" : "All api endpoints about admin-session"
+    "description" : "???"
   }, {
     "name" : "admins",
-    "description" : "All api endpoints about admins"
+    "description" : "???"
   }, {
     "name" : "analytics",
-    "description" : "All api endpoints about analytics"
+    "description" : "???"
   }, {
     "name" : "apikeys",
-    "description" : "All api endpoints about apikeys"
+    "description" : "???"
   }, {
     "name" : "apps-sessions",
-    "description" : "All api endpoints about apps-sessions"
+    "description" : "???"
   }, {
     "name" : "auth-modules",
-    "description" : "All api endpoints about auth-modules"
+    "description" : "???"
   }, {
     "name" : "certificates",
-    "description" : "All api endpoints about certificates"
+    "description" : "???"
   }, {
     "name" : "cluster",
-    "description" : "All api endpoints about cluster"
+    "description" : "???"
   }, {
     "name" : "data-exporters",
-    "description" : "All api endpoints about data-exporters"
+    "description" : "???"
   }, {
     "name" : "events",
-    "description" : "All api endpoints about events"
+    "description" : "???"
   }, {
     "name" : "experimental",
-    "description" : "All experimental endpoints"
+    "description" : "???"
   }, {
     "name" : "globalconfig",
-    "description" : "All api endpoints about globalconfig"
+    "description" : "???"
   }, {
     "name" : "groups",
-    "description" : "All api endpoints about groups"
+    "description" : "???"
   }, {
     "name" : "import-export",
-    "description" : "All api endpoints about import-export"
+    "description" : "???"
   }, {
     "name" : "jwt-verifiers",
-    "description" : "All api endpoints about jwt-verifiers"
+    "description" : "???"
   }, {
     "name" : "lines",
-    "description" : "All api endpoints about lines"
+    "description" : "???"
   }, {
     "name" : "live",
-    "description" : "All api endpoints about live"
+    "description" : "???"
   }, {
     "name" : "organizations",
-    "description" : "All api endpoints about organizations"
+    "description" : "???"
   }, {
     "name" : "pki",
-    "description" : "All api endpoints about pki"
+    "description" : "???"
   }, {
     "name" : "privateapps",
-    "description" : "All api endpoints about privateapps"
+    "description" : "???"
   }, {
     "name" : "scripts",
-    "description" : "All api endpoints about scripts"
+    "description" : "???"
   }, {
     "name" : "services",
-    "description" : "All api endpoints about services"
+    "description" : "???"
   }, {
     "name" : "snowmonkey",
-    "description" : "All api endpoints about snowmonkey"
+    "description" : "???"
   }, {
     "name" : "tcp",
-    "description" : "All api endpoints about tcp"
+    "description" : "???"
   }, {
     "name" : "teams",
-    "description" : "All api endpoints about teams"
+    "description" : "???"
   }, {
     "name" : "templates",
-    "description" : "All api endpoints about templates "
+    "description" : "???"
   } ],
   "paths" : {
     "/api/stats" : {
       "get" : {
         "tags" : [ "analytics" ],
-        "summary" : "Statistic for a service, apikey or group",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.filterableStats",
         "parameters" : [ ],
         "security" : [ {
@@ -157,7 +157,7 @@
     "/api/stats/global" : {
       "get" : {
         "tags" : [ "analytics" ],
-        "summary" : "Global statistic for your services",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.globalStats",
         "parameters" : [ ],
         "security" : [ {
@@ -377,7 +377,7 @@
     "/api/admins/webauthn" : {
       "post" : {
         "tags" : [ "admins" ],
-        "summary" : "Register a webauthn admin user",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.registerWebAuthnAdmin",
         "parameters" : [ ],
         "security" : [ {
@@ -419,7 +419,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.models.WebAuthnOtoroshiAdmin"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -431,7 +431,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/otoroshi.models.WebAuthnOtoroshiAdmin"
+                "$ref" : "#/components/schemas/Unknown"
               }
             }
           }
@@ -439,7 +439,7 @@
       },
       "get" : {
         "tags" : [ "admins" ],
-        "summary" : "Returns all webauthn admin",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.webAuthnAdmins",
         "parameters" : [ ],
         "security" : [ {
@@ -481,7 +481,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/WebauthnAdminList"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -1433,6 +1433,59 @@
         }
       }
     },
+    "/api/experimental/forms" : {
+      "get" : {
+        "tags" : [ "experimental" ],
+        "summary" : "???",
+        "operationId" : "otoroshi.next.controllers.NgPluginsController.forms",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Unknown"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auths/{id}" : {
       "patch" : {
         "tags" : [ "auth-modules" ],
@@ -2204,7 +2257,7 @@
     "/api/experimental/plugins/categories" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "Return all possible plugin categories",
+        "summary" : "???",
         "operationId" : "otoroshi.next.controllers.NgPluginsController.categories",
         "parameters" : [ ],
         "security" : [ {
@@ -2246,7 +2299,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/StringList"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -2761,7 +2814,7 @@
     "/api/apps-sessions/{id}" : {
       "delete" : {
         "tags" : [ "apps-sessions" ],
-        "summary" : "Discard a specific private apps session",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.discardPrivateAppsSession",
         "parameters" : [ {
           "name" : "id",
@@ -2811,7 +2864,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Done"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -3341,7 +3394,7 @@
     "/api/alert/events" : {
       "get" : {
         "tags" : [ "events" ],
-        "summary" : "Get all events of type AlertEvent",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.EventsController.alertEvents",
         "parameters" : [ ],
         "security" : [ {
@@ -3383,7 +3436,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/AlertEventList"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -4078,7 +4131,7 @@
     "/api/experimental/plugins/steps" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "Return all possible plugin steps",
+        "summary" : "???",
         "operationId" : "otoroshi.next.controllers.NgPluginsController.steps",
         "parameters" : [ ],
         "security" : [ {
@@ -4120,7 +4173,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/StringList"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -4848,7 +4901,7 @@
     "/api/admin-sessions/{id}" : {
       "delete" : {
         "tags" : [ "admin-sessions" ],
-        "summary" : "Discard a specific admin session (otoroshi-ui)",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.discardSession",
         "parameters" : [ {
           "name" : "id",
@@ -4898,7 +4951,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Done"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -4962,7 +5015,7 @@
     "/api/status/global" : {
       "get" : {
         "tags" : [ "analytics" ],
-        "summary" : "Global status of your services",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.globalStatus",
         "parameters" : [ ],
         "security" : [ {
@@ -6606,7 +6659,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -7763,7 +7816,7 @@
     "/api/admins/webauthn/{username}/{id}" : {
       "delete" : {
         "tags" : [ "admins" ],
-        "summary" : "Deletes a webauthn admin",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.webAuthnDeleteAdmin",
         "parameters" : [ {
           "name" : "username",
@@ -7821,7 +7874,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Done"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -8338,7 +8391,7 @@
     "/api/events" : {
       "get" : {
         "tags" : [ "analytics" ],
-        "summary" : "Events for a service, apikey or group",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.filterableEvents",
         "parameters" : [ ],
         "security" : [ {
@@ -9845,7 +9898,7 @@
     "/api/admins/webauthn/{username}" : {
       "put" : {
         "tags" : [ "admins" ],
-        "summary" : "Updates a webauthn admin",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.updateWebAuthnAdmin",
         "parameters" : [ {
           "name" : "username",
@@ -9895,7 +9948,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.models.WebAuthnOtoroshiAdmin"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -9907,7 +9960,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/otoroshi.models.WebAuthnOtoroshiAdmin"
+                "$ref" : "#/components/schemas/Unknown"
               }
             }
           }
@@ -11379,7 +11432,7 @@
     "/api/admins/simple/{username}" : {
       "delete" : {
         "tags" : [ "admins" ],
-        "summary" : "Deletes an admin",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.deleteAdmin",
         "parameters" : [ {
           "name" : "username",
@@ -11429,7 +11482,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Done"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -11438,7 +11491,7 @@
       },
       "put" : {
         "tags" : [ "admins" ],
-        "summary" : "Updates an admin",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.updateAdmin",
         "parameters" : [ {
           "name" : "username",
@@ -11488,7 +11541,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -11500,7 +11553,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
+                "$ref" : "#/components/schemas/Unknown"
               }
             }
           }
@@ -11787,7 +11840,7 @@
     "/api/admin-sessions" : {
       "get" : {
         "tags" : [ "admin-sessions" ],
-        "summary" : "Returns all admin sessions",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.sessions",
         "parameters" : [ ],
         "security" : [ {
@@ -11829,7 +11882,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.models.BackOfficeUser"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -11838,7 +11891,7 @@
       },
       "delete" : {
         "tags" : [ "admin-sessions" ],
-        "summary" : "Discard all admin sessions (otoroshi-ui)",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.discardAllSessions",
         "parameters" : [ ],
         "security" : [ {
@@ -11880,7 +11933,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Done"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -11995,7 +12048,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -12391,7 +12444,7 @@
     "/api/experimental/plugins/all" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "Return all next gen. plugins",
+        "summary" : "???",
         "operationId" : "otoroshi.next.controllers.NgPluginsController.plugins",
         "parameters" : [ ],
         "security" : [ {
@@ -12433,7 +12486,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/PluginDescriptionsResponse"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -12444,7 +12497,7 @@
     "/api/events/_template" : {
       "get" : {
         "tags" : [ "analytics" ],
-        "summary" : "Returns a template that extract possible fields out of a Gateway event",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.TemplatesController.templateSpec",
         "parameters" : [ ],
         "security" : [ {
@@ -12486,7 +12539,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Any"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -13061,7 +13114,7 @@
     "/api/audit/events" : {
       "get" : {
         "tags" : [ "events" ],
-        "summary" : "Get all events of type AuditEvent",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.EventsController.auditEvents",
         "parameters" : [ ],
         "security" : [ {
@@ -13103,7 +13156,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/AuditEventList"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -13169,6 +13222,59 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/Empty"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/experimental/forms/_single" : {
+      "get" : {
+        "tags" : [ "experimental" ],
+        "summary" : "???",
+        "operationId" : "otoroshi.next.controllers.NgPluginsController.form",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Unknown"
+                }
               }
             }
           }
@@ -14552,7 +14658,7 @@
     "/api/apps-sessions" : {
       "get" : {
         "tags" : [ "apps-sessions" ],
-        "summary" : "Return all private apps sessions",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.privateAppsSessions",
         "parameters" : [ ],
         "security" : [ {
@@ -14594,7 +14700,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.models.PrivateAppsUser"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -14603,7 +14709,7 @@
       },
       "delete" : {
         "tags" : [ "apps-sessions" ],
-        "summary" : "Discard all private apps sessions",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.discardAllPrivateAppsSessions",
         "parameters" : [ ],
         "security" : [ {
@@ -14645,7 +14751,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Done"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -15511,7 +15617,7 @@
     "/api/status" : {
       "post" : {
         "tags" : [ "analytics" ],
-        "summary" : "Status for some/all services over time",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.servicesStatus",
         "parameters" : [ ],
         "security" : [ {
@@ -15565,7 +15671,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/ServiceDescriptorList"
+                "$ref" : "#/components/schemas/Unknown"
               }
             }
           }
@@ -15655,7 +15761,7 @@
     "/api/admins/simple" : {
       "post" : {
         "tags" : [ "admins" ],
-        "summary" : "Register an admin user",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.registerSimpleAdmin",
         "parameters" : [ ],
         "security" : [ {
@@ -15697,7 +15803,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -15709,7 +15815,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
+                "$ref" : "#/components/schemas/Unknown"
               }
             }
           }
@@ -15717,7 +15823,7 @@
       },
       "get" : {
         "tags" : [ "admins" ],
-        "summary" : "Returns all admins",
+        "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.simpleAdmins",
         "parameters" : [ ],
         "security" : [ {
@@ -15759,7 +15865,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/SimpleAdminList"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -16276,7 +16382,7 @@
     "/api/experimental/certificates/_by_domain" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "Return a composition of possibles domains and their corresponding certificates",
+        "summary" : "???",
         "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.domainsAndCertificates",
         "parameters" : [ ],
         "security" : [ {
@@ -16318,7 +16424,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Empty"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
