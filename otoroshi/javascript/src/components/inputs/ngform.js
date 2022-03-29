@@ -15,6 +15,7 @@ class NgFormRenderer extends Component {
     } else {
       return (
         <div style={{ outline: '1px solid yellow', padding: 5, margin: 5, display: 'flex', flexDirection: 'column' }}>
+          <h3>{this.props.label || this.props.name}</h3>
           {this.props.children}
         </div>
       );
@@ -84,7 +85,7 @@ class NgStep extends Component {
       } else if (this.props.schema.type === "bool" || this.props.schema.type === "boolean") {
         constraints.push(yup.boolean().optional())
       } else if (this.props.schema.type === "array") {
-        //constraints.push(yup.array().of())
+        // constraints.push(yup.array().of())
       } else if (this.props.schema.type === "object") {
         // constraints.push(yup.object().of())
       } 
@@ -97,7 +98,7 @@ class NgStep extends Component {
       } else if (this.props.schema.type === "bool" || this.props.schema.type === "boolean") {
         constraints.push(yup.boolean().required())
       } else if (this.props.schema.type === "array") {
-        //constraints.push(yup.array().of())
+        // constraints.push(yup.array().of())
       } else if (this.props.schema.type === "object") {
         // constraints.push(yup.object().of())
       } 
@@ -112,7 +113,7 @@ class NgStep extends Component {
             res.__valid = false
             res.__errors.push(e.message)
           }
-        } else {
+        } else if (_.isFunction(validator)) {
           const r = validator(value);
           if (!r.valid) {
             res.__valid = false;
@@ -718,10 +719,62 @@ export class NgForm extends Component {
     }
   }
 
+  convertSchema = (schema) => {
+    if (
+      schema.array || 
+      schema.format || 
+      schema.createOption || 
+      schema.isMulti || 
+      schema.defaultKeyValue ||
+      schema.label ||
+      schema.placeholder ||
+      schema.defaultValue ||
+      schema.help ||
+      schema.className ||
+      schema.style ||
+      schema.render ||
+      schema.itemRender ||
+      schema.conditionalSchema
+    ) {
+      const possible = {
+        'select': 'select',
+        'code': 'code',
+        'singleLineCode': 'single-line-of-code',
+        'markdown': 'code',
+        'text': 'text',
+        'hidden': 'hidden',
+        'password': 'string', // TODO: support it
+        'form': 'form',
+      };
+      let renderer = possible[schema.format] || null;
+      const config = {
+        type: schema.array ? 'array' : (schema.format === 'form' ? 'form' : schema.type),
+        of: schema.array ? schema.type : null,
+        constraints: schema.constraints,
+        visible: schema.visible,
+        renderer: schema.array ? null : renderer,
+        schema: schema.schema,
+        flow: schema.flow,
+        label: schema.label,
+        // itemRenderer: schema.array ? renderer : null, // TODO: support string renderers
+        props: {
+          label: schema.label,
+          placeholder: schema.placeholder,
+          help: schema.help,
+          disabled: schema.disabled,
+        }
+      }
+      // console.log(schema, config)
+      return config;
+    } else {
+      return schema;
+    }
+  }
+
   render() {
     const value = this.getValue();
-    const flow = _.isFunction(this.props.flow) ? this.props.flow(value) : this.props.flow;
-    const schema = _.isFunction(this.props.schema) ? this.props.schema(value) : this.props.schema;
+    const flow = (_.isFunction(this.props.flow) ? this.props.flow(value) : this.props.flow) || [];
+    const schema = (_.isFunction(this.props.schema) ? this.props.schema(value) : this.props.schema) || {};
     const propsComponents = _.isFunction(this.props.components) ? this.props.components(value) : this.props.components;
     const components = { ...NgForm.DefaultTheme, ...propsComponents }; // TODO: get theme from context also
     const FormRenderer = components.FormRenderer;
@@ -730,7 +783,7 @@ export class NgForm extends Component {
     const validation = root ? this.state.validation : this.props.validation;
     return (
       <FormRenderer {...this.props}>
-        {flow.map(name => {
+        {flow && flow.map(name => {
           const stepSchema = schema[name];
           if (stepSchema) {
             const visible = ('visible' in stepSchema) ? (_.isFunction(stepSchema.visible) ? stepSchema.visible(value) : stepSchema.visible) : true;
@@ -742,7 +795,7 @@ export class NgForm extends Component {
                 validation={validation}
                 setValidation={this.setValidation}
                 components={components}
-                schema={stepSchema} 
+                schema={this.convertSchema(stepSchema)} 
                 value={value ? value[name] : null}
                 onChange={e => {
                   const newValue = value ? { ...value, [name]: e } : { [name]: e };
@@ -801,6 +854,7 @@ export class NgFormPlayground extends Component {
   }
 
   render() {
+    return <NgFormPlaygroundOtoroshi />
     return (
       <div style={{ marginTop: 40 }}>
         <NgForm 
@@ -994,6 +1048,54 @@ export class NgFormPlayground extends Component {
   }
 }
 
+export class NgFormPlaygroundOtoroshi extends Component {
+
+  state = { forms: {} }
+
+  componentDidMount() {
+    return fetch(`/bo/api/proxy/api/experimental/forms`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+      },
+    }).then(r => r.json()).then(r => {
+      this.setState({ forms: r });
+    });
+  }
+
+  render() {
+    return (
+      <ul style={{ marginTop: 60 }}>
+        {Object.keys(this.state.forms)
+          .filter(name => name.indexOf('otoroshi.next.plugins') === 0)
+          .filter(name => name.indexOf('otoroshi.next.plugins.api') !== 0)
+          .filter(name => name.indexOf('otoroshi.next.plugins.wrappers') !== 0)
+          .filter(key  => this.state.forms[key].flow.length > 0)
+          // .filter(name => name.indexOf('otoroshi.next.plugins.ApikeyCalls') === 0)
+          .map(key => {
+            // console.log(this.state.forms[key].schema)
+            return (
+              <li key={key}>
+                <h3>{key}</h3>
+                <NgFormState key={key}>{(value, onChange) => (
+                  <NgForm 
+                    key={key}
+                    root 
+                    value={value}
+                    flow={this.state.forms[key].flow}
+                    schema={this.state.forms[key].schema}
+                    onChange={onChange} />
+                )}</NgFormState>
+              </li>
+            )
+          })}
+      </ul>
+    )
+  }
+}
+
+
 /*
 
 import { Form } from './Form';
@@ -1062,37 +1164,4 @@ export class NgFormTest extends Component {
       />
     )
   }
-}
-
-export class NgFormPlaygroundTest extends Component {
-
-  state = { forms: {} }
-
-  componentDidMount() {
-    return fetch(`/bo/api/proxy/api/experimental/forms`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-      },
-    }).then(r => r.json()).then(r => {
-      this.setState({ forms: r });
-    });
-  }
-
-  render() {
-    return (
-      <ul>
-        {Object.keys(this.state.forms).map(key => {
-          return (
-            <li key={key}>
-              <h3>{key}</h3>
-              <NgForm name={key} flow={this.state.forms[key].flow} schema={this.state.forms[key].schema} />
-            </li>
-          )
-        })}
-      </ul>
-    )
-  }
-}
-*/
+}*/
