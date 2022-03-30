@@ -1,5 +1,9 @@
 # Setup Otoroshi
 
+in this section we are going to configure otoroshi before running it for the first time
+
+## Setup the database
+
 Right now, Otoroshi supports multiple datastore. You can choose one datastore over another depending on your use case.
 
 @@@div { .plugin .platform } 
