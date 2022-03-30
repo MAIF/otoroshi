@@ -18502,7 +18502,7 @@
         }
       },
       "otoroshi.next.plugins.Keys" : {
-        "description" : "Internal api",
+        "description" : "Internal api ",
         "type" : "object",
         "properties" : { }
       },

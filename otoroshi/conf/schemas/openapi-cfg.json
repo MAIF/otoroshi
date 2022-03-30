@@ -221,7 +221,7 @@
     "entity_description.otoroshi.next.plugins.JsonTransform": "Plugin to transform json response",
     "entity_description.otoroshi.next.plugins.JsonTransformConfig": "Configuration for JsonTransform",
     "entity_description.otoroshi.next.plugins.JwtVerification": "Plugin to verify jwt token",
-    "entity_description.otoroshi.next.plugins.Keys": "Internal api",
+    "entity_description.otoroshi.next.plugins.Keys": "Internal api ",
     "entity_description.otoroshi.next.plugins.MaintenanceMode": "Plugin for maintainance mode",
     "entity_description.otoroshi.next.plugins.MissingHeadersIn": "Plugin to add headers to a request",
     "entity_description.otoroshi.next.plugins.MissingHeadersOut": "Plugin to add headers to a response",
