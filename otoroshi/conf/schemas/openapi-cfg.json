@@ -777,7 +777,7 @@
     "operations_input_entity.otoroshi.controllers.adminapi.PkiController.genSelfSignedCA_pki": "otoroshi.ssl.pki.models.GenCsrQuery",
     "operations_input_entity.otoroshi.controllers.adminapi.PkiController.genSelfSignedCert_pki": "otoroshi.ssl.pki.models.GenCsrQuery",
     "operations_input_entity.otoroshi.controllers.adminapi.PkiController.genSubCA_pki": "otoroshi.ssl.pki.models.GenCsrQuery",
-    "operations_input_entity.otoroshi.controllers.adminapi.PkiController.importBundle_certificates": "PemCertificateBody",
+    "operations_input_entity.otoroshi.controllers.adminapi.PkiController.importBundle_certificates": "PemCertificateBody ",
     "operations_input_entity.otoroshi.controllers.adminapi.PkiController.importCertFromP12_pki": "ByteStreamBody",
     "operations_input_entity.otoroshi.controllers.adminapi.PkiController.signCert_pki": "PemCsrBody",
     "operations_input_entity.otoroshi.controllers.adminapi.ScriptApiController.bulkCreateAction_scripts": "BulkBody",
