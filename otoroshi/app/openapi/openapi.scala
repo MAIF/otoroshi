@@ -3,6 +3,7 @@ package otoroshi.openapi
 import io.github.classgraph._
 import otoroshi.env.Env
 import otoroshi.models.Entity
+import otoroshi.utils.RegexPool
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -56,7 +57,30 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
         "otoroshi.auth.AuthModuleConfig",
         "otoroshi.auth.OAuth2ModuleConfig",
         "otoroshi.ssl.ClientCertificateValidator",
-        "otoroshi.next.models.KvStoredNgBackendDataStore"
+        "otoroshi.next.models.KvStoredNgBackendDataStore",
+        "otoroshi.next.models.KvStoredNgTargetDataStore",
+        "otoroshi.next.models.KvNgRouteDataStore",
+        "otoroshi.next.models.KvNgServiceDataStore",
+        "otoroshi.storage.RedisLikeWrapper",
+        "otoroshi.plugins.log4j.Log4jExpressionPart",
+        "otoroshi.plugins.jobs.kubernetes.KubernetesSecret",
+        "otoroshi.plugins.jobs.kubernetes.KubernetesIngressClassParameters",
+        "otoroshi.plugins.jobs.kubernetes.KubernetesNamespace",
+        "otoroshi.plugins.jobs.kubernetes.KubernetesPod",
+        "otoroshi.plugins.jobs.kubernetes.KubernetesOpenshiftDnsOperatorServer",
+        "otoroshi.plugins.jobs.kubernetes.KubernetesCertSecret",
+        "otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiResource",
+        "otoroshi.plugins.jobs.kubernetes.KubernetesEndpoint",
+        "otoroshi.plugins.jobs.kubernetes.KubernetesValidatingWebhookConfiguration",
+        "otoroshi.plugins.jobs.kubernetes.KubernetesConfigMap",
+        "otoroshi.plugins.jobs.kubernetes.KubernetesOpenshiftDnsOperator",
+        "otoroshi.plugins.jobs.kubernetes.KubernetesIngressClass",
+        "otoroshi.plugins.jobs.kubernetes.KubernetesDeployment",
+        "otoroshi.plugins.jobs.kubernetes.KubernetesService",
+        "otoroshi.plugins.jobs.kubernetes.OtoResHolder",
+        "otoroshi.plugins.jobs.kubernetes.KubernetesMutatingWebhookConfiguration",
+        "otoroshi.plugins.jobs.kubernetes.KubernetesIngress",
+        "otoroshi.next.plugins.api.*"
       )
     )
   lazy val descriptions: Map[String, String] =
@@ -88,9 +112,9 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
       .map(t => s"    ${JsString(t._1).stringify}: ${t._2.stringify}")
       .mkString(",\n")
     // val olddescs = old_descriptions.mapValues(JsString.apply).toSeq.sortWith((a, b) => a._1.compareTo(b._1) < 0).map(t => s"    ${JsString(t._1).stringify}: ${t._2.stringify}").mkString(",\n")
-
+    //   "banned": ${JsArray(banned.map(JsString.apply)).prettify},
     val fileContent = s"""{
-  "banned": ${JsArray(banned.map(JsString.apply)).prettify},
+  "banned": [\n    ${banned.map(JsString.apply).map(_.stringify).mkString(",\n    ")}\n  ],
   "descriptions": {
 $descs
   },
@@ -268,7 +292,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       result: TrieMap[String, JsValue],
       config: OpenApiGeneratorConfig
   ): Unit = {
-    if (clazz.getName.contains("$") || config.banned.contains(clazz.getName)) {
+    if (clazz.getName.contains("$") || config.banned.contains(clazz.getName) || config.banned.filter(_.contains("*")).map(RegexPool.apply).exists(_.matches(clazz.getName))) {
       return ()
     }
     if (clazz.getName.startsWith("otoroshi.")) {
@@ -947,7 +971,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }
 
     entities.foreach { clazz =>
-      if (!config.banned.contains(clazz.getName)) {
+      if (!config.banned.contains(clazz.getName) && !config.banned.filter(_.contains("*")).map(RegexPool.apply).exists(_.matches(clazz.getName))) {
         visitEntity(clazz, None, result, config)
       }
     }
