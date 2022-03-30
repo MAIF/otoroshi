@@ -237,7 +237,7 @@ export class NgArrayRenderer extends Component {
                   }} 
                   {...props}
                 />}
-                <button type="button" className="btn btn-sm btn-danger" style={{ width: 42 }} onClick={e => {
+                <button type="button" className="btn btn-sm btn-danger" style={{ width: 42, marginLeft: 5 }} onClick={e => {
                   const newArray = this.props.value ? [...this.props.value] : [];
                   newArray.splice(idx, 1);
                   this.props.onChange(newArray);
@@ -245,7 +245,7 @@ export class NgArrayRenderer extends Component {
               </div>
             );
           })}
-          <button type="button" className="btn btn-sm btn-success" style={{ width: 42 }} onClick={e => {
+          <button type="button" className="btn btn-sm btn-success float-end" style={{ width: 42, marginTop: 5 }} onClick={e => {
             const newArray = this.props.value ? [...this.props.value, ''] : [''];
             this.props.onChange(newArray);
           }}><i className="fas fa-plus-circle" /></button>
@@ -309,7 +309,7 @@ export class NgObjectRenderer extends Component {
                   }} 
                   {...props}
                 />}
-                <button type="button" className="btn btn-sm btn-danger" style={{ width: 42 }} onClick={e => {
+                <button type="button" className="btn btn-sm btn-danger" style={{ width: 42, marginLeft: 5 }} onClick={e => {
                   const newObject = this.props.value ? {...this.props.value} : {};
                   delete newObject[key];
                   this.props.onChange(newObject);
@@ -317,7 +317,7 @@ export class NgObjectRenderer extends Component {
               </div>
             );
           })}
-          <button type="button"className="btn btn-sm btn-success"  style={{ width: 42 }} onClick={e => {
+          <button type="button"className="btn btn-sm btn-success float-end" style={{ width: 42, marginTop: 5 }} onClick={e => {
             const newObject = {...this.props.value};
             newObject[''] = '';
             this.props.onChange(newObject);
@@ -374,7 +374,7 @@ export class NgArraySelectRenderer extends Component {
                     newArray.splice(idx, 1, e.value);
                     this.props.onChange(newArray);
                   }} />
-                <button type="button" className="btn btn-sm btn-danger" style={{ width: 42 }} onClick={e => {
+                <button type="button" className="btn btn-sm btn-danger" style={{ width: 42, marginLeft: 5 }} onClick={e => {
                   const newArray = this.props.value ? [...this.props.value] : [];
                   newArray.splice(idx, 1);
                   this.props.onChange(newArray);
@@ -382,7 +382,7 @@ export class NgArraySelectRenderer extends Component {
               </div>
             );
           })}
-          <button type="button" className="btn btn-sm btn-success" style={{ width: 42 }} onClick={e => {
+          <button type="button" className="btn btn-sm btn-success float-end" style={{ width: 42, marginTop: 5 }} onClick={e => {
             const newArray = this.props.value ? [...this.props.value, ''] : [''];
             this.props.onChange(newArray);
           }}><i className="fas fa-plus-circle" /></button>
@@ -454,7 +454,7 @@ export class NgObjectSelectRenderer extends Component {
                     newObject[key] = e.value;
                     this.props.onChange(newObject);
                   }} />
-                <button type="button" className="btn btn-sm btn-danger" style={{ width: 42 }} onClick={e => {
+                <button type="button" className="btn btn-sm btn-danger" style={{ width: 42, marginLeft: 5 }} onClick={e => {
                   const newObject = this.props.value ? {...this.props.value} : {};
                   delete newObject[key];
                   this.props.onChange(newObject);
@@ -462,7 +462,7 @@ export class NgObjectSelectRenderer extends Component {
               </div>
             );
           })}
-          <button type="button" className="btn btn-sm btn-success" style={{ width: 42 }} onClick={e => {
+          <button type="button" className="btn btn-sm btn-success float-end" style={{ width: 42, marginTop: 5 }} onClick={e => {
             const newObject = {...this.props.value};
             newObject[''] = '';
             this.props.onChange(newObject);
