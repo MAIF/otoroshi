@@ -17222,16 +17222,6 @@
           }
         }
       },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesSecret" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind secret",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.plugins.apikeys.BiscuitConf" : {
         "description" : "Configuration for the biscuit plugin",
         "type" : "object",
@@ -17426,16 +17416,6 @@
               "type" : "string"
             },
             "description" : "Fields array validation"
-          }
-        }
-      },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesIngressClassParameters" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind ingressclass parameter",
-            "type" : "object"
           }
         }
       },
@@ -18197,16 +18177,6 @@
             "format" : "int64",
             "description" : "Timeout at connection",
             "type" : "integer"
-          }
-        }
-      },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesNamespace" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind namespace",
-            "type" : "object"
           }
         }
       },
@@ -19179,16 +19149,6 @@
           "remove" : {
             "description" : "Remove from value",
             "type" : "string"
-          }
-        }
-      },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesPod" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind pod",
-            "type" : "object"
           }
         }
       },
@@ -20541,16 +20501,6 @@
         "type" : "object",
         "properties" : { }
       },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesOpenshiftDnsOperatorServer" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind OpenshiftOperatorServer",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.next.models.NgTreeRouter" : {
         "description" : "A very efficient router with a tree structure",
         "type" : "object",
@@ -21314,16 +21264,6 @@
           "$ref" : "#/components/schemas/otoroshi.models.RSAlgoSettings"
         } ]
       },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesCertSecret" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "json representation of a KubernetesCertSecret",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.tcp.TcpRule" : {
         "description" : "Associate targets for a domain (SNI)",
         "type" : "object",
@@ -21777,16 +21717,6 @@
               "$ref" : "#/components/schemas/otoroshi.next.models.NgTarget"
             },
             "description" : "The canary targets"
-          }
-        }
-      },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiResource" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resources for otoroshi",
-            "type" : "object"
           }
         }
       },
