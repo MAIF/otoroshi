@@ -49,6 +49,24 @@ export class NgCodeRenderer extends Component {
   }
 }
 
+export class NgJsonRenderer extends Component {
+  render() {
+    return (
+      <LabelAndInput {...this.props}>
+        <CodeInput 
+          value={JSON.stringify(this.props.value, null, 2)} 
+          onChange={e => {
+            try {
+              this.props.onChange(JSON.parse(e));
+            } catch (ex) {}
+          }} 
+          style={{ width: '100%' }}
+        />
+      </LabelAndInput>
+    );
+  }
+}
+
 export class NgStringRenderer extends Component {
   render() {
     const schema = this.props.schema;

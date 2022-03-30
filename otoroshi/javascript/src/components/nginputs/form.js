@@ -1,8 +1,30 @@
 import React, { Component } from 'react';
 import _ from 'lodash';
 
-import { NgPasswordRenderer, NgStringRenderer, NgSelectRenderer, NgTextRenderer, NgNumberRenderer, NgBooleanRenderer, NgArrayRenderer, NgObjectRenderer, NgArraySelectRenderer, NgObjectSelectRenderer, NgDateRenderer, NgHiddenRenderer, NgSingleCodeLineRenderer, NgCodeRenderer } from './inputs';
-import { NgStepNotFound, NgRendererNotFound, NgValidationRenderer, NgFormRenderer } from './components';
+import { 
+  NgPasswordRenderer, 
+  NgJsonRenderer, 
+  NgStringRenderer, 
+  NgSelectRenderer, 
+  NgTextRenderer, 
+  NgNumberRenderer, 
+  NgBooleanRenderer, 
+  NgArrayRenderer, 
+  NgObjectRenderer, 
+  NgArraySelectRenderer, 
+  NgObjectSelectRenderer, 
+  NgDateRenderer, 
+  NgHiddenRenderer, 
+  NgSingleCodeLineRenderer, 
+  NgCodeRenderer 
+} from './inputs';
+
+import { 
+  NgStepNotFound, 
+  NgRendererNotFound, 
+  NgValidationRenderer, 
+  NgFormRenderer 
+} from './components';
 
 const Helpers = {
   rendererFor: (type, components) => {
@@ -26,6 +48,8 @@ const Helpers = {
       return components.ObjectSelectRenderer;
     } else if (type === "code") {
       return components.CodeRenderer;
+    } else if (type === "json") {
+      return components.JsonRenderer;
     } else if (type === "single-line-of-code") {
       return components.SingleCodeLineRenderer;
     } else if (type === "text") {
@@ -154,6 +178,7 @@ export class NgForm extends Component {
     SingleCodeLineRenderer: NgSingleCodeLineRenderer,
     CodeRenderer: NgCodeRenderer,
     PasswordRenderer: NgPasswordRenderer,
+    JsonRenderer: NgJsonRenderer,
   };
 
   static setTheme = (theme) => {
