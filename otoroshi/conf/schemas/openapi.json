@@ -23,88 +23,88 @@
   } ],
   "tags" : [ {
     "name" : "admin-sessions",
-    "description" : "???"
+    "description" : "All api endpoints about admin-session"
   }, {
     "name" : "admins",
-    "description" : "???"
+    "description" : "All api endpoints about admins"
   }, {
     "name" : "analytics",
-    "description" : "???"
+    "description" : "All api endpoints about analytics"
   }, {
     "name" : "apikeys",
-    "description" : "???"
+    "description" : "All api endpoints about apikeys"
   }, {
     "name" : "apps-sessions",
-    "description" : "???"
+    "description" : "All api endpoints about apps-sessions"
   }, {
     "name" : "auth-modules",
-    "description" : "???"
+    "description" : "All api endpoints about auth-modules"
   }, {
     "name" : "certificates",
-    "description" : "???"
+    "description" : "All api endpoints about certificates"
   }, {
     "name" : "cluster",
-    "description" : "???"
+    "description" : "All api endpoints about cluster"
   }, {
     "name" : "data-exporters",
-    "description" : "???"
+    "description" : "All api endpoints about data-exporters"
   }, {
     "name" : "events",
-    "description" : "???"
+    "description" : "All api endpoints about events"
   }, {
     "name" : "experimental",
-    "description" : "???"
+    "description" : "All experimental endpoints"
   }, {
     "name" : "globalconfig",
-    "description" : "???"
+    "description" : "All api endpoints about globalconfig"
   }, {
     "name" : "groups",
-    "description" : "???"
+    "description" : "All api endpoints about groups"
   }, {
     "name" : "import-export",
-    "description" : "???"
+    "description" : "All api endpoints about import-export"
   }, {
     "name" : "jwt-verifiers",
-    "description" : "???"
+    "description" : "All api endpoints about jwt-verifiers"
   }, {
     "name" : "lines",
-    "description" : "???"
+    "description" : "All api endpoints about lines"
   }, {
     "name" : "live",
-    "description" : "???"
+    "description" : "All api endpoints about live"
   }, {
     "name" : "organizations",
-    "description" : "???"
+    "description" : "All api endpoints about organizations"
   }, {
     "name" : "pki",
-    "description" : "???"
+    "description" : "All api endpoints about pki"
   }, {
     "name" : "privateapps",
-    "description" : "???"
+    "description" : "All api endpoints about privateapps"
   }, {
     "name" : "scripts",
-    "description" : "???"
+    "description" : "All api endpoints about scripts"
   }, {
     "name" : "services",
-    "description" : "???"
+    "description" : "All api endpoints about services"
   }, {
     "name" : "snowmonkey",
-    "description" : "???"
+    "description" : "All api endpoints about snowmonkey"
   }, {
     "name" : "tcp",
-    "description" : "???"
+    "description" : "All api endpoints about tcp"
   }, {
     "name" : "teams",
-    "description" : "???"
+    "description" : "All api endpoints about teams"
   }, {
     "name" : "templates",
-    "description" : "???"
+    "description" : "All api endpoints about templates "
   } ],
   "paths" : {
     "/api/stats" : {
       "get" : {
         "tags" : [ "analytics" ],
-        "summary" : "???",
+        "summary" : "Statistic for a service, apikey or group",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.filterableStats",
         "parameters" : [ ],
         "security" : [ {
@@ -157,7 +157,7 @@
     "/api/stats/global" : {
       "get" : {
         "tags" : [ "analytics" ],
-        "summary" : "???",
+        "summary" : "Global statistic for your services",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.globalStats",
         "parameters" : [ ],
         "security" : [ {
@@ -377,7 +377,7 @@
     "/api/admins/webauthn" : {
       "post" : {
         "tags" : [ "admins" ],
-        "summary" : "???",
+        "summary" : "Register a webauthn admin user",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.registerWebAuthnAdmin",
         "parameters" : [ ],
         "security" : [ {
@@ -419,7 +419,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/otoroshi.models.WebAuthnOtoroshiAdmin"
                 }
               }
             }
@@ -431,7 +431,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.models.WebAuthnOtoroshiAdmin"
               }
             }
           }
@@ -439,7 +439,7 @@
       },
       "get" : {
         "tags" : [ "admins" ],
-        "summary" : "???",
+        "summary" : "Returns all webauthn admin",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.webAuthnAdmins",
         "parameters" : [ ],
         "security" : [ {
@@ -481,7 +481,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/WebauthnAdminList"
                 }
               }
             }
@@ -1436,7 +1436,7 @@
     "/api/experimental/forms" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "Return all plugins config form spec",
         "operationId" : "otoroshi.next.controllers.NgPluginsController.forms",
         "parameters" : [ ],
         "security" : [ {
@@ -1791,7 +1791,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/The form description of the current controllers entity"
+                  "$ref" : "#/components/schemas/ExperimentalFormResponse"
                 }
               }
             }
@@ -1948,7 +1948,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/The form description of the current controllers entity"
+                  "$ref" : "#/components/schemas/ExperimentalFormResponse"
                 }
               }
             }
@@ -2257,7 +2257,7 @@
     "/api/experimental/plugins/categories" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "Returns all possible plugins categories",
         "operationId" : "otoroshi.next.controllers.NgPluginsController.categories",
         "parameters" : [ ],
         "security" : [ {
@@ -2299,7 +2299,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/StringList"
                 }
               }
             }
@@ -2814,7 +2814,7 @@
     "/api/apps-sessions/{id}" : {
       "delete" : {
         "tags" : [ "apps-sessions" ],
-        "summary" : "???",
+        "summary" : "Discard a specific private apps session",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.discardPrivateAppsSession",
         "parameters" : [ {
           "name" : "id",
@@ -2864,7 +2864,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/Done"
                 }
               }
             }
@@ -3394,7 +3394,7 @@
     "/api/alert/events" : {
       "get" : {
         "tags" : [ "events" ],
-        "summary" : "???",
+        "summary" : "Get all events of type AlertEvent",
         "operationId" : "otoroshi.controllers.adminapi.EventsController.alertEvents",
         "parameters" : [ ],
         "security" : [ {
@@ -3436,7 +3436,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/AlertEventList"
                 }
               }
             }
@@ -4131,7 +4131,7 @@
     "/api/experimental/plugins/steps" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "Returns all possible plugins steps",
         "operationId" : "otoroshi.next.controllers.NgPluginsController.steps",
         "parameters" : [ ],
         "security" : [ {
@@ -4173,7 +4173,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/StringList"
                 }
               }
             }
@@ -4901,7 +4901,7 @@
     "/api/admin-sessions/{id}" : {
       "delete" : {
         "tags" : [ "admin-sessions" ],
-        "summary" : "???",
+        "summary" : "Discard a specific admin session (otoroshi-ui)",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.discardSession",
         "parameters" : [ {
           "name" : "id",
@@ -4951,7 +4951,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/Done"
                 }
               }
             }
@@ -5015,7 +5015,7 @@
     "/api/status/global" : {
       "get" : {
         "tags" : [ "analytics" ],
-        "summary" : "???",
+        "summary" : "Global status of your services",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.globalStatus",
         "parameters" : [ ],
         "security" : [ {
@@ -6014,7 +6014,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/text plain PEM bundle"
+                "$ref" : "#/components/schemas/PemCertificateBody"
               }
             }
           }
@@ -6119,7 +6119,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Initial resources template"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -6131,7 +6131,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Initial resources template"
+                "$ref" : "#/components/schemas/Unknown"
               }
             }
           }
@@ -6311,7 +6311,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/The form description of the current controllers entity"
+                  "$ref" : "#/components/schemas/ExperimentalFormResponse"
                 }
               }
             }
@@ -6659,7 +6659,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
                 }
               }
             }
@@ -7805,7 +7805,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/The form description of the current controllers entity"
+                  "$ref" : "#/components/schemas/ExperimentalFormResponse"
                 }
               }
             }
@@ -7816,7 +7816,7 @@
     "/api/admins/webauthn/{username}/{id}" : {
       "delete" : {
         "tags" : [ "admins" ],
-        "summary" : "???",
+        "summary" : "Deletes a webauthn admin",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.webAuthnDeleteAdmin",
         "parameters" : [ {
           "name" : "username",
@@ -7874,7 +7874,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/Done"
                 }
               }
             }
@@ -8391,7 +8391,7 @@
     "/api/events" : {
       "get" : {
         "tags" : [ "analytics" ],
-        "summary" : "???",
+        "summary" : "Events for a service, apikey or group",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.filterableEvents",
         "parameters" : [ ],
         "security" : [ {
@@ -9898,7 +9898,7 @@
     "/api/admins/webauthn/{username}" : {
       "put" : {
         "tags" : [ "admins" ],
-        "summary" : "???",
+        "summary" : "Updates a webauthn admin",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.updateWebAuthnAdmin",
         "parameters" : [ {
           "name" : "username",
@@ -9948,7 +9948,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/otoroshi.models.WebAuthnOtoroshiAdmin"
                 }
               }
             }
@@ -9960,7 +9960,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.models.WebAuthnOtoroshiAdmin"
               }
             }
           }
@@ -10257,7 +10257,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/The form description of the current controllers entity"
+                  "$ref" : "#/components/schemas/ExperimentalFormResponse"
                 }
               }
             }
@@ -11432,7 +11432,7 @@
     "/api/admins/simple/{username}" : {
       "delete" : {
         "tags" : [ "admins" ],
-        "summary" : "???",
+        "summary" : "Deletes an admin",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.deleteAdmin",
         "parameters" : [ {
           "name" : "username",
@@ -11482,7 +11482,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/Done"
                 }
               }
             }
@@ -11491,7 +11491,7 @@
       },
       "put" : {
         "tags" : [ "admins" ],
-        "summary" : "???",
+        "summary" : "Updates an admin",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.updateAdmin",
         "parameters" : [ {
           "name" : "username",
@@ -11541,7 +11541,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
                 }
               }
             }
@@ -11553,7 +11553,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
               }
             }
           }
@@ -11840,7 +11840,7 @@
     "/api/admin-sessions" : {
       "get" : {
         "tags" : [ "admin-sessions" ],
-        "summary" : "???",
+        "summary" : "Returns all admin sessions",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.sessions",
         "parameters" : [ ],
         "security" : [ {
@@ -11882,7 +11882,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/otoroshi.models.BackOfficeUser"
                 }
               }
             }
@@ -11891,7 +11891,7 @@
       },
       "delete" : {
         "tags" : [ "admin-sessions" ],
-        "summary" : "???",
+        "summary" : "Discard all admin sessions (otoroshi-ui)",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.discardAllSessions",
         "parameters" : [ ],
         "security" : [ {
@@ -11933,7 +11933,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/Done"
                 }
               }
             }
@@ -12048,7 +12048,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
                 }
               }
             }
@@ -12444,7 +12444,7 @@
     "/api/experimental/plugins/all" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "Return all plugins descriptions",
         "operationId" : "otoroshi.next.controllers.NgPluginsController.plugins",
         "parameters" : [ ],
         "security" : [ {
@@ -12497,7 +12497,7 @@
     "/api/events/_template" : {
       "get" : {
         "tags" : [ "analytics" ],
-        "summary" : "???",
+        "summary" : "Returns a template that extract possible fields out of a Gateway event",
         "operationId" : "otoroshi.controllers.adminapi.TemplatesController.templateSpec",
         "parameters" : [ ],
         "security" : [ {
@@ -12539,7 +12539,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/Any"
                 }
               }
             }
@@ -13114,7 +13114,7 @@
     "/api/audit/events" : {
       "get" : {
         "tags" : [ "events" ],
-        "summary" : "???",
+        "summary" : "Get all events of type AuditEvent",
         "operationId" : "otoroshi.controllers.adminapi.EventsController.auditEvents",
         "parameters" : [ ],
         "security" : [ {
@@ -13156,7 +13156,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/AuditEventList"
                 }
               }
             }
@@ -13231,7 +13231,7 @@
     "/api/experimental/forms/_single" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "Return a plugin config form spec",
         "operationId" : "otoroshi.next.controllers.NgPluginsController.form",
         "parameters" : [ ],
         "security" : [ {
@@ -14658,7 +14658,7 @@
     "/api/apps-sessions" : {
       "get" : {
         "tags" : [ "apps-sessions" ],
-        "summary" : "???",
+        "summary" : "Return all private apps sessions",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.privateAppsSessions",
         "parameters" : [ ],
         "security" : [ {
@@ -14700,7 +14700,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/otoroshi.models.PrivateAppsUser"
                 }
               }
             }
@@ -14709,7 +14709,7 @@
       },
       "delete" : {
         "tags" : [ "apps-sessions" ],
-        "summary" : "???",
+        "summary" : "Discard all private apps sessions",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.discardAllPrivateAppsSessions",
         "parameters" : [ ],
         "security" : [ {
@@ -14751,7 +14751,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/Done"
                 }
               }
             }
@@ -15617,7 +15617,7 @@
     "/api/status" : {
       "post" : {
         "tags" : [ "analytics" ],
-        "summary" : "???",
+        "summary" : "Status for some/all services over time",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.servicesStatus",
         "parameters" : [ ],
         "security" : [ {
@@ -15671,7 +15671,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/ServiceDescriptorList"
               }
             }
           }
@@ -15761,7 +15761,7 @@
     "/api/admins/simple" : {
       "post" : {
         "tags" : [ "admins" ],
-        "summary" : "???",
+        "summary" : "Register an admin user",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.registerSimpleAdmin",
         "parameters" : [ ],
         "security" : [ {
@@ -15803,7 +15803,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
                 }
               }
             }
@@ -15815,7 +15815,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
               }
             }
           }
@@ -15823,7 +15823,7 @@
       },
       "get" : {
         "tags" : [ "admins" ],
-        "summary" : "???",
+        "summary" : "Returns all admins",
         "operationId" : "otoroshi.controllers.adminapi.UsersController.simpleAdmins",
         "parameters" : [ ],
         "security" : [ {
@@ -15865,7 +15865,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/SimpleAdminList"
                 }
               }
             }
@@ -16382,7 +16382,7 @@
     "/api/experimental/certificates/_by_domain" : {
       "get" : {
         "tags" : [ "experimental" ],
-        "summary" : "???",
+        "summary" : "Experimental payload",
         "operationId" : "otoroshi.next.controllers.adminapi.NgRoutesController.domainsAndCertificates",
         "parameters" : [ ],
         "security" : [ {
@@ -17222,16 +17222,6 @@
           }
         }
       },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesSecret" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind secret",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.plugins.apikeys.BiscuitConf" : {
         "description" : "Configuration for the biscuit plugin",
         "type" : "object",
@@ -17295,11 +17285,6 @@
           }
         }
       },
-      "otoroshi.storage.drivers.rediscala.RedisClusterStore" : {
-        "description" : "Specific redis mode storage implementation",
-        "type" : "object",
-        "properties" : { }
-      },
       "otoroshi.models.MappingSettings" : {
         "description" : "Settings to transform a jwt token",
         "type" : "object",
@@ -17347,20 +17332,6 @@
         "description" : "Plugin to apply quotas en apikeys",
         "type" : "object",
         "properties" : { }
-      },
-      "otoroshi.next.models.KvStoredNgTargetDataStore" : {
-        "description" : "Datastore for targets",
-        "type" : "object",
-        "properties" : {
-          "_env" : {
-            "description" : "The current env",
-            "$ref" : "#/components/schemas/otoroshi.env.Env"
-          },
-          "redis_cli" : {
-            "description" : "The current datastore access",
-            "$ref" : "#/components/schemas/otoroshi.storage.RedisLike"
-          }
-        }
       },
       "otoroshi.plugins.core.apikeys.JwtApikeyExtractor" : {
         "description" : "Internal api",
@@ -17426,16 +17397,6 @@
               "type" : "string"
             },
             "description" : "Fields array validation"
-          }
-        }
-      },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesIngressClassParameters" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind ingressclass parameter",
-            "type" : "object"
           }
         }
       },
@@ -17547,8 +17508,8 @@
       },
       "otoroshi.next.plugins.W3CTracingConfigKind" : {
         "description" : "Configuration for W3CTracing",
-        "type" : "object",
-        "properties" : { }
+        "type" : "string",
+        "enum" : [ "jaeger", "zipkin", "logger", "noop" ]
       },
       "otoroshi.next.plugins.JQConfig" : {
         "description" : "Configuration for JQ",
@@ -17567,48 +17528,6 @@
       "otoroshi.models.TeamId" : {
         "type" : "string",
         "description" : "team id"
-      },
-      "otoroshi.next.proxy.NgReportPluginSequence" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "stop_ns" : {
-            "format" : "int64",
-            "description" : "Stop time in nanoseconds",
-            "type" : "integer"
-          },
-          "start" : {
-            "format" : "int64",
-            "description" : "Start time",
-            "type" : "integer"
-          },
-          "kind" : {
-            "description" : "The kind of plugin sequence",
-            "type" : "string"
-          },
-          "stop" : {
-            "format" : "int64",
-            "description" : "Stop time",
-            "type" : "integer"
-          },
-          "start_ns" : {
-            "format" : "int64",
-            "description" : "Start time in nanoseconds",
-            "type" : "integer"
-          },
-          "plugins" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.next.proxy.NgReportPluginSequenceItem"
-            },
-            "description" : "The possible plugins"
-          },
-          "size" : {
-            "format" : "int32",
-            "description" : "The number of plugins",
-            "type" : "integer"
-          }
-        }
       },
       "otoroshi.next.plugins.NgAllowedMethodsConfig" : {
         "description" : "Configuration for AllowHttpMethods",
@@ -17700,11 +17619,6 @@
             "description" : "Exposed cors headers"
           }
         }
-      },
-      "otoroshi.storage.RedisLike" : {
-        "description" : "A redis like representation of a datastore",
-        "type" : "object",
-        "properties" : { }
       },
       "ErrorTemplateList" : {
         "type" : "array",
@@ -17889,11 +17803,6 @@
           }
         }
       },
-      "otoroshi.storage.drivers.leveldb.LevelDbRedis" : {
-        "description" : "Mongo DB storage implementation",
-        "type" : "object",
-        "properties" : { }
-      },
       "otoroshi.plugins.geoloc.IpStackGeolocationInfoExtractor" : {
         "description" : "Plugin that extracts geolocation based on ipstack",
         "type" : "object",
@@ -17996,11 +17905,6 @@
           }
         }
       },
-      "otoroshi.storage.drivers.lettuce.LettuceRedis" : {
-        "description" : "Redis storage implementation",
-        "type" : "object",
-        "properties" : { }
-      },
       "otoroshi.next.plugins.AdditionalHeadersIn" : {
         "description" : "Plugin that add headers on a request",
         "type" : "object",
@@ -18014,107 +17918,9 @@
           }
         }
       },
-      "otoroshi.next.plugins.api.NgPreRoutingErrorRaw" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "code" : {
-            "format" : "int32",
-            "description" : "The error code",
-            "type" : "integer"
-          },
-          "content_type" : {
-            "description" : "The error content-type",
-            "type" : "string"
-          },
-          "headers" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "The error headers"
-          }
-        }
-      },
-      "otoroshi.next.plugins.api.NgPluginHelper" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
-      },
       "LetsEncryptCertBody" : {
         "type" : "object",
         "description" : "PEM encoded certificate"
-      },
-      "otoroshi.next.plugins.api.NgMergedResponseTransformer" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "plugins" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginWrapper.NgSimplePluginWrapper<otoroshi.next.plugins.api.NgRequestTransformer>"
-            },
-            "description" : "The current merged plugins"
-          }
-        }
-      },
-      "otoroshi.next.plugins.api.NgTransformerResponseContext" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "attrs" : {
-            "description" : "The current request attributes",
-            "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
-          },
-          "otoroshi_response" : {
-            "description" : "The current otoroshi response",
-            "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginHttpResponse"
-          },
-          "apikey" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
-            } ],
-            "description" : "The current apikey"
-          },
-          "snowflake" : {
-            "description" : "The current request snowflake",
-            "type" : "string"
-          },
-          "report" : {
-            "description" : "The current execution report",
-            "$ref" : "#/components/schemas/otoroshi.next.proxy.NgExecutionReport"
-          },
-          "route" : {
-            "description" : "The current matched route",
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
-          },
-          "sequence" : {
-            "description" : "The current plugin sequence",
-            "$ref" : "#/components/schemas/otoroshi.next.proxy.NgReportPluginSequence"
-          },
-          "user" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "$ref" : "#/components/schemas/otoroshi.models.PrivateAppsUser"
-            } ],
-            "description" : "The current request user"
-          },
-          "config" : {
-            "description" : "The current plugin config",
-            "type" : "object"
-          },
-          "raw_response" : {
-            "description" : "The current backend response",
-            "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginHttpResponse"
-          },
-          "global_config" : {
-            "description" : "The current global config",
-            "type" : "object"
-          }
-        }
       },
       "otoroshi.script.PreRoutingContext" : {
         "description" : "Context for preroutes plugins",
@@ -18200,16 +18006,6 @@
           }
         }
       },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesNamespace" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind namespace",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.models.BasicAuthConstraints" : {
         "description" : "Settings to extract apikey from a basic auth header like",
         "type" : "object",
@@ -18256,32 +18052,6 @@
             "description" : "the kind of strategy",
             "type" : "string",
             "enum" : [ "PassThrough", "Sign", "Transform", "DefaultToken" ]
-          }
-        }
-      },
-      "otoroshi.next.plugins.api.NgAfterRequestContext" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "attrs" : {
-            "description" : "The current request attributes",
-            "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
-          },
-          "snowflake" : {
-            "description" : "The current request snowflake",
-            "type" : "string"
-          },
-          "config" : {
-            "description" : "The current plugin config",
-            "type" : "object"
-          },
-          "global_config" : {
-            "description" : "The current global config",
-            "type" : "object"
-          },
-          "route" : {
-            "description" : "The current matched route",
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
           }
         }
       },
@@ -18334,74 +18104,6 @@
           },
           "method" : {
             "description" : "The request method",
-            "type" : "string"
-          }
-        }
-      },
-      "otoroshi.next.plugins.api.NgTransformerRequestContext" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "apikey" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
-            } ],
-            "description" : "The current apikey"
-          },
-          "route" : {
-            "description" : "The current matched route",
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
-          },
-          "otoroshi_request" : {
-            "description" : "The current otoroshi request",
-            "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginHttpRequest"
-          },
-          "config" : {
-            "description" : "The current plugin config",
-            "type" : "object"
-          },
-          "snowflake" : {
-            "description" : "The current request snowflake",
-            "type" : "string"
-          },
-          "attrs" : {
-            "description" : "The current request attributes",
-            "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
-          },
-          "user" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "$ref" : "#/components/schemas/otoroshi.models.PrivateAppsUser"
-            } ],
-            "description" : "The current request user"
-          },
-          "raw_request" : {
-            "description" : "The current request",
-            "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginHttpRequest"
-          },
-          "global_config" : {
-            "description" : "The current global config",
-            "type" : "object"
-          },
-          "sequence" : {
-            "description" : "The current plugin sequence",
-            "$ref" : "#/components/schemas/otoroshi.next.proxy.NgReportPluginSequence"
-          },
-          "report" : {
-            "description" : "The current execution report",
-            "$ref" : "#/components/schemas/otoroshi.next.proxy.NgExecutionReport"
-          }
-        }
-      },
-      "otoroshi.storage.drivers.mongo.MongoRedis" : {
-        "description" : "Mongo DB storage implementation",
-        "type" : "object",
-        "properties" : {
-          "dbName" : {
-            "description" : "The current db name",
             "type" : "string"
           }
         }
@@ -18494,11 +18196,6 @@
           }
         }
       },
-      "otoroshi.next.plugins.api.NgNamedPlugin" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
-      },
       "otoroshi.models.FileSettings" : {
         "description" : "Settings for a file data exporter",
         "type" : "object",
@@ -18575,12 +18272,23 @@
         } ]
       },
       "otoroshi.plugins.discovery.SelfRegistrationConfig" : {
-        "description" : "Internal api",
+        "description" : "Configuration for the DiscoverySelfRegistrationTransformer plugin",
         "type" : "object",
         "properties" : {
-          "raw" : {
-            "description" : "Configuration for self registration",
+          "registrationTtl" : {
+            "description" : "the ttl for a service registration",
+            "type" : "number"
+          },
+          "targetTemplate" : {
+            "description" : "A json template for otoroshi target",
             "type" : "object"
+          },
+          "hosts" : {
+            "description" : "The possible list of hosts for a service",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -18828,16 +18536,6 @@
           }
         }
       },
-      "otoroshi.next.plugins.OtoroshiInfos" : {
-        "description" : "Plugin for otoroshi info token",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "Internal value",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.models.Team" : {
         "description" : "An otoroshi model for a team of users in the organization (otoroshi-ui)",
         "type" : "object",
@@ -18957,32 +18655,14 @@
         }
       },
       "otoroshi.plugins.authcallers.OAuth2Kind" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
+        "description" : "The kind of oauth2 flow",
+        "type" : "string",
+        "enum" : [ "client_credentials", "password" ]
       },
       "otoroshi.models.SecComVersion" : {
         "type" : "string",
         "enum" : [ "V1", "v2" ],
         "description" : "Version of the challenge token"
-      },
-      "otoroshi.next.proxy.NgExecutionReport" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "description" : "Report id",
-            "type" : "string"
-          },
-          "reporting" : {
-            "description" : "Reporting enabled",
-            "type" : "boolean"
-          },
-          "creation" : {
-            "description" : "Date of creation",
-            "type" : "number"
-          }
-        }
       },
       "otoroshi.plugins.authcallers.OAuth2Caller" : {
         "description" : "Plugin that can call an oauth2 client_credentials flow or password flow backend",
@@ -19002,11 +18682,6 @@
             "$ref" : "#/components/schemas/otoroshi.models.MappingSettings"
           }
         }
-      },
-      "otoroshi.next.plugins.api.NgPlugin" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
       },
       "ServiceDescriptorList" : {
         "type" : "array",
@@ -19179,16 +18854,6 @@
           "remove" : {
             "description" : "Remove from value",
             "type" : "string"
-          }
-        }
-      },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesPod" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind pod",
-            "type" : "object"
           }
         }
       },
@@ -19802,7 +19467,10 @@
           },
           "config_flow" : {
             "type" : "array",
-            "description" : "the config flow of the plugin (for UI form)"
+            "description" : "the config flow of the plugin (for UI form)",
+            "items" : {
+              "type" : "string"
+            }
           },
           "plugin_visibility" : {
             "type" : "string",
@@ -19836,22 +19504,12 @@
         "type" : "object",
         "properties" : { }
       },
-      "otoroshi.storage.drivers.rediscala.RedisLFStore" : {
-        "description" : "Specific redis mode storage implementation",
-        "type" : "object",
-        "properties" : { }
-      },
       "otoroshi.plugins.apikeys.CertificateAsApikey" : {
         "description" : "Plugin to use a certificate as an apikey",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.oidc.OIDCThirdPartyApiKeyConfigMode" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
-      },
-      "otoroshi.next.plugins.api.NgCachedConfigContext" : {
         "description" : "Internal api",
         "type" : "object",
         "properties" : { }
@@ -19889,20 +19547,6 @@
               "type" : "string"
             },
             "description" : "Entity tags"
-          }
-        }
-      },
-      "otoroshi.next.models.KvNgRouteDataStore" : {
-        "description" : "Datastore for routes",
-        "type" : "object",
-        "properties" : {
-          "redis_cli" : {
-            "description" : "The current datastore access",
-            "$ref" : "#/components/schemas/otoroshi.storage.RedisLike"
-          },
-          "_env" : {
-            "description" : "The current env",
-            "$ref" : "#/components/schemas/otoroshi.env.Env"
           }
         }
       },
@@ -19992,20 +19636,6 @@
               "type" : "string"
             } ],
             "description" : "Certificate subject"
-          }
-        }
-      },
-      "otoroshi.next.models.KvNgServiceDataStore" : {
-        "description" : "Datastore for services",
-        "type" : "object",
-        "properties" : {
-          "_env" : {
-            "description" : "The current env",
-            "$ref" : "#/components/schemas/otoroshi.env.Env"
-          },
-          "redis_cli" : {
-            "description" : "The current datastore access",
-            "$ref" : "#/components/schemas/otoroshi.storage.RedisLike"
           }
         }
       },
@@ -20134,11 +19764,6 @@
           }
         }
       },
-      "otoroshi.next.plugins.api.NgPreRouting" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
-      },
       "otoroshi.plugins.oauth1.OAuth1CallerPlugin" : {
         "description" : "Plugin to call OAuth1 protected backends",
         "type" : "object",
@@ -20233,18 +19858,8 @@
           }
         }
       },
-      "otoroshi.storage.drivers.lettuce.LettuceRedisStandaloneAndSentinels" : {
-        "description" : "Redis sentinel storage implementation",
-        "type" : "object",
-        "properties" : { }
-      },
       "otoroshi.plugins.jobs.kubernetes.KubernetesToOtoroshiCertSyncJob" : {
         "description" : "Plugin to sync otoroshi certificates with kubernetes",
-        "type" : "object",
-        "properties" : { }
-      },
-      "otoroshi.next.plugins.api.NgStep" : {
-        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -20451,40 +20066,6 @@
           }
         }
       },
-      "otoroshi.next.plugins.api.NgPreRoutingContext" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "attrs" : {
-            "description" : "The current request attributes",
-            "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
-          },
-          "global_config" : {
-            "description" : "The current global config",
-            "type" : "object"
-          },
-          "report" : {
-            "description" : "The current execution report",
-            "$ref" : "#/components/schemas/otoroshi.next.proxy.NgExecutionReport"
-          },
-          "sequence" : {
-            "description" : "The current plugin sequence",
-            "$ref" : "#/components/schemas/otoroshi.next.proxy.NgReportPluginSequence"
-          },
-          "route" : {
-            "description" : "The current matched route",
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
-          },
-          "snowflake" : {
-            "description" : "The current request snowflake",
-            "type" : "string"
-          },
-          "config" : {
-            "description" : "The current plugin config",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.next.plugins.NgApikeyExtractorCustomHeaders" : {
         "description" : "Configuration for ApikeyCalls",
         "type" : "object",
@@ -20540,16 +20121,6 @@
         "description" : "Plugin that validates current user",
         "type" : "object",
         "properties" : { }
-      },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesOpenshiftDnsOperatorServer" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind OpenshiftOperatorServer",
-            "type" : "object"
-          }
-        }
       },
       "otoroshi.next.models.NgTreeRouter" : {
         "description" : "A very efficient router with a tree structure",
@@ -21155,19 +20726,6 @@
         "enum" : [ "SIMPLE", "WEBAUTHN" ],
         "description" : "Admin kind"
       },
-      "otoroshi.next.plugins.api.NgMergedAccessValidator" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "plugins" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginWrapper.NgSimplePluginWrapper<otoroshi.next.plugins.api.NgAccessValidator>"
-            },
-            "description" : "The current merged plugins"
-          }
-        }
-      },
       "otoroshi.plugins.log4j.Log4jExpressionParser" : {
         "description" : "Internal api",
         "type" : "object",
@@ -21314,16 +20872,6 @@
           "$ref" : "#/components/schemas/otoroshi.models.RSAlgoSettings"
         } ]
       },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesCertSecret" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "json representation of a KubernetesCertSecret",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.tcp.TcpRule" : {
         "description" : "Associate targets for a domain (SNI)",
         "type" : "object",
@@ -21412,140 +20960,10 @@
         "type" : "object",
         "properties" : { }
       },
-      "otoroshi.storage.drivers.rediscala.RedisSentinelLFStore" : {
-        "description" : "Specific redis mode storage implementation",
-        "type" : "object",
-        "properties" : { }
-      },
       "otoroshi.next.plugins.JsonTransform" : {
         "description" : "Plugin to transform json response",
         "type" : "object",
         "properties" : { }
-      },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "globalConfigs" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.GlobalConfig>"
-            },
-            "description" : "template for entities globalConfigs"
-          },
-          "tenants" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.Tenant>"
-            },
-            "description" : "template for entities tenants"
-          },
-          "serviceGroups" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.ServiceGroup>"
-            },
-            "description" : "template for entities serviceGroups"
-          },
-          "targets" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.next.models.StoredNgTarget>"
-            },
-            "description" : "template for entities targets"
-          },
-          "teams" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.Team>"
-            },
-            "description" : "template for entities teams"
-          },
-          "serviceDescriptors" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.ServiceDescriptor>"
-            },
-            "description" : "template for entities serviceDescriptors"
-          },
-          "certificates" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.ssl.Cert>"
-            },
-            "description" : "template for entities certificates"
-          },
-          "services" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.next.models.NgService>"
-            },
-            "description" : "template for entities services"
-          },
-          "authModules" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.auth.AuthModuleConfig>"
-            },
-            "description" : "template for entities authModules"
-          },
-          "dataExporters" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.DataExporterConfig>"
-            },
-            "description" : "template for entities dataExporters"
-          },
-          "scripts" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.script.Script>"
-            },
-            "description" : "template for entities scripts"
-          },
-          "jwtVerifiers" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.GlobalJwtVerifier>"
-            },
-            "description" : "template for entities jwtVerifiers"
-          },
-          "backends" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.next.models.StoredNgBackend>"
-            },
-            "description" : "template for entities backends"
-          },
-          "apiKeys" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.ApiKey>"
-            },
-            "description" : "template for entities apiKeys"
-          },
-          "tcpServices" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.tcp.TcpService>"
-            },
-            "description" : "template for entities tcpServices"
-          },
-          "simpleAdmins" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.SimpleOtoroshiAdmin>"
-            },
-            "description" : "template for entities simpleAdmins"
-          },
-          "routes" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.next.models.NgRoute>"
-            },
-            "description" : "template for entities routes"
-          }
-        }
       },
       "otoroshi.plugins.jobs.kubernetes.OtoroshiResourcesContext" : {
         "description" : "Internal api",
@@ -21721,16 +21139,6 @@
         "type" : "object",
         "properties" : { }
       },
-      "otoroshi.storage.drivers.reactivepg.ReactivePgRedis" : {
-        "description" : "Postgresql storage implementation",
-        "type" : "object",
-        "properties" : {
-          "avoidJsonPath" : {
-            "description" : "Avoid using jsonpath operators",
-            "type" : "boolean"
-          }
-        }
-      },
       "otoroshi.models.BadResponse" : {
         "description" : "Settings for a bad response return (chaos engineering)",
         "type" : "object",
@@ -21777,16 +21185,6 @@
               "$ref" : "#/components/schemas/otoroshi.next.models.NgTarget"
             },
             "description" : "The canary targets"
-          }
-        }
-      },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiResource" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resources for otoroshi",
-            "type" : "object"
           }
         }
       },
@@ -21839,11 +21237,6 @@
             "$ref" : "#/components/schemas/otoroshi.gateway.CircuitBreakersHolder"
           }
         }
-      },
-      "otoroshi.next.plugins.api.NgPreRoutingErrorWithResult" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
       },
       "otoroshi.plugins.jwt.JwtUserExtractor" : {
         "description" : "Plugin to extract user from jwt token",
@@ -22206,11 +21599,6 @@
           }
         }
       },
-      "otoroshi.next.plugins.api.NgPluginCategory" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
-      },
       "otoroshi.ssl.pki.models.GenKeyPairQuery" : {
         "description" : "Settings for generating a keypair",
         "type" : "object",
@@ -22253,25 +21641,6 @@
       },
       "otoroshi.next.plugins.ReadOnlyCalls" : {
         "description" : "Plugin for readonly calls",
-        "type" : "object",
-        "properties" : { }
-      },
-      "otoroshi.plugins.jobs.kubernetes.CRDContext" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "kubernetes" : {
-            "description" : "Resources from kubernetes",
-            "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext"
-          },
-          "otoroshi" : {
-            "description" : "Resources from otoroshi",
-            "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoroshiResourcesContext"
-          }
-        }
-      },
-      "otoroshi.next.plugins.api.NgPreRoutingError" : {
-        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -22336,11 +21705,6 @@
             "type" : "boolean"
           }
         }
-      },
-      "otoroshi.storage.drivers.rediscala.RedisSentinelStore" : {
-        "description" : "Specific redis mode storage implementation",
-        "type" : "object",
-        "properties" : { }
       },
       "otoroshi.next.models.StoredNgTargetDataStore" : {
         "description" : "The datastore for targets",
@@ -22604,9 +21968,33 @@
         "description" : "Configuration for OtoroshiChallenge",
         "type" : "object",
         "properties" : {
-          "raw" : {
-            "description" : "Internal value",
-            "type" : "object"
+          "version" : {
+            "description" : "The version of the jwt",
+            "$ref" : "#/components/schemas/otoroshi.models.SecComVersion"
+          },
+          "ttl" : {
+            "description" : "The ttl of the generated jwt in milliseconds",
+            "type" : "number"
+          },
+          "request_header_name" : {
+            "description" : "The header name to inject the jwt",
+            "type" : "string"
+          },
+          "response_header_name" : {
+            "description" : "The header name to read the jwt",
+            "type" : "string"
+          },
+          "algo_to_backend" : {
+            "description" : "The jwt signing algorithm when writing",
+            "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
+          },
+          "algo_from_backend" : {
+            "description" : "The jwt signing algorithm when reading",
+            "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
+          },
+          "state_resp_leeway" : {
+            "description" : "the number of seconds acceptable between client and server time",
+            "type" : "number"
           }
         }
       },
@@ -22615,50 +22003,31 @@
         "type" : "object",
         "properties" : { }
       },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesEndpoint" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind endpoint",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.next.plugins.NgOtoroshiInfoConfig" : {
         "description" : "Configuration for OtoroshiInfos",
         "type" : "object",
         "properties" : {
-          "raw" : {
-            "description" : "Internal value",
-            "type" : "object"
+          "version" : {
+            "description" : "The version of the jwt",
+            "$ref" : "#/components/schemas/otoroshi.models.SecComInfoTokenVersion"
+          },
+          "secComTtl" : {
+            "description" : "The ttl of the generated jwt in milliseconds",
+            "type" : "number"
+          },
+          "headerName" : {
+            "description" : "The header name to inject the jwt",
+            "type" : "string"
+          },
+          "algo" : {
+            "description" : "The jwt signing algorithm",
+            "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
           }
         }
       },
       "otoroshi.utils.http.DN" : {
-        "description" : "A representation of a Distinguished Name",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "The raw textual value of a DN",
-            "type" : "string"
-          }
-        }
-      },
-      "otoroshi.plugins.cache.ResponseCache" : {
-        "description" : "Plugin that can cache http responses",
-        "type" : "object",
-        "properties" : { }
-      },
-      "otoroshi.storage.drivers.rediscala.RedisCPStore" : {
-        "description" : "Specific redis mode storage implementation",
-        "type" : "object",
-        "properties" : { }
-      },
-      "otoroshi.plugins.JsonPathUtils" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
+        "type" : "string",
+        "description" : "A string representation of a Distinguished Name"
       },
       "Any" : {
         "oneOf" : [ {
@@ -22753,21 +22122,6 @@
           }
         }
       },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesValidatingWebhookConfiguration" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind validating webhook configuration",
-            "type" : "object"
-          }
-        }
-      },
-      "otoroshi.next.plugins.api.NgTunnelHandler" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
-      },
       "otoroshi.plugins.izanami.IzanamiCanaryRoutingConfig" : {
         "description" : "Configuration for IzanamiCanary",
         "type" : "object",
@@ -22807,19 +22161,6 @@
           }
         }
       },
-      "otoroshi.plugins.log4j.Log4jExpression" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "parts" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.log4j.Log4jExpressionPart"
-            },
-            "description" : "parts of a log4j expression"
-          }
-        }
-      },
       "otoroshi.ssl.pki.models.SignCertResponse" : {
         "description" : "Response for a certificate signing operation",
         "type" : "object",
@@ -22849,14 +22190,8 @@
         "properties" : { }
       },
       "otoroshi.next.models.NgDomainAndPath" : {
-        "description" : "A string representing a domain and an optional path",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "the raw value of the domain and path",
-            "type" : "string"
-          }
-        }
+        "type" : "string",
+        "description" : "A string representing a domain and an optional path"
       },
       "otoroshi.next.plugins.JQ" : {
         "description" : "Plugin to transform body with JQ filters",
@@ -23401,16 +22736,6 @@
         "type" : "object",
         "properties" : { }
       },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesConfigMap" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind config map",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.plugins.apikeys.ClientCredentialService" : {
         "description" : "Plugin that provide the OAuth2 client_credentials flow",
         "type" : "object",
@@ -23420,16 +22745,6 @@
         "description" : "Plugin to disable HTTP/1.0",
         "type" : "object",
         "properties" : { }
-      },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesOpenshiftDnsOperator" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind OpenshiftOperator",
-            "type" : "object"
-          }
-        }
       },
       "otoroshi.plugins.loggers.RequestBodyEvent" : {
         "description" : "Internal api",
@@ -23505,24 +22820,6 @@
           "tls" : {
             "description" : "Use tls",
             "type" : "boolean"
-          }
-        }
-      },
-      "otoroshi.next.plugins.api.NgPluginHttpResponse" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "headers" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "The response headers"
-          },
-          "status" : {
-            "format" : "int32",
-            "description" : "The response status",
-            "type" : "integer"
           }
         }
       },
@@ -23861,49 +23158,6 @@
           }
         }
       },
-      "otoroshi.next.plugins.api.NgPluginHttpRequest" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "url" : {
-            "description" : "The request url",
-            "type" : "string"
-          },
-          "method" : {
-            "description" : "The request method",
-            "type" : "string"
-          },
-          "version" : {
-            "description" : "The request http version",
-            "type" : "string"
-          },
-          "backend" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "$ref" : "#/components/schemas/otoroshi.next.models.NgTarget"
-            } ],
-            "description" : "The current route backend"
-          },
-          "headers" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "The request headers"
-          }
-        }
-      },
-      "otoroshi.storage.drivers.rediscala.RedisCommandsStore" : {
-        "description" : "Specific redis mode storage implementation",
-        "type" : "object",
-        "properties" : {
-          "cluster" : {
-            "description" : "Is redis clustered",
-            "type" : "boolean"
-          }
-        }
-      },
       "otoroshi.models.RemainingQuotas" : {
         "description" : "Remaining quotas for an apikey",
         "type" : "object",
@@ -24042,11 +23296,6 @@
           }
         }
       },
-      "otoroshi.next.plugins.api.NgAccessValidator" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
-      },
       "otoroshi.plugins.cache.ResponseCacheConfig" : {
         "description" : "Configuration for ResponseCache",
         "type" : "object",
@@ -24056,11 +23305,6 @@
             "type" : "object"
           }
         }
-      },
-      "otoroshi.next.plugins.api.NgRequestTransformer" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
       },
       "otoroshi.plugins.biscuit.BiscuitValidator" : {
         "description" : "Internal api",
@@ -24253,13 +23497,7 @@
       },
       "otoroshi.next.models.NgPluginInstanceConfig" : {
         "description" : "The current configuration for a plugin",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "Internal representation",
-            "type" : "object"
-          }
-        }
+        "type" : "object"
       },
       "otoroshi.models.PrivateAppsUser" : {
         "description" : "User session for private apps",
@@ -24599,16 +23837,6 @@
           }
         }
       },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesIngressClass" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind ingressclass",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.next.plugins.Http2Caller" : {
         "description" : "Experimental plugin",
         "type" : "object",
@@ -24669,86 +23897,9 @@
           }
         }
       },
-      "otoroshi.next.plugins.OtoroshiChallenge" : {
-        "description" : "Plugin for otoroshi challenge",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "Internal value",
-            "type" : "object"
-          }
-        }
-      },
       "CodeBody" : {
         "type" : "string",
         "description" : "Plugin scala code"
-      },
-      "otoroshi.next.plugins.api.NgTransformerErrorContext" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "config" : {
-            "description" : "The current plugin config",
-            "type" : "object"
-          },
-          "otoroshi_response" : {
-            "description" : "The current otoroshi response",
-            "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginHttpResponse"
-          },
-          "report" : {
-            "description" : "The current execution report",
-            "$ref" : "#/components/schemas/otoroshi.next.proxy.NgExecutionReport"
-          },
-          "maybe_cause_id" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string"
-            } ],
-            "description" : "The current cause"
-          },
-          "message" : {
-            "description" : "The current error message",
-            "type" : "string"
-          },
-          "apikey" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
-            } ],
-            "description" : "The current apikey"
-          },
-          "route" : {
-            "description" : "The current matched route",
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
-          },
-          "call_attempts" : {
-            "format" : "int32",
-            "description" : "The current call attempts",
-            "type" : "integer"
-          },
-          "global_config" : {
-            "description" : "The current global config",
-            "type" : "object"
-          },
-          "attrs" : {
-            "description" : "The current request attributes",
-            "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
-          },
-          "user" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "$ref" : "#/components/schemas/otoroshi.models.PrivateAppsUser"
-            } ],
-            "description" : "The current request user"
-          },
-          "snowflake" : {
-            "description" : "The current request snowflake",
-            "type" : "string"
-          }
-        }
       },
       "otoroshi.models.AutoCert" : {
         "description" : "Settings to generate certificates on the fly",
@@ -25102,26 +24253,6 @@
           }
         }
       },
-      "otoroshi.storage.drivers.inmemory.SwappableInMemoryRedis" : {
-        "description" : "In-memory storage implementation",
-        "type" : "object",
-        "properties" : {
-          "env" : {
-            "description" : "The current env",
-            "$ref" : "#/components/schemas/otoroshi.env.Env"
-          }
-        }
-      },
-      "otoroshi.storage.drivers.inmemory.ModernSwappableInMemoryRedis" : {
-        "description" : "In-memory storage implementation",
-        "type" : "object",
-        "properties" : {
-          "env" : {
-            "description" : "The current env",
-            "$ref" : "#/components/schemas/otoroshi.env.Env"
-          }
-        }
-      },
       "otoroshi.next.plugins.ContextValidationConfig" : {
         "description" : "Configuration for ContextValidation",
         "type" : "object",
@@ -25132,16 +24263,6 @@
               "$ref" : "#/components/schemas/otoroshi.next.plugins.ContextValidator"
             },
             "description" : "The validators to pass on the current context"
-          }
-        }
-      },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesDeployment" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind deployment",
-            "type" : "object"
           }
         }
       },
@@ -25254,11 +24375,6 @@
           }
         }
       },
-      "otoroshi.storage.drivers.cassandra.NewCassandraRedis" : {
-        "description" : "Cassandra storage implementation",
-        "type" : "object",
-        "properties" : { }
-      },
       "otoroshi.utils.http.CacheConnectionSettings" : {
         "description" : "The settings for http cached connection at host level",
         "type" : "object",
@@ -25361,39 +24477,8 @@
           "$ref" : "#/components/schemas/otoroshi.models.RefJwtVerifier"
         } ]
       },
-      "otoroshi.next.plugins.api.NgBeforeRequestContext" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "config" : {
-            "description" : "The current plugin config",
-            "type" : "object"
-          },
-          "snowflake" : {
-            "description" : "The current request snowflake",
-            "type" : "string"
-          },
-          "route" : {
-            "description" : "The current matched route",
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
-          },
-          "attrs" : {
-            "description" : "The current request attributes",
-            "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
-          },
-          "global_config" : {
-            "description" : "The current global config",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.plugins.jsoup.HtmlPatcher" : {
         "description" : "Plugin to transform html response body",
-        "type" : "object",
-        "properties" : { }
-      },
-      "otoroshi.next.plugins.api.NgRequestSink" : {
-        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -25992,11 +25077,6 @@
           }
         }
       },
-      "otoroshi.next.plugins.api.NgRouteMatcher" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
-      },
       "otoroshi.next.plugins.NoopSpanExporter" : {
         "description" : "Internal api",
         "type" : "object",
@@ -26051,28 +25131,6 @@
         "description" : "Internal api",
         "type" : "object",
         "properties" : { }
-      },
-      "otoroshi.next.plugins.api.NgRouteMatcherContext" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "route" : {
-            "description" : "The current matched route",
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
-          },
-          "snowflake" : {
-            "description" : "The current request snowflake",
-            "type" : "string"
-          },
-          "attrs" : {
-            "description" : "The current request attributes",
-            "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
-          },
-          "config" : {
-            "description" : "The current plugin config",
-            "type" : "object"
-          }
-        }
       },
       "otoroshi.next.plugins.RBAC" : {
         "description" : "Plugin to apply RBAC",
@@ -26430,26 +25488,6 @@
           }
         }
       },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesService" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind service",
-            "type" : "object"
-          }
-        }
-      },
-      "otoroshi.plugins.jobs.kubernetes.OtoResHolder" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "Internal api",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.utils.mailer.SendgridSettings" : {
         "description" : "Settings for the sendgrid mailer",
         "type" : "object",
@@ -26469,16 +25507,6 @@
             "description" : "the kind of mailer",
             "type" : "string",
             "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
-          }
-        }
-      },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesMutatingWebhookConfiguration" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind mutating webhook configuration",
-            "type" : "object"
           }
         }
       },
@@ -26699,6 +25727,10 @@
           }
         }
       },
+      "ExperimentalFormResponse" : {
+        "type" : "object",
+        "description" : "The representation of a form to configure a plugin or an entity"
+      },
       "otoroshi.next.plugins.NgApikeyExtractorClientId" : {
         "description" : "Configuration for ApikeyCalls",
         "type" : "object",
@@ -26879,24 +25911,6 @@
             "description" : "Support baggage"
           }
         }
-      },
-      "otoroshi.next.plugins.api.NgMergedPreRouting" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "plugins" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginWrapper.NgSimplePluginWrapper<otoroshi.next.plugins.api.NgPreRouting>"
-            },
-            "description" : "The current merged plugins"
-          }
-        }
-      },
-      "otoroshi.next.plugins.api.NgPluginWrapper" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
       },
       "otoroshi.next.models.NgCacheConnectionSettings" : {
         "description" : "The settings for http cached connection at host level",
@@ -27471,11 +26485,6 @@
         "type" : "object",
         "properties" : { }
       },
-      "otoroshi.next.plugins.api.NgPluginVisibility" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
-      },
       "otoroshi.models.Restrictions" : {
         "description" : "Http requests restrictions for a service or an apikey",
         "type" : "object",
@@ -27755,11 +26764,6 @@
           }
         }
       },
-      "otoroshi.next.plugins.api.NgRequestOrigin" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
-      },
       "otoroshi.plugins.quotas.ServiceQuotas" : {
         "description" : "Internal api",
         "type" : "object",
@@ -27784,56 +26788,6 @@
           },
           "privateKey" : {
             "description" : "Private key (PEM encoded)",
-            "type" : "string"
-          }
-        }
-      },
-      "otoroshi.next.plugins.api.NgAccessContext" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "config" : {
-            "description" : "The current plugin config",
-            "type" : "object"
-          },
-          "route" : {
-            "description" : "The current matched route",
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
-          },
-          "user" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "$ref" : "#/components/schemas/otoroshi.models.PrivateAppsUser"
-            } ],
-            "description" : "The current request user"
-          },
-          "global_config" : {
-            "description" : "The current global config",
-            "type" : "object"
-          },
-          "sequence" : {
-            "description" : "The current plugin sequence",
-            "$ref" : "#/components/schemas/otoroshi.next.proxy.NgReportPluginSequence"
-          },
-          "attrs" : {
-            "description" : "The current request attributes",
-            "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
-          },
-          "apikey" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "$ref" : "#/components/schemas/otoroshi.models.ApiKey"
-            } ],
-            "description" : "The current apikey"
-          },
-          "report" : {
-            "description" : "The current execution report",
-            "$ref" : "#/components/schemas/otoroshi.next.proxy.NgExecutionReport"
-          },
-          "snowflake" : {
-            "description" : "The current request snowflake",
             "type" : "string"
           }
         }
@@ -27895,11 +26849,6 @@
             "type" : "integer"
           }
         }
-      },
-      "otoroshi.next.plugins.api.NgPluginConfig" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
       },
       "otoroshi.models.LatencyInjectionFaultConfig" : {
         "description" : "Settings for a latency injection fault (chaos engineering)",
@@ -27969,16 +26918,6 @@
             "description" : "the kind of algosettings",
             "type" : "string",
             "enum" : [ "HSAlgoSettings", "RSAlgoSettings", "ESAlgoSettings", "JWKSAlgoSettings", "RSAKPAlgoSettings", "ESKPAlgoSettings", "KidAlgoSettings" ]
-          }
-        }
-      },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesIngress" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "raw" : {
-            "description" : "kubernetes resource of kind ingress",
-            "type" : "object"
           }
         }
       },
@@ -28183,48 +27122,6 @@
         "type" : "object",
         "properties" : { }
       },
-      "otoroshi.next.proxy.NgReportPluginSequenceItem" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "start" : {
-            "format" : "int64",
-            "description" : "Start time",
-            "type" : "integer"
-          },
-          "in" : {
-            "description" : "Context in",
-            "type" : "object"
-          },
-          "plugin" : {
-            "description" : "Plugin id",
-            "type" : "string"
-          },
-          "stop_ns" : {
-            "format" : "int64",
-            "description" : "Stop time in nanoseconds",
-            "type" : "integer"
-          },
-          "name" : {
-            "description" : "Plugin name",
-            "type" : "string"
-          },
-          "out" : {
-            "description" : "Context out",
-            "type" : "object"
-          },
-          "stop" : {
-            "format" : "int64",
-            "description" : "Stop time",
-            "type" : "integer"
-          },
-          "start_ns" : {
-            "format" : "int64",
-            "description" : "Start time in nanoseconds",
-            "type" : "integer"
-          }
-        }
-      },
       "otoroshi.plugins.security.SecurityTxt" : {
         "description" : "Plugin that serves /.well-known/security.txt resources",
         "type" : "object",
@@ -28244,28 +27141,6 @@
               "$ref" : "#/components/schemas/otoroshi.models.TeamId"
             },
             "description" : "Teams of the current entity"
-          }
-        }
-      },
-      "otoroshi.next.plugins.api.NgTunnelHandlerContext" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "config" : {
-            "description" : "The current plugin config",
-            "type" : "object"
-          },
-          "route" : {
-            "description" : "The current matched route",
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgRoute"
-          },
-          "attrs" : {
-            "description" : "The current request attributes",
-            "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
-          },
-          "snowflake" : {
-            "description" : "The current request snowflake",
-            "type" : "string"
           }
         }
       },
@@ -28659,53 +27534,12 @@
           }
         }
       },
-      "otoroshi.storage.drivers.rediscala.RedisMCPStore" : {
-        "description" : "Specific redis mode storage implementation",
-        "type" : "object",
-        "properties" : { }
-      },
-      "otoroshi.next.plugins.api.NgRequestSinkContext" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "message" : {
-            "description" : "The error message",
-            "type" : "string"
-          },
-          "status" : {
-            "format" : "int32",
-            "description" : "The error http status code",
-            "type" : "integer"
-          },
-          "attrs" : {
-            "description" : "The current request attributes",
-            "$ref" : "#/components/schemas/otoroshi.utils.TypedMap"
-          },
-          "origin" : {
-            "description" : "The request origin",
-            "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgRequestOrigin"
-          },
-          "snowflake" : {
-            "description" : "The current request snowflake",
-            "type" : "string"
-          },
-          "config" : {
-            "description" : "The current plugin config",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.plugins.jobs.kubernetes.OtoroshiToKubernetesCertSyncJob" : {
         "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
       "otoroshi.plugins.biscuit.BiscuitExtractor" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
-      },
-      "otoroshi.next.plugins.api.NgAccess" : {
         "description" : "Internal api",
         "type" : "object",
         "properties" : { }
@@ -28733,24 +27567,6 @@
         "description" : "Plugin that log access",
         "type" : "object",
         "properties" : { }
-      },
-      "otoroshi.storage.drivers.lettuce.LettuceRedisCluster" : {
-        "description" : "Redis cluster storage implementation",
-        "type" : "object",
-        "properties" : { }
-      },
-      "otoroshi.next.plugins.api.NgMergedRequestTransformer" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "plugins" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.next.plugins.api.NgPluginWrapper.NgSimplePluginWrapper<otoroshi.next.plugins.api.NgRequestTransformer>"
-            },
-            "description" : "The current merged plugins"
-          }
-        }
       },
       "otoroshi.models.DataCenterMatch" : {
         "description" : "Match a target if in the same datacenter",
