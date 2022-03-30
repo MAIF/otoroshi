@@ -25763,6 +25763,7 @@
           }
         }
       },
+<<<<<<< HEAD
       "otoroshi.next.plugins.SdkWrapper" : {
         "description" : "???",
         "type" : "object",
@@ -25773,6 +25774,8 @@
           }
         }
       },
+=======
+>>>>>>> Update some openapi definitions
       "otoroshi.models.Sign" : {
         "description" : "???",
         "type" : "object",
@@ -26177,7 +26180,20 @@
             "additionalProperties" : {
               "type" : "string"
             },
+<<<<<<< HEAD
             "description" : "???"
+=======
+            "description" : "Http header when fetching JWKS"
+          },
+          "type" : {
+            "description" : "the kind of algosettings",
+            "type" : "string",
+            "enum" : [ "HSAlgoSettings", "RSAlgoSettings", "ESAlgoSettings", "JWKSAlgoSettings", "RSAKPAlgoSettings", "ESKPAlgoSettings", "KidAlgoSettings" ]
+          },
+          "ttl" : {
+            "description" : "Cache ttl",
+            "type" : "number"
+>>>>>>> Update some openapi definitions
           },
           "url" : {
             "description" : "???",
@@ -26191,6 +26207,7 @@
             "description" : "???",
             "type" : "number"
           },
+<<<<<<< HEAD
           "proxy" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
@@ -26198,6 +26215,11 @@
               "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
             "description" : "???"
+=======
+          "tlsConfig" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
+>>>>>>> Update some openapi definitions
           }
         }
       },

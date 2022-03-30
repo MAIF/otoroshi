@@ -35,7 +35,8 @@
     "otoroshi.next.plugins.OtoroshiInfos",
     "otoroshi.plugins.log4j.Log4jExpression",
     "otoroshi.plugins.JsonPathUtils",
-    "otoroshi.plugins.cache.ResponseCache"
+    "otoroshi.plugins.cache.ResponseCache",
+    "otoroshi.next.plugins.SdkWrapper"
   ],
   "descriptions": {
     "entity_description.otoroshi.auth.BasicAuthModuleConfig": "Authentication module that let you use otoroshi as the identity provider",
@@ -272,7 +273,6 @@
     "entity_description.otoroshi.next.plugins.RoutingRestrictions": "Configuration for NgRestrictions",
     "entity_description.otoroshi.next.plugins.SOAPAction": "Plugin to call SOAP service",
     "entity_description.otoroshi.next.plugins.SOAPActionConfig": "Configuration for SOAPAction",
-    "entity_description.otoroshi.next.plugins.SdkWrapper": "Internal api",
     "entity_description.otoroshi.next.plugins.SendOtoroshiHeadersBack": "Plugin to enrich response header with otoroshi infos",
     "entity_description.otoroshi.next.plugins.SnowMonkeyChaos": "Plugin to induce chaos",
     "entity_description.otoroshi.next.plugins.StaticResponse": "Plugin to return static responses",
@@ -1578,9 +1578,9 @@
     "otoroshi.models.IpStackGeolocationSettings.timeout": "API call timeout",
     "otoroshi.models.JWKSAlgoSettings.headers": "Http header when fetching JWKS",
     "otoroshi.models.JWKSAlgoSettings.kty": "Key type",
-    "otoroshi.models.JWKSAlgoSettings.mtlsConfig": "TLS settings for http client",
     "otoroshi.models.JWKSAlgoSettings.proxy": "Web proxy for http client",
     "otoroshi.models.JWKSAlgoSettings.timeout": "Timeout when fetching JWKS",
+    "otoroshi.models.JWKSAlgoSettings.tlsConfig": "???",
     "otoroshi.models.JWKSAlgoSettings.ttl": "Cache ttl",
     "otoroshi.models.JWKSAlgoSettings.url": "JWKS url",
     "otoroshi.models.JwtAuthConstraints.cookieName": "Cookie name to extract jwt token",
@@ -2175,7 +2175,6 @@
     "otoroshi.next.plugins.SOAPActionConfig.jqResponseFilter": "JQ filter to transform response body",
     "otoroshi.next.plugins.SOAPActionConfig.preserveQuery": "Preserve query params",
     "otoroshi.next.plugins.SOAPActionConfig.url": "SOAP endpoint",
-    "otoroshi.next.plugins.SdkWrapper.config": "Internal component",
     "otoroshi.next.plugins.SnowMonkeyChaos.badResponsesFaultConfig": "Config. for bad responses faults",
     "otoroshi.next.plugins.SnowMonkeyChaos.largeRequestFaultConfig": "Config. for large request body faults",
     "otoroshi.next.plugins.SnowMonkeyChaos.largeResponseFaultConfig": "Config. for large response faults",

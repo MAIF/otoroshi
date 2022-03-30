@@ -156,7 +156,7 @@ object MtlsConfig {
             .asOpt[Seq[String]]
             .map(_.filter(_.trim.nonEmpty))
             .getOrElse(Seq.empty),
-          mtls = (json \ "mtls").asOpt[Boolean].getOrElse(false),
+          mtls = (json \ "mtls").asOpt[Boolean].orElse((json \ "tls").asOpt[Boolean]).getOrElse(false),
           loose = (json \ "loose").asOpt[Boolean].getOrElse(false),
           trustAll = (json \ "trustAll").asOpt[Boolean].getOrElse(false)
         )
