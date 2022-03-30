@@ -17508,8 +17508,8 @@
       },
       "otoroshi.next.plugins.W3CTracingConfigKind" : {
         "description" : "Configuration for W3CTracing",
-        "type" : "object",
-        "properties" : { }
+        "type" : "string",
+        "enum" : [ "jaeger", "zipkin", "logger", "noop" ]
       },
       "otoroshi.next.plugins.JQConfig" : {
         "description" : "Configuration for JQ",
@@ -18655,9 +18655,9 @@
         }
       },
       "otoroshi.plugins.authcallers.OAuth2Kind" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
+        "description" : "The kind of oauth2 flow",
+        "type" : "string",
+        "enum" : [ "client_credentials", "password" ]
       },
       "otoroshi.models.SecComVersion" : {
         "type" : "string",
@@ -22104,9 +22104,41 @@
         "description" : "Configuration for OtoroshiChallenge",
         "type" : "object",
         "properties" : {
-          "raw" : {
-            "description" : "Internal value",
-            "type" : "object"
+          "version" : {
+            "description" : "The version of the jwt",
+            "type" : {
+              "$ref" : "#/components/schemas/otoroshi.models.SecComVersion"
+            }
+          },
+          "ttl" : {
+            "description" : "The ttl of the generated jwt in milliseconds",
+            "type" : "number"
+          },
+          "request_header_name" : {
+            "description" : "The header name to inject the jwt",
+            "type" : "string",
+            "required" : false
+          },
+          "response_header_name" : {
+            "description" : "The header name to read the jwt",
+            "type" : "string",
+            "required" : false
+          },
+          "algo_to_backend" : {
+            "description" : "The jwt signing algorithm when writing",
+            "type" : {
+              "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
+            }
+          },
+          "algo_from_backend" : {
+            "description" : "The jwt signing algorithm when reading",
+            "type" : {
+              "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
+            }
+          },
+          "state_resp_leeway" : {
+            "description" : "the number of seconds acceptable between client and server time",
+            "type" : "number"
           }
         }
       },
@@ -22119,9 +22151,26 @@
         "description" : "Configuration for OtoroshiInfos",
         "type" : "object",
         "properties" : {
-          "raw" : {
-            "description" : "Internal value",
-            "type" : "object"
+          "version" : {
+            "description" : "The version of the jwt",
+            "type" : {
+              "$ref" : "#/components/schemas/otoroshi.models.SecComInfoTokenVersion"
+            }
+          },
+          "secComTtl" : {
+            "description" : "The ttl of the generated jwt in milliseconds",
+            "type" : "number"
+          },
+          "headerName" : {
+            "description" : "The header name to inject the jwt",
+            "type" : "string",
+            "required" : false
+          },
+          "algo" : {
+            "description" : "The jwt signing algorithm",
+            "type" : {
+              "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
+            }
           }
         }
       },

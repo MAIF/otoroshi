@@ -246,9 +246,7 @@
     "entity_description.otoroshi.next.plugins.NgLargeRequestFaultConfig": "Configuration for SnowMonkeyChaos",
     "entity_description.otoroshi.next.plugins.NgLargeResponseFaultConfig": "Configuration for SnowMonkeyChaos",
     "entity_description.otoroshi.next.plugins.NgLatencyInjectionFaultConfig": "Configuration for SnowMonkeyChaos",
-    "entity_description.otoroshi.next.plugins.NgOtoroshiChallengeConfig": "Configuration for OtoroshiChallenge",
     "entity_description.otoroshi.next.plugins.NgOtoroshiChallengeKeys": "Configuration for OtoroshiChallenge",
-    "entity_description.otoroshi.next.plugins.NgOtoroshiInfoConfig": "Configuration for OtoroshiInfos",
     "entity_description.otoroshi.next.plugins.NgPublicPrivatePathsConfig": "Configuration for PublicPrivatePaths",
     "entity_description.otoroshi.next.plugins.NgRedirectionSettings": "Configuration for Redirection",
     "entity_description.otoroshi.next.plugins.NgRestrictionPath": "Configuration for NgRestrictions",
@@ -278,7 +276,6 @@
     "entity_description.otoroshi.next.plugins.UdpTunnel": "Plugin to have udp tunnels over websockets",
     "entity_description.otoroshi.next.plugins.W3CTracing": "Plugin to have distributed tracing",
     "entity_description.otoroshi.next.plugins.W3CTracingConfig": "Configuration for W3CTracing",
-    "entity_description.otoroshi.next.plugins.W3CTracingConfigKind": "Configuration for W3CTracing",
     "entity_description.otoroshi.next.plugins.XForwardedHeaders": "Plugin to add X-Forwarded headers in a request",
     "entity_description.otoroshi.next.plugins.XmlToJsonRequest": "Plugin to transform xml body into json",
     "entity_description.otoroshi.next.plugins.XmlToJsonResponse": "Plugin to transform xml body into json",
@@ -306,7 +303,6 @@
     "entity_description.otoroshi.plugins.authcallers.ForceRetryException": "Internal api",
     "entity_description.otoroshi.plugins.authcallers.OAuth2Caller": "Plugin that can call an oauth2 client_credentials flow or password flow backend",
     "entity_description.otoroshi.plugins.authcallers.OAuth2CallerConfig": "Configuration for OAuth2Caller",
-    "entity_description.otoroshi.plugins.authcallers.OAuth2Kind": "Internal api",
     "entity_description.otoroshi.plugins.biscuit.AccessValidatorContext": "Internal api",
     "entity_description.otoroshi.plugins.biscuit.BiscuitConfig": "Internal api",
     "entity_description.otoroshi.plugins.biscuit.BiscuitExtractor": "Internal api",
@@ -2107,8 +2103,6 @@
     "otoroshi.next.plugins.NgLatencyInjectionFaultConfig.from": "Lower bound of latency injection",
     "otoroshi.next.plugins.NgLatencyInjectionFaultConfig.ratio": "The ratio of requests impacted",
     "otoroshi.next.plugins.NgLatencyInjectionFaultConfig.to": "Upper bound of latency injection",
-    "otoroshi.next.plugins.NgOtoroshiChallengeConfig.raw": "Internal value",
-    "otoroshi.next.plugins.NgOtoroshiInfoConfig.raw": "Internal value",
     "otoroshi.next.plugins.NgPublicPrivatePathsConfig.privatePatterns": "Paths that should have user or apikey to pass",
     "otoroshi.next.plugins.NgPublicPrivatePathsConfig.publicPatterns": "Paths that should not have user or apikey to pass",
     "otoroshi.next.plugins.NgPublicPrivatePathsConfig.strict": "apikey only",
@@ -3276,6 +3270,85 @@
           }
         }
       }
+    },
+    "otoroshi.next.plugins.NgOtoroshiInfoConfig" : {
+      "description" : "Configuration for OtoroshiInfos",
+      "type" : "object",
+      "properties" : {
+        "version" : {
+          "description" : "The version of the jwt",
+          "type" : {
+            "$ref" : "#/components/schemas/otoroshi.models.SecComInfoTokenVersion"
+          }
+        },
+        "secComTtl" : {
+          "description" : "The ttl of the generated jwt in milliseconds",
+          "type" : "number"
+        },
+        "headerName" : {
+          "description" : "The header name to inject the jwt",
+          "type" : "string",
+          "required" : false
+        },
+        "algo" : {
+          "description" : "The jwt signing algorithm",
+          "type" : {
+            "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
+          }
+        }
+      }
+    },
+    "otoroshi.next.plugins.NgOtoroshiChallengeConfig" : {
+      "description" : "Configuration for OtoroshiChallenge",
+      "type" : "object",
+      "properties" : {
+        "version" : {
+          "description" : "The version of the jwt",
+          "type" : {
+            "$ref" : "#/components/schemas/otoroshi.models.SecComVersion"
+          }
+        },
+        "ttl" : {
+          "description" : "The ttl of the generated jwt in milliseconds",
+          "type" : "number"
+        },
+        "request_header_name" : {
+          "description" : "The header name to inject the jwt",
+          "type" : "string",
+          "required" : false
+        },
+        "response_header_name" : {
+          "description" : "The header name to read the jwt",
+          "type" : "string",
+          "required" : false
+        },
+        "algo_to_backend" : {
+          "description" : "The jwt signing algorithm when writing",
+          "type" : {
+            "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
+          }
+        },
+        "algo_from_backend" : {
+          "description" : "The jwt signing algorithm when reading",
+          "type" : {
+            "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
+          }
+        },
+        "state_resp_leeway" : {
+          "description" : "the number of seconds acceptable between client and server time",
+          "type" : "number"
+        }
+      }
+    },
+    "otoroshi.next.plugins.W3CTracingConfigKind" : {
+      "description" : "Configuration for W3CTracing",
+      "type" : "string",
+      "enum" : [ "jaeger", "zipkin", "logger", "noop" ]
+    },
+    "otoroshi.plugins.authcallers.OAuth2Kind" : {
+      "description" : "The kind of oauth2 flow",
+      "type" : "string",
+      "enum" : [ "client_credentials", "password" ]
     }
   },
   "merge_schemas":   {
