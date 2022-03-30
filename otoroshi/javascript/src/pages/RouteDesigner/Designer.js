@@ -691,7 +691,7 @@ const EditView = ({
                         backgroundColor: asJsonFormat ? "#373735" : "#f9b000",
                         color: "#fff"
                     }}>FORM</button>
-                <button className='btn btn-sm' onClick={() => {
+                <button className='btn btn-sm mx-1' onClick={() => {
                     if (!isEqual(ref.current.rawData(), form.value))
                         setForm({ ...form, value: ref.current.rawData() })
                     toggleJsonFormat(true)
@@ -751,8 +751,7 @@ const EditView = ({
                 {backendConfigRef && <BackendForm isCreation={false} value={backendConfigRef} style={{
                     maxWidth: '100%'
                 }} foldable={true} />}
-                <button className="btn btn-sm btn-success m-3"
-                    style={{ backgroundColor: "#f9b000", borderColor: '#f9b000' }}
+                <button className="btn btn-sm btn-save m-3"
                     onClick={() => {
                         nextClient.update(nextClient.ENTITIES.ROUTES, route)
                             .then(newRoute => {
@@ -803,20 +802,19 @@ const Description = ({ text }) => {
     </>
 }
 
-const RemoveComponent = ({ onRemove }) => <button className='btn btn-sm btn-danger ms-2' onClick={onRemove}>
+const RemoveComponent = ({ onRemove }) => <button className='btn btn-sm btn-danger me-2' onClick={onRemove}>
     <i className='fas fa-trash me-2'></i>
     Remove this component
 </button>
 
-const EditViewActions = ({ valid, selectedNode, onRemove, saveable }) => <div className='d-flex mt-4'>
-    <button className="btn btn-sm btn-success"
-        style={{ backgroundColor: "#f9b000", borderColor: '#f9b000' }}
+const EditViewActions = ({ valid, selectedNode, onRemove, saveable }) => <div className='d-flex mt-4 justify-content-end'>
+    {!selectedNode.default && <RemoveComponent onRemove={onRemove} />}
+    <button className="btn btn-sm btn-save"
         onClick={valid}
         disabled={!saveable}>
         <i className='fas fa-save me-2' />
         Update the plugin configuration
     </button>
-    {!selectedNode.default && <RemoveComponent onRemove={onRemove} />}
 </div>
 
 const BackendSelector = ({ setBackendConfigRef, setUsingExistingBackend, setRoute, usingExistingBackend, route, backends }) => (

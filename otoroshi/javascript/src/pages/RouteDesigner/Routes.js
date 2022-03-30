@@ -33,11 +33,11 @@ export default ({ }) => {
             rowNavigation={true}
             hideAddItemAction={true}
             rawEditUrl={true}
-            injectTopBar={() => <Link
-                className='btn btn-success'
+            injectTopBar={() => <div className="btn-group input-group-btn"><Link
+                className='btn btn-primary'
                 to={'routes/new?tab=informations'}>
                 <i className="fas fa-plus-circle" /> Create new route
-            </Link>
+            </Link></div>
             }
         />
     </div>
