@@ -658,7 +658,11 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }) match {
       case v if v == unknownValue => Json.obj("$ref" -> "#/components/schemas/Unknown")
       case v if multiple          => Json.obj("type" -> "array", "items" -> Json.obj("$ref" -> s"#/components/schemas/$v"))
-      case v                      => Json.obj("$ref" -> s"#/components/schemas/$v")
+      case v                      =>
+        if (v.contains(" ")) {
+          println(s"bad response entity at: ${finalPath}")
+        }
+        Json.obj("$ref" -> s"#/components/schemas/$v")
     }
 
     (resStatus, resBody)
@@ -730,7 +734,11 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             "type"  -> "array",
             "items" -> Json.obj("$ref" -> s"#/components/schemas/${entity.get}")
           )
-        case (_, v)                                             => Json.obj("$ref" -> s"#/components/schemas/$v")
+        case (_, v)                                             =>
+          if (v.contains(" ")) {
+            println(s"bad request body at: ${finalPath}")
+          }
+          Json.obj("$ref" -> s"#/components/schemas/$v")
       }
       reqBody.some
     } else {

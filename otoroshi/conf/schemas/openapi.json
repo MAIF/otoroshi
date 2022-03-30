@@ -1478,7 +1478,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unkown"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -1791,7 +1791,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/The form description of the current controllers entity"
+                  "$ref" : "#/components/schemas/ExperimentalFormResponse"
                 }
               }
             }
@@ -1948,7 +1948,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/The form description of the current controllers entity"
+                  "$ref" : "#/components/schemas/ExperimentalFormResponse"
                 }
               }
             }
@@ -6014,7 +6014,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/text plain PEM bundle"
+                "$ref" : "#/components/schemas/PemCertificateBody"
               }
             }
           }
@@ -6119,7 +6119,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Initial resources template"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -6131,7 +6131,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Initial resources template"
+                "$ref" : "#/components/schemas/Unknown"
               }
             }
           }
@@ -6311,7 +6311,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/The form description of the current controllers entity"
+                  "$ref" : "#/components/schemas/ExperimentalFormResponse"
                 }
               }
             }
@@ -7805,7 +7805,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/The form description of the current controllers entity"
+                  "$ref" : "#/components/schemas/ExperimentalFormResponse"
                 }
               }
             }
@@ -10257,7 +10257,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/The form description of the current controllers entity"
+                  "$ref" : "#/components/schemas/ExperimentalFormResponse"
                 }
               }
             }
@@ -12486,7 +12486,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unkown"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -13273,7 +13273,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unkown"
+                  "$ref" : "#/components/schemas/Unknown"
                 }
               }
             }
@@ -19467,7 +19467,10 @@
           },
           "config_flow" : {
             "type" : "array",
-            "description" : "the config flow of the plugin (for UI form)"
+            "description" : "the config flow of the plugin (for UI form)",
+            "items" : {
+              "type" : "string"
+            }
           },
           "plugin_visibility" : {
             "type" : "string",
@@ -20962,131 +20965,6 @@
         "type" : "object",
         "properties" : { }
       },
-      "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "globalConfigs" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.GlobalConfig>"
-            },
-            "description" : "template for entities globalConfigs"
-          },
-          "tenants" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.Tenant>"
-            },
-            "description" : "template for entities tenants"
-          },
-          "serviceGroups" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.ServiceGroup>"
-            },
-            "description" : "template for entities serviceGroups"
-          },
-          "targets" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.next.models.StoredNgTarget>"
-            },
-            "description" : "template for entities targets"
-          },
-          "teams" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.Team>"
-            },
-            "description" : "template for entities teams"
-          },
-          "serviceDescriptors" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.ServiceDescriptor>"
-            },
-            "description" : "template for entities serviceDescriptors"
-          },
-          "certificates" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.ssl.Cert>"
-            },
-            "description" : "template for entities certificates"
-          },
-          "services" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.next.models.NgService>"
-            },
-            "description" : "template for entities services"
-          },
-          "authModules" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.auth.AuthModuleConfig>"
-            },
-            "description" : "template for entities authModules"
-          },
-          "dataExporters" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.DataExporterConfig>"
-            },
-            "description" : "template for entities dataExporters"
-          },
-          "scripts" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.script.Script>"
-            },
-            "description" : "template for entities scripts"
-          },
-          "jwtVerifiers" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.GlobalJwtVerifier>"
-            },
-            "description" : "template for entities jwtVerifiers"
-          },
-          "backends" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.next.models.StoredNgBackend>"
-            },
-            "description" : "template for entities backends"
-          },
-          "apiKeys" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.ApiKey>"
-            },
-            "description" : "template for entities apiKeys"
-          },
-          "tcpServices" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.tcp.TcpService>"
-            },
-            "description" : "template for entities tcpServices"
-          },
-          "simpleAdmins" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.models.SimpleOtoroshiAdmin>"
-            },
-            "description" : "template for entities simpleAdmins"
-          },
-          "routes" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoResHolder<otoroshi.next.models.NgRoute>"
-            },
-            "description" : "template for entities routes"
-          }
-        }
-      },
       "otoroshi.plugins.jobs.kubernetes.OtoroshiResourcesContext" : {
         "description" : "Internal api",
         "type" : "object",
@@ -21766,20 +21644,6 @@
         "type" : "object",
         "properties" : { }
       },
-      "otoroshi.plugins.jobs.kubernetes.CRDContext" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "kubernetes" : {
-            "description" : "Resources from kubernetes",
-            "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext"
-          },
-          "otoroshi" : {
-            "description" : "Resources from otoroshi",
-            "$ref" : "#/components/schemas/otoroshi.plugins.jobs.kubernetes.OtoroshiResourcesContext"
-          }
-        }
-      },
       "otoroshi.next.plugins.QueryTransformerConfig" : {
         "description" : "Configuration for QueryTransformer",
         "type" : "object",
@@ -22106,9 +21970,7 @@
         "properties" : {
           "version" : {
             "description" : "The version of the jwt",
-            "type" : {
-              "$ref" : "#/components/schemas/otoroshi.models.SecComVersion"
-            }
+            "$ref" : "#/components/schemas/otoroshi.models.SecComVersion"
           },
           "ttl" : {
             "description" : "The ttl of the generated jwt in milliseconds",
@@ -22116,25 +21978,19 @@
           },
           "request_header_name" : {
             "description" : "The header name to inject the jwt",
-            "type" : "string",
-            "required" : false
+            "type" : "string"
           },
           "response_header_name" : {
             "description" : "The header name to read the jwt",
-            "type" : "string",
-            "required" : false
+            "type" : "string"
           },
           "algo_to_backend" : {
             "description" : "The jwt signing algorithm when writing",
-            "type" : {
-              "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
-            }
+            "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
           },
           "algo_from_backend" : {
             "description" : "The jwt signing algorithm when reading",
-            "type" : {
-              "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
-            }
+            "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
           },
           "state_resp_leeway" : {
             "description" : "the number of seconds acceptable between client and server time",
@@ -22153,9 +22009,7 @@
         "properties" : {
           "version" : {
             "description" : "The version of the jwt",
-            "type" : {
-              "$ref" : "#/components/schemas/otoroshi.models.SecComInfoTokenVersion"
-            }
+            "$ref" : "#/components/schemas/otoroshi.models.SecComInfoTokenVersion"
           },
           "secComTtl" : {
             "description" : "The ttl of the generated jwt in milliseconds",
@@ -22163,30 +22017,17 @@
           },
           "headerName" : {
             "description" : "The header name to inject the jwt",
-            "type" : "string",
-            "required" : false
+            "type" : "string"
           },
           "algo" : {
             "description" : "The jwt signing algorithm",
-            "type" : {
-              "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
-            }
+            "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
           }
         }
       },
       "otoroshi.utils.http.DN" : {
         "type" : "string",
         "description" : "A string representation of a Distinguished Name"
-      },
-      "otoroshi.plugins.cache.ResponseCache" : {
-        "description" : "Plugin that can cache http responses",
-        "type" : "object",
-        "properties" : { }
-      },
-      "otoroshi.plugins.JsonPathUtils" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : { }
       },
       "Any" : {
         "oneOf" : [ {
@@ -22317,19 +22158,6 @@
               "type" : "string"
             } ],
             "description" : "The name of the query param to extract"
-          }
-        }
-      },
-      "otoroshi.plugins.log4j.Log4jExpression" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "parts" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.plugins.log4j.Log4jExpressionPart"
-            },
-            "description" : "parts of a log4j expression"
           }
         }
       },
@@ -25898,6 +25726,10 @@
             "description" : "The targets of the backend"
           }
         }
+      },
+      "ExperimentalFormResponse" : {
+        "type" : "object",
+        "description" : "The representation of a form to configure a plugin or an entity"
       },
       "otoroshi.next.plugins.NgApikeyExtractorClientId" : {
         "description" : "Configuration for ApikeyCalls",

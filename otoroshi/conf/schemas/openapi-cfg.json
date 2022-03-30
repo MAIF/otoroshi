@@ -28,9 +28,14 @@
     "otoroshi.plugins.jobs.kubernetes.OtoResHolder",
     "otoroshi.plugins.jobs.kubernetes.KubernetesMutatingWebhookConfiguration",
     "otoroshi.plugins.jobs.kubernetes.KubernetesIngress",
+    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext",
+    "otoroshi.plugins.jobs.kubernetes.CRDContext",
     "otoroshi.next.plugins.api.*",
     "otoroshi.next.plugins.OtoroshiChallenge",
-    "otoroshi.next.plugins.OtoroshiInfos"
+    "otoroshi.next.plugins.OtoroshiInfos",
+    "otoroshi.plugins.log4j.Log4jExpression",
+    "otoroshi.plugins.JsonPathUtils",
+    "otoroshi.plugins.cache.ResponseCache"
   ],
   "descriptions": {
     "entity_description.otoroshi.auth.BasicAuthModuleConfig": "Authentication module that let you use otoroshi as the identity provider",
@@ -284,7 +289,6 @@
     "entity_description.otoroshi.next.plugins.wrappers.PreRoutingWrapper": "Internal api",
     "entity_description.otoroshi.next.plugins.wrappers.RequestSinkWrapper": "Internal api",
     "entity_description.otoroshi.next.plugins.wrappers.RequestTransformerWrapper": "Internal api",
-    "entity_description.otoroshi.plugins.JsonPathUtils": "Internal api",
     "entity_description.otoroshi.plugins.Keys": "Internal api",
     "entity_description.otoroshi.plugins.accesslog.AccessLog": "Plugin that log access",
     "entity_description.otoroshi.plugins.accesslog.AccessLogJson": "Plugin that log access in json",
@@ -314,7 +318,6 @@
     "entity_description.otoroshi.plugins.biscuit.SealedBiscuitToken": "Internal api",
     "entity_description.otoroshi.plugins.biscuit.VerificationContext": "Internal api",
     "entity_description.otoroshi.plugins.biscuit.vavr_implicits": "Internal api",
-    "entity_description.otoroshi.plugins.cache.ResponseCache": "Plugin that can cache http responses",
     "entity_description.otoroshi.plugins.cache.ResponseCacheConfig": "Configuration for ResponseCache",
     "entity_description.otoroshi.plugins.cache.ResponseCacheFilterConfig": "Configuration for ResponseCache",
     "entity_description.otoroshi.plugins.clientcert.ClientCertChainHeader": "Plugin that can pass client certificates as header to the backends",
@@ -355,7 +358,6 @@
     "entity_description.otoroshi.plugins.izanami.IzanamiCanaryRoutingConfigRoute": "Configuration for IzanamiCanary",
     "entity_description.otoroshi.plugins.izanami.IzanamiProxy": "Plugin to proxy izanami",
     "entity_description.otoroshi.plugins.izanami.IzanamiProxyConfig": "Configuration for IzanamiProxy",
-    "entity_description.otoroshi.plugins.jobs.kubernetes.CRDContext": "Internal api",
     "entity_description.otoroshi.plugins.jobs.kubernetes.ClientSupport": "Internal api",
     "entity_description.otoroshi.plugins.jobs.kubernetes.FailedCrdParsing": "Internal api",
     "entity_description.otoroshi.plugins.jobs.kubernetes.IngressSupport": "Internal api",
@@ -370,7 +372,6 @@
     "entity_description.otoroshi.plugins.jobs.kubernetes.KubernetesIngressSyncJob": "Plugin to sync kubernetes ingresses with otoroshi",
     "entity_description.otoroshi.plugins.jobs.kubernetes.KubernetesIngressToDescriptor": "Internal api",
     "entity_description.otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob": "Plugin to import entities from kubernetes CRDs",
-    "entity_description.otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext": "Internal api",
     "entity_description.otoroshi.plugins.jobs.kubernetes.KubernetesSupport": "Internal api",
     "entity_description.otoroshi.plugins.jobs.kubernetes.KubernetesToOtoroshiCertSyncJob": "Plugin to sync otoroshi certificates with kubernetes",
     "entity_description.otoroshi.plugins.jobs.kubernetes.OtoAnnotationConfig": "Internal api",
@@ -380,7 +381,6 @@
     "entity_description.otoroshi.plugins.jsoup.HtmlPatcher": "Plugin to transform html response body",
     "entity_description.otoroshi.plugins.jwt.JwtUserExtractor": "Plugin to extract user from jwt token",
     "entity_description.otoroshi.plugins.log4j.Log4ShellFilter": "Plugin to mitigate Log4Shell attacks",
-    "entity_description.otoroshi.plugins.log4j.Log4jExpression": "Internal api",
     "entity_description.otoroshi.plugins.log4j.Log4jExpressionParser": "Internal api",
     "entity_description.otoroshi.plugins.log4j.Log4jExpressionText": "Internal api",
     "entity_description.otoroshi.plugins.loggers.BodyLogger": "Plugin to log http bodies",
@@ -777,7 +777,7 @@
     "operations_input_entity.otoroshi.controllers.adminapi.PkiController.genSelfSignedCA_pki": "otoroshi.ssl.pki.models.GenCsrQuery",
     "operations_input_entity.otoroshi.controllers.adminapi.PkiController.genSelfSignedCert_pki": "otoroshi.ssl.pki.models.GenCsrQuery",
     "operations_input_entity.otoroshi.controllers.adminapi.PkiController.genSubCA_pki": "otoroshi.ssl.pki.models.GenCsrQuery",
-    "operations_input_entity.otoroshi.controllers.adminapi.PkiController.importBundle_certificates": "text plain PEM bundle",
+    "operations_input_entity.otoroshi.controllers.adminapi.PkiController.importBundle_certificates": "PemCertificateBody",
     "operations_input_entity.otoroshi.controllers.adminapi.PkiController.importCertFromP12_pki": "ByteStreamBody",
     "operations_input_entity.otoroshi.controllers.adminapi.PkiController.signCert_pki": "PemCsrBody",
     "operations_input_entity.otoroshi.controllers.adminapi.ScriptApiController.bulkCreateAction_scripts": "BulkBody",
@@ -822,7 +822,7 @@
     "operations_input_entity.otoroshi.controllers.adminapi.TemplatesController.createFromTemplate_admins": "Empty",
     "operations_input_entity.otoroshi.controllers.adminapi.TemplatesController.createFromTemplate_tcp": "Empty",
     "operations_input_entity.otoroshi.controllers.adminapi.TemplatesController.createFromTemplate_templates": "Empty",
-    "operations_input_entity.otoroshi.controllers.adminapi.TemplatesController.initiateResources_templates": "Initial resources template",
+    "operations_input_entity.otoroshi.controllers.adminapi.TemplatesController.initiateResources_templates": "Unknown",
     "operations_input_entity.otoroshi.controllers.adminapi.TenantsController.bulkCreateAction_organizations": "BulkBody",
     "operations_input_entity.otoroshi.controllers.adminapi.TenantsController.bulkPatchAction_organizations": "BulkBody",
     "operations_input_entity.otoroshi.controllers.adminapi.TenantsController.bulkUpdateAction_organizations": "BulkBody",
@@ -1043,7 +1043,7 @@
     "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateDataExporterConfig_data-exporters": "otoroshi.models.DataExporterConfig",
     "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateGlobalConfig_globalconfig": "otoroshi.models.GlobalConfig",
     "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateJwtVerifier_jwt-verifiers": "otoroshi.models.GlobalJwtVerifier",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateResources_templates": "Initial resources template",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateResources_templates": "Unknown",
     "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateScript_scripts": "otoroshi.script.Script",
     "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateServiceGroup_groups": "otoroshi.models.ServiceGroup",
     "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateServiceGroup_templates": "otoroshi.models.ServiceGroup",
@@ -1081,9 +1081,9 @@
     "operations_response_entity.otoroshi.controllers.adminapi.UsersController.webAuthnAdmins_admins": "WebauthnAdminList",
     "operations_response_entity.otoroshi.controllers.adminapi.UsersController.webAuthnDeleteAdmin_admins": "Done",
     "operations_response_entity.otoroshi.next.controllers.NgPluginsController.categories_experimental": "StringList",
-    "operations_response_entity.otoroshi.next.controllers.NgPluginsController.form_experimental": "Unkown",
-    "operations_response_entity.otoroshi.next.controllers.NgPluginsController.forms_experimental": "Unkown",
-    "operations_response_entity.otoroshi.next.controllers.NgPluginsController.plugins_experimental": "Unkown",
+    "operations_response_entity.otoroshi.next.controllers.NgPluginsController.form_experimental": "Unknown",
+    "operations_response_entity.otoroshi.next.controllers.NgPluginsController.forms_experimental": "Unknown",
+    "operations_response_entity.otoroshi.next.controllers.NgPluginsController.plugins_experimental": "Unknown",
     "operations_response_entity.otoroshi.next.controllers.NgPluginsController.steps_experimental": "StringList",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgBackendsController.bulkCreateAction_experimental": "BulkResponseBody",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgBackendsController.bulkDeleteAction_experimental": "BulkResponseBody",
@@ -1093,11 +1093,11 @@
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgBackendsController.deleteEntityAction_experimental": "otoroshi.next.models.StoredNgBackend",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgBackendsController.findAllEntitiesAction_experimental": "otoroshi.next.models.StoredNgBackend",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgBackendsController.findEntityByIdAction_experimental": "otoroshi.next.models.StoredNgBackend",
-    "operations_response_entity.otoroshi.next.controllers.adminapi.NgBackendsController.form_experimental": "The form description of the current controllers entity",
+    "operations_response_entity.otoroshi.next.controllers.adminapi.NgBackendsController.form_experimental": "ExperimentalFormResponse",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgBackendsController.initiateStoredNgBackend_experimental": "otoroshi.next.models.StoredNgBackend",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgBackendsController.patchEntityAction_experimental": "otoroshi.next.models.StoredNgBackend",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgBackendsController.updateEntityAction_experimental": "otoroshi.next.models.StoredNgBackend",
-    "operations_response_entity.otoroshi.next.controllers.adminapi.NgFrontendsController.form_experimental": "The form description of the current controllers entity",
+    "operations_response_entity.otoroshi.next.controllers.adminapi.NgFrontendsController.form_experimental": "ExperimentalFormResponse",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgRoutesController.bulkCreateAction_experimental": "BulkResponseBody",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgRoutesController.bulkDeleteAction_experimental": "BulkResponseBody",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgRoutesController.bulkPatchAction_experimental": "BulkResponseBody",
@@ -1107,7 +1107,7 @@
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgRoutesController.domainsAndCertificates_experimental": "Unknown",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgRoutesController.findAllEntitiesAction_experimental": "otoroshi.next.models.NgRoute",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgRoutesController.findEntityByIdAction_experimental": "otoroshi.next.models.NgRoute",
-    "operations_response_entity.otoroshi.next.controllers.adminapi.NgRoutesController.form_experimental": "The form description of the current controllers entity",
+    "operations_response_entity.otoroshi.next.controllers.adminapi.NgRoutesController.form_experimental": "ExperimentalFormResponse",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgRoutesController.initiateRoute_experimental": "otoroshi.next.models.NgRoute",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgRoutesController.patchEntityAction_experimental": "otoroshi.next.models.NgRoute",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgRoutesController.updateEntityAction_experimental": "otoroshi.next.models.NgRoute",
@@ -1119,7 +1119,7 @@
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgServicesController.deleteEntityAction_experimental": "otoroshi.next.models.NgService",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgServicesController.findAllEntitiesAction_experimental": "otoroshi.next.models.NgService",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgServicesController.findEntityByIdAction_experimental": "otoroshi.next.models.NgService",
-    "operations_response_entity.otoroshi.next.controllers.adminapi.NgServicesController.form_experimental": "The form description of the current controllers entity",
+    "operations_response_entity.otoroshi.next.controllers.adminapi.NgServicesController.form_experimental": "ExperimentalFormResponse",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgServicesController.fromOpenapi_experimental": "otoroshi.next.models.NgService",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgServicesController.initiateService_experimental": "otoroshi.next.models.NgService",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgServicesController.patchEntityAction_experimental": "otoroshi.next.models.NgService",
@@ -1132,7 +1132,7 @@
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgTargetsController.deleteEntityAction_experimental": "otoroshi.next.models.StoredNgTarget",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgTargetsController.findAllEntitiesAction_experimental": "otoroshi.next.models.StoredNgTarget",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgTargetsController.findEntityByIdAction_experimental": "otoroshi.next.models.StoredNgTarget",
-    "operations_response_entity.otoroshi.next.controllers.adminapi.NgTargetsController.form_experimental": "The form description of the current controllers entity",
+    "operations_response_entity.otoroshi.next.controllers.adminapi.NgTargetsController.form_experimental": "ExperimentalFormResponse",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgTargetsController.initiateStoredNgTarget_experimental": "otoroshi.next.models.StoredNgTarget",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgTargetsController.patchEntityAction_experimental": "otoroshi.next.models.StoredNgTarget",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgTargetsController.updateEntityAction_experimental": "otoroshi.next.models.StoredNgTarget",
@@ -2275,8 +2275,6 @@
     "otoroshi.plugins.izanami.IzanamiProxyConfig.mtls": "Izanami server tls config",
     "otoroshi.plugins.izanami.IzanamiProxyConfig.path": "Izanami server path",
     "otoroshi.plugins.izanami.IzanamiProxyConfig.timeout": "Timeout when talking to the izanami server",
-    "otoroshi.plugins.jobs.kubernetes.CRDContext.kubernetes": "Resources from kubernetes",
-    "otoroshi.plugins.jobs.kubernetes.CRDContext.otoroshi": "Resources from otoroshi",
     "otoroshi.plugins.jobs.kubernetes.ClientSupport.client": "The actual kubernetes client",
     "otoroshi.plugins.jobs.kubernetes.ClientSupport.env": "The current env",
     "otoroshi.plugins.jobs.kubernetes.FailedCrdParsing.crd": "The failed crd",
@@ -2338,23 +2336,6 @@
     "otoroshi.plugins.jobs.kubernetes.KubernetesConfig.watch": "Enabled resources watch",
     "otoroshi.plugins.jobs.kubernetes.KubernetesConfig.watchGracePeriodSeconds": "The number of second to wait between receiving a change event and the actual sync",
     "otoroshi.plugins.jobs.kubernetes.KubernetesConfig.watchTimeoutSeconds": "The timeout to call a watch resources",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.apiKeys": "template for entities apiKeys",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.authModules": "template for entities authModules",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.backends": "template for entities backends",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.certificates": "template for entities certificates",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.dataExporters": "template for entities dataExporters",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.globalConfigs": "template for entities globalConfigs",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.jwtVerifiers": "template for entities jwtVerifiers",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.routes": "template for entities routes",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.scripts": "template for entities scripts",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.serviceDescriptors": "template for entities serviceDescriptors",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.serviceGroups": "template for entities serviceGroups",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.services": "template for entities services",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.simpleAdmins": "template for entities simpleAdmins",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.targets": "template for entities targets",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.tcpServices": "template for entities tcpServices",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.teams": "template for entities teams",
-    "otoroshi.plugins.jobs.kubernetes.KubernetesResourcesContext.tenants": "template for entities tenants",
     "otoroshi.plugins.jobs.kubernetes.OtoAnnotationConfig.annotations": "Internal api",
     "otoroshi.plugins.jobs.kubernetes.OtoroshiResourcesContext.apiKeys": "template for entities apiKeys",
     "otoroshi.plugins.jobs.kubernetes.OtoroshiResourcesContext.authModules": "template for entities authModules",
@@ -2373,7 +2354,6 @@
     "otoroshi.plugins.jobs.kubernetes.OtoroshiResourcesContext.tcpServices": "template for entities tcpServices",
     "otoroshi.plugins.jobs.kubernetes.OtoroshiResourcesContext.teams": "template for entities teams",
     "otoroshi.plugins.jobs.kubernetes.OtoroshiResourcesContext.tenants": "template for entities tenants",
-    "otoroshi.plugins.log4j.Log4jExpression.parts": "parts of a log4j expression",
     "otoroshi.plugins.log4j.Log4jExpressionText.value": "A parsed text for log4jshell evaluation",
     "otoroshi.plugins.loggers.BodyLoggerConfig.json": "The current config",
     "otoroshi.plugins.loggers.BodyLoggerFilterConfig.json": "The current config",
@@ -2716,6 +2696,10 @@
     "Unknown" : {
       "type" : "object",
       "description" : "value used by the openapi generator when no matching type found. Should be fixed in a near future."
+    },
+    "ExperimentalFormResponse" : {
+      "type" : "object",
+      "description" : "The representation of a form to configure a plugin or an entity"
     },
     "Any" : {
       "oneOf" : [ {
@@ -3109,7 +3093,10 @@
         },
         "config_flow" : {
           "type" : "array",
-          "description" : "the config flow of the plugin (for UI form)"
+          "description" : "the config flow of the plugin (for UI form)",
+          "items" : {
+            "type" : "string"
+          }
         },
         "plugin_visibility" : {
           "type" : "string",
@@ -3277,9 +3264,7 @@
       "properties" : {
         "version" : {
           "description" : "The version of the jwt",
-          "type" : {
-            "$ref" : "#/components/schemas/otoroshi.models.SecComInfoTokenVersion"
-          }
+          "$ref" : "#/components/schemas/otoroshi.models.SecComInfoTokenVersion"
         },
         "secComTtl" : {
           "description" : "The ttl of the generated jwt in milliseconds",
@@ -3287,14 +3272,11 @@
         },
         "headerName" : {
           "description" : "The header name to inject the jwt",
-          "type" : "string",
-          "required" : false
+          "type" : "string"
         },
         "algo" : {
           "description" : "The jwt signing algorithm",
-          "type" : {
-            "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
-          }
+          "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
         }
       }
     },
@@ -3304,9 +3286,7 @@
       "properties" : {
         "version" : {
           "description" : "The version of the jwt",
-          "type" : {
-            "$ref" : "#/components/schemas/otoroshi.models.SecComVersion"
-          }
+          "$ref" : "#/components/schemas/otoroshi.models.SecComVersion"
         },
         "ttl" : {
           "description" : "The ttl of the generated jwt in milliseconds",
@@ -3314,25 +3294,19 @@
         },
         "request_header_name" : {
           "description" : "The header name to inject the jwt",
-          "type" : "string",
-          "required" : false
+          "type" : "string"
         },
         "response_header_name" : {
           "description" : "The header name to read the jwt",
-          "type" : "string",
-          "required" : false
+          "type" : "string"
         },
         "algo_to_backend" : {
           "description" : "The jwt signing algorithm when writing",
-          "type" : {
-            "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
-          }
+          "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
         },
         "algo_from_backend" : {
           "description" : "The jwt signing algorithm when reading",
-          "type" : {
-            "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
-          }
+          "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
         },
         "state_resp_leeway" : {
           "description" : "the number of seconds acceptable between client and server time",
