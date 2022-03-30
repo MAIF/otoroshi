@@ -6014,7 +6014,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/PemCertificateBody "
+                "$ref" : "#/components/schemas/PemCertificateBody"
               }
             }
           }
