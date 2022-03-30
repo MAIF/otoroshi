@@ -56,7 +56,7 @@ import { createTooltip } from '../tooltips';
 import { TenantsPage } from '../pages/TenantsPage';
 import { TeamsPage } from '../pages/TeamsPage';
 import { Toasts } from '../components/Toasts';
-import { NgFormPlayground } from '../components/inputs/ngform';
+import { NgFormPlayground } from '../components/nginputs';
 
 class BackOfficeAppContainer extends Component {
   constructor(props) {
