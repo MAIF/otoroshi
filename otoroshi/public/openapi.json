@@ -18502,7 +18502,7 @@
         }
       },
       "otoroshi.next.plugins.Keys" : {
-        "description" : "Internal api ",
+        "description" : "Internal api",
         "type" : "object",
         "properties" : { }
       },
@@ -26691,7 +26691,7 @@
             "type" : "number"
           },
           "tlsConfig" : {
-            "description" : "???",
+            "description" : "TLS config",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
           }
         }
