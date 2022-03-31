@@ -22,7 +22,7 @@ const Dot = ({ icon, children, clickable, onClick, highlighted, selectedNode, st
     {children && children}
 </div>
 
-const NodeElement = ({ element, setSelectedNode, hideLink, selectedNode, bold, disableBorder }) => {
+const NodeElement = ({ element, setSelectedNode, hideLink, selectedNode, bold, disableBorder, style }) => {
     const { id, name, index } = element
     const highlighted = selectedNode && selectedNode.id === id && (selectedNode.plugin_multi_inst ? selectedNode.index === index : true)
 
@@ -30,8 +30,9 @@ const NodeElement = ({ element, setSelectedNode, hideLink, selectedNode, bold, d
         <Dot clickable={true}
             selectedNode={selectedNode}
             style={{
-                border: disableBorder ? 0 : 1,
-                fontWeight: bold ? 'bold' : 'normal'
+                borderWidth: disableBorder ? 0 : 1,
+                fontWeight: bold ? 'bold' : 'normal',
+                ...style
             }}
             onClick={e => {
                 e.stopPropagation()
@@ -51,26 +52,26 @@ const NodeElement = ({ element, setSelectedNode, hideLink, selectedNode, bold, d
     </>
 }
 
-const Anchor = ({ text, highlighted = true, mt = 'initial', addNode }) => <div className='anchor'
-    onDragOver={e => e.preventDefault()}
-    onDrop={(ev) => {
-        ev.preventDefault()
-        const node = JSON.parse(ev.dataTransfer.getData("newElement"))
-        addNode(node)
-    }}
-    style={{
-        opacity: highlighted ? 1 : .25,
-        marginTop: mt
-    }}>
-    <span className='text-center'>{text}</span>
-</div>
+// const Anchor = ({ text, highlighted = true, mt = 'initial', addNode }) => <div className='anchor'
+//     onDragOver={e => e.preventDefault()}
+//     onDrop={(ev) => {
+//         ev.preventDefault()
+//         const node = JSON.parse(ev.dataTransfer.getData("newElement"))
+//         addNode(node)
+//     }}
+//     style={{
+//         opacity: highlighted ? 1 : .25,
+//         marginTop: mt
+//     }}>
+//     <span className='text-center'>{text}</span>
+// </div>
 
 const Link = ({ highlighted = true, flex }) => <div className="link" style={{
     opacity: highlighted ? 1 : .25,
     flex: flex ? 1 : 'initial'
 }}></div>
 
-export default ({ lineId, value }) => {
+export default ({ value }) => {
     const { routeId } = useParams()
 
     const [backends, setBackends] = useState([])
@@ -158,7 +159,7 @@ export default ({ lineId, value }) => {
         !EXCLUDED_PLUGINS.plugin_visibility.includes(plugin.plugin_visibility) &&
         !EXCLUDED_PLUGINS.ids.includes(plugin.id.replace('cp:', ''))
 
-    const onDrag = (e, element) => e.dataTransfer.setData("newElement", JSON.stringify(element))
+    // const onDrag = (e, element) => e.dataTransfer.setData("newElement", JSON.stringify(element))
 
     const removeNode = (id, index) => {
         setNodes(nodes.filter((node, i) => node.id !== id && i !== index))
@@ -314,7 +315,8 @@ export default ({ lineId, value }) => {
                             group: category,
                             elements: []
                         })))}
-                        onDrag={onDrag} addNode={addNode} />
+                        // onDrag={onDrag}
+                        addNode={addNode} />
                 </div>
             </div>
             <div className="col-sm-9">
@@ -332,6 +334,11 @@ export default ({ lineId, value }) => {
                                         top: 0,
                                         left: '-16px',
                                         height: '36px',
+                                        border: '1px solid #eee',
+                                        borderRightWidth: 0,
+                                        borderRadius: '4px',
+                                        borderTopRightRadius: 0,
+                                        borderBottomRightRadius: 0,
                                         backgroundColor: selectedNode && selectedNode.id === "Frontend" ? "#f9b000" : "rgb(73, 73, 72)",
                                         opacity: !selectedNode || (selectedNode && selectedNode.id === "Frontend") ? 1 : .25
                                     }}>
@@ -343,6 +350,9 @@ export default ({ lineId, value }) => {
                                     </div>
                                     {inputNodes.slice(0, 1)
                                         .map((value, i) => <NodeElement
+                                            style={{
+                                                borderLeftWidth: 0
+                                            }}
                                             element={value}
                                             key={`inNodes${i}`}
                                             selectedNode={selectedNode}
@@ -363,7 +373,7 @@ export default ({ lineId, value }) => {
                                         setSelectedNode={setSelectedNode}
                                         isLast={(inputNodes.length - 1) === i}
                                     />)}
-                                    <Anchor text="Drop elements here" highlighted={!selectedNode} addNode={addNode} />
+                                    {/* <Anchor text="Drop elements here" highlighted={!selectedNode} addNode={addNode} /> */}
                                     <Link highlighted={!selectedNode} flex={true} />
                                 </div>
                             </div>
@@ -382,12 +392,12 @@ export default ({ lineId, value }) => {
                                         selectedNode={selectedNode}
                                         isLast={(outputNodes.length - 1) === i}
                                     />)}
-                                    <Anchor
+                                    {/* <Anchor
                                         out={true}
                                         addNode={addNode}
                                         text="Drop elements here"
                                         stream="onOutputStream"
-                                        highlighted={!selectedNode} />
+                                        highlighted={!selectedNode} /> */}
                                     <Link highlighted={!selectedNode} flex={true} />
                                 </div>
                             </div>
@@ -438,11 +448,14 @@ export default ({ lineId, value }) => {
     </Loader>
 }
 
-const Element = ({ element, onDrag, n, addNode }) => (
-    <div className="element" draggable={true} onDragStart={e => onDrag(e, { ...element })} onClick={e => {
-        e.stopPropagation()
-        addNode(element)
-    }}>
+const Element = ({ element, /*onDrag,*/ n, addNode }) => (
+    <div className="element"
+        // draggable={true}
+        // onDragStart={e => onDrag(e, { ...element })}
+        onClick={e => {
+            e.stopPropagation()
+            addNode(element)
+        }}>
         <div className="d-flex-between" style={{
             padding: "10px",
             textOverflow: 'ellipsis',
@@ -456,7 +469,7 @@ const Element = ({ element, onDrag, n, addNode }) => (
     </div>
 )
 
-const Group = ({ group, elements, onDrag, addNode }) => {
+const Group = ({ group, elements, /*onDrag,*/ addNode }) => {
     const [open, setOpen] = useState(false)
 
     return <div className="group">
@@ -471,7 +484,7 @@ const Group = ({ group, elements, onDrag, addNode }) => {
             <span style={{ color: "#fff", padding: "10px" }}>{group.charAt(0).toUpperCase() + group.slice(1)}</span>
         </div>
         {open && <>
-            <PluginsStack elements={elements} onDrag={onDrag} addNode={addNode} />
+            <PluginsStack elements={elements} /*onDrag={onDrag}*/ addNode={addNode} />
         </>}
     </div>
 }
@@ -505,7 +518,7 @@ const SearchBar = ({ handleSearch }) => <div className='group'>
             <input
                 type="text"
                 style={{
-                    border: 0,
+                    borderWidth: 0,
                     padding: '6px 0px 6px 6px',
                     width: '100%',
                     outline: 'none',
