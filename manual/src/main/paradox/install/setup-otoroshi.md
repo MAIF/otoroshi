@@ -1,5 +1,9 @@
 # Setup Otoroshi
 
+in this section we are going to configure otoroshi before running it for the first time
+
+## Setup the database
+
 Right now, Otoroshi supports multiple datastore. You can choose one datastore over another depending on your use case.
 
 @@@div { .plugin .platform } 
@@ -63,6 +67,42 @@ Not suitable for production usage.
 @@@ div { .centered-img }
 <img src="../imgs/datastores.png" />
 @@@
+
+the first thing to setup is what kind of datastore you want to use with the `otoroshi.storage` setting
+
+```conf
+otoroshi {
+  storage = "inmemory" # the storage used by otoroshi. possible values are redis, inmemory, file, http, s3, cassandra, lettuce, experimental-pg             
+  storage = ${?APP_STORAGE} # the storage used by otoroshi. possible values are redis, inmemory, file, http, s3, cassandra, lettuce, experimental-pg  
+  storage = ${?OTOROSHI_STORAGE} # the storage used by otoroshi. possible values are redis, inmemory, file, http, s3, cassandra, lettuce, experimental-pg  
+}
+```
+
+depending on the value you chose, you will be able to configure your datastore with the following configuration
+
+inmemory
+:   @@snip [inmemory.conf](../snippets/datastores/inmemory.conf) 
+
+file
+:   @@snip [file.conf](../snippets/datastores/file.conf) 
+
+http
+:   @@snip [http.conf](../snippets/datastores/http.conf) 
+
+s3
+:   @@snip [s3.conf](../snippets/datastores/s3.conf) 
+
+redis
+:   @@snip [redis.conf](../snippets/datastores/redis.conf) 
+
+redis with lettuce
+:   @@snip [lettuce.conf](../snippets/datastores/lettuce.conf) 
+
+postgresql
+:   @@snip [pg.conf](../snippets/datastores/pg.conf) 
+
+cassandra
+:   @@snip [inmemory.conf](../snippets/datastores/cassandra.conf) 
 
 ## Setup your hosts before running
 

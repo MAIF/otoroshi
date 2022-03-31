@@ -26243,16 +26243,6 @@
           }
         }
       },
-      "otoroshi.next.plugins.SdkWrapper" : {
-        "description" : "Internal api",
-        "type" : "object",
-        "properties" : {
-          "config" : {
-            "description" : "Internal component",
-            "$ref" : "#/components/schemas/otoroshi.next.plugins.W3CTracingConfig"
-          }
-        }
-      },
       "otoroshi.models.Sign" : {
         "description" : "jwt token re-sign policy settings",
         "type" : "object",
@@ -26683,10 +26673,6 @@
             },
             "description" : "Http header when fetching JWKS"
           },
-          "mtlsConfig" : {
-            "description" : "TLS settings for http client",
-            "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
-          },
           "type" : {
             "description" : "the kind of algosettings",
             "type" : "string",
@@ -26703,6 +26689,10 @@
           "timeout" : {
             "description" : "Timeout when fetching JWKS",
             "type" : "number"
+          },
+          "tlsConfig" : {
+            "description" : "TLS config",
+            "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
           }
         }
       },

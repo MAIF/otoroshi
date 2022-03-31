@@ -17,7 +17,6 @@ import otoroshi.gateway.{Errors, Retry}
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{DynamicSSLEngineProvider, PemUtils}
 import otoroshi.storage.BasicStore
-import otoroshi.tcp.TcpService
 import otoroshi.utils
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
@@ -146,7 +145,7 @@ sealed trait AlgoMode
 case class InputMode(typ: String, kid: Option[String]) extends AlgoMode
 case object OutputMode                                 extends AlgoMode
 
-sealed trait AlgoSettings extends AsJson {
+trait AlgoSettings extends AsJson {
 
   def keyId: Option[String]
 
@@ -185,6 +184,7 @@ sealed trait AlgoSettings extends AsJson {
     )
   }
 }
+
 object AlgoSettings                                                           extends FromJson[AlgoSettings]   {
   override def fromJson(json: JsValue): Either[Throwable, AlgoSettings] =
     Try {
@@ -224,7 +224,7 @@ object HSAlgoSettings                                                         ex
       Left(e)
     } get
 }
-case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) extends AlgoSettings             {
+case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) extends AlgoSettings {
 
   def keyId: Option[String] = None
 
@@ -262,7 +262,7 @@ object RSAlgoSettings                                                           
       Left(e)
     } get
 }
-case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings             {
+case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings {
 
   def keyId: Option[String] = None
 
@@ -340,7 +340,7 @@ object ESAlgoSettings                                                           
       Left(e)
     } get
 }
-case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings             {
+case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings {
 
   def keyId: Option[String] = None
 
@@ -425,7 +425,7 @@ object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
             .getOrElse(FiniteDuration(60 * 60 * 1000, TimeUnit.MILLISECONDS)),
           (json \ "kty").asOpt[String].map(v => KeyType.parse(v)).getOrElse(KeyType.RSA),
           (json \ "proxy").asOpt[JsValue].flatMap(v => WSProxyServerJson.proxyFromJson(v)),
-          MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
+          MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue].orElse((json \ "tlsConfig").asOpt[JsValue]).orElse((json \ "tls_config").asOpt[JsValue]))
         )
       )
     } recover { case e =>
@@ -434,13 +434,13 @@ object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
   }
 }
 case class JWKSAlgoSettings(
-    url: String,
-    headers: Map[String, String],
-    timeout: FiniteDuration,
-    ttl: FiniteDuration,
-    kty: KeyType,
-    proxy: Option[WSProxyServer] = None,
-    mtlsConfig: MtlsConfig
+  url: String,
+  headers: Map[String, String],
+  timeout: FiniteDuration,
+  ttl: FiniteDuration,
+  kty: KeyType,
+  proxy: Option[WSProxyServer] = None,
+  tlsConfig: MtlsConfig
 ) extends AlgoSettings {
 
   val logger = Logger("otoroshi-jwks")
@@ -485,7 +485,7 @@ case class JWKSAlgoSettings(
     Retry
       .retry(10, delay = 20, ctx = s"try to fetch JWKS at '$url'") { _ =>
         env.MtlsWs
-          .url(url, mtlsConfig)
+          .url(url, tlsConfig)
           .withRequestTimeout(timeout)
           .withHttpHeaders(headers.toSeq: _*)
           .withMaybeProxyServer(
@@ -564,7 +564,8 @@ case class JWKSAlgoSettings(
       "ttl"        -> ttl.toMillis,
       "kty"        -> kty.getValue,
       "proxy"      -> WSProxyServerJson.maybeProxyToJson(proxy),
-      "mtlsConfig" -> mtlsConfig.json
+      "tls_config"  -> tlsConfig.json,
+      "mtlsConfig"  -> tlsConfig.json
     )
 }
 
@@ -581,7 +582,7 @@ object RSAKPAlgoSettings                                extends FromJson[RSAKPAl
       Left(e)
     } get
 }
-case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings                {
+case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings {
 
   import scala.concurrent.duration._
 
@@ -631,7 +632,7 @@ object ESKPAlgoSettings                                extends FromJson[ESKPAlgo
       Left(e)
     } get
 }
-case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings               {
+case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings {
 
   import scala.concurrent.duration._
 
