@@ -283,8 +283,6 @@ export default ({ value }) => {
     const targetNodes = nodes.filter(node => node.onTargetStream)
     const outputNodes = nodes.filter(node => (node.plugin_steps || []).some(s => ["TransformResponse"].includes(s)))
 
-    console.log(inputNodes)
-
     return <Loader loading={loading}>
         <div className="h-100 col-sm-12" onClick={() => setSelectedNode(undefined)}>
             <div className="col-sm-3" style={{
@@ -433,7 +431,7 @@ export default ({ value }) => {
                                 bold={true}
                             />)}
                         </div></div>
-                    <div className="col-sm-8" style={{ paddingRight: 0 }}>
+                    <div className="col-sm-8" style={{ paddingRight: 0, position: 'relative' }}>
                         {selectedNode ? <EditView
                             setRoute={setRoute}
                             selectedNode={selectedNode}
@@ -570,7 +568,6 @@ const UnselectedNode = ({ saveChanges }) => <div className="d-flex-between dark-
 const EditView = ({
     selectedNode, setSelectedNode, route,
     removeNode, plugins, updatePlugin, setRoute, backends }) => {
-
     const [usingExistingBackend, setUsingExistingBackend] = useState(route.backend_ref)
     const [asJsonFormat, toggleJsonFormat] = useState(selectedNode.legacy)
     const [form, setForm] = useState({
@@ -584,6 +581,20 @@ const EditView = ({
     const [test, setTest] = useState()
     const [saveable, setSaveable] = useState(false)
     const [backendConfigRef, setBackendConfigRef] = useState()
+
+    const [offset, setOffset] = useState(0);
+
+    useEffect(() => {
+        const onScroll = () => setOffset(window.pageYOffset);
+        window.removeEventListener('scroll', onScroll);
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
+
+    const updateScroll = e => {
+        console.log(window.scrollY)
+        setTop(window.scrollY)
+    }
 
     useEffect(() => {
         if (route.backend_ref)
@@ -681,12 +692,17 @@ const EditView = ({
             })
     }
 
-    console.log("SCHEMA", form.schema.plugin)
-    console.log("VALUE", form.value)
+    // console.log("SCHEMA", form.schema.plugin)
+    // console.log("VALUE", form.value)
 
     return <div onClick={e => {
         e.stopPropagation()
-    }} className="plugins-stack">
+    }} className="plugins-stack" style={{
+        position: 'absolute',
+        top: offset,
+        left: 12,
+        right: 0
+    }}>
         <div className="group-header d-flex-between" style={{
             borderBottom: '1px solid #f9b000',
             borderRight: 0
