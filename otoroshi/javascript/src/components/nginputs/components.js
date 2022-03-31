@@ -59,6 +59,7 @@ export class NgFormRenderer extends Component {
       if (!this.props.rawSchema) {
         return null;
       }
+      if (!this.props.rawSchema.props) this.props.rawSchema.props = {};
       const collapsable = this.props.rawSchema.props.collapsable || this.props.rawSchema.collapsable
       const noBorder = this.props.rawSchema.props.noBorder || this.props.rawSchema.noBorder
       const noTitle = this.props.rawSchema.props.noTitle || this.props.rawSchema.noTitle

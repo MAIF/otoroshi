@@ -21,9 +21,12 @@ export class NgFormPlayground extends Component {
   }
 
   render() {
-    return <NgFormPlaygroundOtoroshi globalEnv={this.props.globalEnv} />
+    if (!(this.props.globalEnv && this.props.globalEnv.env === 'dev')) {
+      return null;
+    }
     return (
       <div style={{ marginTop: 40 }}>
+        <NgFormPlaygroundOtoroshi globalEnv={this.props.globalEnv} />
         <NgForm 
           style={{ display: 'flex', flexDirection: 'column', width: '100%' }}
           value={this.state.value || {}}
