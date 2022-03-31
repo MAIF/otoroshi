@@ -476,7 +476,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <dt>postgresql</dt>
   <dd>
   <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-conf">otoroshi {
-  pg { # postrgesql settings. everything possible with the client
+  # postrgesql settings. everything possible with the client
+  # WARNING: this is an experimental support and everything might not work as expected !!!
+  pg { 
     uri = ${?PG_URI}
     uri = ${?OTOROSHI_PG_URI}
     uri = ${?POSTGRESQL_ADDON_URI}
