@@ -21,7 +21,7 @@ export class NgFormPlayground extends Component {
   }
 
   render() {
-    return <NgFormPlaygroundOtoroshi />
+    return <NgFormPlaygroundOtoroshi globalEnv={this.props.globalEnv} />
     return (
       <div style={{ marginTop: 40 }}>
         <NgForm 
@@ -231,32 +231,36 @@ export class NgFormPlaygroundOtoroshi extends Component {
   }
 
   render() {
-    return (
-      <div style={{ marginTop: 60, display: 'flex', flexDirection: 'column' }}>
-        {Object.keys(this.state.forms)
-          .filter(name => name.indexOf('otoroshi.next.plugins') === 0)
-          .filter(name => name.indexOf('otoroshi.next.plugins.api') !== 0)
-          .filter(name => name.indexOf('otoroshi.next.plugins.wrappers') !== 0)
-          .filter(key  => this.state.forms[key].flow.length > 0)
-          // .filter(name => name.indexOf('otoroshi.next.plugins.NgChaosConfig') === 0)
-          // .filter(name => name.indexOf('otoroshi.next.plugins.ApikeyCalls') === 0)
-          .map(key => {
-            return (
-              <div key={key} style={{ borderBottom: '1px rgb(181, 179, 179) solid', paddingBottom: 50, marginBottom: 20 }}>
-                <h3>{key}</h3>
-                <hr />
-                <NgFormState key={key}>{(value, onChange) => (
-                  <NgForm 
-                    key={key}
-                    value={value}
-                    flow={this.state.forms[key].flow}
-                    schema={this.state.forms[key].schema}
-                    onChange={onChange} />
-                )}</NgFormState>
-              </div>
-            )
-          })}
-      </div>
-    )
+    if (this.props.globalEnv && this.props.globalEnv.env === 'dev') {
+      return (
+        <div style={{ marginTop: 60, display: 'flex', flexDirection: 'column' }}>
+          {Object.keys(this.state.forms)
+            .filter(name => name.indexOf('otoroshi.next.plugins') === 0)
+            .filter(name => name.indexOf('otoroshi.next.plugins.api') !== 0)
+            .filter(name => name.indexOf('otoroshi.next.plugins.wrappers') !== 0)
+            .filter(key  => this.state.forms[key].flow.length > 0)
+            // .filter(name => name.indexOf('otoroshi.next.plugins.NgChaosConfig') === 0)
+            // .filter(name => name.indexOf('otoroshi.next.plugins.ApikeyCalls') === 0)
+            .map(key => {
+              return (
+                <div key={key} style={{ borderBottom: '1px rgb(181, 179, 179) solid', paddingBottom: 50, marginBottom: 20 }}>
+                  <h3>{key}</h3>
+                  <hr />
+                  <NgFormState key={key}>{(value, onChange) => (
+                    <NgForm 
+                      key={key}
+                      value={value}
+                      flow={this.state.forms[key].flow}
+                      schema={this.state.forms[key].schema}
+                      onChange={onChange} />
+                  )}</NgFormState>
+                </div>
+              )
+            })}
+        </div>
+      )
+    } else {
+      return null;
+    }
   }
 }
