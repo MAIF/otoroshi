@@ -161,7 +161,8 @@ export default ({ value }) => {
 
     // const onDrag = (e, element) => e.dataTransfer.setData("newElement", JSON.stringify(element))
 
-    const removeNode = (id, index) => {
+    const removeNode = (id, idx) => {
+        const index = idx + 1 // increase of one to prevent delete the Frontend node
         setNodes(nodes.filter((node, i) => node.id !== id && i !== index))
         setRoute({
             ...route,
@@ -281,6 +282,8 @@ export default ({ value }) => {
         .filter(node => (node.plugin_steps || []).some(s => ["PreRoute", "ValidateAccess", "TransformRequest"].includes(s))))
     const targetNodes = nodes.filter(node => node.onTargetStream)
     const outputNodes = nodes.filter(node => (node.plugin_steps || []).some(s => ["TransformResponse"].includes(s)))
+
+    console.log(inputNodes)
 
     return <Loader loading={loading}>
         <div className="h-100 col-sm-12" onClick={() => setSelectedNode(undefined)}>
@@ -507,7 +510,7 @@ const PluginsStack = ({ elements, ...props }) => <div className="plugins-stack">
 
 const SearchBar = ({ handleSearch }) => <div className='group'>
     <div className="group-header" style={{ alignItems: 'initial' }}>
-        <i className="fas fa-search group-icon" />
+        <i className="fas fa-search group-icon designer-group-header-icon" />
         <div style={{
             paddingLeft: '6px',
             width: '100%',
@@ -689,31 +692,37 @@ const EditView = ({
             borderRight: 0
         }}>
             <div className='d-flex-between'>
-                <i className={`fas fa-${plugin.icon || 'bars'} group-icon`}
+                <i className={`fas fa-${plugin.icon || 'bars'} group-icon designer-group-header-icon`}
                     style={{
                         color: "#fff",
                         borderBottomLeftRadius: 0
                     }} />
                 <span style={{ color: "#fff", paddingLeft: "12px" }}>{name || id}</span>
             </div>
-            {!selectedNode.legacy && <div className='mr-2'>
-                <button className='btn btn-sm'
-                    onClick={() => toggleJsonFormat(false)}
-                    style={{
+            <div className='d-flex me-1'>
+                {!selectedNode.legacy && <>
+                    <button className='btn btn-sm'
+                        onClick={() => toggleJsonFormat(false)}
+                        style={{
+                            padding: "6px 12px",
+                            backgroundColor: asJsonFormat ? "#373735" : "#f9b000",
+                            color: "#fff"
+                        }}>FORM</button>
+                    <button className='btn btn-sm mx-1' onClick={() => {
+                        if (!isEqual(ref.current.rawData(), form.value))
+                            setForm({ ...form, value: ref.current.rawData() })
+                        toggleJsonFormat(true)
+                    }} style={{
                         padding: "6px 12px",
-                        backgroundColor: asJsonFormat ? "#373735" : "#f9b000",
+                        backgroundColor: asJsonFormat ? "#f9b000" : "#373735",
                         color: "#fff"
-                    }}>FORM</button>
-                <button className='btn btn-sm mx-1' onClick={() => {
-                    if (!isEqual(ref.current.rawData(), form.value))
-                        setForm({ ...form, value: ref.current.rawData() })
-                    toggleJsonFormat(true)
-                }} style={{
-                    padding: "6px 12px",
-                    backgroundColor: asJsonFormat ? "#f9b000" : "#373735",
-                    color: "#fff"
-                }}>RAW JSON</button>
-            </div>}
+                    }}>RAW JSON</button>
+                </>}
+                <button className='btn btn-sm btn-danger' style={{ minWidth: '36px' }}>
+                    <i className='fas fa-times designer-times-button'
+                        onClick={() => setSelectedNode(undefined)} />
+                </button>
+            </div>
         </div>
         <div style={{
             backgroundColor: "#494949"
