@@ -24,7 +24,20 @@ import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.events.{OtoroshiEventsActorSupervizer, StartExporters}
 import otoroshi.jobs.updates.Version
-import otoroshi.models.{EntityLocation, OtoroshiAdminType, SimpleOtoroshiAdmin, Team, TeamAccess, TeamId, Tenant, TenantAccess, TenantId, UserRight, UserRights, WebAuthnOtoroshiAdmin}
+import otoroshi.models.{
+  EntityLocation,
+  OtoroshiAdminType,
+  SimpleOtoroshiAdmin,
+  Team,
+  TeamAccess,
+  TeamId,
+  Tenant,
+  TenantAccess,
+  TenantId,
+  UserRight,
+  UserRights,
+  WebAuthnOtoroshiAdmin
+}
 import otoroshi.next.proxy.NgProxyState
 import otoroshi.openapi.{ClassGraphScanner, FormsGenerator, OpenApiGenerator, OpenapiToJson}
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
@@ -101,9 +114,11 @@ class Env(
     val finalConfigJson1: JsObject =
       wholeConfigJson.deepMerge(Json.obj("otoroshi" -> mergeConfig, "app" -> mergeConfig))
     (Configuration(ConfigFactory.parseString(Json.stringify(finalConfigJson1))), finalConfigJson1)
-  }) getOrElse (_configuration, Json.parse(_configuration.underlying.root().render(ConfigRenderOptions.concise())).asObject)
+  }) getOrElse (_configuration, Json
+    .parse(_configuration.underlying.root().render(ConfigRenderOptions.concise()))
+    .asObject)
 
-  val configuration = merged_configuration // _configuration
+  val configuration     = merged_configuration // _configuration
   val configurationJson = merged_configuration_json
 
   private lazy val xmasStart =
@@ -676,10 +691,10 @@ class Env(
 
   val confPackages: Seq[String] =
     configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.packages").getOrElse(Seq.empty) ++
-      configuration
-        .getOptionalWithFileSupport[String]("otoroshi.plugins.packagesStr")
-        .map(v => v.split(",").map(_.trim).toSeq)
-        .getOrElse(Seq.empty)
+    configuration
+      .getOptionalWithFileSupport[String]("otoroshi.plugins.packagesStr")
+      .map(v => v.split(",").map(_.trim).toSeq)
+      .getOrElse(Seq.empty)
 
   logger.info(s"Otoroshi version ${otoroshiVersion}")
   // logger.info(s"Scala version ${scala.util.Properties.versionNumberString} / ${scala.tools.nsc.Properties.versionNumberString}")
@@ -813,11 +828,11 @@ class Env(
     }
   }
 
-  val openApiSchema    = new ClassGraphScanner().run(confPackages, this)
+  val openApiSchema = new ClassGraphScanner().run(confPackages, this)
 
-  val scriptingEnabled      = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.scripts.enabled").getOrElse(false)
-  val scriptCompiler        = new ScriptCompiler(this)
-  val scriptManager         = new ScriptManager(this).start()
+  val scriptingEnabled = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.scripts.enabled").getOrElse(false)
+  val scriptCompiler   = new ScriptCompiler(this)
+  val scriptManager    = new ScriptManager(this).start()
 
   if (scriptingEnabled) logger.warn("Scripting is enabled on this Otoroshi instance !")
 
@@ -891,10 +906,13 @@ class Env(
     .getOrElse("")
 
   lazy val proxyState = new NgProxyState(this)
-  lazy val vaults = new Vaults(this)
+  lazy val vaults     = new Vaults(this)
 
-  lazy val http2ClientProxyEnabled = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.next.experimental.http2-client-proxy.enabled").getOrElse(false)
-  lazy val http2ClientProxyPort = configuration.getOptionalWithFileSupport[Int]("otoroshi.next.experimental.http2-client-proxy.port").getOrElse(8555)
+  lazy val http2ClientProxyEnabled = configuration
+    .getOptionalWithFileSupport[Boolean]("otoroshi.next.experimental.http2-client-proxy.enabled")
+    .getOrElse(false)
+  lazy val http2ClientProxyPort    =
+    configuration.getOptionalWithFileSupport[Int]("otoroshi.next.experimental.http2-client-proxy.port").getOrElse(8555)
 
   lazy val defaultConfig = GlobalConfig(
     trustXForwarded = initialTrustXForwarded,
@@ -1158,7 +1176,7 @@ class Env(
                   groups = Seq(backOfficeGroup, defaultGroup),
                   simpleAdmins = Seq(admin),
                   teams = Seq(defaultTeam),
-                  tenants = Seq(defaultTenant),
+                  tenants = Seq(defaultTenant)
                 )
 
                 val initialCustomization = configuration

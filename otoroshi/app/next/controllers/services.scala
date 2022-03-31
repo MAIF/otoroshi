@@ -194,28 +194,38 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
         )
       )
     )
-    env.datastores.globalConfigDataStore.latest().templates.service.map { template =>
-      Ok(defaultService.json.asObject.deepMerge(template))
-    }.getOrElse {
-      Ok(defaultService.json)
-    }
+    env.datastores.globalConfigDataStore
+      .latest()
+      .templates
+      .service
+      .map { template =>
+        Ok(defaultService.json.asObject.deepMerge(template))
+      }
+      .getOrElse {
+        Ok(defaultService.json)
+      }
   }
 
   def form() = ApiAction {
     env.openApiSchema.asForms.get("otoroshi.next.models.NgService") match {
-      case Some(value)  => Ok(Json.obj(
-        "schema" -> value.schema,
-        "flow" -> value.flow
-      ))
-      case _            => NotFound(Json.obj("error" -> "Schema and flow not found"))
+      case Some(value) =>
+        Ok(
+          Json.obj(
+            "schema" -> value.schema,
+            "flow"   -> value.flow
+          )
+        )
+      case _           => NotFound(Json.obj("error" -> "Schema and flow not found"))
     }
   }
 
   def fromOpenapi() = ApiAction.async(parse.json) { ctx =>
     (ctx.request.body.select("domain").asOpt[String], ctx.request.body.select("openapi").asOpt[String]) match {
-      case (Some(domain), Some(openapi)) => NgService.fromOpenApi(domain, openapi)
-        .map(service => Ok(service.json))
-      case _ => BadRequest(Json.obj("error" -> "missing domain and/or openapi value")).vfuture
+      case (Some(domain), Some(openapi)) =>
+        NgService
+          .fromOpenApi(domain, openapi)
+          .map(service => Ok(service.json))
+      case _                             => BadRequest(Json.obj("error" -> "missing domain and/or openapi value")).vfuture
     }
   }
 }

@@ -2,7 +2,15 @@ package otoroshi.next.plugins
 
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgStep}
+import otoroshi.next.plugins.api.{
+  NgAccess,
+  NgAccessContext,
+  NgAccessValidator,
+  NgPluginCategory,
+  NgPluginConfig,
+  NgPluginVisibility,
+  NgStep
+}
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -43,16 +51,16 @@ class PublicPrivatePaths extends NgAccessValidator {
 
   private val configReads: Reads[NgPublicPrivatePathsConfig] = NgPublicPrivatePathsConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = false
-  override def core: Boolean                   = true
-  override def name: String                    = "Public/Private paths"
-  override def description: Option[String]     = "This plugin allows or forbid request based on path patterns".some
+  override def multiInstance: Boolean                      = false
+  override def core: Boolean                               = true
+  override def name: String                                = "Public/Private paths"
+  override def description: Option[String]                 = "This plugin allows or forbid request based on path patterns".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgPublicPrivatePathsConfig().some
-  override def isAccessAsync: Boolean          = true
+  override def isAccessAsync: Boolean                      = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val uri                                                                 = ctx.request.thePath

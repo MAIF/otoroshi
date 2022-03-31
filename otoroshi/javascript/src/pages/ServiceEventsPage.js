@@ -280,31 +280,29 @@ export class ServiceEventsPage extends Component {
               from={this.state.from}
               to={this.state.to}
             />
-            </div>
-            <div className="input-group col-3 ms-3" style={{ width: 'auto' }}>
-              <div className="input-group-text">Limit</div>
-              <input
-                type="number"
-                style={{ width: 100 }}
-                className="form-control"
-                value={this.state.limit}
-                onChange={(e) =>
-                  this.setState({ limit: e.target.value }, () => this.table.update())
-                }
-              />
-            </div>
-            <div className="input-group col-4 ms-3" style={{ width: 'auto' }}>
-              <span style={{ marginTop: 10, marginRight: 5 }}>
-                Order by timestamp ascending values
-              </span>
-              <SimpleBooleanInput
-                value={this.state.asc}
-                onChange={(e) => {
-                  this.setState({ asc: !this.state.asc }, () => {
-                    this.table.update();
-                  });
-                }}
-              />
+          </div>
+          <div className="input-group col-3 ms-3" style={{ width: 'auto' }}>
+            <div className="input-group-text">Limit</div>
+            <input
+              type="number"
+              style={{ width: 100 }}
+              className="form-control"
+              value={this.state.limit}
+              onChange={(e) => this.setState({ limit: e.target.value }, () => this.table.update())}
+            />
+          </div>
+          <div className="input-group col-4 ms-3" style={{ width: 'auto' }}>
+            <span style={{ marginTop: 10, marginRight: 5 }}>
+              Order by timestamp ascending values
+            </span>
+            <SimpleBooleanInput
+              value={this.state.asc}
+              onChange={(e) => {
+                this.setState({ asc: !this.state.asc }, () => {
+                  this.table.update();
+                });
+              }}
+            />
           </div>
         </div>
         <Table

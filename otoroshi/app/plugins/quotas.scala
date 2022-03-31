@@ -53,9 +53,9 @@ class InstanceQuotas extends AccessValidator {
                                                     |```
                                                   """.stripMargin)
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
   override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     val config = ctx.configFor("InstanceQuotas")
@@ -167,9 +167,9 @@ class ServiceQuotas extends AccessValidator {
                                                      |}
                                                      |```""")
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
   private def totalCallsKey(name: String)(implicit env: Env): String   =
     s"${env.storageRoot}:plugins:services-public-quotas:global:$name"

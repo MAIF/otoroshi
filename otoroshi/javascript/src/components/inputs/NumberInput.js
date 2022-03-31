@@ -175,9 +175,7 @@ export class NumberRangeInput extends Component {
           )}
           {(this.props.prefixTo || this.props.suffixTo) && (
             <div className="input-group col-sm-6" style={{ float: 'inherit' }}>
-              {this.props.prefixTo && (
-                <div className="input-group-text">{this.props.prefixTo}</div>
-              )}
+              {this.props.prefixTo && <div className="input-group-text">{this.props.prefixTo}</div>}
               <input
                 type="number"
                 step={this.props.stepTo}
@@ -190,9 +188,7 @@ export class NumberRangeInput extends Component {
                 value={this.props.valueTo}
                 onChange={this.onChangeTo}
               />
-              {this.props.suffixTo && (
-                <div className="input-group-text">{this.props.suffixTo}</div>
-              )}
+              {this.props.suffixTo && <div className="input-group-text">{this.props.suffixTo}</div>}
             </div>
           )}
           {!(this.props.prefixFrom || this.props.suffixFrom) && (

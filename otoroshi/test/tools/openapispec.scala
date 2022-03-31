@@ -8,7 +8,7 @@ import otoroshi.openapi.{CrdsGenerator, OpenApiGenerator}
 
 class OpenApiSpec extends AnyWordSpec with Matchers with OptionValues {
 
- val scanResult = new ClassGraph()
+  val scanResult = new ClassGraph()
     .addClassLoader(this.getClass.getClassLoader)
     .enableAllInfo()
     .acceptPackages(Seq("otoroshi", "otoroshi_plugins", "play.api.libs.ws"): _*)

@@ -149,12 +149,12 @@ case class KubernetesCertSecret(raw: JsValue) extends KubernetesEntity {
 }
 
 case class KubernetesSecret(raw: JsValue) extends KubernetesEntity {
-  lazy val theType: String       = (raw \ "type").as[String]
-  lazy val base64Data: String    = (raw \ "data").as[String]
-  lazy val data                  = new String(OtoroshiClaim.decoder.decode(base64Data))
+  lazy val theType: String                         = (raw \ "type").as[String]
+  lazy val base64Data: String                      = (raw \ "data").as[String]
+  lazy val data                                    = new String(OtoroshiClaim.decoder.decode(base64Data))
   lazy val stringData: Option[Map[String, String]] = (raw \ "stringData").asOpt[Map[String, String]]
-  lazy val hasStringData: Boolean = stringData.isDefined
-  def cert: KubernetesCertSecret = KubernetesCertSecret(raw)
+  lazy val hasStringData: Boolean                  = stringData.isDefined
+  def cert: KubernetesCertSecret                   = KubernetesCertSecret(raw)
 }
 
 case class OtoResHolder[T](raw: JsValue, typed: T) extends KubernetesEntity

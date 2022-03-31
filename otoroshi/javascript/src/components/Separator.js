@@ -5,7 +5,7 @@ export class Separator extends Component {
     return (
       <div className="row mb-3">
         <label className="col-sm-2" />
-        <div className="col-sm-12 pt-2" style={{ borderBottom: '1px solid #666'}}>
+        <div className="col-sm-12 pt-2" style={{ borderBottom: '1px solid #666' }}>
           {this.props.title}
         </div>
       </div>

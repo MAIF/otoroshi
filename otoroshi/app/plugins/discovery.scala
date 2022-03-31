@@ -187,9 +187,9 @@ class DiscoverySelfRegistrationSink extends RequestSink {
 
   override def name: String = "Global self registration endpoints (service discovery)"
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  def steps: Seq[NgStep] = Seq(NgStep.Sink)
+  def steps: Seq[NgStep]                = Seq(NgStep.Sink)
 
   override def defaultConfig: Option[JsObject] = {
     Some(
@@ -242,9 +242,9 @@ class DiscoverySelfRegistrationTransformer extends RequestTransformer {
 
   override def name: String = "Self registration endpoints (service discovery)"
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def defaultConfig: Option[JsObject] = {
     Some(
@@ -321,9 +321,9 @@ class DiscoveryTargetsSelector extends PreRouting {
 
   override def name: String = "Service discovery target selector (service discovery)"
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+  def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def defaultConfig: Option[JsObject] = {
     Some(

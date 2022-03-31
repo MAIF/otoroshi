@@ -2196,7 +2196,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
         case Some(location) => (location.subdomain, location.env, location.domain)
       }
     } getOrElse ("myservice", "prod", env.domain)
-    val defaultDescriptor = ServiceDescriptor(
+    val defaultDescriptor          = ServiceDescriptor(
       id = IdGenerator.namedId("service", env),
       name = "my-service",
       description = "a service",
@@ -2213,7 +2213,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       ),
       detectApiKeySooner = false,
       privateApp = false,
-      sendOtoroshiHeadersBack = false, // try to hide otoroshi as much as possible
+      sendOtoroshiHeadersBack = false,    // try to hide otoroshi as much as possible
       enforceSecureCommunication = false, // try to hide otoroshi as much as possible
       forceHttps = if (env.exposedRootSchemeIsHttps) true else false,
       allowHttp10 = true,
@@ -2225,11 +2225,16 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       missingOnlyHeadersOut = Map.empty,
       stripPath = true
     )
-    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.descriptor.map { template =>
-      ServiceDescriptor._fmt.reads(defaultDescriptor.json.asObject.deepMerge(template)).get
-    }.getOrElse {
-      defaultDescriptor
-    }
+    env.datastores.globalConfigDataStore
+      .latest()(env.otoroshiExecutionContext, env)
+      .templates
+      .descriptor
+      .map { template =>
+        ServiceDescriptor._fmt.reads(defaultDescriptor.json.asObject.deepMerge(template)).get
+      }
+      .getOrElse {
+        defaultDescriptor
+      }
   }
   def updateMetrics(
       id: String,

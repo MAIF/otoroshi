@@ -51,10 +51,10 @@ case class JwtInjection(
     additionalCookies: Map[String, String] = Map.empty,
     removeCookies: Seq[String] = Seq.empty
 ) extends AsJson {
-  def json: JsValue = asJson
+  def json: JsValue   = asJson
   def asJson: JsValue =
     Json.obj(
-      "token" -> decodedToken.map(_.getToken.json).getOrElse(JsNull).asValue,
+      "token"             -> decodedToken.map(_.getToken.json).getOrElse(JsNull).asValue,
       "additionalHeaders" -> JsObject(this.additionalHeaders.mapValues(JsString.apply)),
       "removeHeaders"     -> JsArray(this.removeHeaders.map(JsString.apply)),
       "additionalCookies" -> JsObject(this.additionalCookies.mapValues(JsString.apply)),
@@ -224,7 +224,7 @@ object HSAlgoSettings                                                         ex
       Left(e)
     } get
 }
-case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) extends AlgoSettings {
+case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) extends AlgoSettings             {
 
   def keyId: Option[String] = None
 
@@ -262,7 +262,7 @@ object RSAlgoSettings                                                           
       Left(e)
     } get
 }
-case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings {
+case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings             {
 
   def keyId: Option[String] = None
 
@@ -340,7 +340,7 @@ object ESAlgoSettings                                                           
       Left(e)
     } get
 }
-case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings {
+case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings             {
 
   def keyId: Option[String] = None
 
@@ -425,7 +425,12 @@ object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
             .getOrElse(FiniteDuration(60 * 60 * 1000, TimeUnit.MILLISECONDS)),
           (json \ "kty").asOpt[String].map(v => KeyType.parse(v)).getOrElse(KeyType.RSA),
           (json \ "proxy").asOpt[JsValue].flatMap(v => WSProxyServerJson.proxyFromJson(v)),
-          MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue].orElse((json \ "tlsConfig").asOpt[JsValue]).orElse((json \ "tls_config").asOpt[JsValue]))
+          MtlsConfig.read(
+            (json \ "mtlsConfig")
+              .asOpt[JsValue]
+              .orElse((json \ "tlsConfig").asOpt[JsValue])
+              .orElse((json \ "tls_config").asOpt[JsValue])
+          )
         )
       )
     } recover { case e =>
@@ -434,13 +439,13 @@ object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
   }
 }
 case class JWKSAlgoSettings(
-  url: String,
-  headers: Map[String, String],
-  timeout: FiniteDuration,
-  ttl: FiniteDuration,
-  kty: KeyType,
-  proxy: Option[WSProxyServer] = None,
-  tlsConfig: MtlsConfig
+    url: String,
+    headers: Map[String, String],
+    timeout: FiniteDuration,
+    ttl: FiniteDuration,
+    kty: KeyType,
+    proxy: Option[WSProxyServer] = None,
+    tlsConfig: MtlsConfig
 ) extends AlgoSettings {
 
   val logger = Logger("otoroshi-jwks")
@@ -564,8 +569,8 @@ case class JWKSAlgoSettings(
       "ttl"        -> ttl.toMillis,
       "kty"        -> kty.getValue,
       "proxy"      -> WSProxyServerJson.maybeProxyToJson(proxy),
-      "tls_config"  -> tlsConfig.json,
-      "mtlsConfig"  -> tlsConfig.json
+      "tls_config" -> tlsConfig.json,
+      "mtlsConfig" -> tlsConfig.json
     )
 }
 
@@ -582,7 +587,7 @@ object RSAKPAlgoSettings                                extends FromJson[RSAKPAl
       Left(e)
     } get
 }
-case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings {
+case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings                {
 
   import scala.concurrent.duration._
 
@@ -632,7 +637,7 @@ object ESKPAlgoSettings                                extends FromJson[ESKPAlgo
       Left(e)
     } get
 }
-case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings {
+case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings               {
 
   import scala.concurrent.duration._
 
@@ -2258,10 +2263,15 @@ trait GlobalJwtVerifierDataStore extends BasicStore[GlobalJwtVerifier] {
       desc = "New jwt verifier",
       metadata = Map.empty
     )
-    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.verifier.map { template =>
-      GlobalJwtVerifier._fmt.reads(defaultJwt.json.asObject.deepMerge(template)).get
-    }.getOrElse {
-      defaultJwt
-    }
+    env.datastores.globalConfigDataStore
+      .latest()(env.otoroshiExecutionContext, env)
+      .templates
+      .verifier
+      .map { template =>
+        GlobalJwtVerifier._fmt.reads(defaultJwt.json.asObject.deepMerge(template)).get
+      }
+      .getOrElse {
+        defaultJwt
+      }
   }
 }

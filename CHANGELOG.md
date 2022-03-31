@@ -4,8 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.4] - 2022-03-31
 
-## [1.5.3] - 2021-02-14
+https://github.com/MAIF/otoroshi/milestone/34?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.5.3...v1.5.4
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.4
+
+- Add storage section in documentation (#993)
+- robots plugin (#1038)
+- ordering issue with spread projection (#1047)
+- fix gzip compression application (#1048)
+- introduce plugins to handle payload transformation json <-> xml (#1049)
+- introduce plugin to call soap actions (#1050)
+- user validation post successful login (#1052)
+- Support pluggable secret vaults throught EL and proxy state job (#1074)
+- Kafka data exporter does not send events by default (#1077)
+- Default templates for entities (#1078)
+- Support new entities in kubernetes (#1079)
+- New engine triggers weird behavior on resources when proxying simple website (#1084)
+- Add docker image with JDK19 (#1089)
+
+## [1.5.3] - 2022-02-14
 
 https://github.com/MAIF/otoroshi/milestone/33?closed=1
 https://github.com/MAIF/otoroshi/compare/v1.5.2...v1.5.3
@@ -21,7 +40,7 @@ https://github.com/MAIF/otoroshi/releases/tag/v1.5.3
 - bad ttl handling for the pg datastore (#1030)
 - introduce the next proxy engine as a plugin (#1036)
 
-## [1.5.2] - 2021-01-03
+## [1.5.2] - 2022-01-03
 
 https://github.com/MAIF/otoroshi/milestone/32?closed=1
 https://github.com/MAIF/otoroshi/compare/v1.5.1...v1.5.2

@@ -18,26 +18,26 @@ import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
 
 case class NgCustomTimeouts(
-  path: String = "/*",
-  connectionTimeout: Long = 10000,
-  idleTimeout: Long = 60000,
-  callAndStreamTimeout: Long = 1.hour.toMillis,
-  callTimeout: Long = 30000,
-  globalTimeout: Long = 30000
+    path: String = "/*",
+    connectionTimeout: Long = 10000,
+    idleTimeout: Long = 60000,
+    callAndStreamTimeout: Long = 1.hour.toMillis,
+    callTimeout: Long = 30000,
+    globalTimeout: Long = 30000
 ) {
-  def json: JsValue = NgCustomTimeouts.format.writes(this)
+  def json: JsValue               = NgCustomTimeouts.format.writes(this)
   lazy val legacy: CustomTimeouts = CustomTimeouts(
     path = path,
     connectionTimeout = connectionTimeout,
     idleTimeout = idleTimeout,
     callAndStreamTimeout = callAndStreamTimeout,
     callTimeout = callTimeout,
-    globalTimeout = globalTimeout,
+    globalTimeout = globalTimeout
   )
 }
 
 object NgCustomTimeouts {
-  val format = new Format[NgCustomTimeouts] {
+  val format                                               = new Format[NgCustomTimeouts] {
     override def reads(json: JsValue): JsResult[NgCustomTimeouts] = {
       Try {
         NgCustomTimeouts(
@@ -55,12 +55,12 @@ object NgCustomTimeouts {
     }
     override def writes(o: NgCustomTimeouts): JsValue = {
       Json.obj(
-        "path"                 -> o.path,
-        "call_timeout"          -> o.callTimeout,
+        "path"                    -> o.path,
+        "call_timeout"            -> o.callTimeout,
         "call_and_stream_timeout" -> o.callAndStreamTimeout,
-        "connection_timeout"    -> o.connectionTimeout,
-        "idle_timeout"          -> o.idleTimeout,
-        "global_timeout"        -> o.globalTimeout
+        "connection_timeout"      -> o.connectionTimeout,
+        "idle_timeout"            -> o.idleTimeout,
+        "global_timeout"          -> o.globalTimeout
       )
     }
   }
@@ -70,23 +70,23 @@ object NgCustomTimeouts {
     idleTimeout = config.idleTimeout,
     callAndStreamTimeout = config.callAndStreamTimeout,
     callTimeout = config.callTimeout,
-    globalTimeout = config.globalTimeout,
+    globalTimeout = config.globalTimeout
   )
 }
 
 case class NgCacheConnectionSettings(
-  enabled: Boolean = false,
-  queueSize: Int = 2048,
-  strategy: OverflowStrategy = OverflowStrategy.dropNew
+    enabled: Boolean = false,
+    queueSize: Int = 2048,
+    strategy: OverflowStrategy = OverflowStrategy.dropNew
 ) {
   lazy val legacy: CacheConnectionSettings = CacheConnectionSettings(
     enabled = enabled,
     queueSize = queueSize,
-    strategy = strategy,
+    strategy = strategy
   )
   def json: JsValue = {
     Json.obj(
-      "enabled"   -> enabled,
+      "enabled"    -> enabled,
       "queue_size" -> queueSize
     )
   }
@@ -96,26 +96,29 @@ object NgCacheConnectionSettings {
   def fromLegacy(config: CacheConnectionSettings): NgCacheConnectionSettings = NgCacheConnectionSettings(
     enabled = config.enabled,
     queueSize = config.queueSize,
-    strategy = config.strategy,
+    strategy = config.strategy
   )
 }
 
 case class NgClientConfig(
-   retries: Int = 1,
-   maxErrors: Int = 20,
-   retryInitialDelay: Long = 50,
-   backoffFactor: Long = 2,
-   connectionTimeout: Long = 10000,
-   idleTimeout: Long = 60000,
-   callAndStreamTimeout: Long = 120000, // http client timeout per call with streaming from otoroshi to client included (actually end the call)
-   callTimeout: Long = 30000,  // circuit breaker timeout per call (soft, streaming from otoroshi to client not included)
-   globalTimeout: Long = 30000,  // circuit breaker timeout around all calls (soft, streaming from otoroshi to client not included)
-   sampleInterval: Long = 2000,
-   proxy: Option[WSProxyServer] = None,
-   customTimeouts: Seq[NgCustomTimeouts] = Seq.empty[NgCustomTimeouts],
-   cacheConnectionSettings: NgCacheConnectionSettings = NgCacheConnectionSettings()
+    retries: Int = 1,
+    maxErrors: Int = 20,
+    retryInitialDelay: Long = 50,
+    backoffFactor: Long = 2,
+    connectionTimeout: Long = 10000,
+    idleTimeout: Long = 60000,
+    callAndStreamTimeout: Long =
+      120000, // http client timeout per call with streaming from otoroshi to client included (actually end the call)
+    callTimeout: Long =
+      30000,  // circuit breaker timeout per call (soft, streaming from otoroshi to client not included)
+    globalTimeout: Long =
+      30000,  // circuit breaker timeout around all calls (soft, streaming from otoroshi to client not included)
+    sampleInterval: Long = 2000,
+    proxy: Option[WSProxyServer] = None,
+    customTimeouts: Seq[NgCustomTimeouts] = Seq.empty[NgCustomTimeouts],
+    cacheConnectionSettings: NgCacheConnectionSettings = NgCacheConnectionSettings()
 ) {
-  def json: JsValue = NgClientConfig.format.writes(this)
+  def json: JsValue             = NgClientConfig.format.writes(this)
   lazy val legacy: ClientConfig = ClientConfig(
     retries = retries,
     maxErrors = maxErrors,
@@ -129,13 +132,13 @@ case class NgClientConfig(
     sampleInterval = sampleInterval,
     proxy = proxy,
     customTimeouts = customTimeouts.map(_.legacy),
-    cacheConnectionSettings = cacheConnectionSettings.legacy,
+    cacheConnectionSettings = cacheConnectionSettings.legacy
   )
 }
 
 object NgClientConfig {
-  val default = NgClientConfig()
-  val format = new Format[NgClientConfig] {
+  val default                                          = NgClientConfig()
+  val format                                           = new Format[NgClientConfig] {
     override def reads(json: JsValue): JsResult[NgClientConfig] = {
       Try {
         NgClientConfig(
@@ -168,18 +171,18 @@ object NgClientConfig {
 
     override def writes(o: NgClientConfig): JsValue =
       Json.obj(
-        "retries"                 -> o.retries,
-        "max_errors"               -> o.maxErrors,
+        "retries"                   -> o.retries,
+        "max_errors"                -> o.maxErrors,
         "retry_initial_delay"       -> o.retryInitialDelay,
-        "backoff_factor"           -> o.backoffFactor,
-        "call_timeout"             -> o.callTimeout,
-        "call_and_stream_timeout"    -> o.callAndStreamTimeout,
-        "connection_timeout"       -> o.connectionTimeout,
-        "idle_timeout"             -> o.idleTimeout,
-        "global_timeout"           -> o.globalTimeout,
-        "sample_interval"          -> o.sampleInterval,
-        "proxy"                   -> o.proxy.map(p => WSProxyServerJson.proxyToJson(p)).getOrElse(Json.obj()).as[JsValue],
-        "custom_timeouts"          -> JsArray(o.customTimeouts.map(_.json)),
+        "backoff_factor"            -> o.backoffFactor,
+        "call_timeout"              -> o.callTimeout,
+        "call_and_stream_timeout"   -> o.callAndStreamTimeout,
+        "connection_timeout"        -> o.connectionTimeout,
+        "idle_timeout"              -> o.idleTimeout,
+        "global_timeout"            -> o.globalTimeout,
+        "sample_interval"           -> o.sampleInterval,
+        "proxy"                     -> o.proxy.map(p => WSProxyServerJson.proxyToJson(p)).getOrElse(Json.obj()).as[JsValue],
+        "custom_timeouts"           -> JsArray(o.customTimeouts.map(_.json)),
         "cache_connection_settings" -> o.cacheConnectionSettings.json
       )
   }
@@ -196,29 +199,29 @@ object NgClientConfig {
     sampleInterval = config.sampleInterval,
     proxy = config.proxy,
     customTimeouts = config.customTimeouts.map(NgCustomTimeouts.fromLegacy),
-    cacheConnectionSettings = NgCacheConnectionSettings.fromLegacy(config.cacheConnectionSettings),
+    cacheConnectionSettings = NgCacheConnectionSettings.fromLegacy(config.cacheConnectionSettings)
   )
 }
 
 case class NgTlsConfig(
-   certs: Seq[String] = Seq.empty,
-   trustedCerts: Seq[String] = Seq.empty,
-   enabled: Boolean = false,
-   loose: Boolean = false,
-   trustAll: Boolean = false
+    certs: Seq[String] = Seq.empty,
+    trustedCerts: Seq[String] = Seq.empty,
+    enabled: Boolean = false,
+    loose: Boolean = false,
+    trustAll: Boolean = false
 ) {
-  def json: JsValue = NgTlsConfig.format.writes(this)
+  def json: JsValue           = NgTlsConfig.format.writes(this)
   lazy val legacy: MtlsConfig = MtlsConfig(
     certs = certs,
     trustedCerts = trustedCerts,
     mtls = enabled,
     loose = loose,
-    trustAll = trustAll,
+    trustAll = trustAll
   )
 }
 
 object NgTlsConfig {
-  val format = new Format[NgTlsConfig] {
+  val format                                      = new Format[NgTlsConfig] {
     override def reads(json: JsValue): JsResult[NgTlsConfig] = {
       Try {
         NgTlsConfig(
@@ -244,10 +247,10 @@ object NgTlsConfig {
 
     override def writes(o: NgTlsConfig): JsValue = {
       Json.obj(
-        "certs"        -> JsArray(o.certs.map(JsString.apply)),
+        "certs"         -> JsArray(o.certs.map(JsString.apply)),
         "trusted_certs" -> JsArray(o.trustedCerts.map(JsString.apply)),
-        "enabled"         -> o.enabled,
-        "loose"        -> o.loose,
+        "enabled"       -> o.enabled,
+        "loose"         -> o.loose,
         "trust_all"     -> o.trustAll
       )
     }
@@ -257,7 +260,7 @@ object NgTlsConfig {
     trustedCerts = config.trustedCerts,
     enabled = config.mtls,
     loose = config.loose,
-    trustAll = config.trustAll,
+    trustAll = config.trustAll
   )
 }
 
@@ -321,8 +324,8 @@ object NgBackend {
         )
     }
   }
-  val fmt = new Format[NgBackend] {
-    override def writes(o: NgBackend): JsValue = o.json
+  val fmt                                         = new Format[NgBackend] {
+    override def writes(o: NgBackend): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgBackend] = JsSuccess(readFromJson(json))
   }
 }
@@ -388,7 +391,7 @@ object StoredNgTarget {
     } catch {
       case e: Throwable => throw e
     }
-  val format = new Format[StoredNgTarget] {
+  val format                                    = new Format[StoredNgTarget] {
     override def reads(json: JsValue): JsResult[StoredNgTarget] = Try {
       StoredNgTarget(
         location = otoroshi.models.EntityLocation.readFromKey(json),
@@ -417,12 +420,12 @@ case class StoredNgTarget(
     target: NgTarget
 ) extends EntityLocationSupport {
   def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.targetsDataStore.set(this)
-  override def internalId: String               = id
-  override def theName: String                  = name
-  override def theDescription: String           = description
-  override def theTags: Seq[String]             = tags
-  override def theMetadata: Map[String, String] = metadata
-  override def json: JsValue                    = location.jsonWithKey ++ Json.obj(
+  override def internalId: String                                      = id
+  override def theName: String                                         = name
+  override def theDescription: String                                  = description
+  override def theTags: Seq[String]                                    = tags
+  override def theMetadata: Map[String, String]                        = metadata
+  override def json: JsValue                                           = location.jsonWithKey ++ Json.obj(
     "id"          -> id,
     "name"        -> name,
     "description" -> description,
@@ -456,7 +459,7 @@ case class NgTarget(
     ipAddress: Option[String] = None,
     tlsConfig: NgTlsConfig = NgTlsConfig()
 ) {
-  lazy val baseUrl: String = s"${if (tls) "https" else "http"}://${ipAddress.getOrElse(hostname)}${defaultPortString}"
+  lazy val baseUrl: String                  = s"${if (tls) "https" else "http"}://${ipAddress.getOrElse(hostname)}${defaultPortString}"
   lazy val defaultPortString                = port match {
     case 443 => ""
     case 80  => ""
@@ -519,8 +522,8 @@ object NgTarget {
       ipAddress = (obj \ "ip_address").asOpt[String].filterNot(_.trim.isEmpty)
     )
   }
-  val fmt = new Format[NgTarget] {
-    override def writes(o: NgTarget): JsValue = o.json
+  val fmt                                  = new Format[NgTarget] {
+    override def writes(o: NgTarget): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgTarget] = JsSuccess(readFrom(json))
   }
 }
@@ -532,7 +535,7 @@ object StoredNgBackend {
     } catch {
       case e: Throwable => throw e
     }
-  val format = new Format[StoredNgBackend] {
+  val format                                     = new Format[StoredNgBackend] {
     override def reads(json: JsValue): JsResult[StoredNgBackend] = Try {
       StoredNgBackend(
         location = otoroshi.models.EntityLocation.readFromKey(json),
@@ -561,12 +564,12 @@ case class StoredNgBackend(
     backend: NgBackend
 ) extends EntityLocationSupport {
   def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.backendsDataStore.set(this)
-  override def internalId: String               = id
-  override def theName: String                  = name
-  override def theDescription: String           = description
-  override def theTags: Seq[String]             = tags
-  override def theMetadata: Map[String, String] = metadata
-  override def json: JsValue                    = location.jsonWithKey ++ Json.obj(
+  override def internalId: String                                      = id
+  override def theName: String                                         = name
+  override def theDescription: String                                  = description
+  override def theTags: Seq[String]                                    = tags
+  override def theMetadata: Map[String, String]                        = metadata
+  override def json: JsValue                                           = location.jsonWithKey ++ Json.obj(
     "id"          -> id,
     "name"        -> name,
     "description" -> description,

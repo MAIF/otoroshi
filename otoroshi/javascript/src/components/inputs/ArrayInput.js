@@ -199,7 +199,7 @@ export class ArrayInput extends Component {
                     {this.props.suffix && (
                       <span className="input-group-text">{this.props.suffix}</span>
                     )}
-                    </>
+                  </>
                 )}
                 {!!this.state.values.length && !this.props.creatable && !this.props.component && (
                   <div className="flex-grow-1">

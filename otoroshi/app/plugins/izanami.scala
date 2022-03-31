@@ -8,7 +8,16 @@ import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script.{AfterRequestContext, BeforeRequestContext, HttpRequest, HttpResponse, RequestTransformer, TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseContext}
+import otoroshi.script.{
+  AfterRequestContext,
+  BeforeRequestContext,
+  HttpRequest,
+  HttpResponse,
+  RequestTransformer,
+  TransformerRequestBodyContext,
+  TransformerRequestContext,
+  TransformerResponseContext
+}
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
@@ -120,9 +129,9 @@ class IzanamiProxy extends RequestTransformer {
     )
   }
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
 
@@ -333,9 +342,9 @@ class IzanamiCanary extends RequestTransformer {
 
   override def name: String = "Izanami Canary Campaign"
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
-  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def defaultConfig: Option[JsObject] = {
     Some(

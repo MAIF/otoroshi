@@ -235,7 +235,7 @@ export class U2FRegisterPage extends Component {
           (ok, cancel) => (
             <RegisterAdminModal ok={ok} cancel={cancel} users={admins} mode="create" />
           ),
-          { style: { width: '100%' }, additionalClass: "modal-xl" }
+          { style: { width: '100%' }, additionalClass: 'modal-xl' }
         )
         .then((form) => {
           if (this.table) this.table.update();
@@ -252,7 +252,7 @@ export class U2FRegisterPage extends Component {
           (ok, cancel) => (
             <RegisterAdminModal ok={ok} cancel={cancel} user={user} users={admins} mode="update" />
           ),
-          { style: { width: '100%' }, additionalClass: "modal-xl" }
+          { style: { width: '100%' }, additionalClass: 'modal-xl' }
         )
         .then((form) => {
           if (this.table) this.table.update();
@@ -269,7 +269,7 @@ export class U2FRegisterPage extends Component {
           (ok, cancel) => (
             <AdminEditionModal ok={ok} cancel={cancel} user={user} users={admins} mode="update" />
           ),
-          { style: { width: '100%' }, additionalClass: "modal-xl" }
+          { style: { width: '100%' }, additionalClass: 'modal-xl' }
         )
         .then((form) => {
           if (this.table) this.table.update();
@@ -347,7 +347,7 @@ export class U2FRegisterPage extends Component {
               </button>
               <button
                 type="button"
-                className="btn btn-success ms-md-2 mt-2 mt-md-0"               
+                className="btn btn-success ms-md-2 mt-2 mt-md-0"
                 onClick={this.registerWebAuthn}>
                 Register Admin with WebAuthn
               </button>

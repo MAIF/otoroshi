@@ -44,12 +44,12 @@ case class NgRoute(
 ) extends EntityLocationSupport {
 
   def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.routeDataStore.set(this)
-  override def internalId: String               = id
-  override def theName: String                  = name
-  override def theDescription: String           = description
-  override def theTags: Seq[String]             = tags
-  override def theMetadata: Map[String, String] = metadata
-  override def json: JsValue                    = location.jsonWithKey ++ Json.obj(
+  override def internalId: String                                      = id
+  override def theName: String                                         = name
+  override def theDescription: String                                  = description
+  override def theTags: Seq[String]                                    = tags
+  override def theMetadata: Map[String, String]                        = metadata
+  override def json: JsValue                                           = location.jsonWithKey ++ Json.obj(
     "id"               -> id,
     "name"             -> name,
     "description"      -> description,
@@ -112,17 +112,18 @@ case class NgRoute(
           .applyOnIf(frontend.headers.nonEmpty) { firstRes =>
             val headers   = request.headers.toSimpleMap.map(t => (t._1.toLowerCase, t._2))
             val secondRes = frontend.headers.map(t => (t._1.toLowerCase, t._2)).forall {
-              case (key, value) if value.startsWith("Regex(") =>
+              case (key, value) if value.startsWith("Regex(")    =>
                 headers.get(key).exists(str => RegexPool.regex(value.substring(6).init).matches(str))
               case (key, value) if value.startsWith("Wildcard(") =>
                 headers.get(key).exists(str => RegexPool.apply(value.substring(9).init).matches(str))
-              case (key, value) => headers.get(key).contains(value)
+              case (key, value)                                  => headers.get(key).contains(value)
             }
             firstRes && secondRes
-          }.applyOnIf(frontend.query.nonEmpty) { firstRes =>
-            val query   = request.queryString
+          }
+          .applyOnIf(frontend.query.nonEmpty) { firstRes =>
+            val query     = request.queryString
             val secondRes = frontend.query.forall {
-              case (key, value) if value.startsWith("Regex(") =>
+              case (key, value) if value.startsWith("Regex(")    =>
                 query.get(key).exists { values =>
                   val regex = RegexPool.regex(value.substring(6).init)
                   values.exists(str => regex.matches(str))
@@ -132,7 +133,7 @@ case class NgRoute(
                   val regex = RegexPool.apply(value.substring(9).init)
                   values.exists(str => regex.matches(str))
                 }
-              case (key, value) => query.get(key).exists(_.contains(value))
+              case (key, value)                                  => query.get(key).exists(_.contains(value))
             }
             firstRes && secondRes
           }
@@ -587,7 +588,7 @@ object NgRoute {
       query = Map.empty,
       methods = Seq.empty,
       stripPath = true,
-      exact = false,
+      exact = false
     ),
     backendRef = None,
     backend = NgBackend(
@@ -727,7 +728,7 @@ object NgRoute {
         query = Map.empty,
         methods = Seq.empty, // get from restrictions ???
         stripPath = service.stripPath,
-        exact = false,
+        exact = false
       ),
       backendRef = None,
       backend = NgBackend(

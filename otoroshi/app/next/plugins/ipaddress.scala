@@ -39,17 +39,17 @@ class IpAddressAllowedList extends NgAccessValidator {
 
   private val configReads: Reads[NgIpAddressesConfig] = NgIpAddressesConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Security)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean                   = true
-  override def name: String                    = "IP allowed list"
-  override def description: Option[String]     =
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "IP allowed list"
+  override def description: Option[String]                 =
     "This plugin verifies the current request ip address is in the allowed list".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgIpAddressesConfig().some
-  override def isAccessAsync: Boolean          = true
+  override def isAccessAsync: Boolean                      = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val remoteAddress                  = ctx.request.theIpAddress
@@ -90,17 +90,17 @@ class IpAddressBlockList extends NgAccessValidator {
 
   private val configReads: Reads[NgIpAddressesConfig] = NgIpAddressesConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Security)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean                   = true
-  override def name: String                    = "IP block list"
-  override def description: Option[String]     =
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "IP block list"
+  override def description: Option[String]                 =
     "This plugin verifies the current request ip address is not in the blocked list".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgIpAddressesConfig().some
-  override def isAccessAsync: Boolean          = true
+  override def isAccessAsync: Boolean                      = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val remoteAddress                  = ctx.request.theIpAddress
@@ -137,7 +137,8 @@ class IpAddressBlockList extends NgAccessValidator {
   }
 }
 
-case class NgEndlessHttpResponseConfig(finger: Boolean = false, addresses: Seq[String] = Seq.empty) extends NgPluginConfig {
+case class NgEndlessHttpResponseConfig(finger: Boolean = false, addresses: Seq[String] = Seq.empty)
+    extends NgPluginConfig {
   def json: JsValue = NgEndlessHttpResponseConfig.format.writes(this)
 }
 
@@ -162,20 +163,20 @@ class EndlessHttpResponse extends NgRequestTransformer {
   // TODO: should be a pre-route to be faster in the pipeline
   private val configReads: Reads[NgEndlessHttpResponseConfig] = NgEndlessHttpResponseConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean                     = true
-  override def usesCallbacks: Boolean            = false
-  override def transformsRequest: Boolean        = true
-  override def transformsResponse: Boolean       = false
-  override def transformsError: Boolean          = false
-  override def isTransformRequestAsync: Boolean  = false
-  override def isTransformResponseAsync: Boolean = true
-  override def name: String                      = "Endless HTTP responses"
-  override def description: Option[String]       = "This plugin returns 128 Gb of 0 to the ip addresses is in the list".some
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = false
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = true
+  override def name: String                                = "Endless HTTP responses"
+  override def description: Option[String]                 = "This plugin returns 128 Gb of 0 to the ip addresses is in the list".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgEndlessHttpResponseConfig().some
 
   override def transformRequestSync(

@@ -84,13 +84,13 @@ trait StartableAndStoppable {
 }
 
 trait NamedPlugin { self =>
-  def deprecated: Boolean           = false
-  def core: Boolean                 = false
+  def deprecated: Boolean             = false
+  def core: Boolean                   = false
   def pluginType: PluginType
-  def internalName: String          = self.getClass.getName
-  def name: String                  = self.getClass.getName
-  def description: Option[String]   = None
-  def documentation: Option[String] = None
+  def internalName: String            = self.getClass.getName
+  def name: String                    = self.getClass.getName
+  def description: Option[String]     = None
+  def documentation: Option[String]   = None
   def defaultConfig: Option[JsObject] = None
   def configRoot: Option[String]      =
     defaultConfig match {
@@ -99,7 +99,7 @@ trait NamedPlugin { self =>
       case Some(config) if config.value.isEmpty   => None
       case Some(config) if config.value.size == 1 => config.value.headOption.map(_._1)
     }
-  def configSchema: Option[JsObject] =
+  def configSchema: Option[JsObject]  =
     defaultConfig.flatMap(c => configRoot.map(r => (c \ r).asOpt[JsObject].getOrElse(Json.obj()))) match {
       case None         => None
       case Some(config) => {
@@ -144,7 +144,7 @@ trait NamedPlugin { self =>
         Some(genSchema(config, ""))
       }
     }
-  def configFlow: Seq[String]        =
+  def configFlow: Seq[String]         =
     defaultConfig.flatMap(c => configRoot.map(r => (c \ r).asOpt[JsObject].getOrElse(Json.obj()))) match {
       case None         => Seq.empty
       case Some(config) => {
@@ -163,7 +163,7 @@ trait NamedPlugin { self =>
   def visibility: NgPluginVisibility
   def categories: Seq[NgPluginCategory]
   def steps: Seq[NgStep]
-  def jsonDescription(): JsObject =
+  def jsonDescription(): JsObject     =
     Try {
       Json.obj(
         "name"          -> name,
@@ -548,16 +548,16 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
 }
 
 object DefaultRequestTransformer extends RequestTransformer {
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
   def categories: Seq[NgPluginCategory] = Seq.empty
-  def steps: Seq[NgStep] = Seq.empty
+  def steps: Seq[NgStep]                = Seq.empty
 }
 
 object CompilingRequestTransformer extends RequestTransformer {
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
   def categories: Seq[NgPluginCategory] = Seq.empty
-  def steps: Seq[NgStep] = Seq.empty
+  def steps: Seq[NgStep]                = Seq.empty
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
@@ -762,8 +762,8 @@ class ScriptManager(env: Env) {
       import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
 
       import collection.JavaConverters._
-      val start                     = System.currentTimeMillis()
-      val scanResult                = env.openApiSchema.scanResult
+      val start      = System.currentTimeMillis()
+      val scanResult = env.openApiSchema.scanResult
 
       // val scanResult: ScanResult = new ClassGraph().addClassLoader(env.environment.classLoader).enableAllInfo.blacklistPackages(
       //   "java.*",
@@ -1562,11 +1562,16 @@ trait ScriptDataStore extends BasicStore[Script] {
       `type` = PluginType.TransformerType,
       metadata = Map.empty
     )
-    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.script.map { template =>
-      Script._fmt.reads(defaultScript.json.asObject.deepMerge(template)).get
-    }.getOrElse {
-      defaultScript
-    }
+    env.datastores.globalConfigDataStore
+      .latest()(env.otoroshiExecutionContext, env)
+      .templates
+      .script
+      .map { template =>
+        Script._fmt.reads(defaultScript.json.asObject.deepMerge(template)).get
+      }
+      .getOrElse {
+        defaultScript
+      }
   }
 }
 

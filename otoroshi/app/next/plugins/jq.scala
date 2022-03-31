@@ -21,17 +21,17 @@ case class JQConfig(request: String = ".", response: String = "") extends NgPlug
 
 object JQConfig {
   val format = new Format[JQConfig] {
-    override def writes(o: JQConfig): JsValue = Json.obj(
-      "request" -> o.request,
-      "response" -> o.response,
+    override def writes(o: JQConfig): JsValue             = Json.obj(
+      "request"  -> o.request,
+      "response" -> o.response
     )
     override def reads(json: JsValue): JsResult[JQConfig] = Try {
       JQConfig(
         request = json.select("request").asOpt[String].getOrElse("."),
-        response = json.select("response").asOpt[String].getOrElse("."),
+        response = json.select("response").asOpt[String].getOrElse(".")
       )
     } match {
-      case Failure(ex) => JsError(ex.getMessage())
+      case Failure(ex)    => JsError(ex.getMessage())
       case Success(value) => JsSuccess(value)
     }
   }
@@ -43,15 +43,15 @@ case class JQRequestConfig(filter: String = ".") extends NgPluginConfig {
 
 object JQRequestConfig {
   val format = new Format[JQRequestConfig] {
-    override def writes(o: JQRequestConfig): JsValue = Json.obj(
-      "filter" -> o.filter,
+    override def writes(o: JQRequestConfig): JsValue             = Json.obj(
+      "filter" -> o.filter
     )
     override def reads(json: JsValue): JsResult[JQRequestConfig] = Try {
       JQRequestConfig(
-        filter = json.select("filter").asOpt[String].getOrElse("."),
+        filter = json.select("filter").asOpt[String].getOrElse(".")
       )
     } match {
-      case Failure(ex) => JsError(ex.getMessage())
+      case Failure(ex)    => JsError(ex.getMessage())
       case Success(value) => JsSuccess(value)
     }
   }
@@ -63,15 +63,15 @@ case class JQResponseConfig(filter: String = ".") extends NgPluginConfig {
 
 object JQResponseConfig {
   val format = new Format[JQResponseConfig] {
-    override def writes(o: JQResponseConfig): JsValue = Json.obj(
-      "filter" -> o.filter,
+    override def writes(o: JQResponseConfig): JsValue             = Json.obj(
+      "filter" -> o.filter
     )
     override def reads(json: JsValue): JsResult[JQResponseConfig] = Try {
       JQResponseConfig(
-        filter = json.select("filter").asOpt[String].getOrElse("."),
+        filter = json.select("filter").asOpt[String].getOrElse(".")
       )
     } match {
-      case Failure(ex) => JsError(ex.getMessage())
+      case Failure(ex)    => JsError(ex.getMessage())
       case Success(value) => JsSuccess(value)
     }
   }
@@ -80,25 +80,28 @@ object JQResponseConfig {
 class JQ extends NgRequestTransformer {
 
   private val library = ImmutableJqLibrary.of()
-  private val logger = Logger("otoroshi-plugins-ng-jq")
+  private val logger  = Logger("otoroshi-plugins-ng-jq")
 
-  override def multiInstance: Boolean = true
-  override def name: String                = "JQ"
-  override def description: Option[String] = s"""This plugin let you transform JSON bodies (in requests and responses) using [JQ filters](https://stedolan.github.io/jq/manual/#Basicfilters).""".some
+  override def multiInstance: Boolean                      = true
+  override def name: String                                = "JQ"
+  override def description: Option[String]                 =
+    s"""This plugin let you transform JSON bodies (in requests and responses) using [JQ filters](https://stedolan.github.io/jq/manual/#Basicfilters).""".some
   override def defaultConfigObject: Option[NgPluginConfig] = JQConfig().some
 
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
 
   override def transformsError: Boolean = false
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  override def transformRequest(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(JQConfig.format).getOrElse(JQConfig())
     if (ctx.otoroshiRequest.hasBody) {
       ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-        val bodyStr = bodyRaw.utf8String
-        val request = ImmutableJqRequest
+        val bodyStr  = bodyRaw.utf8String
+        val request  = ImmutableJqRequest
           .builder()
           .lib(library)
           .input(bodyStr)
@@ -108,10 +111,8 @@ class JQ extends NgRequestTransformer {
         val response = request.execute()
         if (response.hasErrors) {
           logger.error(
-            s"error while transforming response body:\n${
-              response.getErrors.asScala
-                .mkString("\n")
-            }"
+            s"error while transforming response body:\n${response.getErrors.asScala
+              .mkString("\n")}"
           )
           val errors = JsArray(response.getErrors.asScala.map(err => JsString(err)))
           Results
@@ -119,11 +120,13 @@ class JQ extends NgRequestTransformer {
             .left
         } else {
           val rawBody = response.getOutput.byteString
-          val source = Source(rawBody.grouped(16 * 1024).toList)
-          ctx.otoroshiRequest.copy(
-            body = source,
-            headers = ctx.otoroshiRequest.headers.removeAndPutIgnoreCase("Content-Length" -> rawBody.size.toString)
-          ).right
+          val source  = Source(rawBody.grouped(16 * 1024).toList)
+          ctx.otoroshiRequest
+            .copy(
+              body = source,
+              headers = ctx.otoroshiRequest.headers.removeAndPutIgnoreCase("Content-Length" -> rawBody.size.toString)
+            )
+            .right
         }
       }
     } else {
@@ -131,7 +134,9 @@ class JQ extends NgRequestTransformer {
     }
   }
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  override def transformResponse(
+      ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(JQConfig.format).getOrElse(JQConfig())
     ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
       val bodyStr  = bodyRaw.utf8String
@@ -154,11 +159,13 @@ class JQ extends NgRequestTransformer {
           .left
       } else {
         val rawBody = response.getOutput.byteString
-        val source = Source(rawBody.grouped(16 * 1024).toList)
-        ctx.otoroshiResponse.copy(
-          body = source,
-          headers = ctx.otoroshiResponse.headers.removeAndPutIgnoreCase("Content-Length" -> rawBody.size.toString)
-        ).right
+        val source  = Source(rawBody.grouped(16 * 1024).toList)
+        ctx.otoroshiResponse
+          .copy(
+            body = source,
+            headers = ctx.otoroshiResponse.headers.removeAndPutIgnoreCase("Content-Length" -> rawBody.size.toString)
+          )
+          .right
       }
     }
   }
@@ -167,27 +174,30 @@ class JQ extends NgRequestTransformer {
 class JQRequest extends NgRequestTransformer {
 
   private val library = ImmutableJqLibrary.of()
-  private val logger = Logger("otoroshi-plugins-ng-jq-request")
+  private val logger  = Logger("otoroshi-plugins-ng-jq-request")
 
-  override def multiInstance: Boolean = true
-  override def name: String                = "JQ transform request"
-  override def description: Option[String] = s"""This plugin let you transform request JSON body using [JQ filters](https://stedolan.github.io/jq/manual/#Basicfilters).""".some
+  override def multiInstance: Boolean                      = true
+  override def name: String                                = "JQ transform request"
+  override def description: Option[String]                 =
+    s"""This plugin let you transform request JSON body using [JQ filters](https://stedolan.github.io/jq/manual/#Basicfilters).""".some
   override def defaultConfigObject: Option[NgPluginConfig] = JQRequestConfig().some
 
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
-  override def transformsRequest: Boolean = true
+  override def transformsRequest: Boolean  = true
   override def transformsResponse: Boolean = false
-  override def transformsError: Boolean = false
+  override def transformsError: Boolean    = false
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  override def transformRequest(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(JQRequestConfig.format).getOrElse(JQRequestConfig())
     if (ctx.otoroshiRequest.hasBody) {
       ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-        val bodyStr = bodyRaw.utf8String
-        val request = ImmutableJqRequest
+        val bodyStr  = bodyRaw.utf8String
+        val request  = ImmutableJqRequest
           .builder()
           .lib(library)
           .input(bodyStr)
@@ -197,10 +207,8 @@ class JQRequest extends NgRequestTransformer {
         val response = request.execute()
         if (response.hasErrors) {
           logger.error(
-            s"error while transforming response body:\n${
-              response.getErrors.asScala
-                .mkString("\n")
-            }"
+            s"error while transforming response body:\n${response.getErrors.asScala
+              .mkString("\n")}"
           )
           val errors = JsArray(response.getErrors.asScala.map(err => JsString(err)))
           Results
@@ -208,11 +216,13 @@ class JQRequest extends NgRequestTransformer {
             .left
         } else {
           val rawBody = response.getOutput.byteString
-          val source = Source(rawBody.grouped(16 * 1024).toList)
-          ctx.otoroshiRequest.copy(
-            body = source,
-            headers = ctx.otoroshiRequest.headers.removeAndPutIgnoreCase("Content-Length" -> rawBody.size.toString)
-          ).right
+          val source  = Source(rawBody.grouped(16 * 1024).toList)
+          ctx.otoroshiRequest
+            .copy(
+              body = source,
+              headers = ctx.otoroshiRequest.headers.removeAndPutIgnoreCase("Content-Length" -> rawBody.size.toString)
+            )
+            .right
         }
       }
     } else {
@@ -224,22 +234,25 @@ class JQRequest extends NgRequestTransformer {
 class JQResponse extends NgRequestTransformer {
 
   private val library = ImmutableJqLibrary.of()
-  private val logger = Logger("otoroshi-plugins-ng-jq-response")
+  private val logger  = Logger("otoroshi-plugins-ng-jq-response")
 
-  override def multiInstance: Boolean = true
-  override def name: String                = "JQ transform response"
-  override def description: Option[String] = s"""This plugin let you transform JSON response using [JQ filters](https://stedolan.github.io/jq/manual/#Basicfilters).""".some
+  override def multiInstance: Boolean                      = true
+  override def name: String                                = "JQ transform response"
+  override def description: Option[String]                 =
+    s"""This plugin let you transform JSON response using [JQ filters](https://stedolan.github.io/jq/manual/#Basicfilters).""".some
   override def defaultConfigObject: Option[NgPluginConfig] = JQResponseConfig().some
 
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
 
-  override def transformsError: Boolean = false
-  override def transformsRequest: Boolean = true
+  override def transformsError: Boolean    = false
+  override def transformsRequest: Boolean  = true
   override def transformsResponse: Boolean = false
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  override def transformResponse(
+      ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(JQResponseConfig.format).getOrElse(JQResponseConfig())
     ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
       val bodyStr  = bodyRaw.utf8String
@@ -262,11 +275,13 @@ class JQResponse extends NgRequestTransformer {
           .left
       } else {
         val rawBody = response.getOutput.byteString
-        val source = Source(rawBody.grouped(16 * 1024).toList)
-        ctx.otoroshiResponse.copy(
-          body = source,
-          headers = ctx.otoroshiResponse.headers.removeAndPutIgnoreCase("Content-Length" -> rawBody.size.toString)
-        ).right
+        val source  = Source(rawBody.grouped(16 * 1024).toList)
+        ctx.otoroshiResponse
+          .copy(
+            body = source,
+            headers = ctx.otoroshiResponse.headers.removeAndPutIgnoreCase("Content-Length" -> rawBody.size.toString)
+          )
+          .right
       }
     }
   }

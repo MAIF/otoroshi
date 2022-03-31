@@ -125,8 +125,7 @@ class ElasticsearchConnectionDiagnostic extends Component {
           <br />
           {this.props.resp.search.error && (
             <>
-              Elasticsearch search API:{' '}
-              <span className="badge bg-danger">data not available</span>
+              Elasticsearch search API: <span className="badge bg-danger">data not available</span>
             </>
           )}
           {!this.props.resp.search.error && (

@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../js/cc.js"></script>
 <script type="text/javascript" src="../js/groups.js"></script>
 <script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/ngplugins.js"></script>
 <script type="text/javascript" src="../js/expression-language.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
 <link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
@@ -34,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.3
+1.5.4
 </div>
 </div>
 <div class="nav-toc">
@@ -114,6 +115,12 @@
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="../next/index.html" class="page">Otoroshi Next</a>
+  <ul>
+    <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
+    <li><a href="../next/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
+  </ul></li>
 </ul>
 </div>
 
@@ -147,7 +154,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.3
+1.5.4
 </div>
 </div>
 <div class="nav-toc">
@@ -227,6 +234,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="../next/index.html" class="page">Otoroshi Next</a>
+  <ul>
+    <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
+    <li><a href="../next/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
+  </ul></li>
 </ul>
 </div>
 
@@ -251,6 +264,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#setup-otoroshi" name="setup-otoroshi" class="anchor"><span class="anchor-link"></span></a>Setup Otoroshi</h1>
+<p>in this section we are going to configure otoroshi before running it for the first time</p>
+<h2><a href="#setup-the-database" name="setup-the-database" class="anchor"><span class="anchor-link"></span></a>Setup the database</h2>
 <p>Right now, Otoroshi supports multiple datastore. You can choose one datastore over another depending on your use case.</p><div class="plugin platform">
 <div style="font-size: 22px; font-weight: bold;">Redis</div>
 <div class="element-tag recommended-tag">Recommended</div>
@@ -275,6 +290,600 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>The <strong>filedb</strong> datastore is pretty handy for testing purposes, but is not supposed to be used in production mode. Not suitable for production usage.</p>
 <img src="../imgs/filedb.png" /></div><div class="centered-img">
 <img src="../imgs/datastores.png" /></div>
+<p>the first thing to setup is what kind of datastore you want to use with the <code>otoroshi.storage</code> setting</p>
+<pre class="prettyprint"><code class="language-conf">otoroshi {
+  storage = &quot;inmemory&quot; # the storage used by otoroshi. possible values are redis, inmemory, file, http, s3, cassandra, lettuce, experimental-pg             
+  storage = ${?APP_STORAGE} # the storage used by otoroshi. possible values are redis, inmemory, file, http, s3, cassandra, lettuce, experimental-pg  
+  storage = ${?OTOROSHI_STORAGE} # the storage used by otoroshi. possible values are redis, inmemory, file, http, s3, cassandra, lettuce, experimental-pg  
+}
+</code></pre>
+<p>depending on the value you chose, you will be able to configure your datastore with the following configuration</p>
+<dl>
+  <dt>inmemory</dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-conf">otoroshi {
+  inmemory { # configuration to fetch/store otoroshi state in memory
+    windowSize = 99
+    windowSize = ${?INMEMORY_WINDOW_SIZE}
+    windowSize = ${?OTOROSHI_INMEMORY_WINDOW_SIZE}
+    experimental = false
+    experimental = ${?INMEMORY_EXPERIMENTAL_STORE}
+    experimental = ${?OTOROSHI_INMEMORY_EXPERIMENTAL_STORE}
+    optimized = false
+    optimized = ${?INMEMORY_OPTIMIZED}
+    optimized = ${?OTOROSHI_INMEMORY_OPTIMIZED}
+    modern = false
+    modern =  ${?INMEMORY_MODERN}
+    modern =  ${?OTOROSHI_INMEMORY_MODERN}
+  }
+}</code></pre></dd>
+  <dt>file</dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-conf">otoroshi {
+  filedb { # configuration to fetch/store otoroshi state from a file
+    windowSize = 99
+    windowSize = ${?FILEDB_WINDOW_SIZE}
+    windowSize = ${?OTOROSHI_FILEDB_WINDOW_SIZE}
+    path = &quot;./filedb/state.ndjson&quot;
+    path = ${?FILEDB_PATH}
+    path = ${?OTOROSHI_FILEDB_PATH}
+  }
+}</code></pre></dd>
+  <dt>http</dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-conf">otoroshi {
+  httpdb { # configuration to fetch/store otoroshi state from an http endpoint
+    url = &quot;http://127.0.0.1:8888/worker-0/state.json&quot;
+    headers = {}
+    timeout = 10000
+    pollEvery = 10000
+  }
+}</code></pre></dd>
+  <dt>s3</dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-conf">otoroshi {
+  s3db { # configuration to fetch/store otoroshi state from a S3 bucket
+    bucket = &quot;otoroshi-states&quot;
+    bucket = ${?OTOROSHI_DB_S3_BUCKET}
+    endpoint = &quot;https://otoroshi-states.foo.bar&quot;
+    endpoint = ${?OTOROSHI_DB_S3_ENDPOINT}
+    region = &quot;eu-west-1&quot;
+    region = ${?OTOROSHI_DB_S3_REGION}
+    access = &quot;secret&quot;
+    access = ${?OTOROSHI_DB_S3_ACCESS}
+    secret = &quot;secret&quot;
+    secret = ${?OTOROSHI_DB_S3_SECRET}
+    key = &quot;/otoroshi/states/state&quot;
+    key = ${?OTOROSHI_DB_S3_KEY}
+    chunkSize = 8388608
+    chunkSize = ${?OTOROSHI_DB_S3_CHUNK_SIZE}
+    v4auth = true
+    v4auth = ${?OTOROSHI_DB_S3_V4_AUTH}
+    writeEvery = 60000 # write interval
+    writeEvery = ${?OTOROSHI_DB_S3_WRITE_EVERY} # write interval
+    acl = &quot;Private&quot;
+    acl = ${?OTOROSHI_DB_S3_ACL}
+  }
+}</code></pre></dd>
+  <dt>redis</dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-conf">otoroshi {
+  redis { # configuration to fetch/store otoroshi state from a redis datastore using rediscala
+    host = &quot;localhost&quot;
+    host = ${?REDIS_HOST}
+    host = ${?OTOROSHI_REDIS_HOST}
+    port = 6379
+    port = ${?REDIS_PORT}
+    port = ${?OTOROSHI_REDIS_PORT}
+    password = ${?REDIS_PASSWORD}
+    password = ${?OTOROSHI_REDIS_PASSWORD}
+    windowSize = 99
+    windowSize = ${?REDIS_WINDOW_SIZE}
+    windowSize = ${?OTOROSHI_REDIS_WINDOW_SIZE}
+    slaves = []
+    slavesStr = ${?REDIS_SLAVES}
+    slavesStr = ${?OTOROSHI_REDIS_SLAVES}
+    slavesStr = ${?REDIS_MEMBERS}
+    slavesStr = ${?OTOROSHI_REDIS_MEMBERS}
+    useScan = false
+    useScan =  ${?REDIS_USE_SCAN}
+    useScan =  ${?OTOROSHI_REDIS_USE_SCAN}
+
+    pool {
+      members = []
+      members = ${?REDIS_POOL_MEMBERS}
+      members = ${?OTOROSHI_REDIS_POOL_MEMBERS}
+    }
+
+    mpool {
+      members = []
+      membersStr = ${?REDIS_MPOOL_MEMBERS}
+      membersStr = ${?OTOROSHI_REDIS_MPOOL_MEMBERS}
+    }
+
+    lf {
+      master {
+        host = ${?REDIS_LF_HOST}
+        host = ${?OTOROSHI_REDIS_LF_HOST}
+        port = ${?REDIS_LF_PORT}
+        port = ${?OTOROSHI_REDIS_LF_PORT}
+        password = ${?REDIS_LF_PASSWORD}
+        password = ${?OTOROSHI_REDIS_LF_PASSWORD}
+      }
+      slaves = []
+      slavesStr = ${?REDIS_LF_SLAVES}
+      slavesStr = ${?OTOROSHI_REDIS_LF_SLAVES}
+      slavesStr = ${?REDIS_LF_MEMBERS}
+      slavesStr = ${?OTOROSHI_REDIS_LF_MEMBERS}
+    }
+
+    sentinels {
+      master = ${?REDIS_SENTINELS_MASTER}
+      master = ${?OTOROSHI_REDIS_SENTINELS_MASTER}
+      password = ${?REDIS_SENTINELS_PASSWORD}
+      password = ${?OTOROSHI_REDIS_SENTINELS_PASSWORD}
+      db = ${?REDIS_SENTINELS_DB}
+      db = ${?OTOROSHI_REDIS_SENTINELS_DB}
+      name = ${?REDIS_SENTINELS_NAME}
+      name = ${?OTOROSHI_REDIS_SENTINELS_NAME}
+      members = []
+      membersStr = ${?REDIS_SENTINELS_MEMBERS}
+      membersStr = ${?OTOROSHI_REDIS_SENTINELS_MEMBERS}
+
+      lf {
+        master = ${?REDIS_SENTINELS_LF_MASTER}
+        master = ${?OTOROSHI_REDIS_SENTINELS_LF_MASTER}
+        members = []
+        membersStr = ${?REDIS_SENTINELS_LF_MEMBERS}
+        membersStr = ${?OTOROSHI_REDIS_SENTINELS_LF_MEMBERS}
+      }
+    }
+
+    cluster {
+      members = []
+      membersStr = ${?REDIS_CLUSTER_MEMBERS}
+      membersStr = ${?OTOROSHI_REDIS_CLUSTER_MEMBERS}
+    }
+  }
+}</code></pre></dd>
+  <dt>redis with lettuce</dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-conf">otoroshi {
+  redis { 
+    lettuce { # configuration to fetch/store otoroshi state from a redis datastore using the lettuce driver (the next default one)
+      connection = &quot;default&quot;
+      connection = ${?REDIS_LETTUCE_CONNECTION}
+      connection = ${?OTOROSHI_REDIS_LETTUCE_CONNECTION}
+      uri =  ${?REDIS_LETTUCE_URI}
+      uri =  ${?OTOROSHI_REDIS_LETTUCE_URI}
+      uri =  ${?REDIS_URL}
+      uri =  ${?OTOROSHI_REDIS_URL}
+      uris = []
+      urisStr = ${?REDIS_LETTUCE_URIS}
+      urisStr = ${?OTOROSHI_REDIS_LETTUCE_URIS}
+      readFrom = &quot;MASTER_PREFERRED&quot;
+      readFrom = ${?REDIS_LETTUCE_READ_FROM}
+      readFrom = ${?OTOROSHI_REDIS_LETTUCE_READ_FROM}
+      startTLS = false
+      startTLS = ${?REDIS_LETTUCE_START_TLS}
+      startTLS = ${?OTOROSHI_REDIS_LETTUCE_START_TLS}
+      verifyPeers = true
+      verifyPeers = ${?REDIS_LETTUCE_VERIFY_PEERS}
+      verifyPeers = ${?OTOROSHI_REDIS_LETTUCE_VERIFY_PEERS}
+    }
+  }
+}</code></pre></dd>
+  <dt>postgresql</dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-conf">otoroshi {
+  # postrgesql settings. everything possible with the client
+  # WARNING: this is an experimental support and everything might not work as expected !!!
+  pg { 
+    uri = ${?PG_URI}
+    uri = ${?OTOROSHI_PG_URI}
+    uri = ${?POSTGRESQL_ADDON_URI}
+    uri = ${?OTOROSHI_POSTGRESQL_ADDON_URI}
+    poolSize = 20
+    poolSize = ${?PG_POOL_SIZE}
+    poolSize = ${?OTOROSHI_PG_POOL_SIZE}
+    port = 5432
+    port = ${?PG_PORT}
+    port = ${?OTOROSHI_PG_PORT}
+    host = &quot;localhost&quot;
+    host = ${?PG_HOST}
+    host = ${?OTOROSHI_PG_HOST}
+    database = &quot;otoroshi&quot;
+    database = ${?PG_DATABASE}
+    database = ${?OTOROSHI_PG_DATABASE}
+    user = &quot;otoroshi&quot;
+    user = ${?PG_USER}
+    user = ${?OTOROSHI_PG_USER}
+    password = &quot;otoroshi&quot;
+    password = ${?PG_PASSWORD}
+    password = ${?OTOROSHI_PG_PASSWORD}
+    logQueries = ${?PG_DEBUG_QUERIES}
+    logQueries = ${?OTOROSHI_PG_DEBUG_QUERIES}
+    avoidJsonPath = false
+    avoidJsonPath = ${?PG_AVOID_JSON_PATH}
+    avoidJsonPath = ${?OTOROSHI_PG_AVOID_JSON_PATH}
+    optimized = true
+    optimized = ${?PG_OPTIMIZED}
+    optimized = ${?OTOROSHI_PG_OPTIMIZED}
+    connect-timeout = ${?PG_CONNECT_TIMEOUT}
+    connect-timeout = ${?OTOROSHI_PG_CONNECT_TIMEOUT}
+    idle-timeout = ${?PG_IDLE_TIMEOUT}
+    idle-timeout = ${?OTOROSHI_PG_IDLE_TIMEOUT}
+    log-activity = ${?PG_LOG_ACTIVITY}
+    log-activity = ${?OTOROSHI_PG_LOG_ACTIVITY}
+    pipelining-limit = ${?PG_PIPELINING_LIMIT}
+    pipelining-limit = ${?OTOROSHI_PG_PIPELINING_LIMIT}
+    ssl {
+      enabled = false
+      enabled = ${?PG_SSL_ENABLED}
+      enabled = ${?OTOROSHI_PG_SSL_ENABLED}
+      mode = &quot;verify_ca&quot;
+      mode = ${?PG_SSL_MODE}
+      mode = ${?OTOROSHI_PG_SSL_MODE}
+      trusted-certs-path = []
+      trusted-certs = []
+      trusted-cert-path = ${?PG_SSL_TRUSTED_CERT_PATH}
+      trusted-cert-path = ${?OTOROSHI_PG_SSL_TRUSTED_CERT_PATH}
+      trusted-cert = ${?PG_SSL_TRUSTED_CERT}
+      trusted-cert = ${?OTOROSHI_PG_SSL_TRUSTED_CERT}
+      client-certs-path = []
+      client-certs = []
+      client-cert-path = ${?PG_SSL_CLIENT_CERT_PATH}
+      client-cert-path = ${?OTOROSHI_PG_SSL_CLIENT_CERT_PATH}
+      client-cert = ${?PG_SSL_CLIENT_CERT}
+      client-cert = ${?OTOROSHI_PG_SSL_CLIENT_CERT}
+      trust-all = ${?PG_SSL_TRUST_ALL}
+      trust-all = ${?OTOROSHI_PG_SSL_TRUST_ALL}
+    }
+  }
+}</code></pre></dd>
+  <dt>cassandra</dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-conf">otoroshi {
+  cassandra { # cassandra settings. everything possible with the client
+    windowSize = 99
+    windowSize = ${?CASSANDRA_WINDOW_SIZE}
+    windowSize = ${?OTOROSHI_CASSANDRA_WINDOW_SIZE}
+    host = &quot;127.0.0.1&quot;
+    host = ${?CASSANDRA_HOST}
+    host = ${?OTOROSHI_CASSANDRA_HOST}
+    port = 9042
+    port = ${?CASSANDRA_PORT}
+    port = ${?OTOROSHI_CASSANDRA_PORT}
+    replicationFactor = 1
+    replicationFactor = ${?CASSANDRA_REPLICATION_FACTOR}
+    replicationFactor = ${?OTOROSHI_CASSANDRA_REPLICATION_FACTOR}
+    replicationOptions = ${?CASSANDRA_REPLICATION_OPTIONS}
+    replicationOptions = ${?OTOROSHI_CASSANDRA_REPLICATION_OPTIONS}
+    durableWrites = true
+    durableWrites = ${?CASSANDRA_DURABLE_WRITES}
+    durableWrites = ${?OTOROSHI_CASSANDRA_DURABLE_WRITES}
+    basic.contact-points = [ ${app.cassandra.host}&quot;:&quot;${app.cassandra.port} ]
+    basic.session-name = &quot;otoroshi&quot;
+    basic.session-name = ${?OTOROSHI_CASSANDRA_SESSION_NAME}
+    basic.session-keyspace = ${?OTOROSHI_CASSANDRA_SESSION_KEYSPACE}
+    basic.config-reload-interval = 5 minutes
+    basic.request {
+      timeout = 10 seconds
+      consistency = LOCAL_ONE
+      consistency = ${?OTOROSHI_CASSANDRA_CONSISTENCY}
+      page-size = 5000
+      page-size = ${?OTOROSHI_CASSANDRA_PAGE_SIZE}
+      serial-consistency = SERIAL
+      serial-consistency = ${?OTOROSHI_CASSANDRA_SERIAL_CONSISTENCY}
+      default-idempotence = false
+      default-idempotence = ${?OTOROSHI_CASSANDRA_DEFAULT_IDEMPOTENCE}
+    }
+    basic.load-balancing-policy {
+      class = DefaultLoadBalancingPolicy
+      local-datacenter = datacenter1
+      local-datacenter = ${?OTOROSHI_CASSANDRA_LOCAL_DATACENTER}
+      # filter.class=
+      slow-replica-avoidance = true
+    }
+    basic.cloud {
+      # secure-connect-bundle = /location/of/secure/connect/bundle
+    }
+    basic.application {
+      # name =
+      # version =
+    }
+    basic.graph {
+      # name = your-graph-name
+      traversal-source = &quot;g&quot;
+      # is-system-query = false
+      # read-consistency-level = LOCAL_QUORUM
+      # write-consistency-level = LOCAL_ONE
+      # timeout = 10 seconds
+    }
+    advanced.connection {
+      connect-timeout = 5 seconds
+      init-query-timeout = 500 milliseconds
+      set-keyspace-timeout = ${datastax-java-driver.advanced.connection.init-query-timeout}
+      pool {
+        local {
+          size = 1
+        }
+        remote {
+          size = 1
+        }
+      }
+      max-requests-per-connection = 1024
+      max-orphan-requests = 256
+      warn-on-init-error = true
+    }
+    advanced.reconnect-on-init = false
+    advanced.reconnection-policy {
+      class = ExponentialReconnectionPolicy
+      base-delay = 1 second
+      max-delay = 60 seconds
+    }
+    advanced.retry-policy {
+      class = DefaultRetryPolicy
+    }
+    advanced.speculative-execution-policy {
+      class = NoSpeculativeExecutionPolicy
+      # max-executions = 3
+      # delay = 100 milliseconds
+    }
+    advanced.auth-provider {
+      # class = PlainTextAuthProvider
+      username = ${?CASSANDRA_USERNAME}
+      username = ${?OTOROSHI_CASSANDRA_USERNAME}
+      password = ${?CASSANDRA_PASSWORD}
+      password = ${?OTOROSHI_CASSANDRA_PASSWORD}
+      authorization-id = ${?OTOROSHI_CASSANDRA_AUTHORIZATION_ID}
+      //service = &quot;cassandra&quot;
+      # login-configuration {
+      #   principal = &quot;cassandra@DATASTAX.COM&quot;
+      #   useKeyTab = &quot;true&quot;
+      #   refreshKrb5Config = &quot;true&quot;
+      #   keyTab = &quot;/path/to/keytab/file&quot;
+      # }
+      # sasl-properties {
+      #   javax.security.sasl.qop = &quot;auth-conf&quot;
+      # }
+    }
+    advanced.ssl-engine-factory {
+      # class = DefaultSslEngineFactory
+      # cipher-suites = [ &quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot; ]
+      # hostname-validation = true
+      # truststore-path = /path/to/client.truststore
+      # truststore-password = password123
+      # keystore-path = /path/to/client.keystore
+      # keystore-password = password123
+    }
+    advanced.timestamp-generator {
+      class = AtomicTimestampGenerator
+      drift-warning {
+        threshold = 1 second
+        interval = 10 seconds
+      }
+      force-java-clock = false
+    }
+    advanced.request-tracker {
+      class = NoopRequestTracker
+      logs {
+        # success.enabled = true
+        slow {
+          # threshold = 1 second
+          # enabled = true
+        }
+        # error.enabled = true
+        # max-query-length = 500
+        # show-values = true
+        # max-value-length = 50
+        # max-values = 50
+        # show-stack-traces = true
+      }
+    }
+    advanced.throttler {
+      class = PassThroughRequestThrottler
+      # max-queue-size = 10000
+      # max-concurrent-requests = 10000
+      # max-requests-per-second = 10000
+      # drain-interval = 10 milliseconds
+    }
+    advanced.node-state-listener.class = NoopNodeStateListener
+    advanced.schema-change-listener.class = NoopSchemaChangeListener
+    advanced.address-translator {
+      class = PassThroughAddressTranslator
+    }
+    advanced.resolve-contact-points = true
+    advanced.protocol {
+      version = V4
+      version = ${?OTOROSHI_CASSANDRA_PROTOCOL_VERSION}
+      compression = lz4
+      compression = ${?OTOROSHI_CASSANDRA_PROTOCOL_COMPRESSION}
+      max-frame-length = 256 MB
+    }
+    advanced.request {
+      warn-if-set-keyspace = false
+      trace {
+        attempts = 5
+        interval = 3 milliseconds
+        consistency = ONE
+      }
+      log-warnings = true
+    }
+    advanced.graph {
+      # sub-protocol = &quot;graphson-2.0&quot;
+      paging-enabled = &quot;AUTO&quot;
+      paging-options {
+        page-size = ${datastax-java-driver.advanced.continuous-paging.page-size}
+        max-pages = ${datastax-java-driver.advanced.continuous-paging.max-pages}
+        max-pages-per-second = ${datastax-java-driver.advanced.continuous-paging.max-pages-per-second}
+        max-enqueued-pages = ${datastax-java-driver.advanced.continuous-paging.max-enqueued-pages}
+      }
+    }
+    advanced.continuous-paging {
+      page-size = ${datastax-java-driver.basic.request.page-size}
+      page-size-in-bytes = false
+      max-pages = 0
+      max-pages-per-second = 0
+      max-enqueued-pages = 4
+      timeout {
+        first-page = 2 seconds
+        other-pages = 1 second
+      }
+    }
+    advanced.monitor-reporting {
+      enabled = true
+    }
+    advanced.metrics {
+      session {
+        enabled = [
+          # bytes-sent,
+          # bytes-received
+          # connected-nodes,
+          # cql-requests,
+          # cql-client-timeouts,
+          # cql-prepared-cache-size,
+          # throttling.delay,
+          # throttling.queue-size,
+          # throttling.errors,
+          # continuous-cql-requests,
+          # graph-requests,
+          # graph-client-timeouts
+        ]
+        cql-requests {
+          highest-latency = 3 seconds
+          significant-digits = 3
+          refresh-interval = 5 minutes
+        }
+        throttling.delay {
+          highest-latency = 3 seconds
+          significant-digits = 3
+          refresh-interval = 5 minutes
+        }
+        continuous-cql-requests {
+          highest-latency = 120 seconds
+          significant-digits = 3
+          refresh-interval = 5 minutes
+        }
+        graph-requests {
+          highest-latency = 12 seconds
+          significant-digits = 3
+          refresh-interval = 5 minutes
+        }
+      }
+      node {
+        enabled = [
+          # pool.open-connections,
+          # pool.available-streams,
+          # pool.in-flight,
+          # pool.orphaned-streams,
+          # bytes-sent,
+          # bytes-received,
+          # cql-messages,
+          # errors.request.unsent,
+          # errors.request.aborted,
+          # errors.request.write-timeouts,
+          # errors.request.read-timeouts,
+          # errors.request.unavailables,
+          # errors.request.others,
+          # retries.total,
+          # retries.aborted,
+          # retries.read-timeout,
+          # retries.write-timeout,
+          # retries.unavailable,
+          # retries.other,
+          # ignores.total,
+          # ignores.aborted,
+          # ignores.read-timeout,
+          # ignores.write-timeout,
+          # ignores.unavailable,
+          # ignores.other,
+          # speculative-executions,
+          # errors.connection.init,
+          # errors.connection.auth,
+          # graph-messages,
+        ]
+        cql-messages {
+          highest-latency = 3 seconds
+          significant-digits = 3
+          refresh-interval = 5 minutes
+        }
+        graph-messages {
+          highest-latency = 3 seconds
+          significant-digits = 3
+          refresh-interval = 5 minutes
+        }
+      }
+    }
+    advanced.socket {
+      tcp-no-delay = true
+      //keep-alive = false
+      //reuse-address = true
+      //linger-interval = 0
+      //receive-buffer-size = 65535
+      //send-buffer-size = 65535
+    }
+    advanced.heartbeat {
+      interval = 30 seconds
+      timeout = ${datastax-java-driver.advanced.connection.init-query-timeout}
+    }
+    advanced.metadata {
+      topology-event-debouncer {
+        window = 1 second
+        max-events = 20
+      }
+      schema {
+        enabled = true
+        # refreshed-keyspaces = [ &quot;ks1&quot;, &quot;ks2&quot; ]
+        request-timeout = ${datastax-java-driver.basic.request.timeout}
+        request-page-size = ${datastax-java-driver.basic.request.page-size}
+        debouncer {
+          window = 1 second
+          max-events = 20
+        }
+      }
+      token-map.enabled = true
+    }
+    advanced.control-connection {
+      timeout = ${datastax-java-driver.advanced.connection.init-query-timeout}
+      schema-agreement {
+        interval = 200 milliseconds
+        timeout = 10 seconds
+        warn-on-failure = true
+      }
+    }
+    advanced.prepared-statements {
+      prepare-on-all-nodes = true
+      reprepare-on-up {
+        enabled = true
+        check-system-table = false
+        max-statements = 0
+        max-parallelism = 100
+        timeout = ${datastax-java-driver.advanced.connection.init-query-timeout}
+      }
+    }
+    advanced.netty {
+      daemon = false
+      io-group {
+        size = 0
+        shutdown {quiet-period = 2, timeout = 15, unit = SECONDS}
+      }
+      admin-group {
+        size = 2
+        shutdown {quiet-period = 2, timeout = 15, unit = SECONDS}
+      }
+      timer {
+        tick-duration = 100 milliseconds
+        ticks-per-wheel = 2048
+      }
+    }
+    advanced.coalescer {
+      max-runs-with-no-work = 5
+      reschedule-interval = 10 microseconds
+    }
+  }
+}</code></pre></dd>
+</dl>
 <h2><a href="#setup-your-hosts-before-running" name="setup-your-hosts-before-running" class="anchor"><span class="anchor-link"></span></a>Setup your hosts before running</h2>
 <p>By default, Otoroshi starts with domain <code>oto.tools</code> that automatically targets <code>127.0.0.1</code> with no changes to your <code>/etc/hosts</code> file. Of course you can change the domain value, you have to add the values in your <code>/etc/hosts</code> file according to the setting you put in Otoroshi configuration or define the right ip address at the DNS provider level</p>
 <ul>
@@ -1104,7 +1713,7 @@ play.http {
           type = Dispatcher
           executor = &quot;fork-join-executor&quot;
           fork-join-executor {
-            parallelism-factor = 8.0
+            parallelism-factor = 4.0
             parallelism-factor = ${?OTOROSHI_CORE_DISPATCHER_PARALLELISM_FACTOR}
             parallelism-min = 8
             parallelism-min = ${?OTOROSHI_CORE_DISPATCHER_PARALLELISM_MIN}
@@ -1166,9 +1775,19 @@ otoroshi {
   secret = ${?OTOROSHI_SECRET}  # the secret used to sign sessions
   admin-api-secret = ${?OTOROSHI_ADMIN_API_SECRET}  # the secret for admin api
   next {
+    state-sync-interval = 10000
+    state-sync-interval = ${?OTOROSHI_NEXT_STATE_SYNC_INTERVAL}
+    export-reporting = false
+    export-reporting = ${?OTOROSHI_NEXT_EXPORT_REPORTING}
+    monitor-proxy-state-size = false
+    monitor-proxy-state-size = ${?OTOROSHI_NEXT_MONITOR_PROXY_STATE_SIZE}
+    monitor-datastore-size = false
+    monitor-datastore-size = ${?OTOROSHI_NEXT_MONITOR_DATASTORE_SIZE}
     plugins {
       merge-sync-steps = true
       merge-sync-steps = ${?OTOROSHI_NEXT_PLUGINS_MERGE_SYNC_STEPS}
+      apply-legacy-checks = true
+      apply-legacy-checks = ${?OTOROSHI_NEXT_PLUGINS_APPLY_LEGACY_CHECKS}
     }
   }
   options {
@@ -1513,6 +2132,27 @@ otoroshi {
     ttl = ${?OTOROSHI_HEALTHCHECK_TTL}
     ttl-only = true
     ttl-only = ${?OTOROSHI_HEALTHCHECK_TTL_ONLY}
+  }
+  vaults {
+    enabled = false
+    enabled = ${?OTOROSHI_VAULTS_ENABLED}
+    secrets-ttl = 300000 # 5 minutes
+    secrets-ttl = ${?OTOROSHI_VAULTS_SECRETS_TTL}
+    cached-secrets = 10000
+    cached-secrets = ${?OTOROSHI_VAULTS_CACHED_SECRETS}
+    read-ttl = 10000 # 10 seconds
+    read-ttl = ${?OTOROSHI_VAULTS_READ_TTL}
+    env {
+      type = &quot;env&quot;
+      prefix = ${?OTOROSHI_VAULTS_ENV_PREFIX}
+    }
+    # hashicorpvault {
+    #   type = &quot;hashicorp-vault&quot;
+    #   url = &quot;http://127.0.0.1:8200&quot;
+    #   mount = &quot;kv&quot;
+    #   kv = &quot;v2&quot;
+    #   token = &quot;root&quot;
+    # }
   }
 }
 
@@ -2172,8 +2812,13 @@ otoroshi {
   secret = ${?OTOROSHI_SECRET}  # the secret used to sign sessions
   admin-api-secret = ${?OTOROSHI_ADMIN_API_SECRET}  # the secret for admin api
   next {
+    state-sync-interval = ${?OTOROSHI_NEXT_STATE_SYNC_INTERVAL}
+    export-reporting = ${?OTOROSHI_NEXT_EXPORT_REPORTING}
+    monitor-proxy-state-size = ${?OTOROSHI_NEXT_MONITOR_PROXY_STATE_SIZE}
+    monitor-datastore-size = ${?OTOROSHI_NEXT_MONITOR_DATASTORE_SIZE}
     plugins {
       merge-sync-steps = ${?OTOROSHI_NEXT_PLUGINS_MERGE_SYNC_STEPS}
+      apply-legacy-checks = ${?OTOROSHI_NEXT_PLUGINS_APPLY_LEGACY_CHECKS}
     }
   }
   options {
@@ -2392,6 +3037,17 @@ otoroshi {
     ttl = ${?OTOROSHI_HEALTHCHECK_TTL}
     ttl-only = ${?OTOROSHI_HEALTHCHECK_TTL_ONLY}
   }
+  vaults {
+    enabled = ${?OTOROSHI_VAULTS_ENABLED}
+    secrets-ttl = ${?OTOROSHI_VAULTS_SECRETS_TTL}
+    cached-secrets = ${?OTOROSHI_VAULTS_CACHED_SECRETS}
+    read-ttl = ${?OTOROSHI_VAULTS_READ_TTL}
+    env {
+      prefix = ${?OTOROSHI_VAULTS_ENV_PREFIX}
+    }
+    # hashicorpvault {
+    # }
+  }
 }
 http.port = ${?otoroshi.http.port}     # the main http port for the otoroshi server
 http.port = ${?PORT}                   # the main http port for the otoroshi server
@@ -2486,6 +3142,7 @@ akka { # akka specific configuration
 <ul>
   <li><a href="../install/setup-otoroshi.html#setup-otoroshi" class="header">Setup Otoroshi</a>
   <ul>
+    <li><a href="../install/setup-otoroshi.html#setup-the-database" class="header">Setup the database</a></li>
     <li><a href="../install/setup-otoroshi.html#setup-your-hosts-before-running" class="header">Setup your hosts before running</a></li>
     <li><a href="../install/setup-otoroshi.html#setup-your-configuration-file" class="header">Setup your configuration file</a></li>
     <li><a href="../install/setup-otoroshi.html#configuration-with-env-variables" class="header">Configuration with env. variables</a></li>

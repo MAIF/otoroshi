@@ -40,14 +40,14 @@ class AuthModule extends NgAccessValidator {
   private val logger                                 = Logger("otoroshi-next-plugins-auth-module")
   private val configReads: Reads[NgAuthModuleConfig] = NgAuthModuleConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication, NgPluginCategory.Security)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean                   = true
-  override def name: String                    = "Authentication"
-  override def description: Option[String]     = "This plugin applies an authentication module".some
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Authentication"
+  override def description: Option[String]                 = "This plugin applies an authentication module".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgAuthModuleConfig().some
 
   override def isAccessAsync: Boolean = true

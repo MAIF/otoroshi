@@ -174,7 +174,7 @@ class Commands extends Component {
       .popup(
         'New Certificate',
         (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} caRef={id} />,
-        { style: { width: '100%' }, additionalClass: "modal-xl" }
+        { style: { width: '100%' }, additionalClass: 'modal-xl' }
       )
       .then((form) => {
         if (form) {
@@ -655,7 +655,7 @@ export class CertificatesPage extends Component {
       .popup(
         'New Certificate',
         (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} letsEncrypt={true} />,
-        { style: { width: '100%' }, additionalClass: "modal-xl" }
+        { style: { width: '100%' }, additionalClass: 'modal-xl' }
       )
       .then((form) => {
         if (form) {
@@ -698,7 +698,7 @@ export class CertificatesPage extends Component {
       .popup(
         'New Certificate',
         (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} caRef={id} />,
-        { style: { width: '100%' }, additionalClass: "modal-xl" }
+        { style: { width: '100%' }, additionalClass: 'modal-xl' }
       )
       .then((form) => {
         if (form) {
@@ -755,7 +755,7 @@ export class CertificatesPage extends Component {
     window
       .popup('New Certificate', (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} />, {
         style: { width: '100%' },
-        additionalClass: "modal-xl" 
+        additionalClass: 'modal-xl',
       })
       .then((form) => {
         if (form) {
@@ -977,7 +977,7 @@ export class NewCertificateForm extends Component {
     return (
       <>
         <div className="modal-body">
-          <form className="form-horizontal" style={{maxHeight: '80vh' }}>
+          <form className="form-horizontal" style={{ maxHeight: '80vh' }}>
             <SelectInput
               label="Issuer"
               value={this.state.caRef}

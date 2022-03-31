@@ -75,7 +75,7 @@ object ServiceGroup {
 }
 
 trait ServiceGroupDataStore extends BasicStore[ServiceGroup] {
-  def template(env: Env): ServiceGroup         = initiateNewGroup(env)
+  def template(env: Env): ServiceGroup = initiateNewGroup(env)
   def initiateNewGroup(env: Env): ServiceGroup = {
     val defaultGroup = ServiceGroup(
       id = IdGenerator.namedId("group", env),
@@ -84,10 +84,15 @@ trait ServiceGroupDataStore extends BasicStore[ServiceGroup] {
       metadata = Map.empty,
       tags = Seq.empty
     )
-    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.group.map { template =>
-      ServiceGroup._fmt.reads(defaultGroup.json.asObject.deepMerge(template)).get
-    }.getOrElse {
-      defaultGroup
-    }
+    env.datastores.globalConfigDataStore
+      .latest()(env.otoroshiExecutionContext, env)
+      .templates
+      .group
+      .map { template =>
+        ServiceGroup._fmt.reads(defaultGroup.json.asObject.deepMerge(template)).get
+      }
+      .getOrElse {
+        defaultGroup
+      }
   }
 }

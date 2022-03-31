@@ -42,16 +42,16 @@ case class NgPluginHttpRequest(
     body: Source[ByteString, _],
     backend: Option[NgTarget]
 ) {
-  lazy val contentType: Option[String] = header("Content-Type")
+  lazy val contentType: Option[String]      = header("Content-Type")
   lazy val contentLengthStr: Option[String] = header("Content-Length")
-  lazy val host: String                = header("Host").getOrElse("")
-  lazy val uri: Uri                    = Uri(url)
-  lazy val scheme: String              = uri.scheme
-  lazy val authority: Uri.Authority    = uri.authority
-  lazy val fragment: Option[String]    = uri.fragment
-  lazy val path: String                = uri.path.toString()
-  lazy val queryString: Option[String] = uri.rawQueryString
-  lazy val relativeUri: String         = uri.toRelative.toString()
+  lazy val host: String                     = header("Host").getOrElse("")
+  lazy val uri: Uri                         = Uri(url)
+  lazy val scheme: String                   = uri.scheme
+  lazy val authority: Uri.Authority         = uri.authority
+  lazy val fragment: Option[String]         = uri.fragment
+  lazy val path: String                     = uri.path.toString()
+  lazy val queryString: Option[String]      = uri.rawQueryString
+  lazy val relativeUri: String              = uri.toRelative.toString()
   lazy val hasBody: Boolean = {
     (method.toUpperCase(), header("Content-Length")) match {
       case ("GET", Some(_))    => true
@@ -69,7 +69,7 @@ case class NgPluginHttpRequest(
 
   def header(name: String): Option[String] = headers.get(name).orElse(headers.get(name.toLowerCase()))
 
-  def json: JsValue                    =
+  def json: JsValue =
     Json.obj(
       "url"               -> url,
       "method"            -> method,
@@ -100,11 +100,11 @@ case class NgPluginHttpResponse(
     body: Source[ByteString, _]
 ) {
   lazy val transferEncoding: Option[String] = header("Transfer-Encoding")
-  lazy val isChunked: Boolean = transferEncoding.exists(h => h.toLowerCase().contains("chunked"))
-  lazy val contentType: Option[String] = header("Content-Type")
+  lazy val isChunked: Boolean               = transferEncoding.exists(h => h.toLowerCase().contains("chunked"))
+  lazy val contentType: Option[String]      = header("Content-Type")
   lazy val contentLengthStr: Option[String] = header("Content-Length")
-  lazy val hasLength: Boolean = contentLengthStr.isDefined
-  def header(name: String): Option[String] = headers.get(name).orElse(headers.get(name.toLowerCase()))
+  lazy val hasLength: Boolean               = contentLengthStr.isDefined
+  def header(name: String): Option[String]  = headers.get(name).orElse(headers.get(name.toLowerCase()))
   def asResult: Result = {
     val ctype   = header("Content-Type")
     val clength = header("Content-Length").map(_.toLong)
@@ -128,7 +128,7 @@ case class NgPluginHttpResponse(
         r.as(typ)
       }
   }
-  def json: JsValue =
+  def json: JsValue                         =
     Json.obj(
       "status"  -> status,
       "headers" -> headers,
@@ -152,7 +152,7 @@ sealed trait NgPluginVisibility {
   def name: String
   def json: JsValue = name.json
 }
-object NgPluginVisibility {
+object NgPluginVisibility       {
   case object NgInternal extends NgPluginVisibility { def name: String = "internal" }
   case object NgUserLand extends NgPluginVisibility { def name: String = "userland" }
 }
@@ -164,21 +164,21 @@ sealed trait NgPluginCategory {
 
 object NgPluginCategory {
 
-  case object Custom          extends NgPluginCategory { def name: String = "Custom" }
-  case object Other           extends NgPluginCategory { def name: String = "Other" }
-  case object Security        extends NgPluginCategory { def name: String = "Security" }
-  case object Apikey          extends NgPluginCategory { def name: String = "Apikey" }
-  case object Authentication  extends NgPluginCategory { def name: String = "Authentication" }
-  case object AccessControl   extends NgPluginCategory { def name: String = "AccessControl" }
-  case object Logging         extends NgPluginCategory { def name: String = "Logging" }
-  case object TrafficControl  extends NgPluginCategory { def name: String = "TrafficControl" }
-  case object Analytics       extends NgPluginCategory { def name: String = "Analytics" }
-  case object Monitoring      extends NgPluginCategory { def name: String = "Monitoring" }
+  case object Custom          extends NgPluginCategory { def name: String = "Custom"          }
+  case object Other           extends NgPluginCategory { def name: String = "Other"           }
+  case object Security        extends NgPluginCategory { def name: String = "Security"        }
+  case object Apikey          extends NgPluginCategory { def name: String = "Apikey"          }
+  case object Authentication  extends NgPluginCategory { def name: String = "Authentication"  }
+  case object AccessControl   extends NgPluginCategory { def name: String = "AccessControl"   }
+  case object Logging         extends NgPluginCategory { def name: String = "Logging"         }
+  case object TrafficControl  extends NgPluginCategory { def name: String = "TrafficControl"  }
+  case object Analytics       extends NgPluginCategory { def name: String = "Analytics"       }
+  case object Monitoring      extends NgPluginCategory { def name: String = "Monitoring"      }
   case object Transformations extends NgPluginCategory { def name: String = "Transformations" }
-  case object Headers         extends NgPluginCategory { def name: String = "Headers" }
-  case object Experimental    extends NgPluginCategory { def name: String = "Experimental" }
-  case object Integrations    extends NgPluginCategory { def name: String = "Integrations" }
-  case object Tunnel          extends NgPluginCategory { def name: String = "Tunnel" }
+  case object Headers         extends NgPluginCategory { def name: String = "Headers"         }
+  case object Experimental    extends NgPluginCategory { def name: String = "Experimental"    }
+  case object Integrations    extends NgPluginCategory { def name: String = "Integrations"    }
+  case object Tunnel          extends NgPluginCategory { def name: String = "Tunnel"          }
 
   val all = Seq(
     Custom,
@@ -203,14 +203,14 @@ sealed trait NgStep {
   def name: String
   def json: JsValue = name.json
 }
-object NgStep {
-  case object Sink              extends NgStep { def name: String = "Sink" }
-  case object PreRoute          extends NgStep { def name: String = "PreRoute" }
-  case object ValidateAccess    extends NgStep { def name: String = "ValidateAccess" }
-  case object TransformRequest  extends NgStep { def name: String = "TransformRequest" }
+object NgStep       {
+  case object Sink              extends NgStep { def name: String = "Sink"              }
+  case object PreRoute          extends NgStep { def name: String = "PreRoute"          }
+  case object ValidateAccess    extends NgStep { def name: String = "ValidateAccess"    }
+  case object TransformRequest  extends NgStep { def name: String = "TransformRequest"  }
   case object TransformResponse extends NgStep { def name: String = "TransformResponse" }
-  case object MatchRoute        extends NgStep { def name: String = "MatchRoute" }
-  case object HandlesTunnel     extends NgStep { def name: String = "HandlesTunnel" }
+  case object MatchRoute        extends NgStep { def name: String = "MatchRoute"        }
+  case object HandlesTunnel     extends NgStep { def name: String = "HandlesTunnel"     }
 
   val all = Seq(
     Sink,
@@ -219,7 +219,7 @@ object NgStep {
     TransformRequest,
     TransformResponse,
     MatchRoute,
-    HandlesTunnel,
+    HandlesTunnel
   )
 }
 
@@ -230,25 +230,26 @@ trait NgPluginConfig {
 trait NgNamedPlugin extends NamedPlugin { self =>
   def visibility: NgPluginVisibility
   def categories: Seq[NgPluginCategory]
-  def tags: Seq[String] = Seq.empty
+  def tags: Seq[String]                              = Seq.empty
   def steps: Seq[NgStep]
   def multiInstance: Boolean
   def defaultConfigObject: Option[NgPluginConfig]
-  override final def defaultConfig: Option[JsObject] = defaultConfigObject.map(_.json.asOpt[JsObject].getOrElse(Json.obj()))
-  override def pluginType: PluginType         = PluginType.CompositeType
-  override def configRoot: Option[String]     = None
-  override def jsonDescription(): JsObject    =
+  override final def defaultConfig: Option[JsObject] =
+    defaultConfigObject.map(_.json.asOpt[JsObject].getOrElse(Json.obj()))
+  override def pluginType: PluginType                = PluginType.CompositeType
+  override def configRoot: Option[String]            = None
+  override def jsonDescription(): JsObject           =
     Try {
       Json.obj(
         "name"          -> name,
         "description"   -> description.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "defaultConfig" -> defaultConfig.getOrElse(JsNull).as[JsValue],
+        "defaultConfig" -> defaultConfig.getOrElse(JsNull).as[JsValue]
         // "configSchema"  -> configSchema.getOrElse(JsNull).as[JsValue],
         // "configFlow"    -> JsArray(configFlow.map(JsString.apply))
       )
     } match {
       case Failure(_) => Json.obj()
-      case Success(s)  => s
+      case Success(s) => s
     }
 }
 
@@ -373,7 +374,7 @@ object NgPreRouting {
 }
 
 trait NgPreRouting extends NgPlugin {
-  def isPreRouteAsync: Boolean = true
+  def isPreRouteAsync: Boolean                                                                                         = true
   def preRouteSync(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Either[NgPreRoutingError, Done] =
     NgPreRouting.done
   def preRoute(
@@ -509,11 +510,11 @@ case class NgTransformerErrorContext(
 
 trait NgRequestTransformer extends NgPlugin {
 
-  def usesCallbacks: Boolean      = true
-  def transformsRequest: Boolean  = true
-  def transformsResponse: Boolean = true
-  def transformsError: Boolean    = true
-  def isTransformRequestAsync: Boolean = true
+  def usesCallbacks: Boolean            = true
+  def transformsRequest: Boolean        = true
+  def transformsResponse: Boolean       = true
+  def transformsError: Boolean          = true
+  def isTransformRequestAsync: Boolean  = true
   def isTransformResponseAsync: Boolean = true
 
   def beforeRequest(
@@ -587,7 +588,7 @@ object NgAccess {
 }
 
 trait NgAccessValidator extends NgNamedPlugin {
-  def isAccessAsync: Boolean = true
+  def isAccessAsync: Boolean                                                                  = true
   def accessSync(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): NgAccess     = NgAccess.NgAllowed
   def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = accessSync(ctx).vfuture
 }
@@ -622,7 +623,7 @@ case class NgRequestSinkContext(
 }
 
 trait NgRequestSink extends NgNamedPlugin {
-  def isSinkAsync: Boolean = true
+  def isSinkAsync: Boolean                                                                       = true
   def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean       = false
   def handleSync(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Result     =
     Results.NotImplemented(Json.obj("error" -> "not implemented yet"))
@@ -681,15 +682,15 @@ trait NgTunnelHandler extends NgNamedPlugin with NgAccessValidator {
 class NgMergedRequestTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgRequestTransformer]])
     extends NgRequestTransformer {
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
 
   override def defaultConfigObject: Option[NgPluginConfig] = None
-  override def multiInstance: Boolean = true
-  override def transformsRequest: Boolean        = true
-  override def isTransformRequestAsync: Boolean  = true
-  override def isTransformResponseAsync: Boolean = true
+  override def multiInstance: Boolean                      = true
+  override def transformsRequest: Boolean                  = true
+  override def isTransformRequestAsync: Boolean            = true
+  override def isTransformResponseAsync: Boolean           = true
   override def transformRequest(
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
@@ -765,12 +766,12 @@ class NgMergedRequestTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrap
 class NgMergedResponseTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgRequestTransformer]])
     extends NgRequestTransformer {
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def steps: Seq[NgStep]                          = Seq(NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgInternal
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
-  override def multiInstance: Boolean = true
+  override def multiInstance: Boolean            = true
   override def transformsResponse: Boolean       = true
   override def isTransformRequestAsync: Boolean  = true
   override def isTransformResponseAsync: Boolean = true
@@ -848,12 +849,12 @@ class NgMergedResponseTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWra
 
 class NgMergedPreRouting(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgPreRouting]]) extends NgPreRouting {
 
-  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def steps: Seq[NgStep]                          = Seq(NgStep.PreRoute)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgInternal
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
-  override def multiInstance: Boolean = true
+  override def multiInstance: Boolean   = true
   override def isPreRouteAsync: Boolean = true
   override def preRoute(
       _ctx: NgPreRoutingContext
@@ -930,9 +931,9 @@ class NgMergedPreRouting(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgPr
 class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgAccessValidator]])
     extends NgAccessValidator {
 
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgInternal
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def multiInstance: Boolean = true

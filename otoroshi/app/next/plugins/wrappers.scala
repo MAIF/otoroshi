@@ -20,15 +20,15 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class PreRoutingWrapper extends NgPreRouting {
 
-  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
 
-  override def multiInstance: Boolean = true
-  override def name: String                = "Pre-routing plugin wrapper"
-  override def description: Option[String] =
+  override def multiInstance: Boolean                      = true
+  override def name: String                                = "Pre-routing plugin wrapper"
+  override def description: Option[String]                 =
     "Wraps an old pre-routing plugin for the new router. The configuration is the one for the wrapped plugin.".some
-  override def isPreRouteAsync: Boolean    = true
+  override def isPreRouteAsync: Boolean                    = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def preRoute(
@@ -69,15 +69,15 @@ class PreRoutingWrapper extends NgPreRouting {
 
 class AccessValidatorWrapper extends NgAccessValidator {
 
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
 
-  override def multiInstance: Boolean = true
-  override def name: String                = "Access validator plugin wrapper"
-  override def description: Option[String] =
+  override def multiInstance: Boolean                      = true
+  override def name: String                                = "Access validator plugin wrapper"
+  override def description: Option[String]                 =
     "Wraps an old access validator plugin for the new router. The configuration is the one for the wrapped plugin.".some
-  override def isAccessAsync: Boolean      = true
+  override def isAccessAsync: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
   def newContextToOld(ctx: NgAccessContext, plugin: AccessValidator): AccessContext = {
@@ -114,14 +114,14 @@ class AccessValidatorWrapper extends NgAccessValidator {
 
 class RequestSinkWrapper extends NgRequestSink {
 
-  override def steps: Seq[NgStep] = Seq(NgStep.Sink)
+  override def steps: Seq[NgStep]                = Seq(NgStep.Sink)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
 
-  override def multiInstance: Boolean = true
-  override def isSinkAsync: Boolean        = true
-  override def name: String                = "Request sink plugin wrapper"
-  override def description: Option[String] =
+  override def multiInstance: Boolean                      = true
+  override def isSinkAsync: Boolean                        = true
+  override def name: String                                = "Request sink plugin wrapper"
+  override def description: Option[String]                 =
     "Wraps an old request sink plugin for the new router. The configuration is the one for the wrapped plugin.".some
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
@@ -166,19 +166,19 @@ class RequestSinkWrapper extends NgRequestSink {
 
 class RequestTransformerWrapper extends NgRequestTransformer {
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
 
-  override def multiInstance: Boolean = true
-  override def usesCallbacks: Boolean            = true
-  override def transformsRequest: Boolean        = true
-  override def transformsResponse: Boolean       = true
-  override def transformsError: Boolean          = true
-  override def isTransformRequestAsync: Boolean  = true
-  override def isTransformResponseAsync: Boolean = true
-  override def name: String                      = "Request transformer plugin wrapper"
-  override def description: Option[String]       =
+  override def multiInstance: Boolean                      = true
+  override def usesCallbacks: Boolean                      = true
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = true
+  override def transformsError: Boolean                    = true
+  override def isTransformRequestAsync: Boolean            = true
+  override def isTransformResponseAsync: Boolean           = true
+  override def name: String                                = "Request transformer plugin wrapper"
+  override def description: Option[String]                 =
     "Wraps an old request transformer plugin for the new router. The configuration is the one for the wrapped plugin.".some
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
@@ -498,19 +498,20 @@ class RequestTransformerWrapper extends NgRequestTransformer {
 
 class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgRequestTransformer {
 
-  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute, NgStep.ValidateAccess, NgStep.TransformRequest, NgStep.TransformResponse)
+  override def steps: Seq[NgStep]                =
+    Seq(NgStep.PreRoute, NgStep.ValidateAccess, NgStep.TransformRequest, NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
 
-  override def multiInstance: Boolean = true
-  override def usesCallbacks: Boolean            = true
-  override def transformsRequest: Boolean        = true
-  override def transformsResponse: Boolean       = true
-  override def transformsError: Boolean          = true
-  override def isPreRouteAsync: Boolean          = true
-  override def isAccessAsync: Boolean            = true
-  override def isTransformRequestAsync: Boolean  = true
-  override def isTransformResponseAsync: Boolean = true
+  override def multiInstance: Boolean                      = true
+  override def usesCallbacks: Boolean                      = true
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = true
+  override def transformsError: Boolean                    = true
+  override def isPreRouteAsync: Boolean                    = true
+  override def isAccessAsync: Boolean                      = true
+  override def isTransformRequestAsync: Boolean            = true
+  override def isTransformResponseAsync: Boolean           = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def preRoute(

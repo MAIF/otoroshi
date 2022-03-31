@@ -35,35 +35,37 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
 
   private val configReads: Reads[NgJwtVerificationConfig] = NgJwtVerificationConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess, NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess, NgStep.TransformRequest)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Security)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = true
+  override def multiInstance: Boolean      = true
   override def core: Boolean               = true
   override def usesCallbacks: Boolean      = false
   override def transformsRequest: Boolean  = true
   override def transformsResponse: Boolean = false
   override def transformsError: Boolean    = false
 
-  override def isAccessAsync: Boolean            = true
-  override def isTransformRequestAsync: Boolean  = false
-  override def isTransformResponseAsync: Boolean = true
-  override def name: String                      = "Jwt verifiers"
-  override def description: Option[String]       =
+  override def isAccessAsync: Boolean                      = true
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = true
+  override def name: String                                = "Jwt verifiers"
+  override def description: Option[String]                 =
     "This plugin verifies the current request with one or more jwt verifier".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgJwtVerificationConfig().some
 
-  override def configSchema: Option[JsObject] = Json.obj(
-    "verifiers" -> Json.obj(
-      "format" -> "select",
-      "array" -> false,
-      "type" -> "string",
-      "isMulti" -> true,
-      "optionsFrom" -> "/bo/api/proxy/api/verifiers",
-      "transformer" -> Json.obj("value" -> "id", "label" -> "name")
+  override def configSchema: Option[JsObject] = Json
+    .obj(
+      "verifiers" -> Json.obj(
+        "format"      -> "select",
+        "array"       -> false,
+        "type"        -> "string",
+        "isMulti"     -> true,
+        "optionsFrom" -> "/bo/api/proxy/api/verifiers",
+        "transformer" -> Json.obj("value" -> "id", "label" -> "name")
+      )
     )
-  ).some
+    .some
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     // val verifiers = ctx.config.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty)

@@ -78,21 +78,21 @@ class Cors extends NgRequestTransformer with NgPreRouting {
 
   private val configReads: Reads[NgCorsSettings] = NgCorsSettings.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute, NgStep.TransformResponse)
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute, NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Security)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean                     = true
-  override def usesCallbacks: Boolean            = false
-  override def transformsRequest: Boolean        = false
-  override def transformsResponse: Boolean       = true
-  override def isTransformRequestAsync: Boolean  = true
-  override def isTransformResponseAsync: Boolean = false
-  override def isPreRouteAsync: Boolean          = true
-  override def transformsError: Boolean          = false
-  override def name: String                      = "CORS"
-  override def description: Option[String]       = "This plugin applies CORS rules".some
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = false
+  override def transformsResponse: Boolean                 = true
+  override def isTransformRequestAsync: Boolean            = true
+  override def isTransformResponseAsync: Boolean           = false
+  override def isPreRouteAsync: Boolean                    = true
+  override def transformsError: Boolean                    = false
+  override def name: String                                = "CORS"
+  override def description: Option[String]                 = "This plugin applies CORS rules".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgCorsSettings().some
   override def preRoute(
       ctx: NgPreRoutingContext

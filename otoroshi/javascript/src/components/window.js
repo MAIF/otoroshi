@@ -21,8 +21,7 @@ class Alert extends Component {
                 className="btn-close"
                 data-dismiss="modal"
                 onClick={this.props.close}
-                aria-label="Close">
-              </button>
+                aria-label="Close"></button>
             </div>
             <div className="modal-body">
               {_.isString(res) && <p>{res}</p>}
@@ -71,8 +70,7 @@ class Confirm extends Component {
                 className="btn-close"
                 data-dismiss="modal"
                 onClick={this.props.cancel}
-                aria-label="Close">
-              </button>
+                aria-label="Close"></button>
             </div>
             <div className="modal-body">
               <p>{this.props.message}</p>
@@ -122,8 +120,7 @@ class Prompt extends Component {
                 className="btn-close"
                 data-bs-dismiss="modal"
                 onClick={this.props.cancel}
-                aria-label="Close">
-              </button>
+                aria-label="Close"></button>
             </div>
             <div className="modal-body">
               <p>{this.props.message}</p>
@@ -167,14 +164,18 @@ class Prompt extends Component {
 
 class Popup extends Component {
   render() {
-    console.log(this.props)
+    console.log(this.props);
     return (
       <div
         className="modal"
         tabIndex="-1"
         role="dialog"
         style={{ display: 'block', ...this.props.style }}>
-        <div className={"modal-dialog" + (this.props.additionalClass ? (' ' + this.props.additionalClass) : '')} role="document">
+        <div
+          className={
+            'modal-dialog' + (this.props.additionalClass ? ' ' + this.props.additionalClass : '')
+          }
+          role="document">
           <div className="modal-content">
             <div className="modal-header">
               <h4 className="modal-title">{this.props.title}</h4>
@@ -183,8 +184,7 @@ class Popup extends Component {
                 className="btn-close"
                 data-dismiss="modal"
                 onClick={this.props.cancel}
-                aria-label="Close">
-              </button>
+                aria-label="Close"></button>
             </div>
             {this.props.body(this.props.ok, this.props.cancel)}
           </div>
@@ -284,7 +284,7 @@ export function registerPopup() {
     document.body.appendChild(div);
   }
   window.popup = (title, fn, props = {}) => {
-    console.log("props", props)
+    console.log('props', props);
     return new Promise((success, failure) => {
       ReactDOM.render(
         <Popup

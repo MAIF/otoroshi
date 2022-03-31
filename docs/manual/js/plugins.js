@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", function(){
+    const maxChildrenLength = 4;
     const pluginNames = [
       "transformer",
       "validator",
@@ -54,7 +55,7 @@ document.addEventListener("DOMContentLoaded", function(){
     }
 
     plugins.forEach((plugin, i) => {
-        [...plugin.children].slice(4).forEach(child => child.classList.add("plugin-hidden"))
+        [...plugin.children].slice(maxChildrenLength).forEach(child => child.classList.add("plugin-hidden"))
 
         const title = [...plugin.children][0];
         [...title.getElementsByTagName("a")]
@@ -75,25 +76,32 @@ document.addEventListener("DOMContentLoaded", function(){
           const children = e.target.children;
 
           for(let j=0; j<plugins.length; j++) {
-            if(i !== j && !plugins[j].children[4].classList.contains("plugin-hidden")) {
-              [...plugins[j].children].slice(4, -1).forEach(child => child.classList.add("plugin-hidden"))
+            if(i !== j && !plugins[j].children[maxChildrenLength].classList.contains("plugin-hidden")) {
+              [...plugins[j].children].slice(maxChildrenLength, -1).forEach(child => child.classList.add("plugin-hidden"))
               plugins[j].classList.remove("plugin-open")
             }
           }
 
-          if(children.length >= 4) {
-            if(e.target.children[4].classList.contains("plugin-hidden")) {
-              [...plugin.children].slice(4).forEach(child => child.classList.remove("plugin-hidden"))
+          if(children.length >= maxChildrenLength) {
+            if(e.target.children[maxChildrenLength].classList.contains("plugin-hidden")) {
+              [...plugin.children].slice(maxChildrenLength).forEach(child => child.classList.remove("plugin-hidden"))
               plugin.classList.add("plugin-open")
               plugin.scrollIntoView({ behavior: 'smooth'})
             }
             else {
-              [...plugin.children].slice(4, -1).forEach(child => child.classList.add("plugin-hidden"))
+              [...plugin.children].slice(maxChildrenLength, -1).forEach(child => child.classList.add("plugin-hidden"))
               plugin.classList.remove("plugin-open")
             }
           }
         });
     });
+
+    if (plugins.length > 0 && window.location.hash && window.location.hash.length > 1) {
+      const plugin = window.location.hash.substring(1);
+      setTimeout(function() {
+        document.getElementById(plugin).click();
+      }, 300)
+    }
 
     [...document.getElementsByClassName("nav-next")].forEach(nav => {
       nav.style.width = '100%'

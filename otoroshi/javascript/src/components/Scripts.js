@@ -119,13 +119,10 @@ class PluginsDescription extends Component {
           .map((script) =>
             this.findNode(
               script,
-              <div
-                className="row mb-3">
+              <div className="row mb-3">
                 <label className="col-form-label" />
                 {!this.state.display[script.id] && (
-                  <div
-                    className="d-flex justify-content-end input-group-btn"
-                    >
+                  <div className="d-flex justify-content-end input-group-btn">
                     {script.id.indexOf('cp:otoroshi.') === 0 && (
                       <a
                         className="btn btn-sm btn-info"

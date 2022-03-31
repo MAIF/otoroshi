@@ -15,7 +15,8 @@ clean () {
 
 buildDev () {
   cd $LOCATION/otoroshi
-  sbt ';clean;compile;testOnly OpenapiGeneratorTests;testOnly PluginDocNextTests'
+  sbt ';clean;compile;testOnly PluginDocNextTests'
+  # sbt ';clean;compile;testOnly OpenapiGeneratorTests;testOnly PluginDocNextTests'
   # cp $LOCATION/otoroshi/public/openapi.json $LOCATION/manual/src/main/paradox/code/
   cd $LOCATION/manual
   cp -R $LOCATION/kubernetes $LOCATION/manual/src/main/paradox/snippets
@@ -49,7 +50,8 @@ buildDev () {
 
 build () {
   cd $LOCATION/otoroshi
-  sbt ';clean;compile;testOnly OpenapiGeneratorTests;testOnly PluginDocNextTests'
+  # sbt ';clean;compile;testOnly OpenapiGeneratorTests;testOnly PluginDocNextTests'
+  sbt ';clean;compile;testOnly PluginDocNextTests'
   # TODO: run screenshot generator
   cd $LOCATION/manual
   cp -R $LOCATION/kubernetes $LOCATION/manual/src/main/paradox/snippets

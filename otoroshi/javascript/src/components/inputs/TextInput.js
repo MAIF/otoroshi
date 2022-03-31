@@ -199,9 +199,7 @@ export class RangeTextInput extends Component {
           )}
           {(this.props.prefixTo || this.props.suffixTo) && (
             <div className="input-group col-sm-6">
-              {this.props.prefixTo && (
-                <div className="input-group-text">{this.props.prefixTo}</div>
-              )}
+              {this.props.prefixTo && <div className="input-group-text">{this.props.prefixTo}</div>}
               <input
                 type={this.props.typeTo || 'text'}
                 className="form-control"
@@ -213,9 +211,7 @@ export class RangeTextInput extends Component {
                 onDrop={this.props.onDropTo || this.onDropTo}
                 onDragOver={(e) => e.preventDefault()}
               />
-              {this.props.suffixTo && (
-                <div className="input-group-text">{this.props.suffixTo}</div>
-              )}
+              {this.props.suffixTo && <div className="input-group-text">{this.props.suffixTo}</div>}
             </div>
           )}
           {!(this.props.prefixFrom || this.props.suffixFrom) && (

@@ -21,9 +21,9 @@ class ServiceMetrics extends RequestTransformer {
 
   override def name: String = "Service Metrics"
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Monitoring)
-  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
 
   override def defaultConfig: Option[JsObject] =
     Some(
@@ -198,9 +198,9 @@ class PrometheusEndpoint extends RequestSink {
 
   override def name: String = "Prometheus Endpoint"
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Monitoring)
-  def steps: Seq[NgStep] = Seq(NgStep.Sink)
+  def steps: Seq[NgStep]                = Seq(NgStep.Sink)
 
   override def defaultConfig: Option[JsObject] =
     Some(
@@ -358,9 +358,9 @@ class PrometheusServiceMetrics extends RequestTransformer {
       """.stripMargin
     )
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Monitoring)
-  def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext

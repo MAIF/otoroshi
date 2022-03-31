@@ -150,11 +150,14 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
 
   def form() = ApiAction {
     env.openApiSchema.asForms.get("otoroshi.next.models.NgRoute") match {
-      case Some(value)  => Ok(Json.obj(
-        "schema" -> value.schema,
-        "flow" -> value.flow
-      ))
-      case _            => NotFound(Json.obj("error" -> "Schema and flow not found"))
+      case Some(value) =>
+        Ok(
+          Json.obj(
+            "schema" -> value.schema,
+            "flow"   -> value.flow
+          )
+        )
+      case _           => NotFound(Json.obj("error" -> "Schema and flow not found"))
     }
   }
 
@@ -201,11 +204,16 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
         )
       )
     )
-    env.datastores.globalConfigDataStore.latest().templates.route.map { template =>
-      Ok(defaultRoute.json.asObject.deepMerge(template))
-    }.getOrElse {
-      Ok(defaultRoute.json)
-    }
+    env.datastores.globalConfigDataStore
+      .latest()
+      .templates
+      .route
+      .map { template =>
+        Ok(defaultRoute.json.asObject.deepMerge(template))
+      }
+      .getOrElse {
+        Ok(defaultRoute.json)
+      }
   }
 
   def domainsAndCertificates() = ApiAction { ctx =>

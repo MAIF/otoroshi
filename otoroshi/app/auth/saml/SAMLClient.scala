@@ -336,7 +336,10 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
           emailAttributeName = (json \ "emailAttributeName").asOpt[String],
           sessionCookieValues =
             (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
-          userValidators = (json \ "userValidators").asOpt[Seq[JsValue]].map(_.flatMap(v => UserValidator.format.reads(v).asOpt)).getOrElse(Seq.empty)
+          userValidators = (json \ "userValidators")
+            .asOpt[Seq[JsValue]]
+            .map(_.flatMap(v => UserValidator.format.reads(v).asOpt))
+            .getOrElse(Seq.empty)
         )
       )
     } recover { case e =>

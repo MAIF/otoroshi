@@ -137,7 +137,10 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           sessionCookieValues =
             (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
-          userValidators = (json \ "userValidators").asOpt[Seq[JsValue]].map(_.flatMap(v => UserValidator.format.reads(v).asOpt)).getOrElse(Seq.empty)
+          userValidators = (json \ "userValidators")
+            .asOpt[Seq[JsValue]]
+            .map(_.flatMap(v => UserValidator.format.reads(v).asOpt))
+            .getOrElse(Seq.empty)
         )
       )
     } recover { case e =>

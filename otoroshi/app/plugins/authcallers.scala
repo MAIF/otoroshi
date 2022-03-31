@@ -107,9 +107,9 @@ class OAuth2Caller extends RequestTransformer {
 
   override def configRoot: Option[String] = "OAuth2Caller".some
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
-  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   def getToken(key: String, config: OAuth2CallerConfig)(implicit
       env: Env,
@@ -279,9 +279,9 @@ class BasicAuthCaller extends RequestTransformer {
 
   override def configRoot: Option[String] = "BasicAuthCaller".some
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
-  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext

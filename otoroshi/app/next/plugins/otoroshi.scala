@@ -74,20 +74,20 @@ class OtoroshiChallenge extends NgRequestTransformer {
 
   private val logger = Logger("otoroshi-next-plugins-otoroshi-challenge")
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = false
-  override def core: Boolean                     = true
-  override def usesCallbacks: Boolean            = false
-  override def transformsRequest: Boolean        = true
-  override def transformsResponse: Boolean       = true
-  override def isTransformRequestAsync: Boolean  = false
-  override def isTransformResponseAsync: Boolean = true
-  override def transformsError: Boolean          = false
-  override def name: String                      = "Otoroshi challenge token"
-  override def description: Option[String]       =
+  override def multiInstance: Boolean                      = false
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = true
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = true
+  override def transformsError: Boolean                    = false
+  override def name: String                                = "Otoroshi challenge token"
+  override def description: Option[String]                 =
     "This plugin adds a jwt challenge token to the request to a backend and expects a response with a matching token".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgOtoroshiChallengeConfig(Json.obj()).some
 
@@ -328,20 +328,20 @@ class OtoroshiInfos extends NgRequestTransformer {
 
   private val logger = Logger("otoroshi-next-plugins-otoroshi-infos")
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Security)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = false
-  override def core: Boolean                     = true
-  override def usesCallbacks: Boolean            = false
-  override def transformsRequest: Boolean        = true
-  override def transformsResponse: Boolean       = false
-  override def transformsError: Boolean          = false
-  override def isTransformRequestAsync: Boolean  = false
-  override def isTransformResponseAsync: Boolean = true
-  override def name: String                      = "Otoroshi info. token"
-  override def description: Option[String]       = "This plugin adds a jwt info. token to the request to a backend".some
+  override def multiInstance: Boolean                      = false
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = false
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = true
+  override def name: String                                = "Otoroshi info. token"
+  override def description: Option[String]                 = "This plugin adds a jwt info. token to the request to a backend".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgOtoroshiInfoConfig(Json.obj()).some
 
   override def transformRequestSync(

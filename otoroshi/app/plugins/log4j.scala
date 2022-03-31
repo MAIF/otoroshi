@@ -141,9 +141,9 @@ class Log4ShellFilter extends RequestTransformer {
     """.stripMargin
     )
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security)
-  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   def containsBadValue(value: String): Boolean = {
     if (value.contains("${")) {

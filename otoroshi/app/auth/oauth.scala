@@ -46,7 +46,10 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           id = (json \ "id").as[String],
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
-          userValidators = (json \ "userValidators").asOpt[Seq[JsValue]].map(_.flatMap(v => UserValidator.format.reads(v).asOpt)).getOrElse(Seq.empty),
+          userValidators = (json \ "userValidators")
+            .asOpt[Seq[JsValue]]
+            .map(_.flatMap(v => UserValidator.format.reads(v).asOpt))
+            .getOrElse(Seq.empty),
           sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
           clientId = (json \ "clientId").asOpt[String].getOrElse("client"),
           clientSecret = (json \ "clientSecret").asOpt[String].getOrElse("secret"),

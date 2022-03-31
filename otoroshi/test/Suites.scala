@@ -143,9 +143,9 @@ class PluginDocNextTests
     )
 
 class PluginDocNgTests
-  extends Suites(
-    new PluginDocNgSpec()
-  )
+    extends Suites(
+      new PluginDocNgSpec()
+    )
 
 class DevOtoroshiTests
     extends Suites(

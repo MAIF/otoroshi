@@ -478,23 +478,22 @@ export class TopBar extends Component {
     return (
       <nav className="navbar navbar-expand-lg fixed-top">
         <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
-            <div className="d-flex flex-column flex-md-row w-100">
-              <div className="px-2 mb-2 mb-md-0 d-flex justify-content-between justify-content-lg-center align-items-center navbar-header">
-
-              <button 
-                  className="btn btn-menu ms-3 navbar-toggler" 
-                  type="button" 
-                  data-bs-toggle="collapse" 
-                  data-bs-target="#sidebar" 
-                  aria-controls="sidebar" 
-                  aria-expanded="false" >
-                  <span className="navbar-toggler-icon">Menu</span>
-                </button>
-                <a className="navbar-brand" href="/bo/dashboard" style={{ display: 'flex' }}>
-                  {this.brandName()}
-                </a>
-              </div>
-              <form id="navbar" className="navbar-form navbar-left align-self-center">
+          <div className="d-flex flex-column flex-md-row w-100">
+            <div className="px-2 mb-2 mb-md-0 d-flex justify-content-between justify-content-lg-center align-items-center navbar-header">
+              <button
+                className="btn btn-menu ms-3 navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#sidebar"
+                aria-controls="sidebar"
+                aria-expanded="false">
+                <span className="navbar-toggler-icon">Menu</span>
+              </button>
+              <a className="navbar-brand" href="/bo/dashboard" style={{ display: 'flex' }}>
+                {this.brandName()}
+              </a>
+            </div>
+            <form id="navbar" className="navbar-form navbar-left align-self-center">
               {selected && (
                 <div className="mb-3" style={{ marginRight: 10 }}>
                   <span
@@ -570,21 +569,19 @@ export class TopBar extends Component {
                 />
               </div>
             </form>
-            </div>
+          </div>
 
-            <div className="d-flex flex-grow-1 my-1 my-xl-0">
-              <div className="d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0">
+          <div className="d-flex flex-grow-1 my-1 my-xl-0">
+            <div className="d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0">
               {window.__apiReadOnly && (
                 <div className="">
-                  <a style={{ color: '#c44141' }} title="Admin API in read-only mode" >
+                  <a style={{ color: '#c44141' }} title="Admin API in read-only mode">
                     <span className="fas fa-lock fa-lg" />
                   </a>
                 </div>
               )}
               {this.props.changePassword && (
-                <div
-                  onClick={(e) => (window.location = '/bo/dashboard/admins')}
-                  className="mx-2">
+                <div onClick={(e) => (window.location = '/bo/dashboard/admins')} className="mx-2">
                   <a
                     href="/bo/dashboard/admins"
                     data-toggle="dropdown"
@@ -612,8 +609,16 @@ export class TopBar extends Component {
                 </a>
               </div>
               <div className="dropdown mx-2">
-                <i className="fas fa-cog" role="button" id="dropdownMenuParams" data-bs-toggle="dropdown" aria-expanded="false"/>
-                <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuParams">
+                <i
+                  className="fas fa-cog"
+                  role="button"
+                  id="dropdownMenuParams"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                />
+                <ul
+                  className="dropdown-menu dropdown-menu-end"
+                  aria-labelledby="dropdownMenuParams">
                   {/*<li>
                     <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>
                   </li>*/}
@@ -683,9 +688,7 @@ export class TopBar extends Component {
                       </li>
                     )}
                   {window.__otoroshi__env__latest.userAdmin &&
-                    this.state.env.clusterRole === 'Leader' && (
-                      <li className="dropdown-divider" />
-                    )}
+                    this.state.env.clusterRole === 'Leader' && <li className="dropdown-divider" />}
                   {(window.__otoroshi__env__latest.userAdmin || window.__user.tenantAdmin) && (
                     <>
                       {window.__otoroshi__env__latest.userAdmin && (
@@ -964,8 +967,8 @@ export class TopBar extends Component {
                 </ul>
               </div>
             </div>
-            </div>
           </div>
+        </div>
       </nav>
     );
   }

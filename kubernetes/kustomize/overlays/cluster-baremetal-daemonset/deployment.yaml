@@ -225,7 +225,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:1.5.3-dev
+      - image: maif/otoroshi:1.5.4-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:

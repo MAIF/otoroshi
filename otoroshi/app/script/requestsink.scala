@@ -97,13 +97,13 @@ case class RequestSinkContext(
 }
 
 object DefaultRequestSink extends RequestSink {
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
   def categories: Seq[NgPluginCategory] = Seq.empty
-  def steps: Seq[NgStep] = Seq.empty
+  def steps: Seq[NgStep]                = Seq.empty
 }
 
 object CompilingRequestSink extends RequestSink {
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
   def categories: Seq[NgPluginCategory] = Seq.empty
-  def steps: Seq[NgStep] = Seq.empty
+  def steps: Seq[NgStep]                = Seq.empty
 }

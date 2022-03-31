@@ -532,9 +532,9 @@ object Attrs {
 
 class Transformer1 extends RequestTransformer {
 
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq.empty
-  override def steps: Seq[NgStep] = Seq.empty
+  override def steps: Seq[NgStep]                = Seq.empty
 
   override def transformRequestWithCtx(
       context: TransformerRequestContext
@@ -555,9 +555,9 @@ class Transformer1 extends RequestTransformer {
 
 class Transformer2 extends RequestTransformer {
 
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq.empty
-  override def steps: Seq[NgStep] = Seq.empty
+  override def steps: Seq[NgStep]                = Seq.empty
 
   override def transformRequestWithCtx(
       context: TransformerRequestContext
@@ -581,9 +581,9 @@ class Transformer2 extends RequestTransformer {
 
 class Transformer3 extends RequestTransformer {
 
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq.empty
-  override def steps: Seq[NgStep] = Seq.empty
+  override def steps: Seq[NgStep]                = Seq.empty
 
   override def transformRequestWithCtx(
       context: TransformerRequestContext
@@ -599,9 +599,9 @@ class Transformer3 extends RequestTransformer {
 
 class Validator1 extends AccessValidator {
 
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq.empty
-  override def steps: Seq[NgStep] = Seq.empty
+  override def steps: Seq[NgStep]                = Seq.empty
 
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     TransformersCounters.counterValidator.incrementAndGet()

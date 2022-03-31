@@ -153,11 +153,14 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
 
   def form() = ApiAction {
     env.openApiSchema.asForms.get("otoroshi.next.models.NgBackend") match {
-      case Some(value)  => Ok(Json.obj(
-        "schema" -> value.schema,
-        "flow" -> value.flow
-      ))
-      case _            => NotFound(Json.obj("error" -> "Schema and flow not found"))
+      case Some(value) =>
+        Ok(
+          Json.obj(
+            "schema" -> value.schema,
+            "flow"   -> value.flow
+          )
+        )
+      case _           => NotFound(Json.obj("error" -> "Schema and flow not found"))
     }
   }
 
@@ -171,10 +174,15 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
       metadata = Map.empty,
       backend = NgBackend.empty
     )
-    env.datastores.globalConfigDataStore.latest().templates.backend.map { template =>
-      Ok(defaultBackend.json.asObject.deepMerge(template))
-    }.getOrElse {
-      Ok(defaultBackend.json)
-    }
+    env.datastores.globalConfigDataStore
+      .latest()
+      .templates
+      .backend
+      .map { template =>
+        Ok(defaultBackend.json.asObject.deepMerge(template))
+      }
+      .getOrElse {
+        Ok(defaultBackend.json)
+      }
   }
 }

@@ -171,10 +171,10 @@ case class Cert(
     else "certificate"
   }
 
-  lazy val notRevoked: Boolean = !revoked
-  lazy val cacheKey: String    = s"$id###$contentHash"
-  lazy val contentHash: String = Hashing.sha256().hashString(s"$chain:$privateKey", StandardCharsets.UTF_8).toString
-  lazy val bundle: String = s"${privateKey}\n\n${chain}\n"
+  lazy val notRevoked: Boolean                      = !revoked
+  lazy val cacheKey: String                         = s"$id###$contentHash"
+  lazy val contentHash: String                      = Hashing.sha256().hashString(s"$chain:$privateKey", StandardCharsets.UTF_8).toString
+  lazy val bundle: String                           = s"${privateKey}\n\n${chain}\n"
   lazy val allDomains: Seq[String] = {
     val enriched = enrich()
     (Seq(enriched.domain) ++ enriched.sans).filter(_.trim.nonEmpty).filterNot(_ == "--").distinct
@@ -650,11 +650,17 @@ trait CertificateDataStore extends BasicStore[Cert] {
 
   def nakedTemplate(env: Env): Future[Cert] = {
     val defaultCert = syncTemplate(env)
-    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.certificate.map { template =>
-      Cert._fmt.reads(defaultCert.json.asObject.deepMerge(template)).get
-    }.getOrElse {
-      defaultCert
-    }.vfuture
+    env.datastores.globalConfigDataStore
+      .latest()(env.otoroshiExecutionContext, env)
+      .templates
+      .certificate
+      .map { template =>
+        Cert._fmt.reads(defaultCert.json.asObject.deepMerge(template)).get
+      }
+      .getOrElse {
+        defaultCert
+      }
+      .vfuture
   }
 
   def template(implicit ec: ExecutionContext, env: Env): Future[Cert] = {
@@ -1072,12 +1078,12 @@ object DynamicSSLEngineProvider {
   )
 
   // val _certificates               = new TrieMap[String, Cert]()
-  val autogenCerts = Scaffeine().expireAfterWrite(5.minutes).maximumSize(1000).build[String, Cert]()
+  val autogenCerts                = Scaffeine().expireAfterWrite(5.minutes).maximumSize(1000).build[String, Cert]()
   val _ocspProjectionCertificates = new TrieMap[java.math.BigInteger, OCSPCertProjection]()
 
   private def allUnrevokedCertMap: TrieMap[String, Cert] = {
     val datastoreCerts = getCurrentEnv().proxyState.allCertificatesMap().filter(_._2.notRevoked)
-    val genCerts = autogenCerts.asMap()
+    val genCerts       = autogenCerts.asMap()
     new TrieMap[String, Cert]().++=(datastoreCerts).++=(genCerts)
   }
   private def allUnrevokedCertSeq: Seq[Cert] = allUnrevokedCertMap.values.toSeq
@@ -1166,7 +1172,7 @@ object DynamicSSLEngineProvider {
           optEnv.get
         ) // new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
       }
-      val tm: Array[TrustManager] =
+      val tm: Array[TrustManager]        =
         optEnv
           .flatMap(e =>
             e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")
@@ -1996,7 +2002,7 @@ object FakeKeyStore {
       serial: Option[Long]
   )(implicit env: Env): GenCertResponse = {
 
-    val f = env.pki.genSelfSignedCert(
+    val f    = env.pki.genSelfSignedCert(
       GenCsrQuery(
         hosts = Seq.empty,
         key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
@@ -2023,7 +2029,7 @@ object FakeKeyStore {
       caKeyPair: KeyPair
   )(implicit env: Env): GenCertResponse = {
 
-    val f = env.pki.genCert(
+    val f    = env.pki.genCert(
       GenCsrQuery(
         hosts = Seq(host),
         key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
@@ -2052,7 +2058,7 @@ object FakeKeyStore {
       caKeyPair: KeyPair
   )(implicit env: Env): GenCertResponse = {
 
-    val f = env.pki.genSubCA(
+    val f    = env.pki.genSubCA(
       GenCsrQuery(
         hosts = Seq.empty,
         key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
@@ -2076,7 +2082,7 @@ object FakeKeyStore {
       env: Env
   ): GenCertResponse = {
 
-    val f = env.pki.genSelfSignedCA(
+    val f    = env.pki.genSelfSignedCA(
       GenCsrQuery(
         hosts = Seq.empty,
         key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),

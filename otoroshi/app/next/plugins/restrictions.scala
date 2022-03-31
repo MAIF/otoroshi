@@ -2,7 +2,15 @@ package otoroshi.next.plugins
 
 import otoroshi.env.Env
 import otoroshi.models.{RestrictionPath, Restrictions}
-import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgStep}
+import otoroshi.next.plugins.api.{
+  NgAccess,
+  NgAccessContext,
+  NgAccessValidator,
+  NgPluginCategory,
+  NgPluginConfig,
+  NgPluginVisibility,
+  NgStep
+}
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
 import play.api.libs.json._
 
@@ -104,18 +112,18 @@ class RoutingRestrictions extends NgAccessValidator {
 
   private val configReads: Reads[NgRestrictions] = NgRestrictions.format
 
-  override def multiInstance: Boolean = true
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def multiInstance: Boolean            = true
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.TrafficControl)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def core: Boolean                   = true
-  override def name: String                    = "Routing Restrictions"
-  override def description: Option[String]     =
+  override def core: Boolean                               = true
+  override def name: String                                = "Routing Restrictions"
+  override def description: Option[String]                 =
     "This plugin apply routing restriction `method domain/path` on the current request/route".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgRestrictions().some
 
-  override def isAccessAsync: Boolean          = true
+  override def isAccessAsync: Boolean = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val restrictions                                   = ctx.cachedConfig(internalName)(configReads).getOrElse(NgRestrictions())

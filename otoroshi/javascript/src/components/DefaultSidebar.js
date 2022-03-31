@@ -73,9 +73,9 @@ export function DefaultSidebar(props) {
         </a>
       </li>
       <li className="nav-item">
-        <a 
-          href={`/bo/dashboard/apikeys/add`} 
-          className="nav-link" 
+        <a
+          href={`/bo/dashboard/apikeys/add`}
+          className="nav-link"
           {...createTooltip('Create a new apikey')}>
           <i className="fas fa-plus" /> Add apikey
         </a>
@@ -95,9 +95,9 @@ export function DefaultSidebar(props) {
         </a>
       </li>
       <li className="nav-item">
-        <a 
-          href={`/bo/dashboard/tcp/services/add`} 
-          className="nav-link" 
+        <a
+          href={`/bo/dashboard/tcp/services/add`}
+          className="nav-link"
           {...createTooltip('Create a new Tcp service')}>
           <i className="fas fa-plus" /> Add Tcp service
         </a>

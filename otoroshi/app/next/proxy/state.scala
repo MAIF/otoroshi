@@ -28,7 +28,7 @@ class NgProxyState(env: Env) {
 
   private val logger = Logger("otoroshi-proxy-state")
 
-  private val routes            = TrieMap
+  private val routes = TrieMap
     .newBuilder[String, NgRoute]
     .+=(NgRoute.fake.id -> NgRoute.fake)
     .result()
@@ -53,7 +53,7 @@ class NgProxyState(env: Env) {
   private val privateAppsSessions = new TrieMap[String, PrivateAppsUser]()
   private val tcpServices         = new TrieMap[String, TcpService]()
   private val scripts             = new TrieMap[String, Script]()
-  private val tryItEnabledReports        = Scaffeine()
+  private val tryItEnabledReports = Scaffeine()
     .expireAfterWrite(5.minutes)
     .maximumSize(100)
     .build[String, Unit]()
@@ -75,7 +75,7 @@ class NgProxyState(env: Env) {
         tryItEnabledReports.invalidate(id)
         true
       }
-      case None => false
+      case None    => false
     }
   }
 
@@ -89,11 +89,11 @@ class NgProxyState(env: Env) {
         tryItReports.invalidate(id)
         report.some
       }
-      case None => None
+      case None         => None
     }
   }
 
-  def findRoutes(domain: String, path: String): Option[Seq[NgRoute]]             =
+  def findRoutes(domain: String, path: String): Option[Seq[NgRoute]] =
     domainPathTreeRef.get().find(domain, path).map(_.routes)
 
   def findRoute(request: RequestHeader, attrs: TypedMap): Option[NgMatchedRoute] =
@@ -104,46 +104,46 @@ class NgProxyState(env: Env) {
     case None        => domainPathTreeRef.get().findWildcard(domain).map(_.routes)
   }
 
-  def script(id: String): Option[Script]                 = scripts.get(id)
-  def backend(id: String): Option[NgBackend]             = backends.get(id)
-  def errorTemplate(id: String): Option[ErrorTemplate]   = errorTemplates.get(id)
-  def target(id: String): Option[NgTarget]               = targets.get(id)
-  def route(id: String): Option[NgRoute]                 = routes.get(id)
-  def apikey(id: String): Option[ApiKey]                 = apikeys.get(id)
-  def jwtVerifier(id: String): Option[GlobalJwtVerifier] = jwtVerifiers.get(id)
-  def certificate(id: String): Option[Cert]              = certificates.get(id)
-  def authModule(id: String): Option[AuthModuleConfig]   = authModules.get(id)
-  def authModuleAsync(id: String): Future[Option[AuthModuleConfig]]   = authModules.get(id).vfuture
-  def service(id: String): Option[ServiceDescriptor] = services.get(id)
-  def team(id: String): Option[Team] = teams.get(id)
-  def tenant(id: String): Option[Tenant] = tenants.get(id)
-  def serviceGroup(id: String): Option[ServiceGroup] = serviceGroups.get(id)
-  def dataExporter(id: String): Option[DataExporterConfig] = dataExporters.get(id)
-  def otoroshiAdmin(id: String): Option[OtoroshiAdmin] = otoroshiAdmins.get(id)
-  def backofficeSession(id: String): Option[BackOfficeUser] = backofficeSessions.get(id)
-  def privateAppsSession(id: String): Option[PrivateAppsUser] = privateAppsSessions.get(id)
-  def tcpService(id: String): Option[TcpService] = tcpServices.get(id)
+  def script(id: String): Option[Script]                            = scripts.get(id)
+  def backend(id: String): Option[NgBackend]                        = backends.get(id)
+  def errorTemplate(id: String): Option[ErrorTemplate]              = errorTemplates.get(id)
+  def target(id: String): Option[NgTarget]                          = targets.get(id)
+  def route(id: String): Option[NgRoute]                            = routes.get(id)
+  def apikey(id: String): Option[ApiKey]                            = apikeys.get(id)
+  def jwtVerifier(id: String): Option[GlobalJwtVerifier]            = jwtVerifiers.get(id)
+  def certificate(id: String): Option[Cert]                         = certificates.get(id)
+  def authModule(id: String): Option[AuthModuleConfig]              = authModules.get(id)
+  def authModuleAsync(id: String): Future[Option[AuthModuleConfig]] = authModules.get(id).vfuture
+  def service(id: String): Option[ServiceDescriptor]                = services.get(id)
+  def team(id: String): Option[Team]                                = teams.get(id)
+  def tenant(id: String): Option[Tenant]                            = tenants.get(id)
+  def serviceGroup(id: String): Option[ServiceGroup]                = serviceGroups.get(id)
+  def dataExporter(id: String): Option[DataExporterConfig]          = dataExporters.get(id)
+  def otoroshiAdmin(id: String): Option[OtoroshiAdmin]              = otoroshiAdmins.get(id)
+  def backofficeSession(id: String): Option[BackOfficeUser]         = backofficeSessions.get(id)
+  def privateAppsSession(id: String): Option[PrivateAppsUser]       = privateAppsSessions.get(id)
+  def tcpService(id: String): Option[TcpService]                    = tcpServices.get(id)
 
-  def allScripts(): Seq[Script]                 = scripts.values.toSeq
-  def allRoutes(): Seq[NgRoute]                 = routes.values.toSeq
-  def allApikeys(): Seq[ApiKey]                 = apikeys.values.toSeq
-  def allJwtVerifiers(): Seq[GlobalJwtVerifier] = jwtVerifiers.values.toSeq
-  def allCertificates(): Seq[Cert]              = certificates.values.toSeq
-  def allCertificatesMap(): TrieMap[String, Cert] = certificates
-  def allAuthModules(): Seq[AuthModuleConfig]   = authModules.values.toSeq
-  def allServices(): Seq[ServiceDescriptor] = services.values.toSeq
-  def allTeams(): Seq[Team] = teams.values.toSeq
-  def allTenants(): Seq[Tenant] = tenants.values.toSeq
-  def allServiceGroups(): Seq[ServiceGroup] = serviceGroups.values.toSeq
-  def allDataExporters(): Seq[DataExporterConfig] = dataExporters.values.toSeq
-  def allOtoroshiAdmins(): Seq[OtoroshiAdmin] = otoroshiAdmins.values.toSeq
-  def allBackofficeSessions(): Seq[BackOfficeUser] = backofficeSessions.values.toSeq
+  def allScripts(): Seq[Script]                      = scripts.values.toSeq
+  def allRoutes(): Seq[NgRoute]                      = routes.values.toSeq
+  def allApikeys(): Seq[ApiKey]                      = apikeys.values.toSeq
+  def allJwtVerifiers(): Seq[GlobalJwtVerifier]      = jwtVerifiers.values.toSeq
+  def allCertificates(): Seq[Cert]                   = certificates.values.toSeq
+  def allCertificatesMap(): TrieMap[String, Cert]    = certificates
+  def allAuthModules(): Seq[AuthModuleConfig]        = authModules.values.toSeq
+  def allServices(): Seq[ServiceDescriptor]          = services.values.toSeq
+  def allTeams(): Seq[Team]                          = teams.values.toSeq
+  def allTenants(): Seq[Tenant]                      = tenants.values.toSeq
+  def allServiceGroups(): Seq[ServiceGroup]          = serviceGroups.values.toSeq
+  def allDataExporters(): Seq[DataExporterConfig]    = dataExporters.values.toSeq
+  def allOtoroshiAdmins(): Seq[OtoroshiAdmin]        = otoroshiAdmins.values.toSeq
+  def allBackofficeSessions(): Seq[BackOfficeUser]   = backofficeSessions.values.toSeq
   def allPrivateAppsSessions(): Seq[PrivateAppsUser] = privateAppsSessions.values.toSeq
-  def allTcpServices(): Seq[TcpService] = tcpServices.values.toSeq
+  def allTcpServices(): Seq[TcpService]              = tcpServices.values.toSeq
 
-  def allNgServices(): Seq[NgService] = ngservices.values.toSeq
+  def allNgServices(): Seq[NgService]     = ngservices.values.toSeq
   def allBackends(): Seq[StoredNgBackend] = ngbackends.values.toSeq
-  def allTargets(): Seq[StoredNgTarget] = ngtargets.values.toSeq
+  def allTargets(): Seq[StoredNgTarget]   = ngtargets.values.toSeq
 
   def updateRoutes(values: Seq[NgRoute]): Unit = {
     routes.addAll(values.map(v => (v.id, v))).remAll(routes.keySet.toSeq.diff(values.map(_.id)))
@@ -181,15 +181,21 @@ class NgProxyState(env: Env) {
   }
 
   def updateOtoroshiAdmins(values: Seq[OtoroshiAdmin]): Unit = {
-    otoroshiAdmins.addAll(values.map(v => (v.username, v))).remAll(otoroshiAdmins.keySet.toSeq.diff(values.map(_.username)))
+    otoroshiAdmins
+      .addAll(values.map(v => (v.username, v)))
+      .remAll(otoroshiAdmins.keySet.toSeq.diff(values.map(_.username)))
   }
 
   def updateBackofficeSessions(values: Seq[BackOfficeUser]): Unit = {
-    backofficeSessions.addAll(values.map(v => (v.randomId, v))).remAll(backofficeSessions.keySet.toSeq.diff(values.map(_.randomId)))
+    backofficeSessions
+      .addAll(values.map(v => (v.randomId, v)))
+      .remAll(backofficeSessions.keySet.toSeq.diff(values.map(_.randomId)))
   }
 
   def updatePrivateAppsSessions(values: Seq[PrivateAppsUser]): Unit = {
-    privateAppsSessions.addAll(values.map(v => (v.randomId, v))).remAll(privateAppsSessions.keySet.toSeq.diff(values.map(_.randomId)))
+    privateAppsSessions
+      .addAll(values.map(v => (v.randomId, v)))
+      .remAll(privateAppsSessions.keySet.toSeq.diff(values.map(_.randomId)))
   }
 
   def updateTcpServices(values: Seq[TcpService]): Unit = {
@@ -221,7 +227,9 @@ class NgProxyState(env: Env) {
   }
 
   def updateErrorTemplates(values: Seq[ErrorTemplate]): Unit = {
-    errorTemplates.addAll(values.map(v => (v.serviceId, v))).remAll(errorTemplates.keySet.toSeq.diff(values.map(_.serviceId)))
+    errorTemplates
+      .addAll(values.map(v => (v.serviceId, v)))
+      .remAll(errorTemplates.keySet.toSeq.diff(values.map(_.serviceId)))
   }
 
   def updateScripts(values: Seq[Script]): Unit = {
@@ -288,7 +296,7 @@ class NgProxyStateLoaderJob extends Job {
             query = Map.empty,
             methods = Seq.empty,
             stripPath = true,
-            exact = false,
+            exact = false
           ),
           backend = NgBackend(
             targets = Seq(
@@ -356,7 +364,7 @@ class NgProxyStateLoaderJob extends Job {
             query = Map.empty,
             methods = Seq.empty,
             stripPath = true,
-            exact = false,
+            exact = false
           ),
           backend = NgBackend(
             targets = Seq(
@@ -418,7 +426,7 @@ class NgProxyStateLoaderJob extends Job {
             query = Map.empty,
             methods = Seq.empty,
             stripPath = true,
-            exact = false,
+            exact = false
           ),
           backend = NgBackend(
             targets = Seq(
@@ -462,47 +470,48 @@ class NgProxyStateLoaderJob extends Job {
 
   def soapRoute(env: Env): Seq[NgRoute] = {
     if (env.env == "dev") {
-      Seq(NgRoute(
-        location = EntityLocation.default,
-        id = s"route_soap",
-        name = s"route_soap",
-        description = s"route_soap",
-        tags = Seq.empty,
-        metadata = Map.empty,
-        enabled = true,
-        debugFlow = true,
-        exportReporting = false,
-        frontend = NgFrontend(
-          domains = Seq(NgDomainAndPath(s"soap-next-gen.oto.tools/text/from/number/:number")),
-          headers = Map.empty,
-          query = Map.empty,
-          methods = Seq("GET"),
-          stripPath = true,
-          exact = false,
-        ),
-        backend = NgBackend(
-          targets = Seq(
-            NgTarget(
-              id = "www.dataaccess.com",
-              hostname = "www.dataaccess.com",
-              port = 443,
-              tls = true
-            )
+      Seq(
+        NgRoute(
+          location = EntityLocation.default,
+          id = s"route_soap",
+          name = s"route_soap",
+          description = s"route_soap",
+          tags = Seq.empty,
+          metadata = Map.empty,
+          enabled = true,
+          debugFlow = true,
+          exportReporting = false,
+          frontend = NgFrontend(
+            domains = Seq(NgDomainAndPath(s"soap-next-gen.oto.tools/text/from/number/:number")),
+            headers = Map.empty,
+            query = Map.empty,
+            methods = Seq("GET"),
+            stripPath = true,
+            exact = false
           ),
-          targetRefs = Seq.empty,
-          root = s"/webservicesserver/numberconversion.wso",
-          rewrite = true,
-          loadBalancing = RoundRobin,
-          client = NgClientConfig.default
-        ),
-        plugins = NgPlugins(
-          Seq(
-            NgPluginInstance(
-              plugin = pluginId[SOAPAction],
-              config = NgPluginInstanceConfig(SOAPActionConfig(
-                // url = "https://www.dataaccess.com/webservicesserver/numberconversion.wso",
-                envelope =
-                  s"""<?xml version="1.0" encoding="utf-8"?>
+          backend = NgBackend(
+            targets = Seq(
+              NgTarget(
+                id = "www.dataaccess.com",
+                hostname = "www.dataaccess.com",
+                port = 443,
+                tls = true
+              )
+            ),
+            targetRefs = Seq.empty,
+            root = s"/webservicesserver/numberconversion.wso",
+            rewrite = true,
+            loadBalancing = RoundRobin,
+            client = NgClientConfig.default
+          ),
+          plugins = NgPlugins(
+            Seq(
+              NgPluginInstance(
+                plugin = pluginId[SOAPAction],
+                config = NgPluginInstanceConfig(
+                  SOAPActionConfig(
+                    // url = "https://www.dataaccess.com/webservicesserver/numberconversion.wso",
+                    envelope = s"""<?xml version="1.0" encoding="utf-8"?>
                     |<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
                     |  <soap:Body>
                     |    <NumberToWords xmlns="http://www.dataaccess.com/webservicesserver/">
@@ -510,12 +519,15 @@ class NgProxyStateLoaderJob extends Job {
                     |    </NumberToWords>
                     |  </soap:Body>
                     |</soap:Envelope>""".stripMargin,
-                jqResponseFilter = """{number_str: .["soap:Envelope"] | .["soap:Body"] | .["m:NumberToWordsResponse"] | .["m:NumberToWordsResult"] }""".some
-              ).json.asObject)
+                    jqResponseFilter =
+                      """{number_str: .["soap:Envelope"] | .["soap:Body"] | .["m:NumberToWordsResponse"] | .["m:NumberToWordsResult"] }""".some
+                  ).json.asObject
+                )
+              )
             )
           )
         )
-      ))
+      )
     } else {
       Seq.empty
     }
@@ -523,22 +535,29 @@ class NgProxyStateLoaderJob extends Job {
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val start        = System.currentTimeMillis()
-    val config       = env.datastores.globalConfigDataStore.latest().plugins.config.select(ProxyEngine.configRoot).asOpt[JsObject].map(v => ProxyEngineConfig.parse(v, env)).getOrElse(ProxyEngineConfig.default)
+    val config       = env.datastores.globalConfigDataStore
+      .latest()
+      .plugins
+      .config
+      .select(ProxyEngine.configRoot)
+      .asOpt[JsObject]
+      .map(v => ProxyEngineConfig.parse(v, env))
+      .getOrElse(ProxyEngineConfig.default)
     val debug        = config.debug
     val debugHeaders = config.debugHeaders
     for {
       _                   <- env.vaults.renewSecretsInCache()
-      routes              <- env.datastores.routeDataStore.findAllAndFillSecrets()  // secrets OK
-      routescomp          <- env.datastores.servicesDataStore.findAllAndFillSecrets()  // secrets OK
+      routes              <- env.datastores.routeDataStore.findAllAndFillSecrets() // secrets OK
+      routescomp          <- env.datastores.servicesDataStore.findAllAndFillSecrets() // secrets OK
       genRoutesDomain     <- generateRoutesByDomain(env)
       genRoutesPath       <- generateRoutesByName(env)
       genRandom           <- generateRandomRoutes(env)
-      descriptors         <- env.datastores.serviceDescriptorDataStore.findAllAndFillSecrets()  // secrets OK
-      fakeRoutes          = if (env.env == "dev") Seq(NgRoute.fake) else Seq.empty
-      newRoutes           = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
-                            NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
-                          ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
-      apikeys             <- env.datastores.apiKeyDataStore.findAllAndFillSecrets()  // secrets OK
+      descriptors         <- env.datastores.serviceDescriptorDataStore.findAllAndFillSecrets() // secrets OK
+      fakeRoutes           = if (env.env == "dev") Seq(NgRoute.fake) else Seq.empty
+      newRoutes            = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
+                               NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
+                             ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
+      apikeys             <- env.datastores.apiKeyDataStore.findAllAndFillSecrets() // secrets OK
       certs               <- env.datastores.certificatesDataStore.findAllAndFillSecrets() // secrets OK
       verifiers           <- env.datastores.globalJwtVerifierDataStore.findAllAndFillSecrets() // secrets OK
       modules             <- env.datastores.authConfigsDataStore.findAllAndFillSecrets() // secrets OK
@@ -556,39 +575,39 @@ class NgProxyStateLoaderJob extends Job {
       tcpServices         <- env.datastores.tcpServiceDataStore.findAllAndFillSecrets() // secrets OK
       scripts             <- env.datastores.scriptDataStore.findAll() // no need for secrets
       croutes             <- if (env.env == "dev") {
-                           NgService
-                             .fromOpenApi(
-                               "oto-api-next-gen.oto.tools",
-                               "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json"
-                             )
-                             .map(route => {
-                               // java.nio.file.Files.writeString(new java.io.File("./service.json").toPath(), route.json.prettify)
-                               route.toRoutes.map(r =>
-                                 r.copy(
-                                   backend =
-                                     r.backend.copy(targets = r.backend.targets.map(t => t.copy(port = 9999, tls = false))),
-                                   plugins = NgPlugins(
-                                     Seq(
-                                       NgPluginInstance(
-                                         plugin = NgPluginHelper.pluginId[OverrideHost]
-                                       ),
-                                       NgPluginInstance(
-                                         plugin = NgPluginHelper.pluginId[AdditionalHeadersIn],
-                                         config = NgPluginInstanceConfig(
-                                           Json.obj(
-                                             "headers" -> Json.obj(
-                                               "Otoroshi-Client-Id"     -> "admin-api-apikey-id",
-                                               "Otoroshi-Client-Secret" -> "admin-api-apikey-secret"
+                               NgService
+                                 .fromOpenApi(
+                                   "oto-api-next-gen.oto.tools",
+                                   "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json"
+                                 )
+                                 .map(route => {
+                                   // java.nio.file.Files.writeString(new java.io.File("./service.json").toPath(), route.json.prettify)
+                                   route.toRoutes.map(r =>
+                                     r.copy(
+                                       backend =
+                                         r.backend.copy(targets = r.backend.targets.map(t => t.copy(port = 9999, tls = false))),
+                                       plugins = NgPlugins(
+                                         Seq(
+                                           NgPluginInstance(
+                                             plugin = NgPluginHelper.pluginId[OverrideHost]
+                                           ),
+                                           NgPluginInstance(
+                                             plugin = NgPluginHelper.pluginId[AdditionalHeadersIn],
+                                             config = NgPluginInstanceConfig(
+                                               Json.obj(
+                                                 "headers" -> Json.obj(
+                                                   "Otoroshi-Client-Id"     -> "admin-api-apikey-id",
+                                                   "Otoroshi-Client-Secret" -> "admin-api-apikey-secret"
+                                                 )
+                                               )
                                              )
                                            )
                                          )
                                        )
                                      )
                                    )
-                                 )
-                               )
-                             })
-                         } else Seq.empty[NgRoute].vfuture
+                                 })
+                             } else Seq.empty[NgRoute].vfuture
     } yield {
       env.proxyState.updateRoutes(newRoutes ++ croutes)
       env.proxyState.updateTargets(targets)
@@ -643,27 +662,29 @@ class NgInternalStateMonitor extends Job {
 
   override def starting: JobStarting = JobStarting.Automatically
 
-  override def instantiation(ctx: JobContext, env: Env): JobInstantiation =  JobInstantiation.OneInstancePerOtoroshiInstance
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
+    JobInstantiation.OneInstancePerOtoroshiInstance
 
   def monitorProxyState(env: Env): Unit = {
-    val start = System.currentTimeMillis()
-    val total = Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(env.proxyState).totalSize())
+    val start    = System.currentTimeMillis()
+    val total    = Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(env.proxyState).totalSize())
     val duration = Milliseconds(System.currentTimeMillis() - start)
     env.metrics.markDouble("ng-proxy-state-size-monitoring", total.value)
     logger.debug(s"proxy-state: ${total.toMegabytes} mb, in ${duration}")
   }
 
   def monitorDataStoreState(env: Env): Unit = {
-    val start = System.currentTimeMillis()
-    val total = Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(env.datastores).totalSize())
+    val start    = System.currentTimeMillis()
+    val total    = Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(env.datastores).totalSize())
     val duration = Milliseconds(System.currentTimeMillis() - start)
     env.metrics.markDouble("ng-datastore-size-monitoring", total.value)
     logger.debug(s"datastore: ${total.toMegabytes} mb, in ${duration}")
   }
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val monitorState = env.configuration.getOptional[Boolean]("otoroshi.next.monitor-proxy-state-size").getOrElse(false)
-    val monitorDatastore = env.configuration.getOptional[Boolean]("otoroshi.next.monitor-datastore-size").getOrElse(false)
+    val monitorState     = env.configuration.getOptional[Boolean]("otoroshi.next.monitor-proxy-state-size").getOrElse(false)
+    val monitorDatastore =
+      env.configuration.getOptional[Boolean]("otoroshi.next.monitor-datastore-size").getOrElse(false)
     if (monitorState) monitorProxyState(env)
     if (monitorDatastore) monitorDataStoreState(env)
     ().vfuture

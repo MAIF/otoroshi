@@ -31,9 +31,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.asJavaIterableConverter
 import scala.util.{Failure, Success, Try}
 
-
 object NoopSpanExporter {
-  private val INSTANCE: SpanExporter = new NoopSpanExporter
+  private val INSTANCE: SpanExporter             = new NoopSpanExporter
   private[plugins] def getInstance: SpanExporter = INSTANCE
 }
 
@@ -50,7 +49,7 @@ final class NoopSpanExporter extends SpanExporter {
 sealed trait W3CTracingConfigKind {
   def name: String
 }
-object W3CTracingConfigKind {
+object W3CTracingConfigKind       {
   case object Jaeger extends W3CTracingConfigKind { def name: String = "jaeger" }
   case object Zipkin extends W3CTracingConfigKind { def name: String = "zipkin" }
   case object Logger extends W3CTracingConfigKind { def name: String = "logger" }
@@ -74,11 +73,11 @@ case class W3CTracingConfig(
 
 object W3CTracingConfig {
   val format = new Format[W3CTracingConfig] {
-    override def writes(o: W3CTracingConfig): JsValue = Json.obj(
-      "kind" -> o.kind.name,
+    override def writes(o: W3CTracingConfig): JsValue             = Json.obj(
+      "kind"     -> o.kind.name,
       "endpoint" -> o.endpoint,
-      "timeout" -> o.timeout,
-      "baggage" -> o.baggage
+      "timeout"  -> o.timeout,
+      "baggage"  -> o.baggage
     )
     override def reads(json: JsValue): JsResult[W3CTracingConfig] = Try {
       W3CTracingConfig(
@@ -105,39 +104,65 @@ class W3CTracing extends NgRequestTransformer {
 
   private val opentelemetrysdks = new TrieMap[String, SdkWrapper]()
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Monitoring, NgPluginCategory.Analytics)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   def buildOpenTelemetry(config: W3CTracingConfig): SdkWrapper = {
     val sdkTracerProvider = config.kind match {
-      case W3CTracingConfigKind.Noop => SdkTracerProvider.builder
-        .addSpanProcessor(SimpleSpanProcessor.create(NoopSpanExporter.getInstance))
-        .build
-      case W3CTracingConfigKind.Logger => SdkTracerProvider.builder
-        .addSpanProcessor(SimpleSpanProcessor.create(LoggingSpanExporter.create()))
-        .build
-      case W3CTracingConfigKind.Jaeger =>  SdkTracerProvider.builder
-        .addSpanProcessor(SimpleSpanProcessor.create(JaegerGrpcSpanExporter.builder().setEndpoint(config.endpoint).setTimeout(config.timeout, TimeUnit.MILLISECONDS).build()))
-        .build
-      case W3CTracingConfigKind.Zipkin => SdkTracerProvider.builder
-        .addSpanProcessor(SimpleSpanProcessor.create(ZipkinSpanExporter.builder().setEndpoint(config.endpoint).setReadTimeout(config.timeout, TimeUnit.MILLISECONDS).build()))
-        .build
+      case W3CTracingConfigKind.Noop   =>
+        SdkTracerProvider.builder
+          .addSpanProcessor(SimpleSpanProcessor.create(NoopSpanExporter.getInstance))
+          .build
+      case W3CTracingConfigKind.Logger =>
+        SdkTracerProvider.builder
+          .addSpanProcessor(SimpleSpanProcessor.create(LoggingSpanExporter.create()))
+          .build
+      case W3CTracingConfigKind.Jaeger =>
+        SdkTracerProvider.builder
+          .addSpanProcessor(
+            SimpleSpanProcessor.create(
+              JaegerGrpcSpanExporter
+                .builder()
+                .setEndpoint(config.endpoint)
+                .setTimeout(config.timeout, TimeUnit.MILLISECONDS)
+                .build()
+            )
+          )
+          .build
+      case W3CTracingConfigKind.Zipkin =>
+        SdkTracerProvider.builder
+          .addSpanProcessor(
+            SimpleSpanProcessor.create(
+              ZipkinSpanExporter
+                .builder()
+                .setEndpoint(config.endpoint)
+                .setReadTimeout(config.timeout, TimeUnit.MILLISECONDS)
+                .build()
+            )
+          )
+          .build
     }
-    val sdk = OpenTelemetrySdk.builder
+    val sdk               = OpenTelemetrySdk.builder
       .setTracerProvider(sdkTracerProvider)
-      .setPropagators(ContextPropagators.create(TextMapPropagator.composite(
-        W3CTraceContextPropagator.getInstance(),
-        W3CBaggagePropagator.getInstance()
-      )))
+      .setPropagators(
+        ContextPropagators.create(
+          TextMapPropagator.composite(
+            W3CTraceContextPropagator.getInstance(),
+            W3CBaggagePropagator.getInstance()
+          )
+        )
+      )
       .build
     SdkWrapper(config, sdk, sdkTracerProvider)
   }
 
   def getOpenTelemetry(serviceId: String, config: W3CTracingConfig): OpenTelemetrySdk = {
-    val wrapper = opentelemetrysdks.getOrElse(serviceId, {
-      buildOpenTelemetry(config)
-    })
+    val wrapper = opentelemetrysdks.getOrElse(
+      serviceId, {
+        buildOpenTelemetry(config)
+      }
+    )
     if (wrapper.hasChanged(config)) {
       wrapper.close()
       val nwrapper = buildOpenTelemetry(config)
@@ -148,12 +173,13 @@ class W3CTracing extends NgRequestTransformer {
     }
   }
 
-  private val SpanKey = TypedKey[Span]("otoroshi.next.plugins.W3CTracing.Span")
+  private val SpanKey   = TypedKey[Span]("otoroshi.next.plugins.W3CTracing.Span")
   private val ScopesKey = TypedKey[Seq[Scope]]("otoroshi.next.plugins.W3CTracing.Scopes")
-  private val TraceKey = TypedKey[Seq[(String, String)]]("otoroshi.next.plugins.W3CTracing.Trace")
+  private val TraceKey  = TypedKey[Seq[(String, String)]]("otoroshi.next.plugins.W3CTracing.Trace")
 
   private val getter = new TextMapGetter[NgTransformerRequestContext] {
-    override def keys(carrier: NgTransformerRequestContext): lang.Iterable[String] = carrier.otoroshiRequest.headers.keys.asJava
+    override def keys(carrier: NgTransformerRequestContext): lang.Iterable[String] =
+      carrier.otoroshiRequest.headers.keys.asJava
     override def get(carrier: NgTransformerRequestContext, key: String): String = {
       carrier.otoroshiRequest.headers.getIgnoreCase(key).getOrElse("")
     }
@@ -166,23 +192,26 @@ class W3CTracing extends NgRequestTransformer {
     }
   }
 
-  override def multiInstance: Boolean = false
-  override def core: Boolean               = true
-  override def name: String                = "W3C Trace Context"
-  override def description: Option[String] = "This plugin propagates W3C Trace Context spans and can export it to Jaeger or Zipkin".some
+  override def multiInstance: Boolean                      = false
+  override def core: Boolean                               = true
+  override def name: String                                = "W3C Trace Context"
+  override def description: Option[String]                 =
+    "This plugin propagates W3C Trace Context spans and can export it to Jaeger or Zipkin".some
   override def defaultConfigObject: Option[NgPluginConfig] = W3CTracingConfig().some
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
-    val config =  ctx.cachedConfig(internalName)(W3CTracingConfig.format).getOrElse(W3CTracingConfig())
-    val telemetry = getOpenTelemetry(ctx.route.id, config)
+  override def transformRequest(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+    val config     = ctx.cachedConfig(internalName)(W3CTracingConfig.format).getOrElse(W3CTracingConfig())
+    val telemetry  = getOpenTelemetry(ctx.route.id, config)
     val propagator = telemetry.getPropagators.getTextMapPropagator
-    val tracer = telemetry.getTracer("otoroshi")
+    val tracer     = telemetry.getTracer("otoroshi")
 
     val context = propagator.extract(Context.current(), ctx, getter)
-    val span = tracer.spanBuilder("http_proxy").setParent(context).setSpanKind(SpanKind.SERVER).startSpan()
+    val span    = tracer.spanBuilder("http_proxy").setParent(context).setSpanKind(SpanKind.SERVER).startSpan()
     val baggage = Baggage.fromContext(context)
-    val scope1 = span.makeCurrent()
-    val scope2 = baggage.makeCurrent()
+    val scope1  = span.makeCurrent()
+    val scope2  = baggage.makeCurrent()
     val current = Context.current()
 
     span.setAttribute("lc", "otoroshi")
@@ -197,35 +226,46 @@ class W3CTracing extends NgRequestTransformer {
     span.setAttribute("http.from", ctx.request.theIpAddress)
 
     val newContext = if (config.baggage.nonEmpty) {
-      config.baggage.foldLeft(baggage.toBuilder) {
-        case (builder, (key, value)) => builder.put(key, GlobalExpressionLanguage.apply(
-          value = value,
-          req = ctx.request.some,
-          service = ctx.route.serviceDescriptor.some,
-          apiKey = ctx.apikey,
-          user = ctx.user,
-          context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-          attrs = ctx.attrs,
-          env = env,
-        ))
-      }.build().storeInContext(current)
+      config.baggage
+        .foldLeft(baggage.toBuilder) { case (builder, (key, value)) =>
+          builder.put(
+            key,
+            GlobalExpressionLanguage.apply(
+              value = value,
+              req = ctx.request.some,
+              service = ctx.route.serviceDescriptor.some,
+              apiKey = ctx.apikey,
+              user = ctx.user,
+              context = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+              attrs = ctx.attrs,
+              env = env
+            )
+          )
+        }
+        .build()
+        .storeInContext(current)
     } else {
       current
     }
 
     ctx.attrs.put(ScopesKey -> Seq(scope1, scope2))
-    ctx.attrs.put(SpanKey -> span)
-    ctx.attrs.put(TraceKey -> Seq.empty)
+    ctx.attrs.put(SpanKey   -> span)
+    ctx.attrs.put(TraceKey  -> Seq.empty)
 
     propagator.inject(newContext, ctx, setter)
     val headers = ctx.attrs.get(TraceKey).get
     span.addEvent("forward_request")
-    ctx.otoroshiRequest.copy(
-      headers = ctx.otoroshiRequest.headers ++ headers.toMap
-    ).right.vfuture
+    ctx.otoroshiRequest
+      .copy(
+        headers = ctx.otoroshiRequest.headers ++ headers.toMap
+      )
+      .right
+      .vfuture
   }
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  override def transformResponse(
+      ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     ctx.attrs.get(SpanKey).foreach { span =>
       span.addEvent("process_response")
       span.setAttribute("http.response", ctx.otoroshiResponse.status)
@@ -236,7 +276,9 @@ class W3CTracing extends NgRequestTransformer {
     ctx.otoroshiResponse.right.vfuture
   }
 
-  override def transformError(ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] =  {
+  override def transformError(
+      ctx: NgTransformerErrorContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
     ctx.attrs.get(SpanKey).foreach { span =>
       span.addEvent("process_error")
       span.setAttribute("http.response", ctx.otoroshiResponse.status)
