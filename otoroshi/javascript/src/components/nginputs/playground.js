@@ -22,7 +22,7 @@ export class NgFormPlayground extends Component {
 
   render() {
     return <NgFormPlaygroundOtoroshi globalEnv={this.props.globalEnv} />
-    return (
+    /*return (
       <div style={{ marginTop: 40 }}>
         <NgForm 
           style={{ display: 'flex', flexDirection: 'column', width: '100%' }}
@@ -210,7 +210,7 @@ export class NgFormPlayground extends Component {
           </code>
         </pre>
       </div>
-    );
+    );*/
   }
 }
 
