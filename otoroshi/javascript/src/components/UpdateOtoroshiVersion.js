@@ -18,7 +18,7 @@ export class UpdateOtoroshiVersion extends Component {
           <button
             type="button"
             className="btn btn-sm"
-            style={{ alignSelf: 'flex-end'}}
+            style={{ alignSelf: 'flex-end' }}
             onClick={(e) => {
               e.preventDefault();
               localStorage.setItem(

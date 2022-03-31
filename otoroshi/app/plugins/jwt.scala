@@ -68,9 +68,9 @@ class JwtUserExtractor extends PreRouting {
     "jti"
   )
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
-  def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+  def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val config        = ctx.configFor("JwtUserExtractor")

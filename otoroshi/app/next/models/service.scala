@@ -67,11 +67,11 @@ case class NgService(
 ) extends EntityLocationSupport {
 
   def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.servicesDataStore.set(this)
-  override def internalId: String               = id
-  override def theName: String                  = name
-  override def theDescription: String           = description
-  override def theTags: Seq[String]             = tags
-  override def theMetadata: Map[String, String] = metadata
+  override def internalId: String                                      = id
+  override def theName: String                                         = name
+  override def theDescription: String                                  = description
+  override def theTags: Seq[String]                                    = tags
+  override def theMetadata: Map[String, String]                        = metadata
 
   override def json: JsValue = location.jsonWithKey ++ Json.obj(
     "id"               -> id,
@@ -122,7 +122,7 @@ object NgService {
     } catch {
       case e: Throwable => throw e
     }
-  val fmt = new Format[NgService] {
+  val fmt                                  = new Format[NgService] {
     override def writes(o: NgService): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgService] = Try {
       NgService(
@@ -185,7 +185,7 @@ object NgService {
             query = Map.empty,
             methods = methods,
             stripPath = false,
-            exact = true,
+            exact = true
           ),
           backend = NgMinimalBackend(
             targets = targets,

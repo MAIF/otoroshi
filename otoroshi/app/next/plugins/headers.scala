@@ -52,20 +52,20 @@ object NgHeaderValuesConfig {
 
 class OverrideHost extends NgRequestTransformer {
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = false
-  override def core: Boolean                     = true
-  override def usesCallbacks: Boolean            = false
-  override def transformsRequest: Boolean        = true
-  override def transformsResponse: Boolean       = false
-  override def transformsError: Boolean          = false
-  override def isTransformRequestAsync: Boolean  = false
-  override def isTransformResponseAsync: Boolean = true
-  override def name: String                      = "Override host header"
-  override def description: Option[String]       =
+  override def multiInstance: Boolean                      = false
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = false
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = true
+  override def name: String                                = "Override host header"
+  override def description: Option[String]                 =
     "This plugin override the current Host header with the Host of the backend target".some
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
@@ -87,16 +87,16 @@ class HeadersValidation extends NgAccessValidator {
 
   private val configReads: Reads[NgHeaderValuesConfig] = NgHeaderValuesConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Headers)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean                   = true
-  override def name: String                    = "Headers validation"
-  override def description: Option[String]     = "This plugin validates the values of incoming request headers".some
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Headers validation"
+  override def description: Option[String]                 = "This plugin validates the values of incoming request headers".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderValuesConfig().some
-  override def isAccessAsync: Boolean          = true
+  override def isAccessAsync: Boolean                      = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val validationHeaders = ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.map {
@@ -131,20 +131,20 @@ class AdditionalHeadersOut extends NgRequestTransformer {
 
   private val configReads: Reads[NgHeaderValuesConfig] = NgHeaderValuesConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean                     = true
-  override def usesCallbacks: Boolean            = false
-  override def transformsRequest: Boolean        = false
-  override def transformsResponse: Boolean       = true
-  override def transformsError: Boolean          = false
-  override def isTransformRequestAsync: Boolean  = true
-  override def isTransformResponseAsync: Boolean = false
-  override def name: String                      = "Additional headers out"
-  override def description: Option[String]       = "This plugin adds headers in the otoroshi response".some
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = false
+  override def transformsResponse: Boolean                 = true
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = true
+  override def isTransformResponseAsync: Boolean           = false
+  override def name: String                                = "Additional headers out"
+  override def description: Option[String]                 = "This plugin adds headers in the otoroshi response".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderValuesConfig().some
 
   override def transformResponseSync(
@@ -171,20 +171,20 @@ class AdditionalHeadersIn extends NgRequestTransformer {
 
   private val configReads: Reads[NgHeaderValuesConfig] = NgHeaderValuesConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean                     = true
-  override def usesCallbacks: Boolean            = false
-  override def transformsRequest: Boolean        = true
-  override def transformsResponse: Boolean       = false
-  override def transformsError: Boolean          = false
-  override def isTransformRequestAsync: Boolean  = false
-  override def isTransformResponseAsync: Boolean = true
-  override def name: String                      = "Additional headers in"
-  override def description: Option[String]       = "This plugin adds headers in the incoming otoroshi request".some
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = false
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = true
+  override def name: String                                = "Additional headers in"
+  override def description: Option[String]                 = "This plugin adds headers in the incoming otoroshi request".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderValuesConfig().some
 
   override def transformRequestSync(
@@ -211,20 +211,20 @@ class MissingHeadersIn extends NgRequestTransformer {
 
   private val configReads: Reads[NgHeaderValuesConfig] = NgHeaderValuesConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean                     = true
-  override def usesCallbacks: Boolean            = false
-  override def transformsRequest: Boolean        = true
-  override def transformsResponse: Boolean       = false
-  override def transformsError: Boolean          = false
-  override def isTransformRequestAsync: Boolean  = false
-  override def isTransformResponseAsync: Boolean = true
-  override def name: String                      = "Missing headers in"
-  override def description: Option[String]       =
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = false
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = true
+  override def name: String                                = "Missing headers in"
+  override def description: Option[String]                 =
     "This plugin adds headers (if missing) in the incoming otoroshi request".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderValuesConfig().some
 
@@ -258,20 +258,20 @@ class MissingHeadersOut extends NgRequestTransformer {
 
   private val configReads: Reads[NgHeaderValuesConfig] = NgHeaderValuesConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean                     = true
-  override def usesCallbacks: Boolean            = false
-  override def transformsRequest: Boolean        = false
-  override def transformsResponse: Boolean       = true
-  override def transformsError: Boolean          = false
-  override def isTransformRequestAsync: Boolean  = true
-  override def isTransformResponseAsync: Boolean = false
-  override def name: String                      = "Missing headers out"
-  override def description: Option[String]       = "This plugin adds headers (if missing) in the otoroshi response".some
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = false
+  override def transformsResponse: Boolean                 = true
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = true
+  override def isTransformResponseAsync: Boolean           = false
+  override def name: String                                = "Missing headers out"
+  override def description: Option[String]                 = "This plugin adds headers (if missing) in the otoroshi response".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderValuesConfig().some
 
   override def transformResponseSync(
@@ -302,22 +302,22 @@ class MissingHeadersOut extends NgRequestTransformer {
 
 class RemoveHeadersOut extends NgRequestTransformer {
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   private val configReads: Reads[NgHeaderNamesConfig] = NgHeaderNamesConfig.format
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean                     = true
-  override def usesCallbacks: Boolean            = false
-  override def transformsRequest: Boolean        = false
-  override def transformsResponse: Boolean       = true
-  override def transformsError: Boolean          = false
-  override def isTransformRequestAsync: Boolean  = true
-  override def isTransformResponseAsync: Boolean = false
-  override def name: String                      = "Remove headers out"
-  override def description: Option[String]       = "This plugin removes headers in the otoroshi response".some
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = false
+  override def transformsResponse: Boolean                 = true
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = true
+  override def isTransformResponseAsync: Boolean           = false
+  override def name: String                                = "Remove headers out"
+  override def description: Option[String]                 = "This plugin removes headers in the otoroshi response".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderNamesConfig().some
 
   override def transformResponseSync(
@@ -334,20 +334,20 @@ class RemoveHeadersIn extends NgRequestTransformer {
 
   private val configReads: Reads[NgHeaderNamesConfig] = NgHeaderNamesConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean                     = true
-  override def usesCallbacks: Boolean            = false
-  override def transformsRequest: Boolean        = true
-  override def transformsResponse: Boolean       = false
-  override def transformsError: Boolean          = false
-  override def isTransformRequestAsync: Boolean  = false
-  override def isTransformResponseAsync: Boolean = true
-  override def name: String                      = "Remove headers in"
-  override def description: Option[String]       = "This plugin removes headers in the incoming otoroshi request".some
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = false
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = true
+  override def name: String                                = "Remove headers in"
+  override def description: Option[String]                 = "This plugin removes headers in the incoming otoroshi request".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderNamesConfig().some
 
   override def transformRequestSync(
@@ -364,20 +364,20 @@ class SendOtoroshiHeadersBack extends NgRequestTransformer {
 
   import otoroshi.utils.http.HeadersHelperImplicits._
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = false
-  override def core: Boolean                     = true
-  override def usesCallbacks: Boolean            = false
-  override def transformsRequest: Boolean        = false
-  override def transformsResponse: Boolean       = true
-  override def transformsError: Boolean          = false
-  override def isTransformRequestAsync: Boolean  = true
-  override def isTransformResponseAsync: Boolean = false
-  override def name: String                      = "Send otoroshi headers back"
-  override def description: Option[String]       =
+  override def multiInstance: Boolean                      = false
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = false
+  override def transformsResponse: Boolean                 = true
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = true
+  override def isTransformResponseAsync: Boolean           = false
+  override def name: String                                = "Send otoroshi headers back"
+  override def description: Option[String]                 =
     "This plugin adds response header containing useful informations about the current call".some
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
@@ -436,20 +436,20 @@ class SendOtoroshiHeadersBack extends NgRequestTransformer {
 
 class XForwardedHeaders extends NgRequestTransformer {
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Headers)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = false
-  override def core: Boolean                     = true
-  override def usesCallbacks: Boolean            = false
-  override def transformsRequest: Boolean        = true
-  override def transformsResponse: Boolean       = false
-  override def transformsError: Boolean          = false
-  override def isTransformRequestAsync: Boolean  = false
-  override def isTransformResponseAsync: Boolean = true
-  override def name: String                      = "X-Forwarded-* headers"
-  override def description: Option[String]       =
+  override def multiInstance: Boolean                      = false
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = false
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = true
+  override def name: String                                = "X-Forwarded-* headers"
+  override def description: Option[String]                 =
     "This plugin adds all the X-Forwarder-* headers to the request for the backend target".some
   override def defaultConfigObject: Option[NgPluginConfig] = None
 

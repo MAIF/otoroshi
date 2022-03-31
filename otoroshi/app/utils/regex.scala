@@ -56,7 +56,9 @@ class ReplaceAllWith(regex: String) {
     str
   }
 
-  def replaceOnAsync(value: String)(callback: String => Future[String])(implicit ec: ExecutionContext): Future[String] = {
+  def replaceOnAsync(
+      value: String
+  )(callback: String => Future[String])(implicit ec: ExecutionContext): Future[String] = {
     var str: String      = value
     val matcher: Matcher = pattern.matcher(str)
     def next(): Future[String] = {

@@ -14,7 +14,7 @@ import otoroshi.events.{JobErrorEvent, JobRunEvent, JobStartedEvent, JobStoppedE
 import otoroshi.models.GlobalConfig
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils
-import otoroshi.utils.{SchedulerHelper, TypedMap, future}
+import otoroshi.utils.{future, SchedulerHelper, TypedMap}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
@@ -78,10 +78,10 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
     case JobVisibility.UserLand => NgPluginVisibility.NgUserLand
     case JobVisibility.Internal => NgPluginVisibility.NgInternal
   }
-  def steps: Seq[NgStep] = Seq.empty
+  def steps: Seq[NgStep]             = Seq.empty
 
   def uniqueId: JobId
-  def jobVisibility: JobVisibility                                       = JobVisibility.UserLand
+  def jobVisibility: JobVisibility                                    = JobVisibility.UserLand
   def kind: JobKind                                                   = JobKind.Autonomous
   def starting: JobStarting                                           = JobStarting.Automatically
   def instantiation(ctx: JobContext, env: Env): JobInstantiation      = JobInstantiation.OneInstancePerOtoroshiInstance
@@ -613,12 +613,12 @@ class JobManager(env: Env) {
 }
 
 object DefaultJob extends Job {
-  override def uniqueId: JobId = JobId("otoroshi.script.default.DefaultJob")
+  override def uniqueId: JobId          = JobId("otoroshi.script.default.DefaultJob")
   def categories: Seq[NgPluginCategory] = Seq.empty
 }
 
 object CompilingJob extends Job {
-  override def uniqueId: JobId = JobId("otoroshi.script.default.CompilingJob")
+  override def uniqueId: JobId          = JobId("otoroshi.script.default.CompilingJob")
   def categories: Seq[NgPluginCategory] = Seq.empty
 }
 

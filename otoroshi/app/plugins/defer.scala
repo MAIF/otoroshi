@@ -42,9 +42,9 @@ class DeferPlugin extends RequestTransformer {
       """.stripMargin
     )
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext

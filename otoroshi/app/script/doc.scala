@@ -17,7 +17,16 @@ class PluginDocumentationGenerator(docPath: String) {
 
   val logger = Logger("PluginDocumentationGenerator")
 
-  lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames, exporterNames, handlerNames) =
+  lazy val (
+    transformersNames,
+    validatorsNames,
+    preRouteNames,
+    reqSinkNames,
+    listenerNames,
+    jobNames,
+    exporterNames,
+    handlerNames
+  ) =
     Try {
       import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
 
@@ -102,7 +111,7 @@ class PluginDocumentationGenerator(docPath: String) {
             Seq.empty[String],
             Seq.empty[String],
             Seq.empty[String],
-            Seq.empty[String],
+            Seq.empty[String]
           )
       } finally if (scanResult != null) scanResult.close()
     } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq

@@ -321,7 +321,8 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
               _.save()
             )
           case "certificates" =>
-            env.datastores.certificatesDataStore.nakedTemplate(env)
+            env.datastores.certificatesDataStore
+              .nakedTemplate(env)
               .flatMap(cert =>
                 patchTemplate[Cert](
                   cert

@@ -893,37 +893,37 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
   }
 
   private[kubernetes] def customizeRoute(
-    _spec: JsValue,
-    res: KubernetesOtoroshiResource,
-    entities: Seq[NgRoute]
+      _spec: JsValue,
+      res: KubernetesOtoroshiResource,
+      entities: Seq[NgRoute]
   ): JsValue = {
     val spec = findAndMerge[NgRoute](_spec, res, "route", None, entities, _.metadata, _.id, _.json)
     customizeIdAndName(spec, res)
   }
 
   private[kubernetes] def customizeService(
-                                          _spec: JsValue,
-                                          res: KubernetesOtoroshiResource,
-                                          entities: Seq[NgService]
-                                        ): JsValue = {
+      _spec: JsValue,
+      res: KubernetesOtoroshiResource,
+      entities: Seq[NgService]
+  ): JsValue = {
     val spec = findAndMerge[NgService](_spec, res, "service", None, entities, _.metadata, _.id, _.json)
     customizeIdAndName(spec, res)
   }
 
   private[kubernetes] def customizeBackend(
-                                            _spec: JsValue,
-                                            res: KubernetesOtoroshiResource,
-                                            entities: Seq[StoredNgBackend]
-                                          ): JsValue = {
+      _spec: JsValue,
+      res: KubernetesOtoroshiResource,
+      entities: Seq[StoredNgBackend]
+  ): JsValue = {
     val spec = findAndMerge[StoredNgBackend](_spec, res, "backend", None, entities, _.metadata, _.id, _.json)
     customizeIdAndName(spec, res)
   }
 
   private[kubernetes] def customizeTarget(
-                                            _spec: JsValue,
-                                            res: KubernetesOtoroshiResource,
-                                            entities: Seq[StoredNgTarget]
-                                          ): JsValue = {
+      _spec: JsValue,
+      res: KubernetesOtoroshiResource,
+      entities: Seq[StoredNgTarget]
+  ): JsValue = {
     val spec = findAndMerge[StoredNgTarget](_spec, res, "target", None, entities, _.metadata, _.id, _.json)
     customizeIdAndName(spec, res)
   }
@@ -987,14 +987,22 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     client.fetchOtoroshiResources[Tenant]("organizations", Tenant.format, (a, b) => customizeTenant(a, b, tenants))
   def crdsFetchTeams(teams: Seq[Team]): Future[Seq[OtoResHolder[Team]]]                                         =
     client.fetchOtoroshiResources[Team]("teams", Team.format, (a, b) => customizeTeam(a, b, teams))
-  def crdsFetchRoutes(routes: Seq[NgRoute]): Future[Seq[OtoResHolder[NgRoute]]] =
+  def crdsFetchRoutes(routes: Seq[NgRoute]): Future[Seq[OtoResHolder[NgRoute]]]                                 =
     client.fetchOtoroshiResources[NgRoute]("routes", NgRoute.fmt, (a, b) => customizeRoute(a, b, routes))
-  def crdsFetchServices(services: Seq[NgService]): Future[Seq[OtoResHolder[NgService]]] =
+  def crdsFetchServices(services: Seq[NgService]): Future[Seq[OtoResHolder[NgService]]]                         =
     client.fetchOtoroshiResources[NgService]("services", NgService.fmt, (a, b) => customizeService(a, b, services))
-  def crdsFetchBackends(backends: Seq[StoredNgBackend]): Future[Seq[OtoResHolder[StoredNgBackend]]] =
-    client.fetchOtoroshiResources[StoredNgBackend]("backends", StoredNgBackend.format, (a, b) => customizeBackend(a, b, backends))
-  def crdsFetchTargets(targets: Seq[StoredNgTarget]): Future[Seq[OtoResHolder[StoredNgTarget]]] =
-    client.fetchOtoroshiResources[StoredNgTarget]("targets", StoredNgTarget.format, (a, b) => customizeTarget(a, b, targets))
+  def crdsFetchBackends(backends: Seq[StoredNgBackend]): Future[Seq[OtoResHolder[StoredNgBackend]]]             =
+    client.fetchOtoroshiResources[StoredNgBackend](
+      "backends",
+      StoredNgBackend.format,
+      (a, b) => customizeBackend(a, b, backends)
+    )
+  def crdsFetchTargets(targets: Seq[StoredNgTarget]): Future[Seq[OtoResHolder[StoredNgTarget]]]                 =
+    client.fetchOtoroshiResources[StoredNgTarget](
+      "targets",
+      StoredNgTarget.format,
+      (a, b) => customizeTarget(a, b, targets)
+    )
   def crdsFetchServiceGroups(groups: Seq[ServiceGroup]): Future[Seq[OtoResHolder[ServiceGroup]]]                =
     client.fetchOtoroshiResources[ServiceGroup](
       "service-groups",
@@ -1080,48 +1088,48 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
 }
 
 case class KubernetesResourcesContext(
-   serviceGroups: Seq[OtoResHolder[ServiceGroup]],
-   serviceDescriptors: Seq[OtoResHolder[ServiceDescriptor]],
-   apiKeys: Seq[OtoResHolder[ApiKey]],
-   certificates: Seq[OtoResHolder[Cert]],
-   globalConfigs: Seq[OtoResHolder[GlobalConfig]],
-   jwtVerifiers: Seq[OtoResHolder[GlobalJwtVerifier]],
-   authModules: Seq[OtoResHolder[AuthModuleConfig]],
-   scripts: Seq[OtoResHolder[Script]],
-   tcpServices: Seq[OtoResHolder[TcpService]],
-   simpleAdmins: Seq[OtoResHolder[SimpleOtoroshiAdmin]],
-   tenants: Seq[OtoResHolder[Tenant]],
-   teams: Seq[OtoResHolder[Team]],
-   dataExporters: Seq[OtoResHolder[DataExporterConfig]],
-   routes: Seq[OtoResHolder[NgRoute]],
-   services: Seq[OtoResHolder[NgService]],
-   backends: Seq[OtoResHolder[StoredNgBackend]],
-   targets: Seq[OtoResHolder[StoredNgTarget]],
+    serviceGroups: Seq[OtoResHolder[ServiceGroup]],
+    serviceDescriptors: Seq[OtoResHolder[ServiceDescriptor]],
+    apiKeys: Seq[OtoResHolder[ApiKey]],
+    certificates: Seq[OtoResHolder[Cert]],
+    globalConfigs: Seq[OtoResHolder[GlobalConfig]],
+    jwtVerifiers: Seq[OtoResHolder[GlobalJwtVerifier]],
+    authModules: Seq[OtoResHolder[AuthModuleConfig]],
+    scripts: Seq[OtoResHolder[Script]],
+    tcpServices: Seq[OtoResHolder[TcpService]],
+    simpleAdmins: Seq[OtoResHolder[SimpleOtoroshiAdmin]],
+    tenants: Seq[OtoResHolder[Tenant]],
+    teams: Seq[OtoResHolder[Team]],
+    dataExporters: Seq[OtoResHolder[DataExporterConfig]],
+    routes: Seq[OtoResHolder[NgRoute]],
+    services: Seq[OtoResHolder[NgService]],
+    backends: Seq[OtoResHolder[StoredNgBackend]],
+    targets: Seq[OtoResHolder[StoredNgTarget]]
 )
 
 case class OtoroshiResourcesContext(
-  serviceGroups: Seq[ServiceGroup],
-  serviceDescriptors: Seq[ServiceDescriptor],
-  apiKeys: Seq[ApiKey],
-  certificates: Seq[Cert],
-  globalConfigs: Seq[GlobalConfig],
-  jwtVerifiers: Seq[GlobalJwtVerifier],
-  authModules: Seq[AuthModuleConfig],
-  scripts: Seq[Script],
-  tcpServices: Seq[TcpService],
-  simpleAdmins: Seq[SimpleOtoroshiAdmin],
-  tenants: Seq[Tenant],
-  teams: Seq[Team],
-  dataExporters: Seq[DataExporterConfig],
-  routes: Seq[NgRoute],
-  services: Seq[NgService],
-  backends: Seq[StoredNgBackend],
-  targets: Seq[StoredNgTarget],
+    serviceGroups: Seq[ServiceGroup],
+    serviceDescriptors: Seq[ServiceDescriptor],
+    apiKeys: Seq[ApiKey],
+    certificates: Seq[Cert],
+    globalConfigs: Seq[GlobalConfig],
+    jwtVerifiers: Seq[GlobalJwtVerifier],
+    authModules: Seq[AuthModuleConfig],
+    scripts: Seq[Script],
+    tcpServices: Seq[TcpService],
+    simpleAdmins: Seq[SimpleOtoroshiAdmin],
+    tenants: Seq[Tenant],
+    teams: Seq[Team],
+    dataExporters: Seq[DataExporterConfig],
+    routes: Seq[NgRoute],
+    services: Seq[NgService],
+    backends: Seq[StoredNgBackend],
+    targets: Seq[StoredNgTarget]
 )
 
 case class CRDContext(
-  kubernetes: KubernetesResourcesContext,
-  otoroshi: OtoroshiResourcesContext
+    kubernetes: KubernetesResourcesContext,
+    otoroshi: OtoroshiResourcesContext
 )
 
 object KubernetesCRDsJob {
@@ -1170,23 +1178,35 @@ object KubernetesCRDsJob {
     val useProxyState = conf.useProxyState
     for {
 
-      otoserviceGroups      <- if (useProxyState) env.proxyState.allServiceGroups().vfuture else env.datastores.serviceGroupDataStore.findAll()
-      otoserviceDescriptors <- if (useProxyState) env.proxyState.allServices().vfuture else env.datastores.serviceDescriptorDataStore.findAll()
+      otoserviceGroups      <-
+        if (useProxyState) env.proxyState.allServiceGroups().vfuture else env.datastores.serviceGroupDataStore.findAll()
+      otoserviceDescriptors <-
+        if (useProxyState) env.proxyState.allServices().vfuture else env.datastores.serviceDescriptorDataStore.findAll()
       otoapiKeys            <- if (useProxyState) env.proxyState.allApikeys().vfuture else env.datastores.apiKeyDataStore.findAll()
-      otocertificates       <- if (useProxyState) env.proxyState.allCertificates().vfuture else env.datastores.certificatesDataStore.findAll()
+      otocertificates       <-
+        if (useProxyState) env.proxyState.allCertificates().vfuture else env.datastores.certificatesDataStore.findAll()
       otoglobalConfigs      <- env.datastores.globalConfigDataStore.findAll()
-      otojwtVerifiers       <- if (useProxyState) env.proxyState.allJwtVerifiers().vfuture else env.datastores.globalJwtVerifierDataStore.findAll()
-      otoauthModules        <- if (useProxyState) env.proxyState.allAuthModules().vfuture else env.datastores.authConfigsDataStore.findAll()
+      otojwtVerifiers       <- if (useProxyState) env.proxyState.allJwtVerifiers().vfuture
+                               else env.datastores.globalJwtVerifierDataStore.findAll()
+      otoauthModules        <-
+        if (useProxyState) env.proxyState.allAuthModules().vfuture else env.datastores.authConfigsDataStore.findAll()
       otoscripts            <- if (useProxyState) env.proxyState.allScripts().vfuture else env.datastores.scriptDataStore.findAll()
-      ototcpServices        <- if (useProxyState) env.proxyState.allTcpServices().vfuture else env.datastores.tcpServiceDataStore.findAll()
-      otosimpleAdmins       <- if (useProxyState) env.proxyState.allOtoroshiAdmins().collect { case s: SimpleOtoroshiAdmin => s }.vfuture else env.datastores.simpleAdminDataStore.findAll()
-      otodataexporters      <- if (useProxyState) env.proxyState.allDataExporters().vfuture else env.datastores.dataExporterConfigDataStore.findAll()
+      ototcpServices        <-
+        if (useProxyState) env.proxyState.allTcpServices().vfuture else env.datastores.tcpServiceDataStore.findAll()
+      otosimpleAdmins       <- if (useProxyState)
+                                 env.proxyState.allOtoroshiAdmins().collect { case s: SimpleOtoroshiAdmin => s }.vfuture
+                               else env.datastores.simpleAdminDataStore.findAll()
+      otodataexporters      <- if (useProxyState) env.proxyState.allDataExporters().vfuture
+                               else env.datastores.dataExporterConfigDataStore.findAll()
       ototeams              <- if (useProxyState) env.proxyState.allTeams().vfuture else env.datastores.teamDataStore.findAll()
       ototenants            <- if (useProxyState) env.proxyState.allTenants().vfuture else env.datastores.tenantDataStore.findAll()
       otoroutes             <- if (useProxyState) env.proxyState.allRoutes().vfuture else env.datastores.routeDataStore.findAll()
-      otoservices           <- if (useProxyState) env.proxyState.allNgServices().vfuture else env.datastores.servicesDataStore.findAll()
-      otobackends           <- if (useProxyState) env.proxyState.allBackends().vfuture else env.datastores.backendsDataStore.findAll()
-      ototargets            <- if (useProxyState) env.proxyState.allTargets().vfuture else env.datastores.targetsDataStore.findAll()
+      otoservices           <-
+        if (useProxyState) env.proxyState.allNgServices().vfuture else env.datastores.servicesDataStore.findAll()
+      otobackends           <-
+        if (useProxyState) env.proxyState.allBackends().vfuture else env.datastores.backendsDataStore.findAll()
+      ototargets            <-
+        if (useProxyState) env.proxyState.allTargets().vfuture else env.datastores.targetsDataStore.findAll()
 
       services           <- clientSupport.client.fetchServices()
       endpoints          <- clientSupport.client.fetchEndpoints()
@@ -1228,7 +1248,7 @@ object KubernetesCRDsJob {
           routes = routes,
           services = services,
           backends = backends,
-          targets = targets,
+          targets = targets
         ),
         otoroshi = OtoroshiResourcesContext(
           serviceGroups = otoserviceGroups,
@@ -1247,7 +1267,7 @@ object KubernetesCRDsJob {
           routes = otoroutes,
           services = otoservices,
           backends = otobackends,
-          targets = ototargets,
+          targets = ototargets
         )
       )
     }
@@ -1310,12 +1330,13 @@ object KubernetesCRDsJob {
       ec: ExecutionContext
   ): Future[Unit] = {
     for {
-      _ <- ctx.otoroshi.tenants
-             .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-             .filterNot(sg => ctx.kubernetes.tenants.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
-             .map(_.id.value)
-             .debug(seq => logger.info(s"Will delete ${seq.size} out of date tenants entities"))
-             .applyOn(env.datastores.tenantDataStore.deleteByIds)
+      _ <-
+        ctx.otoroshi.tenants
+          .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+          .filterNot(sg => ctx.kubernetes.tenants.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+          .map(_.id.value)
+          .debug(seq => logger.info(s"Will delete ${seq.size} out of date tenants entities"))
+          .applyOn(env.datastores.tenantDataStore.deleteByIds)
 
       _ <- ctx.otoroshi.teams
              .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
@@ -1326,28 +1347,35 @@ object KubernetesCRDsJob {
 
       _ <- ctx.otoroshi.serviceGroups
              .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-             .filterNot(sg => ctx.kubernetes.serviceGroups.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+             .filterNot(sg =>
+               ctx.kubernetes.serviceGroups.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
+             )
              .map(_.id)
              .debug(seq => logger.info(s"Will delete ${seq.size} out of date service-group entities"))
              .applyOn(env.datastores.serviceGroupDataStore.deleteByIds)
 
       _ <- ctx.otoroshi.serviceDescriptors
              .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-             .filterNot(sg => ctx.kubernetes.serviceDescriptors.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+             .filterNot(sg =>
+               ctx.kubernetes.serviceDescriptors.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
+             )
              .map(_.id)
              .debug(seq => logger.info(s"Will delete ${seq.size} out of date service-descriptor entities"))
              .applyOn(env.datastores.serviceDescriptorDataStore.deleteByIds)
 
-      _ <- ctx.otoroshi.apiKeys
-             .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-             .filterNot(sg => ctx.kubernetes.apiKeys.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
-             .map(_.clientId)
-             .debug(seq => logger.info(s"Will delete ${seq.size} out of date apikey entities"))
-             .applyOn(env.datastores.apiKeyDataStore.deleteByIds)
+      _ <-
+        ctx.otoroshi.apiKeys
+          .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+          .filterNot(sg => ctx.kubernetes.apiKeys.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+          .map(_.clientId)
+          .debug(seq => logger.info(s"Will delete ${seq.size} out of date apikey entities"))
+          .applyOn(env.datastores.apiKeyDataStore.deleteByIds)
 
       _ <- ctx.otoroshi.certificates
              .filter(sg => sg.entityMetadata.get("otoroshi-provider").contains("kubernetes-crds"))
-             .filterNot(sg => ctx.kubernetes.certificates.exists(ssg => sg.entityMetadata.get("kubernetes-path").contains(ssg.path)))
+             .filterNot(sg =>
+               ctx.kubernetes.certificates.exists(ssg => sg.entityMetadata.get("kubernetes-path").contains(ssg.path))
+             )
              .map(_.id)
              .debug(seq => logger.info(s"Will delete ${seq.size} out of date certificate entities"))
              .applyOn(env.datastores.certificatesDataStore.deleteByIds)
@@ -1355,73 +1383,88 @@ object KubernetesCRDsJob {
       _ <- ctx.otoroshi.jwtVerifiers
              .map(_.asGlobal)
              .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-             .filterNot(sg => ctx.kubernetes.jwtVerifiers.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+             .filterNot(sg =>
+               ctx.kubernetes.jwtVerifiers.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
+             )
              .map(_.id)
              .debug(seq => logger.info(s"Will delete ${seq.size} out of date jwt-verifier entities"))
              .applyOn(env.datastores.globalJwtVerifierDataStore.deleteByIds)
 
       _ <- ctx.otoroshi.authModules
              .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-             .filterNot(sg => ctx.kubernetes.authModules.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+             .filterNot(sg =>
+               ctx.kubernetes.authModules.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
+             )
              .map(_.id)
              .debug(seq => logger.info(s"Will delete ${seq.size} out of date auth-module entities"))
              .applyOn(env.datastores.authConfigsDataStore.deleteByIds)
 
-      _ <- ctx.otoroshi.scripts
-             .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-             .filterNot(sg => ctx.kubernetes.scripts.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
-             .map(_.id)
-             .debug(seq => logger.info(s"Will delete ${seq.size} out of date script entities"))
-             .applyOn(env.datastores.scriptDataStore.deleteByIds)
+      _ <-
+        ctx.otoroshi.scripts
+          .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+          .filterNot(sg => ctx.kubernetes.scripts.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+          .map(_.id)
+          .debug(seq => logger.info(s"Will delete ${seq.size} out of date script entities"))
+          .applyOn(env.datastores.scriptDataStore.deleteByIds)
 
       _ <- ctx.otoroshi.tcpServices
              .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-             .filterNot(sg => ctx.kubernetes.tcpServices.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+             .filterNot(sg =>
+               ctx.kubernetes.tcpServices.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
+             )
              .map(_.id)
              .debug(seq => logger.info(s"Will delete ${seq.size} out of date tcp-service entities"))
              .applyOn(env.datastores.tcpServiceDataStore.deleteByIds)
 
       _ <- ctx.otoroshi.simpleAdmins
              .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-             .filterNot(sg => ctx.kubernetes.simpleAdmins.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+             .filterNot(sg =>
+               ctx.kubernetes.simpleAdmins.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
+             )
              .map(_.username)
              .debug(seq => logger.info(s"Will delete ${seq.size} out of date admin entities"))
              .applyOn(env.datastores.simpleAdminDataStore.deleteUsers)
 
       _ <- ctx.otoroshi.dataExporters
              .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-             .filterNot(sg => ctx.kubernetes.dataExporters.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+             .filterNot(sg =>
+               ctx.kubernetes.dataExporters.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
+             )
              .map(_.id)
              .debug(seq => logger.info(s"Will delete ${seq.size} out of date data-exporters entities"))
              .applyOn(env.datastores.dataExporterConfigDataStore.deleteByIds)
 
-      _ <- ctx.otoroshi.routes
-            .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-            .filterNot(sg => ctx.kubernetes.routes.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
-            .map(_.id)
-            .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-routes entities"))
-            .applyOn(env.datastores.routeDataStore.deleteByIds)
+      _ <-
+        ctx.otoroshi.routes
+          .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+          .filterNot(sg => ctx.kubernetes.routes.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+          .map(_.id)
+          .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-routes entities"))
+          .applyOn(env.datastores.routeDataStore.deleteByIds)
 
-      _ <- ctx.otoroshi.services
-            .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-            .filterNot(sg => ctx.kubernetes.services.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
-            .map(_.id)
-            .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-services entities"))
-            .applyOn(env.datastores.servicesDataStore.deleteByIds)
+      _ <-
+        ctx.otoroshi.services
+          .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+          .filterNot(sg => ctx.kubernetes.services.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+          .map(_.id)
+          .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-services entities"))
+          .applyOn(env.datastores.servicesDataStore.deleteByIds)
 
-      _ <- ctx.otoroshi.backends
-            .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-            .filterNot(sg => ctx.kubernetes.backends.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
-            .map(_.id)
-            .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-backends entities"))
-            .applyOn(env.datastores.backendsDataStore.deleteByIds)
+      _ <-
+        ctx.otoroshi.backends
+          .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+          .filterNot(sg => ctx.kubernetes.backends.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+          .map(_.id)
+          .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-backends entities"))
+          .applyOn(env.datastores.backendsDataStore.deleteByIds)
 
-      _ <- ctx.otoroshi.targets
-            .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-            .filterNot(sg => ctx.kubernetes.targets.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
-            .map(_.id)
-            .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-targets entities"))
-            .applyOn(env.datastores.targetsDataStore.deleteByIds)
+      _ <-
+        ctx.otoroshi.targets
+          .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+          .filterNot(sg => ctx.kubernetes.targets.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+          .map(_.id)
+          .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-targets entities"))
+          .applyOn(env.datastores.targetsDataStore.deleteByIds)
     } yield ()
   }
 
@@ -2098,11 +2141,13 @@ object KubernetesCRDsJob {
       }
     }
 
-    (if (config.useProxyState) env.proxyState.certificate(Cert.OtoroshiCA).vfuture else env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA)).flatMap {
+    (if (config.useProxyState) env.proxyState.certificate(Cert.OtoroshiCA).vfuture
+     else env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA)).flatMap {
       case None     => ().future
       case Some(ca) => {
         val cname = "kubernetes-webhooks-cert"
-        (if (config.useProxyState) env.proxyState.certificate(cname).vfuture else env.datastores.certificatesDataStore.findById(cname)).flatMap {
+        (if (config.useProxyState) env.proxyState.certificate(cname).vfuture
+         else env.datastores.certificatesDataStore.findById(cname)).flatMap {
           case Some(c)
               if c.entityMetadata
                 .get("domain") == s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc".some =>
@@ -2156,10 +2201,12 @@ object KubernetesCRDsJob {
       }
     }
 
-    (if (config.useProxyState) env.proxyState.certificate(Cert.OtoroshiIntermediateCA).vfuture else env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA)).flatMap {
+    (if (config.useProxyState) env.proxyState.certificate(Cert.OtoroshiIntermediateCA).vfuture
+     else env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA)).flatMap {
       case None     => ().future
       case Some(ca) => {
-        (if (config.useProxyState) env.proxyState.certificate(certId).vfuture else env.datastores.certificatesDataStore.findById(certId)).flatMap {
+        (if (config.useProxyState) env.proxyState.certificate(certId).vfuture
+         else env.datastores.certificatesDataStore.findById(certId)).flatMap {
           case Some(c) if c.entityMetadata.get("csr") == queryJson.some => ().future
           case _                                                        => doIt(ca)
         }

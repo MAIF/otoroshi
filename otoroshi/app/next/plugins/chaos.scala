@@ -114,7 +114,7 @@ object NgLargeResponseFaultConfig {
   }
 }
 case class NgLatencyInjectionFaultConfig(ratio: Double, from: FiniteDuration, to: FiniteDuration)
-  extends NgFaultConfig {
+    extends NgFaultConfig {
   def json: JsValue                       = NgLatencyInjectionFaultConfig.format.writes(this)
   def legacy: LatencyInjectionFaultConfig = LatencyInjectionFaultConfig(ratio, from, to)
 }
@@ -232,25 +232,25 @@ class SnowMonkeyChaos extends NgRequestTransformer {
   private val snowMonkeyRef                     = Scaffeine().maximumSize(1).build[String, SnowMonkey]()
   private val configReads: Reads[NgChaosConfig] = NgChaosConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = false
-  override def core: Boolean                     = true
-  override def usesCallbacks: Boolean            = false
-  override def transformsRequest: Boolean        = true
-  override def transformsResponse: Boolean       = true
-  override def transformsError: Boolean          = false
-  override def isTransformRequestAsync: Boolean  = true
-  override def isTransformResponseAsync: Boolean = false
-  override def name: String                      = "Snow Monkey Chaos"
-  override def description: Option[String]       = "This plugin introduce some chaos into you life".some
+  override def multiInstance: Boolean                      = false
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = true
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = true
+  override def isTransformResponseAsync: Boolean           = false
+  override def name: String                                = "Snow Monkey Chaos"
+  override def description: Option[String]                 = "This plugin introduce some chaos into you life".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgChaosConfig().some
 
   override def transformRequest(
-                                 ctx: NgTransformerRequestContext
-                               )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     // val config = ctx.cachedConfig(internalName)(configReads).getOrElse(ChaosConfig(enabled = true))
     val snowMonkey   = snowMonkeyRef.get("singleton", _ => new SnowMonkey()(env))
     val globalConfig = env.datastores.globalConfigDataStore.latest()
@@ -273,8 +273,8 @@ class SnowMonkeyChaos extends NgRequestTransformer {
   }
 
   override def transformResponseSync(
-                                      ctx: NgTransformerResponseContext
-                                    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+      ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     // val config = ctx.cachedConfig(internalName)(configReads).getOrElse(ChaosConfig(enabled = true))
     ctx.attrs.get(SnowMonkeyChaos.ContextKey) match {
       case None                => ctx.otoroshiResponse.right

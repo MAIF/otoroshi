@@ -43,8 +43,7 @@ export class ServiceSidebar extends Component {
     return (
       <ul className="nav flex-column nav-sidebar">
         <li className="nav-item">
-          <h3
-            {...createTooltip(`Back to the service descriptor of ${name}`)}>
+          <h3 {...createTooltip(`Back to the service descriptor of ${name}`)}>
             {nolink && (
               <span>
                 <span className="fas fa-cube" /> {name}
@@ -72,7 +71,7 @@ export class ServiceSidebar extends Component {
             <Link
               to={`/lines/${env}/services/${serviceId}/stats`}
               {...createTooltip(`Show live metrics report for ${name}`)}
-                className={`nav-link ${className('stats')}`}>
+              className={`nav-link ${className('stats')}`}>
               <i className="fas fa-chart-bar" /> Live metrics
             </Link>
           </li>

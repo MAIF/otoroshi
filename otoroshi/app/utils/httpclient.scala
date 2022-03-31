@@ -896,11 +896,14 @@ case class AkkWsClientStreamedResponse(
   private lazy val _contentType: String          = httpResponse.entity.contentType.mediaType
     .toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
   private lazy val _bodyAsBytes: ByteString      =
-    Await.result(bodyAsSource.runFold(ByteString.empty)(_ ++ _)(mat), FiniteDuration(10, TimeUnit.MINUTES)) // AWAIT: valid
-  private lazy val _bodyAsString: String         = _bodyAsBytes.utf8String
-  private lazy val _bodyAsXml: Elem              = XML.loadString(_bodyAsString)
-  private lazy val _bodyAsJson: JsValue          = Json.parse(_bodyAsString)
-  private lazy val _cookies: Seq[WSCookie]       = AkkWsClient.cookies(httpResponse)
+    Await.result(
+      bodyAsSource.runFold(ByteString.empty)(_ ++ _)(mat),
+      FiniteDuration(10, TimeUnit.MINUTES)
+    ) // AWAIT: valid
+  private lazy val _bodyAsString: String   = _bodyAsBytes.utf8String
+  private lazy val _bodyAsXml: Elem        = XML.loadString(_bodyAsString)
+  private lazy val _bodyAsJson: JsValue    = Json.parse(_bodyAsString)
+  private lazy val _cookies: Seq[WSCookie] = AkkWsClient.cookies(httpResponse)
 
   def status: Int                                      = httpResponse.status.intValue()
   def statusText: String                               = httpResponse.status.defaultMessage()

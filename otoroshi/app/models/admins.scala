@@ -57,8 +57,8 @@ case class SimpleOtoroshiAdmin(
     rights: UserRights,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends OtoroshiAdmin {
-  val isSimple = true
-  val isWebAuthn = false
+  val isSimple                         = true
+  val isWebAuthn                       = false
   def internalId: String               = username
   def theDescription: String           = label
   def theMetadata: Map[String, String] = metadata
@@ -116,8 +116,8 @@ case class WebAuthnOtoroshiAdmin(
     rights: UserRights,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends OtoroshiAdmin {
-  val isSimple = false
-  val isWebAuthn = true
+  val isSimple                         = false
+  val isWebAuthn                       = true
   def internalId: String               = username
   def theDescription: String           = label
   def theMetadata: Map[String, String] = metadata

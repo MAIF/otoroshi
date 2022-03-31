@@ -9,7 +9,16 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.common.base.Charsets
 import otoroshi.env.Env
-import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
+import otoroshi.events.{
+  Alerts,
+  ApiKeyQuotasAlmostExceededAlert,
+  ApiKeyQuotasAlmostExceededReason,
+  ApiKeyQuotasExceededAlert,
+  ApiKeyQuotasExceededReason,
+  ApiKeySecretHasRotated,
+  ApiKeySecretWillRotate,
+  RevokedApiKeyUsageAlert
+}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.next.plugins.api.NgAccess
@@ -62,7 +71,7 @@ case class ApiKeyRotation(
 
 case class ApiKeyRotationInfo(rotationAt: DateTime, remaining: Long) {
   def json: JsValue = Json.obj(
-    "remaining" -> remaining,
+    "remaining"   -> remaining,
     "rotation_at" -> rotationAt.toString()
   )
 }
@@ -401,11 +410,16 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
       clientName = "client-name-apikey",
       authorizedEntities = Seq(ServiceGroupIdentifier(groupId))
     )
-    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.apikey.map { template =>
-      ApiKey._fmt.reads(defaultApikey.json.asObject.deepMerge(template)).get
-    }.getOrElse {
-      defaultApikey
-    }
+    env.datastores.globalConfigDataStore
+      .latest()(env.otoroshiExecutionContext, env)
+      .templates
+      .apikey
+      .map { template =>
+        ApiKey._fmt.reads(defaultApikey.json.asObject.deepMerge(template)).get
+      }
+      .getOrElse {
+        defaultApikey
+      }
   }
 
   def template(env: Env): ApiKey = {
@@ -415,11 +429,16 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
       clientName = "client-name-apikey",
       authorizedEntities = Seq.empty
     )
-    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.apikey.map { template =>
-      ApiKey._fmt.reads(defaultApikey.json.asObject.deepMerge(template)).get
-    }.getOrElse {
-      defaultApikey
-    }
+    env.datastores.globalConfigDataStore
+      .latest()(env.otoroshiExecutionContext, env)
+      .templates
+      .apikey
+      .map { template =>
+        ApiKey._fmt.reads(defaultApikey.json.asObject.deepMerge(template)).get
+      }
+      .getOrElse {
+        defaultApikey
+      }
   }
 
   def remainingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]
@@ -565,13 +584,13 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
   }
 }
 
-sealed trait ApikeyLocationKind {
+sealed trait ApikeyLocationKind                                   {
   def name: String
 }
-object ApikeyLocationKind {
+object ApikeyLocationKind                                         {
   case object Header extends ApikeyLocationKind { def name: String = "Header" }
   case object Cookie extends ApikeyLocationKind { def name: String = "Cookie" }
-  case object Query  extends ApikeyLocationKind { def name: String = "Query" }
+  case object Query  extends ApikeyLocationKind { def name: String = "Query"  }
 }
 case class ApikeyLocation(kind: ApikeyLocationKind, name: String) {
   def json: JsValue = Json.obj(
@@ -584,12 +603,12 @@ case class ApikeyTuple(
     clientSecret: Option[String] = None,
     jwtToken: Option[DecodedJWT] = None,
     location: Option[ApikeyLocation]
-) {
+)                                                                 {
   def json: JsValue = Json.obj(
-    "client_id" -> clientId,
+    "client_id"     -> clientId,
     "client_secret" -> clientSecret.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "jwt_token" -> jwtToken.map(_.json).getOrElse(JsNull).as[JsValue],
-    "location" -> location.map(_.json).getOrElse(JsNull).as[JsValue],
+    "jwt_token"     -> jwtToken.map(_.json).getOrElse(JsNull).as[JsValue],
+    "location"      -> location.map(_.json).getOrElse(JsNull).as[JsValue]
   )
 }
 

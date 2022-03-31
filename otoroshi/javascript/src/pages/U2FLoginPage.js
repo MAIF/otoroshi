@@ -264,16 +264,10 @@ export class U2FLoginPage extends Component {
           <div className="row mb-3">
             <label className="col-xs-12 col-sm-2 col-form-label" />
             <div className="col-sm-10 text-start">
-              <button
-                type="submit"
-                className="btn"
-                onClick={this.simpleLogin}>
+              <button type="submit" className="btn" onClick={this.simpleLogin}>
                 Login
               </button>
-              <button
-                type="button"
-                className="btn ms-2 hide"
-                onClick={this.webAuthnLogin}>
+              <button type="button" className="btn ms-2 hide" onClick={this.webAuthnLogin}>
                 Login with WebAuthn
               </button>
             </div>

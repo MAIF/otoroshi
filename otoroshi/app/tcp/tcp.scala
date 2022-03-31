@@ -993,11 +993,16 @@ sealed trait TcpServiceDataStore extends BasicStore[TcpService] {
         )
       )
     )
-    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.tcpService.map { template =>
-      TcpService.fmt.reads(defaultService.json.asObject.deepMerge(template)).get
-    }.getOrElse {
-      defaultService
-    }
+    env.datastores.globalConfigDataStore
+      .latest()(env.otoroshiExecutionContext, env)
+      .templates
+      .tcpService
+      .map { template =>
+        TcpService.fmt.reads(defaultService.json.asObject.deepMerge(template)).get
+      }
+      .getOrElse {
+        defaultService
+      }
   }
 }
 

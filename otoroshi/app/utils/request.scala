@@ -12,7 +12,7 @@ object RequestImplicits {
   private val uriCache = new ConcurrentHashMap[String, String]()
 
   implicit class EnhancedRequestHeader(val requestHeader: RequestHeader) extends AnyVal {
-    def contentLengthStr: Option[String] = requestHeader.headers.get("Content-Length")
+    def contentLengthStr: Option[String]     = requestHeader.headers.get("Content-Length")
     def theUri: Uri                          = Uri(requestHeader.uri)
     def thePath: String                      = theUri.path.toString()
     def relativeUri: String = {

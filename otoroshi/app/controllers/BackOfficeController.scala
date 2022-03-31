@@ -241,16 +241,16 @@ class BackOfficeController(
                             ByteString.empty
                         }
                         .alsoTo(Sink.onComplete { case e =>
-                        if (flags.logStats)
-                          logger.info(
+                          if (flags.logStats)
+                            logger.info(
+                              s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
+                                .currentTimeMillis() - start}ms"
+                            )
+                          logger.debug(
                             s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
                               .currentTimeMillis() - start}ms"
                           )
-                        logger.debug(
-                          s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
-                            .currentTimeMillis() - start}ms"
-                        )
-                      }),
+                        }),
                       res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
                       res.headers.get("Content-Type").flatMap(_.headOption)
                     )
@@ -305,7 +305,7 @@ class BackOfficeController(
                         .lazySource(() => res.bodyAsSource)
                         .recover {
                           case t: java.util.concurrent.TimeoutException if path.contains("/live") =>
-                          ByteString.empty
+                            ByteString.empty
                         }
                         .alsoTo(Sink.onComplete { case e =>
                           if (flags.logStats)

@@ -308,7 +308,8 @@ trait RedisLikeStore[T] extends BasicStore[T] {
 
   def findAllAndFillSecrets()(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = {
     if (env.vaults.enabled) {
-      Source.single(key("*").key)
+      Source
+        .single(key("*").key)
         .mapAsync(1)(redisLike.keys)
         .mapAsync(1) { keys =>
           if (keys.isEmpty) FastFuture.successful(Seq.empty[(Option[ByteString], String)])
@@ -316,18 +317,17 @@ trait RedisLikeStore[T] extends BasicStore[T] {
         }
         .map(seq => seq.filter(_._1.isDefined).map(t => (t._1.get.utf8String, t._2)))
         .flatMapConcat(values => Source(values.toList))
-        .mapAsync(1) {
-          case (value, key) =>
-            if (value.contains("${vault://")) {
-              env.vaults.fillSecretsAsync(key, value).map { filledValue =>
-                fromJsonSafe(Json.parse(filledValue))
-              }
-            } else {
-              fromJsonSafe(Json.parse(value)).vfuture
+        .mapAsync(1) { case (value, key) =>
+          if (value.contains("${vault://")) {
+            env.vaults.fillSecretsAsync(key, value).map { filledValue =>
+              fromJsonSafe(Json.parse(filledValue))
             }
+          } else {
+            fromJsonSafe(Json.parse(value)).vfuture
+          }
         }
-        .collect {
-          case JsSuccess(i, _) => i
+        .collect { case JsSuccess(i, _) =>
+          i
         }
         .runWith(Sink.seq)(env.otoroshiMaterializer)
     } else {
@@ -338,11 +338,16 @@ trait RedisLikeStore[T] extends BasicStore[T] {
           else redisLike.mget(keys: _*)
         )
         .map(seq =>
-          seq.filter(_.isDefined).map(_.get).map(_.utf8String).map { v =>
-            fromJsonSafe(Json.parse(v))
-          }.collect {
-            case JsSuccess(i, _) => i
-          }
+          seq
+            .filter(_.isDefined)
+            .map(_.get)
+            .map(_.utf8String)
+            .map { v =>
+              fromJsonSafe(Json.parse(v))
+            }
+            .collect { case JsSuccess(i, _) =>
+              i
+            }
         )
     }
   }
@@ -432,7 +437,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
 
   def findByIdAndFillSecrets(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[T]] = {
     redisLike.get(key(id).key).flatMap {
-      case None => None.vfuture
+      case None           => None.vfuture
       case Some(rawValue) => {
         val value = rawValue.utf8String
         if (env.vaults.enabled && value.contains("${vault://")) {

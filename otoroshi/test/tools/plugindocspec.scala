@@ -21,4 +21,3 @@ class PluginDocNgSpec extends WordSpec with MustMatchers with OptionValues {
   val generator = new NgPluginDocumentationGenerator("../manual")
   generator.runOnePage()
 }
-

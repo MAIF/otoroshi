@@ -77,7 +77,10 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
             .getOrElse(Map.empty),
           sessionCookieValues =
             (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
-          userValidators = (json \ "userValidators").asOpt[Seq[JsValue]].map(_.flatMap(v => UserValidator.format.reads(v).asOpt)).getOrElse(Seq.empty)
+          userValidators = (json \ "userValidators")
+            .asOpt[Seq[JsValue]]
+            .map(_.flatMap(v => UserValidator.format.reads(v).asOpt))
+            .getOrElse(Seq.empty)
         )
       )
     } recover { case e =>

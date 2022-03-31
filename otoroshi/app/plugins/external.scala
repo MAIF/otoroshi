@@ -119,9 +119,9 @@ class ExternalHttpValidator extends AccessValidator {
       )
     )
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
   private val digester = MessageDigest.getInstance("SHA-1")
 

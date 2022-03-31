@@ -464,14 +464,14 @@ export class Oauth2ModuleConfig extends Component {
           onChange={(v) => changeTheValue(path + '.otoroshiRightsField', v)}
         />
         <Separator title="Users" />
-        <ArrayInput 
+        <ArrayInput
           label="User validators"
           component={UserValidator}
           value={settings.userValidators}
           onChange={(v) => changeTheValue(path + '.userValidators', v)}
           defaultValue={{
             path: '$.profile.admin',
-            value: true
+            value: true,
           }}
         />
         <Suspense fallback={<div>loading ...</div>}>
@@ -703,19 +703,15 @@ export class User extends Component {
 
   render() {
     return (
-      <div className='row mt-1 mb-3'>
-        <div className='col-12 d-flex justify-content-end input-group-btn mb-2'>
+      <div className="row mt-1 mb-3">
+        <div className="col-12 d-flex justify-content-end input-group-btn mb-2">
           <button
-            type='button'
-            className='btn btn-sm btn-success'
-            title='Set password'
+            type="button"
+            className="btn btn-sm btn-success"
+            title="Set password"
             onClick={(e) => {
-              window
-                .newPrompt('Type password', { type: 'password' })
-                .then((value1) => {
-                  window
-                    .newPrompt('Re-type password', { type: 'password' })
-                    .then((value2) => {
+              window.newPrompt('Type password', { type: 'password' }).then((value1) => {
+                window.newPrompt('Re-type password', { type: 'password' }).then((value2) => {
                   if (value1 && value2 && value1 === value2) {
                     this.props.hashPassword(this.props.user.email, value1);
                   } else {
@@ -723,31 +719,26 @@ export class User extends Component {
                   }
                 });
               });
-            }}
-          >
-            <i className='fas fa-edit' /> Set password
+            }}>
+            <i className="fas fa-edit" /> Set password
           </button>
           <button
-            type='button'
-            className='btn btn-sm btn-success'
-            title='Generate password'
+            type="button"
+            className="btn btn-sm btn-success"
+            title="Generate password"
             onClick={(e) => {
               const password = faker.random.alphaNumeric(16);
               this.props.hashPassword(this.props.user.email, password);
-              window.newAlert(
-                `The generated password is: ${password}`,
-                'Generated password'
-              );
+              window.newAlert(`The generated password is: ${password}`, 'Generated password');
             }}
-            style={{ marginRight: 0 }}
-          >
-            <i className='fas fa-redo' /> Generate passsword
+            style={{ marginRight: 0 }}>
+            <i className="fas fa-redo" /> Generate passsword
           </button>
           {this.props.webauthn && (
             <button
-              type='button'
-              className='btn btn-sm btn-info'
-              title='Update profile link'
+              type="button"
+              className="btn btn-sm btn-info"
+              title="Update profile link"
               onClick={(e) => {
                 return fetch(
                   `/bo/api/proxy/api/privateapps/sessions/${this.props.authModuleId}/${this.props.user.email}`,
@@ -770,30 +761,24 @@ export class User extends Component {
                           flexDirection: 'column',
                           justifyContent: 'center',
                           alignItems: 'center',
-                        }}
-                      >
-                        <p>
-                          The link to update user profile is usable for the next
-                          10 minutes
-                        </p>
+                        }}>
+                        <p>The link to update user profile is usable for the next 10 minutes</p>
                         <a
-                          target='_blank'
-                          href={`${r.host}/privateapps/profile?session=${sessionId}`}
-                        >{`${r.host}/privateapps/profile?session=${sessionId}`}</a>
+                          target="_blank"
+                          href={`${r.host}/privateapps/profile?session=${sessionId}`}>{`${r.host}/privateapps/profile?session=${sessionId}`}</a>
                       </div>,
                       'Profile updates'
                     );
                   });
-              }}
-            >
-              <i className='fas fa-link' /> Update profile link
+              }}>
+              <i className="fas fa-link" /> Update profile link
             </button>
           )}
           {this.props.webauthn && (
             <button
-              type='button'
-              className='btn btn-sm btn-info'
-              title='Send update profile link to user'
+              type="button"
+              className="btn btn-sm btn-info"
+              title="Send update profile link to user"
               onClick={(e) => {
                 return fetch(
                   `/bo/api/proxy/api/privateapps/sessions/send/${this.props.authModuleId}/${this.props.user.email}`,
@@ -807,98 +792,72 @@ export class User extends Component {
                 )
                   .then((r) => r.json())
                   .then((r) => {
-                    window.newAlert(
-                      'The email containing update link has been sent',
-                      'Email sent'
-                    );
+                    window.newAlert('The email containing update link has been sent', 'Email sent');
                   });
               }}
-              style={{ marginRight: 0 }}
-            >
-              <i className='fas fa-envelope' /> Send update profile link to user
+              style={{ marginRight: 0 }}>
+              <i className="fas fa-envelope" /> Send update profile link to user
             </button>
           )}
           {this.props.webauthn && (
             <button
-              type='button'
-              className='btn btn-sm btn-info'
+              type="button"
+              className="btn btn-sm btn-info"
               onClick={this.registerWebAuthn}
-              title='Register webauthn device'
-            >
-              <i className='fas fa-lock' /> Register webauthn device
+              title="Register webauthn device">
+              <i className="fas fa-lock" /> Register webauthn device
             </button>
           )}
           <button
-            type='button'
-            className='btn btn-sm btn-danger'
-            title='Remove user'
-            onClick={(e) => this.props.removeUser(this.props.user.email)}
-          >
-            <i className='fas fa-trash' /> Remove user
+            type="button"
+            className="btn btn-sm btn-danger"
+            title="Remove user"
+            onClick={(e) => this.props.removeUser(this.props.user.email)}>
+            <i className="fas fa-trash" /> Remove user
           </button>
         </div>
-        <div className='col-12'>
-          <div className='row mb-3'>
-            <label
-              for='input-Name'
-              className='col-xs-12 col-sm-2 col-form-label'
-            >
+        <div className="col-12">
+          <div className="row mb-3">
+            <label for="input-Name" className="col-xs-12 col-sm-2 col-form-label">
               Name
             </label>
-            <div className='col-sm-10 d-flex'>
+            <div className="col-sm-10 d-flex">
               <input
-                type='text'
-                placeholder='User name'
-                className='form-control'
+                type="text"
+                placeholder="User name"
+                className="form-control"
                 value={this.props.user.name}
-                onChange={(e) =>
-                  this.props.onChange(
-                    this.props.user.email,
-                    'name',
-                    e.target.value
-                  )
-                }
+                onChange={(e) => this.props.onChange(this.props.user.email, 'name', e.target.value)}
               />
             </div>
           </div>
-          <div className='row mb-3'>
-            <label
-              for='input-Name'
-              className='col-xs-12 col-sm-2 col-form-label'
-            >
+          <div className="row mb-3">
+            <label for="input-Name" className="col-xs-12 col-sm-2 col-form-label">
               Email
             </label>
-            <div className='col-sm-10 d-flex'>
+            <div className="col-sm-10 d-flex">
               <input
-                type='text'
-                placeholder='User email'
-                className='form-control'
+                type="text"
+                placeholder="User email"
+                className="form-control"
                 value={this.props.user.email}
                 onChange={(e) =>
-                  this.props.onChange(
-                    this.props.user.email,
-                    'email',
-                    e.target.value
-                  )
+                  this.props.onChange(this.props.user.email, 'email', e.target.value)
                 }
               />
             </div>
           </div>
-          <div className='row mb-3'>
-            <label
-              for='input-Name'
-              className='col-xs-12 col-sm-2 col-form-label'
-            >
+          <div className="row mb-3">
+            <label for="input-Name" className="col-xs-12 col-sm-2 col-form-label">
               Metadata
             </label>
-            <div className='col-sm-10 d-flex'>
+            <div className="col-sm-10 d-flex">
               <input
-                type='text'
-                placeholder='User metadata'
-                className='form-control'
+                type="text"
+                placeholder="User metadata"
+                className="form-control"
                 value={
-                  this.state.rawUser !==
-                  JSON.stringify(this.props.user.metadata)
+                  this.state.rawUser !== JSON.stringify(this.props.user.metadata)
                     ? this.state.rawUser
                     : JSON.stringify(this.props.user.metadata)
                 }
@@ -906,11 +865,7 @@ export class User extends Component {
                   try {
                     const finalValue = JSON.parse(e.target.value);
                     this.setState({ rawUser: JSON.stringify(finalValue) });
-                    this.props.onChange(
-                      this.props.user.email,
-                      'metadata',
-                      finalValue
-                    );
+                    this.props.onChange(this.props.user.email, 'metadata', finalValue);
                   } catch (err) {
                     this.setState({ rawUser: e.target.value });
                   }
@@ -1097,14 +1052,14 @@ export class BasicModuleConfig extends Component {
             />
           </Suspense>
         )}
-        <ArrayInput 
+        <ArrayInput
           label="User validators"
           component={UserValidator}
           value={settings.userValidators}
           onChange={(v) => changeTheValue(path + '.userValidators', v)}
           defaultValue={{
             path: '$.profile.admin',
-            value: true
+            value: true,
           }}
         />
       </div>
@@ -1433,14 +1388,14 @@ export class LdapModuleConfig extends Component {
           help="Retrieve metadata from LDAP field"
           onChange={(v) => changeTheValue(path + '.metadataField', v)}
         />
-        <ArrayInput 
+        <ArrayInput
           label="User validators"
           component={UserValidator}
           value={settings.userValidators}
           onChange={(v) => changeTheValue(path + '.userValidators', v)}
           defaultValue={{
             path: '$.profile.admin',
-            value: true
+            value: true,
           }}
         />
         <Suspense fallback={<div>loading ...</div>}>
@@ -1758,7 +1713,7 @@ export class SamlModuleConfig extends Component {
     'validateSignature',
     'validateAssertions',
     'validatingCertificates',
-    'userValidators'
+    'userValidators',
   ];
 
   changeTheValue = (name, value) => {
@@ -1781,9 +1736,9 @@ export class SamlModuleConfig extends Component {
         component: UserValidator,
         defaultValue: {
           path: '$.profile.admin',
-          value: true
-        }
-      }
+          value: true,
+        },
+      },
     },
     warning: {
       type: ({}) => {
@@ -2169,9 +2124,9 @@ export class OAuth1ModuleConfig extends Component {
         component: UserValidator,
         defaultValue: {
           path: '$.profile.admin',
-          value: true
-        }
-      }
+          value: true,
+        },
+      },
     },
     // signatureMethod: {
     //   type: 'select',
@@ -2288,16 +2243,15 @@ const SessionCookieConfig = (props) => {
 };
 
 const UserValidator = (props) => {
-  
   const validator = props.itemValue;
 
   function changeTheValue(field, value) {
     const arr = props.value;
-    arr[props.idx][field] = value
+    arr[props.idx][field] = value;
     props.onChange(arr);
   }
-  
-  console.log(props)
+
+  console.log(props);
   return (
     <>
       <TextInput
@@ -2314,12 +2268,12 @@ const UserValidator = (props) => {
         onChange={(v) => {
           try {
             const parsed = JSON.parse(v);
-            changeTheValue('value', parsed)
-          } catch(e) {
-            changeTheValue('value', v)
+            changeTheValue('value', parsed);
+          } catch (e) {
+            changeTheValue('value', v);
           }
         }}
       />
     </>
   );
-}
+};

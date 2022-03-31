@@ -8,13 +8,13 @@ import scala.collection.concurrent.TrieMap
 
 class OpenapiToJson(spec: JsValue) {
 
-  val logger = Logger("otoroshi-openapi-to-json")
+  val logger              = Logger("otoroshi-openapi-to-json")
   val openAPIV3SchemaPath = "openAPIV3Schema/properties/spec/properties"
   val nullType            = "#/components/schemas/Null"
   val otoroshiSchemaType  = "#/components/schemas/otoroshi."
 
   def run() = {
-    val data               = extractSchemasFromOpenapi()
+    val data = extractSchemasFromOpenapi()
     process(data)
     data
   }
@@ -47,7 +47,7 @@ class OpenapiToJson(spec: JsValue) {
 
   def containsNullAndRef(values: IndexedSeq[JsValue]): Boolean =
     values.exists(p => (p \ "$ref").as[String] == nullType) &&
-      values.exists(p => (p \ "$ref").as[String] != nullType)
+    values.exists(p => (p \ "$ref").as[String] != nullType)
 
   def pruneField(data: TrieMap[String, JsValue], key: String, path: String) =
     data.put(key, data(key).transform(reads(path).json.prune).get)
@@ -147,7 +147,7 @@ class OpenapiToJson(spec: JsValue) {
       try {
         (data(reference) \ "properties").asOpt[JsObject] match {
           case Some(prop) => prop
-          case _ => data(reference).as[JsObject]
+          case _          => data(reference).as[JsObject]
         }
       } catch {
         case _: Throwable =>

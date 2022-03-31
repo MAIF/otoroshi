@@ -32,63 +32,74 @@ sealed trait CachedVaultSecretStatus {
 }
 
 object CachedVaultSecretStatus {
-  case object VaultNotFound extends CachedVaultSecretStatus                     { def value: String =  "vault-not-found"              }
-  case object BadSecretPath extends CachedVaultSecretStatus                     { def value: String =  "bad-secret-path"              }
-  case object SecretNotFound extends CachedVaultSecretStatus                    { def value: String =  "secret-not-found"             }
-  case object SecretValueNotFound extends CachedVaultSecretStatus               { def value: String =  "secret-value-not-found"       }
-  case object SecretReadUnauthorized extends CachedVaultSecretStatus            { def value: String =  "secret-read-not-authorized"   }
-  case object SecretReadForbidden extends CachedVaultSecretStatus               { def value: String =  "secret-read-forbidden"        }
-  case object SecretReadTimeout extends CachedVaultSecretStatus                 { def value: String =  "secret-read-timeout"          }
-  case class  SecretReadError(error: String) extends CachedVaultSecretStatus    { def value: String = s"secret-read-error: ${error}"  }
-  case class  SecretReadSuccess(secret: String) extends CachedVaultSecretStatus { def value: String = secret                          }
+  case object VaultNotFound                    extends CachedVaultSecretStatus { def value: String = "vault-not-found"        }
+  case object BadSecretPath                    extends CachedVaultSecretStatus { def value: String = "bad-secret-path"        }
+  case object SecretNotFound                   extends CachedVaultSecretStatus { def value: String = "secret-not-found"       }
+  case object SecretValueNotFound              extends CachedVaultSecretStatus { def value: String = "secret-value-not-found" }
+  case object SecretReadUnauthorized           extends CachedVaultSecretStatus {
+    def value: String = "secret-read-not-authorized"
+  }
+  case object SecretReadForbidden              extends CachedVaultSecretStatus { def value: String = "secret-read-forbidden"  }
+  case object SecretReadTimeout                extends CachedVaultSecretStatus { def value: String = "secret-read-timeout"    }
+  case class SecretReadError(error: String)    extends CachedVaultSecretStatus {
+    def value: String = s"secret-read-error: ${error}"
+  }
+  case class SecretReadSuccess(secret: String) extends CachedVaultSecretStatus { def value: String = secret                   }
 }
 
 case class CachedVaultSecret(key: String, at: DateTime, status: CachedVaultSecretStatus)
 
 trait Vault {
-  def get(path: String, options: Map[String, String])(implicit env: Env, ec: ExecutionContext): Future[CachedVaultSecretStatus]
+  def get(path: String, options: Map[String, String])(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[CachedVaultSecretStatus]
 }
 
 class EnvVault(vaultName: String, env: Env) extends Vault {
 
-  private val logger = Logger("otoroshi-env-vault")
-  private val defaultPrefix = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${vaultName}.prefix")
+  private val logger        = Logger("otoroshi-env-vault")
+  private val defaultPrefix =
+    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${vaultName}.prefix")
 
-  override def get(path: String, options: Map[String, String])(implicit env: Env, ec: ExecutionContext): Future[CachedVaultSecretStatus] = {
+  override def get(path: String, options: Map[String, String])(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[CachedVaultSecretStatus] = {
     val prefix = options.get("prefix").orElse(defaultPrefix).getOrElse("")
-    val parts = path.split("/").toSeq.map(_.trim).filterNot(_.isEmpty)
+    val parts  = path.split("/").toSeq.map(_.trim).filterNot(_.isEmpty)
     if (parts.isEmpty) {
       CachedVaultSecretStatus.BadSecretPath.vfuture
     } else if (parts.size == 1) {
       val name = prefix + parts.head
       sys.env.get(name).orElse(sys.env.get(name.toUpperCase())) match {
-        case None => CachedVaultSecretStatus.SecretNotFound.vfuture
+        case None         => CachedVaultSecretStatus.SecretNotFound.vfuture
         case Some(secret) => CachedVaultSecretStatus.SecretReadSuccess(secret).vfuture
       }
     } else {
-      val name = prefix + parts.head
+      val name    = prefix + parts.head
       val pointer = parts.tail.mkString("/", "/", "")
       sys.env.get(name).orElse(sys.env.get(name.toUpperCase())).filter(_.trim.startsWith("{")).flatMap { jsonraw =>
         Try {
           val obj = Json.parse(jsonraw).asOpt[JsObject].getOrElse(Json.obj())
           obj.atPointer(pointer).asOpt[JsValue] match {
-            case Some(JsString(value)) => value.some
-            case Some(JsNumber(value)) => value.toString().some
+            case Some(JsString(value))  => value.some
+            case Some(JsNumber(value))  => value.toString().some
             case Some(JsBoolean(value)) => value.toString.some
-            case Some(o@JsObject(_)) => o.stringify.some
-            case Some(arr@JsArray(_)) => arr.stringify.some
-            case Some(JsNull) => "null".some
-            case _ => None
+            case Some(o @ JsObject(_))  => o.stringify.some
+            case Some(arr @ JsArray(_)) => arr.stringify.some
+            case Some(JsNull)           => "null".some
+            case _                      => None
           }
         } match {
-          case Failure(e) =>
+          case Failure(e)            =>
             logger.error("error while trying to read JSON env. variable", e)
             CachedVaultSecretStatus.SecretReadError(e.getMessage).some
-          case Success(None) => CachedVaultSecretStatus.SecretNotFound.some
+          case Success(None)         => CachedVaultSecretStatus.SecretNotFound.some
           case Success(Some(secret)) => CachedVaultSecretStatus.SecretReadSuccess(secret).some
         }
       } match {
-        case None => CachedVaultSecretStatus.SecretNotFound.vfuture
+        case None         => CachedVaultSecretStatus.SecretNotFound.vfuture
         case Some(status) => status.vfuture
       }
     }
@@ -99,10 +110,14 @@ class HashicorpVault(name: String, env: Env) extends Vault {
 
   private val logger = Logger("otoroshi-hashicorp-vault")
 
-  private val url = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url").getOrElse("http://127.0.0.1:8200")
-  private val mount = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.mount").getOrElse("secret")
-  private val kv = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.kv").getOrElse("v2")
-  private val token = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.token").getOrElse("root")
+  private val url   = env.configuration
+    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
+    .getOrElse("http://127.0.0.1:8200")
+  private val mount =
+    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.mount").getOrElse("secret")
+  private val kv    = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.kv").getOrElse("v2")
+  private val token =
+    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.token").getOrElse("root")
 
   private val baseUrl = s"${url}/v1/${mount}"
 
@@ -116,12 +131,16 @@ class HashicorpVault(name: String, env: Env) extends Vault {
     s"${baseUrl}${path}${opts}"
   }
 
-  override def get(rawpath: String, options: Map[String, String])(implicit env: Env, ec: ExecutionContext): Future[CachedVaultSecretStatus] = {
-    val parts = rawpath.split("/").toSeq.filterNot(_.isEmpty)
-    val path = parts.init.mkString("/", "/", "")
+  override def get(rawpath: String, options: Map[String, String])(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[CachedVaultSecretStatus] = {
+    val parts     = rawpath.split("/").toSeq.filterNot(_.isEmpty)
+    val path      = parts.init.mkString("/", "/", "")
     val valuename = parts.last
-    val url = if (kv == "v2") dataUrlV2(path, options) else dataUrlV1(path, options)
-    env.Ws.url(url)
+    val url       = if (kv == "v2") dataUrlV2(path, options) else dataUrlV1(path, options)
+    env.Ws
+      .url(url)
       .withHttpHeaders("X-Vault-Token" -> token)
       .withRequestTimeout(1.minute)
       .withFollowRedirects(false)
@@ -130,23 +149,23 @@ class HashicorpVault(name: String, env: Env) extends Vault {
         if (response.status == 200) {
           if (kv == "v2") {
             response.json.select("data").select("data").select(valuename).asOpt[JsValue] match {
-              case Some(JsString(value)) => CachedVaultSecretStatus.SecretReadSuccess(value)
-              case Some(JsNumber(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
+              case Some(JsString(value))  => CachedVaultSecretStatus.SecretReadSuccess(value)
+              case Some(JsNumber(value))  => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
               case Some(JsBoolean(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString)
-              case Some(o@JsObject(_)) => CachedVaultSecretStatus.SecretReadSuccess(o.stringify)
-              case Some(arr@JsArray(_)) => CachedVaultSecretStatus.SecretReadSuccess(arr.stringify)
-              case Some(JsNull) => CachedVaultSecretStatus.SecretReadSuccess("null")
-              case _ => CachedVaultSecretStatus.SecretValueNotFound
+              case Some(o @ JsObject(_))  => CachedVaultSecretStatus.SecretReadSuccess(o.stringify)
+              case Some(arr @ JsArray(_)) => CachedVaultSecretStatus.SecretReadSuccess(arr.stringify)
+              case Some(JsNull)           => CachedVaultSecretStatus.SecretReadSuccess("null")
+              case _                      => CachedVaultSecretStatus.SecretValueNotFound
             }
           } else {
             response.json.select("data").select(valuename).asOpt[JsValue] match {
-              case Some(JsString(value)) => CachedVaultSecretStatus.SecretReadSuccess(value)
-              case Some(JsNumber(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
+              case Some(JsString(value))  => CachedVaultSecretStatus.SecretReadSuccess(value)
+              case Some(JsNumber(value))  => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
               case Some(JsBoolean(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString)
-              case Some(o@JsObject(_)) => CachedVaultSecretStatus.SecretReadSuccess(o.stringify)
-              case Some(arr@JsArray(_)) => CachedVaultSecretStatus.SecretReadSuccess(arr.stringify)
-              case Some(JsNull) => CachedVaultSecretStatus.SecretReadSuccess("null")
-              case _ => CachedVaultSecretStatus.SecretValueNotFound
+              case Some(o @ JsObject(_))  => CachedVaultSecretStatus.SecretReadSuccess(o.stringify)
+              case Some(arr @ JsArray(_)) => CachedVaultSecretStatus.SecretReadSuccess(arr.stringify)
+              case Some(JsNull)           => CachedVaultSecretStatus.SecretReadSuccess("null")
+              case _                      => CachedVaultSecretStatus.SecretValueNotFound
             }
           }
         } else if (response.status == 401) {
@@ -156,8 +175,9 @@ class HashicorpVault(name: String, env: Env) extends Vault {
         } else {
           CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
         }
-      }.recover {
-        case e: Throwable => CachedVaultSecretStatus.SecretReadError(e.getMessage)
+      }
+      .recover { case e: Throwable =>
+        CachedVaultSecretStatus.SecretReadError(e.getMessage)
       }
   }
 }
@@ -166,18 +186,29 @@ class AzureVault(name: String, env: Env) extends Vault {
 
   private val logger = Logger("otoroshi-azure-vault")
 
-  private val baseUrl = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url").getOrElse("https://myvault.vault.azure.net/")
-  private val apiVersion = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.api-version").getOrElse("7.2")
-  private val token = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.token").getOrElse("root") // TODO: get it automatically with client_credential flow
+  private val baseUrl    = env.configuration
+    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
+    .getOrElse("https://myvault.vault.azure.net/")
+  private val apiVersion =
+    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.api-version").getOrElse("7.2")
+  private val token      = env.configuration
+    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.token")
+    .getOrElse("root") // TODO: get it automatically with client_credential flow
 
   private def dataUrl(path: String, options: Map[String, String]) = {
-    val opts = if (options.nonEmpty) s"?api-version=${apiVersion}&" + options.toSeq.map(v => s"${v._1}=${v._2}").mkString("&") else "?api-version=${apiVersion}"
+    val opts =
+      if (options.nonEmpty) s"?api-version=${apiVersion}&" + options.toSeq.map(v => s"${v._1}=${v._2}").mkString("&")
+      else "?api-version=${apiVersion}"
     s"${baseUrl}/secrets${path}${opts}"
   }
 
-  override def get(path: String, options: Map[String, String])(implicit env: Env, ec: ExecutionContext): Future[CachedVaultSecretStatus] = {
+  override def get(path: String, options: Map[String, String])(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[CachedVaultSecretStatus] = {
     val url = dataUrl(path, options)
-    env.Ws.url(url)
+    env.Ws
+      .url(url)
       .withHttpHeaders("Authorization" -> s"Bearer ${token}")
       .withRequestTimeout(1.minute)
       .withFollowRedirects(false)
@@ -185,13 +216,13 @@ class AzureVault(name: String, env: Env) extends Vault {
       .map { response =>
         if (response.status == 200) {
           response.json.select("value").asOpt[JsValue] match {
-            case Some(JsString(value)) => CachedVaultSecretStatus.SecretReadSuccess(value)
-            case Some(JsNumber(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
+            case Some(JsString(value))  => CachedVaultSecretStatus.SecretReadSuccess(value)
+            case Some(JsNumber(value))  => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
             case Some(JsBoolean(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString)
-            case Some(o@JsObject(_)) => CachedVaultSecretStatus.SecretReadSuccess(o.stringify)
-            case Some(arr@JsArray(_)) => CachedVaultSecretStatus.SecretReadSuccess(arr.stringify)
-            case Some(JsNull) => CachedVaultSecretStatus.SecretReadSuccess("null")
-            case _ => CachedVaultSecretStatus.SecretValueNotFound
+            case Some(o @ JsObject(_))  => CachedVaultSecretStatus.SecretReadSuccess(o.stringify)
+            case Some(arr @ JsArray(_)) => CachedVaultSecretStatus.SecretReadSuccess(arr.stringify)
+            case Some(JsNull)           => CachedVaultSecretStatus.SecretReadSuccess("null")
+            case _                      => CachedVaultSecretStatus.SecretValueNotFound
           }
         } else if (response.status == 401) {
           CachedVaultSecretStatus.SecretReadUnauthorized
@@ -200,26 +231,36 @@ class AzureVault(name: String, env: Env) extends Vault {
         } else {
           CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
         }
-      }.recover {
-        case e: Throwable => CachedVaultSecretStatus.SecretReadError(e.getMessage)
+      }
+      .recover { case e: Throwable =>
+        CachedVaultSecretStatus.SecretReadError(e.getMessage)
       }
   }
 }
 
 class GoogleSecretManagerVault(name: String, env: Env) extends Vault {
 
-  private val logger = Logger("otoroshi-gcloud-vault")
-  private val baseUrl = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url").getOrElse("https://secretmanager.googleapis.com")
-  private val apikey = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.apikey").getOrElse("secret")
+  private val logger  = Logger("otoroshi-gcloud-vault")
+  private val baseUrl = env.configuration
+    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
+    .getOrElse("https://secretmanager.googleapis.com")
+  private val apikey  =
+    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.apikey").getOrElse("secret")
 
   private def dataUrl(path: String, options: Map[String, String]) = {
-    val opts = if (options.nonEmpty) s"?key=${apikey}&" + options.toSeq.map(v => s"${v._1}=${v._2}").mkString("&") else s"?key=${apikey}"
+    val opts =
+      if (options.nonEmpty) s"?key=${apikey}&" + options.toSeq.map(v => s"${v._1}=${v._2}").mkString("&")
+      else s"?key=${apikey}"
     s"${baseUrl}/v1${path}:access${opts}"
   }
 
-  override def get(path: String, options: Map[String, String])(implicit env: Env, ec: ExecutionContext): Future[CachedVaultSecretStatus] = {
+  override def get(path: String, options: Map[String, String])(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[CachedVaultSecretStatus] = {
     val url = dataUrl(path, options)
-    env.Ws.url(url)
+    env.Ws
+      .url(url)
       .withRequestTimeout(1.minute)
       .withFollowRedirects(false)
       .get()
@@ -227,7 +268,7 @@ class GoogleSecretManagerVault(name: String, env: Env) extends Vault {
         if (response.status == 200) {
           response.json.select("payload").select("data").asOpt[String] match {
             case Some(value) => CachedVaultSecretStatus.SecretReadSuccess(value.fromBase64)
-            case _ => CachedVaultSecretStatus.SecretValueNotFound
+            case _           => CachedVaultSecretStatus.SecretValueNotFound
           }
         } else if (response.status == 401) {
           CachedVaultSecretStatus.SecretReadUnauthorized
@@ -236,18 +277,25 @@ class GoogleSecretManagerVault(name: String, env: Env) extends Vault {
         } else {
           CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
         }
-      }.recover {
-      case e: Throwable => CachedVaultSecretStatus.SecretReadError(e.getMessage)
-    }
+      }
+      .recover { case e: Throwable =>
+        CachedVaultSecretStatus.SecretReadError(e.getMessage)
+      }
   }
 }
 
 class AlibabaCloudSecretManagerVault(name: String, env: Env) extends Vault {
 
-  private val logger = Logger("otoroshi-alibaba-cloud-vault")
-  private val baseUrl = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url").getOrElse("https://kms.eu-central-1.aliyuncs.com")
-  private val accessKeyId = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key-id").getOrElse("access-key")
-  private val accessKeySecret = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key-secret").getOrElse("secret")
+  private val logger          = Logger("otoroshi-alibaba-cloud-vault")
+  private val baseUrl         = env.configuration
+    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
+    .getOrElse("https://kms.eu-central-1.aliyuncs.com")
+  private val accessKeyId     = env.configuration
+    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key-id")
+    .getOrElse("access-key")
+  private val accessKeySecret = env.configuration
+    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key-secret")
+    .getOrElse("secret")
 
   def makeStringToSign(opts: String): String = {
     "GET%2F&" + URLEncoder.encode(opts, Charsets.UTF_8)
@@ -258,17 +306,22 @@ class AlibabaCloudSecretManagerVault(name: String, env: Env) extends Vault {
   }
 
   private def dataUrl(path: String, options: Map[String, String]): String = {
-    val opts = if (options.nonEmpty) options.toSeq.map(v => s"${v._1}=${v._2}").mkString("&") else s""
-    val name = path.split("/").filterNot(_.isEmpty).head
+    val opts      = if (options.nonEmpty) options.toSeq.map(v => s"${v._1}=${v._2}").mkString("&") else s""
+    val name      = path.split("/").filterNot(_.isEmpty).head
     val timestamp = DateTime.now().toString()
-    val query = s"Action=GetSecretValue&SecretName=${name}&Format=json&AccessKeyId=${accessKeyId}&SignatureMethod=HMAC-SHA1&Timestamp=${timestamp}&SignatureVersion=1.0&${opts}"
+    val query     =
+      s"Action=GetSecretValue&SecretName=${name}&Format=json&AccessKeyId=${accessKeyId}&SignatureMethod=HMAC-SHA1&Timestamp=${timestamp}&SignatureVersion=1.0&${opts}"
     val signature = makeSignature(query, accessKeySecret)
     s"${baseUrl}/?${query}&Signature=${signature}"
   }
 
-  override def get(path: String, options: Map[String, String])(implicit env: Env, ec: ExecutionContext): Future[CachedVaultSecretStatus] = {
+  override def get(path: String, options: Map[String, String])(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[CachedVaultSecretStatus] = {
     val url = dataUrl(path, options)
-    env.Ws.url(url)
+    env.Ws
+      .url(url)
       .withRequestTimeout(1.minute)
       .withFollowRedirects(false)
       .get()
@@ -276,7 +329,7 @@ class AlibabaCloudSecretManagerVault(name: String, env: Env) extends Vault {
         if (response.status == 200) {
           response.json.select("SecretData").asOpt[String] match {
             case Some(value) => CachedVaultSecretStatus.SecretReadSuccess(value)
-            case _ => CachedVaultSecretStatus.SecretValueNotFound
+            case _           => CachedVaultSecretStatus.SecretValueNotFound
           }
         } else if (response.status == 401) {
           CachedVaultSecretStatus.SecretReadUnauthorized
@@ -285,43 +338,49 @@ class AlibabaCloudSecretManagerVault(name: String, env: Env) extends Vault {
         } else {
           CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
         }
-      }.recover {
-      case e: Throwable => CachedVaultSecretStatus.SecretReadError(e.getMessage)
-    }
+      }
+      .recover { case e: Throwable =>
+        CachedVaultSecretStatus.SecretReadError(e.getMessage)
+      }
   }
 }
 
 class KubernetesVault(name: String, env: Env) extends Vault {
 
-  private val logger = Logger("otoroshi-kubernetes-vault")
+  private val logger        = Logger("otoroshi-kubernetes-vault")
   private implicit val _env = env
-  private implicit val ec = env.otoroshiExecutionContext
+  private implicit val ec   = env.otoroshiExecutionContext
 
-  private val kubeConfig = env.configurationJson.select(s"otoroshi").select("vaults").select(name).asOpt[JsValue] match {
-    case Some(JsString("global")) => {
-      val global = env.datastores.globalConfigDataStore.latest()
-      val c1 = global.scripts.jobConfig.select("KubernetesConfig").asOpt[JsObject]
-      val c2 = global.plugins.config.select("KubernetesConfig").asOpt[JsObject]
-      val c3 = c1.orElse(c2).getOrElse(Json.obj())
-      KubernetesConfig.theConfig(c3)
+  private val kubeConfig =
+    env.configurationJson.select(s"otoroshi").select("vaults").select(name).asOpt[JsValue] match {
+      case Some(JsString("global")) => {
+        val global = env.datastores.globalConfigDataStore.latest()
+        val c1     = global.scripts.jobConfig.select("KubernetesConfig").asOpt[JsObject]
+        val c2     = global.plugins.config.select("KubernetesConfig").asOpt[JsObject]
+        val c3     = c1.orElse(c2).getOrElse(Json.obj())
+        KubernetesConfig.theConfig(c3)
+      }
+      case Some(obj @ JsObject(_))  => KubernetesConfig.theConfig(obj)
+      case _                        => KubernetesConfig.theConfig(KubernetesConfig.defaultConfig)
     }
-    case Some(obj @ JsObject(_)) => KubernetesConfig.theConfig(obj)
-    case _ => KubernetesConfig.theConfig(KubernetesConfig.defaultConfig)
-  }
-  private val client = new KubernetesClient(kubeConfig, env)
+  private val client     = new KubernetesClient(kubeConfig, env)
 
-  override def get(path: String, options: Map[String, String])(implicit env: Env, ec: ExecutionContext): Future[CachedVaultSecretStatus] = {
-    val parts = path.split("/").toSeq.filterNot(_.isEmpty)
-    val namespace = parts.head
+  override def get(path: String, options: Map[String, String])(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[CachedVaultSecretStatus] = {
+    val parts      = path.split("/").toSeq.filterNot(_.isEmpty)
+    val namespace  = parts.head
     val secretName = parts.tail.head
-    client.fetchSecret(namespace, secretName)
+    client
+      .fetchSecret(namespace, secretName)
       .map {
-        case None => CachedVaultSecretStatus.SecretNotFound
+        case None         => CachedVaultSecretStatus.SecretNotFound
         case Some(secret) => {
           if (parts.size > 2 && secret.hasStringData) {
             val valueName = parts.tail.tail.head
             secret.stringData.getOrElse(Map.empty).get(valueName) match {
-              case None => CachedVaultSecretStatus.SecretValueNotFound
+              case None        => CachedVaultSecretStatus.SecretValueNotFound
               case Some(value) => CachedVaultSecretStatus.SecretReadSuccess(value)
             }
           } else if (parts.size > 2) {
@@ -330,8 +389,9 @@ class KubernetesVault(name: String, env: Env) extends Vault {
             CachedVaultSecretStatus.SecretReadSuccess(secret.data)
           }
         }
-      }.recover {
-        case e: Throwable => CachedVaultSecretStatus.SecretReadError(e.getMessage)
+      }
+      .recover { case e: Throwable =>
+        CachedVaultSecretStatus.SecretReadError(e.getMessage)
       }
   }
 }
@@ -340,19 +400,27 @@ class AwsVault(name: String, env: Env) extends Vault {
 
   private val logger = Logger("otoroshi-aws-vault")
 
-  private val accessKey = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key").getOrElse("key")
-  private val accessKeySecret = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key-secret").getOrElse("secret")
-  private val region = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.region").getOrElse("eu-west-3")
+  private val accessKey       =
+    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key").getOrElse("key")
+  private val accessKeySecret = env.configuration
+    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key-secret")
+    .getOrElse("secret")
+  private val region          =
+    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.region").getOrElse("eu-west-3")
 
-  private val secretsManager = AWSSecretsManagerAsyncClientBuilder.standard()
+  private val secretsManager = AWSSecretsManagerAsyncClientBuilder
+    .standard()
     .withRegion(region)
     .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, accessKeySecret)))
     .build()
 
-  override def get(path: String, options: Map[String, String])(implicit env: Env, ec: ExecutionContext): Future[CachedVaultSecretStatus] = {
+  override def get(path: String, options: Map[String, String])(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[CachedVaultSecretStatus] = {
     val promise = Promise.apply[CachedVaultSecretStatus]()
     try {
-      val parts = path.split("/").toSeq.filterNot(_.isEmpty)
+      val parts   = path.split("/").toSeq.filterNot(_.isEmpty)
       var request = new GetSecretValueRequest()
       request = request.withSecretId(parts.head)
       if (parts.size > 1) {
@@ -362,7 +430,8 @@ class AwsVault(name: String, env: Env) extends Vault {
         request = request.withVersionStage(parts.tail.tail.head)
       }
       val handler = new AsyncHandler[GetSecretValueRequest, GetSecretValueResult]() {
-        override def onError(exception: Exception): Unit = promise.trySuccess(CachedVaultSecretStatus.SecretReadError(exception.getMessage))
+        override def onError(exception: Exception): Unit =
+          promise.trySuccess(CachedVaultSecretStatus.SecretReadError(exception.getMessage))
         override def onSuccess(request: GetSecretValueRequest, result: GetSecretValueResult): Unit = {
           promise.trySuccess(CachedVaultSecretStatus.SecretReadSuccess(result.getSecretString))
         }
@@ -379,21 +448,29 @@ class IzanamiVault(name: String, env: Env) extends Vault {
 
   private val logger = Logger("otoroshi-azure-vault")
 
-  private val baseUrl = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url").getOrElse("https://127.0.0.1:9000")
-  private val clientId = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client-id").getOrElse("client")
-  private val clientSecret = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client-secret").getOrElse("secret")
+  private val baseUrl      = env.configuration
+    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
+    .getOrElse("https://127.0.0.1:9000")
+  private val clientId     =
+    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client-id").getOrElse("client")
+  private val clientSecret =
+    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client-secret").getOrElse("secret")
 
   private def dataUrl(id: String, options: Map[String, String]) = {
     val opts = if (options.nonEmpty) s"?" + options.toSeq.map(v => s"${v._1}=${v._2}").mkString("&") else ""
     s"${baseUrl}/api/configs/${id}${opts}"
   }
 
-  override def get(path: String, options: Map[String, String])(implicit env: Env, ec: ExecutionContext): Future[CachedVaultSecretStatus] = {
-    val parts = path.split("/").toSeq.filterNot(_.isEmpty)
+  override def get(path: String, options: Map[String, String])(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[CachedVaultSecretStatus] = {
+    val parts     = path.split("/").toSeq.filterNot(_.isEmpty)
     val featureId = parts.head
-    val pointer = parts.tail.mkString("/", "/", "")
-    val url = dataUrl(featureId, options)
-    env.Ws.url(url)
+    val pointer   = parts.tail.mkString("/", "/", "")
+    val url       = dataUrl(featureId, options)
+    env.Ws
+      .url(url)
       .withAuth(clientId, clientSecret, WSAuthScheme.BASIC)
       .withRequestTimeout(1.minute)
       .withFollowRedirects(false)
@@ -401,13 +478,13 @@ class IzanamiVault(name: String, env: Env) extends Vault {
       .map { response =>
         if (response.status == 200) {
           response.json.atPointer(pointer).asOpt[JsValue] match {
-            case Some(JsString(value)) => CachedVaultSecretStatus.SecretReadSuccess(value)
-            case Some(JsNumber(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
+            case Some(JsString(value))  => CachedVaultSecretStatus.SecretReadSuccess(value)
+            case Some(JsNumber(value))  => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
             case Some(JsBoolean(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString)
-            case Some(o@JsObject(_)) => CachedVaultSecretStatus.SecretReadSuccess(o.stringify)
-            case Some(arr@JsArray(_)) => CachedVaultSecretStatus.SecretReadSuccess(arr.stringify)
-            case Some(JsNull) => CachedVaultSecretStatus.SecretReadSuccess("null")
-            case _ => CachedVaultSecretStatus.SecretValueNotFound
+            case Some(o @ JsObject(_))  => CachedVaultSecretStatus.SecretReadSuccess(o.stringify)
+            case Some(arr @ JsArray(_)) => CachedVaultSecretStatus.SecretReadSuccess(arr.stringify)
+            case Some(JsNull)           => CachedVaultSecretStatus.SecretReadSuccess("null")
+            case _                      => CachedVaultSecretStatus.SecretValueNotFound
           }
         } else if (response.status == 401) {
           CachedVaultSecretStatus.SecretReadUnauthorized
@@ -416,25 +493,35 @@ class IzanamiVault(name: String, env: Env) extends Vault {
         } else {
           CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
         }
-      }.recover {
-      case e: Throwable => CachedVaultSecretStatus.SecretReadError(e.getMessage)
-    }
+      }
+      .recover { case e: Throwable =>
+        CachedVaultSecretStatus.SecretReadError(e.getMessage)
+      }
   }
 }
 
 class Vaults(env: Env) {
 
-  private val logger = Logger("otoroshi-vaults")
-  private val secretsTtl = env.configuration.getOptionalWithFileSupport[Long]("otoroshi.vaults.secrets-ttl").map(_.milliseconds).getOrElse(5.minutes)
-  private val readTtl = env.configuration.getOptionalWithFileSupport[Long]("otoroshi.vaults.read-ttl").map(_.milliseconds).getOrElse(10.seconds)
-  private val cachedSecrets: Long = env.configuration.getOptionalWithFileSupport[Long]("otoroshi.vaults.cached-secrets").getOrElse(10000L)
-  private val cache = Scaffeine().expireAfterWrite(secretsTtl).maximumSize(cachedSecrets).build[String, CachedVaultSecret]()
-  private val expressionReplacer = ReplaceAllWith("\\$\\{vault://([^}]*)\\}")
+  private val logger                         = Logger("otoroshi-vaults")
+  private val secretsTtl                     = env.configuration
+    .getOptionalWithFileSupport[Long]("otoroshi.vaults.secrets-ttl")
+    .map(_.milliseconds)
+    .getOrElse(5.minutes)
+  private val readTtl                        = env.configuration
+    .getOptionalWithFileSupport[Long]("otoroshi.vaults.read-ttl")
+    .map(_.milliseconds)
+    .getOrElse(10.seconds)
+  private val cachedSecrets: Long            =
+    env.configuration.getOptionalWithFileSupport[Long]("otoroshi.vaults.cached-secrets").getOrElse(10000L)
+  private val cache                          =
+    Scaffeine().expireAfterWrite(secretsTtl).maximumSize(cachedSecrets).build[String, CachedVaultSecret]()
+  private val expressionReplacer             = ReplaceAllWith("\\$\\{vault://([^}]*)\\}")
   private val vaults: TrieMap[String, Vault] = new TrieMap[String, Vault]()
-  private implicit val _env = env
-  private implicit val ec = env.otoroshiExecutionContext
+  private implicit val _env                  = env
+  private implicit val ec                    = env.otoroshiExecutionContext
 
-  val enabled: Boolean = env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.vaults.enabled").getOrElse(false)
+  val enabled: Boolean =
+    env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.vaults.enabled").getOrElse(false)
 
   if (enabled) {
     logger.warn("the vaults feature is enabled !")
@@ -478,40 +565,46 @@ class Vaults(env: Env) {
   }
 
   def getWithTimeout(vault: Vault, path: String, options: Map[String, String]): Future[CachedVaultSecretStatus] = {
-    Future.firstCompletedOf(Seq(
-      vault.get(path, options),
-      timeout(CachedVaultSecretStatus.SecretReadTimeout)
-    ))
+    Future.firstCompletedOf(
+      Seq(
+        vault.get(path, options),
+        timeout(CachedVaultSecretStatus.SecretReadTimeout)
+      )
+    )
   }
 
   def resolveExpression(expr: String): Future[CachedVaultSecretStatus] = {
-    val uri = Uri(expr)
-    val name = uri.authority.host.toString()
-    val path = uri.path.toString()
+    val uri     = Uri(expr)
+    val name    = uri.authority.host.toString()
+    val path    = uri.path.toString()
     val options = uri.query().toMap
     cache.getIfPresent(expr) match {
       case Some(res) => res.status.vfuture
-      case None => {
+      case None      => {
         vaults.get(name) match {
-          case None =>
+          case None        =>
             cache.put(expr, CachedVaultSecret(expr, DateTime.now(), CachedVaultSecretStatus.VaultNotFound))
             CachedVaultSecretStatus.VaultNotFound.vfuture
           case Some(vault) => {
-            getWithTimeout(vault, path, options).map { status =>
-              val theStatus = status match {
-                case CachedVaultSecretStatus.SecretReadSuccess(v) => CachedVaultSecretStatus.SecretReadSuccess(JsString(v).stringify.substring(1).init)
-                case s => s
-              }
-              val secret = CachedVaultSecret(expr, DateTime.now(), theStatus)
-              cache.put(expr, secret)
-              theStatus
-            }.recover {
-              case e: Throwable => {
-                val secret = CachedVaultSecret(expr, DateTime.now(), CachedVaultSecretStatus.SecretReadError(e.getMessage))
+            getWithTimeout(vault, path, options)
+              .map { status =>
+                val theStatus = status match {
+                  case CachedVaultSecretStatus.SecretReadSuccess(v) =>
+                    CachedVaultSecretStatus.SecretReadSuccess(JsString(v).stringify.substring(1).init)
+                  case s                                            => s
+                }
+                val secret    = CachedVaultSecret(expr, DateTime.now(), theStatus)
                 cache.put(expr, secret)
-                secret.status
+                theStatus
               }
-            }
+              .recover {
+                case e: Throwable => {
+                  val secret =
+                    CachedVaultSecret(expr, DateTime.now(), CachedVaultSecretStatus.SecretReadError(e.getMessage))
+                  cache.put(expr, secret)
+                  secret.status
+                }
+              }
           }
         }
       }
@@ -523,13 +616,15 @@ class Vaults(env: Env) {
       Source(cache.asMap().values.toList)
         .filter { secret =>
           secret.status match {
-            case CachedVaultSecretStatus.SecretReadSuccess(_) if System.currentTimeMillis() - secret.at.toDate.getTime < (secretsTtl.toMillis - 20000) => false
+            case CachedVaultSecretStatus.SecretReadSuccess(_)
+                if System.currentTimeMillis() - secret.at.toDate.getTime < (secretsTtl.toMillis - 20000) =>
+              false
             case _ => true
           }
         }
         .mapAsync(4) { secret =>
-          resolveExpression(secret.key).recover {
-            case e: Throwable => ()
+          resolveExpression(secret.key).recover { case e: Throwable =>
+            ()
           }
         }
         .runWith(Sink.ignore)(env.otoroshiMaterializer)
@@ -556,15 +651,18 @@ class Vaults(env: Env) {
   def fillSecretsAsync(id: String, source: String)(implicit ec: ExecutionContext): Future[String] = {
     if (enabled) {
       expressionReplacer.replaceOnAsync(source) { expr =>
-        resolveExpression(expr).map { status =>
-          status match {
-            case CachedVaultSecretStatus.SecretReadSuccess(_) => logger.debug(s"fill secret on '${id}' from '${expr}' successfully")
-            case _ => logger.info(s"filling secret on '${id}' from '${expr}' failed because of '${status.value}'")
+        resolveExpression(expr)
+          .map { status =>
+            status match {
+              case CachedVaultSecretStatus.SecretReadSuccess(_) =>
+                logger.debug(s"fill secret on '${id}' from '${expr}' successfully")
+              case _                                            => logger.info(s"filling secret on '${id}' from '${expr}' failed because of '${status.value}'")
+            }
+            status.value
           }
-          status.value
-        }.recover {
-          case e: Throwable => CachedVaultSecretStatus.SecretReadError(e.getMessage).value
-        }
+          .recover { case e: Throwable =>
+            CachedVaultSecretStatus.SecretReadError(e.getMessage).value
+          }
       }
     } else {
       source.vfuture

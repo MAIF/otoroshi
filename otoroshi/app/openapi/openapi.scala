@@ -105,7 +105,7 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
       f.createNewFile()
     }
 
-    val descs = descriptions
+    val descs       = descriptions
       .mapValues(JsString.apply)
       .toSeq
       .sortWith((a, b) => a._1.compareTo(b._1) < 0)
@@ -132,7 +132,13 @@ $descs
 // TODO: handle all Unknown data type
 // TODO: handle all ???
 // TODO: handle adt with type field
-class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Seq[String] = Seq.empty, write: Boolean = false, scanResult: ScanResult) {
+class OpenApiGenerator(
+    routerPath: String,
+    configFilePath: String,
+    specFiles: Seq[String] = Seq.empty,
+    write: Boolean = false,
+    scanResult: ScanResult
+) {
 
   lazy val logger = Logger("otoroshi-openapi-generator").logger
 
@@ -144,22 +150,24 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
   val world = scanResult.getAllClassesAsMap.asScala
 
   val entities: Seq[ClassInfo] = (scanResult.getClassesImplementing(classOf[Entity].getName).asScala ++
-      scanResult.getSubclasses(classOf[Entity].getName).asScala ++
-      world.get("otoroshi.models.GlobalConfig") ++
-      world.get("otoroshi.ssl.pki.models.GenKeyPairQuery") ++
-      world.get("otoroshi.ssl.pki.models.GenCsrQuery") ++
-      world.get("otoroshi.ssl.pki.models.GenCertResponse") ++
-      world.get("otoroshi.ssl.pki.models.GenCsrResponse") ++
-      world.get("otoroshi.ssl.pki.models.SignCertResponse") ++
-      world.get("otoroshi.ssl.pki.models.GenKeyPairResponse") ++
-      world.get("otoroshi.models.ErrorTemplate") ++
-      world.get("otoroshi.models.Outage") ++
-      world.get("otoroshi.models.RemainingQuotas") ++
-      world.get("otoroshi.events.HealthCheckEvent") ++
-      world.filter(p =>
+    scanResult.getSubclasses(classOf[Entity].getName).asScala ++
+    world.get("otoroshi.models.GlobalConfig") ++
+    world.get("otoroshi.ssl.pki.models.GenKeyPairQuery") ++
+    world.get("otoroshi.ssl.pki.models.GenCsrQuery") ++
+    world.get("otoroshi.ssl.pki.models.GenCertResponse") ++
+    world.get("otoroshi.ssl.pki.models.GenCsrResponse") ++
+    world.get("otoroshi.ssl.pki.models.SignCertResponse") ++
+    world.get("otoroshi.ssl.pki.models.GenKeyPairResponse") ++
+    world.get("otoroshi.models.ErrorTemplate") ++
+    world.get("otoroshi.models.Outage") ++
+    world.get("otoroshi.models.RemainingQuotas") ++
+    world.get("otoroshi.events.HealthCheckEvent") ++
+    world
+      .filter(p =>
         p._1.startsWith("otoroshi.next.plugins") ||
-        p._1.startsWith("otoroshi.next.models") || p._1.startsWith("otoroshi.plugins")).values
-  ).toSeq.distinct
+        p._1.startsWith("otoroshi.next.models") || p._1.startsWith("otoroshi.plugins")
+      )
+      .values).toSeq.distinct
 
   var adts              = Seq.empty[JsObject]
   val foundDescriptions = new TrieMap[String, String]()
@@ -176,7 +184,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       typ: TypeSignature,
       config: OpenApiGeneratorConfig
   ): JsValue = {
-    val finalPath  = s"${clazz.getName}.$name"
+    val finalPath = s"${clazz.getName}.$name"
     config.descriptions.get(finalPath).filterNot(_ == unknownValue) match {
       case None        =>
         notFound.incrementAndGet()
@@ -292,13 +300,19 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       result: TrieMap[String, JsValue],
       config: OpenApiGeneratorConfig
   ): Unit = {
-    if (clazz.getName.contains("$") || config.banned.contains(clazz.getName) || config.banned.filter(_.contains("*")).map(RegexPool.apply).exists(_.matches(clazz.getName))) {
+    if (
+      clazz.getName.contains("$") || config.banned.contains(clazz.getName) || config.banned
+        .filter(_.contains("*"))
+        .map(RegexPool.apply)
+        .exists(_.matches(clazz.getName))
+    ) {
       return ()
     }
     if (clazz.getName.startsWith("otoroshi.")) {
       if (clazz.isInterface) {
         val children = scanResult.getClassesImplementing(clazz.getName).asScala.map(_.getName)
-        children.flatMap(cl => world.get(cl))
+        children
+          .flatMap(cl => world.get(cl))
           .foreach(cl => visitEntity(cl, clazz.some, result, config))
         adts = adts :+ Json.obj(
           clazz.getName -> Json.obj(
@@ -320,8 +334,8 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
 
       if (clazz.getName.startsWith("otoroshi.next.plugins")) {
         try {
-          val c = Class.forName(clazz.getName)
-          val m = c.getDeclaredMethod("defaultConfigObject")
+          val c   = Class.forName(clazz.getName)
+          val m   = c.getDeclaredMethod("defaultConfigObject")
           m.setAccessible(true)
           val res = m.invoke(c.getDeclaredConstructor().newInstance())
           res match {
@@ -330,13 +344,13 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
                 case Some(newClazz) =>
                   fields = (newClazz.getFieldInfo.asScala ++ newClazz.getDeclaredFieldInfo.asScala).toSet
                     .filter(_.isFinal)
-                case _ => ()
+                case _              => ()
               }
-            case _ =>
+            case _                =>
           }
         } catch {
           case _: Throwable => ()
-            // logger.debug(s"failed for ${clazz.getName}")
+          // logger.debug(s"failed for ${clazz.getName}")
         }
       }
 
@@ -417,14 +431,15 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         val typ  = field.getTypeSignatureOrTypeDescriptor
         typ match {
           case c: BaseTypeSignature                                                                              =>
-            val valueName = c.getTypeStr
-            val fieldName = config.fields_rename
+            val valueName      = c.getTypeStr
+            val fieldName      = config.fields_rename
               .select(s"$name:$valueName")
               .asOpt[String]
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
-            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
+            val finalFieldName =
+              if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, c.getTypeStr, typ).foreach { r =>
               properties = properties ++ Json.obj(
                 finalFieldName -> r.deepMerge(
@@ -436,14 +451,15 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             }
           case c: ClassRefTypeSignature
               if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.immutable.Map" =>
-            val valueName = c.getTypeArguments.asScala.tail.head.toString
-            val fieldName = config.fields_rename
+            val valueName      = c.getTypeArguments.asScala.tail.head.toString
+            val fieldName      = config.fields_rename
               .select(s"$name:$valueName")
               .asOpt[String]
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
-            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
+            val finalFieldName =
+              if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
                 finalFieldName -> Json.obj(
@@ -455,14 +471,15 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             }
           case c: ClassRefTypeSignature
               if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.Seq" =>
-            val valueName = c.getTypeArguments.asScala.head.toString
-            val fieldName = config.fields_rename
+            val valueName      = c.getTypeArguments.asScala.head.toString
+            val fieldName      = config.fields_rename
               .select(s"$name:$valueName")
               .asOpt[String]
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
-            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
+            val finalFieldName =
+              if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
                 finalFieldName -> Json.obj(
@@ -474,14 +491,15 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             }
           case c: ClassRefTypeSignature
               if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.immutable.List" =>
-            val valueName = c.getTypeArguments.asScala.head.toString
-            val fieldName = config.fields_rename
+            val valueName      = c.getTypeArguments.asScala.head.toString
+            val fieldName      = config.fields_rename
               .select(s"$name:$valueName")
               .asOpt[String]
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
-            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
+            val finalFieldName =
+              if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
                 finalFieldName -> Json.obj(
@@ -492,14 +510,15 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               )
             }
           case c: ClassRefTypeSignature if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.Option" =>
-            val valueName = c.getTypeArguments.asScala.head.toString
-            val fieldName = config.fields_rename
+            val valueName      = c.getTypeArguments.asScala.head.toString
+            val fieldName      = config.fields_rename
               .select(s"$name:$valueName")
               .asOpt[String]
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
-            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
+            val finalFieldName =
+              if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, valueName, typ).foreach { r =>
               properties = properties ++ Json.obj(
                 finalFieldName -> Json.obj(
@@ -512,14 +531,15 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
               )
             }
           case c: ClassRefTypeSignature                                                                          =>
-            val valueName = c.getBaseClassName
-            val fieldName = config.fields_rename
+            val valueName      = c.getBaseClassName
+            val fieldName      = config.fields_rename
               .select(s"$name:$valueName")
               .asOpt[String]
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name:$valueName").asOpt[String])
               .orElse(config.fields_rename.select(s"${clazz.getName}.$name").asOpt[String])
               .getOrElse(name)
-            val finalFieldName = if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
+            val finalFieldName =
+              if (field.getClassInfo.getPackageName.startsWith("otoroshi.next")) fieldName.camelToSnake else fieldName
             handleType(name, valueName, typ).map { r =>
               properties = properties ++ Json.obj(
                 finalFieldName -> r.deepMerge(Json.obj("description" -> getFieldDescription(clazz, name, typ, config)))
@@ -766,13 +786,13 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
                   "/api/swagger"
                 ) && !path.startsWith("/api/openapi") && !path.startsWith("/api/services/:serviceId/apikeys") && !path
                   .startsWith("/api/groups/:groupId/apikeys") => {
-              val name               = rest.mkString(" ").split("\\(").head
-              val methodName         = name.split("\\.").reverse.head
-              val controllerName     = name.split("\\.").reverse.tail.reverse.mkString(".")
-              val controller         = world.getOrElse(controllerName, null)
+              val name           = rest.mkString(" ").split("\\(").head
+              val methodName     = name.split("\\.").reverse.head
+              val controllerName = name.split("\\.").reverse.tail.reverse.mkString(".")
+              val controller     = world.getOrElse(controllerName, null)
 
               if (controller == null) {
-                  return (Json.obj(), Json.obj())
+                return (Json.obj(), Json.obj())
               }
 
               val method             = controller.getMethodInfo(methodName)
@@ -979,7 +999,12 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }
 
     entities.foreach { clazz =>
-      if (!config.banned.contains(clazz.getName) && !config.banned.filter(_.contains("*")).map(RegexPool.apply).exists(_.matches(clazz.getName))) {
+      if (
+        !config.banned.contains(clazz.getName) && !config.banned
+          .filter(_.contains("*"))
+          .map(RegexPool.apply)
+          .exists(_.matches(clazz.getName))
+      ) {
         visitEntity(clazz, None, result, config)
       }
     }
@@ -1041,7 +1066,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       )
       specFiles.foreach { specFile =>
         val prettyJson = spec.prettify.trim
-        val file = new File(specFile)
+        val file       = new File(specFile)
         logger.debug(s"writing spec to: '${file.getAbsolutePath}'")
         if (file.exists()) {
           val jsonRaw = Files.readString(file.toPath).trim

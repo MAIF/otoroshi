@@ -132,9 +132,9 @@ class AccessLog extends RequestTransformer {
     """.stripMargin
     )
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Logging)
-  def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
@@ -296,9 +296,9 @@ class AccessLogJson extends RequestTransformer {
       |```
     """.stripMargin)
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Logging)
-  def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
@@ -516,9 +516,9 @@ class KafkaAccessLog extends RequestTransformer {
       |```
     """.stripMargin)
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Logging)
-  def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
 
   override def stop(env: Env): Future[Unit] = {
     kafkaWrapperCache.foreach(_._2.close())

@@ -111,7 +111,7 @@ object implicits {
     def fromBase64: String       = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
     def sha256: String           = Hex.encodeHexString(BetterString.digest256.digest(obj.getBytes(StandardCharsets.UTF_8)))
     def sha512: String           = Hex.encodeHexString(BetterString.digest512.digest(obj.getBytes(StandardCharsets.UTF_8)))
-    def camelToSnake: String     = {
+    def camelToSnake: String = {
       obj.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase
       // obj.replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2").replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase
     }
@@ -339,18 +339,18 @@ object implicits {
     }
   }
 
-  implicit class BetterDecodedJWT(val jwt: DecodedJWT)                 extends AnyVal {
+  implicit class BetterDecodedJWT(val jwt: DecodedJWT)                        extends AnyVal {
     def claimStr(name: String): Option[String]   = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asString())
     def claimBool(name: String): Option[Boolean] = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asBoolean())
     def claimInt(name: String): Option[Int]      = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asInt())
     def claimLng(name: String): Option[Long]     = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asLong())
     def claimDbl(name: String): Option[Double]   = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asDouble())
-    def json: JsValue = Json.obj(
-      "header" -> jwt.getHeader.fromBase64.parseJson,
-      "payload" -> jwt.getPayload.fromBase64.parseJson,
+    def json: JsValue                            = Json.obj(
+      "header"  -> jwt.getHeader.fromBase64.parseJson,
+      "payload" -> jwt.getPayload.fromBase64.parseJson
     )
   }
-  implicit class BetterAtomicReference[A](val ref: AtomicReference[A]) extends AnyVal {
+  implicit class BetterAtomicReference[A](val ref: AtomicReference[A])        extends AnyVal {
     def getOrSet(f: => A): A = {
       val initValue = ref.get()
       if (initValue == null) {
@@ -362,7 +362,7 @@ object implicits {
       }
     }
   }
-  implicit class BetterDuration(val duration: Duration)                extends AnyVal {
+  implicit class BetterDuration(val duration: Duration)                       extends AnyVal {
     final def toHumanReadable: String = {
       val units       = Seq(
         TimeUnit.DAYS,
@@ -393,24 +393,25 @@ object implicits {
       }
     }
   }
-  implicit class BetterMapOfStringAndB[B](val theMap: Map[String, B])  extends AnyVal {
-    def put(key: String, value: B): Map[String, B] = theMap.+((key, value))
-    def put(tuple: (String, B)): Map[String, B] = theMap.+(tuple)
-    def remove(key: String): Map[String, B] = theMap.-(key)
-    def removeIgnoreCase(key: String): Map[String, B] = theMap.-(key).-(key.toLowerCase())
-    def containsIgnoreCase(key: String): Boolean = theMap.contains(key) || theMap.contains(key.toLowerCase())
-    def getIgnoreCase(key: String): Option[B] = theMap.get(key).orElse(theMap.get(key.toLowerCase()))
+  implicit class BetterMapOfStringAndB[B](val theMap: Map[String, B])         extends AnyVal {
+    def put(key: String, value: B): Map[String, B]                 = theMap.+((key, value))
+    def put(tuple: (String, B)): Map[String, B]                    = theMap.+(tuple)
+    def remove(key: String): Map[String, B]                        = theMap.-(key)
+    def removeIgnoreCase(key: String): Map[String, B]              = theMap.-(key).-(key.toLowerCase())
+    def containsIgnoreCase(key: String): Boolean                   = theMap.contains(key) || theMap.contains(key.toLowerCase())
+    def getIgnoreCase(key: String): Option[B]                      = theMap.get(key).orElse(theMap.get(key.toLowerCase()))
     def removeAndPutIgnoreCase(tuple: (String, B)): Map[String, B] = removeIgnoreCase(tuple._1).put(tuple)
   }
-  implicit class BetterTrieMapOfStringAndB[B](val theMap: TrieMap[String, B])  extends AnyVal {
-    def add(tuple: (String, B)): TrieMap[String, B] = theMap.+=(tuple)
-    def addAll(all:  TraversableOnce[(String, B)]): TrieMap[String, B] = theMap.++=(all)
-    def rem(key: String): TrieMap[String, B] = theMap.-=(key)
-    def remIgnoreCase(key: String): TrieMap[String, B] = theMap.-=(key).-=(key.toLowerCase())
-    def remAll(keys: TraversableOnce[String]): TrieMap[String, B] = theMap.--=(keys)
-    def remAllIgnoreCase(keys: TraversableOnce[String]): TrieMap[String, B] = theMap.--=(keys).--=(keys.map(_.toLowerCase()))
-    def containsIgnoreCase(key: String): Boolean = theMap.contains(key) || theMap.contains(key.toLowerCase())
-    def getIgnoreCase(key: String): Option[B] = theMap.get(key).orElse(theMap.get(key.toLowerCase()))
-    def remAndAddIgnoreCase(tuple: (String, B)): TrieMap[String, B] = remIgnoreCase(tuple._1).add(tuple)
+  implicit class BetterTrieMapOfStringAndB[B](val theMap: TrieMap[String, B]) extends AnyVal {
+    def add(tuple: (String, B)): TrieMap[String, B]                         = theMap.+=(tuple)
+    def addAll(all: TraversableOnce[(String, B)]): TrieMap[String, B]       = theMap.++=(all)
+    def rem(key: String): TrieMap[String, B]                                = theMap.-=(key)
+    def remIgnoreCase(key: String): TrieMap[String, B]                      = theMap.-=(key).-=(key.toLowerCase())
+    def remAll(keys: TraversableOnce[String]): TrieMap[String, B]           = theMap.--=(keys)
+    def remAllIgnoreCase(keys: TraversableOnce[String]): TrieMap[String, B] =
+      theMap.--=(keys).--=(keys.map(_.toLowerCase()))
+    def containsIgnoreCase(key: String): Boolean                            = theMap.contains(key) || theMap.contains(key.toLowerCase())
+    def getIgnoreCase(key: String): Option[B]                               = theMap.get(key).orElse(theMap.get(key.toLowerCase()))
+    def remAndAddIgnoreCase(tuple: (String, B)): TrieMap[String, B]         = remIgnoreCase(tuple._1).add(tuple)
   }
 }

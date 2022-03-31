@@ -138,7 +138,10 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
               (key, v)
             })
             .getOrElse(Map.empty),
-          userValidators = (json \ "userValidators").asOpt[Seq[JsValue]].map(_.flatMap(v => UserValidator.format.reads(v).asOpt)).getOrElse(Seq.empty)
+          userValidators = (json \ "userValidators")
+            .asOpt[Seq[JsValue]]
+            .map(_.flatMap(v => UserValidator.format.reads(v).asOpt))
+            .getOrElse(Seq.empty)
         )
       )
     } recover { case e =>

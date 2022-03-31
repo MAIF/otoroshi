@@ -109,7 +109,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       }
       def extractInfosFromJob(c: String): JsValue = {
         env.scriptManager.getAnyScript[Job](s"cp:$c") match {
-          case Left(_)                                                          => extractInfos(c)
+          case Left(_)                                                             => extractInfos(c)
           case Right(instance) if instance.jobVisibility == JobVisibility.UserLand => extractInfos(c)
           case Right(instance) if instance.jobVisibility == JobVisibility.Internal => JsNull
         }
@@ -121,19 +121,18 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
               "id"          -> s"cp:$c",
               "name"        -> c,
               "description" -> JsNull,
-              "pluginType"  -> PluginType.CompositeType.name,
+              "pluginType"  -> PluginType.CompositeType.name
             )
           case Right(instance) =>
             instance.jsonDescription ++ Json.obj(
-              "id"         -> s"cp:$c",
-              "name"       -> instance.name,
-              "pluginType" -> instance.pluginType.name,
-              "config_schema"  -> instance.configSchema.getOrElse(JsNull).as[JsValue],
-              "config_flow"    -> JsArray(instance.configFlow.map(JsString.apply)),
-
+              "id"                -> s"cp:$c",
+              "name"              -> instance.name,
+              "pluginType"        -> instance.pluginType.name,
+              "config_schema"     -> instance.configSchema.getOrElse(JsNull).as[JsValue],
+              "config_flow"       -> JsArray(instance.configFlow.map(JsString.apply)),
               "plugin_visibility" -> instance.visibility.json,
               "plugin_categories" -> JsArray(instance.categories.map(_.json)),
-              "plugin_steps"      -> JsArray(instance.steps.map(_.json)),
+              "plugin_steps"      -> JsArray(instance.steps.map(_.json))
             )
         }
       }
@@ -170,30 +169,28 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
             case (c, Right(instance)) =>
               println(c.id, c.name)
               Json.obj(
-                "id"            -> c.id,
-                "name"          -> JsString(Option(c.name).map(_.trim).filter(_.nonEmpty).getOrElse(instance.name)),
-                "description"   -> Option(c.desc)
+                "id"                -> c.id,
+                "name"              -> JsString(Option(c.name).map(_.trim).filter(_.nonEmpty).getOrElse(instance.name)),
+                "description"       -> Option(c.desc)
                   .map(_.trim)
                   .filter(_.nonEmpty)
                   .orElse(instance.description)
                   .map(JsString.apply)
                   .getOrElse(JsNull)
                   .as[JsValue],
-                "pluginType"    -> instance.pluginType.name,
-                "defaultConfig" -> instance.defaultConfig.getOrElse(JsNull).as[JsValue],
-                "configRoot"    -> instance.configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-                "configSchema"  -> instance.configSchema.getOrElse(JsNull).as[JsValue],
-                "configFlow"    -> JsArray(instance.configFlow.map(JsString.apply)),
-
-                "plugin_type"    -> instance.pluginType.name,
-                "default_config" -> instance.defaultConfig.getOrElse(JsNull).as[JsValue],
-                "config_root"    -> instance.configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-                "config_schema"  -> instance.configSchema.getOrElse(JsNull).as[JsValue],
-                "config_flow"    -> JsArray(instance.configFlow.map(JsString.apply)),
-
+                "pluginType"        -> instance.pluginType.name,
+                "defaultConfig"     -> instance.defaultConfig.getOrElse(JsNull).as[JsValue],
+                "configRoot"        -> instance.configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+                "configSchema"      -> instance.configSchema.getOrElse(JsNull).as[JsValue],
+                "configFlow"        -> JsArray(instance.configFlow.map(JsString.apply)),
+                "plugin_type"       -> instance.pluginType.name,
+                "default_config"    -> instance.defaultConfig.getOrElse(JsNull).as[JsValue],
+                "config_root"       -> instance.configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+                "config_schema"     -> instance.configSchema.getOrElse(JsNull).as[JsValue],
+                "config_flow"       -> JsArray(instance.configFlow.map(JsString.apply)),
                 "plugin_visibility" -> instance.visibility.json,
                 "plugin_categories" -> JsArray(instance.categories.map(_.json)),
-                "plugin_steps"      -> JsArray(instance.steps.map(_.json)),
+                "plugin_steps"      -> JsArray(instance.steps.map(_.json))
               )
           } ++
           cpTransformers.map(extractInfos) ++

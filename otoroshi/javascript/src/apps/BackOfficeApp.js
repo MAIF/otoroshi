@@ -137,10 +137,12 @@ class BackOfficeAppContainer extends Component {
     return (
       <div>
         <ReloadNewVersion />
-        {this.state.env && <>
-          <UpdateOtoroshiVersion env={this.state.env} />
-          <TopBar {...this.props} changePassword={this.state.env.changePassword} />
-        </>}
+        {this.state.env && (
+          <>
+            <UpdateOtoroshiVersion env={this.state.env} />
+            <TopBar {...this.props} changePassword={this.state.env.changePassword} />
+          </>
+        )}
         <div className="container-fluid">
           <div className="row">
             <div className="col-sm-2 sidebar" id="sidebar">
@@ -185,7 +187,7 @@ class BackOfficeAppContainer extends Component {
             </div>
             <div className="col-sm-10 offset-2 main">
               <div className="row">
-                <div className={classes.join(' ')} style={{ overflowX: "hidden" }}>
+                <div className={classes.join(' ')} style={{ overflowX: 'hidden' }}>
                   <DynamicTitle />
                   <div className="row" style={{ marginTop: 1 }}>
                     {!this.state.catchedError && (
@@ -243,27 +245,36 @@ class BackOfficeAppContainer extends Component {
                         />
                         <Route
                           path="/routes"
-                          component={(props) => <RouteDesignerPage
-                            globalEnv={this.state.env}
-                            setTitle={(t) => DynamicTitle.setContent(t)}
-                            getTitle={() => DynamicTitle.getContent()}
-                            {...props} />}
+                          component={(props) => (
+                            <RouteDesignerPage
+                              globalEnv={this.state.env}
+                              setTitle={(t) => DynamicTitle.setContent(t)}
+                              getTitle={() => DynamicTitle.getContent()}
+                              {...props}
+                            />
+                          )}
                         />
                         <Route
                           path="/backends"
-                          component={(props) => <BackendsPage
-                            globalEnv={this.state.env}
-                            setTitle={(t) => DynamicTitle.setContent(t)}
-                            getTitle={() => DynamicTitle.getContent()}
-                            {...props} />}
+                          component={(props) => (
+                            <BackendsPage
+                              globalEnv={this.state.env}
+                              setTitle={(t) => DynamicTitle.setContent(t)}
+                              getTitle={() => DynamicTitle.getContent()}
+                              {...props}
+                            />
+                          )}
                         />
                         <Route
                           path="/ngforms"
-                          component={(props) => <NgFormPlayground
-                            globalEnv={this.state.env}
-                            setTitle={(t) => DynamicTitle.setContent(t)}
-                            getTitle={() => DynamicTitle.getContent()}
-                            {...props} />}
+                          component={(props) => (
+                            <NgFormPlayground
+                              globalEnv={this.state.env}
+                              setTitle={(t) => DynamicTitle.setContent(t)}
+                              getTitle={() => DynamicTitle.getContent()}
+                              {...props}
+                            />
+                          )}
                         />
                         <Route
                           path="/apikeys/:taction/:titem"

@@ -2,7 +2,15 @@ package otoroshi.next.plugins
 
 import akka.stream.Materializer
 import otoroshi.env.Env
-import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginConfig, NgPluginHttpResponse, NgPluginVisibility, NgRequestTransformer, NgStep, NgTransformerResponseContext}
+import otoroshi.next.plugins.api.{
+  NgPluginCategory,
+  NgPluginConfig,
+  NgPluginHttpResponse,
+  NgPluginVisibility,
+  NgRequestTransformer,
+  NgStep,
+  NgTransformerResponseContext
+}
 import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.gzip.GzipConfig.logger
 import otoroshi.utils.syntax.implicits._
@@ -73,20 +81,20 @@ class GzipResponseCompressor extends NgRequestTransformer {
 
   private val configReads: Reads[NgGzipConfig] = NgGzipConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean                     = true
-  override def usesCallbacks: Boolean            = false
-  override def transformsRequest: Boolean        = false
-  override def transformsResponse: Boolean       = true
-  override def transformsError: Boolean          = false
-  override def isTransformRequestAsync: Boolean  = true
-  override def isTransformResponseAsync: Boolean = false
-  override def name: String                      = "Gzip compression"
-  override def description: Option[String]       = "This plugin can compress responses using gzip".some
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = false
+  override def transformsResponse: Boolean                 = true
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = true
+  override def isTransformResponseAsync: Boolean           = false
+  override def name: String                                = "Gzip compression"
+  override def description: Option[String]                 = "This plugin can compress responses using gzip".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgGzipConfig().some
 
   override def transformResponseSync(

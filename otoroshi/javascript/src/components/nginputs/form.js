@@ -1,119 +1,118 @@
 import React, { Component } from 'react';
 import _ from 'lodash';
 
-import { 
-  NgPasswordRenderer, 
-  NgJsonRenderer, 
-  NgStringRenderer, 
-  NgSelectRenderer, 
-  NgTextRenderer, 
-  NgNumberRenderer, 
-  NgBooleanRenderer, 
-  NgArrayRenderer, 
-  NgObjectRenderer, 
-  NgArraySelectRenderer, 
-  NgObjectSelectRenderer, 
-  NgDateRenderer, 
-  NgHiddenRenderer, 
-  NgSingleCodeLineRenderer, 
-  NgCodeRenderer 
+import {
+  NgPasswordRenderer,
+  NgJsonRenderer,
+  NgStringRenderer,
+  NgSelectRenderer,
+  NgTextRenderer,
+  NgNumberRenderer,
+  NgBooleanRenderer,
+  NgArrayRenderer,
+  NgObjectRenderer,
+  NgArraySelectRenderer,
+  NgObjectSelectRenderer,
+  NgDateRenderer,
+  NgHiddenRenderer,
+  NgSingleCodeLineRenderer,
+  NgCodeRenderer,
 } from './inputs';
 
-import { 
-  NgStepNotFound, 
-  NgRendererNotFound, 
-  NgValidationRenderer, 
-  NgFormRenderer 
+import {
+  NgStepNotFound,
+  NgRendererNotFound,
+  NgValidationRenderer,
+  NgFormRenderer,
 } from './components';
 
 const Helpers = {
   rendererFor: (type, components) => {
-    if (type === "string") {
+    if (type === 'string') {
       return components.StringRenderer;
-    } else if (type === "bool" || type === "boolean") {
+    } else if (type === 'bool' || type === 'boolean') {
       return components.BooleanRenderer;
-    } else if (type === "number") {
+    } else if (type === 'number') {
       return components.NumberRenderer;
-    } else if (type === "array") {
+    } else if (type === 'array') {
       return components.ArrayRenderer;
-    } else if (type === "object") {
+    } else if (type === 'object') {
       return components.ObjectRenderer;
-    } else if (type === "date") {
+    } else if (type === 'date') {
       return components.DateRenderer;
-    } else if (type === "select") {
+    } else if (type === 'select') {
       return components.SelectRenderer;
-    } else if (type === "array-select") {
+    } else if (type === 'array-select') {
       return components.ArraySelectRenderer;
-    } else if (type === "object-select") {
+    } else if (type === 'object-select') {
       return components.ObjectSelectRenderer;
-    } else if (type === "code") {
+    } else if (type === 'code') {
       return components.CodeRenderer;
-    } else if (type === "json") {
+    } else if (type === 'json') {
       return components.JsonRenderer;
-    } else if (type === "single-line-of-code") {
+    } else if (type === 'single-line-of-code') {
       return components.SingleCodeLineRenderer;
-    } else if (type === "text") {
+    } else if (type === 'text') {
       return components.TextRenderer;
-    } else if (type === "hidden") {
+    } else if (type === 'hidden') {
       return components.HiddenRenderer;
-    } else if (type === "password") {
+    } else if (type === 'password') {
       return components.PasswordRenderer;
-    } else if (type === "form") {
+    } else if (type === 'form') {
       return NgForm;
     } else {
       return components.RendererNotFound;
     }
-  }
-}
+  },
+};
 
 export class NgStep extends Component {
-
   validate = (value) => {
     const constraints = this.props.schema.constraints || [];
     if (this.props.schema.typechecks) {
-      if (this.props.schema.type === "string") {
-        constraints.push(yup.string().optional())
-      } else if (this.props.schema.type === "number") {
-        constraints.push(yup.number().optional())
-      } else if (this.props.schema.type === "bool" || this.props.schema.type === "boolean") {
-        constraints.push(yup.boolean().optional())
-      } else if (this.props.schema.type === "array") {
+      if (this.props.schema.type === 'string') {
+        constraints.push(yup.string().optional());
+      } else if (this.props.schema.type === 'number') {
+        constraints.push(yup.number().optional());
+      } else if (this.props.schema.type === 'bool' || this.props.schema.type === 'boolean') {
+        constraints.push(yup.boolean().optional());
+      } else if (this.props.schema.type === 'array') {
         // constraints.push(yup.array().of())
-      } else if (this.props.schema.type === "object") {
+      } else if (this.props.schema.type === 'object') {
         // constraints.push(yup.object().of())
-      } 
+      }
     }
     if (this.props.schema.required) {
-      if (this.props.schema.type === "string") {
-        constraints.push(yup.string().required())
-      } else if (this.props.schema.type === "number") {
-        constraints.push(yup.number().required())
-      } else if (this.props.schema.type === "bool" || this.props.schema.type === "boolean") {
-        constraints.push(yup.boolean().required())
-      } else if (this.props.schema.type === "array") {
+      if (this.props.schema.type === 'string') {
+        constraints.push(yup.string().required());
+      } else if (this.props.schema.type === 'number') {
+        constraints.push(yup.number().required());
+      } else if (this.props.schema.type === 'bool' || this.props.schema.type === 'boolean') {
+        constraints.push(yup.boolean().required());
+      } else if (this.props.schema.type === 'array') {
         // constraints.push(yup.array().of())
-      } else if (this.props.schema.type === "object") {
+      } else if (this.props.schema.type === 'object') {
         // constraints.push(yup.object().of())
-      } 
+      }
     }
     if (this.props.schema.constraints && this.props.schema.constraints.length > 0) {
-      const res = { __valid: true, __errors: [] }
-      this.props.schema.constraints.map(validator => {
+      const res = { __valid: true, __errors: [] };
+      this.props.schema.constraints.map((validator) => {
         if (validator.validateSync) {
           try {
             validator.validateSync(value);
-          } catch(e) {
-            res.__valid = false
-            res.__errors.push(e.message)
+          } catch (e) {
+            res.__valid = false;
+            res.__errors.push(e.message);
           }
         } else if (_.isFunction(validator)) {
           const r = validator(value);
           if (!r.valid) {
             res.__valid = false;
           }
-          res.__errors = [...res.__errors, ...r.errors ]
+          res.__errors = [...res.__errors, ...r.errors];
         }
-      })
+      });
       this.props.setValidation(this.props.path, res);
       return res;
     } else {
@@ -121,7 +120,7 @@ export class NgStep extends Component {
       this.props.setValidation(this.props.path, res);
       return res;
     }
-  }
+  };
 
   renderer = () => {
     if (this.props.schema.component) {
@@ -135,20 +134,20 @@ export class NgStep extends Component {
     } else {
       return Helpers.rendererFor(this.props.schema.type, this.props.components);
     }
-  }
+  };
 
   render() {
     const Renderer = this.renderer();
     const validation = this.validate(this.props.value);
     const ValidationRenderer = this.props.components.ValidationRenderer;
     return (
-      <ValidationRenderer validation={validation} >
-        <Renderer 
-          validation={validation} 
-          {...this.props} 
+      <ValidationRenderer validation={validation}>
+        <Renderer
+          validation={validation}
+          {...this.props}
           embedded
-          schema={this.props.schema.schema || this.props.schema} 
-          flow={this.props.schema.flow || this.props.flow} 
+          schema={this.props.schema.schema || this.props.schema}
+          flow={this.props.schema.flow || this.props.flow}
           rawSchema={this.props.schema}
           rawFlow={this.props.flow}
         />
@@ -158,7 +157,6 @@ export class NgStep extends Component {
 }
 
 export class NgForm extends Component {
-
   static DefaultTheme = {
     FormRenderer: NgFormRenderer,
     StepNotFound: NgStepNotFound,
@@ -185,7 +183,7 @@ export class NgForm extends Component {
     NgForm.DefaultTheme = theme;
   };
 
-  state = { validation: { valid: true, graph: {}}};
+  state = { validation: { valid: true, graph: {} } };
   tasks = [];
 
   componentDidMount() {
@@ -202,7 +200,7 @@ export class NgForm extends Component {
 
   isValid = (graph) => {
     return !(JSON.stringify(graph).indexOf('"__valid":false') > -1);
-  }
+  };
 
   handleTasks = () => {
     if (this.tasks.length > 0) {
@@ -214,7 +212,7 @@ export class NgForm extends Component {
         if (task) {
           const { path, validation } = task;
           let current = currentValidation.graph;
-          path.map(segment => {
+          path.map((segment) => {
             if (!current[segment]) {
               current[segment] = {};
             }
@@ -233,14 +231,18 @@ export class NgForm extends Component {
             this.rootOnChange(this.getValue());
           }
         }
-      }
+      };
       handleNext();
     }
-  }
+  };
 
   getValue = () => {
-    return this.props.value ? (_.isFunction(this.props.value) ? this.props.value() : this.props.value) : null;
-  }
+    return this.props.value
+      ? _.isFunction(this.props.value)
+        ? this.props.value()
+        : this.props.value
+      : null;
+  };
 
   validation = () => {
     if (!this.props.embedded) {
@@ -248,13 +250,13 @@ export class NgForm extends Component {
     } else {
       return this.props.validation;
     }
-  }
+  };
 
   rootOnChange = (value) => {
     const validation = this.validation();
     if (this.props.onChange) this.props.onChange(value, validation);
     if (this.props.onValidationChange) this.props.onValidationChange(validation);
-  }
+  };
 
   setValidation = (path, validation) => {
     if (!this.props.embedded) {
@@ -262,14 +264,14 @@ export class NgForm extends Component {
     } else {
       this.props.setValidation(path, validation);
     }
-  }
+  };
 
   convertSchema = (schema) => {
     if (
-      schema.array || 
-      schema.format || 
-      schema.createOption || 
-      schema.isMulti || 
+      schema.array ||
+      schema.format ||
+      schema.createOption ||
+      schema.isMulti ||
       schema.defaultKeyValue ||
       schema.label ||
       schema.placeholder ||
@@ -282,22 +284,22 @@ export class NgForm extends Component {
       schema.conditionalSchema
     ) {
       const possible = {
-        'select': 'select',
-        'code': 'code',
-        'singleLineCode': 'single-line-of-code',
-        'markdown': 'code',
-        'text': 'text',
-        'hidden': 'hidden',
-        'password': 'password',
-        'form': 'form',
+        select: 'select',
+        code: 'code',
+        singleLineCode: 'single-line-of-code',
+        markdown: 'code',
+        text: 'text',
+        hidden: 'hidden',
+        password: 'password',
+        form: 'form',
       };
       let renderer = possible[schema.format] || null;
       let itemRenderer = null;
       if (schema.array && schema.format === 'form') {
-        itemRenderer = Helpers.rendererFor(renderer, this.props.components)
+        itemRenderer = Helpers.rendererFor(renderer, this.props.components);
       }
       const config = {
-        type: schema.array ? 'array' : (schema.format === 'form' ? 'form' : schema.type),
+        type: schema.array ? 'array' : schema.format === 'form' ? 'form' : schema.type,
         of: schema.array ? schema.type : null,
         constraints: schema.constraints,
         visible: schema.visible,
@@ -313,19 +315,22 @@ export class NgForm extends Component {
           placeholder: schema.placeholder,
           help: schema.help,
           disabled: schema.disabled,
-        }
-      }
+        },
+      };
       return config;
     } else {
       return schema;
     }
-  }
+  };
 
   render() {
     const value = this.getValue();
     const flow = (_.isFunction(this.props.flow) ? this.props.flow(value) : this.props.flow) || [];
-    const schema = (_.isFunction(this.props.schema) ? this.props.schema(value) : this.props.schema) || {};
-    const propsComponents = _.isFunction(this.props.components) ? this.props.components(value) : this.props.components;
+    const schema =
+      (_.isFunction(this.props.schema) ? this.props.schema(value) : this.props.schema) || {};
+    const propsComponents = _.isFunction(this.props.components)
+      ? this.props.components(value)
+      : this.props.components;
     const components = { ...NgForm.DefaultTheme, ...propsComponents }; // TODO: get theme from context also
     const FormRenderer = components.FormRenderer;
     const StepNotFound = components.StepNotFound;
@@ -335,43 +340,50 @@ export class NgForm extends Component {
     const path = this.props.path || [];
     return (
       <FormRenderer {...this.props}>
-        {flow && flow.map(name => {
-          const stepSchema = schema[name];
-          if (stepSchema) {
-            const visible = ('visible' in stepSchema) ? (_.isFunction(stepSchema.visible) ? stepSchema.visible(value) : stepSchema.visible) : true;
-            if (visible) {
-              return <NgStep
-                key={name}
-                name={name} 
-                embedded
-                fromArray={this.props.fromArray}
-                path={root ? [name] : [...path, name]}
-                validation={validation}
-                setValidation={this.setValidation}
-                components={components}
-                schema={this.convertSchema(stepSchema)} 
-                value={value ? value[name] : null}
-                onChange={e => {
-                  const newValue = value ? { ...value, [name]: e } : { [name]: e };
-                  this.rootOnChange(newValue);
-                }}
-                rootValue={value} 
-                rootOnChange={this.rootOnChange}
-              />
+        {flow &&
+          flow.map((name) => {
+            const stepSchema = schema[name];
+            if (stepSchema) {
+              const visible =
+                'visible' in stepSchema
+                  ? _.isFunction(stepSchema.visible)
+                    ? stepSchema.visible(value)
+                    : stepSchema.visible
+                  : true;
+              if (visible) {
+                return (
+                  <NgStep
+                    key={name}
+                    name={name}
+                    embedded
+                    fromArray={this.props.fromArray}
+                    path={root ? [name] : [...path, name]}
+                    validation={validation}
+                    setValidation={this.setValidation}
+                    components={components}
+                    schema={this.convertSchema(stepSchema)}
+                    value={value ? value[name] : null}
+                    onChange={(e) => {
+                      const newValue = value ? { ...value, [name]: e } : { [name]: e };
+                      this.rootOnChange(newValue);
+                    }}
+                    rootValue={value}
+                    rootOnChange={this.rootOnChange}
+                  />
+                );
+              } else {
+                return null;
+              }
             } else {
-              return null;
+              return <StepNotFound name={name} />;
             }
-          } else {
-            return <StepNotFound name={name} />
-          }
-        })}
+          })}
       </FormRenderer>
     );
   }
 }
 
 export class NgFormState extends Component {
-
   state = { value: this.props.defaultValue || {}, validation: null };
 
   onChange = (value, validation) => {
@@ -380,13 +392,9 @@ export class NgFormState extends Component {
         this.props.onChange(value, validation);
       }
     });
-  }
+  };
 
   render() {
-    return (
-      <>
-        {this.props.children(this.state.value, this.onChange)}
-      </>
-    );
+    return <>{this.props.children(this.state.value, this.onChange)}</>;
   }
 }

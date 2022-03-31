@@ -150,9 +150,9 @@ class WorkflowEndpoint extends RequestTransformer {
     )
   }
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
-  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext

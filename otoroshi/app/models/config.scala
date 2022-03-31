@@ -474,22 +474,22 @@ object TlsSettings {
 }
 
 case class DefaultTemplates(
-  route: Option[JsObject] = Json.obj().some, // Option[NgRoute],
-  service: Option[JsObject] = Json.obj().some, // Option[NgService],
-  backend: Option[JsObject] = Json.obj().some, // Option[NgBackend],
-  target: Option[JsObject] = Json.obj().some, // Option[NgTarget],
-  descriptor: Option[JsObject] = Json.obj().some, // Option[ServiceDescriptor],
-  apikey: Option[JsObject] = Json.obj().some, // Option[ApiKey],
-  group: Option[JsObject] = Json.obj().some, // Option[ServiceGroup],
-  template: Option[JsObject] = Json.obj().some, // Option[ErrorTemplate],
-  verifier: Option[JsObject] = Json.obj().some, // Option[GlobalJwtVerifier],
-  authConfig: Option[JsObject] = Json.obj().some, // Option[AuthModuleConfig],
-  certificate: Option[JsObject] = Json.obj().some, // Option[Cert],
-  script: Option[JsObject] = Json.obj().some, // Option[Script],
-  tcpService: Option[JsObject] = Json.obj().some, // Option[TcpService],
-  dataExporter: Option[JsObject] = Json.obj().some, // Option[DataExporterConfig],
-  tenant: Option[JsObject] = Json.obj().some, // Option[Tenant],
-  team: Option[JsObject] = Json.obj().some, // Option[Team],
+    route: Option[JsObject] = Json.obj().some,        // Option[NgRoute],
+    service: Option[JsObject] = Json.obj().some,      // Option[NgService],
+    backend: Option[JsObject] = Json.obj().some,      // Option[NgBackend],
+    target: Option[JsObject] = Json.obj().some,       // Option[NgTarget],
+    descriptor: Option[JsObject] = Json.obj().some,   // Option[ServiceDescriptor],
+    apikey: Option[JsObject] = Json.obj().some,       // Option[ApiKey],
+    group: Option[JsObject] = Json.obj().some,        // Option[ServiceGroup],
+    template: Option[JsObject] = Json.obj().some,     // Option[ErrorTemplate],
+    verifier: Option[JsObject] = Json.obj().some,     // Option[GlobalJwtVerifier],
+    authConfig: Option[JsObject] = Json.obj().some,   // Option[AuthModuleConfig],
+    certificate: Option[JsObject] = Json.obj().some,  // Option[Cert],
+    script: Option[JsObject] = Json.obj().some,       // Option[Script],
+    tcpService: Option[JsObject] = Json.obj().some,   // Option[TcpService],
+    dataExporter: Option[JsObject] = Json.obj().some, // Option[DataExporterConfig],
+    tenant: Option[JsObject] = Json.obj().some,       // Option[Tenant],
+    team: Option[JsObject] = Json.obj().some          // Option[Team],
 ) {
   def json: JsValue = DefaultTemplates.format.writes(this)
 }
@@ -514,7 +514,7 @@ object DefaultTemplates {
           tcpService = json.select("tcpService").asOpt[JsObject],
           dataExporter = json.select("dataExporter").asOpt[JsObject],
           tenant = json.select("tenant").asOpt[JsObject],
-          team = json.select("team").asOpt[JsObject],
+          team = json.select("team").asOpt[JsObject]
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -522,22 +522,22 @@ object DefaultTemplates {
       }
     }
     override def writes(o: DefaultTemplates): JsValue = Json.obj(
-      "route" -> o.route.getOrElse(JsNull).asValue,
-      "service" -> o.service.getOrElse(JsNull).asValue,
-      "backend" -> o.backend.getOrElse(JsNull).asValue,
-      "target" -> o.target.getOrElse(JsNull).asValue,
-      "descriptor" -> o.descriptor.getOrElse(JsNull).asValue,
-      "apikey" -> o.apikey.getOrElse(JsNull).asValue,
-      "group" -> o.group.getOrElse(JsNull).asValue,
-      "template" -> o.template.getOrElse(JsNull).asValue,
-      "verifier" -> o.verifier.getOrElse(JsNull).asValue,
-      "authConfig" -> o.authConfig.getOrElse(JsNull).asValue,
-      "certificate" -> o.certificate.getOrElse(JsNull).asValue,
-      "script" -> o.script.getOrElse(JsNull).asValue,
-      "tcpService" -> o.tcpService.getOrElse(JsNull).asValue,
+      "route"        -> o.route.getOrElse(JsNull).asValue,
+      "service"      -> o.service.getOrElse(JsNull).asValue,
+      "backend"      -> o.backend.getOrElse(JsNull).asValue,
+      "target"       -> o.target.getOrElse(JsNull).asValue,
+      "descriptor"   -> o.descriptor.getOrElse(JsNull).asValue,
+      "apikey"       -> o.apikey.getOrElse(JsNull).asValue,
+      "group"        -> o.group.getOrElse(JsNull).asValue,
+      "template"     -> o.template.getOrElse(JsNull).asValue,
+      "verifier"     -> o.verifier.getOrElse(JsNull).asValue,
+      "authConfig"   -> o.authConfig.getOrElse(JsNull).asValue,
+      "certificate"  -> o.certificate.getOrElse(JsNull).asValue,
+      "script"       -> o.script.getOrElse(JsNull).asValue,
+      "tcpService"   -> o.tcpService.getOrElse(JsNull).asValue,
       "dataExporter" -> o.dataExporter.getOrElse(JsNull).asValue,
-      "tenant" -> o.tenant.getOrElse(JsNull).asValue,
-      "team" -> o.team.getOrElse(JsNull).asValue,
+      "tenant"       -> o.tenant.getOrElse(JsNull).asValue,
+      "team"         -> o.team.getOrElse(JsNull).asValue
     )
   }
 }
@@ -722,7 +722,7 @@ object GlobalConfig {
         "quotasSettings"          -> o.quotasSettings.json,
         "plugins"                 -> o.plugins.json,
         "metadata"                -> o.metadata,
-        "templates"               -> o.templates.json,
+        "templates"               -> o.templates.json
       )
     }
     override def reads(json: JsValue): JsResult[GlobalConfig] =
@@ -851,7 +851,9 @@ object GlobalConfig {
           plugins = Plugins.format
             .reads((json \ "plugins").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(Plugins()),
-          templates = json.select("templates").asOpt[String]
+          templates = json
+            .select("templates")
+            .asOpt[String]
             .flatMap(str => DefaultTemplates.format.reads(Json.parse(str)).asOpt)
             .orElse(json.select("templates").asOpt(DefaultTemplates.format))
             .getOrElse(DefaultTemplates()),
@@ -897,29 +899,29 @@ trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
 }
 
 case class OtoroshiExport(
-  config: GlobalConfig,
-  descs: Seq[ServiceDescriptor] = Seq.empty,
-  apikeys: Seq[ApiKey] = Seq.empty,
-  groups: Seq[ServiceGroup] = Seq.empty,
-  tmplts: Seq[ErrorTemplate] = Seq.empty,
-  calls: Long = 0,
-  dataIn: Long = 0,
-  dataOut: Long = 0,
-  admins: Seq[WebAuthnOtoroshiAdmin] = Seq.empty,
-  simpleAdmins: Seq[SimpleOtoroshiAdmin] = Seq.empty,
-  jwtVerifiers: Seq[GlobalJwtVerifier] = Seq.empty,
-  authConfigs: Seq[AuthModuleConfig] = Seq.empty,
-  certificates: Seq[Cert] = Seq.empty,
-  clientValidators: Seq[ClientCertificateValidator] = Seq.empty,
-  scripts: Seq[Script] = Seq.empty,
-  tcpServices: Seq[TcpService] = Seq.empty,
-  dataExporters: Seq[DataExporterConfig] = Seq.empty,
-  tenants: Seq[Tenant] = Seq.empty,
-  teams: Seq[Team] = Seq.empty,
-  routes: Seq[NgRoute] = Seq.empty,
-  services: Seq[NgService] = Seq.empty,
-  backends: Seq[StoredNgBackend] = Seq.empty,
-  targets: Seq[StoredNgTarget] = Seq.empty,
+    config: GlobalConfig,
+    descs: Seq[ServiceDescriptor] = Seq.empty,
+    apikeys: Seq[ApiKey] = Seq.empty,
+    groups: Seq[ServiceGroup] = Seq.empty,
+    tmplts: Seq[ErrorTemplate] = Seq.empty,
+    calls: Long = 0,
+    dataIn: Long = 0,
+    dataOut: Long = 0,
+    admins: Seq[WebAuthnOtoroshiAdmin] = Seq.empty,
+    simpleAdmins: Seq[SimpleOtoroshiAdmin] = Seq.empty,
+    jwtVerifiers: Seq[GlobalJwtVerifier] = Seq.empty,
+    authConfigs: Seq[AuthModuleConfig] = Seq.empty,
+    certificates: Seq[Cert] = Seq.empty,
+    clientValidators: Seq[ClientCertificateValidator] = Seq.empty,
+    scripts: Seq[Script] = Seq.empty,
+    tcpServices: Seq[TcpService] = Seq.empty,
+    dataExporters: Seq[DataExporterConfig] = Seq.empty,
+    tenants: Seq[Tenant] = Seq.empty,
+    teams: Seq[Team] = Seq.empty,
+    routes: Seq[NgRoute] = Seq.empty,
+    services: Seq[NgService] = Seq.empty,
+    backends: Seq[StoredNgBackend] = Seq.empty,
+    targets: Seq[StoredNgTarget] = Seq.empty
 ) {
 
   import otoroshi.utils.syntax.implicits._
@@ -1091,7 +1093,7 @@ case class OtoroshiExport(
       "routes"             -> JsArray(routes.map(_.json)),
       "services"           -> JsArray(services.map(_.json)),
       "backends"           -> JsArray(backends.map(_.json)),
-      "targets"            -> JsArray(targets.map(_.json)),
+      "targets"            -> JsArray(targets.map(_.json))
     )
   }
 }

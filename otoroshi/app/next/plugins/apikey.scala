@@ -23,21 +23,21 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
 
   private val configReads: Reads[NgApikeyCallsConfig] = NgApikeyCallsConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.MatchRoute, NgStep.ValidateAccess, NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.MatchRoute, NgStep.ValidateAccess, NgStep.TransformRequest)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Apikey, NgPluginCategory.Security)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean                     = true
-  override def usesCallbacks: Boolean            = false
-  override def transformsRequest: Boolean        = true
-  override def transformsResponse: Boolean       = false
-  override def transformsError: Boolean          = false
-  override def isTransformRequestAsync: Boolean  = false
-  override def isTransformResponseAsync: Boolean = false
-  override def isAccessAsync: Boolean            = true
-  override def name: String                      = "Apikeys"
-  override def description: Option[String]       = "This plugin expects to find an apikey to allow the request to pass".some
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = false
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = false
+  override def isAccessAsync: Boolean                      = true
+  override def name: String                                = "Apikeys"
+  override def description: Option[String]                 = "This plugin expects to find an apikey to allow the request to pass".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgApikeyCallsConfig().some
 
   override def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean = {

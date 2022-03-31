@@ -1014,7 +1014,7 @@ export class DangerZonePage extends Component {
       props: {
         label: '',
         mode: 'json',
-      }
+      },
     },
     metadata: {
       type: 'object',
@@ -1318,14 +1318,14 @@ export class DangerZonePage extends Component {
         <div className="row">
           <div className="mb-3 btnsService">
             <div className="displayGroupBtn">
-                <button
-                  title="Add item"
-                  className="btn btn-success"
-                  type="button"
-                  onClick={this.saveGlobalConfig}
-                  {...propsDisabled}>
-                  <i className="fas fa-hdd" />
-                </button>
+              <button
+                title="Add item"
+                className="btn btn-success"
+                type="button"
+                onClick={this.saveGlobalConfig}
+                {...propsDisabled}>
+                <i className="fas fa-hdd" />
+              </button>
             </div>
           </div>
         </div>

@@ -23,13 +23,20 @@ case class NgFrontend(
     "strip_path" -> stripPath,
     "exact"      -> exact,
     "headers"    -> headers,
-    "query"    -> query,
+    "query"      -> query,
     "methods"    -> methods
   )
 }
 
 object NgFrontend {
-  def empty: NgFrontend = NgFrontend(domains = Seq.empty, headers = Map.empty, query = Map.empty, methods = Seq.empty, stripPath = true, exact = false)
+  def empty: NgFrontend = NgFrontend(
+    domains = Seq.empty,
+    headers = Map.empty,
+    query = Map.empty,
+    methods = Seq.empty,
+    stripPath = true,
+    exact = false
+  )
   def readFrom(lookup: JsLookupResult): NgFrontend = {
     lookup.asOpt[JsObject] match {
       case None      => empty

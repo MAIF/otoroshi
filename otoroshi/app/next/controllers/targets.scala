@@ -150,11 +150,14 @@ class NgTargetsController(val ApiAction: ApiAction, val cc: ControllerComponents
 
   def form() = ApiAction {
     env.openApiSchema.asForms.get("otoroshi.next.models.NgTarget") match {
-      case Some(value)  => Ok(Json.obj(
-        "schema" -> value.schema,
-        "flow" -> value.flow
-      ))
-      case _            => NotFound(Json.obj("error" -> "Schema and flow not found"))
+      case Some(value) =>
+        Ok(
+          Json.obj(
+            "schema" -> value.schema,
+            "flow"   -> value.flow
+          )
+        )
+      case _           => NotFound(Json.obj("error" -> "Schema and flow not found"))
     }
   }
 
@@ -173,10 +176,15 @@ class NgTargetsController(val ApiAction: ApiAction, val cc: ControllerComponents
         tls = true
       )
     )
-    env.datastores.globalConfigDataStore.latest().templates.target.map { template =>
-      Ok(defaultTarget.json.asObject.deepMerge(template))
-    }.getOrElse {
-      Ok(defaultTarget.json)
-    }
+    env.datastores.globalConfigDataStore
+      .latest()
+      .templates
+      .target
+      .map { template =>
+        Ok(defaultTarget.json.asObject.deepMerge(template))
+      }
+      .getOrElse {
+        Ok(defaultTarget.json)
+      }
   }
 }

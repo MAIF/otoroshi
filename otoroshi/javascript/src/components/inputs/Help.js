@@ -9,8 +9,8 @@ export class Help extends Component {
           ref={(r) => {
             if (r)
               new bootstrap.Tooltip(r, {
-                container: 'body'
-              })
+                container: 'body',
+              });
           }}
           className="far fa-question-circle"
           data-toggle="tooltip"

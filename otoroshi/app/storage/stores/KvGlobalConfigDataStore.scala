@@ -162,7 +162,9 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       super.findById(id)(ec, env)
     }
   }
-  override def findByIdAndFillSecrets(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[GlobalConfig]] = {
+  override def findByIdAndFillSecrets(
+      id: String
+  )(implicit ec: ExecutionContext, env: Env): Future[Option[GlobalConfig]] = {
     val staticGlobalScripts: GlobalScripts = env.staticGlobalScripts
     if (/*env.staticExposedDomainEnabled && */ staticGlobalScripts.enabled) {
       super
@@ -237,8 +239,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
-    super.set(value, pxMilliseconds)(ec, env).andThen {
-      case Success(_) => value.fillSecrets(GlobalConfig._fmt).map(gc => configCache.set(gc))
+    super.set(value, pxMilliseconds)(ec, env).andThen { case Success(_) =>
+      value.fillSecrets(GlobalConfig._fmt).map(gc => configCache.set(gc))
     }
   }
 
@@ -259,10 +261,10 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     val dataExporters      = (export \ "dataExporters").asOpt[JsArray].getOrElse(Json.arr())
     val tenants            = (export \ "tenants").asOpt[JsArray].getOrElse(Json.arr())
     val teams              = (export \ "teams").asOpt[JsArray].getOrElse(Json.arr())
-    val routes = (export \ "routes").asOpt[JsArray].getOrElse(Json.arr())
-    val services = (export \ "services").asOpt[JsArray].getOrElse(Json.arr())
-    val backends = (export \ "backends").asOpt[JsArray].getOrElse(Json.arr())
-    val targets = (export \ "targets").asOpt[JsArray].getOrElse(Json.arr())
+    val routes             = (export \ "routes").asOpt[JsArray].getOrElse(Json.arr())
+    val services           = (export \ "services").asOpt[JsArray].getOrElse(Json.arr())
+    val backends           = (export \ "backends").asOpt[JsArray].getOrElse(Json.arr())
+    val targets            = (export \ "targets").asOpt[JsArray].getOrElse(Json.arr())
 
     for {
       _ <- redisCli
@@ -355,7 +357,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       routes,
       services,
       backends,
-      targets,
+      targets
     ).json
   }
 

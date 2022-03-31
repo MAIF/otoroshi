@@ -70,18 +70,18 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
   private val logger                               = Logger("otoroshi-next-plugins-canary-mode")
   private val configReads: Reads[NgCanarySettings] = NgCanarySettings.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute, NgStep.TransformResponse)
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute, NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean = false
-  override def core: Boolean                       = true
-  override def usesCallbacks: Boolean              = false
-  override def transformsRequest: Boolean          = false
-  override def transformsResponse: Boolean         = true
-  override def transformsError: Boolean            = false
-  override def name: String                        = "Canary mode"
-  override def description: Option[String]         = "This plugin can split a portion of the traffic to canary backends".some
+  override def multiInstance: Boolean                      = false
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = false
+  override def transformsResponse: Boolean                 = true
+  override def transformsError: Boolean                    = false
+  override def name: String                                = "Canary mode"
+  override def description: Option[String]                 = "This plugin can split a portion of the traffic to canary backends".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgCanarySettings().some
 
   override def isPreRouteAsync: Boolean          = true

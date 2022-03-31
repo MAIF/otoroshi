@@ -59,7 +59,7 @@ class AuthController(
         val unsignedState = decryptState(req)
         logger.debug(s"Decoded state : ${Json.prettyPrint(unsignedState)}")
         (unsignedState \ "hash").asOpt[String].getOrElse("--")
-      case _ =>
+      case _                                                                 =>
         req.getQueryString("hash").orElse(req.session.get("hash")).getOrElse("--")
     }
 

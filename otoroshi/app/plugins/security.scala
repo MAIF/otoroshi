@@ -14,9 +14,9 @@ class SecurityTxt extends RequestTransformer {
 
   override def name: String = "Security Txt"
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security)
-  def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def defaultConfig: Option[JsObject] =
     Some(

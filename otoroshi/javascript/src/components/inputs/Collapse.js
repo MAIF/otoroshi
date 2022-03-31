@@ -30,10 +30,7 @@ export class Collapse extends Component {
               <span style={{ color: '#f9b000', fontWeight: 'bold', marginTop: 7 }}>
                 {this.props.label}
               </span>
-              <button
-                type="button"
-                className="btn btn-info float-end btn-sm"
-                onClick={this.toggle}>
+              <button type="button" className="btn btn-info float-end btn-sm" onClick={this.toggle}>
                 <i className="fas fa-eye" />
               </button>
             </div>
@@ -51,10 +48,7 @@ export class Collapse extends Component {
               <span style={{ color: '#f9b000', fontWeight: 'bold', marginTop: 7 }}>
                 {this.props.label}
               </span>
-              <button
-                type="button"
-                className="btn btn-info float-end btn-sm"
-                onClick={this.toggle}>
+              <button type="button" className="btn btn-info float-end btn-sm" onClick={this.toggle}>
                 <i className="fas fa-eye-slash" />
               </button>
             </div>

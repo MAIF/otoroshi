@@ -91,7 +91,7 @@ case class UserValidator(path: String, value: JsValue) {
   def validate(user: JsValue): Boolean = {
     // println(user.prettify)
     user.atPath(path).asOpt[JsValue] match {
-      case None => false
+      case None                                              => false
       case Some(JsString(v)) if value.isInstanceOf[JsString] => {
         val expected = value.asString
         if (expected.trim.startsWith("Regex(") && expected.trim.endsWith(")")) {
@@ -105,15 +105,15 @@ case class UserValidator(path: String, value: JsValue) {
           v == expected
         }
       }
-      case Some(v) => v == value
+      case Some(v)                                           => v == value
     }
   }
 }
 
 object UserValidator {
   val format = new Format[UserValidator] {
-    override def writes(o: UserValidator): JsValue = Json.obj(
-      "path" -> o.path,
+    override def writes(o: UserValidator): JsValue             = Json.obj(
+      "path"  -> o.path,
       "value" -> o.value
     )
     override def reads(json: JsValue): JsResult[UserValidator] = Try {
@@ -123,7 +123,7 @@ object UserValidator {
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
-      case Success(value) => JsSuccess(value)
+      case Success(value)     => JsSuccess(value)
     }
   }
 }
@@ -297,10 +297,15 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           sessionCookieValues = SessionCookieValues()
         )
     }
-    env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).templates.authConfig.map { template =>
-      AuthModuleConfig._fmt.reads(defaultModule.json.asObject.deepMerge(template)).get
-    }.getOrElse {
-      defaultModule
-    }
+    env.datastores.globalConfigDataStore
+      .latest()(env.otoroshiExecutionContext, env)
+      .templates
+      .authConfig
+      .map { template =>
+        AuthModuleConfig._fmt.reads(defaultModule.json.asObject.deepMerge(template)).get
+      }
+      .getOrElse {
+        defaultModule
+      }
   }
 }

@@ -225,9 +225,9 @@ class BiscuitExtractor extends PreRouting {
     """.stripMargin.some
   }
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+  def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   // TODO: check if it's a bug, first letter is missing in parsed rule (lient_id instead of client_id)
   // val ruleTuple = Parser.rule("client_id($id) <- client_id(#authority, $id) @ []").get()
@@ -405,9 +405,9 @@ class BiscuitValidator extends AccessValidator {
     """.stripMargin.some
   }
 
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
   override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     val config = BiscuitHelper.readConfig("BiscuitValidator", ctx)
