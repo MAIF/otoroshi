@@ -5,6 +5,7 @@ import { nextClient } from '../../services/BackOfficeServices'
 import { useHistory } from 'react-router-dom'
 
 export const Informations = (props) => {
+    const ref = useRef()
     const history = useHistory()
 
     const schema = {
@@ -17,7 +18,10 @@ export const Informations = (props) => {
             type: type.string,
             label: 'Route name',
             placeholder: 'Your route name',
-            help: 'The name of your route. Only for debug and human readability purposes.'
+            help: 'The name of your route. Only for debug and human readability purposes.',
+            constraints: [
+                constraints.required()
+            ]
         },
         enabled: {
             type: type.bool,
@@ -57,7 +61,7 @@ export const Informations = (props) => {
         },
         _loc: {
             type: type.object,
-            label: 'Location',
+            label: null,
             render: ({ onChange, value }) => (
                 <Location
                     {...value}
@@ -94,18 +98,19 @@ export const Informations = (props) => {
         }
     ]
 
-    const ref = useRef()
-
     return (
         <div className='designer-form'>
             <h3>Route informations</h3>
             <Form
                 schema={schema}
                 flow={flow}
-                value={props.value}
+                value={props.isCreation ? {
+                    ...props.value,
+                    name: "",
+                    description: ""
+                } : props.value}
                 ref={ref}
                 onSubmit={item => {
-                    console.log(item, props)
                     if (props.isCreation)
                         nextClient.create(nextClient.ENTITIES.ROUTES, item)
                             .then(() => history.push(`/routes/${item.id}?tab=flow`))
@@ -114,10 +119,16 @@ export const Informations = (props) => {
                 }}
                 footer={() => null}
             />
-            <button className='btn btn-success btn-block mt-3'
-                onClick={() => ref.current.handleSubmit()}>
-                {props.isCreation ? "Create the route" : "Update the route"}
-            </button>
+            <div className='d-flex align-items-center justify-content-end mt-3'>
+                <button className='btn btn-sm btn-danger'
+                    onClick={() => history.push('/routes')}>
+                    Cancel
+                </button>
+                <button className='btn btn-sm btn-save ms-1'
+                    onClick={() => ref.current.handleSubmit()}>
+                    {props.isCreation ? "Create the route" : "Update the route"}
+                </button>
+            </div>
         </div>
     )
 }

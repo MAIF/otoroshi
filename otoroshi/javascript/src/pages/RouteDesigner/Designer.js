@@ -544,7 +544,7 @@ const UnselectedNode = ({ saveChanges }) => <div className="d-flex-between dark-
     <span style={{
         textAlign: "center",
         fontStyle: 'italic'
-    }}>Start by selecting a node</span>
+    }}>Start by selecting a plugin</span>
     <button className="btn btn-sm btn-outline-success" type="button" onClick={saveChanges}>
         <i className="far fa-paper-plane" style={{ paddingRight: '6px' }} />
         <span>Update route</span>

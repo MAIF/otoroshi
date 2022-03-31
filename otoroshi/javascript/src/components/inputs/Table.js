@@ -377,7 +377,7 @@ export class Table extends Component {
                 type="button"
                 className="btn btn-sm btn-success"
                 {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
-                onClick={(e) => this.showEditForm(e, item)}>
+                onClick={(e) => this.props.navigateOnEdit ? this.props.navigateOnEdit(item) :this.showEditForm(e, item)}>
                 <i className="fas fa-pencil-alt" />
               </button>
               {this.props.showLink && (

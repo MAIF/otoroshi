@@ -122,12 +122,6 @@
         background-color: #eee;
     }
 
-    .designer-sidebar {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
     .tab {
         margin: 6px 0;
         background: none;
@@ -146,23 +140,9 @@
         color: #f9b000;
     }
 
-    .designer-form {
-        display: flex;
-        flex-direction: column;
-        max-width: 50%;
-        background-color: $fondNavbar;
-        color: $grisTexte;
-        padding: 12px;
-        border-radius: 4px;
-        min-height: calc(100vh - 85px);
-    }
-
-    .designer-form input {
-        font-size: 14px;
-    }
-
     .designer-form form {
         flex: 1;
+        padding: 0;
     }
 
     .flex-grow-1 {

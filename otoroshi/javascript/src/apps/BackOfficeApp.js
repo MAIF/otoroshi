@@ -67,11 +67,6 @@ class BackOfficeAppContainer extends Component {
       catchedError: null,
       env: null,
     };
-
-    this.fullPageForRoutes = [
-      /^(\/routes\/[\w]*)/,
-      /^(\/backends\/[\w]*)/
-    ].map(r => new RegExp(r))
   }
 
   addService = (e) => {
@@ -131,15 +126,6 @@ class BackOfficeAppContainer extends Component {
   };
 
   render() {
-    const { pathname } = this.props.location
-
-    const isFullPage = this.fullPageForRoutes.some(reg => {
-      const m = pathname.match(reg)
-      return m && m.length > 0
-    })
-
-    const classNameSidebar = isFullPage ? 'col-sm-0 sidebar' : 'col-sm-2 sidebar'
-
     const classes = ['backoffice-container'];
     if (
       this.props.children &&
@@ -157,7 +143,7 @@ class BackOfficeAppContainer extends Component {
         </>}
         <div className="container-fluid">
           <div className="row">
-            <div className={classNameSidebar} id="sidebar">
+            <div className="col-sm-2 sidebar" id="sidebar">
               <div className="sidebar-container">
                 <div className="sidebar-content">
                   <GlobalTenantSelector />
@@ -197,10 +183,10 @@ class BackOfficeAppContainer extends Component {
                 </div>
               </div>
             </div>
-            <div className={`${(isFullPage ? 'col-sm-12' : 'col-sm-10 offset-2 main')}`}>
+            <div className="col-sm-10 offset-2 main">
               <div className="row">
                 <div className={classes.join(' ')} style={{ overflowX: "hidden" }}>
-                  {isFullPage ? null : <DynamicTitle />}
+                  <DynamicTitle />
                   <div className="row" style={{ marginTop: 1 }}>
                     {!this.state.catchedError && (
                       <Switch>

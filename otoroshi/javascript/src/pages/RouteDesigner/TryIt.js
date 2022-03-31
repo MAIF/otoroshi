@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { BooleanInput, CodeInput, SelectInput } from '@maif/react-forms/lib/inputs'
+import { BooleanInput, CodeInput, SelectInput } from '@maif/react-forms'
 import { tryIt, fetchAllApikeys, findAllCertificates } from '../../services/BackOfficeServices'
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD']

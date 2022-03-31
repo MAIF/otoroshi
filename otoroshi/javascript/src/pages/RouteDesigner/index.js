@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import { Route, Switch, useLocation, useParams, useRouteMatch } from 'react-router-dom'
-import NextSidebar from '../../components/NextSidebar'
 import { nextClient } from '../../services/BackOfficeServices'
 import Designer from './Designer'
 import { Informations } from './Informations'
@@ -35,19 +34,22 @@ export default (props) => {
                             .then(setValue)
                 }, [p.routeId])
 
-                return <div style={{ padding: '7px 15px 0 0' }} className="designer row">
-                    <NextSidebar isCreation={isCreation} entity={nextClient.ENTITIES.ROUTES} />
-                    <div className='col-sm-11' style={{ paddingLeft: 0 }}>
-                        {
-                            (query && query === 'flow' && !isCreation) ?
-                                <Designer {...props} value={value} /> :
-                                (query && query === 'informations') ?
-                                    <Informations {...props} isCreation={isCreation} value={value} /> :
-                                    <TryIt route={value} />
-                        }
-                    </div>
+                if (query) {
+                    if (query === 'flow' && !isCreation)
+                        return <div className="designer row p-0">
+                            <Designer {...props} value={value} />
+                        </div>
+
+                    if (query === 'try-it')
+                        return <div className="designer row p-0">
+                            <TryIt route={value} />
+                        </div>
+                }
+
+                return <div className="designer row p-0">
+                    <Informations {...props} isCreation={isCreation} value={value} />
                 </div>
             }} />
-        <Route component={Routes} />
-    </Switch>
+        < Route component={Routes} />
+    </Switch >
 }

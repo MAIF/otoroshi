@@ -48,7 +48,7 @@ export const LEGACY_PLUGINS_WRAPPER = {
 export const DEFAULT_FLOW = {
     Frontend: {
         id: 'Frontend',
-        icon: 'eye',
+        icon: 'user',
         plugin_steps: ["PreRoute"],
         description: "Exposition",
         default: true,
@@ -89,7 +89,7 @@ export const DEFAULT_FLOW = {
                     custom_target: {
                         label: 'Target',
                         type: 'string',
-                        render: ({ value, onChange, setValue }) => {
+                        render: ({ value, onChange, setValue, parent }) => {
                             return <SingleLineCode
                                 value={value}
                                 onChange={e => {
@@ -107,13 +107,14 @@ export const DEFAULT_FLOW = {
                                             const pathname = '/' + afterSchemeParts.join('/');
                                             const url = `${scheme}://${domain}`
 
-                                            console.log(url)
                                             onChange(url)
 
-                                            if (url.indexOf('://') > -1)
-                                                setValue('hostname', afterScheme);
+                                            if (url.indexOf('://') > -1) {
+                                                console.log(`${parent}.hostname`, afterScheme)
+                                                setValue(`${parent}.hostname`, afterScheme);
+                                        }
 
-                                            console.log(pathname)
+                                            console.log(`root`, pathname)
                                             setValue('root', pathname);
                                         } else {
                                             onChange(e)

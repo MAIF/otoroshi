@@ -19,6 +19,7 @@ export default ({ }) => {
         <Table
             parentProps={{ params }}
             navigateTo={item => history.push(`/routes/${item.id}?tab=flow`)}
+            navigateOnEdit={item => history.push(`/routes/${item.id}?tab=informations`)}
             selfUrl="routes"
             defaultTitle="Routes"
             itemName='Route'

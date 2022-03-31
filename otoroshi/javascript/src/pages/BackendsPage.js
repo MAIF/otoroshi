@@ -3,7 +3,6 @@ import { useHistory, useParams, Link, Switch, Route, useRouteMatch } from 'react
 import { nextClient } from '../services/BackOfficeServices'
 import { Table } from "../components/inputs";
 import { Location } from '../components/Location'
-import NextSidebar from "../components/NextSidebar";
 import { constraints, Form, format, type } from '@maif/react-forms';
 import { camelToSnake, camelToSnakeFlow, toUpperCaseLabels } from '../util';
 
@@ -62,7 +61,6 @@ export const BackendsPage = ({ setTitle }) => {
                 }, [p.routebackendIdId])
 
                 return <div style={{ padding: '7px 15px 0 0' }} className="designer row">
-                    <NextSidebar isCreation={true} entity={nextClient.ENTITIES.BACKENDS} minimalist={true} />
                     <div className='col-sm-11' style={{ paddingLeft: 0 }}>
                         <BackendForm isCreation={isCreation} value={value} />
                     </div>
