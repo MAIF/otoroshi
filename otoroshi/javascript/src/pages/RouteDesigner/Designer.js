@@ -83,6 +83,9 @@ export default ({ value }) => {
     const [selectedNode, setSelectedNode] = useState()
     const [route, setRoute] = useState(value)
 
+    const [preview, showPreview] = useState({
+        enabled: false
+    })
     const [loading, setLoading] = useState(true)
     const location = useLocation()
 
@@ -284,9 +287,10 @@ export default ({ value }) => {
     const outputNodes = nodes.filter(node => (node.plugin_steps || []).some(s => ["TransformResponse"].includes(s)))
 
     return <Loader loading={loading}>
-        <div className="h-100 col-sm-12" onClick={() => setSelectedNode(undefined)}>
-            <div className="col-sm-3" style={{
+        <div className="h-100 col-12" onClick={() => setSelectedNode(undefined)} style={{ overflow: 'hidden' }}>
+            <div className=" plugins-stack-column" style={{
                 paddingLeft: 0,
+                flex: 3,
                 marginRight: 'calc(var(--bs-gutter-x) * 1)'
             }}>
                 <div className="elements">
@@ -300,28 +304,51 @@ export default ({ value }) => {
                         zIndex: -1
                     }}></div>
                     <SearchBar handleSearch={handleSearch} />
-                    <PluginsStack elements={plugins
-                        .reduce((acc, plugin) => {
-                            if (plugin.selected || plugin.filtered)
-                                return acc
-                            return acc.map(group => {
-                                if (plugin.plugin_categories.includes(group.group))
-                                    return {
-                                        ...group,
-                                        elements: [...(group.elements || []), plugin]
-                                    }
-                                return group
-                            })
-                        }, categories.map(category => ({
-                            group: category,
-                            elements: []
-                        })))}
-                        // onDrag={onDrag}
-                        addNode={addNode} />
+                    <div style={{ position: 'relative' }} id="plugins-stack-container">
+                        <PluginsStack
+                            elements={plugins
+                                .reduce((acc, plugin) => {
+                                    if (plugin.selected || plugin.filtered)
+                                        return acc
+                                    return acc.map(group => {
+                                        if (plugin.plugin_categories.includes(group.group))
+                                            return {
+                                                ...group,
+                                                elements: [...(group.elements || []), plugin]
+                                            }
+                                        return group
+                                    })
+                                }, categories.map(category => ({
+                                    group: category,
+                                    elements: []
+                                })))}
+                            // onDrag={onDrag}
+                            addNode={addNode}
+                            showPreview={element => showPreview({
+                                enabled: true,
+                                element
+                            })}
+                        />
+                    </div>
                 </div>
             </div>
-            <div className="col-sm-9">
-                <div className="row h-100 p-2 me-1" style={{
+            <div style={{ position: 'relative', flex: 9 }}>
+                {preview.enabled ? <EditView
+                    addNode={addNode}
+                    hidePreview={() => showPreview({
+                        ...preview,
+                        enabled: false
+                    })}
+                    readOnly={true}
+                    setRoute={setRoute}
+                    selectedNode={preview.element}
+                    setSelectedNode={setSelectedNode}
+                    updatePlugin={updatePlugin}
+                    removeNode={removeNode}
+                    route={route}
+                    plugins={plugins}
+                    backends={backends}
+                /> : <div className="row h-100 p-2 me-1" style={{
                     background: 'rgb(60, 60, 60)',
                     borderRadius: '4px'
                 }}>
@@ -443,19 +470,19 @@ export default ({ value }) => {
                             backends={backends}
                         /> : <UnselectedNode saveChanges={saveChanges} />}
                     </div>
-                </div>
+                </div>}
             </div>
         </div>
     </Loader>
 }
 
-const Element = ({ element, /*onDrag,*/ n, addNode }) => (
+const Element = ({ element, /*onDrag,*/ addNode, showPreview }) => (
     <div className="element"
         // draggable={true}
         // onDragStart={e => onDrag(e, { ...element })}
         onClick={e => {
             e.stopPropagation()
-            addNode(element)
+            showPreview(element)
         }}>
         <div className="d-flex-between" style={{
             padding: "10px",
@@ -465,12 +492,15 @@ const Element = ({ element, /*onDrag,*/ n, addNode }) => (
             width: '100%',
         }}>
             {element.name.charAt(0).toUpperCase() + element.name.slice(1)}
-            <i className="fas fa-arrow-right" style={{ color: "#494948" }} />
+            <i className="fas fa-arrow-right" style={{ color: "#494948" }} onClick={e => {
+                e.stopPropagation()
+                addNode(element)
+            }} />
         </div>
     </div>
 )
 
-const Group = ({ group, elements, /*onDrag,*/ addNode }) => {
+const Group = ({ group, elements, /*onDrag,*/ addNode, ...props }) => {
     const [open, setOpen] = useState(false)
 
     return <div className="group">
@@ -485,7 +515,7 @@ const Group = ({ group, elements, /*onDrag,*/ addNode }) => {
             <span style={{ color: "#fff", padding: "10px" }}>{group.charAt(0).toUpperCase() + group.slice(1)}</span>
         </div>
         {open && <>
-            <PluginsStack elements={elements} /*onDrag={onDrag}*/ addNode={addNode} />
+            <PluginsStack elements={elements} /*onDrag={onDrag}*/ addNode={addNode} {...props} />
         </>}
     </div>
 }
@@ -567,9 +597,11 @@ const UnselectedNode = ({ saveChanges }) => <div className="d-flex-between dark-
 
 const EditView = ({
     selectedNode, setSelectedNode, route,
-    removeNode, plugins, updatePlugin, setRoute, backends }) => {
+    removeNode, plugins, updatePlugin, setRoute, backends,
+    readOnly, addNode, hidePreview
+}) => {
     const [usingExistingBackend, setUsingExistingBackend] = useState(route.backend_ref)
-    const [asJsonFormat, toggleJsonFormat] = useState(selectedNode.legacy)
+    const [asJsonFormat, toggleJsonFormat] = useState(selectedNode.legacy || readOnly)
     const [form, setForm] = useState({
         schema: {},
         flow: [],
@@ -590,11 +622,6 @@ const EditView = ({
         window.addEventListener('scroll', onScroll, { passive: true });
         return () => window.removeEventListener('scroll', onScroll);
     }, []);
-
-    const updateScroll = e => {
-        console.log(window.scrollY)
-        setTop(window.scrollY)
-    }
 
     useEffect(() => {
         if (route.backend_ref)
@@ -681,7 +708,7 @@ const EditView = ({
         setTest(value)
         setSaveable(false)
 
-        toggleJsonFormat(selectedNode.legacy)
+        toggleJsonFormat(selectedNode.legacy || readOnly)
     }, [selectedNode])
 
     const onValidate = item => {
@@ -695,14 +722,16 @@ const EditView = ({
     // console.log("SCHEMA", form.schema.plugin)
     // console.log("VALUE", form.value)
 
-    return <div onClick={e => {
-        e.stopPropagation()
-    }} className="plugins-stack" style={{
-        position: 'absolute',
-        top: offset,
-        left: 12,
-        right: 0
-    }}>
+    return <div
+        onClick={e => e.stopPropagation()}
+        className="plugins-stack"
+        style={{
+            position: 'absolute',
+            zIndex: 100,
+            top: offset,
+            left: 12,
+            right: 0
+        }}>
         <div className="group-header d-flex-between" style={{
             borderBottom: '1px solid #f9b000',
             borderRight: 0
@@ -716,7 +745,7 @@ const EditView = ({
                 <span style={{ color: "#fff", paddingLeft: "12px" }}>{name || id}</span>
             </div>
             <div className='d-flex me-1'>
-                {!selectedNode.legacy && <>
+                {(!selectedNode.legacy && !readOnly) && <>
                     <button className='btn btn-sm'
                         onClick={() => toggleJsonFormat(false)}
                         style={{
@@ -734,9 +763,14 @@ const EditView = ({
                         color: "#fff"
                     }}>RAW JSON</button>
                 </>}
-                <button className='btn btn-sm btn-danger' style={{ minWidth: '36px' }}>
-                    <i className='fas fa-times designer-times-button'
-                        onClick={() => setSelectedNode(undefined)} />
+                <button
+                    className='btn btn-sm btn-danger'
+                    style={{ minWidth: '36px' }}
+                    onClick={() => {
+                        setSelectedNode(undefined)
+                        hidePreview()
+                    }}>
+                    <i className='fas fa-times designer-times-button' />
                 </button>
             </div>
         </div>
@@ -757,14 +791,26 @@ const EditView = ({
                     {form.value && <CodeInput
                         showGutter={false}
                         mode="json"
-                        width="100%"
+                        themeStyle={{
+                            maxHeight: readOnly ? '300px': '-1',
+                            width: "100%"
+                        }}
                         value={stringify(form.value)}
                         onChange={value => {
                             setSaveable(!isEqual(form.originalValue, value))
                             setForm({ ...form, value })
                         }}
                     />}
-                    <EditViewActions valid={() => onValidate(form.value)} selectedNode={selectedNode} onRemove={onRemove} saveable={saveable} />
+                    {readOnly ? <div className='d-flex justify-content-end mt-3'>
+                        <button className='btn btn-sm btn-save' onClick={() => {
+                            hidePreview()
+                            addNode(selectedNode)
+                        }}>
+                            Add to flow
+                        </button>
+                    </div>
+                        :
+                        <EditViewActions valid={() => onValidate(form.value)} selectedNode={selectedNode} onRemove={onRemove} saveable={saveable} />}
                 </>
                     :
                     <Form
