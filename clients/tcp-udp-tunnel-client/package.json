@@ -17,7 +17,7 @@
     "https-proxy-agent": "5.0.0",
     "inquirer": "7.3.3",
     "lodash": "4.17.21",
-    "minimist": "1.2.5",
+    "minimist": "1.2.6",
     "moment": "2.28.0",
     "node-fetch": "2.6.7",
     "open": "7.2.1",
