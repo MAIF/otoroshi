@@ -1,26 +1,26 @@
 package otoroshi.plugins.biscuit
 
-import java.nio.charset.StandardCharsets
-import java.security.SecureRandom
-import java.util.Base64
 import akka.http.scaladsl.util.FastFuture
 import com.clevercloud.biscuit.crypto._
-import com.clevercloud.biscuit.token.builder.Check
+import com.clevercloud.biscuit.datalog.SymbolTable
+import com.clevercloud.biscuit.error.Error
 import com.clevercloud.biscuit.token.builder.Term.Str
-import com.clevercloud.biscuit.token.builder.Utils.{fact, s, string}
+import com.clevercloud.biscuit.token.builder.Utils.{fact, string}
 import com.clevercloud.biscuit.token.builder.parser.Parser
-import com.clevercloud.biscuit.token.{Biscuit, Verifier}
+import com.clevercloud.biscuit.token.{Authorizer, Biscuit}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.utils.crypto.Signatures
+import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{RequestHeader, Results}
-import otoroshi.utils.http.RequestImplicits._
 
+import java.security.SecureRandom
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 object vavr_implicits {
   implicit class BetterVavrEither[L, R](val either: io.vavr.control.Either[L, R]) extends AnyVal {
@@ -36,29 +36,25 @@ object vavr_implicits {
 
 case class BiscuitConfig(
     publicKey: Option[String],
-    secret: Option[String],
     checks: Seq[String],
     facts: Seq[String],
     resources: Seq[String],
     rules: Seq[String],
-    revocation_ids: Seq[Long],
+    revocation_ids: Seq[String],
     extractor: String,
     extractorName: String,
     enforce: Boolean,
-    sealedToken: Boolean
 )
 
 object BiscuitConfig {
   val example: JsObject = Json.obj(
     "publicKey"      -> "xxxxxx",
-    "secret"         -> "secret",
     "checks"         -> Json.arr(),
     "facts"          -> Json.arr(),
     "resources"      -> Json.arr(),
     "rules"          -> Json.arr(),
     "revocation_ids" -> Json.arr(),
     "enforce"        -> false,
-    "sealed"         -> false,
     "extractor"      -> Json.obj(
       "type" -> "header",
       "name" -> "Authorization"
@@ -95,24 +91,20 @@ case class SealedBiscuitToken(token: String) extends BiscuitToken
 
 object BiscuitHelper {
 
-  import vavr_implicits._
-
   import collection.JavaConverters._
 
   def readConfig(name: String, ctx: ContextWithConfig): BiscuitConfig = {
     val rawConfig = ctx.configFor(name)
     BiscuitConfig(
       publicKey = (rawConfig \ "publicKey").asOpt[String],
-      secret = (rawConfig \ "secret").asOpt[String],
       checks = (rawConfig \ "checks").asOpt[Seq[String]].getOrElse(Seq.empty),
       facts = (rawConfig \ "facts").asOpt[Seq[String]].getOrElse(Seq.empty),
       resources = (rawConfig \ "resources").asOpt[Seq[String]].getOrElse(Seq.empty),
       rules = (rawConfig \ "rules").asOpt[Seq[String]].getOrElse(Seq.empty),
-      revocation_ids = (rawConfig \ "revocation_ids").asOpt[Seq[Long]].getOrElse(Seq.empty),
+      revocation_ids = (rawConfig \ "revocation_ids").asOpt[Seq[String]].getOrElse(Seq.empty),
       extractor = (rawConfig \ "extractor" \ "type").asOpt[String].getOrElse("header"),
       extractorName = (rawConfig \ "extractor" \ "name").asOpt[String].getOrElse("Authorization"),
       enforce = (rawConfig \ "enforce").asOpt[Boolean].getOrElse(false),
-      sealedToken = (rawConfig \ "sealed").asOpt[Boolean].getOrElse(false)
     )
   }
 
@@ -141,46 +133,41 @@ object BiscuitHelper {
         .replace("biscuit: ", "")
         .replace("sealed-biscuit: ", "")
         .trim
-      if (token.contains("sealed-biscuit:") || config.sealedToken) {
-        SealedBiscuitToken(tokenValue)
-      } else {
-        PubKeyBiscuitToken(tokenValue)
-      }
+      PubKeyBiscuitToken(tokenValue)
     }
   }
 
-  def verify(verifier: Verifier, config: BiscuitConfig, ctx: VerificationContext)(implicit
+  def verify(verifier: Authorizer, config: BiscuitConfig, ctx: VerificationContext)(implicit
       env: Env
   ): Either[com.clevercloud.biscuit.error.Error, Unit] = {
     verifier.set_time()
-    verifier.add_operation(readOrWrite(ctx.request.method))
+    verifier.add_fact(s"""operation("${readOrWrite(ctx.request.method)}")""")
     verifier.add_fact(
       fact(
         "resource",
         Seq(
-          s("ambient"),
           string(ctx.request.method.toLowerCase()),
           string(ctx.request.theDomain),
           string(ctx.request.thePath)
         ).asJava
       )
     )
-    verifier.add_fact(fact("req_path", Seq(s("ambient"), string(ctx.request.thePath)).asJava))
-    verifier.add_fact(fact("req_domain", Seq(s("ambient"), string(ctx.request.theDomain)).asJava))
-    verifier.add_fact(fact("req_method", Seq(s("ambient"), string(ctx.request.method.toLowerCase())).asJava))
-    verifier.add_fact(fact("descriptor_id", Seq(s("ambient"), string(ctx.descriptor.id)).asJava))
+    verifier.add_fact(fact("req_path", Seq(string(ctx.request.thePath)).asJava))
+    verifier.add_fact(fact("req_domain", Seq(string(ctx.request.theDomain)).asJava))
+    verifier.add_fact(fact("req_method", Seq(string(ctx.request.method.toLowerCase())).asJava))
+    verifier.add_fact(fact("descriptor_id", Seq(string(ctx.descriptor.id)).asJava))
     ctx.apikey.foreach { apikey =>
-      apikey.tags.foreach(tag => verifier.add_fact(fact("apikey_tag", Seq(s("ambient"), string(tag)).asJava)))
+      apikey.tags.foreach(tag => verifier.add_fact(fact("apikey_tag", Seq(string(tag)).asJava)))
       apikey.metadata.foreach(tuple =>
-        verifier.add_fact(fact("apikey_meta", Seq(s("ambient"), string(tuple._1), string(tuple._2)).asJava))
+        verifier.add_fact(fact("apikey_meta", Seq(string(tuple._1), string(tuple._2)).asJava))
       )
     }
     ctx.user.foreach { user =>
       user.metadata.foreach(tuple =>
-        verifier.add_fact(fact("user_meta", Seq(s("ambient"), string(tuple._1), string(tuple._2)).asJava))
+        verifier.add_fact(fact("user_meta", Seq(string(tuple._1), string(tuple._2)).asJava))
       )
     }
-    config.resources.foreach(r => verifier.add_resource(r))
+    config.resources.foreach(r => verifier.add_fact(s"""resource("${r}")"""))
     config.checks
       .map(Parser.check)
       .filter(_.isRight)
@@ -192,20 +179,21 @@ object BiscuitHelper {
       .filter(_.isRight)
       .map(_.get()._2)
       .foreach(r => verifier.add_rule(r))
-    if (config.revocation_ids.nonEmpty) {
-      verifier.revocation_check(config.revocation_ids.toList.map(_.asInstanceOf[java.lang.Long]).asJava)
-    }
-    // TODO: here, add ambient stuff, rules from config, query some stuff, etc ..
-    verifier.verify().asScala match {
-      case Left(err) => Left[com.clevercloud.biscuit.error.Error, Unit](err)
-      case Right(_)  => Right(())
+    val revocationIds = verifier.get_revocation_ids().asScala
+    if (config.revocation_ids.nonEmpty && config.revocation_ids.exists(id => revocationIds.contains(id))) {
+      Left(new Error.FormatError.DeserializationError("revoked token"))
+    } else {
+      // TODO: here, add rules from config, query some stuff, etc ..
+      Try(verifier.allow().authorize()).toEither match {
+        case Left(err: com.clevercloud.biscuit.error.Error) => Left(err)
+        case Left(err) => Left(new com.clevercloud.biscuit.error.Error.InternalError())
+        case Right(_) => Right(())
+      }
     }
   }
 }
 
 class BiscuitExtractor extends PreRouting {
-
-  import vavr_implicits._
 
   import collection.JavaConverters._
 
@@ -269,13 +257,13 @@ class BiscuitExtractor extends PreRouting {
     val signed            = Signatures.hmacSha256Sign(client_id, client_secret)
     val rng               = new SecureRandom()
     val root              = new KeyPair(rng)
-    val symbols           = Biscuit.default_symbol_table()
+    val symbols           = new SymbolTable()
     val authority_builder = new Block(0, symbols)
     authority_builder.add_fact(fact("client_id", Seq(s("authority"), string(client_id)).asJava))
     authority_builder.add_fact(fact("client_sign", Seq(s("authority"), string(signed)).asJava))
-    val biscuit           = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build()).get()
+    val biscuit           = Biscuit.make(rng, root, new SymbolTable(), authority_builder.build())
     println(s"public_key: ${root.public_key().toHex}")
-    println(s"curl http://biscuit.oto.tools:9999 -H 'Authorization: Bearer ${biscuit.serialize_b64().get()}'")
+    println(s"curl http://biscuit.oto.tools:9999 -H 'Authorization: Bearer ${biscuit.serialize_b64url()}'")
   }
 
   def unauthorized(error: JsObject): Future[Unit] = {
@@ -285,31 +273,27 @@ class BiscuitExtractor extends PreRouting {
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = BiscuitHelper.readConfig("BiscuitExtractor", ctx)
 
-    def verification(verifier: Verifier): Future[Unit] = {
-      val client_id: Option[String]   = verifier
-        .query(client_id_rule)
-        .asScala
+    def verification(verifier: Authorizer): Future[Unit] = {
+      val client_id: Option[String] = Try(verifier.query(client_id_rule))
         .toOption
         .map(_.asScala)
         .flatMap(_.headOption)
         .filter(_.name() == "client_id_res")
-        .map(_.ids().asScala)
+        .map(_.terms().asScala)
         .flatMap(_.headOption)
         .flatMap {
-          case str: Str => str.value().some
+          case str: Str => str.getValue().some
           case _        => None
         }
-      val client_sign: Option[String] = verifier
-        .query(client_sign_rule)
-        .asScala
+      val client_sign: Option[String] = Try(verifier.query(client_sign_rule))
         .toOption
         .map(_.asScala)
         .flatMap(_.headOption)
         .filter(_.name() == "client_sign_res")
-        .map(_.ids().asScala)
+        .map(_.terms().asScala)
         .flatMap(_.headOption)
         .flatMap {
-          case str: Str => str.value().some
+          case str: Str => str.getValue().some
           case _        => None
         }
       (client_id, client_sign) match {
@@ -351,33 +335,19 @@ class BiscuitExtractor extends PreRouting {
     }
 
     BiscuitHelper.extractToken(ctx.request, config) match {
-      case Some(SealedBiscuitToken(token)) => {
-        Biscuit
-          .from_sealed(Base64.getUrlDecoder.decode(token), config.secret.get.getBytes(StandardCharsets.UTF_8))
-          .asScala match {
-          case Left(err) if config.enforce =>
-            unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> s"deserialization error: $err"))
-          case Left(_)                     => ().future
-          case Right(biscuit)              =>
-            biscuit.verify_sealed().asScala match {
-              case Left(err) if config.enforce =>
-                unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> s"verifier error: $err"))
-              case Left(_)                     => ().future
-              case Right(verifier)             => verification(verifier)
-            }
-        }
-      }
       case Some(PubKeyBiscuitToken(token)) => {
-        Biscuit.from_b64(token).asScala match {
+        val pubkey = new PublicKey(biscuit.format.schema.Schema.PublicKey.Algorithm.Ed25519, config.publicKey.get)
+        Try(Biscuit.from_b64url(token, pubkey)).toEither match {
           case Left(err) if config.enforce =>
             unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> s"deserialization error: $err"))
           case Left(_)                     => ().future
           case Right(biscuit)              =>
-            biscuit.verify(new PublicKey(config.publicKey.get)).asScala match {
+
+            Try(biscuit.verify(pubkey)).toEither match {
               case Left(err) if config.enforce =>
                 unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> s"verifier error: $err"))
               case Left(_)                     => ().future
-              case Right(verifier)             => verification(verifier)
+              case Right(biscuit)              => verification(biscuit.authorizer())
             }
         }
       }
@@ -387,8 +357,6 @@ class BiscuitExtractor extends PreRouting {
 }
 
 class BiscuitValidator extends AccessValidator {
-
-  import vavr_implicits._
 
   override def name: String = "Biscuit token validator"
 
@@ -412,31 +380,15 @@ class BiscuitValidator extends AccessValidator {
   override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     val config = BiscuitHelper.readConfig("BiscuitValidator", ctx)
     BiscuitHelper.extractToken(ctx.request, config) match {
-      case Some(SealedBiscuitToken(token)) => {
-        Biscuit
-          .from_sealed(Base64.getUrlDecoder.decode(token), config.secret.get.getBytes(StandardCharsets.UTF_8))
-          .asScala match {
-          case Left(_)        => false.future
-          case Right(biscuit) =>
-            biscuit.verify_sealed().asScala match {
-              case Left(_)         => false.future
-              case Right(verifier) => {
-                BiscuitHelper.verify(verifier, config, AccessValidatorContext(ctx)) match {
-                  case Left(_)  => false.future
-                  case Right(_) => true.future
-                }
-              }
-            }
-        }
-      }
       case Some(PubKeyBiscuitToken(token)) => {
-        Biscuit.from_b64(token).asScala match {
+        val pubkey = new PublicKey(biscuit.format.schema.Schema.PublicKey.Algorithm.Ed25519, config.publicKey.get)
+        Try(Biscuit.from_b64url(token, pubkey)).toEither match {
           case Left(_)        => false.future
           case Right(biscuit) =>
-            biscuit.verify(new PublicKey(config.publicKey.get)).asScala match {
+            Try(biscuit.verify(pubkey)).toEither match {
               case Left(_)         => false.future
               case Right(verifier) => {
-                BiscuitHelper.verify(verifier, config, AccessValidatorContext(ctx)) match {
+                BiscuitHelper.verify(verifier.authorizer(), config, AccessValidatorContext(ctx)) match {
                   case Left(_)  => false.future
                   case Right(_) => true.future
                 }

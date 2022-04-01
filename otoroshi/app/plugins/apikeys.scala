@@ -6,8 +6,8 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.clevercloud.biscuit.datalog.SymbolTable
 import com.clevercloud.biscuit.token.builder.parser.Parser
-import com.clevercloud.biscuit.token.format.SealedBiscuit
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
 import com.nimbusds.jose.jwk.{Curve, ECKey, RSAKey}
@@ -15,13 +15,7 @@ import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterAgent
 import otoroshi.env.Env
-import otoroshi.models.{
-  ApiKey,
-  ApiKeyRouteMatcher,
-  RemainingQuotas,
-  ServiceDescriptorIdentifier,
-  ServiceGroupIdentifier
-}
+import otoroshi.models._
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.plugins.JsonPathUtils
 import otoroshi.script._
@@ -35,10 +29,8 @@ import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 import play.core.parsers.FormUrlEncodedParser
 
-import java.nio.charset.StandardCharsets
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import java.security.{KeyPair, SecureRandom}
-import java.util
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -951,8 +943,6 @@ class ClientCredentialFlow extends RequestTransformer {
 
 case class BiscuitConf(
     privkey: Option[String] = None,
-    secret: Option[String] = Some("secret"),
-    sealedToken: Boolean = false,
     checks: Seq[String] = Seq.empty,
     facts: Seq[String] = Seq.empty,
     rules: Seq[String] = Seq.empty
@@ -974,8 +964,6 @@ class ClientCredentialService extends RequestSink {
       .map { js =>
         BiscuitConf(
           privkey = (js \ "privkey").asOpt[String],
-          secret = (js \ "secret").asOpt[String],
-          sealedToken = (js \ "sealedToken").asOpt[Boolean].getOrElse(false),
           checks = (js \ "checks").asOpt[Seq[String]].getOrElse(Seq.empty),
           facts = (js \ "facts").asOpt[Seq[String]].getOrElse(Seq.empty),
           rules = (js \ "rules").asOpt[Seq[String]].getOrElse(Seq.empty)
@@ -1149,7 +1137,7 @@ class ClientCredentialService extends RequestSink {
 
             val biscuitConf: BiscuitConf = conf.biscuit
 
-            val symbols           = Biscuit.default_symbol_table()
+            val symbols           = new SymbolTable()
             val authority_builder = new Block(0, symbols)
 
             authority_builder.add_fact(fact("token_id", Seq(s("authority"), string(IdGenerator.uuid)).asJava))
@@ -1205,22 +1193,11 @@ class ClientCredentialService extends RequestSink {
               .map(_.get()._2)
               .foreach(r => authority_builder.add_rule(r))
 
-            val accessToken: String = if (biscuitConf.sealedToken) {
-              val bytes = SealedBiscuit
-                .make(
-                  authority_builder.build(),
-                  new util.ArrayList[com.clevercloud.biscuit.token.Block](),
-                  biscuitConf.secret.get.getBytes(StandardCharsets.UTF_8)
-                )
-                .get()
-                .serialize()
-                .get()
-              Base64.encodeBase64URLSafeString(bytes)
-            } else {
+            val accessToken: String = {
               val privKeyValue = apiKey.metadata.get("biscuit_pubkey").orElse(biscuitConf.privkey)
-              val keypair      = new KeyPair(privKeyValue.get)
-              val rng          = new SecureRandom()
-              Biscuit.make(rng, keypair, symbols, authority_builder.build()).get().serialize_b64().get()
+              val keypair = new KeyPair(privKeyValue.get)
+              val rng = new SecureRandom()
+              Biscuit.make(rng, keypair, symbols, authority_builder.build()).serialize_b64url()
             }
 
             val pass = scope.forall { s =>
