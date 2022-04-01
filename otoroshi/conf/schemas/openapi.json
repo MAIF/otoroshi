@@ -22211,6 +22211,10 @@
         "description" : "Settings for connection to a kafka cluster",
         "type" : "object",
         "properties" : {
+          "hostValidation" : {
+            "description" : "Enabled TLS hostname validation",
+            "type" : "boolean"
+          },
           "servers" : {
             "type" : "array",
             "items" : {

@@ -20,6 +20,7 @@ import org.apache.kafka.common.config.internals.BrokerSecurityConfigs
 import otoroshi.models.Exporter
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.ssl.DynamicSSLEngineProvider
+import otoroshi.utils.syntax.implicits._
 
 case class KafkaConfig(
     servers: Seq[String],
@@ -27,6 +28,7 @@ case class KafkaConfig(
     keystore: Option[String] = None,
     truststore: Option[String] = None,
     sendEvents: Boolean = false,
+    hostValidation: Boolean = true,
     topic: String = "otoroshi-events",
     mtlsConfig: MtlsConfig = MtlsConfig()
 ) extends Exporter {
@@ -46,6 +48,7 @@ object KafkaConfig {
         "truststore" -> o.truststore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "topic"      -> o.topic,
         "sendEvents" -> o.sendEvents,
+        "hostValidation" -> o.hostValidation,
         "mtlsConfig" -> o.mtlsConfig.json
       )
 
@@ -57,6 +60,7 @@ object KafkaConfig {
           keystore = (json \ "keystore").asOpt[String],
           truststore = (json \ "truststore").asOpt[String],
           sendEvents = (json \ "sendEvents").asOpt[Boolean].getOrElse(false),
+          hostValidation = (json \ "hostValidation").asOpt[Boolean].getOrElse(true),
           topic = (json \ "topic").asOpt[String].getOrElse("otoroshi-events"),
           mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
         )
@@ -97,6 +101,7 @@ object KafkaSettings {
         .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, password)
         .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, jks2.getAbsolutePath)
         .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, password)
+        .applyOnIf(!config.hostValidation)(_.withProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, ""))
     } else {
       val s = for {
         ks <- config.keystore
@@ -111,8 +116,8 @@ object KafkaSettings {
           .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, kp)
           .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, ts)
           .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, kp)
+          .applyOnIf(!config.hostValidation)(_.withProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, ""))
       }
-
       s.getOrElse(settings)
     }
   }

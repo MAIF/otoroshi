@@ -767,6 +767,7 @@ const possibleExporterConfigFormValues = {
       'mtlsConfig.loose',
       'mtlsConfig.certs',
       'mtlsConfig.trustedCerts',
+      'hostValidation',
       'topic',
     ],
     schema: {
@@ -807,6 +808,14 @@ const possibleExporterConfigFormValues = {
           placeholder: '/home/bas/client.truststore.jks',
           help:
             'The truststore path on the server if you use a keystore/truststore to connect to Kafka cluster',
+        },
+      },
+      hostValidation: {
+        type: 'bool',
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
+        props: {
+          label: 'Hostname validation',
+          help: 'Enabled TLS hostname validation',
         },
       },
       'mtlsConfig.mtls': {

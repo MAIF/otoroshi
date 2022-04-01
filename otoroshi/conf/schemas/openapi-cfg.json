@@ -1295,6 +1295,7 @@
     "otoroshi.events.HealthCheckEvent.logicCheck": "Did the service respond with the logic check",
     "otoroshi.events.HealthCheckEvent.status": "Check status",
     "otoroshi.events.HealthCheckEvent.url": "Checked url",
+    "otoroshi.events.KafkaConfig.hostValidation": "Enabled TLS hostname validation",
     "otoroshi.events.KafkaConfig.keyPass": "Optional keypass",
     "otoroshi.events.KafkaConfig.keystore": "Optional keystore",
     "otoroshi.events.KafkaConfig.mtlsConfig": "TLS config to access the cluster",
