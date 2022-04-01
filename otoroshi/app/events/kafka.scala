@@ -42,14 +42,14 @@ object KafkaConfig {
 
     override def writes(o: KafkaConfig): JsValue =
       Json.obj(
-        "servers"    -> JsArray(o.servers.map(JsString.apply)),
-        "keyPass"    -> o.keyPass.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "keystore"   -> o.keystore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "truststore" -> o.truststore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "topic"      -> o.topic,
-        "sendEvents" -> o.sendEvents,
+        "servers"        -> JsArray(o.servers.map(JsString.apply)),
+        "keyPass"        -> o.keyPass.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "keystore"       -> o.keystore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "truststore"     -> o.truststore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "topic"          -> o.topic,
+        "sendEvents"     -> o.sendEvents,
         "hostValidation" -> o.hostValidation,
-        "mtlsConfig" -> o.mtlsConfig.json
+        "mtlsConfig"     -> o.mtlsConfig.json
       )
 
     override def reads(json: JsValue): JsResult[KafkaConfig] =
@@ -116,7 +116,9 @@ object KafkaSettings {
           .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, kp)
           .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, ts)
           .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, kp)
-          .applyOnIf(!config.hostValidation)(_.withProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, ""))
+          .applyOnIf(!config.hostValidation)(
+            _.withProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "")
+          )
       }
       s.getOrElse(settings)
     }

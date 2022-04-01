@@ -19,9 +19,11 @@ export default function Loader({ loading, children, minLoaderTime = 150 }) {
   }, [loading]);
 
   if (internalLoading)
-    return <div className="d-flex justify-content-center">
-      <i className="fas fa-cog fa-spin" style={{ fontSize: '40px' }} />
-    </div>
+    return (
+      <div className="d-flex justify-content-center">
+        <i className="fas fa-cog fa-spin" style={{ fontSize: '40px' }} />
+      </div>
+    );
 
-  return children
+  return children;
 }
