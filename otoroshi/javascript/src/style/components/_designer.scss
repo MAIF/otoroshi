@@ -3,10 +3,23 @@
         flex: 1;
     }
 
+    .flex-column {
+        display: flex;
+        flex-direction: column;
+    }
+
     .h-100 {
         display: flex;
         min-height: calc(100vh - 135px);
-    } 
+    }
+
+    .hide-overflow {
+        overflow: hidden;
+    }
+
+    .relative-container {
+        position: relative;
+    }
 
     .d-flex {
         display: flex;
@@ -40,6 +53,18 @@
         box-shadow: 0 1px 2px rgba(.25, .25, .25, .6);
         color: #000;
         cursor: pointer;
+    }
+
+    .element-text {
+        padding: 10px;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: wrap;
+        width: 100%;
+    }
+
+    .element-arrow {
+        color: #494948;
     }
 
     .group {
@@ -101,23 +126,8 @@
         align-items: center;
         height: fit-content;
     }
-    // .anchor {
-    //     width: 100%;
-    //     background-color: $fondNavbar;
-    //     color: $grisTexte;
-    // }
 
-    // .anchor span {
-    //     display: flex;
-    //     justify-content: center;
-    //     align-items: center;
-    //     border: 1px dotted #f9b000;
-    //     padding: 6px;
-    //     border-radius: 2px;
-    //     font-style: italic;
-    // }
-
-    .link {
+    .vertical-line {
         height: 12px;
         width: 8px;
         background-color: #eee;
@@ -159,11 +169,27 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        text-align: center;
+        position: relative;
+    }
+
+    .dot-icon {
+        color: #fff;
+        font-size: 20;
+    }
+
+    .dot-text {
+        padding: 4px 12px;
+        border-radius: 4px;
+        color: #fff;
+        white-space: wrap;
+        width: fit-content;
     }
 
     .plugins-stack {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none; 
+        -ms-overflow-style: none;
+        /* IE and Edge */
+        scrollbar-width: none;
         max-height: 85vh;
         overflow-y: scroll;
     }
@@ -183,8 +209,9 @@
     }
 
     .div-overflowy {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none; 
+        -ms-overflow-style: none;
+        /* IE and Edge */
+        scrollbar-width: none;
     }
 
     .div-overflowy::-webkit-scrollbar {
@@ -211,5 +238,119 @@
 
     .plugins-stack-column {
         max-height: calc(100vh - 135px);
+        padding-left: 0;
+        flex: 3;
+        margin-right: calc(var(--bs-gutter-x) * 1);
+    }
+
+    .plugins-background-bar {
+        height: calc(100% - 12px);
+        width: 3px;
+        background-color: #f9b000;
+        position: absolute;
+        left: 20px;
+        top: 0;
+        z-index: -1;
+    }
+
+    .frontend-button {
+        z-index: 100;
+        position: absolute;
+        top: 0;
+        left: -16px;
+        height: 36px;
+        border: 1px solid #eee;
+        border-right-width: 0;
+        border-radius: 4px;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    .frontend-container-button {
+        border-left: none;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+
+    .frontend-button-icon {
+        font-size: 26px;
+        color: #fff;
+        margin: 3px;
+    }
+
+    .arrow-flow {
+        width: 72px;
+        height: 36px;
+        border-radius: 6px;
+    }
+
+    .editor-view-form {
+        padding: 0 12px 12px;
+    }
+
+    .editor-view {
+        position: absolute;
+        z-index: 100;
+        left: 12px;
+        right: 0;
+        padding-bottom: 80px;
+    }
+
+    .editor-view-informations {
+        border-bottom: 1px solid #f9b000;
+        border-right: 0;
+    }
+
+    .editor-view-icon {
+        color: #fff;
+        border-bottom-left-radius: 0;
+    }
+
+    .editor-view-text {
+        color: #fff;
+        padding-left: 12px;
+    }
+    
+    .flow-container {
+        background: rgb(60, 60, 60);
+        border-radius: 4px;
+    }
+
+    .backend-selector {
+        padding: 12px;
+        background-color: #404040;
+    }
+
+    .toggle-form-buttons,
+    .new-backend-button {
+        padding: 6px 12px;
+        color: #fff;
+    }
+
+    .status-dot {
+        position: absolute;
+        top: 3px;
+        right: 3px;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+    }
+
+    .backend-button {
+        flex: 0;
+        background-color: #f9b000;
+        padding: 1px;
+        position: relative;
+    }
+
+    .backend-icon {
+        position: absolute;
+        top: -3px;
+        right: -18px;
+        font-size: 42px;
+        color: #fff;
+        background-color: #f9b000;
+        border-radius: 50%;
+        z-index: 100;
     }
 }

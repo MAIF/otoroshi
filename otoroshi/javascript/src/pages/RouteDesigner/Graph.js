@@ -65,7 +65,7 @@ export const DEFAULT_FLOW = {
         label: 'Domains',
       },
     },
-    config_flow: ['domains', 'stripPath', 'exact', 'headers', 'methods', 'query'],
+    config_flow: ['domains', 'stripPath', 'exact', 'headers', 'methods', 'query']
   },
   Backend: {
     id: 'Backend',

@@ -170,14 +170,6 @@
         },
         "description" : "Biscuit rules"
       },
-      "secret" : {
-        "description" : "Biscuit secret",
-        "type" : "string"
-      },
-      "sealedToken" : {
-        "description" : "Is it a sealed token",
-        "type" : "boolean"
-      },
       "facts" : {
         "type" : "array",
         "items" : {
@@ -6771,7 +6763,7 @@
   },
   "otoroshi.models.Exporter" : {
     "oneOfConstraints" : [ {
-      "required" : [ "servers", "keyPass", "mtlsConfig", "topic", "truststore", "keystore", "sendEvents", "type" ]
+      "required" : [ "hostValidation", "servers", "keyPass", "mtlsConfig", "topic", "truststore", "keystore", "sendEvents", "type" ]
     }, {
       "required" : [ "mtlsConfig", "tlsTrustCertsFilePath", "namespace", "topic", "type", "uri", "tenant" ]
     }, {
@@ -6880,6 +6872,10 @@
         "description" : "the kind of mailer",
         "type" : "string",
         "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
+      },
+      "hostValidation" : {
+        "description" : "Enabled TLS hostname validation",
+        "type" : "boolean"
       },
       "path" : {
         "description" : "File path",
@@ -16558,6 +16554,10 @@
               "description" : "Global kafka settings. deprecated",
               "type" : "object",
               "properties" : {
+                "hostValidation" : {
+                  "description" : "Enabled TLS hostname validation",
+                  "type" : "boolean"
+                },
                 "servers" : {
                   "type" : "array",
                   "items" : {
@@ -22440,6 +22440,10 @@
                   "type" : "string",
                   "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
                 },
+                "hostValidation" : {
+                  "description" : "Enabled TLS hostname validation",
+                  "type" : "boolean"
+                },
                 "path" : {
                   "description" : "File path",
                   "type" : "string"
@@ -24567,6 +24571,10 @@
         "description" : "Global kafka settings. deprecated",
         "type" : "object",
         "properties" : {
+          "hostValidation" : {
+            "description" : "Enabled TLS hostname validation",
+            "type" : "boolean"
+          },
           "servers" : {
             "type" : "array",
             "items" : {
@@ -26357,6 +26365,10 @@
     "description" : "Settings for connection to a kafka cluster",
     "type" : "object",
     "properties" : {
+      "hostValidation" : {
+        "description" : "Enabled TLS hostname validation",
+        "type" : "boolean"
+      },
       "servers" : {
         "type" : "array",
         "items" : {
@@ -40028,6 +40040,13 @@
         },
         "description" : "Biscuit checks"
       },
+      "revocation_ids" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
       "extractorName" : {
         "description" : "The name for the location",
         "type" : "string"
@@ -40058,20 +40077,12 @@
         "description" : "Biscuit public key for validation",
         "type" : "string"
       },
-      "secret" : {
-        "description" : "Biscuit secret",
-        "type" : "string"
-      },
       "facts" : {
         "type" : "array",
         "items" : {
           "type" : "string"
         },
         "description" : "Biscuit facts"
-      },
-      "sealedToken" : {
-        "description" : "Is it a sealed token",
-        "type" : "boolean"
       }
     }
   },
@@ -40296,6 +40307,10 @@
             "description" : "the kind of mailer",
             "type" : "string",
             "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
+          },
+          "hostValidation" : {
+            "description" : "Enabled TLS hostname validation",
+            "type" : "boolean"
           },
           "path" : {
             "description" : "File path",

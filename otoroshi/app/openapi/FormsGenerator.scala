@@ -22,10 +22,15 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
       var isArray: Boolean = false
       var informations     = Json.obj(
         "label" -> label,
-        "type"  -> JsString(openapiTypesToFormTypes.getOrElse(`type`, `type`))
+        "type"  -> JsString(openapiTypesToFormTypes.getOrElse(`type`, `type`)),
+        "constraints" -> Json.arr(
+          Json.obj(
+            "type" -> "nullable"
+          )
+        )
       )
       if (`type` == "object" && (prop._2 \ "properties").asOpt[JsObject].nonEmpty)
-        informations = informations ++ Json.obj("format" -> "form", "collapsable" -> true, "collasped" -> true)
+        informations = informations ++ Json.obj("format" -> "form", "collapsable" -> true, "initCollapsed" -> true)
       else if (`type` == "array") {
         isArray = true
         val rawType = (prop._2 \ "items" \ "type").asOpt[String].getOrElse("unknown type")
@@ -34,7 +39,6 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
           "array"  -> true,
           "type"   -> outType,
           "format" -> (if (outType == JsString("object")) JsString("form")
-                       else if (outType == JsString("string")) JsString("singleLineCode")
                        else JsNull)
         )
       }
@@ -94,13 +98,9 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
                           "mode" -> "json"
                         )
                       )
-                    } else
-                      informations ++ Json.obj(
-                        "format" -> "singleLineCode",
-                        "props"  -> Json.obj(
-                          "mode" -> "json"
-                        )
-                      )
+                    }
+                    else
+                      informations
                   } else if ((informations \ "type").as[String] == "number") {
                     informations ++ Json.obj(
                       "constraints" -> Json.arr(

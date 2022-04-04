@@ -494,29 +494,6 @@ spec:
                     additionalProperties:
                       type: "string"
                     type: "object"
-                  mtlsConfig:
-                    description: "TLS settings for http client"
-                    type: "object"
-                    properties:
-                      loose:
-                        description: "Loose verification"
-                        type: "boolean"
-                      trustAll:
-                        description: "Trust any certificate"
-                        type: "boolean"
-                      mtls:
-                        description: "Enabled"
-                        type: "boolean"
-                      certs:
-                        description: "Trusted cert. ids"
-                        type: "array"
-                        items:
-                          type: "string"
-                      trustedCerts:
-                        description: "Trusted cert. ids"
-                        type: "array"
-                        items:
-                          type: "string"
                   base64:
                     description: "The secret is base64 encoded"
                     type: "boolean"
@@ -541,6 +518,29 @@ spec:
                   timeout:
                     description: "Timeout when fetching JWKS"
                     type: "number"
+                  tlsConfig:
+                    description: "TLS config"
+                    type: "object"
+                    properties:
+                      loose:
+                        description: "Loose verification"
+                        type: "boolean"
+                      trustAll:
+                        description: "Trust any certificate"
+                        type: "boolean"
+                      mtls:
+                        description: "Enabled"
+                        type: "boolean"
+                      certs:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
+                      trustedCerts:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
                   privateKey:
                     description: "Private key (for signing)"
                     type: "string"
@@ -576,29 +576,6 @@ spec:
                     additionalProperties:
                       type: "string"
                     type: "object"
-                  mtlsConfig:
-                    description: "TLS settings for http client"
-                    type: "object"
-                    properties:
-                      loose:
-                        description: "Loose verification"
-                        type: "boolean"
-                      trustAll:
-                        description: "Trust any certificate"
-                        type: "boolean"
-                      mtls:
-                        description: "Enabled"
-                        type: "boolean"
-                      certs:
-                        description: "Trusted cert. ids"
-                        type: "array"
-                        items:
-                          type: "string"
-                      trustedCerts:
-                        description: "Trusted cert. ids"
-                        type: "array"
-                        items:
-                          type: "string"
                   base64:
                     description: "The secret is base64 encoded"
                     type: "boolean"
@@ -623,6 +600,29 @@ spec:
                   timeout:
                     description: "Timeout when fetching JWKS"
                     type: "number"
+                  tlsConfig:
+                    description: "TLS config"
+                    type: "object"
+                    properties:
+                      loose:
+                        description: "Loose verification"
+                        type: "boolean"
+                      trustAll:
+                        description: "Trust any certificate"
+                        type: "boolean"
+                      mtls:
+                        description: "Enabled"
+                        type: "boolean"
+                      certs:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
+                      trustedCerts:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
                   privateKey:
                     description: "Private key (for signing)"
                     type: "string"
@@ -654,29 +654,6 @@ spec:
                     additionalProperties:
                       type: "string"
                     type: "object"
-                  mtlsConfig:
-                    description: "TLS settings for http client"
-                    type: "object"
-                    properties:
-                      loose:
-                        description: "Loose verification"
-                        type: "boolean"
-                      trustAll:
-                        description: "Trust any certificate"
-                        type: "boolean"
-                      mtls:
-                        description: "Enabled"
-                        type: "boolean"
-                      certs:
-                        description: "Trusted cert. ids"
-                        type: "array"
-                        items:
-                          type: "string"
-                      trustedCerts:
-                        description: "Trusted cert. ids"
-                        type: "array"
-                        items:
-                          type: "string"
                   base64:
                     description: "The secret is base64 encoded"
                     type: "boolean"
@@ -701,6 +678,29 @@ spec:
                   timeout:
                     description: "Timeout when fetching JWKS"
                     type: "number"
+                  tlsConfig:
+                    description: "TLS config"
+                    type: "object"
+                    properties:
+                      loose:
+                        description: "Loose verification"
+                        type: "boolean"
+                      trustAll:
+                        description: "Trust any certificate"
+                        type: "boolean"
+                      mtls:
+                        description: "Enabled"
+                        type: "boolean"
+                      certs:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
+                      trustedCerts:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
                   privateKey:
                     description: "Private key (for signing)"
                     type: "string"
@@ -1488,29 +1488,6 @@ spec:
                         additionalProperties:
                           type: "string"
                         type: "object"
-                      mtlsConfig:
-                        description: "TLS settings for http client"
-                        type: "object"
-                        properties:
-                          loose:
-                            description: "Loose verification"
-                            type: "boolean"
-                          trustAll:
-                            description: "Trust any certificate"
-                            type: "boolean"
-                          mtls:
-                            description: "Enabled"
-                            type: "boolean"
-                          certs:
-                            description: "Trusted cert. ids"
-                            type: "array"
-                            items:
-                              type: "string"
-                          trustedCerts:
-                            description: "Trusted cert. ids"
-                            type: "array"
-                            items:
-                              type: "string"
                       base64:
                         description: "The secret is base64 encoded"
                         type: "boolean"
@@ -1535,6 +1512,29 @@ spec:
                       timeout:
                         description: "Timeout when fetching JWKS"
                         type: "number"
+                      tlsConfig:
+                        description: "TLS config"
+                        type: "object"
+                        properties:
+                          loose:
+                            description: "Loose verification"
+                            type: "boolean"
+                          trustAll:
+                            description: "Trust any certificate"
+                            type: "boolean"
+                          mtls:
+                            description: "Enabled"
+                            type: "boolean"
+                          certs:
+                            description: "Trusted cert. ids"
+                            type: "array"
+                            items:
+                              type: "string"
+                          trustedCerts:
+                            description: "Trusted cert. ids"
+                            type: "array"
+                            items:
+                              type: "string"
                       kty:
                         description: "Key type"
                         type: "string"
@@ -1613,29 +1613,6 @@ spec:
                             additionalProperties:
                               type: "string"
                             type: "object"
-                          mtlsConfig:
-                            description: "TLS settings for http client"
-                            type: "object"
-                            properties:
-                              loose:
-                                description: "Loose verification"
-                                type: "boolean"
-                              trustAll:
-                                description: "Trust any certificate"
-                                type: "boolean"
-                              mtls:
-                                description: "Enabled"
-                                type: "boolean"
-                              certs:
-                                description: "Trusted cert. ids"
-                                type: "array"
-                                items:
-                                  type: "string"
-                              trustedCerts:
-                                description: "Trusted cert. ids"
-                                type: "array"
-                                items:
-                                  type: "string"
                           base64:
                             description: "The secret is base64 encoded"
                             type: "boolean"
@@ -1660,6 +1637,29 @@ spec:
                           timeout:
                             description: "Timeout when fetching JWKS"
                             type: "number"
+                          tlsConfig:
+                            description: "TLS config"
+                            type: "object"
+                            properties:
+                              loose:
+                                description: "Loose verification"
+                                type: "boolean"
+                              trustAll:
+                                description: "Trust any certificate"
+                                type: "boolean"
+                              mtls:
+                                description: "Enabled"
+                                type: "boolean"
+                              certs:
+                                description: "Trusted cert. ids"
+                                type: "array"
+                                items:
+                                  type: "string"
+                              trustedCerts:
+                                description: "Trusted cert. ids"
+                                type: "array"
+                                items:
+                                  type: "string"
                           privateKey:
                             description: "Private key (for signing)"
                             type: "string"
@@ -1726,29 +1726,6 @@ spec:
                     additionalProperties:
                       type: "string"
                     type: "object"
-                  mtlsConfig:
-                    description: "TLS settings for http client"
-                    type: "object"
-                    properties:
-                      loose:
-                        description: "Loose verification"
-                        type: "boolean"
-                      trustAll:
-                        description: "Trust any certificate"
-                        type: "boolean"
-                      mtls:
-                        description: "Enabled"
-                        type: "boolean"
-                      certs:
-                        description: "Trusted cert. ids"
-                        type: "array"
-                        items:
-                          type: "string"
-                      trustedCerts:
-                        description: "Trusted cert. ids"
-                        type: "array"
-                        items:
-                          type: "string"
                   base64:
                     description: "The secret is base64 encoded"
                     type: "boolean"
@@ -1773,6 +1750,29 @@ spec:
                   timeout:
                     description: "Timeout when fetching JWKS"
                     type: "number"
+                  tlsConfig:
+                    description: "TLS config"
+                    type: "object"
+                    properties:
+                      loose:
+                        description: "Loose verification"
+                        type: "boolean"
+                      trustAll:
+                        description: "Trust any certificate"
+                        type: "boolean"
+                      mtls:
+                        description: "Enabled"
+                        type: "boolean"
+                      certs:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
+                      trustedCerts:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
                   privateKey:
                     description: "Private key (for signing)"
                     type: "string"
@@ -2427,6 +2427,9 @@ spec:
                 description: "Global kafka settings. deprecated"
                 type: "object"
                 properties:
+                  hostValidation:
+                    description: "Enabled TLS hostname validation"
+                    type: "boolean"
                   servers:
                     type: "array"
                     items:
@@ -4072,29 +4075,6 @@ spec:
                     additionalProperties:
                       type: "string"
                     description: "Http header when fetching JWKS"
-                  mtlsConfig:
-                    description: "TLS settings for http client"
-                    type: "object"
-                    properties:
-                      mtls:
-                        description: "Enabled"
-                        type: "boolean"
-                      loose:
-                        description: "Loose verification"
-                        type: "boolean"
-                      trustAll:
-                        description: "Trust any certificate"
-                        type: "boolean"
-                      trustedCerts:
-                        type: "array"
-                        items:
-                          type: "string"
-                        description: "Trusted cert. ids"
-                      certs:
-                        type: "array"
-                        items:
-                          type: "string"
-                        description: "Trusted cert. ids"
                   base64:
                     description: "The secret is base64 encoded"
                     type: "boolean"
@@ -4119,6 +4099,29 @@ spec:
                   timeout:
                     description: "Timeout when fetching JWKS"
                     type: "number"
+                  tlsConfig:
+                    description: "TLS config"
+                    type: "object"
+                    properties:
+                      mtls:
+                        description: "Enabled"
+                        type: "boolean"
+                      loose:
+                        description: "Loose verification"
+                        type: "boolean"
+                      trustAll:
+                        description: "Trust any certificate"
+                        type: "boolean"
+                      trustedCerts:
+                        type: "array"
+                        items:
+                          type: "string"
+                        description: "Trusted cert. ids"
+                      certs:
+                        type: "array"
+                        items:
+                          type: "string"
+                        description: "Trusted cert. ids"
                   kty:
                     description: "Key type"
                     type: "string"
@@ -4220,29 +4223,6 @@ spec:
                     additionalProperties:
                       type: "string"
                     type: "object"
-                  mtlsConfig:
-                    description: "TLS settings for http client"
-                    type: "object"
-                    properties:
-                      loose:
-                        description: "Loose verification"
-                        type: "boolean"
-                      trustAll:
-                        description: "Trust any certificate"
-                        type: "boolean"
-                      mtls:
-                        description: "Enabled"
-                        type: "boolean"
-                      certs:
-                        description: "Trusted cert. ids"
-                        type: "array"
-                        items:
-                          type: "string"
-                      trustedCerts:
-                        description: "Trusted cert. ids"
-                        type: "array"
-                        items:
-                          type: "string"
                   base64:
                     description: "The secret is base64 encoded"
                     type: "boolean"
@@ -4267,6 +4247,29 @@ spec:
                   timeout:
                     description: "Timeout when fetching JWKS"
                     type: "number"
+                  tlsConfig:
+                    description: "TLS config"
+                    type: "object"
+                    properties:
+                      loose:
+                        description: "Loose verification"
+                        type: "boolean"
+                      trustAll:
+                        description: "Trust any certificate"
+                        type: "boolean"
+                      mtls:
+                        description: "Enabled"
+                        type: "boolean"
+                      certs:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
+                      trustedCerts:
+                        description: "Trusted cert. ids"
+                        type: "array"
+                        items:
+                          type: "string"
                   privateKey:
                     description: "Private key (for signing)"
                     type: "string"
@@ -4356,29 +4359,6 @@ spec:
                         additionalProperties:
                           type: "string"
                         type: "object"
-                      mtlsConfig:
-                        description: "TLS settings for http client"
-                        type: "object"
-                        properties:
-                          loose:
-                            description: "Loose verification"
-                            type: "boolean"
-                          trustAll:
-                            description: "Trust any certificate"
-                            type: "boolean"
-                          mtls:
-                            description: "Enabled"
-                            type: "boolean"
-                          certs:
-                            description: "Trusted cert. ids"
-                            type: "array"
-                            items:
-                              type: "string"
-                          trustedCerts:
-                            description: "Trusted cert. ids"
-                            type: "array"
-                            items:
-                              type: "string"
                       base64:
                         description: "The secret is base64 encoded"
                         type: "boolean"
@@ -4403,6 +4383,29 @@ spec:
                       timeout:
                         description: "Timeout when fetching JWKS"
                         type: "number"
+                      tlsConfig:
+                        description: "TLS config"
+                        type: "object"
+                        properties:
+                          loose:
+                            description: "Loose verification"
+                            type: "boolean"
+                          trustAll:
+                            description: "Trust any certificate"
+                            type: "boolean"
+                          mtls:
+                            description: "Enabled"
+                            type: "boolean"
+                          certs:
+                            description: "Trusted cert. ids"
+                            type: "array"
+                            items:
+                              type: "string"
+                          trustedCerts:
+                            description: "Trusted cert. ids"
+                            type: "array"
+                            items:
+                              type: "string"
                       privateKey:
                         description: "Private key (for signing)"
                         type: "string"
@@ -4765,6 +4768,9 @@ spec:
                   type:
                     description: "the kind of mailer"
                     type: "string"
+                  hostValidation:
+                    description: "Enabled TLS hostname validation"
+                    type: "boolean"
                   path:
                     description: "File path"
                     type: "string"
@@ -5229,11 +5235,7 @@ spec:
                     description: "The domain and path that will be matched"
                     type: "array"
                     items:
-                      type: "object"
-                      properties:
-                        raw:
-                          description: "the raw value of the domain and path"
-                          type: "string"
+                      type: "string"
                   strip_path:
                     description: "Is path stripped from backend request"
                     type: "boolean"
@@ -5444,11 +5446,7 @@ spec:
                           description: "The domain and path that will be matched"
                           type: "array"
                           items:
-                            type: "object"
-                            properties:
-                              raw:
-                                description: "the raw value of the domain and path"
-                                type: "string"
+                            type: "string"
                         strip_path:
                           description: "Is path stripped from backend request"
                           type: "boolean"
