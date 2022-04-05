@@ -17226,24 +17226,6 @@
         "description" : "Configuration for the biscuit plugin",
         "type" : "object",
         "properties" : {
-          "checks" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "Biscuit checks"
-          },
-          "sealedToken" : {
-            "description" : "Is it a sealed token",
-            "type" : "boolean"
-          },
-          "facts" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "Biscuit facts"
-          },
           "privkey" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
@@ -17252,13 +17234,19 @@
             } ],
             "description" : "Biscuit private key"
           },
-          "secret" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
+          "checks" : {
+            "type" : "array",
+            "items" : {
               "type" : "string"
-            } ],
-            "description" : "Biscuit secret"
+            },
+            "description" : "Biscuit checks"
+          },
+          "facts" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Biscuit facts"
           },
           "rules" : {
             "type" : "array",
@@ -25830,14 +25818,6 @@
             } ],
             "description" : "Biscuit public key for validation"
           },
-          "secret" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string"
-            } ],
-            "description" : "Biscuit secret"
-          },
           "resources" : {
             "type" : "array",
             "items" : {
@@ -25864,16 +25844,19 @@
             "description" : "Biscuit location (header, cookie, query)",
             "type" : "string"
           },
+          "revocation_ids" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
           "rules" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
             "description" : "Biscuit rules"
-          },
-          "sealedToken" : {
-            "description" : "Is it a sealed token",
-            "type" : "boolean"
           }
         }
       },

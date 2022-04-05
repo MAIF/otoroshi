@@ -1455,14 +1455,12 @@ This plugin validates a Biscuit token.
 ```json
 {
   "publicKey" : "xxxxxx",
-  "secret" : "secret",
   "checks" : [ ],
   "facts" : [ ],
   "resources" : [ ],
   "rules" : [ ],
   "revocation_ids" : [ ],
   "enforce" : false,
-  "sealed" : false,
   "extractor" : {
     "type" : "header",
     "name" : "Authorization"
@@ -2174,14 +2172,12 @@ apikey client_id and an #authority fact 'client_sign' that is the HMAC256 signat
 ```json
 {
   "publicKey" : "xxxxxx",
-  "secret" : "secret",
   "checks" : [ ],
   "facts" : [ ],
   "resources" : [ ],
   "rules" : [ ],
   "revocation_ids" : [ ],
   "enforce" : false,
-  "sealed" : false,
   "extractor" : {
     "type" : "header",
     "name" : "Authorization"
