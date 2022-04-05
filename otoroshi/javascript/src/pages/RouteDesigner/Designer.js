@@ -520,7 +520,7 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
     <div className="d-flex-between element-text">
       {element.name.charAt(0).toUpperCase() + element.name.slice(1)}
       <i
-        className="fas fa-arrow-right element-arrow"
+        className={`fas fa-${either(element.plugin_multi_inst, 'plus', 'arrow-right')} element-arrow`}
         onClick={(e) => {
           e.stopPropagation();
           hidePreview()
