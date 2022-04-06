@@ -1454,7 +1454,7 @@ class ProxyEngine() extends RequestHandler {
               val pluginConfig: JsValue = wrapper.plugin.defaultConfig
                 .map(dc => dc ++ wrapper.instance.config.raw)
                 .getOrElse(wrapper.instance.config.raw)
-              val ctx                   = _ctx.copy(config = pluginConfig)
+              val ctx                   = _ctx.copy(config = pluginConfig, apikey = _ctx.apikey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)), user = _ctx.user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)))
               val debug                 = route.debugFlow || wrapper.instance.debug
               val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
               val item                  = NgReportPluginSequenceItem(
@@ -2297,7 +2297,7 @@ class ProxyEngine() extends RequestHandler {
               val pluginConfig: JsValue = wrapper.plugin.defaultConfig
                 .map(dc => dc ++ wrapper.instance.config.raw)
                 .getOrElse(wrapper.instance.config.raw)
-              val ctx                   = _ctx.copy(config = pluginConfig)
+              val ctx                   = _ctx.copy(config = pluginConfig, apikey = _ctx.apikey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)), user = _ctx.user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)))
               val debug                 = route.debugFlow || wrapper.instance.debug
               val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
               val item                  = NgReportPluginSequenceItem(
@@ -2645,7 +2645,7 @@ class ProxyEngine() extends RequestHandler {
               val pluginConfig: JsValue = wrapper.plugin.defaultConfig
                 .map(dc => dc ++ wrapper.instance.config.raw)
                 .getOrElse(wrapper.instance.config.raw)
-              val ctx                   = _ctx.copy(config = pluginConfig)
+              val ctx                   = _ctx.copy(config = pluginConfig, apikey = _ctx.apikey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)), user = _ctx.user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)))
               val debug                 = route.debugFlow || wrapper.instance.debug
               val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
               val item                  = NgReportPluginSequenceItem(
