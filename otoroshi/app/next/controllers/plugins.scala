@@ -54,10 +54,6 @@ class NgPluginsController(
   def plugins() = ApiAction {
     val plugins = env.scriptManager.ngNames
       .distinct
-      .map(name => {
-        println(name)
-        name
-      })
       .filterNot(_.contains(".NgMerged"))
       .flatMap(name => env.scriptManager.getAnyScript[NgNamedPlugin](s"cp:$name").toOption.map(o => (name, o)))
 

@@ -5,9 +5,11 @@ import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
 import com.jayway.jsonpath.{Configuration, JsonPath}
 import net.minidev.json.{JSONArray, JSONObject}
+import otoroshi.api.OtoroshiEnvHolder
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsBoolean, JsNumber, JsObject, JsString, JsValue, Json, Reads, Writes}
 import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.jackson.JacksonJson
 
 import scala.util.{Failure, Success, Try}
 
@@ -85,17 +87,34 @@ object JsonPathUtils {
       .build()
   }
 
-  def getAtPolyJson(payload: JsValue, path: String): Option[JsValue] = getAtPoly(Json.stringify(payload), path)
+  def getAtPolyJson(payload: JsValue, path: String): Option[JsValue] = {
+    getAtPoly(Json.stringify(payload), path)
+    // val env = OtoroshiEnvHolder.get()
+    // env.metrics.withTimer("JsonPathUtils.getAtPolyJson") {
+    //   Try {
+    //     val docCtx = JsonPath.parse(Reads.JsonNodeReads.reads(payload).get, config)
+    //     Writes.jsonNodeWrites.writes(docCtx.read[JsonNode](path))
+    //   } match {
+    //     case Failure(e) =>
+    //       logger.error(s"error while trying to read '$path' on '$payload'", e)
+    //       None
+    //     case Success(s) => s.some
+    //   }
+    // }
+  }
 
   def getAtPoly(payload: String, path: String): Option[JsValue] = {
-    Try {
-      val docCtx = JsonPath.parse(payload, config)
-      Writes.jsonNodeWrites.writes(docCtx.read[JsonNode](path))
-    } match {
-      case Failure(e) =>
-        logger.error(s"error while trying to read '$path' on '$payload'", e)
-        None
-      case Success(s) => s.some
+    val env = OtoroshiEnvHolder.get()
+    env.metrics.withTimer("JsonPathUtils.getAtPoly") {
+      Try {
+        val docCtx = JsonPath.parse(payload, config)
+        Writes.jsonNodeWrites.writes(docCtx.read[JsonNode](path))
+      } match {
+        case Failure(e) =>
+          logger.error(s"error while trying to read '$path' on '$payload'", e)
+          None
+        case Success(s) => s.some
+      }
     }
   }
 }
