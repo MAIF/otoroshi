@@ -106,13 +106,9 @@ class ContextValidation extends NgAccessValidator {
         )
       }
       .getOrElse(JsNull)
-    val apikey = ctx.apikey.orElse(ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)).map(_.json).getOrElse(JsNull)
-    val user = ctx.user.orElse(ctx.attrs.get(otoroshi.plugins.Keys.UserKey)).map(_.json).getOrElse(JsNull)
     val json           = ctx.json.asObject ++ Json.obj(
       "route" -> ctx.route.json, 
       "token" -> token,
-      "apikey" -> apikey,
-      "user" -> user
     )
     config.validators.forall(validator => validator.validate(json))
   }
