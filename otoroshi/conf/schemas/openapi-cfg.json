@@ -2231,7 +2231,7 @@
     "otoroshi.plugins.biscuit.BiscuitConfig.facts": "Biscuit facts",
     "otoroshi.plugins.biscuit.BiscuitConfig.publicKey": "Biscuit public key for validation",
     "otoroshi.plugins.biscuit.BiscuitConfig.resources": "Biscuit resources",
-    "otoroshi.plugins.biscuit.BiscuitConfig.revocation_ids": "???",
+    "otoroshi.plugins.biscuit.BiscuitConfig.revocation_ids": "Ids of revoked tokens",
     "otoroshi.plugins.biscuit.BiscuitConfig.rules": "Biscuit rules",
     "otoroshi.plugins.biscuit.PreRoutingVerifierContext.apk": "Current apikey",
     "otoroshi.plugins.biscuit.PreRoutingVerifierContext.ctx": "Current context",
