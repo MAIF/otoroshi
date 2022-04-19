@@ -530,7 +530,9 @@ case class JWKSAlgoSettings(
   }
 
   override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
-    logger.error("this method should not be called !")
+    if (isAsync) {
+      logger.warn(s"loading JWKS content from '${url}' blocking style !")
+    }
     // AWAIT: valid
     Await.result(asAlgorithmF(mode)(env, env.otoroshiExecutionContext), timeout)
   }
