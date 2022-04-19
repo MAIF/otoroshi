@@ -230,7 +230,7 @@ case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) ex
 
   def isAsync: Boolean = false
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] =
+  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
     size match {
       case 256 if base64 => Some(Algorithm.HMAC256(ApacheBase64.decodeBase64(transformValue(secret))))
       case 384 if base64 => Some(Algorithm.HMAC384(ApacheBase64.decodeBase64(transformValue(secret))))
@@ -240,6 +240,8 @@ case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) ex
       case 512           => Some(Algorithm.HMAC512(transformValue(secret)))
       case _             => None
     }
+  }
+
   override def asJson                                                            =
     Json.obj(
       "type"   -> "HSAlgoSettings",
@@ -292,7 +294,7 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     }
   }
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] =
+  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
     size match {
       case 256 =>
         Some(
@@ -317,6 +319,7 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
         )
       case _   => None
     }
+  }
 
   override def asJson =
     Json.obj(
@@ -370,7 +373,7 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     }
   }
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] =
+  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
     size match {
       case 256 =>
         Some(
@@ -395,6 +398,7 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
         )
       case _   => None
     }
+  }
 
   override def asJson =
     Json.obj(
