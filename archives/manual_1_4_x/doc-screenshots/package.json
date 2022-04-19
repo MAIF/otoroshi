@@ -12,7 +12,7 @@
     "fs-extra": "^10.0.0",
     "lodash": "^4.17.21",
     "minimist": "^1.2.6",
-    "moment": "^2.29.1",
+    "moment": "^2.29.2",
     "node-cmd": "^5.0.0",
     "node-fetch": "2.6.7",
     "nodemon": "^2.0.12",
