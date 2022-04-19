@@ -21,7 +21,7 @@ import otoroshi.gateway.GwError
 
 import javax.script._
 import otoroshi.models._
-import otoroshi.next.plugins.api.{NgPlugin, NgNamedPlugin, NgPluginCategory, NgPluginVisibility, NgStep}
+import otoroshi.next.plugins.api.{NgNamedPlugin, NgPlugin, NgPluginCategory, NgPluginVisibility, NgStep}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
@@ -928,15 +928,15 @@ class ScriptManager(env: Env) {
           .filterNot(predicate)
           .map(_.getName)
 
-        val ngPlugins: Seq[String] = 
+        val ngPlugins: Seq[String] =
           (scanResult.getSubclasses(classOf[NgPlugin].getName).asScala ++
           scanResult.getClassesImplementing(classOf[NgPlugin].getName).asScala)
-          .filterNot(predicate)
-          .map(_.getName) ++
+            .filterNot(predicate)
+            .map(_.getName) ++
           (scanResult.getSubclasses(classOf[NgNamedPlugin].getName).asScala ++
           scanResult.getClassesImplementing(classOf[NgNamedPlugin].getName).asScala)
-          .filterNot(predicate)
-          .map(_.getName)
+            .filterNot(predicate)
+            .map(_.getName)
 
         (
           requestTransformers,

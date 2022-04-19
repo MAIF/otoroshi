@@ -242,7 +242,7 @@ case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) ex
     }
   }
 
-  override def asJson                                                            =
+  override def asJson =
     Json.obj(
       "type"   -> "HSAlgoSettings",
       "size"   -> this.size,

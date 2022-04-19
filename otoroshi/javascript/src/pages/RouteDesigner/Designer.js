@@ -19,24 +19,34 @@ import { camelToSnake, camelToSnakeFlow, toUpperCaseLabels } from '../../util';
 import { isEqual } from 'lodash';
 import { FeedbackButton } from './FeedbackButton';
 
-const either = (value, left, right) => value ? left : right
+const either = (value, left, right) => (value ? left : right);
 
-const Status = ({ value }) =>
-  <div className='status-dot' style={{ backgroundColor: either(value, '#198754', '#D5443F') }} />
+const Status = ({ value }) => (
+  <div className="status-dot" style={{ backgroundColor: either(value, '#198754', '#D5443F') }} />
+);
 
-const Dot = ({ className, icon, children, clickable, onClick, highlighted, selectedNode, enabled, style = {} }) => (
+const Dot = ({
+  className,
+  icon,
+  children,
+  clickable,
+  onClick,
+  highlighted,
+  selectedNode,
+  enabled,
+  style = {},
+}) => (
   <div
     className={`dot ${className}`}
     style={{
       cursor: either(clickable, 'pointer', 'initial'),
       opacity: either(!selectedNode || highlighted, 1, 0.25),
       backgroundColor: either(highlighted, '#f9b000', '#494948'),
-      ...style
+      ...style,
     }}
     onClick={(e) => {
       e.stopPropagation();
-      if (onClick)
-        onClick(e);
+      if (onClick) onClick(e);
     }}>
     {enabled !== undefined && <Status value={enabled} />}
     {icon && <i className={`fas fa-${icon} dot-icon`} />}
@@ -53,7 +63,7 @@ const NodeElement = ({
   bold,
   disableBorder,
   style,
-  enabled
+  enabled,
 }) => {
   const { id, name, index } = element;
   const highlighted =
@@ -61,32 +71,39 @@ const NodeElement = ({
     selectedNode.id === id &&
     (selectedNode.plugin_multi_inst ? selectedNode.index === index : true);
 
-  return <>
-    <Dot
-      className={className}
-      clickable={true}
-      selectedNode={selectedNode}
-      style={{
-        borderWidth: either(disableBorder, 0, 1),
-        fontWeight: either(bold, 'bold', 'normal'),
-        ...style
-      }}
-      onClick={(e) => {
-        e.stopPropagation();
-        setSelectedNode(element);
-      }}
-      highlighted={highlighted}
-      enabled={enabled}>
-      <span className='dot-text'>{name || id}</span>
-    </Dot>
-    {!hideLink && <VerticalLine highlighted={highlighted} />}
-  </>
+  return (
+    <>
+      <Dot
+        className={className}
+        clickable={true}
+        selectedNode={selectedNode}
+        style={{
+          borderWidth: either(disableBorder, 0, 1),
+          fontWeight: either(bold, 'bold', 'normal'),
+          ...style,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setSelectedNode(element);
+        }}
+        highlighted={highlighted}
+        enabled={enabled}>
+        <span className="dot-text">{name || id}</span>
+      </Dot>
+      {!hideLink && <VerticalLine highlighted={highlighted} />}
+    </>
+  );
 };
 
-const VerticalLine = ({ highlighted = true, flex }) => <div className="vertical-line" style={{
-  opacity: either(highlighted, 1, 0.25),
-  flex: either(flex, 1, 'initial')
-}} />
+const VerticalLine = ({ highlighted = true, flex }) => (
+  <div
+    className="vertical-line"
+    style={{
+      opacity: either(highlighted, 1, 0.25),
+      flex: either(flex, 1, 'initial'),
+    }}
+  />
+);
 
 export default ({ value }) => {
   const { routeId } = useParams();
@@ -137,7 +154,7 @@ export default ({ value }) => {
         'Ancien plugins',
       ]);
       setRoute(route);
-      setOriginalRoute(route)
+      setOriginalRoute(route);
 
       setPlugins(
         formatedPlugins.map((p) => ({
@@ -278,10 +295,9 @@ export default ({ value }) => {
       })
       .then((r) => {
         if (!r.error) {
-          setOriginalRoute(r)
+          setOriginalRoute(r);
           setRoute(r);
-        }
-        else {
+        } else {
           // TODO - manage error
         }
       });
@@ -289,7 +305,7 @@ export default ({ value }) => {
 
   const saveChanges = () => {
     return nextClient.update(nextClient.ENTITIES.ROUTES, route).then((newRoute) => {
-      setOriginalRoute(newRoute)
+      setOriginalRoute(newRoute);
       setRoute(newRoute);
     });
   };
@@ -335,14 +351,12 @@ export default ({ value }) => {
 
   return (
     <Loader loading={loading}>
-      <div
-        className="h-100 col-12 hide-overflow"
-        onClick={() => setSelectedNode(undefined)}>
+      <div className="h-100 col-12 hide-overflow" onClick={() => setSelectedNode(undefined)}>
         <div className="plugins-stack-column">
           <div className="elements">
-            <div className='plugins-background-bar' />
+            <div className="plugins-background-bar" />
             <SearchBar handleSearch={handleSearch} />
-            <div className='relative-container' id="plugins-stack-container">
+            <div className="relative-container" id="plugins-stack-container">
               <PluginsStack
                 elements={plugins.reduce(
                   (acc, plugin) => {
@@ -394,27 +408,30 @@ export default ({ value }) => {
               backends={backends}
             />
           ) : (
-            <div
-              className="row h-100 p-2 me-1 flow-container">
+            <div className="row h-100 p-2 me-1 flow-container">
               <div className="col-sm-4 pe-3 d-flex flex-column">
                 <div className="row" style={{ height: '100%' }}>
                   <div className="col-sm-6 flex-column">
                     <div className="main-view relative-container">
                       <div
-                        className='frontend-button'
+                        className="frontend-button"
                         style={{
-                          background:
-                            either(selectedNode && selectedNode.id === 'Frontend',
-                              'linear-gradient(to right, rgb(249, 176, 0) 55%, transparent 1%)',
-                              'linear-gradient(to right, rgb(73, 73, 72) 55%, transparent 1%)'),
-                          opacity:
-                            either(!selectedNode || (selectedNode && selectedNode.id === 'Frontend'), 1, 0.25)
+                          background: either(
+                            selectedNode && selectedNode.id === 'Frontend',
+                            'linear-gradient(to right, rgb(249, 176, 0) 55%, transparent 1%)',
+                            'linear-gradient(to right, rgb(73, 73, 72) 55%, transparent 1%)'
+                          ),
+                          opacity: either(
+                            !selectedNode || (selectedNode && selectedNode.id === 'Frontend'),
+                            1,
+                            0.25
+                          ),
                         }}>
                         <i className="fas fa-user frontend-button-icon" />
                       </div>
                       {inputNodes.slice(0, 1).map((value, i) => (
                         <NodeElement
-                          className='frontend-container-button'
+                          className="frontend-container-button"
                           element={value}
                           key={`inNodes${i}`}
                           selectedNode={selectedNode}
@@ -423,15 +440,17 @@ export default ({ value }) => {
                           bold={true}
                         />
                       ))}
-                      <Dot
-                        className='arrow-flow'
-                        icon="chevron-down"
-                        selectedNode={selectedNode}
-                      />
+                      <Dot className="arrow-flow" icon="chevron-down" selectedNode={selectedNode} />
                       <VerticalLine highlighted={!selectedNode} />
                       {inputNodes.slice(1).map((value, i) => (
                         <NodeElement
-                          enabled={route.plugins.find((p, i) => (p.plugin === value.id || p.config.plugin === value.id) && i === value.index)?.enabled}
+                          enabled={
+                            route.plugins.find(
+                              (p, i) =>
+                                (p.plugin === value.id || p.config.plugin === value.id) &&
+                                i === value.index
+                            )?.enabled
+                          }
                           element={value}
                           key={`inNodes${i}`}
                           selectedNode={selectedNode}
@@ -442,18 +461,19 @@ export default ({ value }) => {
                       <VerticalLine highlighted={!selectedNode} flex={true} />
                     </div>
                   </div>
-                  <div
-                    className="col-sm-6 pe-3 flex-column">
+                  <div className="col-sm-6 pe-3 flex-column">
                     <div className="main-view">
-                      <Dot
-                        className="arrow-flow"
-                        icon="chevron-up"
-                        selectedNode={selectedNode}
-                      />
+                      <Dot className="arrow-flow" icon="chevron-up" selectedNode={selectedNode} />
                       <VerticalLine highlighted={!selectedNode} />
                       {outputNodes.map((value, i) => (
                         <NodeElement
-                          enabled={route.plugins.find((p, i) => (p.plugin === value.id || p.config.plugin === value.id) && i === value.index)?.enabled}
+                          enabled={
+                            route.plugins.find(
+                              (p, i) =>
+                                (p.plugin === value.id || p.config.plugin === value.id) &&
+                                i === value.index
+                            )?.enabled
+                          }
                           element={value}
                           key={`outNodes${i}`}
                           setSelectedNode={setSelectedNode}
@@ -467,13 +487,23 @@ export default ({ value }) => {
                 </div>
                 <div
                   className="main-view backend-button"
-                  style={{ opacity: either(!selectedNode, 1, either(!selectedNode?.onTargetStream, 0.25, 1)) }}>
+                  style={{
+                    opacity: either(
+                      !selectedNode,
+                      1,
+                      either(!selectedNode?.onTargetStream, 0.25, 1)
+                    ),
+                  }}>
                   <i className="fas fa-bullseye backend-icon" />
                   {targetNodes.map((value, i, arr) => (
                     <NodeElement
                       element={value}
                       key={`targetNodes${i}`}
-                      selectedNode={either(selectedNode && selectedNode.onTargetStream, selectedNode, undefined)}
+                      selectedNode={either(
+                        selectedNode && selectedNode.onTargetStream,
+                        selectedNode,
+                        undefined
+                      )}
                       setSelectedNode={setSelectedNode}
                       hideLink={arr.length - 1 === i}
                       disableBorder={true}
@@ -493,13 +523,18 @@ export default ({ value }) => {
                     route={route}
                     plugins={plugins}
                     backends={backends}
-                    hidePreview={() => showPreview({
-                      ...preview,
-                      enabled: false,
-                    })}
+                    hidePreview={() =>
+                      showPreview({
+                        ...preview,
+                        enabled: false,
+                      })
+                    }
                   />
                 ) : (
-                  <UnselectedNode saveChanges={saveChanges} disabled={isEqual(route, originalRoute)} />
+                  <UnselectedNode
+                    saveChanges={saveChanges}
+                    disabled={isEqual(route, originalRoute)}
+                  />
                 )}
               </div>
             </div>
@@ -523,7 +558,7 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
         className="fas fa-arrow-right element-arrow"
         onClick={(e) => {
           e.stopPropagation();
-          hidePreview()
+          hidePreview();
           addNode(element);
         }}
       />
@@ -676,7 +711,7 @@ const EditView = ({
     window.removeEventListener('scroll', onScroll);
     window.addEventListener('scroll', onScroll, { passive: true });
 
-    onScroll()
+    onScroll();
 
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -688,10 +723,11 @@ const EditView = ({
 
   const { id, flow, config_flow, config_schema, schema, name, index } = selectedNode;
 
-  const isFrontendOrBackend = ['Backend', 'Frontend'].includes(id)
-  const isPluginWithConfiguration = Object.keys(config_schema).length > 0
+  const isFrontendOrBackend = ['Backend', 'Frontend'].includes(id);
+  const isPluginWithConfiguration = Object.keys(config_schema).length > 0;
 
-  const plugin = either(isFrontendOrBackend,
+  const plugin = either(
+    isFrontendOrBackend,
     DEFAULT_FLOW[id],
     plugins.find((element) => element.id === id || element.id.endsWith(id))
   );
@@ -706,13 +742,17 @@ const EditView = ({
     let formSchema = schema || config_schema;
     let formFlow = [
       either(isFrontendOrBackend, undefined, 'status'),
-      either(isPluginWithConfiguration, {
-        label: either(isFrontendOrBackend, null, 'Plugin'),
-        flow: ['plugin'],
-        collapsed: false,
-        collapsable: false
-      }, undefined),
-    ].filter(f => f)
+      either(
+        isPluginWithConfiguration,
+        {
+          label: either(isFrontendOrBackend, null, 'Plugin'),
+          flow: ['plugin'],
+          collapsed: false,
+          collapsable: false,
+        },
+        undefined
+      ),
+    ].filter((f) => f);
 
     if (config_schema) {
       formSchema = {
@@ -759,8 +799,8 @@ const EditView = ({
         };
     } else {
       value = {
-        plugin: { ...value }
-      }
+        plugin: { ...value },
+      };
     }
 
     setForm({
@@ -776,28 +816,36 @@ const EditView = ({
   }, [selectedNode]);
 
   const onValidate = (item) => {
-    return updatePlugin(id, index, unstringify({
-      plugin: item.plugin,
-      status: item.status
-    }), selectedNode.id).then(() => {
+    return updatePlugin(
+      id,
+      index,
+      unstringify({
+        plugin: item.plugin,
+        status: item.status,
+      }),
+      selectedNode.id
+    ).then(() => {
       setForm({ ...form, originalValue: item });
       setSaveable(false);
     });
   };
 
   // console.log("SCHEMA", form.schema.plugin)
-  console.log("VALUE", form.value)
+  console.log('VALUE', form.value);
 
   return (
     <div
       onClick={(e) => e.stopPropagation()}
       className="plugins-stack editor-view"
       style={{ top: offset }}>
-      <div
-        className="group-header d-flex-between editor-view-informations">
+      <div className="group-header d-flex-between editor-view-informations">
         <div className="d-flex-between">
-          <i className={`fas fa-${plugin.icon || 'bars'} group-icon designer-group-header-icon editor-view-icon`} />
-          <span className='editor-view-text'>{name || id}</span>
+          <i
+            className={`fas fa-${
+              plugin.icon || 'bars'
+            } group-icon designer-group-header-icon editor-view-icon`}
+          />
+          <span className="editor-view-text">{name || id}</span>
         </div>
         <div className="d-flex me-1">
           {!selectedNode.legacy && !readOnly && (
@@ -836,16 +884,18 @@ const EditView = ({
           backgroundColor: '#494949',
         }}>
         <Description text={selectedNode.description} />
-        {id === 'Backend' && <BackendSelector
-          backends={backends}
-          setBackendConfigRef={setBackendConfigRef}
-          setUsingExistingBackend={setUsingExistingBackend}
-          setRoute={setRoute}
-          usingExistingBackend={usingExistingBackend}
-          route={route}
-        />}
+        {id === 'Backend' && (
+          <BackendSelector
+            backends={backends}
+            setBackendConfigRef={setBackendConfigRef}
+            setUsingExistingBackend={setUsingExistingBackend}
+            setRoute={setRoute}
+            usingExistingBackend={usingExistingBackend}
+            route={route}
+          />
+        )}
         {!usingExistingBackend || id !== 'Backend' ? (
-          <div className='editor-view-form'>
+          <div className="editor-view-form">
             {asJsonFormat ? (
               <>
                 {form.value && (
@@ -859,10 +909,10 @@ const EditView = ({
                     value={stringify(form.value)}
                     onChange={(value) => {
                       try {
-                        const v = either(typeof value === 'string', JSON.parse(value), value)
+                        const v = either(typeof value === 'string', JSON.parse(value), value);
                         setSaveable(!isEqual(form.originalValue, v));
                       } catch (err) {
-                        setSaveable(true)
+                        setSaveable(true);
                       }
                       setForm({ ...form, value });
                     }}
@@ -896,31 +946,38 @@ const EditView = ({
                   />
                 )}
               </>
-            ) : (
-              form.value ? <Form
+            ) : form.value ? (
+              <Form
                 ref={ref}
                 value={unstringify(form.value)}
                 schema={form.schema}
                 options={{
                   watch: () => {
                     if (ref.current) {
-                      const data = ref.current.rawData()
-                      const unsaved = data.status ? {
-                        ...data,
-                        status: {
-                          ...data.status,
-                          enabled: !!data.status.enabled,
-                          debug: !!data.status.debug
-                        }
-                      } : data
+                      const data = ref.current.rawData();
+                      const unsaved = data.status
+                        ? {
+                            ...data,
+                            status: {
+                              ...data.status,
+                              enabled: !!data.status.enabled,
+                              debug: !!data.status.debug,
+                            },
+                          }
+                        : data;
                       if (unsaved && Object.keys(unsaved).length > 0) {
-                        const configurationChanged = !isEqual(unsaved.plugin, form.originalValue.plugin)
+                        const configurationChanged = !isEqual(
+                          unsaved.plugin,
+                          form.originalValue.plugin
+                        );
                         // console.log(unsaved.plugin, form.originalValue.plugin, configurationChanged)
                         // console.log(unsaved.status, unsaved.status, form.originalValue.status, !isEqual(unsaved.status, form.originalValue.status))
-                        if (configurationChanged)
-                          setSaveable(true)
-                        else if (unsaved.status && !isEqual(unsaved.status, form.originalValue.status))
-                          setSaveable(true)
+                        if (configurationChanged) setSaveable(true);
+                        else if (
+                          unsaved.status &&
+                          !isEqual(unsaved.status, form.originalValue.status)
+                        )
+                          setSaveable(true);
                       }
                     }
                   },
@@ -935,8 +992,8 @@ const EditView = ({
                     saveable={saveable}
                   />
                 )}
-              /> : null
-            )}
+              />
+            ) : null}
           </div>
         ) : (
           <>
@@ -951,10 +1008,12 @@ const EditView = ({
             <FeedbackButton
               text="Update the plugin configuration"
               icon={() => <i className="fas fa-paper-plane" />}
-              onPress={() => nextClient.update(nextClient.ENTITIES.ROUTES, route).then((newRoute) => {
-                setOriginalRoute(newRoute)
-                setRoute(newRoute);
-              })}
+              onPress={() =>
+                nextClient.update(nextClient.ENTITIES.ROUTES, route).then((newRoute) => {
+                  setOriginalRoute(newRoute);
+                  setRoute(newRoute);
+                })
+              }
             />
           </>
         )}
@@ -968,7 +1027,7 @@ const EditView = ({
 
 const stringify = (item) => (typeof item === 'object' ? JSON.stringify(item, null, 2) : item);
 const unstringify = (item) => {
-  console.log(item)
+  console.log(item);
   if (typeof item === 'object') return item;
   else {
     try {
@@ -993,7 +1052,7 @@ const Description = ({ text }) => {
         style={{
           marginBottom: either(text, 'inherit', 0),
           padding: either(text, '12px', 0),
-          paddingBottom: either(overflows || !text, 0, '12px')
+          paddingBottom: either(overflows || !text, 0, '12px'),
         }}>
         {text ? text?.slice(0, either(showMore, textLength, maxLength)) : ''}{' '}
         {overflows && either(!showMore, '...', '')}
@@ -1037,7 +1096,7 @@ const BackendSelector = ({
   route,
   backends,
 }) => (
-  <div className='backend-selector'>
+  <div className="backend-selector">
     <div className={`d-flex ${either(usingExistingBackend, 'mb-3', '')}`}>
       <button
         className="btn btn-sm new-backend-button"

@@ -147,10 +147,10 @@ class HttpHandler()(implicit env: Env) {
     val callDate   = attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).get
     val start      = attrs.get(otoroshi.plugins.Keys.RequestStartKey).get
 
-    val requestTimestamp       = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
-    val jti                    = IdGenerator.uuid
-    val stateValue             = IdGenerator.extendedToken(128)
-    val stateToken: String     = descriptor.secComVersion match {
+    val requestTimestamp                                    = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
+    val jti                                                 = IdGenerator.uuid
+    val stateValue                                          = IdGenerator.extendedToken(128)
+    val stateToken: String                                  = descriptor.secComVersion match {
       case SecComVersion.V1 => stateValue
       case SecComVersion.V2 =>
         OtoroshiClaim(
@@ -167,12 +167,12 @@ class HttpHandler()(implicit env: Env) {
         ).withClaim("state", stateValue)
           .serialize(descriptor.algoChallengeFromOtoToBack)
     }
-    val rawUri                 = req.relativeUri.substring(1)
-    val uriParts               = rawUri.split("/").toSeq
-    val uri: String            = descriptor.maybeStrippedUri(req, rawUri)
-    val scheme                 =
+    val rawUri                                              = req.relativeUri.substring(1)
+    val uriParts                                            = rawUri.split("/").toSeq
+    val uri: String                                         = descriptor.maybeStrippedUri(req, rawUri)
+    val scheme                                              =
       if (descriptor.redirectToLocal) descriptor.localScheme else _target.scheme
-    val host                   = TargetExpressionLanguage(
+    val host                                                = TargetExpressionLanguage(
       if (descriptor.redirectToLocal)
         descriptor.localHost
       else _target.host,
@@ -184,8 +184,8 @@ class HttpHandler()(implicit env: Env) {
       attrs,
       env
     )
-    val root                   = descriptor.root
-    val url                    = TargetExpressionLanguage(
+    val root                                                = descriptor.root
+    val url                                                 = TargetExpressionLanguage(
       s"$scheme://$host$root$uri",
       Some(req),
       Some(descriptor),
@@ -197,10 +197,10 @@ class HttpHandler()(implicit env: Env) {
     )
     lazy val (currentReqHasBody, shouldInjectContentLength) = req.theHasBodyWithoutLength
     // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
-    val fromOtoroshi           = req.headers
+    val fromOtoroshi                                        = req.headers
       .get(env.Headers.OtoroshiRequestId)
       .orElse(req.headers.get(env.Headers.OtoroshiGatewayParentRequest))
-    val promise                = Promise[ProxyDone]
+    val promise                                             = Promise[ProxyDone]
 
     val claim = descriptor.generateInfoToken(apiKey, paUsr, Some(req))
     logger.trace(s"Claim is : $claim")

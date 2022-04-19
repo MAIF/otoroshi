@@ -21,8 +21,8 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
       val label: String    = prop._1
       var isArray: Boolean = false
       var informations     = Json.obj(
-        "label" -> label,
-        "type"  -> JsString(openapiTypesToFormTypes.getOrElse(`type`, `type`)),
+        "label"       -> label,
+        "type"        -> JsString(openapiTypesToFormTypes.getOrElse(`type`, `type`)),
         "constraints" -> Json.arr(
           Json.obj(
             "type" -> "nullable"
@@ -98,8 +98,7 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
                           "mode" -> "json"
                         )
                       )
-                    }
-                    else
+                    } else
                       informations
                   } else if ((informations \ "type").as[String] == "number") {
                     informations ++ Json.obj(

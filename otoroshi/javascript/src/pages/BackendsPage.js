@@ -203,7 +203,7 @@ export const BackendForm = ({ isCreation, value, onSubmit, foldable, style = {} 
                   .then(() => history.push(`/backends`));
               else nextClient.update(nextClient.ENTITIES.BACKENDS, item);
             }}
-            onError={e => console.log(e)}
+            onError={(e) => console.log(e)}
             footer={() => null}
           />
           <button

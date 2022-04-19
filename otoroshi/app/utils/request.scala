@@ -140,7 +140,7 @@ object RequestImplicits {
       //   case _                   => true
       // }
     }
-     
+
     @inline
     def theHasBodyWithoutLength: (Boolean, Boolean) = otoroshi.utils.body.BodyUtils.hasBodyWithoutLength(requestHeader)
   }
