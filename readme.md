@@ -10,7 +10,12 @@
 
 The reference documentation is available at https://maif.github.io/otoroshi/manual/
 
+## Otoroshi Roadmap
+
+You can find the roadmap or topics considered for the roadmap in the [ROADMAP.md](https://github.com/MAIF/otoroshi/blob/master/ROADMAP.md) file.
+
 ## Community
+
 You can join these groups and chats to discuss and ask Otoroshi related questions:
 
 - Issue tracker: [![github: MAIF/otoroshi/issues](https://img.shields.io/github/issues/MAIF/otoroshi.svg)](https://github.com/MAIF/otoroshi/issues)
