@@ -25849,7 +25849,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Ids of revoked tokens"
           },
           "rules" : {
             "type" : "array",
