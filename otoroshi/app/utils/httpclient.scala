@@ -2,6 +2,7 @@ package otoroshi.utils.http
 
 import akka.Done
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.HttpEntity.{ChunkStreamPart, Limitable, SizeLimit}
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
@@ -9,8 +10,9 @@ import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeR
 import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.{ClientTransport, ConnectionContext, Http, HttpsConnectionContext}
-import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
+import akka.stream.{Attributes, FlowShape, Inlet, Materializer, Outlet, OverflowStrategy, QueueOfferResult}
 import akka.stream.scaladsl.{Flow, Sink, Source, SourceQueueWithComplete}
+import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
@@ -27,7 +29,7 @@ import play.api.mvc.MultipartFormData
 import play.shaded.ahc.org.asynchttpclient.util.Assertions
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
-import otoroshi.utils.future.Implicits.EnhancedObject
+import otoroshi.utils.syntax.implicits._
 
 import java.io.{File, FileOutputStream}
 import java.net.{InetAddress, InetSocketAddress, URI}
@@ -1319,7 +1321,9 @@ case class AkkaWsClientRequest(
     val cl = realContentLength
     body match {
       case EmptyBody                         => (HttpEntity.Empty, headers)
-      case InMemoryBody(bytes)               => (HttpEntity.apply(ct, bytes), headers)
+      case InMemoryBody(bytes)               => (HttpEntity(ct, bytes), headers)
+      // case SourceBody(_)     if cl.isDefined && cl.get == 0L => (HttpEntity.Default(ct, 0L, Source.single(ByteString.empty)), headers) // does not work as Default should have length > 0
+      case SourceBody(_)     if cl.isDefined && cl.get == 0L => (HttpEntity.Strict(ct, ByteString.empty), headers)
       case SourceBody(bytes) if cl.isDefined => (HttpEntity(ct, cl.get, bytes), headers)
       case SourceBody(bytes)                 => (HttpEntity(ct, bytes), headers)
     }

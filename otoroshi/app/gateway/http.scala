@@ -195,7 +195,7 @@ class HttpHandler()(implicit env: Env) {
       attrs,
       env
     )
-    lazy val currentReqHasBody = req.theHasBody
+    lazy val (currentReqHasBody, shouldInjectContentLength) = req.theHasBodyWithoutLength
     // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
     val fromOtoroshi           = req.headers
       .get(env.Headers.OtoroshiRequestId)
@@ -527,7 +527,11 @@ class HttpHandler()(implicit env: Env) {
 
           // because writeableOf_WsBody always add a 'Content-Type: application/octet-stream' header
           val builderWithBody = if (currentReqHasBody) {
-            builder.withBody(body)
+            if (shouldInjectContentLength) {
+              builder.addHttpHeaders("Content-Length" -> "0").withBody(body)
+            } else {
+              builder.withBody(body)
+            }
           } else {
             builder
           }

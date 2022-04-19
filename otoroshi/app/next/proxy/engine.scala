@@ -2460,7 +2460,7 @@ class ProxyEngine() extends RequestHandler {
       .map(_.toLong)
     val counterIn                     = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
     counterIn.addAndGet(contentLengthIn.getOrElse(0L))
-    val currentReqHasBody             = request.hasBody
+    val (currentReqHasBody, shouldInjectContentLength) = request.hasBodyWithoutLength
     val wsCookiesIn                   = request.cookies
     val finalTarget: Target           = request.backend.getOrElse(backend).toTarget
     attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> finalTarget)
@@ -2501,7 +2501,11 @@ class ProxyEngine() extends RequestHandler {
     val theBody          = request.body
     // because writeableOf_WsBody always add a 'Content-Type: application/octet-stream' header
     val builderWithBody  = if (currentReqHasBody) {
-      builder.withBody(theBody)
+      if (shouldInjectContentLength) {
+        builder.addHttpHeaders("Content-Length" -> "0").withBody(theBody)
+      } else {
+        builder.withBody(theBody)
+      }
     } else {
       builder
     }

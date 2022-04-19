@@ -55,7 +55,7 @@ object JsonHelpers {
       "uri"               -> request.uri,
       "path"              -> request.path,
       "version"           -> request.version,
-      "has_body"          -> request.hasBody,
+      "has_body"          -> request.theHasBody,
       "remote"            -> request.remoteAddress,
       "client_cert_chain" -> JsonHelpers.clientCertChainToJson(request.clientCertificateChain)
     )
