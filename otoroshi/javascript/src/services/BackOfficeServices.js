@@ -478,6 +478,18 @@ export function updateApiKey(serviceId, ak) {
   }).then((r) => r.json());
 }
 
+export function updateRawApiKey(ak) {
+  return fetch(`/bo/api/proxy/api/apikeys/${ak.clientId}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then((r) => r.json());
+}
+
 export function fetchStandaloneApiKey(clientId) {
   return fetch(`/bo/api/proxy/api/apikeys/${clientId}`, {
     method: 'GET',
@@ -653,6 +665,19 @@ export function saveService(service) {
 export function updateService(serviceId, service) {
   delete service.groupId;
   return fetch(`/bo/api/proxy/api/services/${serviceId}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(service),
+  }).then((r) => r.json());
+}
+
+export function updateRawService(service) {
+  delete service.groupId;
+  return fetch(`/bo/api/proxy/api/services/${service.id}`, {
     method: 'PUT',
     credentials: 'include',
     headers: {
