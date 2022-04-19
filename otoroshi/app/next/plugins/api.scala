@@ -42,35 +42,36 @@ case class NgPluginHttpRequest(
     body: Source[ByteString, _],
     backend: Option[NgTarget]
 ) {
-  lazy val contentType: Option[String]      = header("Content-Type")
-  lazy val contentLengthStr: Option[String] = header("Content-Length")
-  lazy val host: String                     = header("Host").getOrElse("")
-  lazy val uri: Uri                         = Uri(url)
-  lazy val scheme: String                   = uri.scheme
-  lazy val authority: Uri.Authority         = uri.authority
-  lazy val fragment: Option[String]         = uri.fragment
-  lazy val path: String                     = uri.path.toString()
-  lazy val queryString: Option[String]      = uri.rawQueryString
-  lazy val relativeUri: String              = uri.toRelative.toString()
-  lazy val hasBodyWithoutLength: (Boolean, Boolean) = otoroshi.utils.body.BodyUtils.hasBodyWithoutLengthGen(method.toUpperCase(), contentLengthStr, contentType)
-  lazy val hasBody: Boolean = hasBodyWithoutLength._1
-    // val ctype = contentType
-    // (method.toUpperCase(), header("Content-Length")) match {
-    //   case ("GET", Some(_))    => true
-    //   case ("GET", None) if ctype.isDefined => true
-    //   case ("GET", None)       => false
-    //   case ("HEAD", Some(_))   => true
-    //   case ("HEAD", None) if ctype.isDefined => true
-    //   case ("HEAD", None)      => false
-    //   case ("PATCH", _)        => true
-    //   case ("POST", _)         => true
-    //   case ("PUT", _)          => true
-    //   case ("QUERY", _)        => true
-    //   case ("DELETE", Some(_)) => true
-    //   case ("DELETE", None) if ctype.isDefined => true
-    //   case ("DELETE", None)    => false
-    //   case _                   => true
-    // }
+  lazy val contentType: Option[String]              = header("Content-Type")
+  lazy val contentLengthStr: Option[String]         = header("Content-Length")
+  lazy val host: String                             = header("Host").getOrElse("")
+  lazy val uri: Uri                                 = Uri(url)
+  lazy val scheme: String                           = uri.scheme
+  lazy val authority: Uri.Authority                 = uri.authority
+  lazy val fragment: Option[String]                 = uri.fragment
+  lazy val path: String                             = uri.path.toString()
+  lazy val queryString: Option[String]              = uri.rawQueryString
+  lazy val relativeUri: String                      = uri.toRelative.toString()
+  lazy val hasBodyWithoutLength: (Boolean, Boolean) =
+    otoroshi.utils.body.BodyUtils.hasBodyWithoutLengthGen(method.toUpperCase(), contentLengthStr, contentType)
+  lazy val hasBody: Boolean                         = hasBodyWithoutLength._1
+  // val ctype = contentType
+  // (method.toUpperCase(), header("Content-Length")) match {
+  //   case ("GET", Some(_))    => true
+  //   case ("GET", None) if ctype.isDefined => true
+  //   case ("GET", None)       => false
+  //   case ("HEAD", Some(_))   => true
+  //   case ("HEAD", None) if ctype.isDefined => true
+  //   case ("HEAD", None)      => false
+  //   case ("PATCH", _)        => true
+  //   case ("POST", _)         => true
+  //   case ("PUT", _)          => true
+  //   case ("QUERY", _)        => true
+  //   case ("DELETE", Some(_)) => true
+  //   case ("DELETE", None) if ctype.isDefined => true
+  //   case ("DELETE", None)    => false
+  //   case _                   => true
+  // }
   // }
 
   def header(name: String): Option[String] = headers.get(name).orElse(headers.get(name.toLowerCase()))

@@ -1320,12 +1320,12 @@ case class AkkaWsClientRequest(
     val ct = realContentType.getOrElse(ContentTypes.`application/octet-stream`)
     val cl = realContentLength
     body match {
-      case EmptyBody                         => (HttpEntity.Empty, headers)
-      case InMemoryBody(bytes)               => (HttpEntity(ct, bytes), headers)
+      case EmptyBody                                     => (HttpEntity.Empty, headers)
+      case InMemoryBody(bytes)                           => (HttpEntity(ct, bytes), headers)
       // case SourceBody(_)     if cl.isDefined && cl.get == 0L => (HttpEntity.Default(ct, 0L, Source.single(ByteString.empty)), headers) // does not work as Default should have length > 0
-      case SourceBody(_)     if cl.isDefined && cl.get == 0L => (HttpEntity.Strict(ct, ByteString.empty), headers)
-      case SourceBody(bytes) if cl.isDefined => (HttpEntity(ct, cl.get, bytes), headers)
-      case SourceBody(bytes)                 => (HttpEntity(ct, bytes), headers)
+      case SourceBody(_) if cl.isDefined && cl.get == 0L => (HttpEntity.Strict(ct, ByteString.empty), headers)
+      case SourceBody(bytes) if cl.isDefined             => (HttpEntity(ct, cl.get, bytes), headers)
+      case SourceBody(bytes)                             => (HttpEntity(ct, bytes), headers)
     }
   }
 

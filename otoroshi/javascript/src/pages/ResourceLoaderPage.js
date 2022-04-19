@@ -92,26 +92,18 @@ export function ResourceLoaderPage({ setTitle }) {
       }
     }
     setRawResources(resources);
-  }
+  };
 
   if (loadedResources.length > 0) {
     return (
       <div style={{ width: '100%' }}>
         <table className="table table-striped table-hover">
-          <thead style={{ backgroundColor: 'inherit'}}>
+          <thead style={{ backgroundColor: 'inherit' }}>
             <tr>
-              <th scope="col">
-                Resource name
-              </th>
-              <th scope="col">
-                Resource type
-              </th>
-              <th scope="col">
-                To import
-              </th>
-              <th scope="col">
-                Imported
-              </th>
+              <th scope="col">Resource name</th>
+              <th scope="col">Resource type</th>
+              <th scope="col">To import</th>
+              <th scope="col">Imported</th>
             </tr>
           </thead>
           <tbody>
@@ -139,7 +131,11 @@ export function ResourceLoaderPage({ setTitle }) {
             {loadedResources.map((resource, i) => (
               <tr key={`resource${i}`}>
                 <td>
-                  {resource.name || resource.clientName || (resource.resource ? resource.resource.name: null) || (resource.resource ? resource.resource.clientName: null) || 'Unknown'}
+                  {resource.name ||
+                    resource.clientName ||
+                    (resource.resource ? resource.resource.name : null) ||
+                    (resource.resource ? resource.resource.clientName : null) ||
+                    'Unknown'}
                 </td>
                 <td>
                   <span
@@ -180,9 +176,7 @@ export function ResourceLoaderPage({ setTitle }) {
         </table>
         <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
           <div className="btn-group">
-            <button
-              className="btn btn-danger"
-              onClick={() => setLoadedResources([])}>
+            <button className="btn btn-danger" onClick={() => setLoadedResources([])}>
               Cancel
             </button>
             {loadedResources.find((f) => !f.error) && (
