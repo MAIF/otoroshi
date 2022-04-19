@@ -476,10 +476,10 @@ export class TopBar extends Component {
   render() {
     const selected = (this.props.params || {}).lineId;
     return (
-      <nav className="navbar navbar-expand-lg fixed-top">
+      <nav className="navbar navbar-expand-md fixed-top">
         <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
-          <div className="d-flex flex-column flex-md-row w-100">
-            <div className="px-2 mb-2 mb-md-0 d-flex justify-content-between justify-content-lg-center align-items-center navbar-header">
+          <div className="d-flex flex-column flex-md-row position-relative position-md-absolute top-md-0 w-100">
+            <div className="col-12 col-md-2 px-2 mb-2 mb-md-0 d-flex justify-content-between justify-content-lg-center align-items-center navbar-header">
               <button
                 className="btn btn-menu ms-3 navbar-toggler"
                 type="button"
@@ -571,8 +571,8 @@ export class TopBar extends Component {
             </form>
           </div>
 
-          <div className="d-flex flex-grow-1 my-1 my-xl-0">
-            <div className="d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0">
+          <div className="d-flex flex-grow-1 my-1 my-md-0">
+            <div className="d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0" style={{height:52}}>
               {window.__apiReadOnly && (
                 <div className="">
                   <a style={{ color: '#c44141' }} title="Admin API in read-only mode">
