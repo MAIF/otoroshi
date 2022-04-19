@@ -2,6 +2,21 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
 
 # Roadmap
 
+- [x] Q1 2022 
+  - implement the new proxy engine
+  - implement basic views for the new proxy engine
+  - implement some enterprise plugins (payload transformation, soap, etc)
+  - implement secret vaults support
+  - implement tracing plugins
+- [ ] Q2 2022
+  - implement views for the new proxy engine
+  - use wizard to help resources creation
+  - implement a "try it" view for services
+  - implement SMI spec support  
+- [ ] Q3 2022  
+  - use @maif/react-form in UI
+
+
 ## versioning
 
 after releasing 1.5.0 we plan to make a new release immediately with version number 16.0.0 as previous minor version where actually major ones. We will not make a 15.0.0 as there are already alpha releases of the 1.5.0.
@@ -27,15 +42,15 @@ provide the authentication modules needed for most cases and associated tools
 - [ ] access control helpers
 - [ ] spikes and DoS detection and arrest
 - [ ] beyondcorp like setup helpers
-- [ ] secret management from pluggable vaults
-  - [ ] apikey secrets
-  - [ ] jwt verifier secrets
-  - [ ] certificates keypairs
+- [x] secret management from pluggable vaults
+  - [x] apikey secrets
+  - [x] jwt verifier secrets
+  - [x] certificates keypairs
   - [ ] datastore credentials
-  - [ ] auth. modules secrets
-  - [ ] data exporter secrets
+  - [x] auth. modules secrets
+  - [x] data exporter secrets
   - [ ] config. file secrets
-  - [ ] global config secrets
+  - [x] global config secrets
 
 ## plugins
 
@@ -65,7 +80,7 @@ provide the authentication modules needed for most cases and associated tools
 
 - [x] support for kubernetes ingress controller api
 - [x] support for custom kubernetes CRDs to configure otoroshi
-- [ ] optimize kubernetes CRD job
+- [x] optimize kubernetes CRD job
 - [ ] support for [SMI spec](https://smi-spec.io/)
 
 ## clustering
