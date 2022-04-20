@@ -5,6 +5,7 @@ import Designer from './Designer';
 import { Informations } from './Informations';
 import { TryIt } from './TryIt';
 import Routes from './Routes';
+import DesignerSidebar from './DesignerSidebar'
 
 export default (props) => {
   const match = useRouteMatch();
@@ -31,6 +32,11 @@ export default (props) => {
               nextClient.template(nextClient.ENTITIES.ROUTES).then(setValue);
             } else nextClient.fetch(nextClient.ENTITIES.ROUTES, p.routeId).then(setValue);
           }, [p.routeId]);
+
+          useEffect(() => {
+            if (value && value.id)
+              props.setSidebarContent(<DesignerSidebar route={value} />);
+          }, [value])
 
           if (query) {
             if (query === 'flow' && !isCreation)

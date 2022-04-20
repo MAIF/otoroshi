@@ -6,7 +6,7 @@ import {
   getPlugins,
   getOldPlugins,
 } from '../../services/BackOfficeServices';
-import { Form, format, type, CodeInput, SelectInput } from '@maif/react-forms';
+import { Form, format, type, CodeInput, SelectInput, validate } from '@maif/react-forms/lib/index.js';
 import {
   DEFAULT_FLOW,
   EXCLUDED_PLUGINS,
@@ -18,6 +18,7 @@ import Loader from './Loader';
 import { camelToSnake, camelToSnakeFlow, toUpperCaseLabels } from '../../util';
 import { isEqual } from 'lodash';
 import { FeedbackButton } from './FeedbackButton';
+import { MarkdownInput } from '@maif/react-forms';
 
 const either = (value, left, right) => value ? left : right
 
@@ -73,7 +74,7 @@ const NodeElement = ({
       }}
       onClick={(e) => {
         e.stopPropagation();
-        setSelectedNode(element);
+        setSelectedNode(element)
       }}
       highlighted={highlighted}
       enabled={enabled}>
@@ -199,10 +200,12 @@ export default ({ value }) => {
   const removeNode = (id, idx) => {
     const index = idx + 1; // increase of one to prevent delete the Frontend node
     setNodes(nodes.filter((node, i) => node.id !== id && i !== index));
-    setRoute({
+    const newRoute = {
       ...route,
       plugins: route.plugins.filter((plugin) => !plugin.plugin.endsWith(id)),
-    });
+    }
+
+    saveChanges(newRoute)
 
     setPlugins(
       plugins.map((plugin, i) => {
@@ -231,7 +234,7 @@ export default ({ value }) => {
         })
       );
 
-      setRoute({
+      const newRoute = {
         ...route,
         plugins: [
           ...route.plugins,
@@ -243,10 +246,11 @@ export default ({ value }) => {
             },
           },
         ],
-      });
+      }
 
       setNodes([...nodes, newNode]);
       setSelectedNode(newNode);
+      saveChanges(newRoute)
     }
   };
 
@@ -260,34 +264,24 @@ export default ({ value }) => {
   };
 
   const updatePlugin = (pluginId, index, item, updatedField) => {
-    return nextClient
-      .update(nextClient.ENTITIES.ROUTES, {
-        ...route,
-        frontend: either(updatedField === 'Frontend', item.plugin, route.frontend),
-        backend: either(updatedField === 'Backend', item.plugin, route.backend),
-        plugins: route.plugins.map((plugin, i) => {
-          if ((plugin.plugin === pluginId || plugin.config.plugin === pluginId) && i === index)
-            return {
-              ...plugin,
-              ...item.status,
-              config: item.plugin,
-            };
+    return saveChanges({
+      ...route,
+      frontend: either(updatedField === 'Frontend', item.plugin, route.frontend),
+      backend: either(updatedField === 'Backend', item.plugin, route.backend),
+      plugins: route.plugins.map((plugin, i) => {
+        if ((plugin.plugin === pluginId || plugin.config.plugin === pluginId) && i === index)
+          return {
+            ...plugin,
+            ...item.status,
+            config: item.plugin,
+          };
 
-          return plugin;
-        }),
-      })
-      .then((r) => {
-        if (!r.error) {
-          setOriginalRoute(r)
-          setRoute(r);
-        }
-        else {
-          // TODO - manage error
-        }
-      });
+        return plugin;
+      }),
+    })
   };
 
-  const saveChanges = () => {
+  const saveChanges = route => {
     return nextClient.update(nextClient.ENTITIES.ROUTES, route).then((newRoute) => {
       setOriginalRoute(newRoute)
       setRoute(newRoute);
@@ -483,24 +477,23 @@ export default ({ value }) => {
                 </div>
               </div>
               <div className="col-sm-8 relative-container" style={{ paddingRight: 0 }}>
-                {selectedNode ? (
-                  <EditView
-                    setRoute={setRoute}
-                    selectedNode={selectedNode}
-                    setSelectedNode={setSelectedNode}
-                    updatePlugin={updatePlugin}
-                    removeNode={removeNode}
-                    route={route}
-                    plugins={plugins}
-                    backends={backends}
-                    hidePreview={() => showPreview({
-                      ...preview,
-                      enabled: false,
-                    })}
-                  />
-                ) : (
-                  <UnselectedNode saveChanges={saveChanges} disabled={isEqual(route, originalRoute)} />
-                )}
+                <UnselectedNode hideText={selectedNode} />
+                {selectedNode && <EditView
+                  saveChanges={saveChanges}
+                  setRoute={setRoute}
+                  selectedNode={selectedNode}
+                  setSelectedNode={setSelectedNode}
+                  updatePlugin={updatePlugin}
+                  removeNode={removeNode}
+                  route={route}
+                  plugins={plugins}
+                  backends={backends}
+                  hidePreview={() => showPreview({
+                    ...preview,
+                    enabled: false,
+                  })}
+                  showUpdateRouteButton={!isEqual(route, originalRoute)}
+                />}
               </div>
             </div>
           )}
@@ -624,22 +617,9 @@ const read = (value, path) => {
   return read(value[keys[0]], keys.slice(1).join('.'));
 };
 
-const UnselectedNode = ({ saveChanges, disabled }) => (
-  <div className="d-flex-between dark-background p-1 ps-2">
-    <span
-      style={{
-        textAlign: 'center',
-        fontStyle: 'italic',
-      }}>
-      Start by selecting a plugin
-    </span>
-
-    <FeedbackButton
-      text="Update route"
-      disabled={disabled}
-      icon={() => <i className="far fa-paper-plane" />}
-      onPress={saveChanges}
-    />
+const UnselectedNode = ({ hideText }) => (
+  !hideText && <div className="d-flex-between dark-background py-2 ps-2">
+    <span style={{ fontStyle: 'italic' }}> Start by selecting a plugin</span>
   </div>
 );
 
@@ -655,21 +635,21 @@ const EditView = ({
   readOnly,
   addNode,
   hidePreview,
+  showUpdateRouteButton,
+  saveChanges
 }) => {
   const [usingExistingBackend, setUsingExistingBackend] = useState(route.backend_ref);
   const [asJsonFormat, toggleJsonFormat] = useState(selectedNode.legacy || readOnly);
   const [form, setForm] = useState({
     schema: {},
     flow: [],
-    value: undefined,
-    originalValue: {},
+    value: undefined
   });
-
-  const ref = useRef();
-  const [saveable, setSaveable] = useState(false);
   const [backendConfigRef, setBackendConfigRef] = useState();
+  const formRef = useRef()
 
   const [offset, setOffset] = useState(0);
+  const [errors, setErrors] = useState([]);
 
   useEffect(() => {
     const onScroll = () => setOffset(window.pageYOffset);
@@ -767,29 +747,44 @@ const EditView = ({
       schema: formSchema,
       flow: formFlow,
       value,
-      originalValue: value,
+      originalValue: undefined,
       unsavedForm: value,
     });
-    setSaveable(false);
 
     toggleJsonFormat(selectedNode.legacy || readOnly);
-  }, [selectedNode]);
+  }, [selectedNode.id, selectedNode.index]);
 
   const onValidate = (item) => {
-    return updatePlugin(id, index, unstringify({
-      plugin: item.plugin,
-      status: item.status
-    }), selectedNode.id).then(() => {
-      setForm({ ...form, originalValue: item });
-      setSaveable(false);
-    });
-  };
+    const newValue = unstringify(item)
+    return updatePlugin(id, index, {
+      plugin: newValue.plugin,
+      status: newValue.status
+    }, selectedNode.id)
+      .then(() => setForm({ ...form, value: newValue }))
+  }
 
-  // console.log("SCHEMA", form.schema.plugin)
-  console.log("VALUE", form.value)
+  const onJsonInputChange = value => {
+    validate([], form.schema, value)
+      .then(v => {
+        setErrors([])
+        onValidate(v)
+      })
+      .catch(err => {
+        console.log(err.inner)
+        if (err.inner && Array.isArray(err.inner))
+          setErrors(err.inner.map(r => r.message))
+      })
+  }
+
+  if (Object.keys(form.schema).length === 0 || !form.value)
+    return null
+
+  // console.log("SCHEMA", form.schema)
+  // console.log("VALUE", unstringify(form.value))
 
   return (
     <div
+      id="form"
       onClick={(e) => e.stopPropagation()}
       className="plugins-stack editor-view"
       style={{ top: offset }}>
@@ -800,34 +795,14 @@ const EditView = ({
           <span className='editor-view-text'>{name || id}</span>
         </div>
         <div className="d-flex me-1">
-          {!selectedNode.legacy && !readOnly && (
-            <>
-              <button
-                className="btn btn-sm toggle-form-buttons"
-                onClick={() => toggleJsonFormat(false)}
-                style={{ backgroundColor: either(asJsonFormat, '#373735', '#f9b000') }}>
-                FORM
-              </button>
-              <button
-                className="btn btn-sm mx-1 toggle-form-buttons"
-                onClick={() => {
-                  if (!isEqual(ref.current.rawData(), form.value))
-                    setForm({ ...form, value: ref.current.rawData() });
-                  toggleJsonFormat(true);
-                }}
-                style={{ backgroundColor: either(asJsonFormat, '#f9b000', '#373735') }}>
-                RAW JSON
-              </button>
-            </>
-          )}
           <button
-            className="btn btn-sm btn-danger"
+            className="btn btn-sm"
             style={{ minWidth: '36px' }}
             onClick={() => {
               setSelectedNode(undefined);
               hidePreview();
             }}>
-            <i className="fas fa-times designer-times-button" />
+            <i className="fas fa-times" style={{ color: "#fff" }} />
           </button>
         </div>
       </div>
@@ -835,7 +810,30 @@ const EditView = ({
         style={{
           backgroundColor: '#494949',
         }}>
-        <Description text={selectedNode.description} />
+        <Description text={selectedNode.description} fullText={hidePreview} />
+        {!selectedNode.legacy && !readOnly && (
+          <div className={`d-flex justify-content-end ${asJsonFormat ? 'mb-3' : ''}`}>
+            <button
+              className="btn btn-sm toggle-form-buttons mt-3"
+              onClick={() => toggleJsonFormat(false)}
+              style={{ backgroundColor: either(asJsonFormat, '#373735', '#f9b000') }}>
+              FORM
+            </button>
+            <button
+              className="btn btn-sm mx-1 toggle-form-buttons mt-3"
+              onClick={() => {
+                if (formRef.current)
+                  formRef.current.trigger()
+                    .then(res => {
+                      if (res)
+                        toggleJsonFormat(true)
+                    })
+              }}
+              style={{ backgroundColor: either(asJsonFormat, '#f9b000', '#373735') }}>
+              RAW JSON
+            </button>
+          </div>
+        )}
         {id === 'Backend' && <BackendSelector
           backends={backends}
           setBackendConfigRef={setBackendConfigRef}
@@ -848,26 +846,21 @@ const EditView = ({
           <div className='editor-view-form'>
             {asJsonFormat ? (
               <>
-                {form.value && (
-                  <CodeInput
-                    showGutter={false}
-                    mode="json"
-                    themeStyle={{
-                      maxHeight: either(readOnly, '300px', '-1'),
-                      width: '100%',
-                    }}
-                    value={stringify(form.value)}
-                    onChange={(value) => {
-                      try {
-                        const v = either(typeof value === 'string', JSON.parse(value), value)
-                        setSaveable(!isEqual(form.originalValue, v));
-                      } catch (err) {
-                        setSaveable(true)
-                      }
-                      setForm({ ...form, value });
-                    }}
-                  />
-                )}
+                {form.value && <CodeInput
+                  showGutter={false}
+                  mode="json"
+                  themeStyle={{
+                    maxHeight: either(readOnly, '300px', '-1'),
+                    width: '100%',
+                  }}
+                  value={stringify(form.value)}
+                  onChange={onJsonInputChange}
+                />}
+                {errors && <div>
+                  {(errors || []).map((error, idx) => <div style={{
+                    borderLeft: "2px solid #D5443F",
+                  }} className="mt-3 ps-3" key={`errror${idx}`}>{error}</div>)}
+                </div>}
                 {readOnly ? (
                   <div className="d-flex justify-content-end mt-3">
                     <button
@@ -889,57 +882,33 @@ const EditView = ({
                   </div>
                 ) : (
                   <EditViewActions
+                    showUpdateRouteButton={showUpdateRouteButton}
                     valid={() => onValidate(form.value)}
                     selectedNode={selectedNode}
                     onRemove={onRemove}
-                    saveable={saveable}
                   />
                 )}
               </>
             ) : (
-              form.value ? <Form
-                ref={ref}
+              <Form
+                ref={formRef}
                 value={unstringify(form.value)}
                 schema={form.schema}
-                options={{
-                  watch: () => {
-                    if (ref.current) {
-                      const data = ref.current.rawData()
-                      const unsaved = data.status ? {
-                        ...data,
-                        status: {
-                          ...data.status,
-                          enabled: !!data.status.enabled,
-                          debug: !!data.status.debug
-                        }
-                      } : data
-                      if (unsaved && Object.keys(unsaved).length > 0) {
-                        const configurationChanged = !isEqual(unsaved.plugin, form.originalValue.plugin)
-                        // console.log(unsaved.plugin, form.originalValue.plugin, configurationChanged)
-                        // console.log(unsaved.status, unsaved.status, form.originalValue.status, !isEqual(unsaved.status, form.originalValue.status))
-                        if (configurationChanged)
-                          setSaveable(true)
-                        else if (unsaved.status && !isEqual(unsaved.status, form.originalValue.status))
-                          setSaveable(true)
-                      }
-                    }
-                  },
-                }}
                 flow={form.flow}
                 onSubmit={onValidate}
                 footer={({ valid }) => (
                   <EditViewActions
+                    showUpdateRouteButton={showUpdateRouteButton}
                     valid={valid}
                     selectedNode={selectedNode}
                     onRemove={onRemove}
-                    saveable={saveable}
                   />
                 )}
-              /> : null
+              />
             )}
           </div>
         ) : (
-          <>
+          <div className='p-3'>
             {backendConfigRef && (
               <BackendForm
                 isCreation={false}
@@ -951,12 +920,9 @@ const EditView = ({
             <FeedbackButton
               text="Update the plugin configuration"
               icon={() => <i className="fas fa-paper-plane" />}
-              onPress={() => nextClient.update(nextClient.ENTITIES.ROUTES, route).then((newRoute) => {
-                setOriginalRoute(newRoute)
-                setRoute(newRoute);
-              })}
+              onPress={saveChanges}
             />
-          </>
+          </div>
         )}
       </div>
       {usingExistingBackend && id === 'Backend' && !selectedNode.default && (
@@ -968,7 +934,6 @@ const EditView = ({
 
 const stringify = (item) => (typeof item === 'object' ? JSON.stringify(item, null, 2) : item);
 const unstringify = (item) => {
-  console.log(item)
   if (typeof item === 'object') return item;
   else {
     try {
@@ -979,53 +944,58 @@ const unstringify = (item) => {
   }
 };
 
-const Description = ({ text }) => {
+const Description = ({ text, fullText }) => {
   const [showMore, setShowMore] = useState(false);
 
   const textLength = text ? text.length : 0;
-  const maxLength = 120;
+  const maxLength = fullText ? 100000 : 120;
   const overflows = textLength > maxLength;
+
+  const content = text ? text?.slice(0, either(showMore, textLength, maxLength)) : '' + ' ' + (overflows && either(!showMore, '...', ''))
 
   return (
     <>
-      <p
+      <MarkdownInput
         className="form-description"
-        style={{
-          marginBottom: either(text, 'inherit', 0),
-          padding: either(text, '12px', 0),
-          paddingBottom: either(overflows || !text, 0, '12px')
-        }}>
-        {text ? text?.slice(0, either(showMore, textLength, maxLength)) : ''}{' '}
-        {overflows && either(!showMore, '...', '')}
-      </p>
-      {overflows && (
-        <button
-          className="btn btn-sm btn-success me-3 mb-3"
-          onClick={() => setShowMore(!showMore)}
-          style={{ marginLeft: 'auto', display: 'block' }}>
-          {either(showMore, 'Show less', 'Show more description')}
-        </button>
-      )}
+        readOnly={true}
+        preview={true}
+        value={content} />
+        {/* // style={{
+        //   marginBottom: either(text, 'inherit', 0),
+        //   padding: either(text, '12px', 0),
+        //   paddingBottom: either(overflows || !text, 0, '12px')
+        // }}> */}
+      {
+        overflows && (
+          <button
+            className="btn btn-sm btn-success me-3 mb-3"
+            onClick={() => setShowMore(!showMore)}
+            style={{ marginLeft: 'auto', display: 'block' }}>
+            {either(showMore, 'Show less', 'Show more description')}
+          </button>
+        )
+      }
     </>
   );
 };
 
 const RemoveComponent = ({ onRemove }) => (
-  <button className="btn btn-sm btn-danger me-2" onClick={onRemove}>
+  <button className="btn btn-sm btn-danger" onClick={onRemove}>
     <i className="fas fa-trash me-2"></i>
     Remove this component
   </button>
 );
 
-const EditViewActions = ({ valid, selectedNode, onRemove, saveable }) => (
+const EditViewActions = ({ selectedNode, onRemove, valid, showUpdateRouteButton }) => (
   <div className="d-flex mt-4 justify-content-end">
     {!selectedNode.default && <RemoveComponent onRemove={onRemove} />}
-    <FeedbackButton
-      disabled={!saveable}
-      text="Update the plugin configuration"
-      icon={() => <i className="fas fa-paper-plane" />}
+    {valid && <FeedbackButton
+      text="Update route"
+      className="ms-2"
+      disabled={showUpdateRouteButton}
+      icon={() => <i className="far fa-paper-plane" />}
       onPress={valid}
-    />
+    />}
   </div>
 );
 

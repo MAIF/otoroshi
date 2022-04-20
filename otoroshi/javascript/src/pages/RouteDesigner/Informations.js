@@ -11,27 +11,26 @@ export const Informations = (props) => {
   const schema = {
     id: {
       type: type.string,
-      visible: false,
-      constraints: [constraints.nullable()],
+      visible: false
     },
     name: {
       type: type.string,
       label: 'Route name',
       placeholder: 'Your route name',
       help: 'The name of your route. Only for debug and human readability purposes.',
-      constraints: [constraints.required()],
+      constraints: [constraints.required()]
     },
     enabled: {
       type: type.bool,
-      label: 'Route enabled',
+      label: 'Route enabled'
     },
     debug_flow: {
       type: type.bool,
-      label: 'Debug the flow',
+      label: 'Debug the flow'
     },
     export_reporting: {
       type: type.bool,
-      label: 'Export reporting',
+      label: 'Export reporting'
     },
     description: {
       type: type.string,
@@ -48,7 +47,7 @@ export const Informations = (props) => {
     },
     metadata: {
       type: type.object,
-      label: 'Metadata',
+      label: 'Metadata'
     },
     tags: {
       type: type.string,
@@ -100,19 +99,20 @@ export const Informations = (props) => {
     },
   ];
 
+  console.log(props.value)
+
   return (
     <div className="designer-form">
-      <h3>Route informations</h3>
       <Form
         schema={schema}
         flow={flow}
         value={
           props.isCreation
             ? {
-                ...props.value,
-                name: '',
-                description: '',
-              }
+              ...props.value,
+              name: '',
+              description: '',
+            }
             : props.value
         }
         ref={ref}

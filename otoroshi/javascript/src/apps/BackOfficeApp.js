@@ -250,6 +250,7 @@ class BackOfficeAppContainer extends Component {
                               globalEnv={this.state.env}
                               setTitle={(t) => DynamicTitle.setContent(t)}
                               getTitle={() => DynamicTitle.getContent()}
+                              setSidebarContent={(c) => DynamicSidebar.setContent(c)}
                               {...props}
                             />
                           )}

@@ -2530,10 +2530,10 @@
   dependencies:
     "@lezer/lr" "^0.15.0"
 
-"@maif/react-forms@^1.0.36":
-  version "1.0.36"
-  resolved "https://registry.yarnpkg.com/@maif/react-forms/-/react-forms-1.0.36.tgz#c76c64a7b326cee6e223ea1e1e8150a370679da3"
-  integrity sha512-V2Imb0tIAMvWw1xsLP3kR6HGgTv3wR6XgzURlsqhgIQ+Xnerx0b1EBCR0u1G4fRbTunUJPlnWuhwzAdvhT4x4Q==
+"@maif/react-forms@^1.0.37-rc.1":
+  version "1.0.37-rc.1"
+  resolved "https://registry.yarnpkg.com/@maif/react-forms/-/react-forms-1.0.37-rc.1.tgz#4fafab57049dccd4909181c9797bd33eda75905f"
+  integrity sha512-MkP/H9lPBgfSPDbR5jZy01o+QkEtrFyvOBD70uEWdpIyODUEjvcjkJdN4KwfHMgf/8CzjFxMOITwUPRtKn+xnQ==
   dependencies:
     "@codemirror/basic-setup" "^0.19.1"
     "@codemirror/lang-html" "^0.19.4"

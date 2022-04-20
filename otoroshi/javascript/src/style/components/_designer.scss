@@ -1,4 +1,13 @@
 .designer {
+    pre {
+        height: initial !important;
+        white-space: pre-wrap;       /* Since CSS 2.1 */
+        white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+        white-space: -pre-wrap;      /* Opera 4-6 */
+        white-space: -o-pre-wrap;    /* Opera 7 */
+        word-wrap: break-word;       /* Internet Ex */
+    }
+
     .flex {
         flex: 1;
     }
@@ -11,6 +20,8 @@
     .h-100 {
         display: flex;
         min-height: calc(100vh - 135px);
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
 
     .hide-overflow {
@@ -352,5 +363,9 @@
         background-color: #f9b000;
         border-radius: 50%;
         z-index: 100;
+    }
+
+    *[data-id="tooltip"] {
+        z-index: 1002;
     }
 }

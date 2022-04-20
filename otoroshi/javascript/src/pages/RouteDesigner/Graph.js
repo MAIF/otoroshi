@@ -45,6 +45,13 @@ export const LEGACY_PLUGINS_WRAPPER = {
   'request-handler': '',
 };
 
+const PROTOCOLS = {
+  http: 'http',
+  https: 'https',
+  udp: 'udp',
+  tcp: 'tcp'
+}
+
 export const DEFAULT_FLOW = {
   Frontend: {
     id: 'Frontend',
@@ -78,81 +85,87 @@ export const DEFAULT_FLOW = {
       ...generatedSchema,
       targets: {
         ...generatedSchema.targets,
+        onAfterChange: ({ setValue, entry, previousValue, value }) => {
+          if (value && previousValue) {
+            const target = value.custom_target
+
+            if (target && previousValue.custom_target && target !== previousValue.custom_target) {
+              // console.log('custom_target has changed')
+              const parts = target.split('://')
+
+              if (parts.length > 1) {
+                const afterScheme = parts[1];
+                const afterSchemeParts = afterScheme.split('/');
+
+                const hostname = afterSchemeParts.shift();
+                setValue(`${entry}.hostname`, hostname)
+
+                const pathname = '/' + afterSchemeParts.join('/');
+                setValue('plugin.root', pathname);
+              }
+            }
+            else if (value.hostname !== previousValue.hostname) {
+              // console.log('hostname has changed')
+              const parts = (target || '').split('://')
+              const scheme = parts.length > 1 ? `${parts[0]}://` : ''
+              const hostname = value.hostname || ''
+              setValue(`${entry}.custom_target`, `${scheme}${hostname}`)
+            }
+          }
+        },
         schema: {
           custom_target: {
             label: 'Target',
             type: 'string',
-            render: ({ value, onChange, setValue, parent }) => {
-              return (
-                <SingleLineCode
-                  value={value}
-                  onChange={(e) => {
-                    // TODO - not working, fix react-forms to support setValue with dotted notation
-                    try {
-                      const hasProtocol =
-                        ['http://', 'https://', 'udp://', 'tcp://'].filter((p) =>
-                          e.toLowerCase().startsWith(p)
-                        ).length > 0;
-                      if (hasProtocol) {
-                        const parts = e.split('://');
-                        const scheme = parts[0];
-                        const afterScheme = parts[1];
-                        const afterSchemeParts = afterScheme.split('/');
-                        const domain = afterSchemeParts[0];
-                        afterSchemeParts.shift();
-                        const pathname = '/' + afterSchemeParts.join('/');
-                        const url = `${scheme}://${domain}`;
-
-                        onChange(url);
-
-                        if (url.indexOf('://') > -1) {
-                          console.log(`${parent}.hostname`, afterScheme);
-                          setValue(`${parent}.hostname`, afterScheme);
-                        }
-
-                        console.log(`root`, pathname);
-                        setValue('root', pathname);
-                      } else {
-                        onChange(e);
-                      }
-                    } catch (ex) {
-                      console.log(ex);
-                      onChange(e);
-                    }
-                  }}
-                />
-              );
-            },
+            constraints: [
+              { type: 'required' }
+            ]
           },
           expert_mode: {
             type: 'bool',
             label: null,
+            defaultValue: false,
             render: ({ value, onChange }) => {
-              return (
-                <button
-                  className="btn btn-sm btn-success me-3 mb-3"
-                  onClick={() => onChange(!value)}>
-                  {!!value ? 'Show less' : 'Show more'}
-                </button>
-              );
-            },
+              return <button
+                type="button"
+                className="btn btn-sm btn-success me-3 mb-3"
+                onClick={() => onChange(!value)
+                }>
+                {!!value ? 'Show less' : 'Show more'}
+              </button>
+            }
           },
+
           ...Object.fromEntries(
             Object.entries(generatedSchema.targets.schema).map(([key, value]) => {
               return [
                 key,
                 {
                   ...value,
-                  visible: {
-                    ref: 'plugin',
-                    test: (v, idx) => !!v.targets[idx].value?.expert_mode,
-                  },
+                    visible: {
+                      ref: 'plugin',
+                      test: (v, idx) => !!v.targets[idx]?.value?.expert_mode,
+                    },
                 },
               ];
             })
           ),
+          hostname: {
+            ...generatedSchema.targets.schema.hostname,
+            visible: {
+              ref: 'plugin',
+              test: (v, idx) => !!v.targets[idx]?.value?.expert_mode,
+            },
+            constraints: [
+              {
+                type: 'blacklist',
+                arrayOfValues: ['http:', 'https:', 'tcp:', 'udp:', '/'],
+                message: 'You cannot use protocol scheme or / in the Host name'
+              }
+            ]
+          }
         },
-        flow: ['custom_target', 'expert_mode', ...generatedSchema.targets.flow],
+        flow: ['custom_target', 'expert_mode', ...generatedSchema.targets.flow]
       },
     }),
     config_flow: [

@@ -86,8 +86,7 @@ export const BackendForm = ({ isCreation, value, onSubmit, foldable, style = {} 
   const schema = {
     id: {
       type: type.string,
-      visible: false,
-      constraints: [constraints.nullable()],
+      visible: false
     },
     name: {
       label: 'Name',
@@ -179,7 +178,7 @@ export const BackendForm = ({ isCreation, value, onSubmit, foldable, style = {} 
         ...style,
         minHeight: show ? 'calc(100vh - 85px)' : 'initial',
       }}>
-      <div className="d-flex align-items-center">
+      <div className="d-flex align-items-center my-1">
         {foldable && (
           <i
             className={`me-2 fas fa-chevron-${show ? 'up' : 'right'}`}
