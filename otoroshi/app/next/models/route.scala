@@ -858,15 +858,6 @@ object NgRoute {
               config = NgPluginInstanceConfig(NgRestrictions.fromLegacy(service.restrictions).json.asObject)
             )
           }
-          .applyOnIf(service.privateApp && service.authConfigRef.isDefined) { seq =>
-            seq :+ NgPluginInstance(
-              plugin = pluginId[AuthModule],
-              exclude = service.securityExcludedPatterns,
-              config = NgPluginInstanceConfig(
-                NgAuthModuleConfig(service.authConfigRef, !service.strictlyPrivate).json.asObject
-              )
-            )
-          }
           .applyOnIf(service.enforceSecureCommunication && service.sendStateChallenge) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[OtoroshiChallenge],
@@ -928,6 +919,15 @@ object NgRoute {
                   )
                   .json
                   .asObject
+              )
+            )
+          }
+          .applyOnIf(service.privateApp && service.authConfigRef.isDefined) { seq =>
+            seq :+ NgPluginInstance(
+              plugin = pluginId[AuthModule],
+              exclude = service.securityExcludedPatterns,
+              config = NgPluginInstanceConfig(
+                NgAuthModuleConfig(service.authConfigRef, !service.strictlyPrivate).json.asObject
               )
             )
           }
@@ -1009,7 +1009,11 @@ object NgRoute {
               }
           }
       )
-    )
+    )/*.debug { route =>
+      if (route.id == "service_dev_e7ad992b-10e6-4038-a593-8f3953996af6") {
+        route.json.prettify.debugPrintln
+      }
+    }*/
   }
 }
 
