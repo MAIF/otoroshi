@@ -925,7 +925,7 @@ object NgRoute {
           .applyOnIf(service.privateApp && service.authConfigRef.isDefined) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[AuthModule],
-              exclude = service.securityExcludedPatterns,
+              exclude = (service.securityExcludedPatterns ++ service.privatePatterns).distinct,
               config = NgPluginInstanceConfig(
                 NgAuthModuleConfig(service.authConfigRef, !service.strictlyPrivate).json.asObject
               )
