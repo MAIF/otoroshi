@@ -151,6 +151,9 @@ case class JsonPathValidator(path: String, value: JsValue) {
         } else if (expected.trim.startsWith("ContainsNot(") && expected.trim.endsWith(")")) {
           val contained = expected.substring(12).init
           !v.contains(contained)
+        } else if (expected.trim.startsWith("Not(") && expected.trim.endsWith(")")) {
+          val contained = expected.substring(4).init
+          v != contained
         } else {
           v == expected
         }

@@ -69,6 +69,7 @@ Each module has also the following fields :
 
 the expected value support some syntax tricks like 
 
+* `Not(value)` on a string to check if the current value does not equals another value
 * `Regex(regex)` on a string to check if the current value matches the regex
 * `RegexNot(regex)` on a string to check if the current value does not matches the regex
 * `Wildcard(*value*)` on a string to check if the current value matches the value with wildcards
