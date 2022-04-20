@@ -18447,7 +18447,7 @@
           "userValidators" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/otoroshi.auth.UserValidator"
+              "$ref" : "#/components/schemas/otoroshi.utils.JsonPathValidator"
             },
             "description" : "Validators that will check if the current user is authorized after successful login"
           },
@@ -18982,7 +18982,7 @@
           "userValidators" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/otoroshi.auth.UserValidator"
+              "$ref" : "#/components/schemas/otoroshi.utils.JsonPathValidator"
             },
             "description" : "Validators that will check if the current user is authorized after successful login"
           },
@@ -21866,20 +21866,6 @@
           }
         }
       },
-      "otoroshi.next.plugins.ContextValidator" : {
-        "description" : "Plugin for context validation",
-        "type" : "object",
-        "properties" : {
-          "path" : {
-            "description" : "The path being tested on the current context",
-            "type" : "string"
-          },
-          "value" : {
-            "description" : "The expected value",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.next.plugins.NgBadResponse" : {
         "description" : "Configuration for SnowMonkeyChaos",
         "type" : "object",
@@ -22104,7 +22090,7 @@
           "validators" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/otoroshi.next.plugins.ContextValidator"
+              "$ref" : "#/components/schemas/otoroshi.utils.JsonPathValidator"
             },
             "description" : "The validators to pass on the current context"
           }
@@ -24252,7 +24238,7 @@
           "validators" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/otoroshi.next.plugins.ContextValidator"
+              "$ref" : "#/components/schemas/otoroshi.utils.JsonPathValidator"
             },
             "description" : "The validators to pass on the current context"
           }
@@ -24531,7 +24517,7 @@
           "userValidators" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/otoroshi.auth.UserValidator"
+              "$ref" : "#/components/schemas/otoroshi.utils.JsonPathValidator"
             },
             "description" : "Validators that will check if the current user is authorized after successful login"
           },
@@ -25457,6 +25443,20 @@
           "startedAt" : {
             "description" : "Outage starting date",
             "type" : "number"
+          }
+        }
+      },
+      "otoroshi.utils.JsonPathValidator" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "path" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "value" : {
+            "description" : "???",
+            "type" : "object"
           }
         }
       },
@@ -26391,7 +26391,7 @@
           "userValidators" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/otoroshi.auth.UserValidator"
+              "$ref" : "#/components/schemas/otoroshi.utils.JsonPathValidator"
             },
             "description" : "Validators that will check if the current user is authorized after successful login"
           },
@@ -26851,20 +26851,6 @@
         "type" : "object",
         "properties" : { }
       },
-      "otoroshi.auth.UserValidator" : {
-        "description" : "Validate if a user is valid or not (for auth) based on a JsonPath and an expected value",
-        "type" : "object",
-        "properties" : {
-          "path" : {
-            "description" : "The JSON Path that will be checked",
-            "type" : "string"
-          },
-          "value" : {
-            "description" : "The expected value at the previously defined path",
-            "type" : "object"
-          }
-        }
-      },
       "otoroshi.next.plugins.NgIpAddressesConfig" : {
         "description" : "Configuration for ip address related plugins",
         "type" : "object",
@@ -26952,7 +26938,7 @@
           "userValidators" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/otoroshi.auth.UserValidator"
+              "$ref" : "#/components/schemas/otoroshi.utils.JsonPathValidator"
             },
             "description" : "Validators that will check if the current user is authorized after successful login"
           },

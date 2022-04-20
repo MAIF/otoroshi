@@ -2,7 +2,7 @@ package otoroshi.models
 
 import java.util.concurrent.TimeUnit
 import akka.http.scaladsl.util.FastFuture
-import otoroshi.auth.{AuthModuleConfig, GenericOauth2Module, UserValidator, ValidableUser}
+import otoroshi.auth.{AuthModuleConfig, GenericOauth2Module, ValidableUser}
 import otoroshi.env.Env
 import org.joda.time.DateTime
 import play.api.Logger

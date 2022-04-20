@@ -16,7 +16,7 @@ import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, _}
 import play.api.mvc._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.RegexPool
+import otoroshi.utils.{JsonPathValidator, RegexPool}
 
 import javax.naming.ldap.{Control, InitialLdapContext}
 import scala.annotation.tailrec
@@ -140,7 +140,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
             .getOrElse(Map.empty),
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
-            .map(_.flatMap(v => UserValidator.format.reads(v).asOpt))
+            .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
             .getOrElse(Seq.empty)
         )
       )
@@ -208,7 +208,7 @@ case class LdapAuthModuleConfig(
     name: String,
     desc: String,
     sessionMaxAge: Int = 86400,
-    userValidators: Seq[UserValidator] = Seq.empty,
+    userValidators: Seq[JsonPathValidator] = Seq.empty,
     basicAuth: Boolean = false,
     allowEmptyPassword: Boolean = false,
     serverUrls: Seq[String] = Seq.empty,

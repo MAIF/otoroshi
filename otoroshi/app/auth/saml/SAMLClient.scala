@@ -20,11 +20,7 @@ import org.opensaml.security.x509.BasicX509Credential
 import org.opensaml.xmlsec.SignatureSigningParameters
 import org.opensaml.xmlsec.encryption.support.InlineEncryptedKeyResolver
 import org.opensaml.xmlsec.keyinfo.KeyInfoCredentialResolver
-import org.opensaml.xmlsec.keyinfo.impl.{
-  ChainingKeyInfoCredentialResolver,
-  StaticKeyInfoCredentialResolver,
-  X509KeyInfoGeneratorFactory
-}
+import org.opensaml.xmlsec.keyinfo.impl.{ChainingKeyInfoCredentialResolver, StaticKeyInfoCredentialResolver, X509KeyInfoGeneratorFactory}
 import org.opensaml.xmlsec.signature.Signature
 import org.opensaml.xmlsec.signature.impl.SignatureBuilder
 import org.opensaml.xmlsec.signature.support.{SignatureConstants, SignatureException, SignatureSupport}
@@ -36,6 +32,7 @@ import otoroshi.models._
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.DynamicSSLEngineProvider.PRIVATE_KEY_PATTERN
 import otoroshi.ssl.{DynamicSSLEngineProvider, PemHeaders}
+import otoroshi.utils.JsonPathValidator
 import play.api.Logger
 import play.api.libs.json.{Format, JsArray, JsError, JsString, JsSuccess, JsValue, Json}
 import play.api.mvc.Results.{BadRequest, Ok, Redirect}
@@ -338,7 +335,7 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
             (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
-            .map(_.flatMap(v => UserValidator.format.reads(v).asOpt))
+            .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
             .getOrElse(Seq.empty)
         )
       )
@@ -637,7 +634,7 @@ case class SamlAuthModuleConfig(
     name: String,
     desc: String,
     sessionMaxAge: Int = 86400,
-    userValidators: Seq[UserValidator] = Seq.empty,
+    userValidators: Seq[JsonPathValidator] = Seq.empty,
     singleSignOnUrl: String,
     singleLogoutUrl: String,
     ssoProtocolBinding: SAMLProtocolBinding = SAMLProtocolBinding.Redirect,

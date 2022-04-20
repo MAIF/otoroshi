@@ -5,6 +5,7 @@ import otoroshi.controllers.routes
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.security.IdGenerator
+import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.crypto.Signatures
 import play.api.Logger
 import play.api.libs.json.{Format, JsArray, JsError, JsObject, JsString, JsSuccess, JsValue, Json}
@@ -79,7 +80,7 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
             (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
-            .map(_.flatMap(v => UserValidator.format.reads(v).asOpt))
+            .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
             .getOrElse(Seq.empty)
         )
       )
@@ -136,7 +137,7 @@ case class Oauth1ModuleConfig(
     tags: Seq[String],
     metadata: Map[String, String],
     sessionCookieValues: SessionCookieValues,
-    userValidators: Seq[UserValidator] = Seq.empty,
+    userValidators: Seq[JsonPathValidator] = Seq.empty,
     rightsOverride: Map[String, UserRights] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends AuthModuleConfig {

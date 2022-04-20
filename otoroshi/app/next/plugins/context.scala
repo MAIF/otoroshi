@@ -2,16 +2,8 @@ package otoroshi.next.plugins
 
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api.{
-  NgAccess,
-  NgAccessContext,
-  NgAccessValidator,
-  NgPluginCategory,
-  NgPluginConfig,
-  NgPluginVisibility,
-  NgStep
-}
-import otoroshi.utils.RegexPool
+import otoroshi.next.plugins.api.{NgAccess, NgAccessContext, NgAccessValidator, NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgStep}
+import otoroshi.utils.{JsonPathValidator, RegexPool}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.Results
@@ -19,6 +11,7 @@ import play.api.mvc.Results
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+/*
 case class ContextValidator(path: String, value: JsValue) {
   def json: JsValue = ContextValidator.format.writes(this)
   def validate(ctx: JsValue): Boolean = {
@@ -57,9 +50,9 @@ object ContextValidator {
       case Success(value)     => JsSuccess(value)
     }
   }
-}
+}*/
 
-case class ContextValidationConfig(validators: Seq[ContextValidator] = Seq.empty) extends NgPluginConfig {
+case class ContextValidationConfig(validators: Seq[JsonPathValidator] = Seq.empty) extends NgPluginConfig {
   def json: JsValue = ContextValidationConfig.format.writes(this)
 }
 
@@ -72,7 +65,7 @@ object ContextValidationConfig {
       ContextValidationConfig(
         validators = (json \ "validators")
           .asOpt[Seq[JsValue]]
-          .map(_.flatMap(v => ContextValidator.format.reads(v).asOpt))
+          .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
           .getOrElse(Seq.empty)
       )
     } match {

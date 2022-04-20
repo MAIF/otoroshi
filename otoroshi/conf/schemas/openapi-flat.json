@@ -7733,11 +7733,11 @@
           "type" : "object",
           "properties" : {
             "path" : {
-              "description" : "The JSON Path that will be checked",
+              "description" : "???",
               "type" : "string"
             },
             "value" : {
-              "description" : "The expected value at the previously defined path",
+              "description" : "???",
               "type" : "object"
             }
           }
@@ -10744,11 +10744,11 @@
           "type" : "object",
           "properties" : {
             "path" : {
-              "description" : "The JSON Path that will be checked",
+              "description" : "???",
               "type" : "string"
             },
             "value" : {
-              "description" : "The expected value at the previously defined path",
+              "description" : "???",
               "type" : "object"
             }
           }
@@ -17744,11 +17744,11 @@
                 "type" : "object",
                 "properties" : {
                   "path" : {
-                    "description" : "The JSON Path that will be checked",
+                    "description" : "???",
                     "type" : "string"
                   },
                   "value" : {
-                    "description" : "The expected value at the previously defined path",
+                    "description" : "???",
                     "type" : "object"
                   }
                 }
@@ -25514,20 +25514,6 @@
       }
     }
   },
-  "otoroshi.next.plugins.ContextValidator" : {
-    "description" : "Plugin for context validation",
-    "type" : "object",
-    "properties" : {
-      "path" : {
-        "description" : "The path being tested on the current context",
-        "type" : "string"
-      },
-      "value" : {
-        "description" : "The expected value",
-        "type" : "object"
-      }
-    }
-  },
   "otoroshi.next.plugins.NgBadResponse" : {
     "description" : "Configuration for SnowMonkeyChaos",
     "type" : "object",
@@ -26248,11 +26234,11 @@
           "type" : "object",
           "properties" : {
             "path" : {
-              "description" : "The path being tested on the current context",
+              "description" : "???",
               "type" : "string"
             },
             "value" : {
-              "description" : "The expected value",
+              "description" : "???",
               "type" : "object"
             }
           }
@@ -34825,11 +34811,11 @@
           "type" : "object",
           "properties" : {
             "path" : {
-              "description" : "The path being tested on the current context",
+              "description" : "???",
               "type" : "string"
             },
             "value" : {
-              "description" : "The expected value",
+              "description" : "???",
               "type" : "object"
             }
           }
@@ -35770,11 +35756,11 @@
           "type" : "object",
           "properties" : {
             "path" : {
-              "description" : "The JSON Path that will be checked",
+              "description" : "???",
               "type" : "string"
             },
             "value" : {
-              "description" : "The expected value at the previously defined path",
+              "description" : "???",
               "type" : "object"
             }
           }
@@ -36915,6 +36901,20 @@
       "startedAt" : {
         "description" : "Outage starting date",
         "type" : "number"
+      }
+    }
+  },
+  "otoroshi.utils.JsonPathValidator" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "path" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "value" : {
+        "description" : "???",
+        "type" : "object"
       }
     }
   },
@@ -40045,7 +40045,7 @@
         "items" : {
           "type" : "string"
         },
-        "description" : "???"
+        "description" : "Ids of revoked tokens"
       },
       "extractorName" : {
         "description" : "The name for the location",
@@ -43323,11 +43323,11 @@
           "type" : "object",
           "properties" : {
             "path" : {
-              "description" : "The JSON Path that will be checked",
+              "description" : "???",
               "type" : "string"
             },
             "value" : {
-              "description" : "The expected value at the previously defined path",
+              "description" : "???",
               "type" : "object"
             }
           }
@@ -44367,20 +44367,6 @@
     "type" : "object",
     "properties" : { }
   },
-  "otoroshi.auth.UserValidator" : {
-    "description" : "Validate if a user is valid or not (for auth) based on a JsonPath and an expected value",
-    "type" : "object",
-    "properties" : {
-      "path" : {
-        "description" : "The JSON Path that will be checked",
-        "type" : "string"
-      },
-      "value" : {
-        "description" : "The expected value at the previously defined path",
-        "type" : "object"
-      }
-    }
-  },
   "otoroshi.next.plugins.NgIpAddressesConfig" : {
     "description" : "Configuration for ip address related plugins",
     "type" : "object",
@@ -44539,11 +44525,11 @@
           "type" : "object",
           "properties" : {
             "path" : {
-              "description" : "The JSON Path that will be checked",
+              "description" : "???",
               "type" : "string"
             },
             "value" : {
-              "description" : "The expected value at the previously defined path",
+              "description" : "???",
               "type" : "object"
             }
           }
@@ -45800,11 +45786,11 @@
           "type" : "object",
           "properties" : {
             "path" : {
-              "description" : "The JSON Path that will be checked",
+              "description" : "???",
               "type" : "string"
             },
             "value" : {
-              "description" : "The expected value at the previously defined path",
+              "description" : "???",
               "type" : "object"
             }
           }

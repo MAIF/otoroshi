@@ -7,7 +7,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import otoroshi.env.Env
-import otoroshi.plugins.JsonPathUtils
+import otoroshi.utils.JsonPathUtils
 import otoroshi.utils.ReplaceAllWith
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._

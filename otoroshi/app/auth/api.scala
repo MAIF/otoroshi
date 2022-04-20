@@ -4,7 +4,7 @@ import otoroshi.env.Env
 import otoroshi.models.{UserRights, _}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.BasicStore
-import otoroshi.utils.RegexPool
+import otoroshi.utils.{JsonPathValidator, RegexPool}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -17,7 +17,7 @@ import scala.util.{Failure, Success, Try}
 
 trait ValidableUser { self =>
   def json: JsValue
-  def validate(validators: Seq[UserValidator]): Either[String, self.type] = {
+  def validate(validators: Seq[JsonPathValidator]): Either[String, self.type] = {
     val jsonuser = json
     if (validators.forall(validator => validator.validate(jsonuser))) {
       Right(this)
@@ -86,6 +86,7 @@ case class SessionCookieValues(httpOnly: Boolean = true, secure: Boolean = true)
   def asJson: JsValue = SessionCookieValues.fmt.writes(this)
 }
 
+/*
 case class UserValidator(path: String, value: JsValue) {
   def json: JsValue = UserValidator.format.writes(this)
   def validate(user: JsValue): Boolean = {
@@ -127,6 +128,7 @@ object UserValidator {
     }
   }
 }
+*/
 
 trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport {
   def `type`: String
@@ -138,7 +140,7 @@ trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport
   def sessionMaxAge: Int
   def metadata: Map[String, String]
   def sessionCookieValues: SessionCookieValues
-  def userValidators: Seq[UserValidator]
+  def userValidators: Seq[JsonPathValidator]
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   override def internalId: String = id
   override def json: JsValue      = asJson

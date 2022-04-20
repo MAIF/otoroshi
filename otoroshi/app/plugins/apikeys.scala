@@ -17,7 +17,7 @@ import otoroshi.cluster.ClusterAgent
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.plugins.JsonPathUtils
+import otoroshi.utils.JsonPathUtils
 import otoroshi.script._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
