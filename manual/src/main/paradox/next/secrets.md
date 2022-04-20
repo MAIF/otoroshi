@@ -137,9 +137,11 @@ vaults {
   ...
   name_of_the_vault {
     type = "azure"
-    url = "http://127.0.0.1:8200"
+    url = "https://keyvaultname.vault.azure.net"
     api-version = "7.2" # the api version of the vault
-    token = "root" # the token that can access to your secrets
+    tenant = "xxxx-xxx-xxx" # your azure tenant id, optional
+    client_id = "xxxxx" # your azure client_id
+    client_secret = "xxxxx" # your azure client_secret
   }
 }
 ```

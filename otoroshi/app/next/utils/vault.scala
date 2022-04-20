@@ -22,6 +22,7 @@ import play.api.libs.ws.WSAuthScheme
 
 import java.net.URLEncoder
 import java.util.Base64
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -188,25 +189,71 @@ class AzureVault(name: String, env: Env) extends Vault {
 
   private val baseUrl    = env.configuration
     .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
-    .getOrElse("https://myvault.vault.azure.net/")
+    .getOrElse("https://myvault.vault.azure.net")
   private val apiVersion =
     env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.api-version").getOrElse("7.2")
-  private val token      = env.configuration
+  private val maybetoken: Option[String] = env.configuration
     .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.token")
-    .getOrElse("root") // TODO: get it automatically with client_credential flow
+  private val tokenKey = "token"
+
+  private val tokenCache = Scaffeine().maximumSize(2).expireAfterWrite(1.hour).build[String, String]()
 
   private def dataUrl(path: String, options: Map[String, String]) = {
     val opts =
       if (options.nonEmpty) s"?api-version=${apiVersion}&" + options.toSeq.map(v => s"${v._1}=${v._2}").mkString("&")
-      else "?api-version=${apiVersion}"
+      else s"?api-version=${apiVersion}"
     s"${baseUrl}/secrets${path}${opts}"
   }
 
-  override def get(path: String, options: Map[String, String])(implicit
-      env: Env,
-      ec: ExecutionContext
-  ): Future[CachedVaultSecretStatus] = {
-    val url = dataUrl(path, options)
+  private def getToken(): Future[Either[String, String]] = {
+    maybetoken match {
+      case Some(token) => token.right[String].future
+      case None => {
+        tokenCache.getIfPresent(tokenKey) match {
+          case Some(token) => token.right[String].future
+          case None => {
+            implicit val ec = env.otoroshiExecutionContext
+            val tenant = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.tenant").get
+            val clientId = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client_id").get
+            val clientSecret = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client_secret").get
+            env.Ws
+              .url(s"https://login.microsoftonline.com/${tenant}/oauth2/token")
+              .post(Map(
+                "grant_type" -> "client_credentials",
+                "client_id" -> clientId,
+                "client_secret" -> clientSecret,
+                "resource" -> "https://vault.azure.net"
+              ))
+              .map { resp =>
+                if (resp.status == 200) {
+                  resp.json.select("access_token").asOpt[String] match {
+                    case None => {
+                      tokenCache.invalidate(tokenKey)
+                      Left(s"no access_token found in response: ${resp.body}")
+                    }
+                    case Some(accessToken) => {
+                      tokenCache.put(tokenKey, accessToken)
+                      accessToken.right[String]
+                    }
+                  }
+                } else {
+                  tokenCache.invalidate(tokenKey)
+                  Left(s"bad status code for response: ${resp.body}")
+                }
+              }
+              .recover {
+                case e: Throwable =>
+                  logger.error("error while fetching azure key vault token", e)
+                  tokenCache.invalidate(tokenKey)
+                  Left(s"error while fetching azure key vault token: ${e.getMessage}")
+              }
+          }
+        }
+      }
+    }
+  }
+
+  def fetchSecret(url: String, token: String)(implicit env: Env, ec: ExecutionContext): Future[CachedVaultSecretStatus] = {
     env.Ws
       .url(url)
       .withHttpHeaders("Authorization" -> s"Bearer ${token}")
@@ -225,8 +272,10 @@ class AzureVault(name: String, env: Env) extends Vault {
             case _                      => CachedVaultSecretStatus.SecretValueNotFound
           }
         } else if (response.status == 401) {
+          tokenCache.invalidate(tokenKey)
           CachedVaultSecretStatus.SecretReadUnauthorized
         } else if (response.status == 403) {
+          // tokenCache.invalidate(tokenKey) ???
           CachedVaultSecretStatus.SecretReadForbidden
         } else {
           CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
@@ -235,6 +284,22 @@ class AzureVault(name: String, env: Env) extends Vault {
       .recover { case e: Throwable =>
         CachedVaultSecretStatus.SecretReadError(e.getMessage)
       }
+  }
+
+  override def get(path: String, options: Map[String, String])(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[CachedVaultSecretStatus] = {
+    val url = dataUrl(path, options)
+    for {
+      token <- getToken()
+      status <- token match {
+        case Left(err) => CachedVaultSecretStatus.SecretReadError(s"unable to get access_token: ${err}").future
+        case Right(accessToken) => fetchSecret(url, accessToken)
+      }
+    } yield {
+      status
+    }
   }
 }
 
@@ -531,20 +596,28 @@ class Vaults(env: Env) {
         vaultsConfig.select(key).asOpt[JsObject].map { vault =>
           val typ = vault.select("type").asOpt[String].getOrElse("env")
           if (typ == "env") {
+            logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
             vaults.put(key, new EnvVault(key, env))
           } else if (typ == "hashicorp-vault") {
+            logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
             vaults.put(key, new HashicorpVault(key, env))
           } else if (typ == "azure") {
+            logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
             vaults.put(key, new AzureVault(key, env))
           } else if (typ == "aws") {
+            logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
             vaults.put(key, new AwsVault(key, env))
           } else if (typ == "kubernetes") {
+            logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
             vaults.put(key, new KubernetesVault(key, env))
           } else if (typ == "izanami") {
+            logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
             vaults.put(key, new IzanamiVault(key, env))
           } else if (typ == "gcloud") {
+            logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
             vaults.put(key, new GoogleSecretManagerVault(key, env))
           } else if (typ == "alibaba-cloud") {
+            logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
             vaults.put(key, new AlibabaCloudSecretManagerVault(key, env))
           } else {
             // TODO: support square https://github.com/square/keywhiz ?
@@ -652,16 +725,18 @@ class Vaults(env: Env) {
     if (enabled) {
       expressionReplacer.replaceOnAsync(source) { expr =>
         resolveExpression(expr)
-          .map { status =>
-            status match {
-              case CachedVaultSecretStatus.SecretReadSuccess(_) =>
-                logger.debug(s"fill secret on '${id}' from '${expr}' successfully")
-              case _                                            => logger.info(s"filling secret on '${id}' from '${expr}' failed because of '${status.value}'")
-            }
-            status.value
+          .map {
+            case CachedVaultSecretStatus.SecretReadSuccess(value) =>
+              logger.debug(s"fill secret on '${id}' from '${expr}' successfully")
+              value
+            case status                                            =>
+              logger.error(s"filling secret on '${id}' from '${expr}' failed because of '${status.value}'")
+              "not-found"
           }
           .recover { case e: Throwable =>
-            CachedVaultSecretStatus.SecretReadError(e.getMessage).value
+            val error = CachedVaultSecretStatus.SecretReadError(e.getMessage)
+            logger.error(s"filling secret on '${id}' from '${expr}' failed because of '${error.value}'")
+            "not-found"
           }
       }
     } else {
