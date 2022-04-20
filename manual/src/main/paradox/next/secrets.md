@@ -142,6 +142,7 @@ vaults {
     tenant = "xxxx-xxx-xxx" # your azure tenant id, optional
     client_id = "xxxxx" # your azure client_id
     client_secret = "xxxxx" # your azure client_secret
+    # token = "xxx" possible if you have a long lived existing token. will take over tenant / client_id / client_secret
   }
 }
 ```

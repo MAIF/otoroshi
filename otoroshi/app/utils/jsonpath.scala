@@ -139,6 +139,12 @@ case class JsonPathValidator(path: String, value: JsValue) {
         } else if (expected.trim.startsWith("Wildcard(") && expected.trim.endsWith(")")) {
           val regex = expected.substring(9).init
           RegexPool.apply(regex).matches(v)
+        } else if (expected.trim.startsWith("RegexNot(") && expected.trim.endsWith(")")) {
+          val regex = expected.substring(9).init
+          !RegexPool.regex(regex).matches(v)
+        } else if (expected.trim.startsWith("WildcardNot(") && expected.trim.endsWith(")")) {
+          val regex = expected.substring(12).init
+          !RegexPool.apply(regex).matches(v)
         } else if (expected.trim.startsWith("Contains(") && expected.trim.endsWith(")")) {
           val contained = expected.substring(9).init
           v.contains(contained)

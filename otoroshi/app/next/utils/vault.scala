@@ -576,6 +576,9 @@ class Vaults(env: Env) {
     .getOptionalWithFileSupport[Long]("otoroshi.vaults.read-ttl")
     .map(_.milliseconds)
     .getOrElse(10.seconds)
+  private val parallelFetchs                 = env.configuration
+    .getOptionalWithFileSupport[Int]("otoroshi.vaults.parallel-fetchs")
+    .getOrElse(4)
   private val cachedSecrets: Long            =
     env.configuration.getOptionalWithFileSupport[Long]("otoroshi.vaults.cached-secrets").getOrElse(10000L)
   private val cache                          =
@@ -695,7 +698,7 @@ class Vaults(env: Env) {
             case _ => true
           }
         }
-        .mapAsync(4) { secret =>
+        .mapAsync(parallelFetchs) { secret =>
           resolveExpression(secret.key).recover { case e: Throwable =>
             ()
           }
