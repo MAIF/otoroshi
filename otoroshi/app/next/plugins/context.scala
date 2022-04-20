@@ -122,7 +122,7 @@ class ContextValidation extends NgAccessValidator {
       |    "otoroshi.core.RequestCounterIn" : 0
       |  },
       |  "route" : { ... },
-      |  "token" : null
+      |  "token" : null // current valid jwt token if one
       |}
       |```
       |

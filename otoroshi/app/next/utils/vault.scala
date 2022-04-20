@@ -666,7 +666,8 @@ class Vaults(env: Env) {
               .map { status =>
                 val theStatus = status match {
                   case CachedVaultSecretStatus.SecretReadSuccess(v) =>
-                    CachedVaultSecretStatus.SecretReadSuccess(JsString(v).stringify.substring(1).init)
+                    val computed = JsString(v).stringify.substring(1).init
+                    CachedVaultSecretStatus.SecretReadSuccess(computed)
                   case s                                            => s
                 }
                 val secret    = CachedVaultSecret(expr, DateTime.now(), theStatus)
