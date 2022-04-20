@@ -25447,15 +25447,15 @@
         }
       },
       "otoroshi.utils.JsonPathValidator" : {
-        "description" : "???",
+        "description" : "Validator based on JsonPath",
         "type" : "object",
         "properties" : {
           "path" : {
-            "description" : "???",
+            "description" : "The path to find the validated value",
             "type" : "string"
           },
           "value" : {
-            "description" : "???",
+            "description" : "The expected value",
             "type" : "object"
           }
         }
