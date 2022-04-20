@@ -913,11 +913,12 @@ object NgRoute {
               config = NgPluginInstanceConfig(NgCorsSettings.fromLegacy(service.cors).json.asObject)
             )
           }
-          .applyOnIf(!service.publicPatterns.contains("/.*")) { seq =>
+          // .applyOnIf(!service.publicPatterns.contains("/.*")) { seq =>
+          .applyOnIf((service.publicPatterns.isEmpty && service.privatePatterns.isEmpty) || service.privatePatterns.nonEmpty || !service.publicPatterns.contains("/.*")) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[ApikeyCalls],
               include = service.privatePatterns,
-              exclude = service.publicPatterns,
+              exclude = if (service.publicPatterns.size == 1 && service.publicPatterns.contains("/.*")) Seq.empty else service.publicPatterns,
               config = NgPluginInstanceConfig(
                 NgApikeyCallsConfig
                   .fromLegacy(service.apiKeyConstraints)
