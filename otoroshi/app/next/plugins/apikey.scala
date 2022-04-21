@@ -69,15 +69,17 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
     val config    = configCache.get(ctx.route.id, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
     val maybeUser = ctx.attrs.get(otoroshi.plugins.Keys.UserKey)
     (config.passWithUser match {
-      case true  => maybeUser match {
-        case Some(_) => true.future
-        case None => PrivateAppsUserHelper.isPrivateAppsSessionValid(ctx.request, ctx.route.legacy, ctx.attrs).map {
-          case Some(user) =>
-            ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
-            true
-          case None => false
+      case true  =>
+        maybeUser match {
+          case Some(_) => true.future
+          case None    =>
+            PrivateAppsUserHelper.isPrivateAppsSessionValid(ctx.request, ctx.route.legacy, ctx.attrs).map {
+              case Some(user) =>
+                ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+                true
+              case None       => false
+            }
         }
-      }
       case false => false.future
     }).flatMap { pass =>
       ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
@@ -85,13 +87,13 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
           // Here are 2 + 12 datastore calls to handle quotas
           val routeId = ctx.route.originalRouteId.getOrElse(ctx.route.id) // handling route groups
           ApiKeyHelper.passWithApiKeyFromCache(ctx.request, config.legacy, ctx.attrs, routeId).map {
-            case Left(result) => NgAccess.NgDenied(result)
+            case Left(result)  => NgAccess.NgDenied(result)
             case Right(apikey) =>
               ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
               NgAccess.NgAllowed
           }
         }
-        case _ => NgAccess.NgAllowed.vfuture
+        case _                                => NgAccess.NgAllowed.vfuture
       }
     }
   }

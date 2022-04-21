@@ -55,9 +55,9 @@ case class NgMatchedRoute(
     noMoreSegments: Boolean = false
 ) {
   def json: JsValue = Json.obj(
-    "route_id" -> route.id,
-    "path" -> path,
-    "path_params" -> pathParams,
+    "route_id"         -> route.id,
+    "path"             -> path,
+    "path_params"      -> pathParams,
     "no_more_segments" -> noMoreSegments
   )
 }

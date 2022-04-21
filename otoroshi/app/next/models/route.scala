@@ -905,11 +905,16 @@ object NgRoute {
             )
           }
           // .applyOnIf(!service.publicPatterns.contains("/.*")) { seq =>
-          .applyOnIf((service.publicPatterns.isEmpty && service.privatePatterns.isEmpty) || service.privatePatterns.nonEmpty || !service.publicPatterns.contains("/.*")) { seq =>
+          .applyOnIf(
+            (service.publicPatterns.isEmpty && service.privatePatterns.isEmpty) || service.privatePatterns.nonEmpty || !service.publicPatterns
+              .contains("/.*")
+          ) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[ApikeyCalls],
               include = service.privatePatterns,
-              exclude = if (service.publicPatterns.size == 1 && service.publicPatterns.contains("/.*")) Seq.empty else service.publicPatterns,
+              exclude =
+                if (service.publicPatterns.size == 1 && service.publicPatterns.contains("/.*")) Seq.empty
+                else service.publicPatterns,
               config = NgPluginInstanceConfig(
                 NgApikeyCallsConfig
                   .fromLegacy(service.apiKeyConstraints)
@@ -1009,7 +1014,7 @@ object NgRoute {
               }
           }
       )
-    )/*.debug { route =>
+    ) /*.debug { route =>
       if (route.id == "service_dev_e7ad992b-10e6-4038-a593-8f3953996af6") {
         route.json.prettify.debugPrintln
       }

@@ -187,14 +187,14 @@ class AzureVault(name: String, env: Env) extends Vault {
 
   private val logger = Logger("otoroshi-azure-vault")
 
-  private val baseUrl    = env.configuration
+  private val baseUrl                    = env.configuration
     .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
     .getOrElse("https://myvault.vault.azure.net")
-  private val apiVersion =
+  private val apiVersion                 =
     env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.api-version").getOrElse("7.2")
   private val maybetoken: Option[String] = env.configuration
     .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.token")
-  private val tokenKey = "token"
+  private val tokenKey                   = "token"
 
   private val tokenCache = Scaffeine().maximumSize(2).expireAfterWrite(1.hour).build[String, String]()
 
@@ -208,26 +208,30 @@ class AzureVault(name: String, env: Env) extends Vault {
   private def getToken(): Future[Either[String, String]] = {
     maybetoken match {
       case Some(token) => token.right[String].future
-      case None => {
+      case None        => {
         tokenCache.getIfPresent(tokenKey) match {
           case Some(token) => token.right[String].future
-          case None => {
-            implicit val ec = env.otoroshiExecutionContext
-            val tenant = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.tenant").get
-            val clientId = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client_id").get
-            val clientSecret = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client_secret").get
+          case None        => {
+            implicit val ec  = env.otoroshiExecutionContext
+            val tenant       = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.tenant").get
+            val clientId     =
+              env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client_id").get
+            val clientSecret =
+              env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client_secret").get
             env.Ws
               .url(s"https://login.microsoftonline.com/${tenant}/oauth2/token")
-              .post(Map(
-                "grant_type" -> "client_credentials",
-                "client_id" -> clientId,
-                "client_secret" -> clientSecret,
-                "resource" -> "https://vault.azure.net"
-              ))
+              .post(
+                Map(
+                  "grant_type"    -> "client_credentials",
+                  "client_id"     -> clientId,
+                  "client_secret" -> clientSecret,
+                  "resource"      -> "https://vault.azure.net"
+                )
+              )
               .map { resp =>
                 if (resp.status == 200) {
                   resp.json.select("access_token").asOpt[String] match {
-                    case None => {
+                    case None              => {
                       tokenCache.invalidate(tokenKey)
                       Left(s"no access_token found in response: ${resp.body}")
                     }
@@ -241,11 +245,10 @@ class AzureVault(name: String, env: Env) extends Vault {
                   Left(s"bad status code for response: ${resp.body}")
                 }
               }
-              .recover {
-                case e: Throwable =>
-                  logger.error("error while fetching azure key vault token", e)
-                  tokenCache.invalidate(tokenKey)
-                  Left(s"error while fetching azure key vault token: ${e.getMessage}")
+              .recover { case e: Throwable =>
+                logger.error("error while fetching azure key vault token", e)
+                tokenCache.invalidate(tokenKey)
+                Left(s"error while fetching azure key vault token: ${e.getMessage}")
               }
           }
         }
@@ -253,7 +256,10 @@ class AzureVault(name: String, env: Env) extends Vault {
     }
   }
 
-  def fetchSecret(url: String, token: String)(implicit env: Env, ec: ExecutionContext): Future[CachedVaultSecretStatus] = {
+  def fetchSecret(url: String, token: String)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[CachedVaultSecretStatus] = {
     env.Ws
       .url(url)
       .withHttpHeaders("Authorization" -> s"Bearer ${token}")
@@ -292,11 +298,12 @@ class AzureVault(name: String, env: Env) extends Vault {
   ): Future[CachedVaultSecretStatus] = {
     val url = dataUrl(path, options)
     for {
-      token <- getToken()
+      token  <- getToken()
       status <- token match {
-        case Left(err) => CachedVaultSecretStatus.SecretReadError(s"unable to get access_token: ${err}").future
-        case Right(accessToken) => fetchSecret(url, accessToken)
-      }
+                  case Left(err)          =>
+                    CachedVaultSecretStatus.SecretReadError(s"unable to get access_token: ${err}").future
+                  case Right(accessToken) => fetchSecret(url, accessToken)
+                }
     } yield {
       status
     }
@@ -567,22 +574,23 @@ class IzanamiVault(name: String, env: Env) extends Vault {
 
 class Vaults(env: Env) {
 
-  private val logger                         = Logger("otoroshi-vaults")
-  private val secretsTtl                     = env.configuration
+  private val logger              = Logger("otoroshi-vaults")
+  private val secretsTtl          = env.configuration
     .getOptionalWithFileSupport[Long]("otoroshi.vaults.secrets-ttl")
     .map(_.milliseconds)
     .getOrElse(5.minutes)
-  private val readTtl                        = env.configuration
+  private val readTtl             = env.configuration
     .getOptionalWithFileSupport[Long]("otoroshi.vaults.read-ttl")
     .map(_.milliseconds)
     .getOrElse(10.seconds)
-  private val parallelFetchs                 = env.configuration
+  private val parallelFetchs      = env.configuration
     .getOptionalWithFileSupport[Int]("otoroshi.vaults.parallel-fetchs")
     .getOrElse(4)
-  private val cachedSecrets: Long            =
+  private val cachedSecrets: Long =
     env.configuration.getOptionalWithFileSupport[Long]("otoroshi.vaults.cached-secrets").getOrElse(10000L)
 
-  val leaderFetchOnly: Boolean = env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.vaults.leader-fetch-only").getOrElse(false)
+  val leaderFetchOnly: Boolean =
+    env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.vaults.leader-fetch-only").getOrElse(false)
 
   private val cache                          =
     Scaffeine().expireAfterWrite(secretsTtl).maximumSize(cachedSecrets).build[String, CachedVaultSecret]()
@@ -736,7 +744,7 @@ class Vaults(env: Env) {
             case CachedVaultSecretStatus.SecretReadSuccess(value) =>
               logger.debug(s"fill secret on '${id}' from '${expr}' successfully")
               value
-            case status                                            =>
+            case status                                           =>
               logger.error(s"filling secret on '${id}' from '${expr}' failed because of '${status.value}'")
               "not-found"
           }

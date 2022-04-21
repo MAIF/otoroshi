@@ -128,7 +128,7 @@ object UserValidator {
     }
   }
 }
-*/
+ */
 
 trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport {
   def `type`: String

@@ -54,7 +54,12 @@ case class NgPluginHttpRequest(
   lazy val queryString: Option[String]              = uri.rawQueryString
   lazy val relativeUri: String                      = uri.toRelative.toString()
   lazy val hasBodyWithoutLength: (Boolean, Boolean) =
-    otoroshi.utils.body.BodyUtils.hasBodyWithoutLengthGen(method.toUpperCase(), contentLengthStr, contentType, transferEncoding)
+    otoroshi.utils.body.BodyUtils.hasBodyWithoutLengthGen(
+      method.toUpperCase(),
+      contentLengthStr,
+      contentType,
+      transferEncoding
+    )
   lazy val hasBody: Boolean                         = hasBodyWithoutLength._1
   // val ctype = contentType
   // (method.toUpperCase(), header("Content-Length")) match {

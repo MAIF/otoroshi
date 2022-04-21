@@ -7,7 +7,21 @@ import com.jayway.jsonpath.{Configuration, JsonPath}
 import net.minidev.json.{JSONArray, JSONObject}
 import otoroshi.api.OtoroshiEnvHolder
 import play.api.Logger
-import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNumber, JsObject, JsResult, JsString, JsSuccess, JsValue, Json, Reads, Writes}
+import play.api.libs.json.{
+  Format,
+  JsArray,
+  JsBoolean,
+  JsError,
+  JsNumber,
+  JsObject,
+  JsResult,
+  JsString,
+  JsSuccess,
+  JsValue,
+  Json,
+  Reads,
+  Writes
+}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.jackson.JacksonJson
 
@@ -17,8 +31,8 @@ object JsonPathUtils {
 
   private val logger = Logger("otoroshi-jsonpath-utils")
 
-  def matchWith(payload: JsValue, what: String): String => Boolean = {
-    (query: String) => {
+  def matchWith(payload: JsValue, what: String): String => Boolean = { (query: String) =>
+    {
       getAtPolyJson(payload, query).isDefined
     }
   }
@@ -89,11 +103,11 @@ case class JsonPathValidator(path: String, value: JsValue) {
   def json: JsValue = JsonPathValidator.format.writes(this)
   def validate(ctx: JsValue): Boolean = {
     ctx.atPath(path).asOpt[JsValue] match {
-      case None                                                   => false
-      case Some(JsNumber(v))      if value.isInstanceOf[JsString] => v.toString == value.asString
-      case Some(JsBoolean(v))     if value.isInstanceOf[JsString] => v.toString == value.asString
-      case Some(JsArray(seq))     if !value.isInstanceOf[JsArray] => seq.contains(value)
-      case Some(arr@JsArray(seq)) if value.isInstanceOf[JsString] => {
+      case None                                                     => false
+      case Some(JsNumber(v)) if value.isInstanceOf[JsString]        => v.toString == value.asString
+      case Some(JsBoolean(v)) if value.isInstanceOf[JsString]       => v.toString == value.asString
+      case Some(JsArray(seq)) if !value.isInstanceOf[JsArray]       => seq.contains(value)
+      case Some(arr @ JsArray(seq)) if value.isInstanceOf[JsString] => {
         val expected = value.asString
         if (expected.trim.startsWith("Contains(") && expected.trim.endsWith(")")) {
           seq.contains(JsString(expected.substring(9).init))
@@ -101,37 +115,37 @@ case class JsonPathValidator(path: String, value: JsValue) {
           !seq.contains(JsString(expected.substring(12).init))
         } else if (expected.trim.startsWith("Contains(Regex(") && expected.trim.endsWith("))")) {
           val regex = expected.substring(15).init.init
-          val r = RegexPool.regex(regex)
+          val r     = RegexPool.regex(regex)
           seq.exists {
             case JsString(str) => r.matches(str)
-            case _ => false
+            case _             => false
           }
         } else if (expected.trim.startsWith("Contains(Wildcard(") && expected.trim.endsWith("))")) {
           val regex = expected.substring(18).init.init
-          val r = RegexPool.apply(regex)
+          val r     = RegexPool.apply(regex)
           seq.exists {
             case JsString(str) => r.matches(str)
-            case _ => false
+            case _             => false
           }
         } else if (expected.trim.startsWith("ContainsNot(Regex(") && expected.trim.endsWith("))")) {
           val regex = expected.substring(18).init.init
-          val r = RegexPool.regex(regex)
+          val r     = RegexPool.regex(regex)
           !seq.exists {
             case JsString(str) => r.matches(str)
-            case _ => false
+            case _             => false
           }
         } else if (expected.trim.startsWith("ContainsNot(Wildcard(") && expected.trim.endsWith("))")) {
           val regex = expected.substring(21).init.init
-          val r = RegexPool.apply(regex)
+          val r     = RegexPool.apply(regex)
           !seq.exists {
             case JsString(str) => r.matches(str)
-            case _ => false
+            case _             => false
           }
         } else {
           arr.stringify == expected
         }
       }
-      case Some(JsString(v)) if value.isInstanceOf[JsString] => {
+      case Some(JsString(v)) if value.isInstanceOf[JsString]        => {
         val expected = value.asString
         if (expected.trim.startsWith("Regex(") && expected.trim.endsWith(")")) {
           val regex = expected.substring(6).init
@@ -158,7 +172,7 @@ case class JsonPathValidator(path: String, value: JsValue) {
           v == expected
         }
       }
-      case Some(v)                                           => v == value
+      case Some(v)                                                  => v == value
     }
   }
 }
