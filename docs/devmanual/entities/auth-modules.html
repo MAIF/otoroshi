@@ -283,7 +283,70 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>HttpOnly</code>: if enabled, the cookie cannot be accessed through client side script, prevent cross-site scripting (XSS) by not revealing the cookie to a third party</li>
   <li><code>Secure</code>: if enabled, avoid to include cookie in an HTTP Request without secure channel, typically HTTPs.</li>
   <li><code>Session max. age</code>: duration until the session expired</li>
+  <li><code>User validators</code>: a list of validator that will check if a user that successfully logged in has the right to actually pass otoroshi based on the content of it&rsquo;s profile. A validator is composed of a <a href="https://goessner.net/articles/JsonPath/">JSONPath</a> that will tell what to check and a value that is the expected value. The JSONPath will be applied on a document that will look like</li>
 </ul>
+<pre class="prettyprint"><code class="language-javascript">{
+    &quot;_loc&quot;: {
+        &quot;tenant&quot;: &quot;default&quot;,
+        &quot;teams&quot;: [
+            &quot;default&quot;
+        ]
+    },
+    &quot;randomId&quot;: &quot;xxxxx&quot;,
+    &quot;name&quot;: &quot;john.doe@otoroshi.io&quot;,
+    &quot;email&quot;: &quot;john.doe@otoroshi.io&quot;,
+    &quot;authConfigId&quot;: &quot;xxxxxxxx&quot;,
+    &quot;profile&quot;: { // the profile shape depends heavily on the identity provider
+        &quot;sub&quot;: &quot;xxxxxx&quot;,
+        &quot;nickname&quot;: &quot;john.doe&quot;,
+        &quot;name&quot;: &quot;john.doe@otoroshi.io&quot;,
+        &quot;picture&quot;: &quot;https://foo.bar/avatar.png&quot;,
+        &quot;updated_at&quot;: &quot;2022-04-20T12:57:39.723Z&quot;,
+        &quot;email&quot;: &quot;john.doe@otoroshi.io&quot;,
+        &quot;email_verified&quot;: true,
+        &quot;rights&quot;: [&quot;one&quot;, &quot;two&quot;]
+    },
+    &quot;token&quot;: { // the token shape depends heavily on the identity provider
+        &quot;access_token&quot;: &quot;xxxxxx&quot;,
+        &quot;refresh_token&quot;: &quot;yyyyyy&quot;,
+        &quot;id_token&quot;: &quot;zzzzzz&quot;,
+        &quot;scope&quot;: &quot;openid profile email address phone offline_access&quot;,
+        &quot;expires_in&quot;: 86400,
+        &quot;token_type&quot;: &quot;Bearer&quot;
+    },
+    &quot;realm&quot;: &quot;global-oauth-xxxxxxx&quot;,
+    &quot;otoroshiData&quot;: {
+        ...
+    },
+    &quot;createdAt&quot;: 1650459462650,
+    &quot;expiredAt&quot;: 1650545862652,
+    &quot;lastRefresh&quot;: 1650459462650,
+    &quot;metadata&quot;: {},
+    &quot;tags&quot;: []
+}
+</code></pre>
+<p>the expected value support some syntax tricks like </p>
+<ul>
+  <li><code>Not(value)</code> on a string to check if the current value does not equals another value</li>
+  <li><code>Regex(regex)</code> on a string to check if the current value matches the regex</li>
+  <li><code>RegexNot(regex)</code> on a string to check if the current value does not matches the regex</li>
+  <li><code>Wildcard(*value*)</code> on a string to check if the current value matches the value with wildcards</li>
+  <li><code>WildcardNot(*value*)</code> on a string to check if the current value does not matches the value with wildcards</li>
+  <li><code>Contains(value)</code> on a string to check if the current value contains a value</li>
+  <li><code>ContainsNot(value)</code> on a string to check if the current value does not contains a value</li>
+  <li><code>Contains(Regex(regex))</code> on an array to check if one of the item of the array matches the regex</li>
+  <li><code>ContainsNot(Regex(regex))</code> on an array to check if one of the item of the array does not matches the regex</li>
+  <li><code>Contains(Wildcard(*value*))</code> on an array to check if one of the item of the array matches the wildcard value</li>
+  <li><code>ContainsNot(Wildcard(*value*))</code> on an array to check if one of the item of the array does not matches the wildcard value</li>
+  <li><code>Contains(value)</code> on an array to check if the array contains a value</li>
+  <li><code>ContainsNot(value)</code> on an array to check if the array does not contains a value</li>
+</ul>
+<p>for instance to check if the current user has the right <code>two</code>, you can write the following validator</p>
+<pre class="prettyprint"><code class="language-js">{
+  &quot;path&quot;: &quot;$.profile.rights&quot;,
+  &quot;value&quot;: &quot;Contains(two)&quot;
+}
+</code></pre>
 <h2><a href="#oauth-2-0-oidc-provider" name="oauth-2-0-oidc-provider" class="anchor"><span class="anchor-link"></span></a>OAuth 2.0 / OIDC provider</h2>
 <p>If you want to secure an app or your Otoroshi UI with this provider, you can check these tutorials : <a href="../how-to-s/secure-app-with-keycloak.html">Secure an app with keycloak</a> or <a href="../how-to-s/secure-app-with-auth0.html">Secure an app with auth0</a></p>
 <ul>

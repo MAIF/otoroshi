@@ -2,7 +2,6 @@ package otoroshi.auth
 
 import java.security.SecureRandom
 import java.util.Optional
-
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import com.fasterxml.jackson.annotation.JsonInclude.Include
@@ -22,6 +21,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
+import otoroshi.utils.JsonPathValidator
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -139,7 +139,7 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
             (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
-            .map(_.flatMap(v => UserValidator.format.reads(v).asOpt))
+            .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
             .getOrElse(Seq.empty)
         )
       )
@@ -154,7 +154,7 @@ case class BasicAuthModuleConfig(
     desc: String,
     users: Seq[BasicAuthUser] = Seq.empty[BasicAuthUser],
     sessionMaxAge: Int = 86400,
-    userValidators: Seq[UserValidator] = Seq.empty,
+    userValidators: Seq[JsonPathValidator] = Seq.empty,
     basicAuth: Boolean = false,
     webauthn: Boolean = false,
     tags: Seq[String],

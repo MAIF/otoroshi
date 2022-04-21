@@ -23,6 +23,74 @@ Each module has also the following fields :
 * `HttpOnly`: if enabled, the cookie cannot be accessed through client side script, prevent cross-site scripting (XSS) by not revealing the cookie to a third party
 * `Secure`: if enabled, avoid to include cookie in an HTTP Request without secure channel, typically HTTPs.
 * `Session max. age`: duration until the session expired
+* `User validators`: a list of validator that will check if a user that successfully logged in has the right to actually pass otoroshi based on the content of it's profile. A validator is composed of a [JSONPath](https://goessner.net/articles/JsonPath/) that will tell what to check and a value that is the expected value. The JSONPath will be applied on a document that will look like
+
+```javascript
+{
+    "_loc": {
+        "tenant": "default",
+        "teams": [
+            "default"
+        ]
+    },
+    "randomId": "xxxxx",
+    "name": "john.doe@otoroshi.io",
+    "email": "john.doe@otoroshi.io",
+    "authConfigId": "xxxxxxxx",
+    "profile": { // the profile shape depends heavily on the identity provider
+        "sub": "xxxxxx",
+        "nickname": "john.doe",
+        "name": "john.doe@otoroshi.io",
+        "picture": "https://foo.bar/avatar.png",
+        "updated_at": "2022-04-20T12:57:39.723Z",
+        "email": "john.doe@otoroshi.io",
+        "email_verified": true,
+        "rights": ["one", "two"]
+    },
+    "token": { // the token shape depends heavily on the identity provider
+        "access_token": "xxxxxx",
+        "refresh_token": "yyyyyy",
+        "id_token": "zzzzzz",
+        "scope": "openid profile email address phone offline_access",
+        "expires_in": 86400,
+        "token_type": "Bearer"
+    },
+    "realm": "global-oauth-xxxxxxx",
+    "otoroshiData": {
+        ...
+    },
+    "createdAt": 1650459462650,
+    "expiredAt": 1650545862652,
+    "lastRefresh": 1650459462650,
+    "metadata": {},
+    "tags": []
+}
+```
+
+the expected value support some syntax tricks like 
+
+* `Not(value)` on a string to check if the current value does not equals another value
+* `Regex(regex)` on a string to check if the current value matches the regex
+* `RegexNot(regex)` on a string to check if the current value does not matches the regex
+* `Wildcard(*value*)` on a string to check if the current value matches the value with wildcards
+* `WildcardNot(*value*)` on a string to check if the current value does not matches the value with wildcards
+* `Contains(value)` on a string to check if the current value contains a value
+* `ContainsNot(value)` on a string to check if the current value does not contains a value
+* `Contains(Regex(regex))` on an array to check if one of the item of the array matches the regex
+* `ContainsNot(Regex(regex))` on an array to check if one of the item of the array does not matches the regex
+* `Contains(Wildcard(*value*))` on an array to check if one of the item of the array matches the wildcard value
+* `ContainsNot(Wildcard(*value*))` on an array to check if one of the item of the array does not matches the wildcard value
+* `Contains(value)` on an array to check if the array contains a value
+* `ContainsNot(value)` on an array to check if the array does not contains a value
+
+for instance to check if the current user has the right `two`, you can write the following validator
+
+```js
+{
+  "path": "$.profile.rights",
+  "value": "Contains(two)"
+}
+```
 
 ## OAuth 2.0 / OIDC provider
 

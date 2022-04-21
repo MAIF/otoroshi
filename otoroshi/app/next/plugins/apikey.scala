@@ -68,22 +68,33 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config    = configCache.get(ctx.route.id, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
     val maybeUser = ctx.attrs.get(otoroshi.plugins.Keys.UserKey)
-    val pass      = config.passWithUser match {
-      case true  => maybeUser.isDefined
-      case false => false
-    }
-    ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
-      case None if config.validate && !pass => {
-        // Here are 2 + 12 datastore calls to handle quotas
-        val routeId = ctx.route.originalRouteId.getOrElse(ctx.route.id) // handling route groups
-        ApiKeyHelper.passWithApiKeyFromCache(ctx.request, config.legacy, ctx.attrs, routeId).map {
-          case Left(result)  => NgAccess.NgDenied(result)
-          case Right(apikey) =>
-            ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
-            NgAccess.NgAllowed
+    (config.passWithUser match {
+      case true  =>
+        maybeUser match {
+          case Some(_) => true.future
+          case None    =>
+            PrivateAppsUserHelper.isPrivateAppsSessionValid(ctx.request, ctx.route.legacy, ctx.attrs).map {
+              case Some(user) =>
+                ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+                true
+              case None       => false
+            }
         }
+      case false => false.future
+    }).flatMap { pass =>
+      ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
+        case None if config.validate && !pass => {
+          // Here are 2 + 12 datastore calls to handle quotas
+          val routeId = ctx.route.originalRouteId.getOrElse(ctx.route.id) // handling route groups
+          ApiKeyHelper.passWithApiKeyFromCache(ctx.request, config.legacy, ctx.attrs, routeId).map {
+            case Left(result)  => NgAccess.NgDenied(result)
+            case Right(apikey) =>
+              ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
+              NgAccess.NgAllowed
+          }
+        }
+        case _                                => NgAccess.NgAllowed.vfuture
       }
-      case _                                => NgAccess.NgAllowed.vfuture
     }
   }
 
@@ -400,7 +411,7 @@ case class NgApikeyCallsConfig(
     routing: NgApikeyMatcher = NgApikeyMatcher(),
     wipeBackendRequest: Boolean = true,
     validate: Boolean = true,
-    passWithUser: Boolean = true
+    passWithUser: Boolean = false
 ) extends NgPluginConfig {
   def json: JsValue                  = Json.obj(
     "extractors"           -> extractors.json,

@@ -8,6 +8,7 @@ import otoroshi.controllers.routes
 import otoroshi.env.Env
 import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights, _}
 import otoroshi.security.IdGenerator
+import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.http.MtlsConfig
 import play.api.Logger
 import play.api.libs.json._
@@ -48,7 +49,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
-            .map(_.flatMap(v => UserValidator.format.reads(v).asOpt))
+            .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
             .getOrElse(Seq.empty),
           sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
           clientId = (json \ "clientId").asOpt[String].getOrElse("client"),
@@ -127,7 +128,7 @@ case class GenericOauth2ModuleConfig(
     name: String,
     desc: String,
     sessionMaxAge: Int = 86400,
-    userValidators: Seq[UserValidator] = Seq.empty,
+    userValidators: Seq[JsonPathValidator] = Seq.empty,
     clientId: String = "client",
     clientSecret: String = "secret",
     tokenUrl: String = "http://localhost:8082/oauth/token",

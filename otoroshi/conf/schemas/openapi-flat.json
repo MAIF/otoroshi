@@ -7733,11 +7733,11 @@
           "type" : "object",
           "properties" : {
             "path" : {
-              "description" : "The JSON Path that will be checked",
+              "description" : "The path to find the validated value",
               "type" : "string"
             },
             "value" : {
-              "description" : "The expected value at the previously defined path",
+              "description" : "The expected value",
               "type" : "object"
             }
           }
@@ -10744,11 +10744,11 @@
           "type" : "object",
           "properties" : {
             "path" : {
-              "description" : "The JSON Path that will be checked",
+              "description" : "The path to find the validated value",
               "type" : "string"
             },
             "value" : {
-              "description" : "The expected value at the previously defined path",
+              "description" : "The expected value",
               "type" : "object"
             }
           }
@@ -17744,11 +17744,11 @@
                 "type" : "object",
                 "properties" : {
                   "path" : {
-                    "description" : "The JSON Path that will be checked",
+                    "description" : "The path to find the validated value",
                     "type" : "string"
                   },
                   "value" : {
-                    "description" : "The expected value at the previously defined path",
+                    "description" : "The expected value",
                     "type" : "object"
                   }
                 }
@@ -25514,20 +25514,6 @@
       }
     }
   },
-  "otoroshi.next.plugins.ContextValidator" : {
-    "description" : "Plugin for context validation",
-    "type" : "object",
-    "properties" : {
-      "path" : {
-        "description" : "The path being tested on the current context",
-        "type" : "string"
-      },
-      "value" : {
-        "description" : "The expected value",
-        "type" : "object"
-      }
-    }
-  },
   "otoroshi.next.plugins.NgBadResponse" : {
     "description" : "Configuration for SnowMonkeyChaos",
     "type" : "object",
@@ -26248,7 +26234,7 @@
           "type" : "object",
           "properties" : {
             "path" : {
-              "description" : "The path being tested on the current context",
+              "description" : "The path to find the validated value",
               "type" : "string"
             },
             "value" : {
@@ -34825,7 +34811,7 @@
           "type" : "object",
           "properties" : {
             "path" : {
-              "description" : "The path being tested on the current context",
+              "description" : "The path to find the validated value",
               "type" : "string"
             },
             "value" : {
@@ -35770,11 +35756,11 @@
           "type" : "object",
           "properties" : {
             "path" : {
-              "description" : "The JSON Path that will be checked",
+              "description" : "The path to find the validated value",
               "type" : "string"
             },
             "value" : {
-              "description" : "The expected value at the previously defined path",
+              "description" : "The expected value",
               "type" : "object"
             }
           }
@@ -36915,6 +36901,20 @@
       "startedAt" : {
         "description" : "Outage starting date",
         "type" : "number"
+      }
+    }
+  },
+  "otoroshi.utils.JsonPathValidator" : {
+    "description" : "Validator based on JsonPath",
+    "type" : "object",
+    "properties" : {
+      "path" : {
+        "description" : "The path to find the validated value",
+        "type" : "string"
+      },
+      "value" : {
+        "description" : "The expected value",
+        "type" : "object"
       }
     }
   },
@@ -43323,11 +43323,11 @@
           "type" : "object",
           "properties" : {
             "path" : {
-              "description" : "The JSON Path that will be checked",
+              "description" : "The path to find the validated value",
               "type" : "string"
             },
             "value" : {
-              "description" : "The expected value at the previously defined path",
+              "description" : "The expected value",
               "type" : "object"
             }
           }
@@ -44367,20 +44367,6 @@
     "type" : "object",
     "properties" : { }
   },
-  "otoroshi.auth.UserValidator" : {
-    "description" : "Validate if a user is valid or not (for auth) based on a JsonPath and an expected value",
-    "type" : "object",
-    "properties" : {
-      "path" : {
-        "description" : "The JSON Path that will be checked",
-        "type" : "string"
-      },
-      "value" : {
-        "description" : "The expected value at the previously defined path",
-        "type" : "object"
-      }
-    }
-  },
   "otoroshi.next.plugins.NgIpAddressesConfig" : {
     "description" : "Configuration for ip address related plugins",
     "type" : "object",
@@ -44539,11 +44525,11 @@
           "type" : "object",
           "properties" : {
             "path" : {
-              "description" : "The JSON Path that will be checked",
+              "description" : "The path to find the validated value",
               "type" : "string"
             },
             "value" : {
-              "description" : "The expected value at the previously defined path",
+              "description" : "The expected value",
               "type" : "object"
             }
           }
@@ -45800,11 +45786,11 @@
           "type" : "object",
           "properties" : {
             "path" : {
-              "description" : "The JSON Path that will be checked",
+              "description" : "The path to find the validated value",
               "type" : "string"
             },
             "value" : {
-              "description" : "The expected value at the previously defined path",
+              "description" : "The expected value",
               "type" : "object"
             }
           }

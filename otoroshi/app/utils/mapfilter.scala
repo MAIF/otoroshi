@@ -1,6 +1,5 @@
 package otoroshi.utils
 
-import otoroshi.plugins.JsonPathUtils
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.workflow.{WorkFlowOperator, WorkFlowTaskContext}
 import play.api.libs.json._

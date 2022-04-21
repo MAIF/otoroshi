@@ -3,7 +3,7 @@ package otoroshi.plugins.users
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.plugins.JsonPathUtils
+import otoroshi.utils.JsonPathUtils
 import otoroshi.script.{AccessContext, AccessValidator}
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}

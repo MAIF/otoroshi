@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.6
+1.5.7
 </div>
 </div>
 <div class="nav-toc">
@@ -154,7 +154,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.6
+1.5.7
 </div>
 </div>
 <div class="nav-toc">
@@ -2142,6 +2142,11 @@ otoroshi {
     cached-secrets = ${?OTOROSHI_VAULTS_CACHED_SECRETS}
     read-ttl = 10000 # 10 seconds
     read-ttl = ${?OTOROSHI_VAULTS_READ_TTL}
+    # if enabled, only leader nodes fetches the secrets.
+    # entities with secret values filled are then sent to workers when they poll the cluster state.
+    # only works if `otoroshi.cluster.autoUpdateState=true`
+    leader-fetch-only = false
+    leader-fetch-only = ${?OTOROSHI_VAULTS_LEADER_FETCH_ONLY}
     env {
       type = &quot;env&quot;
       prefix = ${?OTOROSHI_VAULTS_ENV_PREFIX}
@@ -2215,6 +2220,7 @@ play.http {
     maxAge = ${?SESSION_MAX_AGE}      # the cookie for otoroshi backoffice max age
     maxAge = ${?OTOROSHI_SESSION_MAX_AGE}      # the cookie for otoroshi backoffice max age
     domain = &quot;.&quot;${app.domain}         # the cookie for otoroshi backoffice domain
+    domain = &quot;.&quot;${otoroshi.domain}    # the cookie for otoroshi backoffice domain
     domain = ${?SESSION_DOMAIN}       # the cookie for otoroshi backoffice domain
     domain = ${?OTOROSHI_SESSION_DOMAIN}       # the cookie for otoroshi backoffice domain
     cookieName = &quot;otoroshi-session&quot;   # the cookie for otoroshi backoffice name
@@ -3042,6 +3048,7 @@ otoroshi {
     secrets-ttl = ${?OTOROSHI_VAULTS_SECRETS_TTL}
     cached-secrets = ${?OTOROSHI_VAULTS_CACHED_SECRETS}
     read-ttl = ${?OTOROSHI_VAULTS_READ_TTL}
+    leader-fetch-only = ${?OTOROSHI_VAULTS_LEADER_FETCH_ONLY}
     env {
       prefix = ${?OTOROSHI_VAULTS_ENV_PREFIX}
     }
@@ -3087,6 +3094,7 @@ play.http {
     maxAge = ${?SESSION_MAX_AGE}      # the cookie for otoroshi backoffice max age
     maxAge = ${?OTOROSHI_SESSION_MAX_AGE}      # the cookie for otoroshi backoffice max age
     domain = &quot;.&quot;${app.domain}         # the cookie for otoroshi backoffice domain
+    domain = &quot;.&quot;${otoroshi.domain}    # the cookie for otoroshi backoffice domain
     domain = ${?SESSION_DOMAIN}       # the cookie for otoroshi backoffice domain
     domain = ${?OTOROSHI_SESSION_DOMAIN}       # the cookie for otoroshi backoffice domain
     cookieName = ${?SESSION_NAME}     # the cookie for otoroshi backoffice name
