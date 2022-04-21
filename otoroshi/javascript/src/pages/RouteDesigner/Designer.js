@@ -10,7 +10,7 @@ import {
   DEFAULT_FLOW,
   EXCLUDED_PLUGINS,
   LEGACY_PLUGINS_WRAPPER,
-  PLUGIN_INFORMATIONS_SCHEMA
+  PLUGIN_INFORMATIONS_SCHEMA,
 } from './Graph';
 import Loader from './Loader';
 import { toUpperCaseLabels, camelToSnake, camelToSnakeFlow } from '../../util';
@@ -18,7 +18,7 @@ import { isEqual } from 'lodash';
 import { Form, type, format, validate } from '@maif/react-forms';
 import { CodeInput } from '@maif/react-forms';
 import { MarkdownInput } from '@maif/react-forms';
-import { FeedbackButton } from './FeedbackButton'
+import { FeedbackButton } from './FeedbackButton';
 
 const either = (value, left, right) => (value ? left : right);
 
@@ -65,7 +65,7 @@ const NodeElement = ({
   disableBorder,
   style,
   enabled,
-  onUnsavedChanges
+  onUnsavedChanges,
 }) => {
   const { id, name, index } = element;
   const highlighted =
@@ -73,29 +73,29 @@ const NodeElement = ({
     selectedNode.id === id &&
     (selectedNode.plugin_multi_inst ? selectedNode.index === index : true);
 
-  return <>
-    <Dot
-      className={className}
-      clickable={true}
-      selectedNode={selectedNode}
-      style={{
-        borderWidth: either(disableBorder, 0, 1),
-        fontWeight: either(bold, 'bold', 'normal'),
-        ...style
-      }}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (onUnsavedChanges)
-          onUnsavedChanges(() => setSelectedNode(element))
-        else
-          setSelectedNode(element)
-      }}
-      highlighted={highlighted}
-      enabled={enabled}>
-      <span className='dot-text'>{name || id}</span>
-    </Dot>
-    {!hideLink && <VerticalLine highlighted={highlighted} />}
-  </>
+  return (
+    <>
+      <Dot
+        className={className}
+        clickable={true}
+        selectedNode={selectedNode}
+        style={{
+          borderWidth: either(disableBorder, 0, 1),
+          fontWeight: either(bold, 'bold', 'normal'),
+          ...style,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (onUnsavedChanges) onUnsavedChanges(() => setSelectedNode(element));
+          else setSelectedNode(element);
+        }}
+        highlighted={highlighted}
+        enabled={enabled}>
+        <span className="dot-text">{name || id}</span>
+      </Dot>
+      {!hideLink && <VerticalLine highlighted={highlighted} />}
+    </>
+  );
 };
 
 const VerticalLine = ({ highlighted = true, flex }) => (
@@ -127,7 +127,7 @@ export default ({ value }) => {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
 
-  const [changed, setChanged] = useState(false)
+  const [changed, setChanged] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -164,7 +164,7 @@ export default ({ value }) => {
       setPlugins(
         formatedPlugins.map((p) => ({
           ...p,
-          selected: p.plugin_multi_inst ? false : route.plugins.find(r => r.plugin === p.id),
+          selected: p.plugin_multi_inst ? false : route.plugins.find((r) => r.plugin === p.id),
         }))
       );
 
@@ -219,22 +219,23 @@ export default ({ value }) => {
     !EXCLUDED_PLUGINS.ids.includes(plugin.id.replace('cp:', ''));
 
   const removeNode = (id, idx) => {
-    setNodes(nodes
-      .filter((node, i) => !(node.id === id && i === idx))
-      .map((node, i) => ({
-        ...node,
-        index: i
-      })));
+    setNodes(
+      nodes
+        .filter((node, i) => !(node.id === id && i === idx))
+        .map((node, i) => ({
+          ...node,
+          index: i,
+        }))
+    );
 
     saveChanges({
       ...route,
-      plugins: route.plugins.filter((_, i) => (i + 2) !== idx)
-    })
+      plugins: route.plugins.filter((_, i) => i + 2 !== idx),
+    });
 
     setPlugins(
-      plugins.map(plugin => {
-        if (plugin.id === id)
-          return { ...plugin, selected: undefined };
+      plugins.map((plugin) => {
+        if (plugin.id === id) return { ...plugin, selected: undefined };
         return plugin;
       })
     );
@@ -243,7 +244,7 @@ export default ({ value }) => {
   const addNode = (node) => {
     const newNode = {
       ...node,
-      index: nodes.length
+      index: nodes.length,
     };
 
     if (
@@ -276,11 +277,11 @@ export default ({ value }) => {
             },
           },
         ],
-      }
+      };
 
       setNodes([...nodes, newNode]);
       setSelectedNode(newNode);
-      saveChanges(newRoute)
+      saveChanges(newRoute);
     }
   };
 
@@ -299,7 +300,7 @@ export default ({ value }) => {
       frontend: either(updatedField === 'Frontend', item.plugin, route.frontend),
       backend: either(updatedField === 'Backend', item.plugin, route.backend),
       plugins: route.plugins.map((plugin, i) => {
-        if ((plugin.plugin === pluginId || plugin.config.plugin === pluginId) && (i + 2) === index)
+        if ((plugin.plugin === pluginId || plugin.config.plugin === pluginId) && i + 2 === index)
           return {
             ...plugin,
             ...item.status,
@@ -308,16 +309,14 @@ export default ({ value }) => {
 
         return plugin;
       }),
-    })
+    });
   };
 
-  const saveChanges = route => {
-    return nextClient
-      .update(nextClient.ENTITIES.ROUTES, route)
-      .then((newRoute) => {
-        setOriginalRoute(newRoute);
-        setRoute(newRoute);
-      });
+  const saveChanges = (route) => {
+    return nextClient.update(nextClient.ENTITIES.ROUTES, route).then((newRoute) => {
+      setOriginalRoute(newRoute);
+      setRoute(newRoute);
+    });
   };
 
   const sortInputStream = (arr) =>
@@ -359,32 +358,31 @@ export default ({ value }) => {
     (node.plugin_steps || []).some((s) => ['TransformResponse'].includes(s))
   );
 
-  const onUnsavedChanges = onConfirm => {
+  const onUnsavedChanges = (onConfirm) => {
     if (changed) {
-      window.newConfirm(`Are you sure to leave this configuration without save your changes ?`)
-        .then(ok => {
-          if (ok)
-            onConfirm()
+      window
+        .newConfirm(`Are you sure to leave this configuration without save your changes ?`)
+        .then((ok) => {
+          if (ok) onConfirm();
         });
-    }
-    else
-      onConfirm()
-  }
+    } else onConfirm();
+  };
 
-  const pluginIsEnabled = value => route.plugins.find(
-    (p, i) => (p.plugin === value.id || p.config.plugin === value.id) && (i + 2) === value.index
-  )?.enabled
+  const pluginIsEnabled = (value) =>
+    route.plugins.find(
+      (p, i) => (p.plugin === value.id || p.config.plugin === value.id) && i + 2 === value.index
+    )?.enabled;
 
   return (
     <Loader loading={loading}>
       <div
         className="h-100 col-12 hide-overflow"
-        onClick={e => {
-          e.stopPropagation()
+        onClick={(e) => {
+          e.stopPropagation();
           onUnsavedChanges(() => {
-            setChanged(false)
-            setSelectedNode(undefined)
-          })
+            setChanged(false);
+            setSelectedNode(undefined);
+          });
         }}>
         <div className="plugins-stack-column">
           <div className="elements">
@@ -478,15 +476,17 @@ export default ({ value }) => {
                       <Dot className="arrow-flow" icon="chevron-down" selectedNode={selectedNode} />
                       <VerticalLine highlighted={!selectedNode} />
                       {inputNodes.slice(1).map((value, i) => {
-                        return <NodeElement
-                          onUnsavedChanges={onUnsavedChanges}
-                          enabled={pluginIsEnabled(value)}
-                          element={value}
-                          key={`inNodes${i}`}
-                          selectedNode={selectedNode}
-                          setSelectedNode={setSelectedNode}
-                          isLast={inputNodes.length - 1 === i}
-                        />
+                        return (
+                          <NodeElement
+                            onUnsavedChanges={onUnsavedChanges}
+                            enabled={pluginIsEnabled(value)}
+                            element={value}
+                            key={`inNodes${i}`}
+                            selectedNode={selectedNode}
+                            setSelectedNode={setSelectedNode}
+                            isLast={inputNodes.length - 1 === i}
+                          />
+                        );
                       })}
                       <VerticalLine highlighted={!selectedNode} flex={true} />
                     </div>
@@ -540,29 +540,33 @@ export default ({ value }) => {
               </div>
               <div className="col-sm-8 relative-container" style={{ paddingRight: 0 }}>
                 <UnselectedNode hideText={selectedNode} />
-                {selectedNode && <EditView
-                  saveChanges={saveChanges}
-                  setRoute={setRoute}
-                  selectedNode={selectedNode}
-                  setSelectedNode={setSelectedNode}
-                  updatePlugin={updatePlugin}
-                  removeNode={removeNode}
-                  route={route}
-                  plugins={plugins}
-                  backends={backends}
-                  hidePreview={() => showPreview({
-                    ...preview,
-                    enabled: false,
-                  })}
-                  showUpdateRouteButton={!isEqual(route, originalRoute)}
-                  setRef={setChanged}
-                />}
+                {selectedNode && (
+                  <EditView
+                    saveChanges={saveChanges}
+                    setRoute={setRoute}
+                    selectedNode={selectedNode}
+                    setSelectedNode={setSelectedNode}
+                    updatePlugin={updatePlugin}
+                    removeNode={removeNode}
+                    route={route}
+                    plugins={plugins}
+                    backends={backends}
+                    hidePreview={() =>
+                      showPreview({
+                        ...preview,
+                        enabled: false,
+                      })
+                    }
+                    showUpdateRouteButton={!isEqual(route, originalRoute)}
+                    setRef={setChanged}
+                  />
+                )}
               </div>
             </div>
           )}
         </div>
       </div>
-    </Loader >
+    </Loader>
   );
 };
 
@@ -576,7 +580,11 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
     <div className="d-flex-between element-text">
       {element.name.charAt(0).toUpperCase() + element.name.slice(1)}
       <i
-        className={`fas fa-${either(element.plugin_multi_inst, 'plus', 'arrow-right')} element-arrow`}
+        className={`fas fa-${either(
+          element.plugin_multi_inst,
+          'plus',
+          'arrow-right'
+        )} element-arrow`}
         onClick={(e) => {
           e.stopPropagation();
           hidePreview();
@@ -665,12 +673,12 @@ const read = (value, path) => {
   return read(value[keys[0]], keys.slice(1).join('.'));
 };
 
-const UnselectedNode = ({ hideText }) => (
-  !hideText && <div className="d-flex-between dark-background py-2 ps-2">
-    <span style={{ fontStyle: 'italic' }}> Start by selecting a plugin</span>
-  </div>
-);
-
+const UnselectedNode = ({ hideText }) =>
+  !hideText && (
+    <div className="d-flex-between dark-background py-2 ps-2">
+      <span style={{ fontStyle: 'italic' }}> Start by selecting a plugin</span>
+    </div>
+  );
 
 const convertTransformer = (obj) => {
   return Object.entries(obj).reduce((acc, [key, value]) => {
@@ -701,30 +709,29 @@ function EditView({
   hidePreview,
   showUpdateRouteButton,
   saveChanges,
-  setRef
+  setRef,
 }) {
   const [usingExistingBackend, setUsingExistingBackend] = useState(route.backend_ref);
   const [asJsonFormat, toggleJsonFormat] = useState(selectedNode.legacy || readOnly);
   const [form, setForm] = useState({
     schema: {},
     flow: [],
-    value: undefined
+    value: undefined,
   });
   const [backendConfigRef, setBackendConfigRef] = useState();
-  const formRef = useRef()
+  const formRef = useRef();
 
   const [offset, setOffset] = useState(0);
   const [errors, setErrors] = useState([]);
-  const [isDirty, setDirty] = useState(showUpdateRouteButton)
+  const [isDirty, setDirty] = useState(showUpdateRouteButton);
 
   useEffect(() => {
-    setDirty(showUpdateRouteButton)
-  }, [showUpdateRouteButton])
+    setDirty(showUpdateRouteButton);
+  }, [showUpdateRouteButton]);
 
   useEffect(() => {
-    if (setRef && typeof setRef === 'function')
-      setRef(isDirty)
-  }, [isDirty])
+    if (setRef && typeof setRef === 'function') setRef(isDirty);
+  }, [isDirty]);
 
   useEffect(() => {
     const onScroll = () => setOffset(window.pageYOffset);
@@ -734,7 +741,7 @@ function EditView({
     onScroll();
 
     return () => {
-      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('scroll', onScroll);
     };
   }, []);
 
@@ -756,13 +763,12 @@ function EditView({
 
   const onRemove = (e) => {
     e.stopPropagation();
-    window.newConfirm(`Are you sure to delete this route ?`)
-      .then(ok => {
-        if (ok) {
-          setSelectedNode(undefined);
-          removeNode(id, index);
-        }
-      });
+    window.newConfirm(`Are you sure to delete this route ?`).then((ok) => {
+      if (ok) {
+        setSelectedNode(undefined);
+        removeNode(id, index);
+      }
+    });
   };
 
   useEffect(() => {
@@ -812,8 +818,9 @@ function EditView({
 
     if (!value) {
       const node =
-        route.plugins.find((p, i) => (p.plugin === id || p.config.plugin === id) && (i + 2) === index) ||
-        plugins.find((p) => p.id === id);
+        route.plugins.find(
+          (p, i) => (p.plugin === id || p.config.plugin === id) && i + 2 === index
+        ) || plugins.find((p) => p.id === id);
       if (node)
         value = {
           plugin: node.config,
@@ -834,205 +841,221 @@ function EditView({
       schema: formSchema,
       flow: formFlow,
       value,
-      originalValue: value
+      originalValue: value,
     });
 
     toggleJsonFormat(selectedNode.legacy || readOnly);
   }, [selectedNode.id, selectedNode.index]);
 
   const onValidate = (item) => {
-    const newValue = unstringify(item)
-    return updatePlugin(id, index, {
-      plugin: newValue.plugin,
-      status: newValue.status
-    }, selectedNode.id)
-      .then(() => {
-        setForm({ ...form, value: newValue, originalValue: newValue })
-        setDirty(false)
-      })
-  }
+    const newValue = unstringify(item);
+    return updatePlugin(
+      id,
+      index,
+      {
+        plugin: newValue.plugin,
+        status: newValue.status,
+      },
+      selectedNode.id
+    ).then(() => {
+      setForm({ ...form, value: newValue, originalValue: newValue });
+      setDirty(false);
+    });
+  };
 
-  const onJsonInputChange = value => {
+  const onJsonInputChange = (value) => {
     validate([], form.schema, value)
-      .then(v => {
-        setErrors([])
-        setForm({ ...form, value: v })
-        setDirty(!isEqual(form.originalValue, v))
+      .then((v) => {
+        setErrors([]);
+        setForm({ ...form, value: v });
+        setDirty(!isEqual(form.originalValue, v));
       })
-      .catch(err => {
+      .catch((err) => {
         if (err.inner && Array.isArray(err.inner)) {
-          setErrors(err.inner.map(r => r.message))
-          setDirty(false)
+          setErrors(err.inner.map((r) => r.message));
+          setDirty(false);
         }
-      })
-  }
+      });
+  };
 
-  if (Object.keys(form.schema).length === 0 || !form.value)
-    return null
+  if (Object.keys(form.schema).length === 0 || !form.value) return null;
 
   // console.log("SCHEMA", form.schema)
   // console.log("VALUE", unstringify(form.value))
 
-  return <>
-    <div
-      id="form"
-      onClick={(e) => e.stopPropagation()}
-      className="plugins-stack editor-view"
-      style={{ top: offset }}>
-      <div className="group-header d-flex-between editor-view-informations">
-        <div className="d-flex-between">
-          <i
-            className={`fas fa-${plugin.icon || 'bars'
-              } group-icon designer-group-header-icon editor-view-icon`}
-          />
-          <span className="editor-view-text">{name || id}</span>
-        </div>
-        <div className="d-flex me-1">
-          <button
-            className="btn btn-sm"
-            style={{ minWidth: '36px' }}
-            onClick={() => {
-              setSelectedNode(undefined);
-              hidePreview();
-            }}>
-            <i className="fas fa-times" style={{ color: "#fff" }} />
-          </button>
-        </div>
-      </div>
+  return (
+    <>
       <div
-        style={{
-          backgroundColor: '#494949',
-        }}>
-        <Description text={selectedNode.description} fullText={hidePreview} />
-        {!selectedNode.legacy && !readOnly && (
-          <div className={`d-flex justify-content-end ${asJsonFormat ? 'mb-3' : ''}`}>
-            <button
-              className="btn btn-sm toggle-form-buttons mt-3"
-              disabled={errors && errors.length > 0}
-              onClick={() => toggleJsonFormat(false)}
-              style={{ backgroundColor: either(asJsonFormat, '#373735', '#f9b000') }}>
-              FORM
-            </button>
-            <button
-              className="btn btn-sm mx-1 toggle-form-buttons mt-3"
-              onClick={() => {
-                if (formRef.current)
-                  formRef.current.trigger()
-                    .then(res => {
-                      if (res)
-                        toggleJsonFormat(true)
-                    })
-              }}
-              style={{ backgroundColor: either(asJsonFormat, '#f9b000', '#373735') }}>
-              RAW JSON
-            </button>
-          </div>
-        )}
-        {id === 'Backend' && <BackendSelector
-          backends={backends}
-          setBackendConfigRef={setBackendConfigRef}
-          setUsingExistingBackend={setUsingExistingBackend}
-          setRoute={setRoute}
-          usingExistingBackend={usingExistingBackend}
-          route={route}
-        />}
-        {!usingExistingBackend || id !== 'Backend' ? (
-          <div className="editor-view-form">
-            {asJsonFormat ? (
-              <>
-                {form.value && <CodeInput
-                  showGutter={false}
-                  mode="json"
-                  themeStyle={{
-                    maxHeight: either(readOnly, '300px', '-1'),
-                    width: '100%',
-                  }}
-                  value={stringify(form.value)}
-                  onChange={onJsonInputChange}
-                />}
-                {errors && <div>
-                  {(errors || []).map((error, idx) => <div style={{
-                    borderLeft: "2px solid #D5443F",
-                  }} className="mt-3 ps-3" key={`errror${idx}`}>{error}</div>)}
-                </div>}
-                {readOnly ? (
-                  <div className="d-flex justify-content-end mt-3">
-                    <button
-                      className="btn btn-sm btn-danger me-1"
-                      onClick={() => {
-                        setSelectedNode(undefined);
-                        hidePreview();
-                      }}>
-                      Cancel
-                    </button>
-                    <button
-                      className="btn btn-sm btn-save"
-                      onClick={() => {
-                        hidePreview();
-                        addNode(selectedNode);
-                      }}>
-                      Add to flow
-                    </button>
-                  </div>
-                ) : (
-                  <Actions
-                    showUpdateRouteButton={isDirty}
-                    valid={() => onValidate(form.value)}
-                    selectedNode={selectedNode}
-                    onRemove={onRemove}
-                  />
-                )}
-              </>
-            ) : (
-              <Form
-                ref={formRef}
-                options={{
-                  watch: () => {
-                    if (formRef.current) {
-                      const formState = formRef.current.methods.formState.isDirty
-                      if (formState !== isDirty)
-                        setDirty(formState)
-                    }
-                  }
-                }}
-                value={unstringify(form.value)}
-                schema={form.schema}
-                flow={form.flow}
-                onSubmit={onValidate}
-                footer={({ valid }) => (
-                  <Actions
-                    showUpdateRouteButton={isDirty}
-                    valid={valid}
-                    selectedNode={selectedNode}
-                    onRemove={onRemove}
-                  />
-                )}
-              />
-            )}
-          </div>
-        ) : (
-          <div className='p-3'>
-            {backendConfigRef && (
-              <BackendForm
-                isCreation={false}
-                value={backendConfigRef}
-                style={{ maxWidth: '100%' }}
-                foldable={true}
-              />
-            )}
-            <FeedbackButton
-              text="Update the plugin configuration"
-              icon={() => <i className="fas fa-paper-plane" />}
-              onPress={saveChanges}
+        id="form"
+        onClick={(e) => e.stopPropagation()}
+        className="plugins-stack editor-view"
+        style={{ top: offset }}>
+        <div className="group-header d-flex-between editor-view-informations">
+          <div className="d-flex-between">
+            <i
+              className={`fas fa-${
+                plugin.icon || 'bars'
+              } group-icon designer-group-header-icon editor-view-icon`}
             />
+            <span className="editor-view-text">{name || id}</span>
           </div>
+          <div className="d-flex me-1">
+            <button
+              className="btn btn-sm"
+              style={{ minWidth: '36px' }}
+              onClick={() => {
+                setSelectedNode(undefined);
+                hidePreview();
+              }}>
+              <i className="fas fa-times" style={{ color: '#fff' }} />
+            </button>
+          </div>
+        </div>
+        <div
+          style={{
+            backgroundColor: '#494949',
+          }}>
+          <Description text={selectedNode.description} fullText={hidePreview} />
+          {!selectedNode.legacy && !readOnly && (
+            <div className={`d-flex justify-content-end ${asJsonFormat ? 'mb-3' : ''}`}>
+              <button
+                className="btn btn-sm toggle-form-buttons mt-3"
+                disabled={errors && errors.length > 0}
+                onClick={() => toggleJsonFormat(false)}
+                style={{ backgroundColor: either(asJsonFormat, '#373735', '#f9b000') }}>
+                FORM
+              </button>
+              <button
+                className="btn btn-sm mx-1 toggle-form-buttons mt-3"
+                onClick={() => {
+                  if (formRef.current)
+                    formRef.current.trigger().then((res) => {
+                      if (res) toggleJsonFormat(true);
+                    });
+                }}
+                style={{ backgroundColor: either(asJsonFormat, '#f9b000', '#373735') }}>
+                RAW JSON
+              </button>
+            </div>
+          )}
+          {id === 'Backend' && (
+            <BackendSelector
+              backends={backends}
+              setBackendConfigRef={setBackendConfigRef}
+              setUsingExistingBackend={setUsingExistingBackend}
+              setRoute={setRoute}
+              usingExistingBackend={usingExistingBackend}
+              route={route}
+            />
+          )}
+          {!usingExistingBackend || id !== 'Backend' ? (
+            <div className="editor-view-form">
+              {asJsonFormat ? (
+                <>
+                  {form.value && (
+                    <CodeInput
+                      showGutter={false}
+                      mode="json"
+                      themeStyle={{
+                        maxHeight: either(readOnly, '300px', '-1'),
+                        width: '100%',
+                      }}
+                      value={stringify(form.value)}
+                      onChange={onJsonInputChange}
+                    />
+                  )}
+                  {errors && (
+                    <div>
+                      {(errors || []).map((error, idx) => (
+                        <div
+                          style={{
+                            borderLeft: '2px solid #D5443F',
+                          }}
+                          className="mt-3 ps-3"
+                          key={`errror${idx}`}>
+                          {error}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {readOnly ? (
+                    <div className="d-flex justify-content-end mt-3">
+                      <button
+                        className="btn btn-sm btn-danger me-1"
+                        onClick={() => {
+                          setSelectedNode(undefined);
+                          hidePreview();
+                        }}>
+                        Cancel
+                      </button>
+                      <button
+                        className="btn btn-sm btn-save"
+                        onClick={() => {
+                          hidePreview();
+                          addNode(selectedNode);
+                        }}>
+                        Add to flow
+                      </button>
+                    </div>
+                  ) : (
+                    <Actions
+                      showUpdateRouteButton={isDirty}
+                      valid={() => onValidate(form.value)}
+                      selectedNode={selectedNode}
+                      onRemove={onRemove}
+                    />
+                  )}
+                </>
+              ) : (
+                <Form
+                  ref={formRef}
+                  options={{
+                    watch: () => {
+                      if (formRef.current) {
+                        const formState = formRef.current.methods.formState.isDirty;
+                        if (formState !== isDirty) setDirty(formState);
+                      }
+                    },
+                  }}
+                  value={unstringify(form.value)}
+                  schema={form.schema}
+                  flow={form.flow}
+                  onSubmit={onValidate}
+                  footer={({ valid }) => (
+                    <Actions
+                      showUpdateRouteButton={isDirty}
+                      valid={valid}
+                      selectedNode={selectedNode}
+                      onRemove={onRemove}
+                    />
+                  )}
+                />
+              )}
+            </div>
+          ) : (
+            <div className="p-3">
+              {backendConfigRef && (
+                <BackendForm
+                  isCreation={false}
+                  value={backendConfigRef}
+                  style={{ maxWidth: '100%' }}
+                  foldable={true}
+                />
+              )}
+              <FeedbackButton
+                text="Update the plugin configuration"
+                icon={() => <i className="fas fa-paper-plane" />}
+                onPress={saveChanges}
+              />
+            </div>
+          )}
+        </div>
+        {usingExistingBackend && id === 'Backend' && !selectedNode.default && (
+          <RemoveComponent onRemove={onRemove} />
         )}
       </div>
-      {usingExistingBackend && id === 'Backend' && !selectedNode.default && (
-        <RemoveComponent onRemove={onRemove} />
-      )}
-    </div>
-  </>
+    </>
+  );
 }
 
 const stringify = (item) => (typeof item === 'object' ? JSON.stringify(item, null, 2) : item);
@@ -1046,7 +1069,6 @@ const unstringify = (item) => {
     }
   }
 };
-
 
 const Actions = ({ selectedNode, onRemove, valid, showUpdateRouteButton }) => (
   <div className="d-flex mt-4 justify-content-end">
@@ -1117,30 +1139,26 @@ const Description = ({ text, fullText }) => {
   const maxLength = fullText ? 100000 : 120;
   const overflows = textLength > maxLength;
 
-  const content = text ? text?.slice(0, either(showMore, textLength, maxLength)) : '' + ' ' + (overflows && either(!showMore, '...', ''))
+  const content = text
+    ? text?.slice(0, either(showMore, textLength, maxLength))
+    : '' + ' ' + (overflows && either(!showMore, '...', ''));
 
   return (
     <>
-      <MarkdownInput
-        className="form-description"
-        readOnly={true}
-        preview={true}
-        value={content} />
+      <MarkdownInput className="form-description" readOnly={true} preview={true} value={content} />
       {/* // style={{
         //   marginBottom: either(text, 'inherit', 0),
         //   padding: either(text, '12px', 0),
         //   paddingBottom: either(overflows || !text, 0, '12px')
         // }}> */}
-      {
-        overflows && (
-          <button
-            className="btn btn-sm btn-success me-3 mb-3"
-            onClick={() => setShowMore(!showMore)}
-            style={{ marginLeft: 'auto', display: 'block' }}>
-            {either(showMore, 'Show less', 'Show more description')}
-          </button>
-        )
-      }
+      {overflows && (
+        <button
+          className="btn btn-sm btn-success me-3 mb-3"
+          onClick={() => setShowMore(!showMore)}
+          style={{ marginLeft: 'auto', display: 'block' }}>
+          {either(showMore, 'Show less', 'Show more description')}
+        </button>
+      )}
     </>
   );
 };

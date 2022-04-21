@@ -86,7 +86,7 @@ export const BackendForm = ({ isCreation, value, onSubmit, foldable, style = {} 
   const schema = {
     id: {
       type: type.string,
-      visible: false
+      visible: false,
     },
     name: {
       label: 'Name',

@@ -49,8 +49,8 @@ const PROTOCOLS = {
   http: 'http',
   https: 'https',
   udp: 'udp',
-  tcp: 'tcp'
-}
+  tcp: 'tcp',
+};
 
 export const DEFAULT_FLOW = {
   Frontend: {
@@ -87,37 +87,38 @@ export const DEFAULT_FLOW = {
         ...generatedSchema.targets,
         onAfterChange: ({ setValue, entry, previousValue, value, getValue }) => {
           if (value && previousValue) {
-            const target = value.custom_target
+            const target = value.custom_target;
 
             if (target && previousValue.custom_target && target !== previousValue.custom_target) {
-              const parts = target.split('://')
+              const parts = target.split('://');
 
               if (parts.length > 1) {
                 const afterScheme = parts[1];
                 const afterSchemeParts = afterScheme.split('/');
 
                 const hostname = afterSchemeParts.shift();
-                setValue(`${entry}.hostname`, hostname)
+                setValue(`${entry}.hostname`, hostname);
 
                 const pathname = '/' + afterSchemeParts.join('/');
                 // if (getValue('plugin.root').length < 2)
                 setValue('plugin.root', pathname);
               }
+            } else if (value.hostname !== previousValue.hostname) {
+              const parts = (target || '').split('://');
+              const scheme = parts.length > 1 ? `${parts[0]}://` : '';
+              const hostname = value.hostname || '';
+              setValue(`${entry}.custom_target`, `${scheme}${hostname}`);
             }
-            else if (value.hostname !== previousValue.hostname) {
-              const parts = (target || '').split('://')
-              const scheme = parts.length > 1 ? `${parts[0]}://` : ''
-              const hostname = value.hostname || ''
-              setValue(`${entry}.custom_target`, `${scheme}${hostname}`)
-            }
-          }
-          else {
-            const port = getValue(`${entry}.port`)
-            const hostname = getValue(`${entry}.hostname`)
-            const root = getValue('plugin.root')
+          } else {
+            const port = getValue(`${entry}.port`);
+            const hostname = getValue(`${entry}.hostname`);
+            const root = getValue('plugin.root');
             if (port && hostname && root) {
-              console.log(`http${port === 443 ? 's' : ''}://${hostname}${root}`)
-              setValue(`${entry}.custom_target`, `http${port === 443 ? 's' : ''}://${hostname}${root}`)
+              console.log(`http${port === 443 ? 's' : ''}://${hostname}${root}`);
+              setValue(
+                `${entry}.custom_target`,
+                `http${port === 443 ? 's' : ''}://${hostname}${root}`
+              );
             }
           }
         },
@@ -125,23 +126,22 @@ export const DEFAULT_FLOW = {
           custom_target: {
             label: 'Target',
             type: 'string',
-            constraints: [
-              { type: 'required' }
-            ]
+            constraints: [{ type: 'required' }],
           },
           expert_mode: {
             type: 'bool',
             label: null,
             defaultValue: false,
             render: ({ value, onChange }) => {
-              return <button
-                type="button"
-                className="btn btn-sm btn-success me-3 mb-3"
-                onClick={() => onChange(!value)
-                }>
-                {!!value ? 'Show less' : 'Show more'}
-              </button>
-            }
+              return (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-success me-3 mb-3"
+                  onClick={() => onChange(!value)}>
+                  {!!value ? 'Show less' : 'Show more'}
+                </button>
+              );
+            },
           },
 
           ...Object.fromEntries(
@@ -152,7 +152,7 @@ export const DEFAULT_FLOW = {
                   ...value,
                   visible: {
                     ref: 'plugin',
-                    test: (v, idx) => !!v.targets[idx]?.value?.expert_mode
+                    test: (v, idx) => !!v.targets[idx]?.value?.expert_mode,
                   },
                 },
               ];
@@ -168,12 +168,12 @@ export const DEFAULT_FLOW = {
               {
                 type: 'blacklist',
                 arrayOfValues: ['http:', 'https:', 'tcp:', 'udp:', '/'],
-                message: 'You cannot use protocol scheme or / in the Host name'
-              }
-            ]
-          }
+                message: 'You cannot use protocol scheme or / in the Host name',
+              },
+            ],
+          },
         },
-        flow: ['custom_target', 'expert_mode', ...generatedSchema.targets.flow]
+        flow: ['custom_target', 'expert_mode', ...generatedSchema.targets.flow],
       },
     }),
     config_flow: [

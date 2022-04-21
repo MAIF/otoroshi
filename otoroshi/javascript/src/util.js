@@ -9,7 +9,7 @@ const reservedCamelWords = [
   'onChange',
   'itemRender',
   'conditionalSchema',
-  'visibleOnCollapse'
+  'visibleOnCollapse',
 ];
 
 export const camelToSnakeCase = (str) =>

@@ -22,7 +22,7 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
       var isArray: Boolean = false
       var informations     = Json.obj(
         "label" -> label,
-        "type"  -> JsString(openapiTypesToFormTypes.getOrElse(`type`, `type`)),
+        "type"  -> JsString(openapiTypesToFormTypes.getOrElse(`type`, `type`))
       )
 
       if (`type` == "object" && (prop._2 \ "properties").asOpt[JsObject].nonEmpty)

@@ -5,7 +5,7 @@ import Designer from './Designer';
 import { Informations } from './Informations';
 import { TryIt } from './TryIt';
 import Routes from './Routes';
-import DesignerSidebar from './DesignerSidebar'
+import DesignerSidebar from './DesignerSidebar';
 
 export default (props) => {
   const match = useRouteMatch();
@@ -34,9 +34,8 @@ export default (props) => {
           }, [p.routeId]);
 
           useEffect(() => {
-            if (value && value.id)
-              props.setSidebarContent(<DesignerSidebar route={value} />);
-          }, [value])
+            if (value && value.id) props.setSidebarContent(<DesignerSidebar route={value} />);
+          }, [value]);
 
           if (query) {
             if (query === 'flow' && !isCreation)
