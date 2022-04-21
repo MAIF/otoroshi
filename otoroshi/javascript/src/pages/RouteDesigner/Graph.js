@@ -72,7 +72,7 @@ export const DEFAULT_FLOW = {
         label: 'Domains',
       },
     },
-    config_flow: ['domains', 'stripPath', 'exact', 'headers', 'methods', 'query']
+    config_flow: ['domains', 'stripPath', 'exact', 'headers', 'methods', 'query'],
   },
   Backend: {
     id: 'Backend',
@@ -85,12 +85,11 @@ export const DEFAULT_FLOW = {
       ...generatedSchema,
       targets: {
         ...generatedSchema.targets,
-        onAfterChange: ({ setValue, entry, previousValue, value }) => {
+        onAfterChange: ({ setValue, entry, previousValue, value, getValue }) => {
           if (value && previousValue) {
             const target = value.custom_target
 
             if (target && previousValue.custom_target && target !== previousValue.custom_target) {
-              // console.log('custom_target has changed')
               const parts = target.split('://')
 
               if (parts.length > 1) {
@@ -101,15 +100,24 @@ export const DEFAULT_FLOW = {
                 setValue(`${entry}.hostname`, hostname)
 
                 const pathname = '/' + afterSchemeParts.join('/');
+                // if (getValue('plugin.root').length < 2)
                 setValue('plugin.root', pathname);
               }
             }
             else if (value.hostname !== previousValue.hostname) {
-              // console.log('hostname has changed')
               const parts = (target || '').split('://')
               const scheme = parts.length > 1 ? `${parts[0]}://` : ''
               const hostname = value.hostname || ''
               setValue(`${entry}.custom_target`, `${scheme}${hostname}`)
+            }
+          }
+          else {
+            const port = getValue(`${entry}.port`)
+            const hostname = getValue(`${entry}.hostname`)
+            const root = getValue('plugin.root')
+            if (port && hostname && root) {
+              console.log(`http${port === 443 ? 's' : ''}://${hostname}${root}`)
+              setValue(`${entry}.custom_target`, `http${port === 443 ? 's' : ''}://${hostname}${root}`)
             }
           }
         },
@@ -142,10 +150,10 @@ export const DEFAULT_FLOW = {
                 key,
                 {
                   ...value,
-                    visible: {
-                      ref: 'plugin',
-                      test: (v, idx) => !!v.targets[idx]?.value?.expert_mode,
-                    },
+                  visible: {
+                    ref: 'plugin',
+                    test: (v, idx) => !!v.targets[idx]?.value?.expert_mode
+                  },
                 },
               ];
             })

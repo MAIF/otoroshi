@@ -33,8 +33,8 @@ kind: ServiceDescriptor
 `;
 
 const UPDATE_ENTITIES = {
-  ApiKey: (content, id) => BackOfficeServices.updateApiKey(id, content),
-  ServiceDescriptor: (content, id) => BackOfficeServices.updateService(id, content),
+  ApiKey: (content) => BackOfficeServices.updateRawApiKey(content),
+  ServiceDescriptor: (content) => BackOfficeServices.updateRawService(content),
   DataExporter: (content) => BackOfficeServices.updateDataExporterConfig(content),
   ServiceGroup: (content) => BackOfficeServices.updateGroup(content),
   Certificate: (content) => BackOfficeServices.updateCertificate(content),
@@ -79,31 +79,38 @@ export function ResourceLoaderPage({ setTitle }) {
     });
   };
 
+  const setResources = (resources) => {
+    if (resources) {
+      if (resources.trim().startsWith('[') || resources.trim().startsWith('{')) {
+        if (format !== 'json') {
+          setFormat('json');
+        }
+      } else {
+        if (format !== 'yaml') {
+          setFormat('yaml');
+        }
+      }
+    }
+    setRawResources(resources);
+  };
+
   if (loadedResources.length > 0) {
     return (
-      <div>
-        <table>
-          <thead>
+      <div style={{ width: '100%' }}>
+        <table className="table table-striped table-hover">
+          <thead style={{ backgroundColor: 'inherit' }}>
             <tr>
-              <th scope="col" className="col-sm-5">
-                Resource name
-              </th>
-              <th scope="col" className="col-sm-3">
-                Resource type
-              </th>
-              <th scope="col" className="col-sm-2">
-                To import
-              </th>
-              <th scope="col" className="col-sm-2">
-                Imported
-              </th>
+              <th scope="col">Resource name</th>
+              <th scope="col">Resource type</th>
+              <th scope="col">To import</th>
+              <th scope="col">Imported</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td className="col-sm-5"></td>
-              <td className="col-sm-3"></td>
-              <td className="col-sm-2">
+              <td></td>
+              <td></td>
+              <td>
                 {loadedResources.find((f) => !f.error) && loadedResources.length > 1 && (
                   <SimpleBooleanInput
                     value={exportAll}
@@ -119,14 +126,18 @@ export function ResourceLoaderPage({ setTitle }) {
                   />
                 )}
               </td>
-              <td className="col-sm-2"></td>
+              <td></td>
             </tr>
             {loadedResources.map((resource, i) => (
               <tr key={`resource${i}`}>
-                <td className="col-md-5">
-                  {resource.name || resource.resource?.name || 'Unknown'}
+                <td>
+                  {resource.name ||
+                    resource.clientName ||
+                    (resource.resource ? resource.resource.name : null) ||
+                    (resource.resource ? resource.resource.clientName : null) ||
+                    'Unknown'}
                 </td>
-                <td className="col-md-3">
+                <td>
                   <span
                     className="badge"
                     style={{
@@ -137,7 +148,7 @@ export function ResourceLoaderPage({ setTitle }) {
                     {resource.error || resource.kind}
                   </span>
                 </td>
-                <td className="col-md-2">
+                <td>
                   {!resource.error && (
                     <SimpleBooleanInput
                       value={resource.enabled}
@@ -152,7 +163,7 @@ export function ResourceLoaderPage({ setTitle }) {
                     />
                   )}
                 </td>
-                <td className="col-sm-2">
+                <td>
                   <span
                     className="badge"
                     style={{ backgroundColor: resource.status ? '#f9b000' : '' }}>
@@ -163,41 +174,40 @@ export function ResourceLoaderPage({ setTitle }) {
             ))}
           </tbody>
         </table>
-        <button
-          className="btn btn-info"
-          style={{ marginTop: 12 }}
-          onClick={() => setLoadedResources([])}>
-          Restart
-        </button>
-        {loadedResources.find((f) => !f.error) && (
-          <button
-            type="button"
-            className="btn btn-success"
-            onClick={() => {
-              Promise.all(
-                loadedResources
-                  .filter((r) => r.enabled)
-                  .map((resource) => {
-                    const content = resource.resource;
-                    const id = resource.id;
-                    const k = resource.kind;
-
-                    return UPDATE_ENTITIES[k](content, id);
-                  })
-              ).then(() => {
-                setLoadedResources(
-                  loadedResources
-                    .filter((r) => r.enabled)
-                    .map((r) => {
-                      if (!r.error) return { ...r, status: 'done' };
-                      return r;
-                    })
-                );
-              });
-            }}>
-            Import selected resources
-          </button>
-        )}
+        <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
+          <div className="btn-group">
+            <button className="btn btn-danger" onClick={() => setLoadedResources([])}>
+              Cancel
+            </button>
+            {loadedResources.find((f) => !f.error) && (
+              <button
+                type="button"
+                className="btn btn-success"
+                onClick={() => {
+                  Promise.all(
+                    loadedResources
+                      .filter((r) => r.enabled)
+                      .map((resource) => {
+                        const content = resource.resource;
+                        const k = resource.kind;
+                        return UPDATE_ENTITIES[k](content);
+                      })
+                  ).then(() => {
+                    setLoadedResources(
+                      loadedResources
+                        .filter((r) => r.enabled)
+                        .map((r) => {
+                          if (!r.error) return { ...r, status: 'done' };
+                          return r;
+                        })
+                    );
+                  });
+                }}>
+                Import selected resources
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
@@ -225,7 +235,7 @@ export function ResourceLoaderPage({ setTitle }) {
               name="resources-loader"
               mode={format}
               theme="monokai"
-              onChange={setRawResources}
+              onChange={setResources}
               value={rawResources}
               editorProps={{ $blockScrolling: true }}
               width="100%"

@@ -43,7 +43,7 @@ case class BiscuitConfig(
     revocation_ids: Seq[String],
     extractor: String,
     extractorName: String,
-    enforce: Boolean,
+    enforce: Boolean
 )
 
 object BiscuitConfig {
@@ -104,7 +104,7 @@ object BiscuitHelper {
       revocation_ids = (rawConfig \ "revocation_ids").asOpt[Seq[String]].getOrElse(Seq.empty),
       extractor = (rawConfig \ "extractor" \ "type").asOpt[String].getOrElse("header"),
       extractorName = (rawConfig \ "extractor" \ "name").asOpt[String].getOrElse("Authorization"),
-      enforce = (rawConfig \ "enforce").asOpt[Boolean].getOrElse(false),
+      enforce = (rawConfig \ "enforce").asOpt[Boolean].getOrElse(false)
     )
   }
 
@@ -186,8 +186,8 @@ object BiscuitHelper {
       // TODO: here, add rules from config, query some stuff, etc ..
       Try(verifier.allow().authorize()).toEither match {
         case Left(err: com.clevercloud.biscuit.error.Error) => Left(err)
-        case Left(err) => Left(new com.clevercloud.biscuit.error.Error.InternalError())
-        case Right(_) => Right(())
+        case Left(err)                                      => Left(new com.clevercloud.biscuit.error.Error.InternalError())
+        case Right(_)                                       => Right(())
       }
     }
   }
@@ -274,8 +274,7 @@ class BiscuitExtractor extends PreRouting {
     val config = BiscuitHelper.readConfig("BiscuitExtractor", ctx)
 
     def verification(verifier: Authorizer): Future[Unit] = {
-      val client_id: Option[String] = Try(verifier.query(client_id_rule))
-        .toOption
+      val client_id: Option[String]   = Try(verifier.query(client_id_rule)).toOption
         .map(_.asScala)
         .flatMap(_.headOption)
         .filter(_.name() == "client_id_res")
@@ -285,8 +284,7 @@ class BiscuitExtractor extends PreRouting {
           case str: Str => str.getValue().some
           case _        => None
         }
-      val client_sign: Option[String] = Try(verifier.query(client_sign_rule))
-        .toOption
+      val client_sign: Option[String] = Try(verifier.query(client_sign_rule)).toOption
         .map(_.asScala)
         .flatMap(_.headOption)
         .filter(_.name() == "client_sign_res")
@@ -342,7 +340,6 @@ class BiscuitExtractor extends PreRouting {
             unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> s"deserialization error: $err"))
           case Left(_)                     => ().future
           case Right(biscuit)              =>
-
             Try(biscuit.verify(pubkey)).toEither match {
               case Left(err) if config.enforce =>
                 unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> s"verifier error: $err"))

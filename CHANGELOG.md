@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.6] - 2022-04-19
+
+https://github.com/MAIF/otoroshi/milestone/36?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.5.5...v1.5.6
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.6
+
+- Upgrade biscuit-java lib to be able to use biscuit V2 (#1103)
+- resources loader broken for apikeys (#1132)
+- fix missing JDK17 build (#1133)
+- fix context validation plugin (#1134)
+- plugins missing in route designer (#1135)
+- change log level for JWKS verifier (#1136)
+
 ## [1.5.5] - 2022-04-01
 
 https://github.com/MAIF/otoroshi/milestone/35?closed=1

@@ -40045,7 +40045,7 @@
         "items" : {
           "type" : "string"
         },
-        "description" : "???"
+        "description" : "Ids of revoked tokens"
       },
       "extractorName" : {
         "description" : "The name for the location",

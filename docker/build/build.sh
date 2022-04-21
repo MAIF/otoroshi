@@ -114,6 +114,7 @@ case "${1}" in
   build-all)
     prepare_build
     build_jdk11 $2
+    build_jdk17 $2
     build_jdk18 $2
     build_jdk19 $2
     build_graal $2
@@ -122,12 +123,14 @@ case "${1}" in
   push-all)
     prepare_build
     build_jdk11 $2
+    build_jdk17 $2
     build_jdk18 $2
     build_jdk19 $2
     build_graal $2
     cleanup
     docker push "maif/otoroshi:$2"
     docker push "maif/otoroshi:$2-jdk11"
+    docker push "maif/otoroshi:$2-jdk17"
     docker push "maif/otoroshi:$2-jdk18"
     docker push "maif/otoroshi:$2-jdk19"
     docker push "maif/otoroshi:$2-graal"

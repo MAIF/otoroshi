@@ -121,18 +121,27 @@ object RequestImplicits {
     def clientCertChainPemString: String     = clientCertChainPem.mkString("\n")
 
     @inline
-    def theHasBody: Boolean =
-      (requestHeader.method, requestHeader.headers.get("Content-Length")) match {
-        case ("GET", Some(_))    => true
-        case ("GET", None)       => false
-        case ("HEAD", Some(_))   => true
-        case ("HEAD", None)      => false
-        case ("PATCH", _)        => true
-        case ("POST", _)         => true
-        case ("PUT", _)          => true
-        case ("DELETE", Some(_)) => true
-        case ("DELETE", None)    => false
-        case _                   => true
-      }
+    def theHasBody: Boolean = {
+      otoroshi.utils.body.BodyUtils.hasBody(requestHeader)
+      // (requestHeader.method, requestHeader.headers.get("Content-Length")) match {
+      //   case ("GET", Some(_))    => true
+      //   case ("GET", None) if ctype.isDefined => true
+      //   case ("GET", None)       => false
+      //   case ("HEAD", Some(_))   => true
+      //   case ("HEAD", None) if ctype.isDefined => true
+      //   case ("HEAD", None)      => false
+      //   case ("PATCH", _)        => true
+      //   case ("POST", _)         => true
+      //   case ("PUT", _)          => true
+      //   case ("QUERY", _)        => true
+      //   case ("DELETE", Some(_)) => true
+      //   case ("DELETE", None) if ctype.isDefined => true
+      //   case ("DELETE", None)    => false
+      //   case _                   => true
+      // }
+    }
+
+    @inline
+    def theHasBodyWithoutLength: (Boolean, Boolean) = otoroshi.utils.body.BodyUtils.hasBodyWithoutLength(requestHeader)
   }
 }

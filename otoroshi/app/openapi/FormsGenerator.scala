@@ -94,8 +94,7 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
                           "mode" -> "json"
                         )
                       )
-                    }
-                    else
+                    } else
                       informations
                   } else
                     informations)
