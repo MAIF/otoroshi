@@ -2220,7 +2220,7 @@ play.http {
     maxAge = ${?SESSION_MAX_AGE}      # the cookie for otoroshi backoffice max age
     maxAge = ${?OTOROSHI_SESSION_MAX_AGE}      # the cookie for otoroshi backoffice max age
     domain = &quot;.&quot;${app.domain}         # the cookie for otoroshi backoffice domain
-    domain = &quot;.&quot;${otoroshi.domain}    # the cookie for otoroshi backoffice domain
+    domain = &quot;.&quot;${?otoroshi.domain}    # the cookie for otoroshi backoffice domain
     domain = ${?SESSION_DOMAIN}       # the cookie for otoroshi backoffice domain
     domain = ${?OTOROSHI_SESSION_DOMAIN}       # the cookie for otoroshi backoffice domain
     cookieName = &quot;otoroshi-session&quot;   # the cookie for otoroshi backoffice name
@@ -3094,7 +3094,7 @@ play.http {
     maxAge = ${?SESSION_MAX_AGE}      # the cookie for otoroshi backoffice max age
     maxAge = ${?OTOROSHI_SESSION_MAX_AGE}      # the cookie for otoroshi backoffice max age
     domain = &quot;.&quot;${app.domain}         # the cookie for otoroshi backoffice domain
-    domain = &quot;.&quot;${otoroshi.domain}    # the cookie for otoroshi backoffice domain
+    domain = &quot;.&quot;${?otoroshi.domain}    # the cookie for otoroshi backoffice domain
     domain = ${?SESSION_DOMAIN}       # the cookie for otoroshi backoffice domain
     domain = ${?OTOROSHI_SESSION_DOMAIN}       # the cookie for otoroshi backoffice domain
     cookieName = ${?SESSION_NAME}     # the cookie for otoroshi backoffice name
