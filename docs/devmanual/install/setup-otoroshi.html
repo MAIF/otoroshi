@@ -1383,7 +1383,7 @@ play.http {
     durableWrites = true
     durableWrites = ${?CASSANDRA_DURABLE_WRITES}
     durableWrites = ${?OTOROSHI_CASSANDRA_DURABLE_WRITES}
-    basic.contact-points = [ ${otoroshi.cassandra.host}&quot;:&quot;${otoroshi.cassandra.port} ]
+    basic.contact-points = [ ${app.cassandra.host}&quot;:&quot;${app.cassandra.port} ]
     basic.session-name = &quot;otoroshi&quot;
     basic.session-name = ${?OTOROSHI_CASSANDRA_SESSION_NAME}
     basic.session-keyspace = ${?OTOROSHI_CASSANDRA_SESSION_KEYSPACE}
@@ -2638,7 +2638,7 @@ akka { # akka specific configuration
     replicationOptions = ${?OTOROSHI_CASSANDRA_REPLICATION_OPTIONS}
     durableWrites = ${?CASSANDRA_DURABLE_WRITES}
     durableWrites = ${?OTOROSHI_CASSANDRA_DURABLE_WRITES}
-    basic.contact-points = [ ${otoroshi.cassandra.host}&quot;:&quot;${otoroshi.cassandra.port} ]
+    basic.contact-points = [ ${app.cassandra.host}&quot;:&quot;${app.cassandra.port} ]
     basic.session-name = ${?OTOROSHI_CASSANDRA_SESSION_NAME}
     basic.session-keyspace = ${?OTOROSHI_CASSANDRA_SESSION_KEYSPACE}
     basic.request {
