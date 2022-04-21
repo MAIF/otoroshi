@@ -10,7 +10,7 @@ https://github.com/MAIF/otoroshi/milestone/39?closed=1
 https://github.com/MAIF/otoroshi/compare/v1.5.7...v1.5.8
 https://github.com/MAIF/otoroshi/releases/tag/v1.5.8
 
-- fix bad config. reference that prevents otoroshi to start
+- fix bad config. reference that prevents otoroshi to start (#1143)
 
 ## [1.5.7] - 2022-04-21
 
