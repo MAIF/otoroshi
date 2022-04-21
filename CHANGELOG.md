@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.5.7] - 2022-04-21
+
+https://github.com/MAIF/otoroshi/milestone/38?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.5.6...v1.5.7
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.7
+
+- Admin login not working while running the app in the default mode (#1137)
+- fix ${otoroshi.domain} reference in config. file for cookie domain (#1138)
+- Apikey plugin does not catch user cookie when possible (#1139)
+- Implement token fetch for the Azure Key Vault (#1140)
+- Enhance JSONPath validators (#1141)
+- Think about the possibility to fetch vault secrets only on the leader nodes (#1142)
+
 ## [1.5.6] - 2022-04-19
 
 https://github.com/MAIF/otoroshi/milestone/36?closed=1
