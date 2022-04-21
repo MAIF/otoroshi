@@ -29,6 +29,11 @@ vaults {
   cached-secrets = ${?OTOROSHI_VAULTS_CACHED_SECRETS}
   read-ttl = 10000 # 10 seconds
   read-ttl = ${?OTOROSHI_VAULTS_READ_TTL}
+  # if enabled, only leader nodes fetches the secrets.
+  # entities with secret values filled are then sent to workers when they poll the cluster state.
+  # only works if `otoroshi.cluster.autoUpdateState=true`
+  leader-fetch-only = false
+  leader-fetch-only = ${?OTOROSHI_VAULTS_LEADER_FETCH_ONLY}
   env {
     type = "env"
     prefix = ${?OTOROSHI_VAULTS_ENV_PREFIX}

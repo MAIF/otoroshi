@@ -581,6 +581,9 @@ class Vaults(env: Env) {
     .getOrElse(4)
   private val cachedSecrets: Long            =
     env.configuration.getOptionalWithFileSupport[Long]("otoroshi.vaults.cached-secrets").getOrElse(10000L)
+
+  val leaderFetchOnly: Boolean = env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.vaults.leader-fetch-only").getOrElse(false)
+
   private val cache                          =
     Scaffeine().expireAfterWrite(secretsTtl).maximumSize(cachedSecrets).build[String, CachedVaultSecret]()
   private val expressionReplacer             = ReplaceAllWith("\\$\\{vault://([^}]*)\\}")

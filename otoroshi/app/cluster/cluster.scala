@@ -845,6 +845,13 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
         // })
         //.runWith(Sink.ignore)
         .runWith(Sink.fold(ByteString.empty)(_ ++ _))
+        .applyOnIf(env.vaults.leaderFetchOnly) { fu =>
+          fu.flatMap { stateCache =>
+            env.vaults.fillSecretsAsync("cluster-state", stateCache.utf8String).map { filledStateCacheStr =>
+              filledStateCacheStr.byteString
+            }
+          }
+        }
         .andThen {
           case Success(stateCache) => {
             cachedRef.set(stateCache)
