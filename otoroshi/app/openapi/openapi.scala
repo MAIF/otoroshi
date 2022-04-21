@@ -1024,7 +1024,7 @@ class OpenApiGenerator(
       "info"         -> Json.obj(
         "title"       -> "Otoroshi Admin API",
         "description" -> "Admin API of the Otoroshi reverse proxy",
-        "version"     -> "1.5.0-dev",
+        "version"     -> "1.5.7",
         "contact"     -> Json.obj(
           "name"  -> "Otoroshi Team",
           "email" -> "oss@maif.fr"
