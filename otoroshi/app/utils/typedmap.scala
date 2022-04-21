@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.DateTime
 import otoroshi.gateway.GwError
 import otoroshi.models.{ApiKey, ApiKeyRotationInfo, ApikeyTuple, JwtInjection, PrivateAppsUser, RemainingQuotas, Target}
 import otoroshi.next.models.{NgBackend, NgContextualPlugins, NgMatchedRoute, NgRoute, NgTarget}
-import play.api.libs.json.{JsBoolean, JsNumber, JsObject, JsString, JsValue}
+import play.api.libs.json.{JsArray, JsBoolean, JsNumber, JsObject, JsString, JsValue, Json}
 import play.api.libs.typedmap.{TypedEntry, TypedKey}
 import otoroshi.utils.json._
 
@@ -63,6 +63,14 @@ final class ConcurrentMutableTypedMap(m: TrieMap[TypedKey[_], Any]) extends Type
       case ((key, v: ApiKeyRotationInfo), idx) => (key.displayName.getOrElse(s"key-${idx}"), v.json)
       case ((key, v: RemainingQuotas), idx)    => (key.displayName.getOrElse(s"key-${idx}"), v.toJson)
       case ((key, v: PrivateAppsUser), idx)    => (key.displayName.getOrElse(s"key-${idx}"), v.json)
+      case ((key, v: otoroshi.next.proxy.NgExecutionReport), idx)    => (key.displayName.getOrElse(s"key-${idx}"), JsString(v.id))
+      case ((key, v: otoroshi.next.models.NgMatchedRoute), idx)      => (key.displayName.getOrElse(s"key-${idx}"), v.json)
+      case ((key, v: otoroshi.next.models.NgContextualPlugins), idx) => (key.displayName.getOrElse(s"key-${idx}"), Json.obj(
+        "disabled_plugins" -> v.disabledPlugins.map(p => JsString(p.plugin)),
+        "excluded_plugins" -> v.filteredPlugins.map(p => JsString(p.plugin)),
+        "included_plugins" -> v.allPlugins.map(p => JsString(p.plugin))
+      ))
+      case ((key, v: Seq[_]), idx) if key.displayName.contains("otoroshi.next.core.MatchedRoutes") => (key.displayName.getOrElse(s"key-${idx}"), JsArray(v.asInstanceOf[Seq[String]].map(JsString.apply)))
       case ((key, value), idx)                 => (key.displayName.getOrElse(s"key-${idx}"), JsString(value.toString))
     })
   }

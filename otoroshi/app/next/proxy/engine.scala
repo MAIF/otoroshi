@@ -338,7 +338,8 @@ class ProxyEngine() extends RequestHandler {
                      Json
                        .obj(
                          "disabled_plugins" -> ctxPlugins.disabledPlugins.map(p => JsString(p.plugin)),
-                         "filtered_plugins" -> ctxPlugins.filteredPlugins.map(p => JsString(p.plugin))
+                         "excluded_plugins" -> ctxPlugins.filteredPlugins.map(p => JsString(p.plugin)),
+                         "included_plugins" -> ctxPlugins.allPlugins.map(p => JsString(p.plugin))
                        )
                        .some
                    )
@@ -441,7 +442,7 @@ class ProxyEngine() extends RequestHandler {
               )
             }
           else Seq.empty
-        if (debug) logger.info(report.json.prettify)
+        // if (debug) logger.info(report.json.prettify)
         // if (reporting && report.getStep("find-route").flatMap(_.ctx.select("found_route").select("debug_flow").asOpt[Boolean]).getOrElse(false)) {
         //   java.nio.file.Files.writeString(new java.io.File("./request-debug.json").toPath, report.json.prettify)
         // }
@@ -512,7 +513,8 @@ class ProxyEngine() extends RequestHandler {
                      Json
                        .obj(
                          "disabled_plugins" -> ctxPlugins.disabledPlugins.map(p => JsString(p.plugin)),
-                         "filtered_plugins" -> ctxPlugins.filteredPlugins.map(p => JsString(p.plugin))
+                         "excluded_plugins" -> ctxPlugins.filteredPlugins.map(p => JsString(p.plugin)),
+                         "included_plugins" -> ctxPlugins.allPlugins.map(p => JsString(p.plugin))
                        )
                        .some
                    )

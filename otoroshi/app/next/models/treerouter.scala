@@ -53,7 +53,14 @@ case class NgMatchedRoute(
     path: String = "",
     pathParams: scala.collection.mutable.HashMap[String, String] = scala.collection.mutable.HashMap.empty,
     noMoreSegments: Boolean = false
-)
+) {
+  def json: JsValue = Json.obj(
+    "route_id" -> route.id,
+    "path" -> path,
+    "path_params" -> pathParams,
+    "no_more_segments" -> noMoreSegments
+  )
+}
 
 object NgTreeRouter {
   def empty = NgTreeRouter(new TrieMap[String, NgTreeNodePath](), scala.collection.mutable.MutableList.empty)

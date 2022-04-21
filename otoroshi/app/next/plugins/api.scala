@@ -44,6 +44,7 @@ case class NgPluginHttpRequest(
 ) {
   lazy val contentType: Option[String]              = header("Content-Type")
   lazy val contentLengthStr: Option[String]         = header("Content-Length")
+  lazy val transferEncoding: Option[String]         = header("Transfer-Encoding")
   lazy val host: String                             = header("Host").getOrElse("")
   lazy val uri: Uri                                 = Uri(url)
   lazy val scheme: String                           = uri.scheme
@@ -53,7 +54,7 @@ case class NgPluginHttpRequest(
   lazy val queryString: Option[String]              = uri.rawQueryString
   lazy val relativeUri: String                      = uri.toRelative.toString()
   lazy val hasBodyWithoutLength: (Boolean, Boolean) =
-    otoroshi.utils.body.BodyUtils.hasBodyWithoutLengthGen(method.toUpperCase(), contentLengthStr, contentType)
+    otoroshi.utils.body.BodyUtils.hasBodyWithoutLengthGen(method.toUpperCase(), contentLengthStr, contentType, transferEncoding)
   lazy val hasBody: Boolean                         = hasBodyWithoutLength._1
   // val ctype = contentType
   // (method.toUpperCase(), header("Content-Length")) match {
