@@ -158,7 +158,7 @@ This plugin expects to find an apikey to allow the request to pass
     "enabled" : false
   },
   "validate" : true,
-  "pass_with_user" : true,
+  "pass_with_user" : false,
   "wipe_backend_request" : true
 }
 ```
@@ -382,7 +382,7 @@ The JSONPath will be applied on a document that will look like
     "otoroshi.core.RequestCounterIn" : 0
   },
   "route" : { ... },
-  "token" : null
+  "token" : null // current valid jwt token if one
 }
 ```
 
@@ -410,8 +410,6 @@ for instance to check if the current apikey has a metadata name `foo` with a val
   "value": "Contains(bar)"
 }
 ```
-
-
 
 
 

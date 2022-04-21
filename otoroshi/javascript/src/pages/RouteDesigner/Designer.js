@@ -1136,12 +1136,8 @@ const Description = ({ text, fullText }) => {
   const [showMore, setShowMore] = useState(false);
 
   const textLength = text ? text.length : 0;
-  const maxLength = fullText ? 100000 : 120;
-  const overflows = textLength > maxLength;
-
-  const content = text
-    ? text?.slice(0, either(showMore, textLength, maxLength))
-    : '' + ' ' + (overflows && either(!showMore, '...', ''));
+  const overflows = textLength > 300;
+  const content = text ? (overflows && !showMore ? (text.slice(0, 300) + ' ...') : text) : '...';
 
   return (
     <>

@@ -144,7 +144,7 @@ export const TryIt = ({ route }) => {
         borderRadius: '8px',
       }}>
       <div className="d-flex">
-        <div style={{ minWidth: '120px' }}>
+        <div style={{ minWidth: '200px' }}>
           <SelectInput
             possibleValues={METHODS}
             value={request.method}

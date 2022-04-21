@@ -17,12 +17,12 @@ export default ({ route }) => (
     </li>
     <li className="nav-item">
       <Link to={`/routes/${route.id}?tab=flow`} className="nav-link">
-        Flow
+        Route designer
       </Link>
     </li>
     <li className="nav-item">
       <Link to={`/routes/${route.id}?tab=try-it`} className="nav-link">
-        Try it!
+        Try route
       </Link>
     </li>
   </ul>

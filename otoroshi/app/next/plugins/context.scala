@@ -51,6 +51,8 @@ class ContextValidation extends NgAccessValidator {
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def name: String                                = "Context validator"
+  //override def description: Option[String]                 = "This plugin validates the current context using JSONPath validators".some
+  //override def documentation: Option[String]                 =
   override def description: Option[String]                 =
     """This plugin validates the current context using JSONPath validators.
       |
@@ -158,8 +160,7 @@ class ContextValidation extends NgAccessValidator {
       |  "value": "Contains(bar)"
       |}
       |```
-      |
-      |""".some
+      |""".stripMargin.some
   override def defaultConfigObject: Option[NgPluginConfig] = ContextValidationConfig().some
 
   private def validate(ctx: NgAccessContext): Boolean = {
