@@ -71,7 +71,12 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
     (config.passWithUser match {
       case true  => maybeUser match {
         case Some(_) => true.future
-        case None => PrivateAppsUserHelper.isPrivateAppsSessionValid(ctx.request, ctx.route.legacy, ctx.attrs).map(_.isDefined)
+        case None => PrivateAppsUserHelper.isPrivateAppsSessionValid(ctx.request, ctx.route.legacy, ctx.attrs).map {
+          case Some(user) =>
+            ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+            true
+          case None => false
+        }
       }
       case false => false.future
     }).flatMap { pass =>
@@ -404,7 +409,7 @@ case class NgApikeyCallsConfig(
     routing: NgApikeyMatcher = NgApikeyMatcher(),
     wipeBackendRequest: Boolean = true,
     validate: Boolean = true,
-    passWithUser: Boolean = true
+    passWithUser: Boolean = false
 ) extends NgPluginConfig {
   def json: JsValue                  = Json.obj(
     "extractors"           -> extractors.json,
