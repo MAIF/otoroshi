@@ -68,7 +68,12 @@ class ClassGraphScanner {
       scanResult = scanResult,
       raw = openApiSchema,
       flattened = flattenedOpenapiSchema,
-      asForms = asForms
+      asForms = asForms /*{
+        val jsonRaw = Files.readString(formFile.toPath)
+        val obj     = Json.parse(jsonRaw).as[JsObject]
+        val map     = new TrieMap[String, Form]()
+        map.++=(obj.value.mapValues(Form.fromJson)).toMap
+      }*/
     )
   }
 

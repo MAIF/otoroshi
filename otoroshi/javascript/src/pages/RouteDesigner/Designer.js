@@ -378,7 +378,7 @@ export default ({ value }) => {
   return (
     <Loader loading={loading}>
       <div
-        className="h-100 col-12 hide-overflow"
+        className="h-100 col-12 hide-overflow route-designer"
         onClick={(e) => {
           e.stopPropagation();
           onUnsavedChanges(() => {
@@ -648,7 +648,7 @@ const SearchBar = ({ handleSearch }) => (
         style={{
           paddingLeft: '6px',
           width: '100%',
-          backgroundColor: '#fff',
+          // backgroundColor: '#fff',
           display: 'flex',
           alignItems: 'center',
         }}>

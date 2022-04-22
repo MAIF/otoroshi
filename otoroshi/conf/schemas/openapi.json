@@ -22092,7 +22092,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.utils.JsonPathValidator"
             },
-            "description" : "The validators to pass on the current context"
+            "description" : "???"
           }
         }
       },
@@ -24241,7 +24241,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.utils.JsonPathValidator"
             },
-            "description" : "The validators to pass on the current context"
+            "description" : "???"
           }
         }
       },

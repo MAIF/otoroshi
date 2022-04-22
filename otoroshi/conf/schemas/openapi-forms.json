@@ -1704,7 +1704,11 @@
           },
           "value" : {
             "label" : "value",
-            "type" : "object"
+            "type" : "object",
+            "format": "code",
+            "props": {
+              "mode": "json"
+            }
           }
         },
         "flow" : [ "path", "value" ]

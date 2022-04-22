@@ -16,7 +16,6 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
   }
 
   def openapiPropertiesToForms(properties: JsObject, typeName: String): JsValue = {
-    println(typeName)
     properties.fields.foldLeft(Json.obj()) { case (props, prop) =>
       val `type`: String   = (prop._2 \ "type").asOpt[String].getOrElse("unknown type")
       val label: String    = prop._1
