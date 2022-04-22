@@ -369,7 +369,7 @@
         z-index: 1002;
     }
 
-    input[type="text"] {
+    input[type="text"], input[type="number"], input[type="password"], input[type="date"], input[type="datetime"], input[type="time"] {
         color: #E6E6E6;
         background-color: #595959;
         border-color: #494948;
