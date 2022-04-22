@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Form, type, constraints, format } from '@maif/react-forms';
 import { Location } from '../../components/Location';
 import { nextClient } from '../../services/BackOfficeServices';

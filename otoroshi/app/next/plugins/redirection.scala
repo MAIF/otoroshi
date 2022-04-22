@@ -65,7 +65,7 @@ class Redirection extends NgPreRouting {
   private val configReads: Reads[NgRedirectionSettings] = NgRedirectionSettings.format
 
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl, NgPluginCategory.Standard)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true

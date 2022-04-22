@@ -114,7 +114,7 @@ class RoutingRestrictions extends NgAccessValidator {
 
   override def multiInstance: Boolean            = true
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.TrafficControl)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Standard)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def core: Boolean                               = true

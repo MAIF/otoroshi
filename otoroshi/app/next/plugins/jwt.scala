@@ -36,7 +36,7 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
   private val configReads: Reads[NgJwtVerificationConfig] = NgJwtVerificationConfig.format
 
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess, NgStep.TransformRequest)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Security)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Standard)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean      = true

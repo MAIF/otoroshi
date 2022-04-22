@@ -21,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class MaintenanceMode extends NgPreRouting {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Standard)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true
@@ -53,7 +53,7 @@ class MaintenanceMode extends NgPreRouting {
 class GlobalMaintenanceMode extends NgPreRouting {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Standard)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = false
@@ -90,7 +90,7 @@ class GlobalMaintenanceMode extends NgPreRouting {
 class BuildMode extends NgPreRouting {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Standard)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true

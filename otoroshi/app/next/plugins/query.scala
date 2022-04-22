@@ -47,7 +47,7 @@ class QueryTransformer extends NgRequestTransformer {
   override def defaultConfigObject: Option[NgPluginConfig] = QueryTransformerConfig().some
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Standard)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def transformsError: Boolean         = false

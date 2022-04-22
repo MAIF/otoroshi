@@ -170,7 +170,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       tags = Seq.empty,
       metadata = Map.empty,
       enabled = true,
-      debugFlow = true,
+      debugFlow = false,
       exportReporting = false,
       groups = Seq("default"),
       frontend = NgFrontend(

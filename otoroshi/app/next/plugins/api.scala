@@ -180,34 +180,32 @@ object NgPluginCategory {
   case object Custom          extends NgPluginCategory { def name: String = "Custom"          }
   case object Other           extends NgPluginCategory { def name: String = "Other"           }
   case object Security        extends NgPluginCategory { def name: String = "Security"        }
-  case object Apikey          extends NgPluginCategory { def name: String = "Apikey"          }
   case object Authentication  extends NgPluginCategory { def name: String = "Authentication"  }
   case object AccessControl   extends NgPluginCategory { def name: String = "AccessControl"   }
   case object Logging         extends NgPluginCategory { def name: String = "Logging"         }
   case object TrafficControl  extends NgPluginCategory { def name: String = "TrafficControl"  }
-  case object Analytics       extends NgPluginCategory { def name: String = "Analytics"       }
   case object Monitoring      extends NgPluginCategory { def name: String = "Monitoring"      }
   case object Transformations extends NgPluginCategory { def name: String = "Transformations" }
   case object Headers         extends NgPluginCategory { def name: String = "Headers"         }
   case object Experimental    extends NgPluginCategory { def name: String = "Experimental"    }
   case object Integrations    extends NgPluginCategory { def name: String = "Integrations"    }
   case object Tunnel          extends NgPluginCategory { def name: String = "Tunnel"          }
+  case object Standard        extends NgPluginCategory { def name: String = "Standard"          }
 
   val all = Seq(
+    Standard,
+    AccessControl,
+    Authentication,
     Custom,
+    Experimental,
+    Headers,
+    Integrations,
+    Logging,
+    Monitoring,
     Other,
     Security,
-    Apikey,
-    Authentication,
-    AccessControl,
-    Logging,
     TrafficControl,
-    Analytics,
-    Monitoring,
     Transformations,
-    Headers,
-    Experimental,
-    Integrations,
     Tunnel
   )
 }

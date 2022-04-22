@@ -26,7 +26,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class TcpTunnel extends NgTunnelHandler {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.HandlesTunnel)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Tunnel)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Tunnel, NgPluginCategory.Standard)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = false
@@ -94,7 +94,7 @@ class TcpTunnel extends NgTunnelHandler {
 class UdpTunnel extends NgTunnelHandler {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.HandlesTunnel)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Tunnel)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Tunnel, NgPluginCategory.Standard)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = false

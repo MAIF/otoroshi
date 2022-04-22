@@ -82,7 +82,7 @@ class GzipResponseCompressor extends NgRequestTransformer {
   private val configReads: Reads[NgGzipConfig] = NgGzipConfig.format
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations, NgPluginCategory.Standard)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true

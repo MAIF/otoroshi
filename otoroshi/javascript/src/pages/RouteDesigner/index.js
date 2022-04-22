@@ -9,10 +9,27 @@ import DesignerSidebar from './DesignerSidebar';
 
 export default (props) => {
   const match = useRouteMatch();
+  const { search } = useLocation();
+  const query = new URLSearchParams(search).get('tab');
 
   useEffect(() => {
-    props.setTitle('Routes designer');
+    props.setTitle('Routes');
   }, []);
+
+  useEffect(() => {
+    const value = null;
+    if (query) {
+      if (query === 'flow') {
+        props.setTitle('Designer');
+      }
+      if (query === 'try-it') {
+        props.setTitle('Test route');
+      }
+      if (query === 'informations') {
+        props.setTitle('Informations');
+      }
+    }
+  }, [search]);
 
   return (
     <Switch>
@@ -21,10 +38,7 @@ export default (props) => {
         path={`${match.url}/:routeId`}
         component={() => {
           const p = useParams();
-          const { search } = useLocation();
-          const query = new URLSearchParams(search).get('tab');
           const isCreation = p.routeId === 'new';
-
           const [value, setValue] = useState({});
 
           useEffect(() => {

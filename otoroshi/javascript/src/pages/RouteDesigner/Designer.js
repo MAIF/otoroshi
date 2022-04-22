@@ -830,7 +830,7 @@ function EditView({
         value = {
           plugin: node.config,
           status: {
-            enabled: node.enabled || false,
+            enabled: node.enabled || true,
             debug: node.debug || false,
             include: node.include || [],
             exclude: node.exclude || [],
@@ -920,7 +920,7 @@ function EditView({
           style={{
             backgroundColor: '#494949',
           }}>
-          <Description text={selectedNode.description} fullText={hidePreview} />
+          <Description text={selectedNode.description} steps={selectedNode.plugin_steps || []} fullText={hidePreview} />
           {!selectedNode.legacy && !readOnly && (
             <div className={`d-flex justify-content-end ${asJsonFormat ? 'mb-3' : ''}`}>
               <button
@@ -1137,7 +1137,7 @@ const BackendSelector = ({
   </div>
 );
 
-const Description = ({ text, fullText }) => {
+const Description = ({ text, fullText, steps }) => {
   const [showMore, setShowMore] = useState(false);
 
   const textLength = text ? text.length : 0;
@@ -1152,6 +1152,9 @@ const Description = ({ text, fullText }) => {
         //   padding: either(text, '12px', 0),
         //   paddingBottom: either(overflows || !text, 0, '12px')
         // }}> */}
+      <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
+        defined on {steps.map(step => <span className="badge bg-warning text-dark" style={{ marginLeft: 5 }}>{step}</span>)}
+      </div>
       {overflows && (
         <button
           className="btn btn-sm btn-success me-3 mb-3"

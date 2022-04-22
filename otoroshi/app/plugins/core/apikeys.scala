@@ -25,7 +25,7 @@ class JwtApikeyExtractor extends PreRouting {
   }
 
   def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Apikey)
+  def categories: Seq[NgPluginCategory] = Seq.empty
   def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
@@ -213,7 +213,7 @@ class BasicAuthApikeyExtractor extends PreRouting {
   }
 
   def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Apikey)
+  def categories: Seq[NgPluginCategory] = Seq.empty
   def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
@@ -278,7 +278,7 @@ class CustomHeadersApikeyExtractor extends PreRouting {
   }
 
   def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Apikey)
+  def categories: Seq[NgPluginCategory] = Seq.empty
   def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
@@ -330,7 +330,7 @@ class ClientIdApikeyExtractor extends PreRouting {
   }
 
   def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Apikey)
+  def categories: Seq[NgPluginCategory] = Seq.empty
   def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
