@@ -74,7 +74,16 @@ export default (props) => {
           );
         }}
       />
+      <Route exact path={`${match.url}/:routeId/health`} component={() => <NotImplementedYet />} />
+      <Route exact path={`${match.url}/:routeId/stats`} component={() => <NotImplementedYet />} />
+      <Route exact path={`${match.url}/:routeId/analytics`} component={() => <NotImplementedYet />} />
+      <Route exact path={`${match.url}/:routeId/events`} component={() => <NotImplementedYet />} />
+      <Route exact path={`${match.url}/:routeId/apikeys`} component={() => <NotImplementedYet />} />
       <Route component={Routes} />
     </Switch>
   );
 };
+
+const NotImplementedYet = () => (
+  <h2>Not implemented yet !</h2>
+)
