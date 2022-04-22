@@ -1153,7 +1153,7 @@ const Description = ({ text, fullText, steps }) => {
         //   paddingBottom: either(overflows || !text, 0, '12px')
         // }}> */}
       <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
-        defined on {steps.map(step => <span className="badge bg-warning text-dark" style={{ marginLeft: 5 }}>{step}</span>)}
+        active on {steps.map(step => <span className="badge bg-warning text-dark" style={{ marginLeft: 5 }}>{step}</span>)}
       </div>
       {overflows && (
         <button
