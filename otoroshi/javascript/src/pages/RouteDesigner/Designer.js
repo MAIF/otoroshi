@@ -375,8 +375,6 @@ export default ({ value }) => {
       (p, i) => (p.plugin === value.id || p.config.plugin === value.id) && i + 2 === value.index
     )?.enabled;
 
-  console.log(route)
-
   return (
     <Loader loading={loading}>
       <div
@@ -1144,7 +1142,11 @@ const Description = ({ text, fullText, steps }) => {
 
   const textLength = text ? text.length : 0;
   const overflows = textLength > 300;
-  const content = text ? (overflows && !showMore ? text.slice(0, 300) + ' ...' : text) : '...';
+  let content = text ? (overflows && !showMore ? text.slice(0, 300) + ' ...' : text) : '...';
+
+  if (content.split('```').length % 2 === 0) {
+    content = content + '\n```\n';
+  }
 
   return (
     <>
