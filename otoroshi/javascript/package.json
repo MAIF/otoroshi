@@ -26,7 +26,7 @@
     "licences": "legally"
   },
   "dependencies": {
-    "@maif/react-forms": "1.0.40",
+    "@maif/react-forms": "1.0.44",
     "antd": "3.26.0",
     "bcryptjs": "2.4.3",
     "browser-update": "3.3.22",

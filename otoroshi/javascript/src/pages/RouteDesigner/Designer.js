@@ -370,10 +370,12 @@ export default ({ value }) => {
     } else onConfirm();
   };
 
-  const pluginIsEnabled = (value) =>
+  const pluginIsEnabled = (value) => 
     route.plugins.find(
       (p, i) => (p.plugin === value.id || p.config.plugin === value.id) && i + 2 === value.index
     )?.enabled;
+
+  console.log(route)
 
   return (
     <Loader loading={loading}>
@@ -830,10 +832,10 @@ function EditView({
         value = {
           plugin: node.config,
           status: {
-            enabled: node.enabled || true,
-            debug: node.debug || false,
-            include: node.include || [],
-            exclude: node.exclude || [],
+            enabled: node.enabled !== undefined ? node.enabled : true,
+            debug: node.debug !== undefined ? node.debug : false,
+            include: node.include !== undefined ? node.include : [],
+            exclude: node.exclude !== undefined ? node.exclude : [],
           },
         };
     } else {
