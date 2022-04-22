@@ -12,7 +12,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ForceHttpsTraffic extends NgPreRouting {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl, NgPluginCategory.Standard)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = false
