@@ -7,6 +7,12 @@ import { TryIt } from './TryIt';
 import Routes from './Routes';
 import DesignerSidebar from './DesignerSidebar';
 
+import { ServiceEventsPage } from '../ServiceEventsPage';
+import { ServiceLiveStatsPage } from '../ServiceLiveStatsPage';
+import { ServiceHealthPage } from '../ServiceHealthPage';
+import { ServiceAnalyticsPage } from '../ServiceAnalyticsPage';
+import { ServiceApiKeysPage } from '../ServiceApiKeysPage';
+
 export default (props) => {
   const match = useRouteMatch();
   const { search } = useLocation();
@@ -33,6 +39,11 @@ export default (props) => {
 
   return (
     <Switch>
+      <Route exact path={`${match.url}/:routeId/health`}    component={(p) => <ServiceHealthPage    setSidebarContent={props.setSidebarContent} setTitle={props.setTitle} {...p.match} />} />
+      <Route exact path={`${match.url}/:routeId/analytics`} component={(p) => <ServiceAnalyticsPage setSidebarContent={props.setSidebarContent} setTitle={props.setTitle} {...p.match} />} />
+      <Route exact path={`${match.url}/:routeId/apikeys`}   component={(p) => <ServiceApiKeysPage   setSidebarContent={props.setSidebarContent} setTitle={props.setTitle} {...p.match} />} />
+      <Route exact path={`${match.url}/:routeId/stats`}     component={(p) => <ServiceLiveStatsPage setSidebarContent={props.setSidebarContent} setTitle={props.setTitle} {...p.match} />} />
+      <Route exact path={`${match.url}/:routeId/events`}    component={(p) => <ServiceEventsPage    setSidebarContent={props.setSidebarContent} setTitle={props.setTitle} {...p.match} />} />
       <Route
         exact
         path={`${match.url}/:routeId`}
@@ -74,11 +85,6 @@ export default (props) => {
           );
         }}
       />
-      <Route exact path={`${match.url}/:routeId/health`} component={() => <NotImplementedYet />} />
-      <Route exact path={`${match.url}/:routeId/stats`} component={() => <NotImplementedYet />} />
-      <Route exact path={`${match.url}/:routeId/analytics`} component={() => <NotImplementedYet />} />
-      <Route exact path={`${match.url}/:routeId/events`} component={() => <NotImplementedYet />} />
-      <Route exact path={`${match.url}/:routeId/apikeys`} component={() => <NotImplementedYet />} />
       <Route component={Routes} />
     </Switch>
   );

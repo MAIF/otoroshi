@@ -2,13 +2,23 @@ import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import { LiveStatTiles } from '../components/LiveStatTiles';
+import DesignerSidebar from './RouteDesigner/DesignerSidebar'
 
 export class ServiceLiveStatsPage extends Component {
   state = {
     service: null,
   };
 
+  onRoutes = window.location.pathname.indexOf('/bo/dashboard/routes') === 0;
+
   sidebarContent(name) {
+    if (this.onRoutes) {
+      return (
+        <DesignerSidebar
+          route={{ id: this.props.params.routeId, name }}
+        />
+      );
+    }
     return (
       <ServiceSidebar
         env={this.state.service.env}
@@ -19,9 +29,10 @@ export class ServiceLiveStatsPage extends Component {
   }
 
   componentDidMount() {
-    BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId).then(
+    const fu = this.onRoutes ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId) : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
+    fu.then(
       (service) => {
-        this.props.setTitle(`Service Live Stats`);
+        this.onRoute ? this.props.setTitle(`Route Live Stats`) : this.props.setTitle(`Service Live Stats`);
         this.setState({ service }, () => {
           this.props.setSidebarContent(this.sidebarContent(service.name));
         });

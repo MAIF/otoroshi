@@ -287,7 +287,8 @@ case class NgBackend(
       "root"           -> root,
       "rewrite"        -> rewrite,
       "load_balancing" -> loadBalancing.toJson,
-      "client"         -> client.json
+      "client"         -> client.json,
+      "health_check"   -> healthCheck.map(_.toJson).getOrElse(JsNull).as[JsValue]
     )
     .applyOnWithOpt(healthCheck) { case (obj, hc) =>
       obj ++ Json.obj("health_check" -> hc.toJson)
