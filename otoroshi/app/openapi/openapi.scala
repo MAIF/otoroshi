@@ -1,5 +1,6 @@
 package otoroshi.openapi
 
+import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
 import io.github.classgraph._
 import otoroshi.env.Env
 import otoroshi.models.Entity
@@ -394,7 +395,8 @@ class OpenApiGenerator(
           case "play.api.libs.json.JsValue"                       => Json.obj("type" -> "object").some
           case "play.api.libs.json.JsObject"                      => Json.obj("type" -> "object").some
           case "play.api.libs.json.JsArray"                       => Json.obj("type" -> "array").some
-          case "akka.http.scaladsl.model.HttpProtocol"            => Json.obj("type" -> "string").some
+          case "akka.http.scaladsl.model.HttpProtocol"            => Json.obj("type" -> "string", "enum" -> Json.arr(
+            HttpProtocols.`HTTP/1.0`.value, HttpProtocols.`HTTP/1.1`.value, HttpProtocols.`HTTP/2.0`.value)).some
           case "java.security.cert.X509Certificate"               =>
             Json.obj("type" -> "string", "description" -> "pem encoded X509 certificate").some
           case "java.security.PrivateKey"                         =>
@@ -429,6 +431,8 @@ class OpenApiGenerator(
       fields.foreach { field =>
         val name = field.getName
         val typ  = field.getTypeSignatureOrTypeDescriptor
+
+        //println(name, typ, handleType(name, "akka.http.scaladsl.model.HttpProtocol", typ))
         typ match {
           case c: BaseTypeSignature                                                                              =>
             val valueName      = c.getTypeStr

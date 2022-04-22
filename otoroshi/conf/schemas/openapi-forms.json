@@ -761,7 +761,9 @@
       },
       "protocol" : {
         "label" : "protocol",
-        "type" : "string"
+        "type" : "string",
+        "format" : "select",
+        "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
       },
       "hostname" : {
         "label" : "hostname",
@@ -1127,7 +1129,9 @@
           },
           "protocol" : {
             "label" : "protocol",
-            "type" : "string"
+            "type" : "string",
+            "format" : "select",
+            "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
           },
           "hostname" : {
             "label" : "hostname",
@@ -1933,7 +1937,9 @@
       },
       "protocol" : {
         "label" : "protocol",
-        "type" : "string"
+        "type" : "string",
+        "format" : "select",
+        "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
       },
       "scheme" : {
         "label" : "scheme",
@@ -3705,7 +3711,9 @@
               },
               "protocol" : {
                 "label" : "protocol",
-                "type" : "string"
+                "type" : "string",
+                "format" : "select",
+                "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
               },
               "scheme" : {
                 "label" : "scheme",
@@ -3970,7 +3978,9 @@
                   },
                   "protocol" : {
                     "label" : "protocol",
-                    "type" : "string"
+                    "type" : "string",
+                    "format" : "select",
+                    "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                   },
                   "scheme" : {
                     "label" : "scheme",
@@ -5517,7 +5527,9 @@
           },
           "protocol" : {
             "label" : "protocol",
-            "type" : "string"
+            "type" : "string",
+            "format" : "select",
+            "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
           },
           "hostname" : {
             "label" : "hostname",
@@ -7367,6 +7379,19 @@
     "schema" : { },
     "flow" : [ ]
   },
+  "otoroshi.utils.JsonPathValidator" : {
+    "schema" : {
+      "path" : {
+        "label" : "path",
+        "type" : "string"
+      },
+      "value" : {
+        "label" : "value",
+        "type" : "object"
+      }
+    },
+    "flow" : [ "path", "value" ]
+  },
   "otoroshi.models.MappingSettings" : {
     "schema" : {
       "map" : {
@@ -7782,7 +7807,9 @@
               },
               "protocol" : {
                 "label" : "protocol",
-                "type" : "string"
+                "type" : "string",
+                "format" : "select",
+                "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
               },
               "hostname" : {
                 "label" : "hostname",
@@ -9559,7 +9586,9 @@
                   },
                   "protocol" : {
                     "label" : "protocol",
-                    "type" : "string"
+                    "type" : "string",
+                    "format" : "select",
+                    "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                   },
                   "hostname" : {
                     "label" : "hostname",
@@ -10026,7 +10055,9 @@
                   },
                   "protocol" : {
                     "label" : "protocol",
-                    "type" : "string"
+                    "type" : "string",
+                    "format" : "select",
+                    "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                   },
                   "hostname" : {
                     "label" : "hostname",
@@ -10611,7 +10642,9 @@
               },
               "protocol" : {
                 "label" : "protocol",
-                "type" : "string"
+                "type" : "string",
+                "format" : "select",
+                "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
               },
               "hostname" : {
                 "label" : "hostname",
@@ -10938,7 +10971,9 @@
           },
           "protocol" : {
             "label" : "protocol",
-            "type" : "string"
+            "type" : "string",
+            "format" : "select",
+            "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
           },
           "scheme" : {
             "label" : "scheme",
@@ -12256,7 +12291,9 @@
                   },
                   "protocol" : {
                     "label" : "protocol",
-                    "type" : "string"
+                    "type" : "string",
+                    "format" : "select",
+                    "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                   },
                   "scheme" : {
                     "label" : "scheme",
@@ -12491,7 +12528,9 @@
                       },
                       "protocol" : {
                         "label" : "protocol",
-                        "type" : "string"
+                        "type" : "string",
+                        "format" : "select",
+                        "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                       },
                       "scheme" : {
                         "label" : "scheme",
@@ -15230,7 +15269,9 @@
               },
               "protocol" : {
                 "label" : "protocol",
-                "type" : "string"
+                "type" : "string",
+                "format" : "select",
+                "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
               },
               "scheme" : {
                 "label" : "scheme",
@@ -15495,7 +15536,9 @@
                   },
                   "protocol" : {
                     "label" : "protocol",
-                    "type" : "string"
+                    "type" : "string",
+                    "format" : "select",
+                    "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                   },
                   "scheme" : {
                     "label" : "scheme",
@@ -19679,7 +19722,9 @@
                       },
                       "protocol" : {
                         "label" : "protocol",
-                        "type" : "string"
+                        "type" : "string",
+                        "format" : "select",
+                        "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                       },
                       "hostname" : {
                         "label" : "hostname",
@@ -20496,7 +20541,9 @@
               },
               "protocol" : {
                 "label" : "protocol",
-                "type" : "string"
+                "type" : "string",
+                "format" : "select",
+                "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
               },
               "hostname" : {
                 "label" : "hostname",
@@ -20794,7 +20841,9 @@
                   },
                   "protocol" : {
                     "label" : "protocol",
-                    "type" : "string"
+                    "type" : "string",
+                    "format" : "select",
+                    "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                   },
                   "hostname" : {
                     "label" : "hostname",
@@ -21197,7 +21246,9 @@
                   },
                   "protocol" : {
                     "label" : "protocol",
-                    "type" : "string"
+                    "type" : "string",
+                    "format" : "select",
+                    "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                   },
                   "hostname" : {
                     "label" : "hostname",
@@ -22236,7 +22287,9 @@
               },
               "protocol" : {
                 "label" : "protocol",
-                "type" : "string"
+                "type" : "string",
+                "format" : "select",
+                "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
               },
               "scheme" : {
                 "label" : "scheme",
@@ -22501,7 +22554,9 @@
                   },
                   "protocol" : {
                     "label" : "protocol",
-                    "type" : "string"
+                    "type" : "string",
+                    "format" : "select",
+                    "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                   },
                   "scheme" : {
                     "label" : "scheme",
@@ -24599,7 +24654,9 @@
           },
           "protocol" : {
             "label" : "protocol",
-            "type" : "string"
+            "type" : "string",
+            "format" : "select",
+            "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
           },
           "hostname" : {
             "label" : "hostname",
@@ -25706,7 +25763,9 @@
                   },
                   "protocol" : {
                     "label" : "protocol",
-                    "type" : "string"
+                    "type" : "string",
+                    "format" : "select",
+                    "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                   },
                   "scheme" : {
                     "label" : "scheme",
@@ -25941,7 +26000,9 @@
                       },
                       "protocol" : {
                         "label" : "protocol",
-                        "type" : "string"
+                        "type" : "string",
+                        "format" : "select",
+                        "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                       },
                       "scheme" : {
                         "label" : "scheme",
@@ -27771,7 +27832,9 @@
               },
               "protocol" : {
                 "label" : "protocol",
-                "type" : "string"
+                "type" : "string",
+                "format" : "select",
+                "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
               },
               "hostname" : {
                 "label" : "hostname",
@@ -27955,19 +28018,6 @@
       }
     },
     "flow" : [ "authorizedCallsPerDay", "remainingCallsPerMonth", "remainingCallsPerSec", "remainingCallsPerDay", "currentCallsPerDay", "currentCallsPerMonth", "authorizedCallsPerSec", "authorizedCallsPerMonth", "currentCallsPerSec" ]
-  },
-  "otoroshi.auth.UserValidator" : {
-    "schema" : {
-      "path" : {
-        "label" : "path",
-        "type" : "string"
-      },
-      "value" : {
-        "label" : "value",
-        "type" : "object"
-      }
-    },
-    "flow" : [ "path", "value" ]
   },
   "otoroshi.next.plugins.JQRequest" : {
     "schema" : {
@@ -29370,7 +29420,9 @@
               },
               "protocol" : {
                 "label" : "protocol",
-                "type" : "string"
+                "type" : "string",
+                "format" : "select",
+                "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
               },
               "scheme" : {
                 "label" : "scheme",
@@ -29635,7 +29687,9 @@
                   },
                   "protocol" : {
                     "label" : "protocol",
-                    "type" : "string"
+                    "type" : "string",
+                    "format" : "select",
+                    "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                   },
                   "scheme" : {
                     "label" : "scheme",
@@ -31933,7 +31987,9 @@
                   },
                   "protocol" : {
                     "label" : "protocol",
-                    "type" : "string"
+                    "type" : "string",
+                    "format" : "select",
+                    "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                   },
                   "hostname" : {
                     "label" : "hostname",
@@ -32848,7 +32904,9 @@
           },
           "protocol" : {
             "label" : "protocol",
-            "type" : "string"
+            "type" : "string",
+            "format" : "select",
+            "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
           },
           "hostname" : {
             "label" : "hostname",
@@ -33117,7 +33175,9 @@
           },
           "protocol" : {
             "label" : "protocol",
-            "type" : "string"
+            "type" : "string",
+            "format" : "select",
+            "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
           },
           "hostname" : {
             "label" : "hostname",
@@ -35053,7 +35113,9 @@
           },
           "protocol" : {
             "label" : "protocol",
-            "type" : "string"
+            "type" : "string",
+            "format" : "select",
+            "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
           },
           "hostname" : {
             "label" : "hostname",
@@ -35350,7 +35412,9 @@
                   },
                   "protocol" : {
                     "label" : "protocol",
-                    "type" : "string"
+                    "type" : "string",
+                    "format" : "select",
+                    "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                   },
                   "hostname" : {
                     "label" : "hostname",
@@ -36804,7 +36868,9 @@
                   },
                   "protocol" : {
                     "label" : "protocol",
-                    "type" : "string"
+                    "type" : "string",
+                    "format" : "select",
+                    "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                   },
                   "scheme" : {
                     "label" : "scheme",
@@ -37069,7 +37135,9 @@
                       },
                       "protocol" : {
                         "label" : "protocol",
-                        "type" : "string"
+                        "type" : "string",
+                        "format" : "select",
+                        "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                       },
                       "scheme" : {
                         "label" : "scheme",
@@ -39850,7 +39918,9 @@
           },
           "protocol" : {
             "label" : "protocol",
-            "type" : "string"
+            "type" : "string",
+            "format" : "select",
+            "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
           },
           "scheme" : {
             "label" : "scheme",
@@ -40115,7 +40185,9 @@
               },
               "protocol" : {
                 "label" : "protocol",
-                "type" : "string"
+                "type" : "string",
+                "format" : "select",
+                "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
               },
               "scheme" : {
                 "label" : "scheme",
@@ -41701,19 +41773,6 @@
       }
     },
     "flow" : [ "name", "revoked", "subject", "description", "tags", "domain", "ca", "keypair", "letsEncrypt", "autoRenew", "certType", "caRef", "to", "exposed", "id", "_loc", "sans", "client", "from", "valid", "metadata", "privateKey", "selfSigned", "chain", "password" ]
-  },
-  "otoroshi.next.plugins.ContextValidator" : {
-    "schema" : {
-      "path" : {
-        "label" : "path",
-        "type" : "string"
-      },
-      "value" : {
-        "label" : "value",
-        "type" : "object"
-      }
-    },
-    "flow" : [ "path", "value" ]
   },
   "otoroshi.models.Outage" : {
     "schema" : {

@@ -4056,10 +4056,10 @@ spec:
                   type: "object"
                   properties:
                     path:
-                      description: "The JSON Path that will be checked"
+                      description: "The path to find the validated value"
                       type: "string"
                     value:
-                      description: "The expected value at the previously defined path"
+                      description: "The expected value"
                       type: "object"
               serverUrls:
                 type: "array"

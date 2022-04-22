@@ -24182,7 +24182,8 @@
           },
           "protocol" : {
             "description" : "Protocol for the target",
-            "type" : "string"
+            "type" : "string",
+            "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
           },
           "predicate" : {
             "description" : "Predicate to choose this target",
@@ -27593,7 +27594,8 @@
           },
           "protocol" : {
             "description" : "Protocol for the target",
-            "type" : "string"
+            "type" : "string",
+            "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
           },
           "predicate" : {
             "description" : "Predicate to choose this target",

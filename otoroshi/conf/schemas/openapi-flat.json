@@ -407,7 +407,8 @@
                 },
                 "protocol" : {
                   "description" : "Protocol for the target",
-                  "type" : "string"
+                  "type" : "string",
+                  "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                 },
                 "hostname" : {
                   "description" : "hostname of the target",
@@ -2246,7 +2247,8 @@
                 },
                 "protocol" : {
                   "description" : "Protocol for the target",
-                  "type" : "string"
+                  "type" : "string",
+                  "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                 },
                 "scheme" : {
                   "description" : "The protocol used for communication. Can be http or https",
@@ -2512,7 +2514,8 @@
                     },
                     "protocol" : {
                       "description" : "Protocol for the target",
-                      "type" : "string"
+                      "type" : "string",
+                      "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                     },
                     "scheme" : {
                       "description" : "The protocol used for communication. Can be http or https",
@@ -4967,7 +4970,8 @@
                 },
                 "protocol" : {
                   "description" : "Protocol for the target",
-                  "type" : "string"
+                  "type" : "string",
+                  "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                 },
                 "scheme" : {
                   "description" : "The protocol used for communication. Can be http or https",
@@ -5233,7 +5237,8 @@
                     },
                     "protocol" : {
                       "description" : "Protocol for the target",
-                      "type" : "string"
+                      "type" : "string",
+                      "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                     },
                     "scheme" : {
                       "description" : "The protocol used for communication. Can be http or https",
@@ -7310,7 +7315,8 @@
                       },
                       "protocol" : {
                         "description" : "Protocol for the target",
-                        "type" : "string"
+                        "type" : "string",
+                        "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                       },
                       "hostname" : {
                         "description" : "hostname of the target",
@@ -8923,7 +8929,8 @@
               },
               "protocol" : {
                 "description" : "Protocol for the target",
-                "type" : "string"
+                "type" : "string",
+                "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
               },
               "scheme" : {
                 "description" : "The protocol used for communication. Can be http or https",
@@ -9189,7 +9196,8 @@
                   },
                   "protocol" : {
                     "description" : "Protocol for the target",
-                    "type" : "string"
+                    "type" : "string",
+                    "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                   },
                   "scheme" : {
                     "description" : "The protocol used for communication. Can be http or https",
@@ -12667,7 +12675,8 @@
           },
           "protocol" : {
             "description" : "Protocol for the target",
-            "type" : "string"
+            "type" : "string",
+            "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
           },
           "hostname" : {
             "description" : "hostname of the target",
@@ -13746,7 +13755,8 @@
             },
             "protocol" : {
               "description" : "Protocol for the target",
-              "type" : "string"
+              "type" : "string",
+              "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
             },
             "scheme" : {
               "description" : "The protocol used for communication. Can be http or https",
@@ -14012,7 +14022,8 @@
                 },
                 "protocol" : {
                   "description" : "Protocol for the target",
-                  "type" : "string"
+                  "type" : "string",
+                  "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                 },
                 "scheme" : {
                   "description" : "The protocol used for communication. Can be http or https",
@@ -18007,7 +18018,8 @@
                             },
                             "protocol" : {
                               "description" : "Protocol for the target",
-                              "type" : "string"
+                              "type" : "string",
+                              "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                             },
                             "hostname" : {
                               "description" : "hostname of the target",
@@ -18841,7 +18853,8 @@
                 },
                 "protocol" : {
                   "description" : "Protocol for the target",
-                  "type" : "string"
+                  "type" : "string",
+                  "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                 },
                 "hostname" : {
                   "description" : "hostname of the target",
@@ -19138,7 +19151,8 @@
                       },
                       "protocol" : {
                         "description" : "Protocol for the target",
-                        "type" : "string"
+                        "type" : "string",
+                        "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                       },
                       "hostname" : {
                         "description" : "hostname of the target",
@@ -19531,7 +19545,8 @@
                       },
                       "protocol" : {
                         "description" : "Protocol for the target",
-                        "type" : "string"
+                        "type" : "string",
+                        "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                       },
                       "hostname" : {
                         "description" : "hostname of the target",
@@ -20571,7 +20586,8 @@
                   },
                   "protocol" : {
                     "description" : "Protocol for the target",
-                    "type" : "string"
+                    "type" : "string",
+                    "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                   },
                   "scheme" : {
                     "description" : "The protocol used for communication. Can be http or https",
@@ -20837,7 +20853,8 @@
                       },
                       "protocol" : {
                         "description" : "Protocol for the target",
-                        "type" : "string"
+                        "type" : "string",
+                        "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                       },
                       "scheme" : {
                         "description" : "The protocol used for communication. Can be http or https",
@@ -22751,7 +22768,8 @@
             },
             "protocol" : {
               "description" : "Protocol for the target",
-              "type" : "string"
+              "type" : "string",
+              "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
             },
             "scheme" : {
               "description" : "The protocol used for communication. Can be http or https",
@@ -23108,7 +23126,8 @@
                     },
                     "protocol" : {
                       "description" : "Protocol for the target",
-                      "type" : "string"
+                      "type" : "string",
+                      "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                     },
                     "hostname" : {
                       "description" : "hostname of the target",
@@ -23352,7 +23371,8 @@
             },
             "protocol" : {
               "description" : "Protocol for the target",
-              "type" : "string"
+              "type" : "string",
+              "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
             },
             "hostname" : {
               "description" : "hostname of the target",
@@ -23755,7 +23775,8 @@
                 },
                 "protocol" : {
                   "description" : "Protocol for the target",
-                  "type" : "string"
+                  "type" : "string",
+                  "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                 },
                 "hostname" : {
                   "description" : "hostname of the target",
@@ -26989,7 +27010,8 @@
             },
             "protocol" : {
               "description" : "Protocol for the target",
-              "type" : "string"
+              "type" : "string",
+              "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
             },
             "hostname" : {
               "description" : "hostname of the target",
@@ -28576,7 +28598,8 @@
                 },
                 "protocol" : {
                   "description" : "Protocol for the target",
-                  "type" : "string"
+                  "type" : "string",
+                  "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                 },
                 "hostname" : {
                   "description" : "hostname of the target",
@@ -29047,7 +29070,8 @@
                       },
                       "protocol" : {
                         "description" : "Protocol for the target",
-                        "type" : "string"
+                        "type" : "string",
+                        "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                       },
                       "hostname" : {
                         "description" : "hostname of the target",
@@ -30603,7 +30627,8 @@
                 },
                 "protocol" : {
                   "description" : "Protocol for the target",
-                  "type" : "string"
+                  "type" : "string",
+                  "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                 },
                 "scheme" : {
                   "description" : "The protocol used for communication. Can be http or https",
@@ -30869,7 +30894,8 @@
                     },
                     "protocol" : {
                       "description" : "Protocol for the target",
-                      "type" : "string"
+                      "type" : "string",
+                      "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                     },
                     "scheme" : {
                       "description" : "The protocol used for communication. Can be http or https",
@@ -32818,7 +32844,8 @@
                     },
                     "protocol" : {
                       "description" : "Protocol for the target",
-                      "type" : "string"
+                      "type" : "string",
+                      "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                     },
                     "scheme" : {
                       "description" : "The protocol used for communication. Can be http or https",
@@ -33056,7 +33083,8 @@
                         },
                         "protocol" : {
                           "description" : "Protocol for the target",
-                          "type" : "string"
+                          "type" : "string",
+                          "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                         },
                         "scheme" : {
                           "description" : "The protocol used for communication. Can be http or https",
@@ -34715,7 +34743,8 @@
       },
       "protocol" : {
         "description" : "Protocol for the target",
-        "type" : "string"
+        "type" : "string",
+        "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
       },
       "scheme" : {
         "description" : "The protocol used for communication. Can be http or https",
@@ -38195,7 +38224,8 @@
                     },
                     "protocol" : {
                       "description" : "Protocol for the target",
-                      "type" : "string"
+                      "type" : "string",
+                      "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                     },
                     "scheme" : {
                       "description" : "The protocol used for communication. Can be http or https",
@@ -38433,7 +38463,8 @@
                         },
                         "protocol" : {
                           "description" : "Protocol for the target",
-                          "type" : "string"
+                          "type" : "string",
+                          "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                         },
                         "scheme" : {
                           "description" : "The protocol used for communication. Can be http or https",
@@ -39854,7 +39885,8 @@
             },
             "protocol" : {
               "description" : "Protocol for the target",
-              "type" : "string"
+              "type" : "string",
+              "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
             },
             "hostname" : {
               "description" : "hostname of the target",
@@ -41735,7 +41767,8 @@
                     },
                     "protocol" : {
                       "description" : "Protocol for the target",
-                      "type" : "string"
+                      "type" : "string",
+                      "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                     },
                     "scheme" : {
                       "description" : "The protocol used for communication. Can be http or https",
@@ -42001,7 +42034,8 @@
                         },
                         "protocol" : {
                           "description" : "Protocol for the target",
-                          "type" : "string"
+                          "type" : "string",
+                          "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                         },
                         "scheme" : {
                           "description" : "The protocol used for communication. Can be http or https",
@@ -43653,7 +43687,8 @@
             },
             "protocol" : {
               "description" : "Protocol for the target",
-              "type" : "string"
+              "type" : "string",
+              "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
             },
             "hostname" : {
               "description" : "hostname of the target",
@@ -44166,7 +44201,8 @@
                     },
                     "protocol" : {
                       "description" : "Protocol for the target",
-                      "type" : "string"
+                      "type" : "string",
+                      "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
                     },
                     "hostname" : {
                       "description" : "hostname of the target",
@@ -45016,7 +45052,8 @@
           },
           "protocol" : {
             "description" : "Protocol for the target",
-            "type" : "string"
+            "type" : "string",
+            "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
           },
           "hostname" : {
             "description" : "hostname of the target",
@@ -46186,7 +46223,8 @@
         },
         "protocol" : {
           "description" : "Protocol for the target",
-          "type" : "string"
+          "type" : "string",
+          "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
         },
         "scheme" : {
           "description" : "The protocol used for communication. Can be http or https",
@@ -46573,7 +46611,8 @@
       },
       "protocol" : {
         "description" : "Protocol for the target",
-        "type" : "string"
+        "type" : "string",
+        "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0" ]
       },
       "hostname" : {
         "description" : "hostname of the target",
