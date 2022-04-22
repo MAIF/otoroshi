@@ -128,12 +128,19 @@ case "${1}" in
     build_jdk19 $2
     build_graal $2
     cleanup
+    echo "\nnow pushing maif/otoroshi:$2\n"
     docker push "maif/otoroshi:$2"
+    echo "\nnow pushing maif/otoroshi:$2-jdk11\n"
     docker push "maif/otoroshi:$2-jdk11"
+    echo "\nnow pushing maif/otoroshi:$2-jdk17\n"
     docker push "maif/otoroshi:$2-jdk17"
+    echo "\nnow pushing maif/otoroshi:$2-jdk18\n"
     docker push "maif/otoroshi:$2-jdk18"
+    echo "\nnow pushing maif/otoroshi:$2-jdk19\n"
     docker push "maif/otoroshi:$2-jdk19"
+    echo "\nnow pushing maif/otoroshi:$2-graal\n"
     docker push "maif/otoroshi:$2-graal"
+    echo "\nnow pushing maif/otoroshi:latest\n"
     docker push "maif/otoroshi:latest"
     ;;
   build-and-push-snapshot)
