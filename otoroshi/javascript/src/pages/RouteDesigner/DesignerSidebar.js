@@ -12,7 +12,7 @@ export default ({ route }) => (
     </li>
     <li className="nav-item">
       <Link to={`/routes/${route.id}?tab=informations`} className="nav-link">
-        Informations
+        Route informations
       </Link>
     </li>
     <li className="nav-item">
@@ -22,7 +22,7 @@ export default ({ route }) => (
     </li>
     <li className="nav-item">
       <Link to={`/routes/${route.id}?tab=try-it`} className="nav-link">
-        Try route
+        Route tester
       </Link>
     </li>
   </ul>
