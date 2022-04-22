@@ -623,7 +623,9 @@ const Group = ({ group, elements, addNode, ...props }) => {
           {group.charAt(0).toUpperCase() + group.slice(1)}
         </span>
       </div>
-      {(props.forceOpen || open) && <PluginsStack elements={elements} addNode={addNode} {...props} />}
+      {(props.forceOpen || open) && (
+        <PluginsStack elements={elements} addNode={addNode} {...props} />
+      )}
     </div>
   );
 };
@@ -1140,7 +1142,7 @@ const Description = ({ text, fullText }) => {
 
   const textLength = text ? text.length : 0;
   const overflows = textLength > 300;
-  const content = text ? (overflows && !showMore ? (text.slice(0, 300) + ' ...') : text) : '...';
+  const content = text ? (overflows && !showMore ? text.slice(0, 300) + ' ...' : text) : '...';
 
   return (
     <>
