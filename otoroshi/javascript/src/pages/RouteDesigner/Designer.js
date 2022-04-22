@@ -268,7 +268,7 @@ export default ({ value }) => {
           ...route.plugins,
           {
             plugin: either(newNode.legacy, LEGACY_PLUGINS_WRAPPER[newNode.pluginType], newNode.id),
-            enabled: node.enabled || false,
+            enabled: node.enabled || true,
             debug: node.debug || false,
             include: node.include || [],
             exclude: node.exclude || [],
