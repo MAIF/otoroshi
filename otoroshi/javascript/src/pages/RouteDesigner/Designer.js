@@ -125,6 +125,7 @@ export default ({ value }) => {
     enabled: false,
   });
   const [loading, setLoading] = useState(true);
+  const [searched, setSearched] = useState('');
   const location = useLocation();
 
   const [changed, setChanged] = useState(false);
@@ -286,6 +287,7 @@ export default ({ value }) => {
   };
 
   const handleSearch = (search) => {
+    setSearched(search);
     setPlugins(
       plugins.map((plugin) => ({
         ...plugin,
@@ -390,6 +392,7 @@ export default ({ value }) => {
             <SearchBar handleSearch={handleSearch} />
             <div className="relative-container" id="plugins-stack-container">
               <PluginsStack
+                forceOpen={!!searched}
                 elements={plugins.reduce(
                   (acc, plugin) => {
                     if (plugin.selected || plugin.filtered) return acc;
@@ -620,7 +623,7 @@ const Group = ({ group, elements, addNode, ...props }) => {
           {group.charAt(0).toUpperCase() + group.slice(1)}
         </span>
       </div>
-      {open && <PluginsStack elements={elements} addNode={addNode} {...props} />}
+      {(props.forceOpen || open) && <PluginsStack elements={elements} addNode={addNode} {...props} />}
     </div>
   );
 };

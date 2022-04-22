@@ -80,6 +80,11 @@ export const Informations = (props) => {
   };
 
   const flow = [
+    {
+      label: 'Location',
+      flow: ['_loc'],
+      collapsed: false,
+    },
     'id',
     'name',
     'enabled',
@@ -90,16 +95,9 @@ export const Informations = (props) => {
     {
       label: 'Advanced',
       flow: ['metadata', 'tags'],
-      collapsed: true,
-    },
-    {
-      label: 'Location',
-      flow: ['_loc'],
-      collapsed: true,
+      collapsed: false,
     },
   ];
-
-  console.log(props.value);
 
   return (
     <div className="designer-form">

@@ -15,7 +15,8 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
     convertSchemasToForms(JsObject(spec).fields)
   }
 
-  def openapiPropertiesToForms(properties: JsObject): JsValue = {
+  def openapiPropertiesToForms(properties: JsObject, typeName: String): JsValue = {
+    println(typeName)
     properties.fields.foldLeft(Json.obj()) { case (props, prop) =>
       val `type`: String   = (prop._2 \ "type").asOpt[String].getOrElse("unknown type")
       val label: String    = prop._1
@@ -56,11 +57,20 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
         )
       }
 
+      if (typeName == "otoroshi.next.plugins.ContextValidationConfig" && label == "value" && `type` == "object") {
+        informations = informations ++ Json.obj(
+          "format" -> "code",
+          "props"  -> Json.obj(
+            "mode" -> "json"
+          )
+        )
+      }
+
       props ++ Json.obj(
         label -> (if (isArray)
                     (prop._2 \ "items" \ "properties").asOpt[JsObject] match {
                       case Some(subProperties) =>
-                        val schema = openapiPropertiesToForms(subProperties)
+                        val schema = openapiPropertiesToForms(subProperties, typeName)
                         informations ++ Json.obj(
                           "schema" -> schema,
                           "flow"   -> schema
@@ -79,7 +89,7 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
                   else if (`type` == "object")
                     (prop._2 \ "properties").asOpt[JsObject] match {
                       case Some(subProperties) =>
-                        val schema = openapiPropertiesToForms(subProperties)
+                        val schema = openapiPropertiesToForms(subProperties, typeName)
                         informations ++ Json.obj(
                           "schema" -> schema,
                           "flow"   -> schema.as[JsObject].keys
@@ -107,7 +117,7 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
       .map(schema => {
         val outSchema = (schema._2 \ "properties")
           .asOpt[JsObject]
-          .map(openapiPropertiesToForms)
+          .map(obj => openapiPropertiesToForms(obj, schema._1))
           .getOrElse(Json.obj())
           .as[JsValue]
 
