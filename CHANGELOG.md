@@ -4,11 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.9] - 2022-04-22
+
+https://github.com/MAIF/otoroshi/milestone/40?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.5.8...v1.5.9
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.9
+
+- fix bad config. reference that prevents otoroshi to start (#1144)
+
 ## [1.5.8] - 2022-04-21
 
 https://github.com/MAIF/otoroshi/milestone/39?closed=1
 https://github.com/MAIF/otoroshi/compare/v1.5.7...v1.5.8
 https://github.com/MAIF/otoroshi/releases/tag/v1.5.8
+
+**THIS RELEASE IS BROKEN, PLEASE UPGRADE DIRECTLY TO 1.5.9**
 
 - fix bad config. reference that prevents otoroshi to start (#1143)
 
@@ -17,6 +27,8 @@ https://github.com/MAIF/otoroshi/releases/tag/v1.5.8
 https://github.com/MAIF/otoroshi/milestone/38?closed=1
 https://github.com/MAIF/otoroshi/compare/v1.5.6...v1.5.7
 https://github.com/MAIF/otoroshi/releases/tag/v1.5.7
+
+**THIS RELEASE IS BROKEN, PLEASE UPGRADE DIRECTLY TO 1.5.8**
 
 - Admin login not working while running the app in the default mode (#1137)
 - fix ${otoroshi.domain} reference in config. file for cookie domain (#1138)
