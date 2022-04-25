@@ -30,6 +30,7 @@ const Dot = ({
   className,
   icon,
   children,
+  prefix,
   clickable,
   onClick,
   highlighted,
@@ -52,6 +53,7 @@ const Dot = ({
       if (onClick) onClick(e);
     }}>
     {enabled !== undefined && <Status value={enabled} />}
+    {prefix && prefix}
     {icon && <i className={`fas fa-${icon} dot-icon`} />}
     {children && children}
 
@@ -565,7 +567,7 @@ export default ({ value }) => {
                           onRemove={removeNode}
                         />
                       ))}
-                      <Dot className="arrow-flow" icon="chevron-down" selectedNode={selectedNode} />
+                      <Dot className="arrow-flow" icon="chevron-down" selectedNode={selectedNode} prefix="request" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }} />
                       <VerticalLine highlighted={!selectedNode} />
                       {inputNodes.slice(1).map((value, i) => {
                         return (
@@ -588,7 +590,7 @@ export default ({ value }) => {
                   </div>
                   <div className="col-sm-6 pe-3 flex-column">
                     <div className="main-view">
-                      <Dot className="arrow-flow" icon="chevron-up" selectedNode={selectedNode} />
+                      <Dot className="arrow-flow" icon="chevron-up" selectedNode={selectedNode}  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>response</Dot>
                       <VerticalLine highlighted={!selectedNode} />
                       {outputNodes.map((value, i) => (
                         <NodeElement
@@ -773,7 +775,7 @@ const UnselectedNode = ({ hideText, route }) => {
           <span style={{ fontStyle: 'italic' }}> Start by selecting a plugin to configure it</span>
         </div>
         <div style={{ marginTop: 20 }}>
-          <h3 style={{ fontSize: '1.25rem' }}>frontend</h3>
+          <h3 style={{ fontSize: '1.25rem' }}>Frontend</h3>
           <span>this route is exposed on</span>
           <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 10, marginTop: 10, paddingTop: 10, paddingBottom: 10, backgroundColor: '#555', borderRadius: 3 }}>
             {frontend.domains.map(domain => {
@@ -813,7 +815,7 @@ const UnselectedNode = ({ hideText, route }) => {
           )}
         </div>
         <div style={{ marginTop: 20 }}>
-          <h3 style={{ fontSize: '1.25rem' }}>backend</h3>
+          <h3 style={{ fontSize: '1.25rem' }}>Backend</h3>
           <span>this route will forward requests to</span>
           <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 10, marginTop: 10, paddingTop: 10, paddingBottom: 10, backgroundColor: '#555', borderRadius: 3 }}>
             {backend.targets.map(target => {
@@ -822,9 +824,10 @@ const UnselectedNode = ({ hideText, route }) => {
               const hostname = target.ip_address ? `${target.hostname}@${target.ip_address}` : target.hostname;
               const end = (rewrite || frontend.strip_path) ? path : `/<request_path>${path}`;
               const start = target.tls ? 'https://' : 'http://'
+              const mtls = (target.tls_config && target.tls_config.enabled && ([ ...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0)) ? <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>mTLS</span>: <span></span>;
               return (
                 <div style={{ paddingLeft: 10, paddingRight: 10, display: 'flex', flexDirection: 'row' }}>
-                  <span style={{ fontFamily: 'monospace'}}>{start}{hostname}:{target.port}{end}</span>
+                  <span style={{ fontFamily: 'monospace'}}>{mtls}{start}{hostname}:{target.port}{end}</span>
                 </div>
               );
             })}
