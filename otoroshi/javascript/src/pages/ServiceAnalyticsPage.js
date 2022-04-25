@@ -8,6 +8,8 @@ import moment from 'moment';
 
 import { OtoDatePicker } from '../components/datepicker';
 
+import DesignerSidebar from './RouteDesigner/DesignerSidebar'
+
 export class ServiceAnalyticsPage extends Component {
   state = {
     service: null,
@@ -17,7 +19,16 @@ export class ServiceAnalyticsPage extends Component {
     loading: true,
   };
 
+  onRoutes = window.location.pathname.indexOf('/bo/dashboard/routes') === 0;
+
   sidebarContent(name) {
+    if (this.onRoutes) {
+      return (
+        <DesignerSidebar
+          route={{ id: this.props.params.routeId, name }}
+        />
+      );
+    }
     return (
       <ServiceSidebar
         env={this.state.service.env}
@@ -28,8 +39,9 @@ export class ServiceAnalyticsPage extends Component {
   }
 
   componentDidMount() {
-    this.props.setTitle(`Service analytics`);
-    BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId).then(
+    this.onRoutes ? this.props.setTitle(`Route analytics`) : this.props.setTitle(`Service analytics`);
+    const fu = this.onRoutes ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId) : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
+    fu.then(
       (service) => {
         this.setState({ service }, () => {
           this.update();

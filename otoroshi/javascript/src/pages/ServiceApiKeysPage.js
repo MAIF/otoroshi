@@ -6,6 +6,8 @@ import { ServiceSidebar } from '../components/ServiceSidebar';
 import faker from 'faker';
 import { Restrictions } from '../components/Restrictions';
 
+import DesignerSidebar from './RouteDesigner/DesignerSidebar'
+
 const Both = ({ label, rawValue }) => (
   <div className="row mb-3">
     <label className="col-sm-2 col-form-label">{label}</label>
@@ -617,7 +619,16 @@ export class ServiceApiKeysPage extends Component {
     service: null,
   };
 
+  onRoutes = window.location.pathname.indexOf('/bo/dashboard/routes') === 0;
+
   sidebarContent(name) {
+    if (this.onRoutes) {
+      return (
+        <DesignerSidebar
+          route={{ id: this.props.params.routeId, name }}
+        />
+      );
+    }
     return (
       <ServiceSidebar
         env={this.state.service.env}
@@ -629,9 +640,10 @@ export class ServiceApiKeysPage extends Component {
 
   componentDidMount() {
     BackOfficeServices.env().then((env) => this.setState({ env }));
-    BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId).then(
+    const fu = this.onRoutes ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId) : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
+    fu.then(
       (service) => {
-        this.props.setTitle(`Service Api Keys`);
+        this.onRoute ? this.props.setTitle(`Routes Api Keys`) : this.props.setTitle(`Service Api Keys`);
         this.setState({ service }, () => {
           this.props.setSidebarContent(this.sidebarContent(service.name));
           if (this.table) {
@@ -665,7 +677,7 @@ export class ServiceApiKeysPage extends Component {
       <Table
         parentProps={this.props}
         selfUrl={`lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`}
-        defaultTitle="Service Api Keys"
+        defaultTitle={this.onRoute ? "Route Api Keys" : "Service Api Keys"}
         defaultValue={() =>
           BackOfficeServices.createNewApikey().then((apk) => ({
             ...apk,

@@ -5,6 +5,7 @@ import { Histogram } from '../components/recharts';
 import { BooleanInput } from '../components/inputs';
 import { Uptime, formatPercentage } from '../components/Status';
 import * as BackOfficeServices from '../services/BackOfficeServices';
+import DesignerSidebar from './RouteDesigner/DesignerSidebar'
 
 import 'antd/dist/antd.css';
 
@@ -17,6 +18,8 @@ export class ServiceHealthPage extends Component {
     stopTheCountUnknownStatus: true,
   };
 
+  onRoutes = window.location.pathname.indexOf('/bo/dashboard/routes') === 0;
+
   colors = {
     RED: '#d50200',
     YELLOW: '#ff8900',
@@ -25,10 +28,11 @@ export class ServiceHealthPage extends Component {
   };
 
   componentDidMount() {
-    BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId).then(
+    const fu = this.onRoutes ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId) : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
+    fu.then(
       (service) => {
         this.setState({ service }, () => {
-          if (service.healthCheck.enabled) {
+          if ((this.onRoute && service.backend.health_check && service.backend.health_check.enabled) || (service.healthCheck && service.healthCheck.enabled)) {
             this.setState({ health: true });
 
             Promise.all([
@@ -38,7 +42,11 @@ export class ServiceHealthPage extends Component {
             ]).then(([evts, status, responsesTime]) => {
               this.setState({ status, responsesTime }, () => {
                 const color = evts[0].health ? this.colors[evts[0].health] : 'grey';
-                this.title = (
+                this.title = this.onRoute ? (
+                  <span>
+                    Route health is <i className="fas fa-heart" style={{ color }} />
+                  </span>
+                ) : (
                   <span>
                     Service health is <i className="fas fa-heart" style={{ color }} />
                   </span>
@@ -57,6 +65,13 @@ export class ServiceHealthPage extends Component {
   }
 
   sidebarContent(name) {
+    if (this.onRoutes) {
+      return (
+        <DesignerSidebar
+          route={{ id: this.props.params.routeId, name }}
+        />
+      );
+    }
     return (
       <ServiceSidebar
         env={this.state.service.env}

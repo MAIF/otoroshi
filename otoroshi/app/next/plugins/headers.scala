@@ -53,7 +53,7 @@ object NgHeaderValuesConfig {
 class OverrideHost extends NgRequestTransformer {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Standard)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = false
@@ -88,7 +88,7 @@ class HeadersValidation extends NgAccessValidator {
   private val configReads: Reads[NgHeaderValuesConfig] = NgHeaderValuesConfig.format
 
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Standard)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true
@@ -132,7 +132,7 @@ class AdditionalHeadersOut extends NgRequestTransformer {
   private val configReads: Reads[NgHeaderValuesConfig] = NgHeaderValuesConfig.format
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Standard)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true
@@ -172,7 +172,7 @@ class AdditionalHeadersIn extends NgRequestTransformer {
   private val configReads: Reads[NgHeaderValuesConfig] = NgHeaderValuesConfig.format
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Standard)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true
@@ -212,7 +212,7 @@ class MissingHeadersIn extends NgRequestTransformer {
   private val configReads: Reads[NgHeaderValuesConfig] = NgHeaderValuesConfig.format
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Standard)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true
@@ -259,7 +259,7 @@ class MissingHeadersOut extends NgRequestTransformer {
   private val configReads: Reads[NgHeaderValuesConfig] = NgHeaderValuesConfig.format
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Standard)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true
@@ -303,7 +303,7 @@ class MissingHeadersOut extends NgRequestTransformer {
 class RemoveHeadersOut extends NgRequestTransformer {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Standard)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   private val configReads: Reads[NgHeaderNamesConfig] = NgHeaderNamesConfig.format
@@ -335,7 +335,7 @@ class RemoveHeadersIn extends NgRequestTransformer {
   private val configReads: Reads[NgHeaderNamesConfig] = NgHeaderNamesConfig.format
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Standard)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true
@@ -365,7 +365,7 @@ class SendOtoroshiHeadersBack extends NgRequestTransformer {
   import otoroshi.utils.http.HeadersHelperImplicits._
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Standard)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = false
@@ -437,7 +437,7 @@ class SendOtoroshiHeadersBack extends NgRequestTransformer {
 class XForwardedHeaders extends NgRequestTransformer {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Standard)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = false

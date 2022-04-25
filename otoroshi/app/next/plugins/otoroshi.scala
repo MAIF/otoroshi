@@ -75,7 +75,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
   private val logger = Logger("otoroshi-next-plugins-otoroshi-challenge")
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security, NgPluginCategory.Standard)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = false
@@ -329,7 +329,7 @@ class OtoroshiInfos extends NgRequestTransformer {
   private val logger = Logger("otoroshi-next-plugins-otoroshi-infos")
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security, NgPluginCategory.Standard)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Security, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = false

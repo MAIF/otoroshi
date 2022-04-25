@@ -1207,7 +1207,11 @@ const Description = ({ text, steps }) => {
 
   const textLength = text ? text.length : 0;
   const overflows = textLength > 300;
-  const content = text ? (overflows && !showMore ? text.slice(0, 300) + ' ...' : text) : '...';
+  let content = text ? (overflows && !showMore ? text.slice(0, 300) + ' ...' : text) : '...';
+
+  if (content.split('```').length % 2 === 0) {
+    content = content + '\n```\n';
+  }
 
   return (
     <>
