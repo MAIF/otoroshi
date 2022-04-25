@@ -687,7 +687,7 @@ const UnselectedNode = ({ hideText, route }) => {
   if (route && route.frontend && route.backend && !hideText) {
     const frontend = route.frontend;
     const backend = route.backend;
-    const allMethods = (frontend.methods && frontend.methods.length > 0) ? frontend.methods.map(m => <span className="badge bg-success">{m}</span>) : [<span className="badge bg-success">*</span>];
+    const allMethods = (frontend.methods && frontend.methods.length > 0) ? frontend.methods.map(m => <span className="badge bg-success">{m}</span>) : [<span className="badge bg-success">ALL</span>];
     return (
       <>
         <div className="d-flex-between dark-background py-2 ps-2">
