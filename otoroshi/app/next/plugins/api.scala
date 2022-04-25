@@ -190,7 +190,7 @@ object NgPluginCategory {
   case object Experimental    extends NgPluginCategory { def name: String = "Experimental"    }
   case object Integrations    extends NgPluginCategory { def name: String = "Integrations"    }
   case object Tunnel          extends NgPluginCategory { def name: String = "Tunnel"          }
-  case object Classic        extends NgPluginCategory { def name: String = "Classic"          }
+  case object Classic         extends NgPluginCategory { def name: String = "Classic"         }
 
   val all = Seq(
     Classic,

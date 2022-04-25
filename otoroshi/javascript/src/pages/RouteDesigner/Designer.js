@@ -23,7 +23,11 @@ import { merge } from 'lodash';
 import { cloneDeep } from 'lodash';
 
 const Status = ({ value }) => (
-  <div className="status-dot" style={{ backgroundColor: value ? '#198754' : '#D5443F' }} />
+  <div className="status-dot" title={value ? 'plugin enabled' : 'plugin disabled'} style={{ backgroundColor: value ? '#198754' : '#D5443F' }} />
+);
+
+const Legacy = ({ value }) => (
+  <div className="legacy-dot" title="legacy plugin" style={{ display: !!value ? 'block' : 'none' }} />
 );
 
 const Dot = ({
@@ -36,6 +40,7 @@ const Dot = ({
   highlighted,
   selectedNode,
   enabled,
+  legacy,
   onUp,
   onDown,
   style = {},
@@ -53,6 +58,7 @@ const Dot = ({
       if (onClick) onClick(e);
     }}>
     {enabled !== undefined && <Status value={enabled} />}
+    {legacy !== undefined && <Legacy value={legacy} />}
     {prefix && prefix}
     {icon && <i className={`fas fa-${icon} dot-icon`} />}
     {children && children}
@@ -85,7 +91,7 @@ const NodeElement = ({
   onDown,
   onRemove
 }) => {
-  const { id, name, index } = element;
+  const { id, name, index, legacy } = element;
   const highlighted =
     selectedNode &&
     selectedNode.id === id &&
@@ -110,6 +116,7 @@ const NodeElement = ({
           else setSelectedNode(element);
         }}
         highlighted={highlighted}
+        legacy={legacy}
         enabled={enabled}>
         <span className="dot-text">{name || id}</span>
         {highlighted && <RemoveButton onRemove={onRemove} />}
@@ -671,7 +678,10 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
       showPreview(element);
     }}>
     <div className="d-flex-between element-text">
-      {element.name.charAt(0).toUpperCase() + element.name.slice(1)}
+      <div>
+        {element.legacy ? <span className="badge bg-warning text-dark" style={{ marginRight: 5 }}>legacy</span>: ''}
+        {element.name.charAt(0).toUpperCase() + element.name.slice(1)}
+      </div>
       <i
         className={`fas fa-${element.plugin_multi_inst ? 'plus' : 'arrow-right'} element-arrow`}
         onClick={(e) => {
