@@ -62,6 +62,12 @@ const Dot = ({
   </div>
 );
 
+const RemoveButton = ({ onRemove }) => {
+  return <div onClick={onRemove}>
+    <i className='fas fa-times' />
+  </div>
+}
+
 const NodeElement = ({
   className,
   element,
@@ -74,7 +80,8 @@ const NodeElement = ({
   enabled,
   onUnsavedChanges,
   onUp,
-  onDown
+  onDown,
+  onRemove
 }) => {
   const { id, name, index } = element;
   const highlighted =
@@ -103,6 +110,7 @@ const NodeElement = ({
         highlighted={highlighted}
         enabled={enabled}>
         <span className="dot-text">{name || id}</span>
+        {highlighted && <RemoveButton onRemove={onRemove} />}
       </Dot>
       {!hideLink && <VerticalLine highlighted={highlighted} />}
     </>
@@ -204,7 +212,6 @@ export default ({ value }) => {
               (p) => p.id === ref.plugin || p.id === ref.config.plugin
             );
 
-            console.log(plugin, formatedPlugins, ref)
             const onInputStream = (plugin.plugin_steps || []).some((s) =>
               ['PreRoute', 'ValidateAccess', 'TransformRequest'].includes(s)
             );
@@ -232,27 +239,35 @@ export default ({ value }) => {
     !EXCLUDED_PLUGINS.plugin_visibility.includes(plugin.plugin_visibility) &&
     !EXCLUDED_PLUGINS.ids.includes(plugin.id.replace('cp:', ''));
 
-  const removeNode = (id, idx) => {
-    setNodes(
-      nodes
-        .filter((node, i) => !(node.id === id && i === idx))
-        .map((node, i) => ({
-          ...node,
-          index: i,
-        }))
-    );
+  const removeNode = e => {
+    e.stopPropagation();
+    const id = selectedNode.id
+    const idx = selectedNode.index
 
-    saveChanges({
-      ...route,
-      plugins: route.plugins.filter((_, i) => i + 2 !== idx),
+    window.newConfirm(`Are you sure to delete this node ?`).then((ok) => {
+      if (ok) {
+        setNodes(
+          nodes
+            .filter((node, i) => !(node.id === id && i === idx))
+            .map((node, i) => ({
+              ...node,
+              index: i,
+            }))
+        );
+
+        saveChanges({
+          ...route,
+          plugins: route.plugins.filter((_, i) => i + 2 !== idx),
+        });
+
+        setPlugins(
+          plugins.map((plugin) => {
+            if (plugin.id === id) return { ...plugin, selected: undefined };
+            return plugin;
+          })
+        );
+      }
     });
-
-    setPlugins(
-      plugins.map((plugin) => {
-        if (plugin.id === id) return { ...plugin, selected: undefined };
-        return plugin;
-      })
-    );
   };
 
   const addNode = (node) => {
@@ -319,7 +334,7 @@ export default ({ value }) => {
     const aPos = possibilities.findIndex(node => node.index === a.index)
     const b = possibilities.find((_, i) => i === aPos + offset)
 
-    console.log(possibilities, aPos, a, b)
+    // console.log(possibilities, aPos, a, b)
 
     if (b && a && b.index > 1) {
       setNodes(nodes.map((node, i) => {
@@ -330,7 +345,6 @@ export default ({ value }) => {
         return { ...node, index: i }
       }))
 
-      console.log({ ...selectedNode })
       setSelectedNode({
         ...selectedNode,
         index: b.index
@@ -442,12 +456,15 @@ export default ({ value }) => {
     } else onConfirm();
   };
 
-  const pluginIsEnabled = (value) =>
-    route.plugins.find(
-      (p, i) => (p.plugin === value.id || p.config.plugin === value.id) && i + 2 === value.index
-    )?.enabled;
+  const pluginIsEnabled = (value) => {
+    // console.log(route.plugins, value.id, value.index,  route.plugins.findIndex(
+    //   (p, i) => (p.plugin === value.id || p.config.plugin === value.id)
+    // ))
 
-  console.log(route.plugins)
+    const index = nodes.findIndex((p, i) => p.id === value.id && i === value.index)
+    console.log(value, index)
+    return route.plugins[index - 2]?.enabled;
+  }
 
   return (
     <Loader loading={loading}>
@@ -511,7 +528,7 @@ export default ({ value }) => {
               selectedNode={preview.element}
               setSelectedNode={setSelectedNode}
               updatePlugin={updatePlugin}
-              removeNode={removeNode}
+              onRemove={removeNode}
               route={route}
               plugins={plugins}
               backends={backends}
@@ -545,6 +562,7 @@ export default ({ value }) => {
                           setSelectedNode={setSelectedNode}
                           isLast={inputNodes.length - 1 === i}
                           bold={true}
+                          onRemove={removeNode}
                         />
                       ))}
                       <Dot className="arrow-flow" icon="chevron-down" selectedNode={selectedNode} />
@@ -561,6 +579,7 @@ export default ({ value }) => {
                             selectedNode={selectedNode}
                             setSelectedNode={setSelectedNode}
                             isLast={inputNodes.length - 1 === i}
+                            onRemove={removeNode}
                           />
                         );
                       })}
@@ -582,6 +601,7 @@ export default ({ value }) => {
                           setSelectedNode={setSelectedNode}
                           selectedNode={selectedNode}
                           isLast={outputNodes.length - 1 === i}
+                          onRemove={removeNode}
                         />
                       ))}
                       <VerticalLine highlighted={!selectedNode} flex={true} />
@@ -604,6 +624,7 @@ export default ({ value }) => {
                       hideLink={arr.length - 1 === i}
                       disableBorder={true}
                       bold={true}
+                      onRemove={removeNode}
                     />
                   ))}
                 </div>
@@ -617,7 +638,7 @@ export default ({ value }) => {
                     selectedNode={selectedNode}
                     setSelectedNode={setSelectedNode}
                     updatePlugin={updatePlugin}
-                    removeNode={removeNode}
+                    onRemove={removeNode}
                     route={route}
                     plugins={plugins}
                     backends={backends}
@@ -767,7 +788,7 @@ function EditView({
   selectedNode,
   setSelectedNode,
   route,
-  removeNode,
+  onRemove,
   plugins,
   updatePlugin,
   setRoute,
@@ -828,16 +849,6 @@ function EditView({
       DEFAULT_FLOW[id] :
       plugins.find((element) => element.id === id || element.id.endsWith(id))
 
-  const onRemove = (e) => {
-    e.stopPropagation();
-    window.newConfirm(`Are you sure to delete this route ?`).then((ok) => {
-      if (ok) {
-        setSelectedNode(undefined);
-        removeNode(id, index);
-      }
-    });
-  };
-
   useEffect(() => {
     let formSchema = schema || config_schema;
     let formFlow = [
@@ -861,7 +872,7 @@ function EditView({
           collapsable: true,
           collapsed: isPluginWithConfiguration,
           label: 'Informations',
-          schema: PLUGIN_INFORMATIONS_SCHEMA,
+          schema: PLUGIN_INFORMATIONS_SCHEMA
         },
       };
       if (isPluginWithConfiguration)

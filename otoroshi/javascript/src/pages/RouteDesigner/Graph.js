@@ -1,5 +1,5 @@
 import React from 'react';
-import { type, format, constraints, SingleLineCode } from '@maif/react-forms';
+import { type } from '@maif/react-forms';
 
 export const PLUGIN_INFORMATIONS_SCHEMA = {
   enabled: {
@@ -64,12 +64,8 @@ export const DEFAULT_FLOW = {
     config_schema: {
       domains: {
         type: type.string,
-        props: {
-          mode: 'json',
-        },
         array: true,
-        format: 'singleLineCode',
-        label: 'Domains',
+        label: 'Domains'
       },
     },
     config_flow: ['domains', 'stripPath', 'exact', 'headers', 'methods', 'query'],
@@ -100,7 +96,6 @@ export const DEFAULT_FLOW = {
                 setValue(`${entry}.hostname`, hostname);
 
                 const pathname = '/' + afterSchemeParts.join('/');
-                // if (getValue('plugin.root').length < 2)
                 setValue('plugin.root', pathname);
               }
             } else if (value.hostname !== previousValue.hostname) {
