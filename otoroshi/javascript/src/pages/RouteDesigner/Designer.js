@@ -741,7 +741,7 @@ const UnselectedNode = ({ hideText, route }) => {
               const path = backend.root;
               const rewrite = backend.rewrite;
               const hostname = target.ip_address ? `${target.hostname}@${target.ip_address}` : target.hostname;
-              const end = (rewrite || frontend.strip_path) ? path : `<request_path>${path}`;
+              const end = (rewrite || frontend.strip_path) ? path : `/<request_path>${path}`;
               const start = target.tls ? 'https://' : 'http://'
               return (
                 <div style={{ paddingLeft: 10, paddingRight: 10, display: 'flex', flexDirection: 'row' }}>
