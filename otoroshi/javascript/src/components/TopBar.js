@@ -571,7 +571,7 @@ export class TopBar extends Component {
             </form>
           </div>
 
-          <div className="d-flex flex-grow-1 my-1 my-md-0">
+          <div className="d-flex flex-grow-1 my-1 my-md-0" style={{ zIndex: 1001 }}>
             <div
               className="d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0"
               style={{ height: 52 }}>
