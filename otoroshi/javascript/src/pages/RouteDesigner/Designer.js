@@ -63,7 +63,7 @@ const Dot = ({
 );
 
 const RemoveButton = ({ onRemove }) => {
-  return <div onClick={onRemove}>
+  return <div onClick={onRemove} className='delete-node-button'>
     <i className='fas fa-times' />
   </div>
 }
@@ -112,7 +112,7 @@ const NodeElement = ({
         <span className="dot-text">{name || id}</span>
         {highlighted && <RemoveButton onRemove={onRemove} />}
       </Dot>
-      {!hideLink && <VerticalLine highlighted={highlighted} />}
+      {!hideLink && <VerticalLine highlighted={!selectedNode} />}
     </>
   );
 };
@@ -462,12 +462,7 @@ export default ({ value }) => {
   };
 
   const pluginIsEnabled = (value) => {
-    // console.log(route.plugins, value.id, value.index,  route.plugins.findIndex(
-    //   (p, i) => (p.plugin === value.id || p.config.plugin === value.id)
-    // ))
-
     const index = nodes.findIndex((p, i) => p.id === value.id && i === value.index)
-    console.log(value, index)
     return route.plugins[index - 2]?.enabled;
   }
 

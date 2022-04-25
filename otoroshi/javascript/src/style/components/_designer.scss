@@ -1,11 +1,16 @@
 .designer {
     pre {
         height: initial !important;
-        white-space: pre-wrap;       /* Since CSS 2.1 */
-        white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
-        white-space: -pre-wrap;      /* Opera 4-6 */
-        white-space: -o-pre-wrap;    /* Opera 7 */
-        word-wrap: break-word;       /* Internet Ex */
+        white-space: pre-wrap;
+        /* Since CSS 2.1 */
+        white-space: -moz-pre-wrap;
+        /* Mozilla, since 1999 */
+        white-space: -pre-wrap;
+        /* Opera 4-6 */
+        white-space: -o-pre-wrap;
+        /* Opera 7 */
+        word-wrap: break-word;
+        /* Internet Ex */
     }
 
     .flex {
@@ -321,7 +326,7 @@
         color: #fff;
         padding-left: 12px;
     }
-    
+
     .flow-container {
         background: rgb(60, 60, 60);
         border-radius: 4px;
@@ -369,13 +374,20 @@
         z-index: 1002;
     }
 
-    input[type="text"], input[type="number"], input[type="password"], input[type="date"], input[type="datetime"], input[type="time"] {
+    input[type="text"],
+    input[type="number"],
+    input[type="password"],
+    input[type="date"],
+    input[type="datetime"],
+    input[type="time"] {
         color: #E6E6E6;
         background-color: #595959;
         border-color: #494948;
     }
 
-    .react-form-select__control, .react-form-select__menu, .react-form-select__single-value {
+    .react-form-select__control,
+    .react-form-select__menu,
+    .react-form-select__single-value {
         color: #E6E6E6;
         background-color: #595959;
         border-color: #494948;
@@ -393,5 +405,19 @@
     .node-cursor i {
         color: #fff;
         min-width: 22px;
+    }
+
+    .delete-node-button i {
+        color: #fff;
+    }
+
+    .delete-node-button {
+        position: absolute;
+        top: -12px;
+        left: -12px;
+        border-radius: 8px;
+        min-width: 22px;
+        background-color: #595959;
+        border: 1px solid #fff;
     }
 }
