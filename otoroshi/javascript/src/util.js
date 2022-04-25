@@ -12,6 +12,8 @@ const reservedCamelWords = [
   'visibleOnCollapse',
 ];
 
+export const REQUEST_STEPS_FLOW = ['PreRoute', 'ValidateAccess', 'TransformRequest']
+
 export const camelToSnakeCase = (str) =>
   str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 

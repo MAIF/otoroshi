@@ -14,7 +14,7 @@ import {
 } from './Graph';
 import Loader from './Loader';
 import { isEqual } from "lodash";
-import { toUpperCaseLabels, camelToSnake, camelToSnakeFlow } from '../../util';
+import { toUpperCaseLabels, camelToSnake, camelToSnakeFlow, REQUEST_STEPS_FLOW } from '../../util';
 import { Form, type, format, validate } from '@maif/react-forms';
 import { CodeInput } from '@maif/react-forms';
 import { MarkdownInput } from '@maif/react-forms';
@@ -159,9 +159,6 @@ export default ({ value }) => {
       nextClient.form(nextClient.ENTITIES.FRONTENDS),
       nextClient.form(nextClient.ENTITIES.BACKENDS),
     ]).then(([backends, route, categories, plugins, oldPlugins, frontendForm, backendForm]) => {
-
-      console.log('plugins', plugins)
-
       const formatedPlugins = [
         ...plugins,
         ...oldPlugins.map((p) => ({
@@ -175,8 +172,6 @@ export default ({ value }) => {
           config_schema: toUpperCaseLabels(plugin.config_schema || plugin.configSchema || {}),
           config: plugin.default_config || plugin.defaultConfig,
         }));
-
-      console.log('formatedPlugins', formatedPlugins)
 
       setBackends(backends);
       setCategories([
@@ -212,24 +207,11 @@ export default ({ value }) => {
             ),
             config_flow: DEFAULT_FLOW.Backend.config_flow,
           },
-          ...route.plugins.map((ref) => {
-            const plugin = formatedPlugins.find(
+          ...route.plugins.map((ref) => ({
+            ...formatedPlugins.find(
               (p) => p.id === ref.plugin || p.id === ref.config.plugin
-            );
-
-            const onInputStream = (plugin.plugin_steps || []).some((s) =>
-              ['PreRoute', 'ValidateAccess', 'TransformRequest'].includes(s)
-            );
-            const onOutputStream = (plugin.plugin_steps || []).some((s) =>
-              ['TransformResponse'].includes(s)
-            );
-
-            return {
-              ...plugin,
-              onOutputStream,
-              onInputStream,
-            };
-          }),
+            )
+          }))
         ].map((node, i) => ({ ...node, index: i }))
       );
 
@@ -272,6 +254,7 @@ export default ({ value }) => {
           })
         );
       }
+      setSelectedNode(undefined)
     });
   };
 
@@ -281,46 +264,47 @@ export default ({ value }) => {
       index: nodes.length,
     };
 
-    if (
-      (newNode.plugin_steps || []).some((s) => ['TransformResponse'].includes(s)) ||
-      newNode.onTargetStream ||
-      (newNode.plugin_steps || []).some((s) =>
-        ['PreRoute', 'ValidateAccess', 'TransformRequest'].includes(s)
-      )
-    ) {
-      setPlugins(
-        plugins.map((p) => {
-          if (p.id === newNode.id) p.selected = !p.plugin_multi_inst;
-          return p;
-        })
-      );
+    setPlugins(
+      plugins.map((p) => {
+        if (p.id === newNode.id) p.selected = !p.plugin_multi_inst;
+        return p;
+      })
+    );
 
-      const newRoute = {
-        ...route,
-        plugins: [
-          ...route.plugins,
-          {
-            plugin: newNode.legacy ? LEGACY_PLUGINS_WRAPPER[newNode.pluginType] : newNode.id,
-            enabled: node.enabled || true,
-            debug: node.debug || false,
-            include: node.include || [],
-            exclude: node.exclude || [],
-            config: {
-              ...newNode.config,
-              plugin: newNode.legacy ? newNode.id : undefined,
-            },
-          },
-        ],
-      };
-
-      setNodes([...nodes, newNode]);
-      setSelectedNode(newNode);
-      saveChanges(newRoute);
+    let steps = [...REQUEST_STEPS_FLOW, 'TransformResponse']
+    const newPlugin = {
+      plugin: newNode.legacy ? LEGACY_PLUGINS_WRAPPER[newNode.pluginType] : newNode.id,
+      enabled: node.enabled || true,
+      debug: node.debug || false,
+      include: node.include || [],
+      exclude: node.exclude || [],
+      config: {
+        ...newNode.config,
+        plugin: newNode.legacy ? newNode.id : undefined,
+      },
     }
+
+    const newRoute = {
+      ...route,
+      plugins: [
+        ...route.plugins.reduce((acc, curr) => {
+          const shouldSkip = (newPlugin.plugin_steps || []).some(s => s === steps[0])
+
+          if (shouldSkip) {
+            steps = steps.slice(1)
+            return [...acc, newPlugin]
+          } else
+            return [...acc, curr]
+        }, []),
+      ],
+    };
+
+    setNodes([...nodes, newNode]);
+    setSelectedNode(newNode);
+    saveChanges(newRoute);
   };
 
   const swap = (aIndex, offset) => {
-    console.log("swap", aIndex, offset)
     const a = { ...nodes.find((_, i) => i === aIndex) }
 
     let possibilities = []
@@ -338,8 +322,6 @@ export default ({ value }) => {
 
     const aPos = possibilities.findIndex(node => node.index === a.index)
     const b = possibilities.find((_, i) => i === aPos + offset)
-
-    // console.log(possibilities, aPos, a, b)
 
     if (b && a && b.index > 1) {
       setNodes(nodes.map((node, i) => {
@@ -437,14 +419,14 @@ export default ({ value }) => {
 
   const inputNodes = sortInputStream(
     nodes.filter((node) =>
-      (node.plugin_steps || []).some((s) =>
-        ['PreRoute', 'ValidateAccess', 'TransformRequest'].includes(s)
-      )
+      (node.plugin_steps || []).some(s => REQUEST_STEPS_FLOW.includes(s))
     )
   );
 
   // console.log("ROUTE", route)
   console.log("NODES", nodes)
+  console.log("ROUTE", route.plugins)
+  // console.log("INPUT NODES", inputNodes)
 
   const targetNodes = nodes.filter((node) => node.onTargetStream);
   const outputNodes = nodes.filter((node) =>
@@ -464,6 +446,36 @@ export default ({ value }) => {
   const pluginIsEnabled = (value) => {
     const index = nodes.findIndex((p, i) => p.id === value.id && i === value.index)
     return route.plugins[index - 2]?.enabled;
+  }
+
+  const renderTranformerResquests = () => {
+    let steps = [...REQUEST_STEPS_FLOW]
+
+    return inputNodes.slice(1).map((value, i) => {
+      const showStep = (value.plugin_steps || []).every(s => s !== steps[0])
+
+      if (showStep)
+        steps = steps.slice(1)
+
+      return <>
+        {(showStep || i === 0) && <>
+          <span className='badge bg-warning text-dark' style={{ opacity: !selectedNode ? 1 : 0.25 }}>{steps[0]}</span>
+          <VerticalLine highlighted={!selectedNode} />
+        </>}
+        <NodeElement
+          onUp={onUp}
+          onDown={onDown}
+          onUnsavedChanges={onUnsavedChanges}
+          enabled={pluginIsEnabled(value)}
+          element={value}
+          key={`inNodes${i}`}
+          selectedNode={selectedNode}
+          setSelectedNode={setSelectedNode}
+          isLast={inputNodes.length - 1 === i}
+          onRemove={removeNode}
+        />
+      </>
+    })
   }
 
   return (
@@ -567,29 +579,14 @@ export default ({ value }) => {
                       ))}
                       <Dot className="arrow-flow" icon="chevron-down" selectedNode={selectedNode} />
                       <VerticalLine highlighted={!selectedNode} />
-                      {inputNodes.slice(1).map((value, i) => {
-                        return (
-                          <NodeElement
-                            onUp={onUp}
-                            onDown={onDown}
-                            onUnsavedChanges={onUnsavedChanges}
-                            enabled={pluginIsEnabled(value)}
-                            element={value}
-                            key={`inNodes${i}`}
-                            selectedNode={selectedNode}
-                            setSelectedNode={setSelectedNode}
-                            isLast={inputNodes.length - 1 === i}
-                            onRemove={removeNode}
-                          />
-                        );
-                      })}
+                      {renderTranformerResquests(inputNodes.slice(1))}
                       <VerticalLine highlighted={!selectedNode} flex={true} />
                     </div>
                   </div>
                   <div className="col-sm-6 pe-3 flex-column">
                     <div className="main-view">
                       <Dot className="arrow-flow" icon="chevron-up" selectedNode={selectedNode} />
-                      <VerticalLine highlighted={!selectedNode} />
+                      <VerticalLine highlighted={!selectedNode} flex={true} />
                       {outputNodes.map((value, i) => (
                         <NodeElement
                           onUp={onUp}
@@ -604,7 +601,10 @@ export default ({ value }) => {
                           onRemove={removeNode}
                         />
                       ))}
-                      <VerticalLine highlighted={!selectedNode} flex={true} />
+                      <VerticalLine highlighted={!selectedNode} />
+                      {outputNodes.length > 0 &&
+                        <span className='badge bg-warning text-dark' style={{ opacity: !selectedNode ? 1 : 0.25 }}>TransformerResponse</span>}
+                      <VerticalLine highlighted={!selectedNode} />
                     </div>
                   </div>
                 </div>
@@ -683,7 +683,11 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
 );
 
 const Group = ({ group, elements, addNode, ...props }) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(props.forceOpen);
+
+  useEffect(() => {
+    setOpen(props.forceOpen)
+  }, [props.forceOpen])
 
   return (
     <div className="group">
@@ -784,7 +788,7 @@ const UnselectedNode = ({ hideText, route }) => {
                 allMethods.map(method => {
                   return (
                     <div style={{ paddingLeft: 10, paddingRight: 10, display: 'flex', flexDirection: 'row' }}>
-                      <div style={{ width: 80 }}>{method}</div><span style={{ fontFamily: 'monospace'}}>{start}{domain}{end}</span>
+                      <div style={{ width: 80 }}>{method}</div><span style={{ fontFamily: 'monospace' }}>{start}{domain}{end}</span>
                     </div>
                   )
                 })
@@ -824,7 +828,7 @@ const UnselectedNode = ({ hideText, route }) => {
               const start = target.tls ? 'https://' : 'http://'
               return (
                 <div style={{ paddingLeft: 10, paddingRight: 10, display: 'flex', flexDirection: 'row' }}>
-                  <span style={{ fontFamily: 'monospace'}}>{start}{hostname}:{target.port}{end}</span>
+                  <span style={{ fontFamily: 'monospace' }}>{start}{hostname}:{target.port}{end}</span>
                 </div>
               );
             })}
