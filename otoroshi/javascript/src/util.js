@@ -24,8 +24,8 @@ export const camelToSnake = (obj) => {
         isFlowField
           ? value.map((step) => camelToSnakeFlow(step))
           : typeof value === 'object' && value !== null && !Array.isArray(value)
-          ? camelToSnake(value)
-          : value,
+            ? camelToSnake(value)
+            : value,
       ];
     })
   );
@@ -34,9 +34,9 @@ export const camelToSnake = (obj) => {
 export const camelToSnakeFlow = (step) => {
   return typeof step === 'object'
     ? {
-        ...step,
-        flow: step.flow.map((f) => camelToSnakeFlow(f)),
-      }
+      ...step,
+      flow: step.flow.map((f) => camelToSnakeFlow(f)),
+    }
     : camelToSnakeCase(step);
 };
 
@@ -51,13 +51,13 @@ export const toUpperCaseLabels = (obj) => {
       [key]: !value
         ? null
         : isLabelField
-        ? prefix.charAt(0).toUpperCase() + prefix.slice(1) + ' ' + sequences.join(' ').toLowerCase()
-        : typeof value === 'object' &&
-          value !== null &&
-          key !== 'transformer' &&
-          !Array.isArray(value)
-        ? toUpperCaseLabels(value)
-        : value,
+          ? prefix.charAt(0).toUpperCase() + prefix.slice(1) + ' ' + sequences.join(' ').toLowerCase()
+          : typeof value === 'object' &&
+            value !== null &&
+            key !== 'transformer' &&
+            !Array.isArray(value)
+            ? toUpperCaseLabels(value)
+            : value,
     };
   }, {});
 };

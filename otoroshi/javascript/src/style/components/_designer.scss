@@ -380,4 +380,18 @@
         background-color: #595959;
         border-color: #494948;
     }
+
+    .node-cursor {
+        position: absolute;
+        top: 0;
+        right: -22px;
+        bottom: 0;
+        align-items: center;
+        justify-content: center
+    }
+
+    .node-cursor i {
+        color: #fff;
+        min-width: 22px;
+    }
 }
