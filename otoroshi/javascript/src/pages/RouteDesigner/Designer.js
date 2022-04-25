@@ -159,6 +159,9 @@ export default ({ value }) => {
       nextClient.form(nextClient.ENTITIES.FRONTENDS),
       nextClient.form(nextClient.ENTITIES.BACKENDS),
     ]).then(([backends, route, categories, plugins, oldPlugins, frontendForm, backendForm]) => {
+
+      console.log('plugins', plugins)
+
       const formatedPlugins = [
         ...plugins,
         ...oldPlugins.map((p) => ({
@@ -172,6 +175,8 @@ export default ({ value }) => {
           config_schema: toUpperCaseLabels(plugin.config_schema || plugin.configSchema || {}),
           config: plugin.default_config || plugin.defaultConfig,
         }));
+
+      console.log('formatedPlugins', formatedPlugins)
 
       setBackends(backends);
       setCategories([
@@ -373,7 +378,7 @@ export default ({ value }) => {
     setPlugins(
       plugins.map((plugin) => ({
         ...plugin,
-        filtered: !plugin.id.toLowerCase().includes(search.toLowerCase()),
+        filtered: !(plugin.id.toLowerCase().includes(search.toLowerCase()) || plugin.name.toLowerCase().includes(search.toLowerCase())),
       }))
     );
   };
@@ -630,7 +635,7 @@ export default ({ value }) => {
                 </div>
               </div>
               <div className="col-sm-8 relative-container" style={{ paddingRight: 0 }}>
-                <UnselectedNode hideText={selectedNode} />
+                <UnselectedNode hideText={selectedNode} route={route} />
                 {selectedNode && (
                   <EditView
                     saveChanges={saveChanges}
@@ -762,12 +767,80 @@ const read = (value, path) => {
   return read(value[keys[0]], keys.slice(1).join('.'));
 };
 
-const UnselectedNode = ({ hideText }) =>
-  !hideText && (
-    <div className="d-flex-between dark-background py-2 ps-2">
-      <span style={{ fontStyle: 'italic' }}> Start by selecting a plugin</span>
-    </div>
-  );
+const UnselectedNode = ({ hideText, route }) => {
+  if (route && route.frontend && route.backend && !hideText) {
+    const frontend = route.frontend;
+    const backend = route.backend;
+    const allMethods = (frontend.methods && frontend.methods.length > 0) ? frontend.methods.map(m => <span className="badge bg-success">{m}</span>) : [<span className="badge bg-success">ALL</span>];
+    return (
+      <>
+        <div className="d-flex-between dark-background py-2 ps-2">
+          <span style={{ fontStyle: 'italic' }}> Start by selecting a plugin to configure it</span>
+        </div>
+        <div style={{ marginTop: 20 }}>
+          <h3 style={{ fontSize: '1.25rem' }}>frontend</h3>
+          <span>this route is exposed on</span>
+          <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 10, marginTop: 10, paddingTop: 10, paddingBottom: 10, backgroundColor: '#555', borderRadius: 3 }}>
+            {frontend.domains.map(domain => {
+              const exact = frontend.exact;
+              const end = exact ? '' : (domain.indexOf('/') < 0 ? '/*' : '*');
+              const start = 'http://'
+              return (
+                allMethods.map(method => {
+                  return (
+                    <div style={{ paddingLeft: 10, paddingRight: 10, display: 'flex', flexDirection: 'row' }}>
+                      <div style={{ width: 80 }}>{method}</div><span style={{ fontFamily: 'monospace'}}>{start}{domain}{end}</span>
+                    </div>
+                  )
+                })
+              );
+            })}
+          </div>
+          {frontend.query && Object.keys(frontend.query).length > 0 && (
+            <div className="">
+              <span>this route will match only if the following query params are present</span>
+              <pre style={{ padding: 10, marginTop: 10, backgroundColor: '#555', fontFamily: 'monospace', borderRadius: 3 }}>
+                <code>
+                  {Object.keys(frontend.query).map(key => `${key}: ${frontend.query[key]}`).join('\n')}
+                </code>
+              </pre>
+            </div>
+          )}
+          {frontend.headers && Object.keys(frontend.headers).length > 0 && (
+            <div className="">
+              <span>this route will match only if the following headers are present</span>
+              <pre style={{ padding: 10, marginTop: 10, backgroundColor: '#555', fontFamily: 'monospace', borderRadius: 3 }}>
+                <code>
+                  {Object.keys(frontend.headers).map(key => `${key}: ${frontend.headers[key]}`).join('\n')}
+                </code>
+              </pre>
+            </div>
+          )}
+        </div>
+        <div style={{ marginTop: 20 }}>
+          <h3 style={{ fontSize: '1.25rem' }}>backend</h3>
+          <span>this route will forward requests to</span>
+          <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 10, marginTop: 10, paddingTop: 10, paddingBottom: 10, backgroundColor: '#555', borderRadius: 3 }}>
+            {backend.targets.map(target => {
+              const path = backend.root;
+              const rewrite = backend.rewrite;
+              const hostname = target.ip_address ? `${target.hostname}@${target.ip_address}` : target.hostname;
+              const end = (rewrite || frontend.strip_path) ? path : `/<request_path>${path}`;
+              const start = target.tls ? 'https://' : 'http://'
+              return (
+                <div style={{ paddingLeft: 10, paddingRight: 10, display: 'flex', flexDirection: 'row' }}>
+                  <span style={{ fontFamily: 'monospace'}}>{start}{hostname}:{target.port}{end}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </>
+    );
+  } else {
+    return null;
+  }
+}
 
 const convertTransformer = (obj) => {
   return Object.entries(obj).reduce((acc, [key, value]) => {
