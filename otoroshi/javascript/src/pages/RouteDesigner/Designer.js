@@ -23,18 +23,24 @@ import { merge } from 'lodash';
 import { cloneDeep } from 'lodash';
 
 const Status = ({ value }) => (
-  <div className="status-dot" style={{ backgroundColor: value ? '#198754' : '#D5443F' }} />
+  <div className="status-dot" title={value ? 'plugin enabled' : 'plugin disabled'} style={{ backgroundColor: value ? '#198754' : '#D5443F' }} />
+);
+
+const Legacy = ({ value }) => (
+  <div className="legacy-dot" title="legacy plugin" style={{ display: !!value ? 'block' : 'none' }} />
 );
 
 const Dot = ({
   className,
   icon,
   children,
+  prefix,
   clickable,
   onClick,
   highlighted,
   selectedNode,
   enabled,
+  legacy,
   onUp,
   onDown,
   arrows = { up: false, down: false },
@@ -53,6 +59,8 @@ const Dot = ({
       if (onClick) onClick(e);
     }}>
     {enabled !== undefined && <Status value={enabled} />}
+    {legacy !== undefined && <Legacy value={legacy} />}
+    {prefix && prefix}
     {icon && <i className={`fas fa-${icon} dot-icon`} />}
     {children && children}
 
@@ -85,7 +93,7 @@ const NodeElement = ({
   onRemove,
   arrows
 }) => {
-  const { id, name, index } = element;
+  const { id, name, index, legacy } = element;
   const highlighted =
     selectedNode &&
     selectedNode.id === id &&
@@ -110,8 +118,9 @@ const NodeElement = ({
           else setSelectedNode(element);
         }}
         highlighted={highlighted}
-        enabled={enabled}
-        arrows={arrows}>
+        arrows={arrows}
+        legacy={legacy}
+        enabled={enabled}>
         <span className="dot-text">{name || id}</span>
         {highlighted && id !== 'Frontend' && id !== 'Backend' && <RemoveButton onRemove={onRemove} />}
       </Dot>
@@ -149,6 +158,8 @@ export default ({ value }) => {
   });
   const [loading, setLoading] = useState(true);
   const [searched, setSearched] = useState('');
+  const [expandAll, setExpandAll] = useState(false);
+  const [showLegacy, setShowLegacy] = useState((window.localStorage.getItem('io.otoroshi.next.designer.showLegacy') || 'true') === 'true');
   const location = useLocation();
 
   const [changed, setChanged] = useState(false);
@@ -454,8 +465,8 @@ export default ({ value }) => {
     )
   );
 
-  console.log("NODES", nodes)
-  console.log("ROUTE", route)
+  // console.log("NODES", nodes)
+  // console.log("ROUTE", route)
 
   const targetNodes = nodes.filter((node) => node.onTargetStream);
   const outputNodes = nodes.filter((node) =>
@@ -542,10 +553,18 @@ export default ({ value }) => {
           <div className="elements">
             <div className="plugins-background-bar" />
             <SearchBar handleSearch={handleSearch} />
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 5, marginTop: 3 }}>
+              <button type="button" className="btn btn-sm btn-warning text-light" style={{ marginRight: 5 }} onClick={(e) => {
+                window.localStorage.setItem('io.otoroshi.next.designer.showLegacy', String(!showLegacy));
+                setShowLegacy(!showLegacy);
+              }}>{showLegacy ? 'Hide legacy plugins' : 'Show legacy plugins'}</button>
+              <button type="button" className="btn btn-sm btn-warning text-light" onClick={(e) => setExpandAll(!expandAll)}>{expandAll ? 'Collapse all' : 'Expand all'}</button>
+            </div>
             <div className="relative-container" id="plugins-stack-container">
               <PluginsStack
                 forceOpen={!!searched}
-                elements={plugins.reduce(
+                expandAll={expandAll}
+                elements={plugins.filter(plugin => (showLegacy ? true : !plugin.legacy)).reduce(
                   (acc, plugin) => {
                     if (plugin.selected || plugin.filtered) return acc;
                     return acc.map((group) => {
@@ -627,7 +646,7 @@ export default ({ value }) => {
                           arrows={showArrows(value)}
                         />
                       ))}
-                      <Dot className="arrow-flow" icon="chevron-down" selectedNode={selectedNode} />
+                      <Dot className="arrow-flow" icon="chevron-down" selectedNode={selectedNode} prefix="request" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }} />
                       <VerticalLine highlighted={!selectedNode} />
                       {renderTranformerResquests(inputNodes.slice(1))}
                       <VerticalLine highlighted={!selectedNode} flex={true} />
@@ -635,7 +654,7 @@ export default ({ value }) => {
                   </div>
                   <div className="col-sm-6 pe-3 flex-column">
                     <div className="main-view">
-                      <Dot className="arrow-flow" icon="chevron-up" selectedNode={selectedNode} />
+                      <Dot className="arrow-flow" icon="chevron-up" selectedNode={selectedNode}  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>response</Dot>
                       <VerticalLine highlighted={!selectedNode} flex={true} />
                       {outputNodes.map((value, i) => (
                         <NodeElement
@@ -721,7 +740,10 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
       showPreview(element);
     }}>
     <div className="d-flex-between element-text">
-      {element.name.charAt(0).toUpperCase() + element.name.slice(1)}
+      <div>
+        {element.legacy ? <span className="badge bg-warning text-dark" style={{ marginRight: 5 }}>legacy</span>: ''}
+        {element.name.charAt(0).toUpperCase() + element.name.slice(1)}
+      </div>
       <i
         className={`fas fa-${element.plugin_multi_inst ? 'plus' : 'arrow-right'} element-arrow`}
         onClick={(e) => {
@@ -740,6 +762,10 @@ const Group = ({ group, elements, addNode, ...props }) => {
   useEffect(() => {
     setOpen(props.forceOpen)
   }, [props.forceOpen])
+
+  useEffect(() => {
+    setOpen(props.expandAll);
+  }, [props.expandAll])
 
   return (
     <div className="group">
@@ -829,7 +855,7 @@ const UnselectedNode = ({ hideText, route }) => {
           <span style={{ fontStyle: 'italic' }}> Start by selecting a plugin to configure it</span>
         </div>
         <div style={{ marginTop: 20 }}>
-          <h3 style={{ fontSize: '1.25rem' }}>frontend</h3>
+          <h3 style={{ fontSize: '1.25rem' }}>Frontend</h3>
           <span>this route is exposed on</span>
           <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 10, marginTop: 10, paddingTop: 10, paddingBottom: 10, backgroundColor: '#555', borderRadius: 3 }}>
             {frontend.domains.map(domain => {
@@ -869,7 +895,7 @@ const UnselectedNode = ({ hideText, route }) => {
           )}
         </div>
         <div style={{ marginTop: 20 }}>
-          <h3 style={{ fontSize: '1.25rem' }}>backend</h3>
+          <h3 style={{ fontSize: '1.25rem' }}>Backend</h3>
           <span>this route will forward requests to</span>
           <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 10, marginTop: 10, paddingTop: 10, paddingBottom: 10, backgroundColor: '#555', borderRadius: 3 }}>
             {backend.targets.map(target => {
@@ -878,9 +904,10 @@ const UnselectedNode = ({ hideText, route }) => {
               const hostname = target.ip_address ? `${target.hostname}@${target.ip_address}` : target.hostname;
               const end = (rewrite || frontend.strip_path) ? path : `/<request_path>${path}`;
               const start = target.tls ? 'https://' : 'http://'
+              const mtls = (target.tls_config && target.tls_config.enabled && ([ ...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0)) ? <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>mTLS</span>: <span></span>;
               return (
                 <div style={{ paddingLeft: 10, paddingRight: 10, display: 'flex', flexDirection: 'row' }}>
-                  <span style={{ fontFamily: 'monospace' }}>{start}{hostname}:{target.port}{end}</span>
+                  <span style={{ fontFamily: 'monospace'}}>{mtls}{start}{hostname}:{target.port}{end}</span>
                 </div>
               );
             })}

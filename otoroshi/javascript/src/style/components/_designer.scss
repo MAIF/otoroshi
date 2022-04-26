@@ -352,6 +352,16 @@
         border-radius: 50%;
     }
 
+    .legacy-dot {
+        position: absolute;
+        top: 12px;
+        right: 3px;
+        background-color: #f9b000;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+    }
+
     .backend-button {
         flex: 0;
         background-color: #f9b000;

@@ -54,6 +54,18 @@ export class TopBar extends Component {
         }));
         options.sort((a, b) => a.label.localeCompare(b.label));
         options.push({
+          action: () => (window.location.href = '/bo/dashboard/routes'),
+          env: <span className="fas fa-road" />,
+          label: 'Routes',
+          value: 'Routes',
+        });
+        options.push({
+          action: () => (window.location.href = '/bo/dashboard/backends'),
+          env: <span className="fas fa-microchip" />,
+          label: 'Backends',
+          value: 'Backends',
+        });
+        options.push({
           action: () => (window.location.href = '/bo/dashboard/admins'),
           env: <span className="fas fa-user" />,
           label: 'Admins',
@@ -571,7 +583,7 @@ export class TopBar extends Component {
             </form>
           </div>
 
-          <div className="d-flex flex-grow-1 my-1 my-md-0">
+          <div className="d-flex flex-grow-1 my-1 my-md-0" style={{ zIndex: 1001 }}>
             <div
               className="d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0"
               style={{ height: 52 }}>

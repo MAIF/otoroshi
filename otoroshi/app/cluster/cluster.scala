@@ -848,7 +848,10 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
         .applyOnIf(env.vaults.leaderFetchOnly) { fu =>
           fu.flatMap { stateCache =>
             env.vaults.fillSecretsAsync("cluster-state", stateCache.utf8String).map { filledStateCacheStr =>
-              filledStateCacheStr.byteString
+              val bs = filledStateCacheStr.byteString
+              digest.reset()
+              digest.update(bs.asByteBuffer)
+              bs
             }
           }
         }

@@ -19,17 +19,17 @@ export default ({ route }) => {
       </li>
       <li className="nav-item">
         <Link to={`/routes/${route.id}?tab=informations`} className="nav-link">
-          <i class="fas fa-file-alt" />  Route informations
+          <i class="fas fa-file-alt" />  Informations
         </Link>
       </li>
       <li className="nav-item">
         <Link to={`/routes/${route.id}?tab=flow`} className="nav-link">
-          <i class="fas fa-pencil-ruler" /> Route designer
+          <i class="fas fa-pencil-ruler" /> Designer
         </Link>
       </li>
       <li className="nav-item">
         <Link to={`/routes/${route.id}?tab=try-it`} className="nav-link">
-          <i class="fas fa-vials" /> Route tester
+          <i class="fas fa-vials" /> Tester
         </Link>
       </li>
       <li className="nav-item">
