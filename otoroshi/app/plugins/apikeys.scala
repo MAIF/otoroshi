@@ -104,9 +104,9 @@ class HasAllowedApiKeyValidator extends AccessValidator {
       |```
     """.stripMargin)
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.apikey match {
@@ -161,9 +161,9 @@ class ApiKeyAllowedOnThisServiceValidator extends AccessValidator {
     """.stripMargin
     )
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
   override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     ctx.apikey match {
@@ -206,9 +206,9 @@ class CertificateAsApikey extends PreRouting {
       """.stripMargin
     )
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     context.request.clientCertificateChain.flatMap(_.headOption) match {
@@ -272,9 +272,9 @@ class ClientCredentialFlowExtractor extends PreRouting {
       s"""This plugin can extract an apikey from an opaque access_token generate by the `ClientCredentialFlow` plugin""".stripMargin
     )
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.request.headers.get("Authorization") match {
@@ -353,9 +353,9 @@ class ClientCredentialFlow extends RequestTransformer {
     )
   }
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
 
@@ -998,9 +998,9 @@ class ClientCredentialService extends RequestSink {
     )
   }
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep]                = Seq(NgStep.Sink)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.Sink)
 
   override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     val conf          = ClientCredentialServiceConfig(ctx.configFor("ClientCredentialService"))
@@ -1409,9 +1409,9 @@ class ApikeyAuthModule extends PreRouting {
     )
   }
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 

@@ -56,9 +56,9 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
     """.stripMargin
     )
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val config  = ctx.configFor("GeolocationInfo")
@@ -128,9 +128,9 @@ class IpStackGeolocationInfoExtractor extends PreRouting {
       |```
     """.stripMargin)
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val config        = ctx.configFor("GeolocationInfo")
@@ -182,9 +182,9 @@ class GeolocationInfoHeader extends RequestTransformer {
     """.stripMargin
     )
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
@@ -220,9 +220,9 @@ class GeolocationInfoEndpoint extends RequestTransformer {
       """.stripMargin
     )
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext

@@ -40,9 +40,9 @@ class HtmlPatcher extends RequestTransformer {
     """.stripMargin
     )
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
 
   private def parseElement(elementStr: String): Option[Element] = {
     if (elementStr.trim().isEmpty()) {

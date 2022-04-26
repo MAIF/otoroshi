@@ -110,22 +110,22 @@ case class PreRoutingContext(
 
 object DefaultPreRouting extends PreRouting {
   override def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = funit
-  def visibility: NgPluginVisibility                                                                       = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory]                                                                    = Seq.empty
-  def steps: Seq[NgStep]                                                                                   = Seq.empty
+  override def visibility: NgPluginVisibility                                                                       = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory]                                                                    = Seq.empty
+  override def steps: Seq[NgStep]                                                                                   = Seq.empty
 }
 
 object CompilingPreRouting extends PreRouting {
   override def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = funit
-  def visibility: NgPluginVisibility                                                                       = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory]                                                                    = Seq.empty
-  def steps: Seq[NgStep]                                                                                   = Seq.empty
+  override def visibility: NgPluginVisibility                                                                       = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory]                                                                    = Seq.empty
+  override def steps: Seq[NgStep]                                                                                   = Seq.empty
 }
 
 class FailingPreRoute extends PreRouting {
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq.empty
-  def steps: Seq[NgStep]                = Seq.empty
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep]                = Seq.empty
   override def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     context.attrs.put(otoroshi.plugins.Keys.GwErrorKey -> GwError("epic fail!"))
     Future.failed(PreRoutingError.fromString("epic fail!"))

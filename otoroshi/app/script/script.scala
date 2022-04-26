@@ -160,9 +160,17 @@ trait NamedPlugin { self =>
         genFlow(config, "")
       }
     }
-  def visibility: NgPluginVisibility
-  def categories: Seq[NgPluginCategory]
-  def steps: Seq[NgStep]
+  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Custom)
+  def steps: Seq[NgStep] = Seq(
+    if (this.isInstanceOf[RequestSink]) NgStep.Sink.some else None,
+    if (this.isInstanceOf[PreRouting]) NgStep.PreRoute.some else None,
+    if (this.isInstanceOf[AccessValidator]) NgStep.ValidateAccess.some else None,
+    if (this.isInstanceOf[RequestTransformer]) NgStep.TransformRequest.some else None,
+    if (this.isInstanceOf[RequestTransformer]) NgStep.TransformResponse.some else None,
+  ).collect {
+    case Some(step) => step
+  }
   def jsonDescription(): JsObject     =
     Try {
       Json.obj(
@@ -548,16 +556,16 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
 }
 
 object DefaultRequestTransformer extends RequestTransformer {
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq.empty
-  def steps: Seq[NgStep]                = Seq.empty
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep]                = Seq.empty
 }
 
 object CompilingRequestTransformer extends RequestTransformer {
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq.empty
-  def steps: Seq[NgStep]                = Seq.empty
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep]                = Seq.empty
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext

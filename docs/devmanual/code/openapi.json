@@ -17164,7 +17164,7 @@
         "properties" : { }
       },
       "otoroshi.next.models.NgRouteDataStore" : {
-        "description" : "The datastore for routes",
+        "description" : "???",
         "type" : "object",
         "properties" : { }
       },
@@ -21232,27 +21232,27 @@
         "properties" : { }
       },
       "otoroshi.next.models.NgRoute" : {
-        "description" : "A routing primitive representing how a request is matched and where the request is forwarded",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "debug_flow" : {
-            "description" : "Enable report debugging",
+            "description" : "???",
             "type" : "boolean"
           },
           "enabled" : {
-            "description" : "Is the route enabled",
+            "description" : "???",
             "type" : "boolean"
           },
           "name" : {
-            "description" : "The name of the route",
+            "description" : "???",
             "type" : "string"
           },
           "id" : {
-            "description" : "The ud of the route",
+            "description" : "???",
             "type" : "string"
           },
           "export_reporting" : {
-            "description" : "Export the execution reporting through standard data exporter",
+            "description" : "???",
             "type" : "boolean"
           },
           "metadata" : {
@@ -21260,14 +21260,14 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "The metadata of the route"
+            "description" : "???"
           },
           "frontend" : {
-            "description" : "The frontend of the route",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgFrontend"
           },
           "_loc" : {
-            "description" : "The location of the route",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "tags" : {
@@ -21275,14 +21275,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "The tags of the route"
+            "description" : "???"
           },
           "groups" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "The groups of the route"
+            "description" : "???"
           },
           "backend_ref" : {
             "oneOf" : [ {
@@ -21290,14 +21290,14 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "The backend id of the route (if one)"
+            "description" : "???"
           },
           "description" : {
-            "description" : "The description of the route",
+            "description" : "???",
             "type" : "string"
           },
           "backend" : {
-            "description" : "The backend of the route",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgBackend"
           }
         }
@@ -24397,6 +24397,11 @@
         "type" : "object",
         "properties" : { }
       },
+      "otoroshi.next.models.PluginIndex" : {
+        "description" : "Custom index for plugins",
+        "type" : "object",
+        "properties" : { }
+      },
       "otoroshi.models.LoadBalancing" : {
         "type" : "object",
         "description" : "Loadbalancing strategy",
@@ -24854,6 +24859,14 @@
               "type" : "string"
             },
             "description" : "Excluded paths"
+          },
+          "plugin_index" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "$ref" : "#/components/schemas/otoroshi.next.models.PluginIndex"
+            } ],
+            "description" : "Custom index for plugins"
           },
           "include" : {
             "type" : "array",

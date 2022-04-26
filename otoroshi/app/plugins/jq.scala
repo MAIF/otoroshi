@@ -65,9 +65,9 @@ class JqBodyTransformer extends RequestTransformer {
     """.stripMargin
     )
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
 
   def shouldApply(included: Seq[String], excluded: Seq[String], uri: String): Boolean = {
     val isExcluded =

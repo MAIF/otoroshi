@@ -30,9 +30,9 @@ class EnvoyControlPlane extends RequestTransformer {
 
   override def name: String = "Envoy Control Plane (experimental)"
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def defaultConfig: Option[JsObject] =
     Json

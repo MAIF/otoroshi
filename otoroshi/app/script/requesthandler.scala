@@ -39,9 +39,9 @@ class ForwardTrafficHandler extends RequestHandler {
 
   override def name: String = "Forward traffic"
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq.empty
-  def steps: Seq[NgStep]                = Seq.empty
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep]                = Seq.empty
 
   override def description: Option[String] =
     "This plugin can be use to perform a raw traffic forward to an URL without passing through otoroshi routing".some

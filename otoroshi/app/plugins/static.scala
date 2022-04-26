@@ -15,9 +15,9 @@ class StaticResponse extends RequestTransformer {
 
   override def name: String = "Static Response"
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def defaultConfig: Option[JsObject] =
     Some(

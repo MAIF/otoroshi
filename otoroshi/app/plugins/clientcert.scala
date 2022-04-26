@@ -23,9 +23,9 @@ class HasClientCertValidator extends AccessValidator {
 
   override def description: Option[String] = Some("Check if a client certificate is present in the request")
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
@@ -46,9 +46,9 @@ class HasClientCertMatchingApikeyValidator extends AccessValidator {
       |""".stripMargin
     )
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
@@ -114,9 +114,9 @@ class HasClientCertMatchingValidator extends AccessValidator {
       |```
     """.stripMargin)
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain
@@ -239,9 +239,9 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
       )
     )
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
   private val cache = new TrieMap[String, (Long, JsValue)]
 
@@ -420,9 +420,9 @@ class ClientCertChainHeader extends RequestTransformer {
     )
   }
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext

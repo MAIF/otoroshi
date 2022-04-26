@@ -129,9 +129,9 @@ class IzanamiProxy extends RequestTransformer {
     )
   }
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
 
@@ -342,9 +342,9 @@ class IzanamiCanary extends RequestTransformer {
 
   override def name: String = "Izanami Canary Campaign"
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def defaultConfig: Option[JsObject] = {
     Some(

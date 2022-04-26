@@ -108,9 +108,9 @@ class OIDCHeaders extends RequestTransformer {
       "accesstoken.jwt"
     )
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   private def extract(payload: JsValue, name: String, jwt: Boolean): String = {
     (payload \ name).asOpt[String] match {
@@ -201,9 +201,9 @@ class OIDCAccessTokenValidator extends AccessValidator {
     oidcConfigRef = "some-oidc-auth-module-id".some
   )
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
   override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     val conf       = ctx.configFor("OIDCAccessTokenValidators")
@@ -307,9 +307,9 @@ class OIDCAccessTokenAsApikey extends PreRouting {
     oidcConfigRef = "some-oidc-auth-module-id".some
   )
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val conf       = ctx.configFor("OIDCAccessTokenAsApikey")

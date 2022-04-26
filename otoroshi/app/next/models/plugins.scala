@@ -9,9 +9,49 @@ import play.api.mvc.RequestHeader
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
+import scala.util.{Failure, Success, Try}
 
 case class NgPluginInstanceConfig(raw: JsObject = Json.obj()) extends AnyVal {
   def json: JsValue = raw
+}
+
+case class PluginIndex(
+  sink: Option[Int] = None,
+  preRoute: Option[Int] = None,
+  validateAccess: Option[Int] = None,
+  transformRequest: Option[Int] = None,
+  transformResponse: Option[Int] = None,
+  matchRoute: Option[Int] = None,
+  handlesTunnel: Option[Int] = None,
+) {
+  def json: JsValue = PluginIndex.format.writes(this)
+}
+
+object PluginIndex {
+  val format = new Format[PluginIndex] {
+    override def reads(json: JsValue): JsResult[PluginIndex] = Try {
+      PluginIndex(
+        sink = json.select("sink").asOpt[Int],
+        preRoute = json.select("pre_route").asOpt[Int],
+        validateAccess = json.select("validate_access").asOpt[Int],
+        transformRequest = json.select("transform_request").asOpt[Int],
+        transformResponse = json.select("transform_response").asOpt[Int],
+        matchRoute = json.select("match_route").asOpt[Int],
+        handlesTunnel = json.select("handles_tunnel").asOpt[Int],
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage())
+      case Success(v) => JsSuccess(v)
+    }
+    override def writes(o: PluginIndex): JsValue = Json.obj()
+      .applyOnWithOpt(o.sink)((o, v) => o ++ Json.obj("sink" -> JsNumber(v)))
+      .applyOnWithOpt(o.preRoute)((o, v) => o ++ Json.obj("pre_route" -> JsNumber(v)))
+      .applyOnWithOpt(o.validateAccess)((o, v) => o ++ Json.obj("validate_access" -> JsNumber(v)))
+      .applyOnWithOpt(o.transformRequest)((o, v) => o ++ Json.obj("transform_request" -> JsNumber(v)))
+      .applyOnWithOpt(o.transformResponse)((o, v) => o ++ Json.obj("transform_response" -> JsNumber(v)))
+      .applyOnWithOpt(o.matchRoute)((o, v) => o ++ Json.obj("match_route" -> JsNumber(v)))
+      .applyOnWithOpt(o.handlesTunnel)((o, v) => o ++ Json.obj("handles_tunnel" -> JsNumber(v)))
+  }
 }
 
 object NgPluginInstance {
@@ -22,7 +62,8 @@ object NgPluginInstance {
       enabled = obj.select("enabled").asOpt[Boolean].getOrElse(true),
       include = obj.select("include").asOpt[Seq[String]].getOrElse(Seq.empty),
       exclude = obj.select("exclude").asOpt[Seq[String]].getOrElse(Seq.empty),
-      config = NgPluginInstanceConfig(obj.select("config").asOpt[JsObject].getOrElse(Json.obj()))
+      config = NgPluginInstanceConfig(obj.select("config").asOpt[JsObject].getOrElse(Json.obj())),
+      pluginIndex = obj.select("plugin_index").asOpt(PluginIndex.format)
     )
   }
 }
@@ -33,7 +74,8 @@ case class NgPluginInstance(
     debug: Boolean = false,
     include: Seq[String] = Seq.empty,
     exclude: Seq[String] = Seq.empty,
-    config: NgPluginInstanceConfig = NgPluginInstanceConfig()
+    config: NgPluginInstanceConfig = NgPluginInstanceConfig(),
+    pluginIndex: Option[PluginIndex] = None
 ) {
   def json: JsValue = Json.obj(
     "enabled" -> enabled,
@@ -42,7 +84,7 @@ case class NgPluginInstance(
     "include" -> include,
     "exclude" -> exclude,
     "config"  -> config.json
-  )
+  ).applyOnWithOpt(pluginIndex)((o, v) => o ++ Json.obj("plugin_index" -> v.json))
   def matches(request: RequestHeader): Boolean = {
     val uri = request.thePath
     if (!(include.isEmpty && exclude.isEmpty)) {
@@ -75,109 +117,112 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
     slots.find(pi => pi.plugin == name).filter(_.enabled)
   }
 
-  def allPlugins()(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgNamedPlugin]] = {
-    slots
-      .map(inst => (inst, inst.getPlugin[NgNamedPlugin]))
-      .collect { case (inst, Some(plugin)) =>
-        NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
-      }
-  }
-
   def requestSinkPlugins(
       request: RequestHeader
   )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestSink]] = {
-    slots
+    val pls = slots
       .filter(_.enabled)
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgRequestSink]))
       .collect { case (inst, Some(plugin)) =>
         NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
-  }
-
-  def transformerPlugins(
-      request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
-    slots
-      .filter(_.enabled)
-      .filter(_.matches(request))
-      .map(inst => (inst, inst.getPlugin[NgRequestTransformer]))
-      .collect { case (inst, Some(plugin)) =>
-        NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
-      }
-  }
-
-  def transformerPluginsWithCallbacks(
-      request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
-    transformerPlugins(request).filter(_.plugin.usesCallbacks)
-  }
-
-  def transformerPluginsThatTransformsRequest(
-      request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
-    transformerPlugins(request).filter(_.plugin.transformsRequest)
-  }
-
-  def transformerPluginsThatTransformsResponse(
-      request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
-    transformerPlugins(request).filter(_.plugin.transformsResponse)
-  }
-
-  def transformerPluginsThatTransformsError(
-      request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
-    transformerPlugins(request).filter(_.plugin.transformsError)
-  }
-
-  def preRoutePlugins(
-      request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgPreRouting]] = {
-    slots
-      .filter(_.enabled)
-      .filter(_.matches(request))
-      .map(inst => (inst, inst.getPlugin[NgPreRouting]))
-      .collect { case (inst, Some(plugin)) =>
-        NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
-      }
-  }
-
-  def accessValidatorPlugins(
-      request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgAccessValidator]] = {
-    slots
-      .filter(_.enabled)
-      .filter(_.matches(request))
-      .map(inst => (inst, inst.getPlugin[NgAccessValidator]))
-      .collect { case (inst, Some(plugin)) =>
-        NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
-      }
+    val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.sink.isDefined))
+    plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.sink.get.compareTo(b.instance.pluginIndex.get.sink.get) < 0) ++ plsWithoutIndex
   }
 
   def routeMatcherPlugins(
-      request: RequestHeader
+    request: RequestHeader
   )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRouteMatcher]] = {
-    slots
+    val pls = slots
       .filter(_.enabled)
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgRouteMatcher]))
       .collect { case (inst, Some(plugin)) =>
         NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
+    val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.matchRoute.isDefined))
+    plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.matchRoute.get.compareTo(b.instance.pluginIndex.get.matchRoute.get) < 0) ++ plsWithoutIndex
   }
 
-  def tunnelHandlerPlugins(
+  def transformerPlugins(
       request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgTunnelHandler]] = {
-    slots
+  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
+    val pls = slots
       .filter(_.enabled)
       .filter(_.matches(request))
-      .map(inst => (inst, inst.getPlugin[NgTunnelHandler]))
+      .map(inst => (inst, inst.getPlugin[NgRequestTransformer]))
       .collect { case (inst, Some(plugin)) =>
         NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
+    val (plsWithIndexAll, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(p => p.transformRequest.isDefined || p.transformResponse.isDefined))
+    val plsReq = plsWithIndexAll.filter(_.plugin.transformsRequest).sortWith((a, b) => a.instance.pluginIndex.get.transformRequest.get.compareTo(b.instance.pluginIndex.get.transformRequest.get) < 0)
+    val plsResp = plsWithIndexAll.filter(_.plugin.transformsResponse).sortWith((a, b) => a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0)
+    val plsErr = plsWithIndexAll.filter(_.plugin.transformsError).sortWith((a, b) => a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0)
+    plsReq ++ plsResp ++ plsErr ++ plsWithoutIndex
   }
+
+  def transformerPluginsThatTransformsError(
+    request: RequestHeader
+  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
+    transformerPlugins(request).filter(_.plugin.transformsError)
+  }
+
+  // def allPlugins()(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgNamedPlugin]] = {
+  //   slots
+  //     .map(inst => (inst, inst.getPlugin[NgNamedPlugin]))
+  //     .collect { case (inst, Some(plugin)) =>
+  //       NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+  //     }
+  // }
+  // def transformerPluginsWithCallbacks(
+  //     request: RequestHeader
+  // )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
+  //   transformerPlugins(request).filter(_.plugin.usesCallbacks)
+  // }
+  // def transformerPluginsThatTransformsRequest(
+  //     request: RequestHeader
+  // )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
+  //   transformerPlugins(request).filter(_.plugin.transformsRequest)
+  // }
+  // def transformerPluginsThatTransformsResponse(
+  //     request: RequestHeader
+  // )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
+  //   transformerPlugins(request).filter(_.plugin.transformsResponse)
+  // }
+  // def preRoutePlugins(
+  //     request: RequestHeader
+  // )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgPreRouting]] = {
+  //   slots
+  //     .filter(_.enabled)
+  //     .filter(_.matches(request))
+  //     .map(inst => (inst, inst.getPlugin[NgPreRouting]))
+  //     .collect { case (inst, Some(plugin)) =>
+  //       NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+  //     }
+  // }
+  // def accessValidatorPlugins(
+  //     request: RequestHeader
+  // )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgAccessValidator]] = {
+  //   slots
+  //     .filter(_.enabled)
+  //     .filter(_.matches(request))
+  //     .map(inst => (inst, inst.getPlugin[NgAccessValidator]))
+  //     .collect { case (inst, Some(plugin)) =>
+  //       NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+  //     }
+  // }
+  // def tunnelHandlerPlugins(
+  //     request: RequestHeader
+  // )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgTunnelHandler]] = {
+  //   slots
+  //     .filter(_.enabled)
+  //     .filter(_.matches(request))
+  //     .map(inst => (inst, inst.getPlugin[NgTunnelHandler]))
+  //     .collect { case (inst, Some(plugin)) =>
+  //       NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+  //     }
+  // }
 }
 
 object NgPlugins {
@@ -210,17 +255,28 @@ case class NgContextualPlugins(
   lazy val (allPlugins, filteredPlugins) = enabledPlugins
     .partition(_.matches(request))
 
-  lazy val requestSinkPlugins = allPlugins
-    .map(inst => (inst, inst.getPlugin[NgRequestSink]))
-    .collect { case (inst, Some(plugin)) =>
-      NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
-    }
+  lazy val requestSinkPlugins = {
+    val pls = allPlugins
+      .map(inst => (inst, inst.getPlugin[NgRequestSink]))
+      .collect { case (inst, Some(plugin)) =>
+        NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+      }
+    val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.sink.isDefined))
+    plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.sink.get.compareTo(b.instance.pluginIndex.get.sink.get) < 0) ++ plsWithoutIndex
+  }
 
-  lazy val transformerPlugins = allPlugins
-    .map(inst => (inst, inst.getPlugin[NgRequestTransformer]))
-    .collect { case (inst, Some(plugin)) =>
-      NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
-    }
+  lazy val transformerPlugins = {
+    val pls = allPlugins
+      .map(inst => (inst, inst.getPlugin[NgRequestTransformer]))
+      .collect { case (inst, Some(plugin)) =>
+        NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+      }
+    val (plsWithIndexAll, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(p => p.transformRequest.isDefined || p.transformResponse.isDefined))
+    val plsReq = plsWithIndexAll.filter(_.plugin.transformsRequest).sortWith((a, b) => a.instance.pluginIndex.get.transformRequest.get.compareTo(b.instance.pluginIndex.get.transformRequest.get) < 0)
+    val plsResp = plsWithIndexAll.filter(_.plugin.transformsResponse).sortWith((a, b) => a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0)
+    val plsErr = plsWithIndexAll.filter(_.plugin.transformsError).sortWith((a, b) => a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0)
+    plsReq ++ plsResp ++ plsErr ++ plsWithoutIndex
+  }
 
   lazy val (transformerPluginsWithCallbacks, tpwoCallbacks)    = transformerPlugins.partition(_.plugin.usesCallbacks)
   lazy val (transformerPluginsThatTransformsRequest, tpwoRequest) = {
@@ -284,11 +340,15 @@ case class NgContextualPlugins(
   lazy val (transformerPluginsThatTransformsError, tpwoErrors) = transformerPlugins.partition(_.plugin.transformsError)
 
   lazy val preRoutePlugins = {
-    val plugs = allPlugins
-      .map(inst => (inst, inst.getPlugin[NgPreRouting]))
-      .collect { case (inst, Some(plugin)) =>
-        NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
-      }
+    val plugs = {
+      val pls = allPlugins
+        .map(inst => (inst, inst.getPlugin[NgPreRouting]))
+        .collect { case (inst, Some(plugin)) =>
+          NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+        }
+      val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.preRoute.isDefined))
+      plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.preRoute.get.compareTo(b.instance.pluginIndex.get.preRoute.get) < 0) ++ plsWithoutIndex
+    }
     if (nextPluginsMerge && plugs.size > 1) {
       val new_plugins = plugs
         .foldLeft((true, Seq.empty[NgPluginWrapper[NgPreRouting]])) {
@@ -318,11 +378,15 @@ case class NgContextualPlugins(
   }
 
   lazy val accessValidatorPlugins = {
-    val plugs = allPlugins
-      .map(inst => (inst, inst.getPlugin[NgAccessValidator]))
-      .collect { case (inst, Some(plugin)) =>
-        NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
-      }
+    val plugs = {
+      val pls = allPlugins
+        .map(inst => (inst, inst.getPlugin[NgAccessValidator]))
+        .collect { case (inst, Some(plugin)) =>
+          NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+        }
+      val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.validateAccess.isDefined))
+      plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.validateAccess.get.compareTo(b.instance.pluginIndex.get.validateAccess.get) < 0) ++ plsWithoutIndex
+    }
     if (nextPluginsMerge && plugs.size > 1) {
       val new_plugins = plugs
         .foldLeft((true, Seq.empty[NgPluginWrapper[NgAccessValidator]])) {
@@ -351,15 +415,23 @@ case class NgContextualPlugins(
     }
   }
 
-  lazy val routeMatcherPlugins = allPlugins
-    .map(inst => (inst, inst.getPlugin[NgRouteMatcher]))
-    .collect { case (inst, Some(plugin)) =>
-      NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
-    }
+  lazy val routeMatcherPlugins = {
+    val pls = allPlugins
+      .map(inst => (inst, inst.getPlugin[NgRouteMatcher]))
+      .collect { case (inst, Some(plugin)) =>
+        NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+      }
+    val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.matchRoute.isDefined))
+    plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.matchRoute.get.compareTo(b.instance.pluginIndex.get.matchRoute.get) < 0) ++ plsWithoutIndex
+  }
 
-  lazy val tunnelHandlerPlugins = allPlugins
-    .map(inst => (inst, inst.getPlugin[NgTunnelHandler]))
-    .collect { case (inst, Some(plugin)) =>
-      NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
-    }
+  lazy val tunnelHandlerPlugins = {
+    val pls = allPlugins
+      .map(inst => (inst, inst.getPlugin[NgTunnelHandler]))
+      .collect { case (inst, Some(plugin)) =>
+        NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+      }
+    val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.handlesTunnel.isDefined))
+    plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.handlesTunnel.get.compareTo(b.instance.pluginIndex.get.handlesTunnel.get) < 0) ++ plsWithoutIndex
+  }
 }

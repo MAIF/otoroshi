@@ -168,9 +168,9 @@ class ProxyEngine() extends RequestHandler {
 
   override def name: String = "Otoroshi next proxy engine (experimental)"
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
-  def steps: Seq[NgStep]                = Seq.empty
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
+  override def steps: Seq[NgStep]                = Seq.empty
 
   override def description: Option[String] =
     """
@@ -545,7 +545,7 @@ class ProxyEngine() extends RequestHandler {
                        for {
                          finalRequest <- callRequestTransformer(snowflake, request, fakeBody, route, backend, ctxPlugins)
                          _             = report.markDoneAndStart("call-backend")
-                         flow         <- callWsBackend(snowflake, request, finalRequest, route, backend)
+                         flow         <- callWsBackend(snowflake, request, finalRequest, route, backend, ctxPlugins)
                          _             = report.markDoneAndStart("trigger-analytics")
                          _            <- triggerWsProxyDone(snowflake, request, finalRequest, route, backend, sb)
                        } yield flow
@@ -2380,7 +2380,8 @@ class ProxyEngine() extends RequestHandler {
       rawRequest: RequestHeader,
       request: NgPluginHttpRequest,
       route: NgRoute,
-      backend: NgTarget
+      backend: NgTarget,
+      ctxPlugins: NgContextualPlugins,
   )(implicit
       ec: ExecutionContext,
       env: Env,
@@ -2391,7 +2392,7 @@ class ProxyEngine() extends RequestHandler {
   ): FEither[NgProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]] = {
     val finalTarget: Target = request.backend.getOrElse(backend).toTarget
     attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> finalTarget)
-    val all_tunnel_handlers = route.plugins.tunnelHandlerPlugins(rawRequest)
+    val all_tunnel_handlers = ctxPlugins.tunnelHandlerPlugins
     if (all_tunnel_handlers.nonEmpty) {
       val handler = all_tunnel_handlers.head
       if (request.relativeUri.startsWith("/.well-known/otoroshi/tunnel")) {

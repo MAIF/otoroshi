@@ -67,6 +67,13 @@ const Helpers = {
 };
 
 export class NgStep extends Component {
+
+  state = { validation: { __valid: true, __errors: [] } };
+
+  componentDidMount() {
+    // this.handleValidation();
+  }
+
   validate = (value) => {
     const constraints = this.props.schema.constraints || [];
     if (this.props.schema.typechecks) {
@@ -136,16 +143,34 @@ export class NgStep extends Component {
     }
   };
 
+  handleValidation = (value) => {
+    const constraints = this.props.schema.constraints || [];
+    if (constraints && constraints.length > 0) {
+      const validation = this.validate(value);
+      console.debug('trigger on change for', this.props.name, 'at', '/' + this.props.path.join('/'), 'with value', value, validation);
+      this.setState({ validation }); 
+    }
+  }
+
+  onChange = (value) => {
+    this.handleValidation(value);
+    if (this.props.onChange) {
+      this.props.onChange(value);
+    }
+  }
+
   render() {
     const Renderer = this.renderer();
-    const validation = this.validate(this.props.value);
+    // const validation = this.validate(this.props.value);
+    const validation = this.state.validation;
     const ValidationRenderer = this.props.components.ValidationRenderer;
     return (
-      <ValidationRenderer validation={validation}>
+      <ValidationRenderer key={this.props.path.join('/')} validation={validation}>
         <Renderer
           validation={validation}
           {...this.props}
           embedded
+          onChange={this.onChange}
           schema={this.props.schema.schema || this.props.schema}
           flow={this.props.schema.flow || this.props.flow}
           rawSchema={this.props.schema}
@@ -351,13 +376,14 @@ export class NgForm extends Component {
                     : stepSchema.visible
                   : true;
               if (visible) {
+                const path = root ? [name] : [...path, name];
                 return (
                   <NgStep
-                    key={name}
+                    key={path.join('/')}
                     name={name}
                     embedded
                     fromArray={this.props.fromArray}
-                    path={root ? [name] : [...path, name]}
+                    path={path}
                     validation={validation}
                     setValidation={this.setValidation}
                     components={components}
