@@ -30,9 +30,9 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
     """.stripMargin
     )
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     val config = KubernetesConfig.theConfig(ctx)
@@ -282,9 +282,9 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
     """.stripMargin
     )
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     val config = KubernetesConfig.theConfig(ctx)

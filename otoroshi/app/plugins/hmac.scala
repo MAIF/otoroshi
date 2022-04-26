@@ -95,9 +95,9 @@ class HMACCallerPlugin extends RequestTransformer {
 
   override def configRoot: Option[String] = "HMACCallerPlugin".some
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def transformRequestWithCtx(
       context: TransformerRequestContext
@@ -178,9 +178,9 @@ class HMACValidator extends AccessValidator {
 
   override def configRoot: Option[String] = "HMACAccessValidator".some
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
   private def checkHMACSignature(authorization: String, context: AccessContext, secret: String) = {
     val params = authorization

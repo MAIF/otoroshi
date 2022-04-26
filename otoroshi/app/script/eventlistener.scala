@@ -52,13 +52,13 @@ trait OtoroshiEventListener extends StartableAndStoppable with NamedPlugin with 
 }
 
 object DefaultOtoroshiEventListener extends OtoroshiEventListener {
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq.empty
-  def steps: Seq[NgStep]                = Seq.empty
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep]                = Seq.empty
 }
 
 object CompilingOtoroshiEventListener extends OtoroshiEventListener {
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq.empty
-  def steps: Seq[NgStep]                = Seq.empty
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep]                = Seq.empty
 }

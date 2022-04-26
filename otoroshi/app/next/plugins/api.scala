@@ -239,10 +239,10 @@ trait NgPluginConfig {
 }
 
 trait NgNamedPlugin extends NamedPlugin { self =>
-  def visibility: NgPluginVisibility
-  def categories: Seq[NgPluginCategory]
+  override def visibility: NgPluginVisibility
+  override def categories: Seq[NgPluginCategory]
   def tags: Seq[String]                              = Seq.empty
-  def steps: Seq[NgStep]
+  override def steps: Seq[NgStep]
   def multiInstance: Boolean
   def defaultConfigObject: Option[NgPluginConfig]
   override final def defaultConfig: Option[JsObject] =

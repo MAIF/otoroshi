@@ -105,9 +105,9 @@ class ResponseCache extends RequestTransformer {
       |```
     """.stripMargin)
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
 
   private val ref    = new AtomicReference[(RedisClientMasterSlaves, ActorSystem)]()
   private val jobRef = new AtomicReference[Cancellable]()

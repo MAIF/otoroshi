@@ -168,9 +168,9 @@ class ProxyEngine() extends RequestHandler {
 
   override def name: String = "Otoroshi next proxy engine (experimental)"
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
-  def steps: Seq[NgStep]                = Seq.empty
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
+  override def steps: Seq[NgStep]                = Seq.empty
 
   override def description: Option[String] =
     """

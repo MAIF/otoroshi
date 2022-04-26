@@ -89,9 +89,9 @@ case class AccessContext(
 
 object DefaultValidator extends AccessValidator {
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq.empty
-  def steps: Seq[NgStep]                = Seq.empty
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep]                = Seq.empty
 
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     FastFuture.successful(true)
@@ -100,9 +100,9 @@ object DefaultValidator extends AccessValidator {
 
 object CompilingValidator extends AccessValidator {
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq.empty
-  def steps: Seq[NgStep]                = Seq.empty
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep]                = Seq.empty
 
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.attrs.put(otoroshi.plugins.Keys.GwErrorKey -> GwError("not ready yet, plugin is loading ..."))

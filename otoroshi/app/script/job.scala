@@ -74,11 +74,11 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
 
   final override def pluginType: PluginType = PluginType.JobType
 
-  def visibility: NgPluginVisibility = jobVisibility match {
+  override def visibility: NgPluginVisibility = jobVisibility match {
     case JobVisibility.UserLand => NgPluginVisibility.NgUserLand
     case JobVisibility.Internal => NgPluginVisibility.NgInternal
   }
-  def steps: Seq[NgStep]             = Seq.empty
+  override def steps: Seq[NgStep]             = Seq.empty
 
   def uniqueId: JobId
   def jobVisibility: JobVisibility                                    = JobVisibility.UserLand
@@ -614,12 +614,12 @@ class JobManager(env: Env) {
 
 object DefaultJob extends Job {
   override def uniqueId: JobId          = JobId("otoroshi.script.default.DefaultJob")
-  def categories: Seq[NgPluginCategory] = Seq.empty
+  override def categories: Seq[NgPluginCategory] = Seq.empty
 }
 
 object CompilingJob extends Job {
   override def uniqueId: JobId          = JobId("otoroshi.script.default.CompilingJob")
-  def categories: Seq[NgPluginCategory] = Seq.empty
+  override def categories: Seq[NgPluginCategory] = Seq.empty
 }
 
 /*

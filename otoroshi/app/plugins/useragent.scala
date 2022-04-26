@@ -69,9 +69,9 @@ class UserAgentExtractor extends PreRouting {
 
   override def name: String = "User-Agent details extractor"
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def defaultConfig: Option[JsObject] =
     Some(
@@ -119,9 +119,9 @@ class UserAgentInfoEndpoint extends RequestTransformer {
 
   override def name: String = "User-Agent endpoint"
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def defaultConfig: Option[JsObject] = None
 
@@ -151,9 +151,9 @@ class UserAgentInfoHeader extends RequestTransformer {
 
   override def name: String = "User-Agent header"
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def defaultConfig: Option[JsObject] =
     Some(

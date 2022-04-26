@@ -78,7 +78,7 @@ class WorkflowJob extends Job {
 
   override def jobVisibility: JobVisibility = JobVisibility.UserLand
 
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
 
   override def kind: JobKind = JobKind.ScheduledEvery
 
@@ -150,9 +150,9 @@ class WorkflowEndpoint extends RequestTransformer {
     )
   }
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
-  def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext

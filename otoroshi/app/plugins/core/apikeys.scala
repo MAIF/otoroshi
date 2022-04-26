@@ -24,9 +24,9 @@ class JwtApikeyExtractor extends PreRouting {
     s"""This plugin extract an apikey from a JWT token signed by the apikey secret. It uses the service descriptor configuration.""".stripMargin.some
   }
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq.empty
-  def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
@@ -212,9 +212,9 @@ class BasicAuthApikeyExtractor extends PreRouting {
     s"""This plugin extract an apikey from a Basic Auth header. It uses the service descriptor configuration.""".stripMargin.some
   }
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq.empty
-  def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
@@ -277,9 +277,9 @@ class CustomHeadersApikeyExtractor extends PreRouting {
     s"""This plugin extract an apikey from custom headers. It uses the service descriptor configuration.""".stripMargin.some
   }
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq.empty
-  def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
@@ -329,9 +329,9 @@ class ClientIdApikeyExtractor extends PreRouting {
     s"""This plugin extract a client_id only apikey from custom headers. It uses the service descriptor configuration.""".stripMargin.some
   }
 
-  def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-  def categories: Seq[NgPluginCategory] = Seq.empty
-  def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
