@@ -26249,7 +26249,7 @@
     "type" : "object",
     "properties" : {
       "validators" : {
-        "description" : "???",
+        "description" : "The validators to pass on the current context",
         "type" : "array",
         "items" : {
           "type" : "object",
@@ -29636,13 +29636,20 @@
         "items" : {
           "type" : "object",
           "properties" : {
+            "include" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              },
+              "description" : "Included paths"
+            },
             "debug" : {
               "description" : "Is the plugin in debug mode",
               "type" : "boolean"
             },
-            "config" : {
-              "description" : "The config. of the plugin",
-              "type" : "object"
+            "plugin" : {
+              "description" : "The id of the plugin",
+              "type" : "string"
             },
             "exclude" : {
               "type" : "array",
@@ -29651,16 +29658,15 @@
               },
               "description" : "Excluded paths"
             },
-            "include" : {
-              "type" : "array",
-              "items" : {
-                "type" : "string"
-              },
-              "description" : "Included paths"
+            "plugin_index" : {
+              "description" : "Custom index for plugins",
+              "oneOfConstraints" : [ ],
+              "type" : "object",
+              "properties" : { }
             },
-            "plugin" : {
-              "description" : "The id of the plugin",
-              "type" : "string"
+            "config" : {
+              "description" : "The config. of the plugin",
+              "type" : "object"
             },
             "enabled" : {
               "description" : "Is the plugin enabled",
@@ -34834,7 +34840,7 @@
     "type" : "object",
     "properties" : {
       "validators" : {
-        "description" : "???",
+        "description" : "The validators to pass on the current context",
         "type" : "array",
         "items" : {
           "type" : "object",
@@ -35113,6 +35119,11 @@
   },
   "otoroshi.plugins.clientcert.HasClientCertMatchingValidator" : {
     "description" : "Plugin that validates client certificates",
+    "type" : "object",
+    "properties" : { }
+  },
+  "otoroshi.next.models.PluginIndex" : {
+    "description" : "Custom index for plugins",
     "type" : "object",
     "properties" : { }
   },
@@ -36261,13 +36272,20 @@
     "description" : "The current configuration and target for a plugin",
     "type" : "object",
     "properties" : {
+      "include" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "Included paths"
+      },
       "debug" : {
         "description" : "Is the plugin in debug mode",
         "type" : "boolean"
       },
-      "config" : {
-        "description" : "The config. of the plugin",
-        "type" : "object"
+      "plugin" : {
+        "description" : "The id of the plugin",
+        "type" : "string"
       },
       "exclude" : {
         "type" : "array",
@@ -36276,16 +36294,15 @@
         },
         "description" : "Excluded paths"
       },
-      "include" : {
-        "type" : "array",
-        "items" : {
-          "type" : "string"
-        },
-        "description" : "Included paths"
+      "plugin_index" : {
+        "description" : "Custom index for plugins",
+        "oneOfConstraints" : [ ],
+        "type" : "object",
+        "properties" : { }
       },
-      "plugin" : {
-        "description" : "The id of the plugin",
-        "type" : "string"
+      "config" : {
+        "description" : "The config. of the plugin",
+        "type" : "object"
       },
       "enabled" : {
         "description" : "Is the plugin enabled",

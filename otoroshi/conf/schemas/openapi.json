@@ -24397,6 +24397,11 @@
         "type" : "object",
         "properties" : { }
       },
+      "otoroshi.next.models.PluginIndex" : {
+        "description" : "Custom index for plugins",
+        "type" : "object",
+        "properties" : { }
+      },
       "otoroshi.models.LoadBalancing" : {
         "type" : "object",
         "description" : "Loadbalancing strategy",
@@ -24854,6 +24859,14 @@
               "type" : "string"
             },
             "description" : "Excluded paths"
+          },
+          "plugin_index" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "$ref" : "#/components/schemas/otoroshi.next.models.PluginIndex"
+            } ],
+            "description" : "Custom index for plugins"
           },
           "include" : {
             "type" : "array",
