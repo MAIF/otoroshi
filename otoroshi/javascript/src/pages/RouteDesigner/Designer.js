@@ -37,6 +37,7 @@ const Dot = ({
   enabled,
   onUp,
   onDown,
+  arrows = { up: false, down: false },
   style = {},
 }) => (
   <div
@@ -56,8 +57,8 @@ const Dot = ({
     {children && children}
 
     {highlighted && <div className='flex flex-column node-cursor'>
-      <i className='fas fa-chevron-up' onClick={onUp} />
-      <i className='fas fa-chevron-down' onClick={onDown} />
+      {arrows.up && <i className='fas fa-chevron-up' onClick={onUp} />}
+      {arrows.down && <i className='fas fa-chevron-down' onClick={onDown} />}
     </div>}
   </div>
 );
@@ -81,7 +82,8 @@ const NodeElement = ({
   onUnsavedChanges,
   onUp,
   onDown,
-  onRemove
+  onRemove,
+  arrows
 }) => {
   const { id, name, index } = element;
   const highlighted =
@@ -108,9 +110,10 @@ const NodeElement = ({
           else setSelectedNode(element);
         }}
         highlighted={highlighted}
-        enabled={enabled}>
+        enabled={enabled}
+        arrows={arrows}>
         <span className="dot-text">{name || id}</span>
-        {highlighted && <RemoveButton onRemove={onRemove} />}
+        {highlighted && id !== 'Frontend' && id !== 'Backend' && <RemoveButton onRemove={onRemove} />}
       </Dot>
       {!hideLink && <VerticalLine highlighted={!selectedNode} />}
     </>
@@ -134,6 +137,7 @@ export default ({ value }) => {
 
   const [categories, setCategories] = useState([]);
   const [nodes, setNodes] = useState([]);
+  const [sortedNodes, setSortedNodes] = useState({})
   const [plugins, setPlugins] = useState([]);
 
   const [selectedNode, setSelectedNode] = useState();
@@ -148,6 +152,21 @@ export default ({ value }) => {
   const location = useLocation();
 
   const [changed, setChanged] = useState(false);
+
+  useEffect(() => {
+    setSortedNodes(nodes.reduce((acc, curr) => {
+      if (curr.onTargetStream)
+        return { ...acc, onTarget: [...acc.onTarget, curr] }
+      else if ((curr.plugin_steps || []).some(s => REQUEST_STEPS_FLOW.includes(s)))
+        return { ...acc, inBound: [...acc.inBound, curr] }
+      else
+        return { ...acc, outBound: [...acc.outBound, curr] }
+    }, {
+      inBound: [],
+      onTarget: [],
+      outBound: []
+    }))
+  }, [nodes])
 
   useEffect(() => {
     Promise.all([
@@ -284,19 +303,21 @@ export default ({ value }) => {
       },
     }
 
+    let hasChanged = false
+    const newPlugins = route.plugins.length === 0 ? [newPlugin] : [...route.plugins.flatMap(curr => {
+      const shouldSkip = (newPlugin.plugin_steps || []).some(s => s === steps[0])
+
+      if (shouldSkip && !hasChanged) {
+        steps = steps.slice(1)
+        hasChanged = true
+        return [newPlugin, curr]
+      } else
+        return curr
+    })]
+
     const newRoute = {
       ...route,
-      plugins: [
-        ...route.plugins.reduce((acc, curr) => {
-          const shouldSkip = (newPlugin.plugin_steps || []).some(s => s === steps[0])
-
-          if (shouldSkip) {
-            steps = steps.slice(1)
-            return [...acc, newPlugin]
-          } else
-            return [...acc, curr]
-        }, []),
-      ],
+      plugins: hasChanged ? newPlugins : [...newPlugins, newPlugin]
     };
 
     setNodes([...nodes, newNode]);
@@ -309,28 +330,38 @@ export default ({ value }) => {
 
     let possibilities = []
 
-    if ((a.plugin_steps || []).some((s) => ['TransformResponse'].includes(s)))
-      possibilities = nodes.filter((node) =>
-        (node.plugin_steps || []).some((s) => ['TransformResponse'].includes(s))
-      )
+    if ((a.plugin_steps || []).some(s => REQUEST_STEPS_FLOW.includes(s)))
+      possibilities = sortedNodes.inBound
+    else if (a.onTargetStream)
+      possibilities = sortedNodes.onTarget
     else
-      possibilities = sortInputStream(nodes.filter((node) =>
-        (node.plugin_steps || []).some((s) =>
-          ['PreRoute', 'ValidateAccess', 'TransformRequest'].includes(s)
-        )
-      ));
+      possibilities = sortedNodes.outBound
 
     const aPos = possibilities.findIndex(node => node.index === a.index)
     const b = possibilities.find((_, i) => i === aPos + offset)
 
     if (b && a && b.index > 1) {
+      const changes = { from: 0, to: 0 }
       setNodes(nodes.map((node, i) => {
-        if (node.index === a.index)
+        if (node.index === a.index) {
+          changes.from = i
           return { ...b, index: i }
-        else if (node.index === b.index)
+        }
+        else if (node.index === b.index) {
+          changes.to = i
           return { ...a, index: i }
+        }
         return { ...node, index: i }
       }))
+
+      let sortedPlugins = [...route.plugins]
+      sortedPlugins[changes.from - 2] = route.plugins[changes.to - 2]
+      sortedPlugins[changes.to - 2] = route.plugins[changes.from - 2]
+
+      saveChanges({
+        ...route,
+        plugins: sortedPlugins
+      })
 
       setSelectedNode({
         ...selectedNode,
@@ -423,10 +454,8 @@ export default ({ value }) => {
     )
   );
 
-  // console.log("ROUTE", route)
   console.log("NODES", nodes)
-  console.log("ROUTE", route.plugins)
-  // console.log("INPUT NODES", inputNodes)
+  console.log("ROUTE", route)
 
   const targetNodes = nodes.filter((node) => node.onTargetStream);
   const outputNodes = nodes.filter((node) =>
@@ -473,9 +502,29 @@ export default ({ value }) => {
           setSelectedNode={setSelectedNode}
           isLast={inputNodes.length - 1 === i}
           onRemove={removeNode}
+          arrows={showArrows(value)}
         />
       </>
     })
+  }
+
+  const showArrows = node => {
+    if (!node)
+      return { to: false, down: false }
+
+    const possibilities = sortedNodes[node.onTargetStream ? 'onTarget' : (node.plugin_steps || []).some(s => REQUEST_STEPS_FLOW.includes(s)) ? 'inBound' : 'outBound']
+
+    const aPos = possibilities.findIndex(n => n.index === node.index)
+    const up = possibilities[aPos - 1]
+    const down = possibilities[aPos + 1]
+
+    if (selectedNode && selectedNode.id === node.id)
+      console.log(node, aPos, up, down, possibilities)
+
+    return {
+      up: up && !['Frontend', 'Backend'].includes(up.id),
+      down: down && !['Frontend', 'Backend'].includes(down.id)
+    }
   }
 
   return (
@@ -575,6 +624,7 @@ export default ({ value }) => {
                           isLast={inputNodes.length - 1 === i}
                           bold={true}
                           onRemove={removeNode}
+                          arrows={showArrows(value)}
                         />
                       ))}
                       <Dot className="arrow-flow" icon="chevron-down" selectedNode={selectedNode} />
@@ -599,6 +649,7 @@ export default ({ value }) => {
                           selectedNode={selectedNode}
                           isLast={outputNodes.length - 1 === i}
                           onRemove={removeNode}
+                          arrows={showArrows(value)}
                         />
                       ))}
                       <VerticalLine highlighted={!selectedNode} />
@@ -625,6 +676,7 @@ export default ({ value }) => {
                       disableBorder={true}
                       bold={true}
                       onRemove={removeNode}
+                      arrows={showArrows(value)}
                     />
                   ))}
                 </div>
