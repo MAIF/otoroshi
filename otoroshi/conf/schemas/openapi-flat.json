@@ -94,7 +94,7 @@
     "properties" : { }
   },
   "otoroshi.next.models.NgRouteDataStore" : {
-    "description" : "The datastore for routes",
+    "description" : "???",
     "type" : "object",
     "properties" : { }
   },
@@ -7047,10 +7047,10 @@
               "additionalProperties" : {
                 "type" : "string"
               },
-              "description" : "The metadata of the route"
+              "description" : "???"
             },
             "backend_ref" : {
-              "description" : "The backend id of the route (if one)",
+              "description" : "???",
               "type" : "string"
             },
             "groups" : {
@@ -7058,14 +7058,14 @@
               "items" : {
                 "type" : "string"
               },
-              "description" : "The groups of the route"
+              "description" : "???"
             },
             "description" : {
-              "description" : "The description of the route",
+              "description" : "???",
               "type" : "string"
             },
             "_loc" : {
-              "description" : "The location of the route",
+              "description" : "???",
               "type" : "object",
               "properties" : {
                 "teams" : {
@@ -7082,11 +7082,11 @@
               }
             },
             "enabled" : {
-              "description" : "Is the route enabled",
+              "description" : "???",
               "type" : "boolean"
             },
             "export_reporting" : {
-              "description" : "Export the execution reporting through standard data exporter",
+              "description" : "???",
               "type" : "boolean"
             },
             "tags" : {
@@ -7094,18 +7094,18 @@
               "items" : {
                 "type" : "string"
               },
-              "description" : "The tags of the route"
+              "description" : "???"
             },
             "debug_flow" : {
-              "description" : "Enable report debugging",
+              "description" : "???",
               "type" : "boolean"
             },
             "name" : {
-              "description" : "The name of the route",
+              "description" : "???",
               "type" : "string"
             },
             "backend" : {
-              "description" : "The backend of the route",
+              "description" : "???",
               "type" : "object",
               "properties" : {
                 "target_refs" : {
@@ -7400,11 +7400,11 @@
               }
             },
             "id" : {
-              "description" : "The ud of the route",
+              "description" : "???",
               "type" : "string"
             },
             "frontend" : {
-              "description" : "The frontend of the route",
+              "description" : "???",
               "type" : "object",
               "properties" : {
                 "headers" : {
@@ -15197,6 +15197,44 @@
     "type" : "object",
     "properties" : { }
   },
+  "otoroshi.next.plugins.GraphQLCaller" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "headers" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "method" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "query" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "response_filter" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "response_path" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "url" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "timeout" : {
+        "format" : "int64",
+        "description" : "???",
+        "type" : "integer"
+      }
+    }
+  },
   "otoroshi.plugins.metrics.PrometheusEndpoint" : {
     "description" : "Plugin to expose metrics collected by PrometheusServiceMetrics",
     "type" : "object",
@@ -19277,10 +19315,10 @@
               "additionalProperties" : {
                 "type" : "string"
               },
-              "description" : "The metadata of the route"
+              "description" : "???"
             },
             "backend_ref" : {
-              "description" : "The backend id of the route (if one)",
+              "description" : "???",
               "type" : "string"
             },
             "groups" : {
@@ -19288,14 +19326,14 @@
               "items" : {
                 "type" : "string"
               },
-              "description" : "The groups of the route"
+              "description" : "???"
             },
             "description" : {
-              "description" : "The description of the route",
+              "description" : "???",
               "type" : "string"
             },
             "_loc" : {
-              "description" : "The location of the route",
+              "description" : "???",
               "type" : "object",
               "properties" : {
                 "teams" : {
@@ -19312,11 +19350,11 @@
               }
             },
             "enabled" : {
-              "description" : "Is the route enabled",
+              "description" : "???",
               "type" : "boolean"
             },
             "export_reporting" : {
-              "description" : "Export the execution reporting through standard data exporter",
+              "description" : "???",
               "type" : "boolean"
             },
             "tags" : {
@@ -19324,18 +19362,18 @@
               "items" : {
                 "type" : "string"
               },
-              "description" : "The tags of the route"
+              "description" : "???"
             },
             "debug_flow" : {
-              "description" : "Enable report debugging",
+              "description" : "???",
               "type" : "boolean"
             },
             "name" : {
-              "description" : "The name of the route",
+              "description" : "???",
               "type" : "string"
             },
             "backend" : {
-              "description" : "The backend of the route",
+              "description" : "???",
               "type" : "object",
               "properties" : {
                 "target_refs" : {
@@ -19630,11 +19668,11 @@
               }
             },
             "id" : {
-              "description" : "The ud of the route",
+              "description" : "???",
               "type" : "string"
             },
             "frontend" : {
-              "description" : "The frontend of the route",
+              "description" : "???",
               "type" : "object",
               "properties" : {
                 "headers" : {
@@ -22858,10 +22896,10 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "The metadata of the route"
+            "description" : "???"
           },
           "backend_ref" : {
-            "description" : "The backend id of the route (if one)",
+            "description" : "???",
             "type" : "string"
           },
           "groups" : {
@@ -22869,14 +22907,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "The groups of the route"
+            "description" : "???"
           },
           "description" : {
-            "description" : "The description of the route",
+            "description" : "???",
             "type" : "string"
           },
           "_loc" : {
-            "description" : "The location of the route",
+            "description" : "???",
             "type" : "object",
             "properties" : {
               "teams" : {
@@ -22893,11 +22931,11 @@
             }
           },
           "enabled" : {
-            "description" : "Is the route enabled",
+            "description" : "???",
             "type" : "boolean"
           },
           "export_reporting" : {
-            "description" : "Export the execution reporting through standard data exporter",
+            "description" : "???",
             "type" : "boolean"
           },
           "tags" : {
@@ -22905,18 +22943,18 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "The tags of the route"
+            "description" : "???"
           },
           "debug_flow" : {
-            "description" : "Enable report debugging",
+            "description" : "???",
             "type" : "boolean"
           },
           "name" : {
-            "description" : "The name of the route",
+            "description" : "???",
             "type" : "string"
           },
           "backend" : {
-            "description" : "The backend of the route",
+            "description" : "???",
             "type" : "object",
             "properties" : {
               "target_refs" : {
@@ -23211,11 +23249,11 @@
             }
           },
           "id" : {
-            "description" : "The ud of the route",
+            "description" : "???",
             "type" : "string"
           },
           "frontend" : {
-            "description" : "The frontend of the route",
+            "description" : "???",
             "type" : "object",
             "properties" : {
               "headers" : {
@@ -23499,7 +23537,7 @@
     "properties" : { }
   },
   "otoroshi.next.models.NgRoute" : {
-    "description" : "A routing primitive representing how a request is matched and where the request is forwarded",
+    "description" : "???",
     "type" : "object",
     "properties" : {
       "metadata" : {
@@ -23507,10 +23545,10 @@
         "additionalProperties" : {
           "type" : "string"
         },
-        "description" : "The metadata of the route"
+        "description" : "???"
       },
       "backend_ref" : {
-        "description" : "The backend id of the route (if one)",
+        "description" : "???",
         "type" : "string"
       },
       "groups" : {
@@ -23518,14 +23556,14 @@
         "items" : {
           "type" : "string"
         },
-        "description" : "The groups of the route"
+        "description" : "???"
       },
       "description" : {
-        "description" : "The description of the route",
+        "description" : "???",
         "type" : "string"
       },
       "_loc" : {
-        "description" : "The location of the route",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "teams" : {
@@ -23542,11 +23580,11 @@
         }
       },
       "enabled" : {
-        "description" : "Is the route enabled",
+        "description" : "???",
         "type" : "boolean"
       },
       "export_reporting" : {
-        "description" : "Export the execution reporting through standard data exporter",
+        "description" : "???",
         "type" : "boolean"
       },
       "tags" : {
@@ -23554,18 +23592,18 @@
         "items" : {
           "type" : "string"
         },
-        "description" : "The tags of the route"
+        "description" : "???"
       },
       "debug_flow" : {
-        "description" : "Enable report debugging",
+        "description" : "???",
         "type" : "boolean"
       },
       "name" : {
-        "description" : "The name of the route",
+        "description" : "???",
         "type" : "string"
       },
       "backend" : {
-        "description" : "The backend of the route",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "target_refs" : {
@@ -23860,11 +23898,11 @@
         }
       },
       "id" : {
-        "description" : "The ud of the route",
+        "description" : "???",
         "type" : "string"
       },
       "frontend" : {
-        "description" : "The frontend of the route",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "headers" : {
@@ -43167,6 +43205,44 @@
     "type" : "object",
     "properties" : { }
   },
+  "otoroshi.next.plugins.GraphQLCallerConfig" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "headers" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "method" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "query" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "response_filter" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "response_path" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "url" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "timeout" : {
+        "format" : "int64",
+        "description" : "???",
+        "type" : "integer"
+      }
+    }
+  },
   "otoroshi.next.plugins.NgHeaderNamesConfig" : {
     "description" : "Configuration for headers plugins",
     "type" : "object",
@@ -43950,10 +44026,10 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "The metadata of the route"
+            "description" : "???"
           },
           "backend_ref" : {
-            "description" : "The backend id of the route (if one)",
+            "description" : "???",
             "type" : "string"
           },
           "groups" : {
@@ -43961,14 +44037,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "The groups of the route"
+            "description" : "???"
           },
           "description" : {
-            "description" : "The description of the route",
+            "description" : "???",
             "type" : "string"
           },
           "_loc" : {
-            "description" : "The location of the route",
+            "description" : "???",
             "type" : "object",
             "properties" : {
               "teams" : {
@@ -43985,11 +44061,11 @@
             }
           },
           "enabled" : {
-            "description" : "Is the route enabled",
+            "description" : "???",
             "type" : "boolean"
           },
           "export_reporting" : {
-            "description" : "Export the execution reporting through standard data exporter",
+            "description" : "???",
             "type" : "boolean"
           },
           "tags" : {
@@ -43997,18 +44073,18 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "The tags of the route"
+            "description" : "???"
           },
           "debug_flow" : {
-            "description" : "Enable report debugging",
+            "description" : "???",
             "type" : "boolean"
           },
           "name" : {
-            "description" : "The name of the route",
+            "description" : "???",
             "type" : "string"
           },
           "backend" : {
-            "description" : "The backend of the route",
+            "description" : "???",
             "type" : "object",
             "properties" : {
               "target_refs" : {
@@ -44303,11 +44379,11 @@
             }
           },
           "id" : {
-            "description" : "The ud of the route",
+            "description" : "???",
             "type" : "string"
           },
           "frontend" : {
-            "description" : "The frontend of the route",
+            "description" : "???",
             "type" : "object",
             "properties" : {
               "headers" : {
