@@ -16,13 +16,13 @@ case class NgPluginInstanceConfig(raw: JsObject = Json.obj()) extends AnyVal {
 }
 
 case class PluginIndex(
-  sink: Option[Int],
-  preRoute: Option[Int],
-  validateAccess: Option[Int],
-  transformRequest: Option[Int],
-  transformResponse: Option[Int],
-  matchRoute: Option[Int],
-  handlesTunnel: Option[Int],
+  sink: Option[Int] = None,
+  preRoute: Option[Int] = None,
+  validateAccess: Option[Int] = None,
+  transformRequest: Option[Int] = None,
+  transformResponse: Option[Int] = None,
+  matchRoute: Option[Int] = None,
+  handlesTunnel: Option[Int] = None,
 ) {
   def json: JsValue = PluginIndex.format.writes(this)
 }
