@@ -553,12 +553,12 @@ export default ({ value }) => {
           <div className="elements">
             <div className="plugins-background-bar" />
             <SearchBar handleSearch={handleSearch} />
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 5, marginTop: 3 }}>
-              <button type="button" className="btn btn-sm btn-warning text-light" style={{ marginRight: 5 }} onClick={(e) => {
+            <div className='plugins-action-container mb-2'>
+              <button type="button" className="btn btn-sm btn-warning text-light plugins-action" style={{ marginRight: 5 }} onClick={(e) => {
                 window.localStorage.setItem('io.otoroshi.next.designer.showLegacy', String(!showLegacy));
                 setShowLegacy(!showLegacy);
               }}>{showLegacy ? 'Hide legacy plugins' : 'Show legacy plugins'}</button>
-              <button type="button" className="btn btn-sm btn-warning text-light" onClick={(e) => setExpandAll(!expandAll)}>{expandAll ? 'Collapse all' : 'Expand all'}</button>
+              <button type="button" className="btn btn-sm btn-warning text-light plugins-action" onClick={(e) => setExpandAll(!expandAll)}>{expandAll ? 'Collapse all' : 'Expand all'}</button>
             </div>
             <div className="relative-container" id="plugins-stack-container">
               <PluginsStack
@@ -654,7 +654,7 @@ export default ({ value }) => {
                   </div>
                   <div className="col-sm-6 pe-3 flex-column">
                     <div className="main-view">
-                      <Dot className="arrow-flow" icon="chevron-up" selectedNode={selectedNode}  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>response</Dot>
+                      <Dot className="arrow-flow" icon="chevron-up" selectedNode={selectedNode} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>response</Dot>
                       <VerticalLine highlighted={!selectedNode} flex={true} />
                       {outputNodes.map((value, i) => (
                         <NodeElement
@@ -741,7 +741,7 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
     }}>
     <div className="d-flex-between element-text">
       <div>
-        {element.legacy ? <span className="badge bg-warning text-dark" style={{ marginRight: 5 }}>legacy</span>: ''}
+        {element.legacy ? <span className="badge bg-warning text-dark" style={{ marginRight: 5 }}>legacy</span> : ''}
         {element.name.charAt(0).toUpperCase() + element.name.slice(1)}
       </div>
       <i
@@ -904,10 +904,10 @@ const UnselectedNode = ({ hideText, route }) => {
               const hostname = target.ip_address ? `${target.hostname}@${target.ip_address}` : target.hostname;
               const end = (rewrite || frontend.strip_path) ? path : `/<request_path>${path}`;
               const start = target.tls ? 'https://' : 'http://'
-              const mtls = (target.tls_config && target.tls_config.enabled && ([ ...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0)) ? <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>mTLS</span>: <span></span>;
+              const mtls = (target.tls_config && target.tls_config.enabled && ([...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0)) ? <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>mTLS</span> : <span></span>;
               return (
                 <div style={{ paddingLeft: 10, paddingRight: 10, display: 'flex', flexDirection: 'row' }}>
-                  <span style={{ fontFamily: 'monospace'}}>{mtls}{start}{hostname}:{target.port}{end}</span>
+                  <span style={{ fontFamily: 'monospace' }}>{mtls}{start}{hostname}:{target.port}{end}</span>
                 </div>
               );
             })}

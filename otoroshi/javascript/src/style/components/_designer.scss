@@ -430,4 +430,24 @@
         background-color: #595959;
         border: 1px solid #fff;
     }
+
+    .plugins-action {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        background-color: #595959;
+    }
+
+    .plugins-action:hover {
+        background-color: #f9b000;
+    }
+
+    .plugins-action-container {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+        margin-bottom: 5;
+        margin-top: 3;
+    }
 }
