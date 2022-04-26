@@ -443,7 +443,7 @@ class KvStoredNgTargetDataStore(redisCli: RedisLike, _env: Env)
     with RedisLikeStore[StoredNgTarget] {
   override def redisLike(implicit env: Env): RedisLike  = redisCli
   override def fmt: Format[StoredNgTarget]              = StoredNgTarget.format
-  override def key(id: String): Key                     = Key.Empty / _env.storageRoot / "targets" / id
+  override def key(id: String): Key                     = Key.Empty / _env.storageRoot / "ng-targets" / id
   override def extractId(value: StoredNgTarget): String = value.id
 }
 
