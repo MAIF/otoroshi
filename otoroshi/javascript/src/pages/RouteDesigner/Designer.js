@@ -154,6 +154,8 @@ export default ({ value }) => {
   });
   const [loading, setLoading] = useState(true);
   const [searched, setSearched] = useState('');
+  const [expandAll, setExpandAll] = useState(false);
+  const [showLegacy, setShowLegacy] = useState((window.localStorage.getItem('io.otoroshi.next.designer.showLegacy') || 'true') === 'true');
   const location = useLocation();
 
   const [changed, setChanged] = useState(false);
@@ -185,7 +187,7 @@ export default ({ value }) => {
           config: plugin.default_config || plugin.defaultConfig,
         }));
 
-      console.log('formatedPlugins', formatedPlugins)
+      // console.log('formatedPlugins', formatedPlugins)
 
       setBackends(backends);
       setCategories([
@@ -453,7 +455,7 @@ export default ({ value }) => {
   );
 
   // console.log("ROUTE", route)
-  console.log("NODES", nodes)
+  // console.log("NODES", nodes)
 
   const targetNodes = nodes.filter((node) => node.onTargetStream);
   const outputNodes = nodes.filter((node) =>
@@ -490,10 +492,18 @@ export default ({ value }) => {
           <div className="elements">
             <div className="plugins-background-bar" />
             <SearchBar handleSearch={handleSearch} />
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 5, marginTop: 3 }}>
+              <button type="button" className="btn btn-sm btn-warning text-light" style={{ marginRight: 5 }} onClick={(e) => {
+                window.localStorage.setItem('io.otoroshi.next.designer.showLegacy', String(!showLegacy));
+                setShowLegacy(!showLegacy);
+              }}>{showLegacy ? 'Hide legacy plugins' : 'Show legacy plugins'}</button>
+              <button type="button" className="btn btn-sm btn-warning text-light" onClick={(e) => setExpandAll(!expandAll)}>{expandAll ? 'Collapse all' : 'Expand all'}</button>
+            </div>
             <div className="relative-container" id="plugins-stack-container">
               <PluginsStack
                 forceOpen={!!searched}
-                elements={plugins.reduce(
+                expandAll={expandAll}
+                elements={plugins.filter(plugin => (showLegacy ? true : !plugin.legacy)).reduce(
                   (acc, plugin) => {
                     if (plugin.selected || plugin.filtered) return acc;
                     return acc.map((group) => {
@@ -696,6 +706,10 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
 
 const Group = ({ group, elements, addNode, ...props }) => {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setOpen(props.expandAll);
+  }, [props.expandAll])
 
   return (
     <div className="group">

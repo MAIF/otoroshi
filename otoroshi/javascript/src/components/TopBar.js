@@ -54,6 +54,18 @@ export class TopBar extends Component {
         }));
         options.sort((a, b) => a.label.localeCompare(b.label));
         options.push({
+          action: () => (window.location.href = '/bo/dashboard/routes'),
+          env: <span className="fas fa-road" />,
+          label: 'Routes',
+          value: 'Routes',
+        });
+        options.push({
+          action: () => (window.location.href = '/bo/dashboard/backends'),
+          env: <span className="fas fa-microchip" />,
+          label: 'Backends',
+          value: 'Backends',
+        });
+        options.push({
           action: () => (window.location.href = '/bo/dashboard/admins'),
           env: <span className="fas fa-user" />,
           label: 'Admins',
