@@ -171,7 +171,7 @@ export default ({ value }) => {
       nextClient.form(nextClient.ENTITIES.BACKENDS),
     ]).then(([backends, route, categories, plugins, oldPlugins, frontendForm, backendForm]) => {
 
-      console.log('plugins', plugins)
+      // console.log('plugins', plugins)
 
       const formatedPlugins = [
         ...plugins,
