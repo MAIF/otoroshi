@@ -225,7 +225,7 @@ case class NgTreeNodePath(
           case None if endsWithSlash && routes.isEmpty              => None
           case None if endsWithSlash && routes.nonEmpty             =>
             // NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.isEmpty).some
-            NgMatchedRoutes(routes, path, pathParams, noMoreSegments = segments.isEmpty).some
+            NgMatchedRoutes(routes, path, pathParams, noMoreSegments = segments.tail.isEmpty).some
           case None if !endsWithSlash                               => {
             // here is one of the worst case scenario where the user wants to use '/api/999' to match calls on '/api/999-foo'
             segmentStartsWithCache.get(
@@ -255,14 +255,14 @@ case class NgTreeNodePath(
           }
           case Some(ptree) if ptree.isEmpty && routes.isEmpty       => None
           case Some(ptree) if ptree.isEmpty && routes.nonEmpty      =>
-            NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.isEmpty).some
+            NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
           case Some(ptree) if ptree.isLeaf && ptree.routes.isEmpty  => None
           case Some(ptree) if ptree.isLeaf && ptree.routes.nonEmpty =>
-            NgMatchedRoutes(ptree.routes, s"$path/$head", pathParams, noMoreSegments = segments.isEmpty).some
+            NgMatchedRoutes(ptree.routes, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
           case Some(ptree)                                          =>
             ptree.find(segments.tail, endsWithSlash, s"$path/$head", pathParams) match {
               case None if routes.isEmpty => None
-              case None                   => NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.isEmpty).some
+              case None                   => NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
               case s                      => s
             }
         }
