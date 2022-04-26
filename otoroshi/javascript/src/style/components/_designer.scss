@@ -181,7 +181,6 @@
         border: 1px solid #eee;
         border-radius: 4px;
         width: 100%;
-        min-height: 36px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -270,16 +269,19 @@
     }
 
     .frontend-button {
-        z-index: 100;
+        // z-index: 100;
         position: absolute;
         top: 0;
-        left: -16px;
-        height: 36px;
+        left: -12px;
+        height: 31px;
+        padding-left: 4px;
         border: 1px solid #eee;
         border-right-width: 0;
         border-radius: 4px;
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
+        display: flex;
+        align-items: center;
     }
 
     .frontend-container-button {
@@ -289,17 +291,10 @@
     }
 
     .frontend-button-icon {
-        font-size: 26px;
+        font-size: 20px;
         color: #fff;
-        margin: 3px;
     }
-
-    .arrow-flow {
-        width: 72px;
-        height: 36px;
-        border-radius: 6px;
-    }
-
+    
     .editor-view-form {
         padding: 0 12px 12px;
     }
@@ -364,15 +359,16 @@
 
     .backend-button {
         flex: 0;
-        background-color: #f9b000;
         padding: 1px;
         position: relative;
+        border: 1px solid #fff;
+        border-radius: 4px;
     }
 
     .backend-icon {
         position: absolute;
-        top: -3px;
-        right: -18px;
+        top: -6px;
+        right: -12px;
         font-size: 42px;
         color: #fff;
         background-color: #f9b000;

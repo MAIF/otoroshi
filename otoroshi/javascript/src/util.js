@@ -13,6 +13,12 @@ const reservedCamelWords = [
 ];
 
 export const REQUEST_STEPS_FLOW = ['PreRoute', 'ValidateAccess', 'TransformRequest']
+export const REQUEST_STEPS_WEIGHT = {
+  PreRoute: 0,
+  ValidateAccess: 1,
+  TransformRequest: 2,
+  TransformResponse: 3
+}
 
 export const camelToSnakeCase = (str) =>
   str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);

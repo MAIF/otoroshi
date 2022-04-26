@@ -14,13 +14,20 @@ import {
 } from './Graph';
 import Loader from './Loader';
 import { isEqual } from "lodash";
-import { toUpperCaseLabels, camelToSnake, camelToSnakeFlow, REQUEST_STEPS_FLOW } from '../../util';
+import { toUpperCaseLabels, camelToSnake, camelToSnakeFlow, REQUEST_STEPS_FLOW, REQUEST_STEPS_WEIGHT } from '../../util';
 import { Form, type, format, validate } from '@maif/react-forms';
 import { CodeInput } from '@maif/react-forms';
 import { MarkdownInput } from '@maif/react-forms';
 import { FeedbackButton } from './FeedbackButton';
 import { merge } from 'lodash';
 import { cloneDeep } from 'lodash';
+
+const HeaderNode = ({ selectedNode, text, icon }) => <Dot selectedNode={selectedNode}>
+  <div className='flex-column p-1'>
+    <i className={`fas fa-arrow-${icon}`} style={{ color: '#fff' }} />
+    <span>{text}</span>
+  </div>
+</Dot>
 
 const Status = ({ value }) => (
   <div className="status-dot" title={value ? 'plugin enabled' : 'plugin disabled'} style={{ backgroundColor: value ? '#198754' : '#D5443F' }} />
@@ -34,7 +41,6 @@ const Dot = ({
   className,
   icon,
   children,
-  prefix,
   clickable,
   onClick,
   highlighted,
@@ -60,7 +66,6 @@ const Dot = ({
     }}>
     {enabled !== undefined && <Status value={enabled} />}
     {legacy !== undefined && <Legacy value={legacy} />}
-    {prefix && prefix}
     {icon && <i className={`fas fa-${icon} dot-icon`} />}
     {children && children}
 
@@ -124,12 +129,12 @@ const NodeElement = ({
         <span className="dot-text">{name || id}</span>
         {highlighted && id !== 'Frontend' && id !== 'Backend' && <RemoveButton onRemove={onRemove} />}
       </Dot>
-      {!hideLink && <VerticalLine highlighted={!selectedNode} />}
+      {!hideLink && <Hr highlighted={!selectedNode} />}
     </>
   );
 };
 
-const VerticalLine = ({ highlighted = true, flex }) => (
+const Hr = ({ highlighted = true, flex }) => (
   <div
     className="vertical-line"
     style={{
@@ -139,50 +144,221 @@ const VerticalLine = ({ highlighted = true, flex }) => (
   />
 );
 
+const FormContainer = ({
+  selectedNode, route, saveChanges, setRoute, setSelectedNode, updatePlugin,
+  removeNode, plugins, backends, preview, showPreview, originalRoute, setRef
+}) => <div className="col-sm-8 relative-container" style={{ paddingRight: 0 }}>
+    <UnselectedNode hideText={selectedNode} route={route} />
+    {selectedNode && (
+      <EditView
+        saveChanges={saveChanges}
+        setRoute={setRoute}
+        selectedNode={selectedNode}
+        setSelectedNode={setSelectedNode}
+        updatePlugin={updatePlugin}
+        onRemove={removeNode}
+        route={route}
+        plugins={plugins}
+        backends={backends}
+        hidePreview={() =>
+          showPreview({
+            ...preview,
+            enabled: false,
+          })
+        }
+        showUpdateRouteButton={!isEqual(route, originalRoute)}
+        setRef={setRef}
+      />
+    )}
+  </div>
+
 export default ({ value }) => {
   const { routeId } = useParams();
-
-  const [backends, setBackends] = useState([]);
-
-  const [categories, setCategories] = useState([]);
-  const [nodes, setNodes] = useState([]);
-  const [sortedNodes, setSortedNodes] = useState({})
-  const [plugins, setPlugins] = useState([]);
-
-  const [selectedNode, setSelectedNode] = useState();
-  const [route, setRoute] = useState(value);
-  const [originalRoute, setOriginalRoute] = useState(value);
-
-  const [preview, showPreview] = useState({
-    enabled: false,
-  });
-  const [loading, setLoading] = useState(true);
-  const [searched, setSearched] = useState('');
-  const [expandAll, setExpandAll] = useState(false);
-  const [showLegacy, setShowLegacy] = useState((window.localStorage.getItem('io.otoroshi.next.designer.showLegacy') || 'true') === 'true');
   const location = useLocation();
 
-  const [changed, setChanged] = useState(false);
+  return <Designer routeId={routeId} location={location} value={value} />
+}
 
-  useEffect(() => {
-    setSortedNodes(nodes.reduce((acc, curr) => {
-      if (curr.onTargetStream)
-        return { ...acc, onTarget: [...acc.onTarget, curr] }
-      else if ((curr.plugin_steps || []).some(s => REQUEST_STEPS_FLOW.includes(s)))
+const FrontendNode = ({
+  onUp, onDown, onUnsavedChanges, frontend, selectedNode, setSelectedNode, removeNode, arrows
+}) => <div className='main-view relative-container' style={{ flex: 'initial' }}>
+    <NodeElement
+      onUp={onUp}
+      onDown={onDown}
+      onUnsavedChanges={onUnsavedChanges}
+      className="frontend-container-button"
+      element={frontend}
+      selectedNode={selectedNode}
+      setSelectedNode={setSelectedNode}
+      isLast={true}
+      bold={true}
+      onRemove={removeNode}
+      arrows={arrows}
+    />
+    <div
+      className="frontend-button"
+      style={{
+        background:
+          (selectedNode && selectedNode.id === 'Frontend') ?
+            'linear-gradient(to right, rgb(249, 176, 0) 55%, transparent 1%)' :
+            'linear-gradient(to right, rgb(73, 73, 72) 55%, transparent 1%)',
+        opacity: (!selectedNode || (selectedNode && selectedNode.id === 'Frontend')) ? 1 : 0.25
+      }}>
+      <i className="fas fa-user frontend-button-icon" />
+    </div>
+  </div>
+
+const Container = ({ children, onClick }) => {
+  return <div
+    className="h-100 col-12 hide-overflow route-designer"
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick()
+    }}>
+    {children}
+  </div>
+}
+
+const BackendNode = ({ selectedNode, onUp, onDown, onUnsavedChanges, backend, setSelectedNode, removeNode, arrows }) => {
+  return <div
+    className="main-view backend-button"
+    style={{ opacity: !selectedNode ? 1 : (!selectedNode.id === 'Backend' ? 0.25 : 1) }}>
+    <i className="fas fa-bullseye backend-icon" />
+    <NodeElement
+      onUp={onUp}
+      onDown={onDown}
+      onUnsavedChanges={onUnsavedChanges}
+      element={backend}
+      selectedNode={(selectedNode && selectedNode.id === 'Backend') ? selectedNode : undefined}
+      setSelectedNode={setSelectedNode}
+      hideLink={true}
+      disableBorder={true}
+      bold={true}
+      onRemove={removeNode}
+      arrows={arrows}
+    />
+  </div>
+}
+
+const InBoundFlow = ({ children }) => <div className="col-sm-6 flex-column">
+  <div className="main-view">
+    {children}
+  </div>
+</div>
+
+const OutBoundFlow = ({ children }) => <div className="col-sm-6 pe-3 flex-column">
+  <div className="main-view">
+    {children}
+  </div>
+</div>
+
+const Flow = ({ children }) => <div className="col-sm-4 pe-3 d-flex flex-column">{children}</div>
+
+const PluginsContainer = ({
+  handleSearch, showLegacy, setShowLegacy, onExpandAll,
+  expandAll, searched, plugins, categories, addNode, showPreview, hidePreview }) => <div className="plugins-stack-column">
+    <div className="elements">
+      <div className="plugins-background-bar" />
+      <SearchBar handleSearch={handleSearch} />
+      <div className='plugins-action-container mb-2'>
+        <button type="button" className="btn btn-sm btn-warning text-light plugins-action" style={{ marginRight: 5 }}
+          onClick={(e) => {
+            window.localStorage.setItem('io.otoroshi.next.designer.showLegacy', String(!showLegacy));
+            setShowLegacy(!showLegacy);
+          }}>
+          {showLegacy ? 'Hide legacy plugins' : 'Show legacy plugins'}
+        </button>
+        <button type="button" className="btn btn-sm btn-warning text-light plugins-action"
+          onClick={onExpandAll}>
+          {expandAll ? 'Collapse all' : 'Expand all'}
+        </button>
+      </div>
+      <div className="relative-container" id="plugins-stack-container">
+        <PluginsStack
+          forceOpen={!!searched}
+          expandAll={expandAll}
+          elements={plugins.filter(plugin => (showLegacy ? true : !plugin.legacy)).reduce(
+            (acc, plugin) => {
+              if (plugin.selected || plugin.filtered) return acc;
+              return acc.map((group) => {
+                if (plugin.plugin_categories.includes(group.group))
+                  return {
+                    ...group,
+                    elements: [...(group.elements || []), plugin],
+                  };
+                return group;
+              });
+            },
+            categories.map((category) => ({
+              group: category,
+              elements: [],
+            }))
+          )}
+          addNode={addNode}
+          showPreview={showPreview}
+          hidePreview={hidePreview}
+        />
+      </div>
+    </div>
+  </div>
+
+class Designer extends React.Component {
+
+  state = {
+    backends: [],
+    categories: [],
+    nodes: [],
+    sortedNodes: {
+      outBound: [],
+      inBound: []
+    },
+    plugins: [],
+    selectedNode: undefined,
+    route: this.props.value,
+    originalRoute: this.props.value,
+    loading: true,
+    searched: '',
+    expandAll: false,
+    showLegacy: (window.localStorage.getItem('io.otoroshi.next.designer.showLegacy') || 'true') === 'true',
+    changed: false,
+    preview: {
+      enabled: false
+    },
+    frontend: {},
+    backend: {}
+  }
+
+  sortNodes = () => {
+    const n = this.state.nodes.reduce((acc, curr) => {
+      if (this.isOnInBoundSteps(curr))
         return { ...acc, inBound: [...acc.inBound, curr] }
       else
         return { ...acc, outBound: [...acc.outBound, curr] }
     }, {
       inBound: [],
-      onTarget: [],
       outBound: []
-    }))
-  }, [nodes])
+    })
+    this.setState({
+      sortedNodes: {
+        inBound: this.sortInputStream(n.inBound),
+        outBound: n.outBound
+      }
+    })
+  }
 
-  useEffect(() => {
+  componentDidMount() {
+    this.loadData()
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.location.pathname !== this.props.location.pathname)
+      this.loadData()
+  }
+
+  loadData = () => {
     Promise.all([
       nextClient.find(nextClient.ENTITIES.BACKENDS),
-      nextClient.fetch(nextClient.ENTITIES.ROUTES, routeId),
+      nextClient.fetch(nextClient.ENTITIES.ROUTES, this.props.routeId),
       getCategories(),
       getPlugins(),
       getOldPlugins(),
@@ -196,110 +372,97 @@ export default ({ value }) => {
           legacy: true,
         })),
       ]
-        .filter(filterSpecificPlugin)
+        .filter(this.filterSpecificPlugin)
         .map((plugin) => ({
           ...plugin,
           config_schema: toUpperCaseLabels(plugin.config_schema || plugin.configSchema || {}),
           config: plugin.default_config || plugin.defaultConfig,
         }));
 
-      setBackends(backends);
-      setCategories([
-        ...categories.filter((category) => !['Tunnel', 'Job'].includes(category)),
-        'Ancien plugins',
-      ]);
-      setRoute(route);
-      setOriginalRoute(route);
-
-      setPlugins(
-        formatedPlugins.map((p) => ({
+      this.setState({
+        backends,
+        categories: [
+          ...categories.filter((category) => !['Tunnel', 'Job'].includes(category)),
+          'Ancien plugins',
+        ],
+        route,
+        originalRoute: route,
+        plugins: formatedPlugins.map((p) => ({
           ...p,
           selected: p.plugin_multi_inst ? false : route.plugins.find((r) => r.plugin === p.id),
-        }))
-      );
-
-      setNodes(
-        [
-          {
-            ...DEFAULT_FLOW.Frontend,
-            ...frontendForm,
-            config_schema: toUpperCaseLabels({
-              ...frontendForm.schema,
-              ...DEFAULT_FLOW.Frontend.config_schema,
-            }),
-            config_flow: DEFAULT_FLOW.Frontend.config_flow,
-          },
-          {
-            ...DEFAULT_FLOW.Backend,
-            ...backendForm,
-            config_schema: toUpperCaseLabels(
-              DEFAULT_FLOW.Backend.config_schema(backendForm.schema)
-            ),
-            config_flow: DEFAULT_FLOW.Backend.config_flow,
-          },
-          ...route.plugins.map((ref) => ({
-            ...formatedPlugins.find(
-              (p) => p.id === ref.plugin || p.id === ref.config.plugin
-            )
-          }))
-        ].map((node, i) => ({ ...node, index: i }))
-      );
-
-      setLoading(false);
+        })),
+        frontend: {
+          ...DEFAULT_FLOW.Frontend,
+          ...frontendForm,
+          config_schema: toUpperCaseLabels({
+            ...frontendForm.schema,
+            ...DEFAULT_FLOW.Frontend.config_schema,
+          }),
+          config_flow: DEFAULT_FLOW.Frontend.config_flow,
+        },
+        backend: {
+          ...DEFAULT_FLOW.Backend,
+          ...backendForm,
+          config_schema: toUpperCaseLabels(
+            DEFAULT_FLOW.Backend.config_schema(backendForm.schema)
+          ),
+          config_flow: DEFAULT_FLOW.Backend.config_flow,
+        },
+        nodes: route.plugins
+          .map((ref, i) => ({
+            ...formatedPlugins.find(p => p.id === ref.plugin || p.id === ref.config.plugin),
+            index: i
+          })),
+        loading: false
+      }, this.sortNodes)
     });
-  }, [location.pathname]);
+  }
 
-  const filterSpecificPlugin = (plugin) =>
+  filterSpecificPlugin = (plugin) =>
     !plugin.plugin_steps.includes('Sink') &&
     !plugin.plugin_steps.includes('HandlesTunnel') &&
     !['job', 'sink'].includes(plugin.pluginType) &&
     !EXCLUDED_PLUGINS.plugin_visibility.includes(plugin.plugin_visibility) &&
     !EXCLUDED_PLUGINS.ids.includes(plugin.id.replace('cp:', ''));
 
-  const removeNode = e => {
+  removeNode = e => {
     e.stopPropagation();
+
+    const { selectedNode, nodes, plugins, route } = this.state
+
     const id = selectedNode.id
     const idx = selectedNode.index
 
     window.newConfirm(`Are you sure to delete this node ?`).then((ok) => {
       if (ok) {
-        setNodes(
-          nodes
+        this.setState({
+          nodes: nodes
             .filter((node, i) => !(node.id === id && i === idx))
             .map((node, i) => ({
               ...node,
               index: i,
-            }))
-        );
-
-        saveChanges({
-          ...route,
-          plugins: route.plugins.filter((_, i) => i + 2 !== idx),
-        });
-
-        setPlugins(
-          plugins.map((plugin) => {
+            })),
+          plugins: plugins.map((plugin) => {
             if (plugin.id === id) return { ...plugin, selected: undefined };
             return plugin;
-          })
-        );
+          }),
+          selectedNode: undefined
+        }, () => {
+          this.sortNodes()
+          saveChanges({
+            ...route,
+            plugins: route.plugins.filter((_, i) => i !== idx),
+          });
+        })
       }
-      setSelectedNode(undefined)
     });
   };
 
-  const addNode = (node) => {
+  addNode = (node) => {
     const newNode = {
       ...node,
-      index: nodes.length,
+      index: this.state.nodes.length,
     };
-
-    setPlugins(
-      plugins.map((p) => {
-        if (p.id === newNode.id) p.selected = !p.plugin_multi_inst;
-        return p;
-      })
-    );
 
     let steps = [...REQUEST_STEPS_FLOW, 'TransformResponse']
     const newPlugin = {
@@ -315,7 +478,7 @@ export default ({ value }) => {
     }
 
     let hasChanged = false
-    const newPlugins = route.plugins.length === 0 ? [newPlugin] : [...route.plugins.flatMap(curr => {
+    const newPlugins = this.state.route.plugins.length === 0 ? [newPlugin] : [...this.state.route.plugins.flatMap(curr => {
       const shouldSkip = (newPlugin.plugin_steps || []).some(s => s === steps[0])
 
       if (shouldSkip && !hasChanged) {
@@ -327,93 +490,101 @@ export default ({ value }) => {
     })]
 
     const newRoute = {
-      ...route,
+      ...this.state.route,
       plugins: hasChanged ? newPlugins : [...newPlugins, newPlugin]
     };
 
-    setNodes([...nodes, newNode]);
-    setSelectedNode(newNode);
-    saveChanges(newRoute);
+    this.setState({
+      plugins: this.state.plugins.map((p) => {
+        if (p.id === newNode.id) p.selected = !p.plugin_multi_inst;
+        return p;
+      }),
+      nodes: [...this.state.nodes, newNode],
+      selectedNode: newNode
+    }, () => {
+      this.sortNodes()
+      this.saveChanges(newRoute)
+    })
   };
 
-  const swap = (aIndex, offset) => {
-    const a = { ...nodes.find((_, i) => i === aIndex) }
+  swap = (aIndex, offset) => {
+    const a = { ...this.state.nodes.find((_, i) => i === aIndex) }
 
     let possibilities = []
 
-    if ((a.plugin_steps || []).some(s => REQUEST_STEPS_FLOW.includes(s)))
-      possibilities = sortedNodes.inBound
-    else if (a.onTargetStream)
-      possibilities = sortedNodes.onTarget
+    if (this.isOnInBoundSteps(a))
+      possibilities = this.state.sortedNodes.inBound
     else
-      possibilities = sortedNodes.outBound
+      possibilities = this.state.sortedNodes.outBound
 
     const aPos = possibilities.findIndex(node => node.index === a.index)
     const b = possibilities.find((_, i) => i === aPos + offset)
 
-    if (b && a && b.index > 1) {
+    if (b && a) {
       const changes = { from: 0, to: 0 }
-      setNodes(nodes.map((node, i) => {
-        if (node.index === a.index) {
-          changes.from = i
-          return { ...b, index: i }
+      this.setState({
+        nodes: this.state.nodes.map((node, i) => {
+          if (node.index === a.index) {
+            changes.from = i
+            return { ...b, index: i }
+          }
+          else if (node.index === b.index) {
+            changes.to = i
+            return { ...a, index: i }
+          }
+          return { ...node, index: i }
+        }),
+        selectedNode: {
+          ...this.state.selectedNode,
+          index: b.index
         }
-        else if (node.index === b.index) {
-          changes.to = i
-          return { ...a, index: i }
-        }
-        return { ...node, index: i }
-      }))
+      }, this.sortNodes)
 
-      let sortedPlugins = [...route.plugins]
-      sortedPlugins[changes.from - 2] = route.plugins[changes.to - 2]
-      sortedPlugins[changes.to - 2] = route.plugins[changes.from - 2]
+      let sortedPlugins = [...this.state.route.plugins]
+      sortedPlugins[changes.from] = this.state.route.plugins[changes.to]
+      sortedPlugins[changes.to] = this.state.route.plugins[changes.from]
 
-      saveChanges({
-        ...route,
+      this.saveChanges({
+        ...this.state.route,
         plugins: sortedPlugins
       })
-
-      setSelectedNode({
-        ...selectedNode,
-        index: b.index
-      })
     }
   }
 
-  const onUp = e => {
+  onUp = e => {
     e.stopPropagation()
-    if (selectedNode) {
-      const { index } = selectedNode
-      swap(index, -1)
+    if (this.state.selectedNode) {
+      const { index } = this.state.selectedNode
+      this.swap(index, -1)
     }
   }
 
-  const onDown = e => {
+  onDown = e => {
     e.stopPropagation()
-    if (selectedNode) {
-      const { index } = selectedNode
-      swap(index, 1)
+    if (this.state.selectedNode) {
+      const { index } = this.state.selectedNode
+      this.swap(index, 1)
     }
   }
 
-  const handleSearch = (search) => {
-    setSearched(search);
-    setPlugins(
-      plugins.map((plugin) => ({
+  handleSearch = searched => {
+    this.setState({
+      searched,
+      plugins: this.state.plugins.map((plugin) => ({
         ...plugin,
-        filtered: !(plugin.id.toLowerCase().includes(search.toLowerCase()) || plugin.name.toLowerCase().includes(search.toLowerCase())),
+        filtered: !(plugin.id.toLowerCase().includes(searched.toLowerCase()) || plugin.name.toLowerCase().includes(searched.toLowerCase())),
       }))
-    );
+    })
   };
 
-  const updatePlugin = (pluginId, index, item, updatedField) => {
-    return saveChanges({
+  updatePlugin = (pluginId, index, item, updatedField) => {
+    const { route } = this.state
+    return this.saveChanges({
       ...route,
       frontend: updatedField === 'Frontend' ? item.plugin : route.frontend,
       backend: updatedField === 'Backend' ? item.plugin : route.backend,
       plugins: route.plugins.map((plugin, i) => {
-        if ((plugin.plugin === pluginId || plugin.config.plugin === pluginId) && i + 2 === index)
+        if ((plugin.plugin === pluginId || plugin.config.plugin === pluginId) && i === index)
           return {
             ...plugin,
             ...item.status,
@@ -425,14 +596,16 @@ export default ({ value }) => {
     });
   };
 
-  const saveChanges = (route) => {
+  saveChanges = (route) => {
     return nextClient.update(nextClient.ENTITIES.ROUTES, route).then((newRoute) => {
-      setOriginalRoute(newRoute);
-      setRoute(newRoute);
+      this.setState({
+        route: newRoute,
+        originalRoute: newRoute
+      })
     });
   };
 
-  const sortInputStream = (arr) =>
+  sortInputStream = (arr) =>
     Object.values(
       arr.reduce(
         (acc, node) => {
@@ -459,22 +632,8 @@ export default ({ value }) => {
       )
     ).flat();
 
-  const inputNodes = sortInputStream(
-    nodes.filter((node) =>
-      (node.plugin_steps || []).some(s => REQUEST_STEPS_FLOW.includes(s))
-    )
-  );
-
-  // console.log("NODES", nodes)
-  // console.log("ROUTE", route)
-
-  const targetNodes = nodes.filter((node) => node.onTargetStream);
-  const outputNodes = nodes.filter((node) =>
-    (node.plugin_steps || []).some((s) => ['TransformResponse'].includes(s))
-  );
-
-  const onUnsavedChanges = (onConfirm) => {
-    if (changed) {
+  onUnsavedChanges = (onConfirm) => {
+    if (this.state.changed) {
       window
         .newConfirm(`Are you sure to leave this configuration without save your changes ?`)
         .then((ok) => {
@@ -483,15 +642,17 @@ export default ({ value }) => {
     } else onConfirm();
   };
 
-  const pluginIsEnabled = (value) => {
-    const index = nodes.findIndex((p, i) => p.id === value.id && i === value.index)
-    return route.plugins[index - 2]?.enabled;
+  pluginIsEnabled = (value) => {
+    const index = this.state.nodes.findIndex((p, i) => p.id === value.id && i === value.index)
+    return this.state.route.plugins[index]?.enabled;
   }
 
-  const renderTranformerResquests = () => {
+  renderInBound = () => {
     let steps = [...REQUEST_STEPS_FLOW]
 
-    return inputNodes.slice(1).map((value, i) => {
+    const { selectedNode, sortedNodes } = this.state
+
+    return sortedNodes.inBound.map((value, i) => {
       const showStep = (value.plugin_steps || []).every(s => s !== steps[0])
 
       if (showStep)
@@ -500,237 +661,200 @@ export default ({ value }) => {
       return <>
         {(showStep || i === 0) && <>
           <span className='badge bg-warning text-dark' style={{ opacity: !selectedNode ? 1 : 0.25 }}>{steps[0]}</span>
-          <VerticalLine highlighted={!selectedNode} />
+          <Hr highlighted={!selectedNode} />
         </>}
         <NodeElement
-          onUp={onUp}
-          onDown={onDown}
-          onUnsavedChanges={onUnsavedChanges}
-          enabled={pluginIsEnabled(value)}
+          onUp={this.onUp}
+          onDown={this.onDown}
+          onUnsavedChanges={this.onUnsavedChanges}
+          enabled={this.pluginIsEnabled(value)}
           element={value}
           key={`inNodes${i}`}
           selectedNode={selectedNode}
-          setSelectedNode={setSelectedNode}
-          isLast={inputNodes.length - 1 === i}
-          onRemove={removeNode}
-          arrows={showArrows(value)}
+          setSelectedNode={n => this.setState({ selectedNode: n })}
+          isLast={sortedNodes.inBound.length - 1 === i}
+          onRemove={this.removeNode}
+          arrows={this.showArrows(value)}
         />
       </>
     })
   }
 
-  const showArrows = node => {
+  renderOutBound = () => {
+    return this.state.sortedNodes.outBound.map((value, i) => (
+      <NodeElement
+        onUp={this.onUp}
+        onDown={this.onDown}
+        onUnsavedChanges={this.onUnsavedChanges}
+        enabled={this.pluginIsEnabled(value)}
+        element={value}
+        key={`outNodes${i}`}
+        setSelectedNode={n => this.setState({ selectedNode: n })}
+        selectedNode={this.state.selectedNode}
+        isLast={this.state.sortedNodes.outBound.length - 1 === i}
+        onRemove={this.removeNode}
+        arrows={this.showArrows(value)}
+      />
+    ))
+  }
+
+  isOnInBoundSteps = plugin => (plugin.plugin_steps || []).some(s => REQUEST_STEPS_FLOW.includes(s))
+
+  getPluginStepWeights = pluginSteps => Math.max(...pluginSteps.map(o => REQUEST_STEPS_WEIGHT[o]))
+
+  hasSimilarity = (a, b) => a.filter(elem => b.includes(elem))
+
+  canSwapPluginWith = (a, b) => {
+    if (this.isOnInBoundSteps(a) && this.isOnInBoundSteps(b)) {
+      const aPlugins = a.plugin_steps || []
+      const bPlugins = b.plugin_steps || []
+
+      if (aPlugins.length === 1 && bPlugins.length === 1)
+        return REQUEST_STEPS_WEIGHT[aPlugins[0]] === REQUEST_STEPS_WEIGHT[bPlugins[0]]
+      return this.hasSimilarity(aPlugins, bPlugins) || this.getPluginStepWeights(aPlugins) <= this.getPluginStepWeights(bPlugins)
+    }
+    else
+      return true
+  }
+
+  showArrows = node => {
     if (!node)
       return { to: false, down: false }
 
-    const possibilities = sortedNodes[node.onTargetStream ? 'onTarget' : (node.plugin_steps || []).some(s => REQUEST_STEPS_FLOW.includes(s)) ? 'inBound' : 'outBound']
+    const possibilities = this.state.sortedNodes[this.isOnInBoundSteps(node) ? 'inBound' : 'outBound']
 
     const aPos = possibilities.findIndex(n => n.index === node.index)
     const up = possibilities[aPos - 1]
     const down = possibilities[aPos + 1]
 
-    if (selectedNode && selectedNode.id === node.id)
-      console.log(node, aPos, up, down, possibilities)
+    // if (selectedNode && selectedNode.id === node.id)
+    //   console.log(node, aPos, up, down, possibilities)
 
     return {
-      up: up && !['Frontend', 'Backend'].includes(up.id),
-      down: down && !['Frontend', 'Backend'].includes(down.id)
+      up: up && !['Frontend', 'Backend'].includes(up.id) && this.canSwapPluginWith(node, up),
+      down: down && !['Frontend', 'Backend'].includes(down.id) && this.canSwapPluginWith(node, down)
     }
   }
 
-  return (
-    <Loader loading={loading}>
-      <div
-        className="h-100 col-12 hide-overflow route-designer"
-        onClick={(e) => {
-          e.stopPropagation();
-          onUnsavedChanges(() => {
-            setChanged(false);
-            setSelectedNode(undefined);
-          });
-        }}>
-        <div className="plugins-stack-column">
-          <div className="elements">
-            <div className="plugins-background-bar" />
-            <SearchBar handleSearch={handleSearch} />
-            <div className='plugins-action-container mb-2'>
-              <button type="button" className="btn btn-sm btn-warning text-light plugins-action" style={{ marginRight: 5 }} onClick={(e) => {
-                window.localStorage.setItem('io.otoroshi.next.designer.showLegacy', String(!showLegacy));
-                setShowLegacy(!showLegacy);
-              }}>{showLegacy ? 'Hide legacy plugins' : 'Show legacy plugins'}</button>
-              <button type="button" className="btn btn-sm btn-warning text-light plugins-action" onClick={(e) => setExpandAll(!expandAll)}>{expandAll ? 'Collapse all' : 'Expand all'}</button>
-            </div>
-            <div className="relative-container" id="plugins-stack-container">
-              <PluginsStack
-                forceOpen={!!searched}
-                expandAll={expandAll}
-                elements={plugins.filter(plugin => (showLegacy ? true : !plugin.legacy)).reduce(
-                  (acc, plugin) => {
-                    if (plugin.selected || plugin.filtered) return acc;
-                    return acc.map((group) => {
-                      if (plugin.plugin_categories.includes(group.group))
-                        return {
-                          ...group,
-                          elements: [...(group.elements || []), plugin],
-                        };
-                      return group;
-                    });
-                  },
-                  categories.map((category) => ({
-                    group: category,
-                    elements: [],
-                  }))
-                )}
-                addNode={addNode}
-                showPreview={(element) =>
-                  showPreview({
-                    enabled: true,
-                    element,
-                  })
-                }
-                hidePreview={() => showPreview({ ...preview, enabled: false })}
-              />
-            </div>
-          </div>
-        </div>
+  render() {
+
+    const { loading, preview, route, plugins, backends, selectedNode,
+      sortedNodes, originalRoute, changed, frontend, categories,
+      showLegacy, expandAll, searched, backend } = this.state
+
+    return <Loader loading={loading} >
+      <Container onClick={() => this.onUnsavedChanges(() => {
+        this.setState({
+          changed: false,
+          selectedNode: undefined
+        })
+      })} >
+        <PluginsContainer
+          handleSearch={this.handleSearch}
+          showLegacy={showLegacy}
+          setShowLegacy={l => this.setState({ showLegacy: l })}
+          onExpandAll={() => this.setState({ expandAll: !expandAll })}
+          expandAll={expandAll}
+          searched={searched}
+          plugins={plugins}
+          categories={categories}
+          addNode={this.addNode}
+          showPreview={element => this.setState({
+            preview: {
+              enabled: true, element
+            }
+          })}
+          hidePreview={() => this.setState({
+            preview: {
+              ...preview,
+              enabled: false
+            }
+          })}
+        />
         <div className="relative-container" style={{ flex: 9 }}>
           {preview.enabled ? (
             <EditView
-              addNode={addNode}
-              hidePreview={() =>
-                showPreview({
+              addNode={this.addNode}
+              hidePreview={() => this.setState({
+                preview: {
                   ...preview,
-                  enabled: false,
-                })
-              }
+                  enabled: false
+                }
+              })}
               readOnly={true}
-              setRoute={setRoute}
+              setRoute={r => this.setState({ route: r })}
               selectedNode={preview.element}
-              setSelectedNode={setSelectedNode}
-              updatePlugin={updatePlugin}
-              onRemove={removeNode}
+              setSelectedNode={n => this.setState({ selectedNode: n })}
+              updatePlugin={this.updatePlugin}
+              onRemove={this.removeNode}
               route={route}
               plugins={plugins}
               backends={backends}
             />
           ) : (
             <div className="row h-100 p-2 me-1 flow-container">
-              <div className="col-sm-4 pe-3 d-flex flex-column">
+              <Flow>
                 <div className="row" style={{ height: '100%' }}>
-                  <div className="col-sm-6 flex-column">
-                    <div className="main-view relative-container">
-                      <div
-                        className="frontend-button"
-                        style={{
-                          background:
-                            (selectedNode && selectedNode.id === 'Frontend') ?
-                              'linear-gradient(to right, rgb(249, 176, 0) 55%, transparent 1%)' :
-                              'linear-gradient(to right, rgb(73, 73, 72) 55%, transparent 1%)',
-                          opacity: (!selectedNode || (selectedNode && selectedNode.id === 'Frontend')) ? 1 : 0.25
-                        }}>
-                        <i className="fas fa-user frontend-button-icon" />
-                      </div>
-                      {inputNodes.slice(0, 1).map((value, i) => (
-                        <NodeElement
-                          onUp={onUp}
-                          onDown={onDown}
-                          onUnsavedChanges={onUnsavedChanges}
-                          className="frontend-container-button"
-                          element={value}
-                          key={`inNodes${i}`}
-                          selectedNode={selectedNode}
-                          setSelectedNode={setSelectedNode}
-                          isLast={inputNodes.length - 1 === i}
-                          bold={true}
-                          onRemove={removeNode}
-                          arrows={showArrows(value)}
-                        />
-                      ))}
-                      <Dot className="arrow-flow" icon="chevron-down" selectedNode={selectedNode} prefix="request" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }} />
-                      <VerticalLine highlighted={!selectedNode} />
-                      {renderTranformerResquests(inputNodes.slice(1))}
-                      <VerticalLine highlighted={!selectedNode} flex={true} />
-                    </div>
-                  </div>
-                  <div className="col-sm-6 pe-3 flex-column">
-                    <div className="main-view">
-                      <Dot className="arrow-flow" icon="chevron-up" selectedNode={selectedNode} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>response</Dot>
-                      <VerticalLine highlighted={!selectedNode} flex={true} />
-                      {outputNodes.map((value, i) => (
-                        <NodeElement
-                          onUp={onUp}
-                          onDown={onDown}
-                          onUnsavedChanges={onUnsavedChanges}
-                          enabled={pluginIsEnabled(value)}
-                          element={value}
-                          key={`outNodes${i}`}
-                          setSelectedNode={setSelectedNode}
-                          selectedNode={selectedNode}
-                          isLast={outputNodes.length - 1 === i}
-                          onRemove={removeNode}
-                          arrows={showArrows(value)}
-                        />
-                      ))}
-                      <VerticalLine highlighted={!selectedNode} />
-                      {outputNodes.length > 0 &&
-                        <span className='badge bg-warning text-dark' style={{ opacity: !selectedNode ? 1 : 0.25 }}>TransformerResponse</span>}
-                      <VerticalLine highlighted={!selectedNode} />
-                    </div>
-                  </div>
-                </div>
-                <div
-                  className="main-view backend-button"
-                  style={{ opacity: !selectedNode ? 1 : (!selectedNode?.onTargetStream ? 0.25 : 1) }}>
-                  <i className="fas fa-bullseye backend-icon" />
-                  {targetNodes.map((value, i, arr) => (
-                    <NodeElement
-                      onUp={onUp}
-                      onDown={onDown}
-                      onUnsavedChanges={onUnsavedChanges}
-                      element={value}
-                      key={`targetNodes${i}`}
-                      selectedNode={(selectedNode && selectedNode.onTargetStream) ? selectedNode : undefined}
-                      setSelectedNode={setSelectedNode}
-                      hideLink={arr.length - 1 === i}
-                      disableBorder={true}
-                      bold={true}
-                      onRemove={removeNode}
-                      arrows={showArrows(value)}
+                  <InBoundFlow>
+                    <HeaderNode text="Request" icon="down" selectedNode={selectedNode} />
+                    <Hr highlighted={!selectedNode} />
+                    <FrontendNode
+                      onUp={this.onUp}
+                      onDown={this.onDown}
+                      onUnsavedChanges={this.onUnsavedChanges}
+                      frontend={frontend}
+                      selectedNode={selectedNode}
+                      removeNode={this.removeNode}
+                      setSelectedNode={n => this.setState({ selectedNode: n })}
+                      arrows={this.showArrows(this.state.frontend)}
                     />
-                  ))}
+                    {this.renderInBound()}
+                    <Hr highlighted={!selectedNode} flex={true} />
+                  </InBoundFlow>
+                  <OutBoundFlow>
+                    <HeaderNode text="Response" icon="up" selectedNode={selectedNode} />
+                    <Hr highlighted={!selectedNode} flex={true} />
+                    {this.renderOutBound()}
+                    <Hr highlighted={!selectedNode} />
+                    {sortedNodes.outBound.length > 0 &&
+                      <span className='badge bg-warning text-dark' style={{ opacity: !selectedNode ? 1 : 0.25 }}>TransformerResponse</span>}
+                    <Hr highlighted={!selectedNode} />
+                  </OutBoundFlow>
                 </div>
-              </div>
-              <div className="col-sm-8 relative-container" style={{ paddingRight: 0 }}>
-                <UnselectedNode hideText={selectedNode} route={route} />
-                {selectedNode && (
-                  <EditView
-                    saveChanges={saveChanges}
-                    setRoute={setRoute}
-                    selectedNode={selectedNode}
-                    setSelectedNode={setSelectedNode}
-                    updatePlugin={updatePlugin}
-                    onRemove={removeNode}
-                    route={route}
-                    plugins={plugins}
-                    backends={backends}
-                    hidePreview={() =>
-                      showPreview({
-                        ...preview,
-                        enabled: false,
-                      })
-                    }
-                    showUpdateRouteButton={!isEqual(route, originalRoute)}
-                    setRef={setChanged}
-                  />
-                )}
-              </div>
+                <BackendNode
+                  onUp={this.onUp}
+                  backend={backend}
+                  onDown={this.onDown}
+                  onUnsavedChanges={this.onUnsavedChanges}
+                  element={this.state.backend}
+                  selectedNode={(selectedNode && selectedNode.id === 'Backend') ? selectedNode : undefined}
+                  setSelectedNode={n => this.setState({ selectedNode: n })}
+                  onRemove={this.removeNode}
+                  arrows={this.showArrows(this.state.backend)}
+                />
+              </Flow>
+              <FormContainer
+                selectedNode={selectedNode}
+                route={route}
+                saveChanges={this.saveChanges}
+                setRoute={n => this.setState({ route: n })}
+                setSelectedNode={n => this.setState({ selectedNode: n })}
+                updatePlugin={this.updatePlugin}
+                removeNode={this.removeNode}
+                plugins={plugins}
+                backends={backends}
+                preview={preview}
+                showPreview={p => this.setState({ preview: p })}
+                originalRoute={originalRoute}
+                setRef={e => this.setState({ changed: e })}
+              />
             </div>
           )}
         </div>
-      </div >
+      </Container>
     </Loader >
-  );
-};
+  };
+}
 
 const Element = ({ element, addNode, showPreview, hidePreview }) => (
   <div
@@ -848,7 +972,9 @@ const UnselectedNode = ({ hideText, route }) => {
   if (route && route.frontend && route.backend && !hideText) {
     const frontend = route.frontend;
     const backend = route.backend;
-    const allMethods = (frontend.methods && frontend.methods.length > 0) ? frontend.methods.map(m => <span className="badge bg-success">{m}</span>) : [<span className="badge bg-success">ALL</span>];
+    const allMethods = (frontend.methods && frontend.methods.length > 0) ?
+      frontend.methods.map((m, i) => <span key={`frontendmethod-${i}`} className="badge bg-success">{m}</span>) :
+      [<span className="badge bg-success">ALL</span>];
     return (
       <>
         <div className="d-flex-between dark-background py-2 ps-2">
@@ -863,9 +989,9 @@ const UnselectedNode = ({ hideText, route }) => {
               const end = exact ? '' : (domain.indexOf('/') < 0 ? '/*' : '*');
               const start = 'http://'
               return (
-                allMethods.map(method => {
+                allMethods.map((method, i) => {
                   return (
-                    <div style={{ paddingLeft: 10, paddingRight: 10, display: 'flex', flexDirection: 'row' }}>
+                    <div style={{ paddingLeft: 10, paddingRight: 10, display: 'flex', flexDirection: 'row' }} key={`allmethods-${i}`}>
                       <div style={{ width: 80 }}>{method}</div><span style={{ fontFamily: 'monospace' }}>{start}{domain}{end}</span>
                     </div>
                   )
@@ -898,7 +1024,7 @@ const UnselectedNode = ({ hideText, route }) => {
           <h3 style={{ fontSize: '1.25rem' }}>Backend</h3>
           <span>this route will forward requests to</span>
           <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 10, marginTop: 10, paddingTop: 10, paddingBottom: 10, backgroundColor: '#555', borderRadius: 3 }}>
-            {backend.targets.map(target => {
+            {backend.targets.map((target, i) => {
               const path = backend.root;
               const rewrite = backend.rewrite;
               const hostname = target.ip_address ? `${target.hostname}@${target.ip_address}` : target.hostname;
@@ -906,7 +1032,7 @@ const UnselectedNode = ({ hideText, route }) => {
               const start = target.tls ? 'https://' : 'http://'
               const mtls = (target.tls_config && target.tls_config.enabled && ([...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0)) ? <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>mTLS</span> : <span></span>;
               return (
-                <div style={{ paddingLeft: 10, paddingRight: 10, display: 'flex', flexDirection: 'row' }}>
+                <div style={{ paddingLeft: 10, paddingRight: 10, display: 'flex', flexDirection: 'row' }} key={`backend-targets${i}`}>
                   <span style={{ fontFamily: 'monospace' }}>{mtls}{start}{hostname}:{target.port}{end}</span>
                 </div>
               );
@@ -1047,7 +1173,7 @@ function EditView({
     if (!value) {
       const node =
         route.plugins.find(
-          (p, i) => (p.plugin === id || p.config.plugin === id) && i + 2 === index
+          (p, i) => (p.plugin === id || p.config.plugin === id) && i === index
         ) || plugins.find((p) => p.id === id);
       if (node)
         value = {
@@ -1379,7 +1505,7 @@ const Description = ({ text, steps }) => {
     <>
       <MarkdownInput className="form-description" readOnly={true} preview={true} value={content} />
       <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
-        active on {steps.map(step => <span className="badge bg-warning text-dark" style={{ marginLeft: 5 }}>{step}</span>)}
+        active on {steps.map((step, i) => <span className="badge bg-warning text-dark" style={{ marginLeft: 5 }} key={`steps-${i}`}>{step}</span>)}
       </div>
       {overflows && (
         <button
