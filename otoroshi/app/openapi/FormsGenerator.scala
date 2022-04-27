@@ -56,15 +56,6 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
         )
       }
 
-      if (typeName == "otoroshi.next.plugins.ContextValidationConfig" && label == "value" && `type` == "object") {
-        informations = informations ++ Json.obj(
-          "format" -> "code",
-          "props"  -> Json.obj(
-            "mode" -> "json"
-          )
-        )
-      }
-
       props ++ Json.obj(
         label -> (if (isArray)
                     (prop._2 \ "items" \ "properties").asOpt[JsObject] match {

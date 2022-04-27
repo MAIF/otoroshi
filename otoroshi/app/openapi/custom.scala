@@ -6,6 +6,32 @@ import play.api.libs.json.Json
 object CustomForms {
 
   val forms: Map[String, Form] = Map(
+    "otoroshi.next.plugins.ContextValidation" -> Form(
+      flow = Seq("validators"),
+      schema = Json.parse(
+        """{
+          |  "validators" : {
+          |    "label" : "validators",
+          |    "type" : "object",
+          |    "array" : true,
+          |    "format" : "form",
+          |    "schema" : {
+          |      "path" : {
+          |        "label" : "path",
+          |        "type" : "string"
+          |      },
+          |      "value" : {
+          |        "label" : "value",
+          |        "type" : "object",
+          |        "format": "code",
+          |        "type": "json"
+          |      }
+          |    },
+          |    "flow" : [ "path", "value" ]
+          |  }
+          |}
+          |""".stripMargin).asObject
+    ),
     "otoroshi.next.plugins.GraphQLQuery" -> Form(
       flow = Seq("url", "method", "headers",  "timeout", "query", "response_filter", "response_path"),
       schema = Json.parse(
