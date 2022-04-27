@@ -737,9 +737,8 @@ class Designer extends React.Component {
   }
 
   render() {
-
     const { loading, preview, route, plugins, backends, selectedNode,
-      sortedNodes, originalRoute, changed, frontend, categories,
+      sortedNodes, originalRoute, frontend, categories,
       showLegacy, expandAll, searched, backend } = this.state
 
     return <Loader loading={loading} >
