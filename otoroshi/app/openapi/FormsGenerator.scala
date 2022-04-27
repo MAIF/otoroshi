@@ -120,7 +120,7 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
           .getOrElse(Json.obj())
           .as[JsValue]
 
-        schema._1 -> Form(schema = outSchema.as[JsObject], flow = outSchema.as[JsObject].keys.toSet[String])
+        schema._1 -> Form(schema = outSchema.as[JsObject], flow = outSchema.as[JsObject].keys.toSeq)
       })
       .toMap
   }
