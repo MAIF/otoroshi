@@ -362,7 +362,7 @@ class Designer extends React.Component {
         }))
       }
 
-      const nodes = pluginsWithNodeId.some(p => p.plugin_index) ? pluginsWithNodeId : this.generatedPluginIndex(pluginsWithNodeId)
+      const nodes = pluginsWithNodeId.some(p => Object.keys(p.plugin_index || {}).length > 0) ? pluginsWithNodeId : this.generatedPluginIndex(pluginsWithNodeId)
 
       console.log(pluginsWithNodeId)
 
@@ -623,7 +623,7 @@ class Designer extends React.Component {
     })
   };
 
-  updatePlugin = (pluginId, nodeId, item) => {
+  updatePlugin = (nodeId, pluginId, item) => {
     const { route } = this.state
     return this.saveChanges({
       ...route,
@@ -647,7 +647,7 @@ class Designer extends React.Component {
       ...route,
       plugins: route.plugins.map(plugin => ({
         ...plugin,
-        plugin_index: Object.fromEntries(Object.entries(plugin.plugin_index).map(([key, v]) => [snakeCase(key), v]))
+        plugin_index: Object.fromEntries(Object.entries(plugin.plugin_index || this.state.nodes.find(n => n.nodeId === plugin.nodeId)?.plugin_index || {}).map(([key, v]) => [snakeCase(key), v]))
       }))
     })
       .then(() => {
@@ -763,7 +763,7 @@ class Designer extends React.Component {
       originalRoute, frontend, categories,
       showLegacy, expandAll, searched, backend, nodes } = this.state
 
-    console.log(nodes)
+    console.log(route)
 
     return <Loader loading={loading} >
       <Container onClick={() => this.onUnsavedChanges(() => {
@@ -1216,7 +1216,6 @@ function EditView({
 
   const onValidate = (item) => {
     const newValue = unstringify(item);
-    console.log(newValue)
     return updatePlugin(
       nodeId,
       selectedNode.id,
