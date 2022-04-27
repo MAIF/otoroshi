@@ -1287,7 +1287,7 @@ function EditView({
           style={{
             backgroundColor: '#494949',
           }}>
-          <Description text={selectedNode.description} steps={selectedNode.plugin_steps || []} />
+          <Description text={selectedNode.description} legacy={selectedNode.legacy} steps={selectedNode.plugin_steps || []} />
           {!selectedNode.legacy && !readOnly && (
             <div className={`d-flex justify-content-end ${asJsonFormat ? 'mb-3' : ''}`}>
               <button
@@ -1508,7 +1508,7 @@ const BackendSelector = ({
   </div>
 );
 
-const Description = ({ text, steps }) => {
+const Description = ({ text, steps, legacy }) => {
   const [showMore, setShowMore] = useState(false);
 
   const textLength = text ? text.length : 0;
@@ -1525,6 +1525,11 @@ const Description = ({ text, steps }) => {
       <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
         active on {steps.map((step, i) => <span className="badge bg-warning text-dark" style={{ marginLeft: 5 }} key={`steps-${i}`}>{step}</span>)}
       </div>
+      {legacy && (
+        <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
+          this plugin is a <span className="badge bg-info text-dark" style={{ marginLeft: 5 }}>legacy plugin</span>
+        </div>
+      )}
       {overflows && (
         <button
           className="btn btn-sm btn-success me-3 mb-3"

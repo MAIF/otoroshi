@@ -19497,6 +19497,52 @@
         "type" : "object",
         "properties" : { }
       },
+      "otoroshi.next.plugins.GraphQLQueryConfig" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "response_path" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
+          },
+          "url" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "response_filter" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
+          },
+          "headers" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "timeout" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "query" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "method" : {
+            "description" : "???",
+            "type" : "string"
+          }
+        }
+      },
       "otoroshi.plugins.oidc.OIDCThirdPartyApiKeyConfigMode" : {
         "description" : "Internal api",
         "type" : "object",
@@ -20680,52 +20726,6 @@
         "description" : "Internal api",
         "type" : "object",
         "properties" : { }
-      },
-      "otoroshi.next.plugins.GraphQLCaller" : {
-        "description" : "???",
-        "type" : "object",
-        "properties" : {
-          "url" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "query" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "timeout" : {
-            "format" : "int64",
-            "description" : "???",
-            "type" : "integer"
-          },
-          "method" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "response_path" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string"
-            } ],
-            "description" : "???"
-          },
-          "headers" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "???"
-          },
-          "response_filter" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string"
-            } ],
-            "description" : "???"
-          }
-        }
       },
       "otoroshi.plugins.metrics.PrometheusEndpoint" : {
         "description" : "Plugin to expose metrics collected by PrometheusServiceMetrics",
@@ -23833,6 +23833,52 @@
         "type" : "object",
         "properties" : { }
       },
+      "otoroshi.next.plugins.GraphQLQuery" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "response_path" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
+          },
+          "url" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "response_filter" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
+          },
+          "headers" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "timeout" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "query" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "method" : {
+            "description" : "???",
+            "type" : "string"
+          }
+        }
+      },
       "otoroshi.models.ZoneMatch" : {
         "description" : "Match a target if in the same zone",
         "type" : "object",
@@ -26348,52 +26394,6 @@
         "description" : "Plugin that extracts geolocation based on maxmind db",
         "type" : "object",
         "properties" : { }
-      },
-      "otoroshi.next.plugins.GraphQLCallerConfig" : {
-        "description" : "???",
-        "type" : "object",
-        "properties" : {
-          "url" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "query" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "timeout" : {
-            "format" : "int64",
-            "description" : "???",
-            "type" : "integer"
-          },
-          "method" : {
-            "description" : "???",
-            "type" : "string"
-          },
-          "response_path" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string"
-            } ],
-            "description" : "???"
-          },
-          "headers" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "???"
-          },
-          "response_filter" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string"
-            } ],
-            "description" : "???"
-          }
-        }
       },
       "otoroshi.next.plugins.NgHeaderNamesConfig" : {
         "description" : "Configuration for headers plugins",

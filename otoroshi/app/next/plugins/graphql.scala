@@ -14,7 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 import scala.util._
 
-case class GraphQLCallerConfig(
+case class GraphQLQueryConfig(
                     url: String,
                     headers: Map[String, String] = Map.empty,
                     method: String = "POST",
@@ -23,13 +23,13 @@ case class GraphQLCallerConfig(
                     responsePath: Option[String] = None,
                     responseFilter: Option[String] = None
 ) extends NgPluginConfig {
-  def json: JsValue = GraphQLCallerConfig.format.writes(this)
+  def json: JsValue = GraphQLQueryConfig.format.writes(this)
 }
 
-object GraphQLCallerConfig {
-  val format = new Format[GraphQLCallerConfig] {
-    override def reads(json: JsValue): JsResult[GraphQLCallerConfig] = Try {
-      GraphQLCallerConfig(
+object GraphQLQueryConfig {
+  val format = new Format[GraphQLQueryConfig] {
+    override def reads(json: JsValue): JsResult[GraphQLQueryConfig] = Try {
+      GraphQLQueryConfig(
         url = json.select("url").asString,
         headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
         method = json.select("method").asOpt[String].getOrElse("POST"),
@@ -43,7 +43,7 @@ object GraphQLCallerConfig {
       case Success(value) => JsSuccess(value)
     }
 
-    override def writes(o: GraphQLCallerConfig): JsValue = Json.obj(
+    override def writes(o: GraphQLQueryConfig): JsValue = Json.obj(
       "url" -> o.url,
       "headers" -> o.headers,
       "method" -> o.method,
@@ -55,15 +55,15 @@ object GraphQLCallerConfig {
   }
 }
 
-class GraphQLCaller extends NgRequestTransformer {
+class GraphQLQuery extends NgRequestTransformer {
 
   private val library = ImmutableJqLibrary.of()
 
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
-  override def name: String                                = "GraphQL Caller"
-  override def description: Option[String]                 = "This plugin can be used to call GraphQL endpoints and expose it as a REST endpoint".some
-  override def defaultConfigObject: Option[NgPluginConfig] = GraphQLCallerConfig(url = "https://some.graphql/endpoint").some
+  override def name: String                                = "GraphQL Query"
+  override def description: Option[String]                 = "This plugin can be used to call GraphQL query endpoints and expose it as a REST endpoint".some
+  override def defaultConfigObject: Option[NgPluginConfig] = GraphQLQueryConfig(url = "https://some.graphql/endpoint").some
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
@@ -91,7 +91,7 @@ class GraphQLCaller extends NgRequestTransformer {
   }
 
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
-    val config = ctx.cachedConfig(internalName)(GraphQLCallerConfig.format).getOrElse(GraphQLCallerConfig(url = "https://some.graphql/endpoint"))
+    val config = ctx.cachedConfig(internalName)(GraphQLQueryConfig.format).getOrElse(GraphQLQueryConfig(url = "https://some.graphql/endpoint"))
     val query = GlobalExpressionLanguage.apply(
       value = config.query,
       req = ctx.request.some,

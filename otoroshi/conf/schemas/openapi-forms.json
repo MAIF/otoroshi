@@ -50,7 +50,7 @@
         "format" : null
       }
     },
-    "flow" : [ "name", "plugin_visibility", "description", "plugin_categories", "id", "config_flow", "config_schema", "default_config", "plugin_steps", "plugin_tags" ]
+    "flow" : [ "id", "name", "description", "default_config", "config_schema", "config_flow", "plugin_visibility", "plugin_categories", "plugin_steps", "plugin_tags" ]
   },
   "otoroshi.next.plugins.MissingHeadersIn" : {
     "schema" : {
@@ -230,7 +230,7 @@
         "format" : null
       }
     },
-    "flow" : [ "username", "tags", "label", "_loc", "typ", "createdAt", "metadata", "rights", "type", "credentials", "handle", "password" ]
+    "flow" : [ "createdAt", "metadata", "password", "credentials", "rights", "handle", "typ", "label", "type", "_loc", "username", "tags" ]
   },
   "otoroshi.script.Script" : {
     "schema" : {
@@ -287,7 +287,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "desc", "name", "tags", "code", "id", "_loc", "metadata", "type" ]
+    "flow" : [ "metadata", "code", "name", "id", "type", "_loc", "tags", "desc" ]
   },
   "otoroshi.models.GlobalScripts" : {
     "schema" : {
@@ -346,7 +346,7 @@
         "type" : "object"
       }
     },
-    "flow" : [ "jobRefs", "preRouteRefs", "validatorRefs", "enabled", "preRouteConfig", "transformersConfig", "sinkConfig", "transformersRefs", "sinkRefs", "validatorConfig", "jobConfig" ]
+    "flow" : [ "jobConfig", "enabled", "transformersConfig", "transformersRefs", "preRouteRefs", "sinkConfig", "jobRefs", "validatorRefs", "sinkRefs", "preRouteConfig", "validatorConfig" ]
   },
   "otoroshi.models.UserRights" : {
     "schema" : {
@@ -824,7 +824,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "tls_config", "weight", "predicate", "hostname", "tls", "id", "port", "ip_address", "protocol" ]
+    "flow" : [ "predicate", "protocol", "hostname", "port", "weight", "tls", "tls_config", "id", "ip_address" ]
   },
   "otoroshi.models.DataExporterConfigType" : {
     "schema" : { },
@@ -1195,7 +1195,7 @@
         "flow" : [ "predicate", "protocol", "hostname", "port", "weight", "tls", "tls_config", "id", "ip_address" ]
       }
     },
-    "flow" : [ "name", "description", "tags", "id", "_loc", "metadata", "target" ]
+    "flow" : [ "metadata", "name", "description", "id", "_loc", "tags", "target" ]
   },
   "otoroshi.models.RefJwtVerifier" : {
     "schema" : {
@@ -1300,7 +1300,7 @@
         "flow" : [ "algo", "size" ]
       }
     },
-    "flow" : [ "duration", "name", "subject", "includeAIA", "ca", "existingSerialNumber", "key", "hosts", "client", "signatureAlg", "digestAlg" ]
+    "flow" : [ "duration", "includeAIA", "signatureAlg", "digestAlg", "hosts", "subject", "name", "client", "existingSerialNumber", "ca", "key" ]
   },
   "BulkPatchBody" : {
     "schema" : { },
@@ -1437,7 +1437,7 @@
         "format" : null
       }
     },
-    "flow" : [ "username", "tags", "label", "_loc", "typ", "createdAt", "metadata", "rights", "type", "credentials", "handle", "password" ]
+    "flow" : [ "createdAt", "metadata", "password", "credentials", "rights", "handle", "typ", "label", "type", "_loc", "username", "tags" ]
   },
   "otoroshi.models.ApiDescriptor" : {
     "schema" : {
@@ -1671,7 +1671,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "extraMetadata", "desc", "name", "allowEmptyPassword", "groupFilters", "rightsOverride", "serverUrls", "basicAuth", "searchBase", "groupRights", "tags", "superAdmins", "sessionMaxAge", "metadataField", "searchFilter", "adminUsername", "userValidators", "emailField", "extractProfileFilter", "userBase", "id", "_loc", "adminPassword", "metadata", "extractProfileFilterNot", "nameField", "type", "extractProfile", "dataOverride", "sessionCookieValues" ]
+    "flow" : [ "groupFilters", "metadata", "allowEmptyPassword", "basicAuth", "searchBase", "nameField", "emailField", "extractProfileFilterNot", "type", "metadataField", "rightsOverride", "id", "groupRights", "extraMetadata", "searchFilter", "adminPassword", "extractProfileFilter", "sessionCookieValues", "dataOverride", "superAdmins", "userBase", "serverUrls", "userValidators", "_loc", "tags", "sessionMaxAge", "adminUsername", "extractProfile", "name", "desc" ]
   },
   "otoroshi.next.plugins.NgApikeyExtractorClientId" : {
     "schema" : {
@@ -1704,11 +1704,8 @@
           },
           "value" : {
             "label" : "value",
-            "type" : "object",
-            "format": "code",
-            "props": {
-              "mode": "json"
-            }
+            "type" : "json",
+            "format" : "code"
           }
         },
         "flow" : [ "path", "value" ]
@@ -1813,13 +1810,19 @@
         "array" : true,
         "format" : "form",
         "schema" : {
+          "include" : {
+            "label" : "include",
+            "type" : "string",
+            "array" : true,
+            "format" : null
+          },
           "debug" : {
             "label" : "debug",
             "type" : "bool"
           },
-          "config" : {
-            "label" : "config",
-            "type" : "object"
+          "plugin" : {
+            "label" : "plugin",
+            "type" : "string"
           },
           "exclude" : {
             "label" : "exclude",
@@ -1827,22 +1830,25 @@
             "array" : true,
             "format" : null
           },
-          "include" : {
-            "label" : "include",
-            "type" : "string",
-            "array" : true,
-            "format" : null
+          "plugin_index" : {
+            "label" : "plugin_index",
+            "type" : "object",
+            "format" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : { },
+            "flow" : [ ]
           },
-          "plugin" : {
-            "label" : "plugin",
-            "type" : "string"
+          "config" : {
+            "label" : "config",
+            "type" : "object"
           },
           "enabled" : {
             "label" : "enabled",
             "type" : "bool"
           }
         },
-        "flow" : [ "debug", "exclude", "include", "plugin", "enabled", "config" ]
+        "flow" : [ "include", "debug", "plugin", "exclude", "enabled", "plugin_index", "config" ]
       }
     },
     "flow" : [ "slots" ]
@@ -2002,7 +2008,7 @@
         "format" : null
       }
     },
-    "flow" : [ "weight", "predicate", "tags", "host", "mtlsConfig", "scheme", "ipAddress", "metadata", "protocol" ]
+    "flow" : [ "predicate", "metadata", "protocol", "scheme", "mtlsConfig", "host", "ipAddress", "weight", "tags" ]
   },
   "otoroshi.plugins.authcallers.OAuth2CallerConfig" : {
     "schema" : {
@@ -2095,7 +2101,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "cacheTokenSeconds", "method", "clientId", "url", "scope", "audience", "tlsConfig", "headerName", "jsonPayload", "clientSecret", "kind", "headerValueFormat", "user", "password" ]
+    "flow" : [ "cacheTokenSeconds", "audience", "headerName", "clientId", "method", "kind", "url", "tlsConfig", "password", "headerValueFormat", "jsonPayload", "scope", "clientSecret", "user" ]
   },
   "otoroshi.models.DataExporterConfigFiltering" : {
     "schema" : {
@@ -2171,7 +2177,7 @@
         "format" : null
       }
     },
-    "flow" : [ "name", "tenant", "description", "tags", "id", "metadata" ]
+    "flow" : [ "metadata", "name", "description", "id", "tenant", "tags" ]
   },
   "otoroshi.models.CorsSettings" : {
     "schema" : {
@@ -2216,7 +2222,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "enabled", "allowHeaders", "allowOrigin", "excludedPatterns", "exposeHeaders", "allowCredentials", "allowMethods", "maxAge" ]
+    "flow" : [ "excludedPatterns", "allowMethods", "allowHeaders", "exposeHeaders", "maxAge", "enabled", "allowCredentials", "allowOrigin" ]
   },
   "StringList" : {
     "schema" : { },
@@ -2440,7 +2446,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "desc", "name", "basicAuth", "tags", "users", "sessionMaxAge", "webauthn", "userValidators", "id", "_loc", "metadata", "type", "sessionCookieValues" ]
+    "flow" : [ "metadata", "sessionCookieValues", "basicAuth", "type", "userValidators", "_loc", "users", "tags", "sessionMaxAge", "name", "webauthn", "id", "desc" ]
   },
   "otoroshi.models.InCookie" : {
     "schema" : {
@@ -2492,7 +2498,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "regex", "wildcard", "exact", "default", "route", "variants" ]
+    "flow" : [ "variants", "wildcard", "default", "regex", "exact", "route" ]
   },
   "otoroshi.plugins.biscuit.BiscuitExtractor" : {
     "schema" : { },
@@ -2618,7 +2624,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "backoff_factor", "custom_timeouts", "retry_initial_delay", "cache_connection_settings", "retries", "max_errors", "proxy", "call_timeout", "global_timeout", "connection_timeout", "sample_interval", "call_and_stream_timeout", "idle_timeout" ]
+    "flow" : [ "custom_timeouts", "global_timeout", "max_errors", "retry_initial_delay", "backoff_factor", "cache_connection_settings", "sample_interval", "call_and_stream_timeout", "retries", "proxy", "call_timeout", "idle_timeout", "connection_timeout" ]
   },
   "otoroshi.next.plugins.NgEndlessHttpResponseConfig" : {
     "schema" : {
@@ -2783,7 +2789,7 @@
         "format" : null
       }
     },
-    "flow" : [ "username", "tags", "label", "_loc", "typ", "createdAt", "metadata", "rights", "type", "password" ]
+    "flow" : [ "createdAt", "metadata", "password", "rights", "typ", "label", "type", "_loc", "username", "tags" ]
   },
   "otoroshi.next.plugins.IpAddressBlockList" : {
     "schema" : {
@@ -5038,7 +5044,7 @@
         "flow" : [ ]
       }
     },
-    "flow" : [ "descriptor", "config", "attrs", "globalConfig", "snowflake", "index" ]
+    "flow" : [ "snowflake", "globalConfig", "index", "descriptor", "config", "attrs" ]
   },
   "otoroshi.models.SecComInfoTokenVersion" : {
     "schema" : { },
@@ -5202,7 +5208,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "startTime", "outageStrategy", "targetGroups", "enabled", "outageDurationTo", "outageDurationFrom", "includeUserFacingDescriptors", "timesPerDay", "chaosConfig", "dryRun", "stopTime" ]
+    "flow" : [ "dryRun", "targetGroups", "includeUserFacingDescriptors", "outageDurationTo", "outageDurationFrom", "startTime", "stopTime", "chaosConfig", "timesPerDay", "outageStrategy", "enabled" ]
   },
   "otoroshi.next.plugins.TcpTunnel" : {
     "schema" : { },
@@ -5329,7 +5335,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "featuresWithContextEnabled", "path", "featurePattern", "mtls", "izanamiUrl", "izanamiClientSecret", "featuresEnabled", "configurationEnabled", "autoContext", "configPattern", "timeout", "izanamiClientId" ]
+    "flow" : [ "configurationEnabled", "path", "izanamiUrl", "featuresWithContextEnabled", "izanamiClientSecret", "featurePattern", "configPattern", "izanamiClientId", "autoContext", "mtls", "featuresEnabled", "timeout" ]
   },
   "otoroshi.plugins.izanami.IzanamiCanaryConfig" : {
     "schema" : {
@@ -5396,7 +5402,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "mtls", "routeConfig", "izanamiUrl", "izanamiClientSecret", "experimentId", "configId", "timeout", "izanamiClientId" ]
+    "flow" : [ "izanamiUrl", "routeConfig", "izanamiClientSecret", "configId", "experimentId", "izanamiClientId", "mtls", "timeout" ]
   },
   "otoroshi.utils.http.MtlsConfig" : {
     "schema" : {
@@ -5425,7 +5431,7 @@
         "format" : null
       }
     },
-    "flow" : [ "certs", "loose", "trustedCerts", "mtls", "trustAll" ]
+    "flow" : [ "mtls", "loose", "trustAll", "trustedCerts", "certs" ]
   },
   "otoroshi.next.plugins.XForwardedHeaders" : {
     "schema" : { },
@@ -5621,7 +5627,7 @@
         "flow" : [ "type", "ratio" ]
       }
     },
-    "flow" : [ "targets", "root", "target_refs", "load_balancing", "rewrite" ]
+    "flow" : [ "target_refs", "root", "targets", "rewrite", "load_balancing" ]
   },
   "otoroshi.utils.letsencrypt.LetsEncryptSettings" : {
     "schema" : {
@@ -5654,7 +5660,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "server", "enabled", "contacts", "privateKey", "publicKey", "emails" ]
+    "flow" : [ "privateKey", "contacts", "emails", "enabled", "publicKey", "server" ]
   },
   "otoroshi.ssl.pki.models.SignCertResponse" : {
     "schema" : {
@@ -5716,7 +5722,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "apikey_path", "jwt_path", "allow_all", "role_prefix", "roles", "allow", "user_path", "deny", "deny_all" ]
+    "flow" : [ "allow", "deny", "role_prefix", "user_path", "roles", "apikey_path", "allow_all", "deny_all", "jwt_path" ]
   },
   "otoroshi.plugins.geoloc.GeolocationInfoHeader" : {
     "schema" : { },
@@ -5762,7 +5768,7 @@
         "format" : null
       }
     },
-    "flow" : [ "trust_all", "certs", "loose", "enabled", "trusted_certs" ]
+    "flow" : [ "enabled", "certs", "loose", "trust_all", "trusted_certs" ]
   },
   "otoroshi.models.SecComHeaders" : {
     "schema" : {
@@ -5859,7 +5865,7 @@
         "format" : null
       }
     },
-    "flow" : [ "name", "description", "tags", "id", "metadata" ]
+    "flow" : [ "metadata", "name", "description", "id", "tags" ]
   },
   "ScriptsList" : {
     "schema" : { },
@@ -5951,7 +5957,7 @@
         "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
       }
     },
-    "flow" : [ "sendEvents", "truststore", "hostValidation", "servers", "mtlsConfig", "keystore", "topic", "type", "keyPass" ]
+    "flow" : [ "hostValidation", "servers", "keyPass", "mtlsConfig", "topic", "truststore", "keystore", "sendEvents", "type" ]
   },
   "otoroshi.models.GlobalConfig" : {
     "schema" : {
@@ -7181,7 +7187,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "endlessIpAddresses", "userAgentSettings", "letsEncryptSettings", "proxies", "plugins", "cleverSettings", "tlsSettings", "backOfficeAuthRef", "limitConcurrentRequests", "maxWebhookSize", "maxConcurrentRequests", "elasticWritesConfigs", "tags", "throttlingQuota", "middleFingers", "alertsEmails", "autoCert", "logAnalyticsOnServer", "quotasSettings", "kafkaConfig", "maintenanceMode", "analyticsWebhooks", "maxHttp10ResponseSize", "geolocationSettings", "u2fLoginOnly", "snowMonkeyConfig", "useCircuitBreakers", "autoLinkToDefaultGroup", "templates", "maxLogsSize", "alertsWebhooks", "trustXForwarded", "mailerSettings", "statsdConfig", "enableEmbeddedMetrics", "ipFiltering", "otoroshiId", "perIpThrottlingQuota", "metadata", "elasticReadsConfig", "scripts", "useAkkaHttpClient", "lines", "apiReadOnly", "streamEntityOnly" ]
+    "flow" : [ "metadata", "backOfficeAuthRef", "plugins", "elasticReadsConfig", "logAnalyticsOnServer", "tlsSettings", "geolocationSettings", "autoCert", "endlessIpAddresses", "streamEntityOnly", "alertsEmails", "middleFingers", "alertsWebhooks", "maxWebhookSize", "cleverSettings", "u2fLoginOnly", "userAgentSettings", "otoroshiId", "proxies", "ipFiltering", "mailerSettings", "lines", "useCircuitBreakers", "scripts", "maxLogsSize", "useAkkaHttpClient", "quotasSettings", "apiReadOnly", "analyticsWebhooks", "kafkaConfig", "templates", "enableEmbeddedMetrics", "limitConcurrentRequests", "maxConcurrentRequests", "maxHttp10ResponseSize", "tags", "letsEncryptSettings", "autoLinkToDefaultGroup", "throttlingQuota", "snowMonkeyConfig", "statsdConfig", "maintenanceMode", "perIpThrottlingQuota", "elasticWritesConfigs", "trustXForwarded" ]
   },
   "otoroshi.plugins.users.HasAllowedUsersValidator" : {
     "schema" : { },
@@ -7327,7 +7333,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "largeRequestFaultConfig", "badResponsesFaultConfig", "enabled", "latencyInjectionFaultConfig", "largeResponseFaultConfig" ]
+    "flow" : [ "badResponsesFaultConfig", "largeResponseFaultConfig", "latencyInjectionFaultConfig", "largeRequestFaultConfig", "enabled" ]
   },
   "otoroshi.models.ServiceGroupIdentifier" : {
     "schema" : { },
@@ -7377,7 +7383,7 @@
         "type" : "object"
       }
     },
-    "flow" : [ "pluralName", "crd", "customizedSpec", "error", "namespace" ]
+    "flow" : [ "crd", "namespace", "pluralName", "error", "customizedSpec" ]
   },
   "otoroshi.next.plugins.NgOtoroshiChallengeKeys" : {
     "schema" : { },
@@ -7459,7 +7465,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "methods", "domains", "query", "strip_path", "exact", "headers" ]
+    "flow" : [ "headers", "methods", "query", "exact", "domains", "strip_path" ]
   },
   "OutagesList" : {
     "schema" : { },
@@ -7581,7 +7587,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "apikey_path", "jwt_path", "allow_all", "role_prefix", "roles", "allow", "user_path", "deny", "deny_all" ]
+    "flow" : [ "allow", "deny", "role_prefix", "user_path", "roles", "apikey_path", "allow_all", "deny_all", "jwt_path" ]
   },
   "otoroshi.next.models.StoredNgBackend" : {
     "schema" : {
@@ -7934,7 +7940,7 @@
         "format" : null
       }
     },
-    "flow" : [ "name", "description", "tags", "id", "_loc", "backend", "metadata" ]
+    "flow" : [ "metadata", "name", "description", "backend", "id", "_loc", "tags" ]
   },
   "otoroshi.plugins.quotas.InstanceQuotas" : {
     "schema" : { },
@@ -8690,7 +8696,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "allowed", "enabled", "notAllowed", "caRef", "replyNicely" ]
+    "flow" : [ "caRef", "allowed", "replyNicely", "notAllowed", "enabled" ]
   },
   "otoroshi.plugins.discovery.DiscoveryHelper" : {
     "schema" : { },
@@ -8731,7 +8737,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "url", "jq_request_filter", "convert_request_body_to_xml", "charset", "preserve_query", "envelope", "jq_response_filter", "action" ]
+    "flow" : [ "convert_request_body_to_xml", "charset", "envelope", "jq_request_filter", "preserve_query", "action", "jq_response_filter", "url" ]
   },
   "otoroshi.plugins.hmac.HMACValidator" : {
     "schema" : { },
@@ -9046,7 +9052,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "sendWorkers", "desc", "name", "projection", "groupDuration", "tags", "groupSize", "enabled", "config", "id", "_loc", "jsonWorkers", "bufferSize", "metadata", "filtering", "type" ]
+    "flow" : [ "metadata", "type", "_loc", "enabled", "groupDuration", "tags", "jsonWorkers", "name", "groupSize", "id", "projection", "filtering", "config", "sendWorkers", "desc", "bufferSize" ]
   },
   "otoroshi.plugins.jobs.kubernetes.OtoroshiToKubernetesCertSyncJob" : {
     "schema" : { },
@@ -9274,7 +9280,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "validate", "wipe_backend_request", "pass_with_user", "extractors", "routing" ]
+    "flow" : [ "wipe_backend_request", "routing", "extractors", "pass_with_user", "validate" ]
   },
   "otoroshi.plugins.oauth1.OAuth1CallerPlugin" : {
     "schema" : { },
@@ -10244,7 +10250,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "randomIfNotFound", "includeJdkCaServer", "includeJdkCaClient", "trustedCAsServer", "defaultDomain" ]
+    "flow" : [ "randomIfNotFound", "trustedCAsServer", "includeJdkCaClient", "defaultDomain", "includeJdkCaServer" ]
   },
   "otoroshi.next.plugins.W3CTracing" : {
     "schema" : {
@@ -10781,7 +10787,7 @@
         "flow" : [ "headers", "methods", "query", "exact", "domains", "strip_path" ]
       }
     },
-    "flow" : [ "debug_flow", "name", "description", "tags", "enabled", "backend_ref", "export_reporting", "groups", "id", "_loc", "backend", "metadata", "frontend" ]
+    "flow" : [ "metadata", "backend_ref", "groups", "description", "_loc", "enabled", "export_reporting", "tags", "debug_flow", "name", "backend", "id", "frontend" ]
   },
   "otoroshi.next.plugins.NgApikeyExtractors" : {
     "schema" : {
@@ -11076,7 +11082,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "health", "duration", "url", "logicCheck", "error", "status" ]
+    "flow" : [ "duration", "logicCheck", "health", "error", "url", "status" ]
   },
   "otoroshi.plugins.jq.JqBodyTransformer" : {
     "schema" : { },
@@ -11117,7 +11123,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "ntlmDomain", "host", "nonProxyHosts", "encoding", "port", "principal", "protocol", "password" ]
+    "flow" : [ "host", "port", "protocol", "principal", "password", "ntlmDomain", "encoding", "nonProxyHosts" ]
   },
   "otoroshi.models.MetricsSettings" : {
     "schema" : {
@@ -13801,7 +13807,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "applyTemplate", "mtlsConfig", "version", "clusterUri", "headers", "type", "indexSettings", "user", "index", "password" ]
+    "flow" : [ "clusterUri", "headers", "password", "indexSettings", "mtlsConfig", "index", "type", "applyTemplate", "version", "user" ]
   },
   "otoroshi.models.ApiKeyConstraints" : {
     "schema" : {
@@ -13972,7 +13978,7 @@
         "flow" : [ "headerName", "queryName", "enabled" ]
       }
     },
-    "flow" : [ "jwtAuth", "basicAuth", "customHeadersAuth", "routing", "clientIdAuth" ]
+    "flow" : [ "routing", "customHeadersAuth", "basicAuth", "jwtAuth", "clientIdAuth" ]
   },
   "otoroshi.next.models.NgCustomTimeouts" : {
     "schema" : {
@@ -14001,7 +14007,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "path", "call_timeout", "global_timeout", "connection_timeout", "call_and_stream_timeout", "idle_timeout" ]
+    "flow" : [ "connection_timeout", "call_and_stream_timeout", "path", "call_timeout", "idle_timeout", "global_timeout" ]
   },
   "otoroshi.next.plugins.Robots" : {
     "schema" : {
@@ -14030,7 +14036,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "robot_txt_content", "meta_content", "header_enabled", "robot_enabled", "header_content", "meta_enabled" ]
+    "flow" : [ "robot_txt_content", "meta_content", "robot_enabled", "header_content", "header_enabled", "meta_enabled" ]
   },
   "otoroshi.plugins.quotas.ServiceQuotasConfig" : {
     "schema" : {
@@ -14095,7 +14101,11 @@
         "format" : null
       }
     },
-    "flow" : [ "black_list", "chunked_threshold", "white_list", "compression_level", "buffer_size", "excluded_patterns" ]
+    "flow" : [ "compression_level", "buffer_size", "chunked_threshold", "excluded_patterns", "white_list", "black_list" ]
+  },
+  "otoroshi.next.models.PluginIndex" : {
+    "schema" : { },
+    "flow" : [ ]
   },
   "otoroshi.next.plugins.wrappers.PreRoutingWrapper" : {
     "schema" : { },
@@ -14163,7 +14173,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "secret", "consumerKey", "consumerSecret", "token", "orgaId" ]
+    "flow" : [ "consumerSecret", "consumerKey", "secret", "token", "orgaId" ]
   },
   "otoroshi.script.AccessContext" : {
     "schema" : {
@@ -16680,7 +16690,7 @@
         "flow" : [ ]
       }
     },
-    "flow" : [ "apikey", "descriptor", "config", "attrs", "globalConfig", "user", "snowflake", "index" ]
+    "flow" : [ "snowflake", "globalConfig", "apikey", "index", "descriptor", "config", "user", "attrs" ]
   },
   "otoroshi.models.AlgoSettings" : {
     "schema" : {
@@ -16782,7 +16792,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "secret", "size", "base64", "url", "certId", "tlsConfig", "kty", "proxy", "onlyExposedCerts", "privateKey", "publicKey", "headers", "ttl", "type", "timeout" ]
+    "flow" : [ "headers", "base64", "publicKey", "certId", "secret", "type", "ttl", "url", "timeout", "tlsConfig", "kty", "privateKey", "proxy", "onlyExposedCerts", "size" ]
   },
   "otoroshi.next.plugins.SendOtoroshiHeadersBack" : {
     "schema" : { },
@@ -16825,7 +16835,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "enabled", "blackList", "compressionLevel", "excludedPatterns", "bufferSize", "chunkedThreshold", "whiteList" ]
+    "flow" : [ "compressionLevel", "blackList", "chunkedThreshold", "excludedPatterns", "bufferSize", "whiteList", "enabled" ]
   },
   "PluginDescriptionsResponse" : {
     "schema" : { },
@@ -16946,7 +16956,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "rolesPath", "dailyQuota", "scopes", "throttlingQuota", "enabled", "quotasEnabled", "monthlyQuota", "oidcConfigRef", "excludedPatterns", "roles", "headerName", "mode", "uniqueApiKey", "ttl", "localVerificationOnly" ]
+    "flow" : [ "excludedPatterns", "headerName", "roles", "localVerificationOnly", "ttl", "enabled", "mode", "oidcConfigRef", "rolesPath", "quotasEnabled", "monthlyQuota", "throttlingQuota", "uniqueApiKey", "scopes", "dailyQuota" ]
   },
   "otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob" : {
     "schema" : { },
@@ -17179,7 +17189,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "mutatingWebhookName", "ingressEndpointIp", "useProxyState", "kubeDnsOperatorCoreDnsNamespace", "ingressEndpointHostname", "image", "trust", "kubeLeader", "openshiftDnsOperatorCleanupDomains", "openshiftDnsOperatorCoreDnsPort", "restartDependantDeployments", "clusterDomain", "kubeDnsOperatorCoreDnsPort", "defaultGroup", "openshiftDnsOperatorIntegration", "watch", "syncDaikokuApikeysOnly", "otoroshiServiceName", "kubeSystemNamespace", "corednsPort", "openshiftDnsOperatorCleanup", "coreDnsIntegrationDryRun", "kubeDnsOperatorIntegration", "validatingWebhookName", "crds", "coreDnsEnv", "triggerKey", "namespacesLabels", "templates", "labels", "ingressEndpointPublishedService", "coreDnsIntegration", "ingressClasses", "namespaces", "token", "kubeDnsOperatorCoreDnsName", "otoroshiNamespace", "userPassword", "endpoint", "triggerHost", "watchTimeoutSeconds", "syncIntervalSeconds", "watchGracePeriodSeconds", "triggerPath", "caCert", "openshiftDnsOperatorCleanupNames", "coreDnsDeploymentName", "openshiftDnsOperatorCoreDnsName", "ingresses", "coreDnsConfigMapName", "openshiftDnsOperatorCoreDnsNamespace", "meshDomain" ]
+    "flow" : [ "watchGracePeriodSeconds", "openshiftDnsOperatorCoreDnsName", "clusterDomain", "useProxyState", "otoroshiNamespace", "crds", "coreDnsDeploymentName", "namespacesLabels", "triggerPath", "coreDnsIntegration", "openshiftDnsOperatorIntegration", "openshiftDnsOperatorCoreDnsNamespace", "watchTimeoutSeconds", "kubeSystemNamespace", "image", "syncIntervalSeconds", "syncDaikokuApikeysOnly", "templates", "openshiftDnsOperatorCleanupNames", "labels", "openshiftDnsOperatorCoreDnsPort", "validatingWebhookName", "kubeDnsOperatorCoreDnsNamespace", "namespaces", "ingressClasses", "trust", "triggerKey", "userPassword", "caCert", "kubeDnsOperatorCoreDnsPort", "ingressEndpointPublishedService", "coreDnsConfigMapName", "endpoint", "restartDependantDeployments", "defaultGroup", "ingressEndpointHostname", "kubeDnsOperatorCoreDnsName", "coreDnsIntegrationDryRun", "ingressEndpointIp", "mutatingWebhookName", "otoroshiServiceName", "meshDomain", "ingresses", "triggerHost", "openshiftDnsOperatorCleanupDomains", "token", "corednsPort", "watch", "kubeLeader", "coreDnsEnv", "openshiftDnsOperatorCleanup", "kubeDnsOperatorIntegration" ]
   },
   "otoroshi.plugins.workflow.WorkflowJob" : {
     "schema" : { },
@@ -24394,7 +24404,7 @@
         "flow" : [ "code", "name", "id", "type", "tags", "desc", "metadata", "_loc" ]
       }
     },
-    "flow" : [ "globalConfigs", "services", "serviceGroups", "targets", "routes", "backends", "tcpServices", "teams", "tenants", "jwtVerifiers", "certificates", "authModules", "scripts", "simpleAdmins", "dataExporters", "serviceDescriptors", "apiKeys" ]
+    "flow" : [ "tenants", "teams", "apiKeys", "serviceGroups", "globalConfigs", "authModules", "services", "jwtVerifiers", "targets", "backends", "routes", "serviceDescriptors", "certificates", "simpleAdmins", "tcpServices", "dataExporters", "scripts" ]
   },
   "otoroshi.models.BadResponse" : {
     "schema" : {
@@ -24536,7 +24546,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "globalTimeout", "retries", "callTimeout", "idleTimeout", "retryInitialDelay", "sampleInterval", "backoffFactor", "maxErrors", "proxy", "connectionTimeout", "cacheConnectionSettings", "customTimeouts", "useCircuitBreaker", "callAndStreamTimeout" ]
+    "flow" : [ "sampleInterval", "backoffFactor", "customTimeouts", "callAndStreamTimeout", "retryInitialDelay", "callTimeout", "useCircuitBreaker", "retries", "proxy", "maxErrors", "idleTimeout", "globalTimeout", "cacheConnectionSettings", "connectionTimeout" ]
   },
   "play.api.libs.ws.WSProxyServer" : {
     "schema" : {
@@ -24573,7 +24583,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "ntlmDomain", "host", "nonProxyHosts", "encoding", "port", "principal", "protocol", "password" ]
+    "flow" : [ "host", "port", "protocol", "principal", "password", "ntlmDomain", "encoding", "nonProxyHosts" ]
   },
   "otoroshi.plugins.jobs.kubernetes.KubernetesIngressSyncJob" : {
     "schema" : { },
@@ -24793,7 +24803,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "robot_txt_content", "meta_content", "header_enabled", "robot_enabled", "header_content", "meta_enabled" ]
+    "flow" : [ "robot_txt_content", "meta_content", "robot_enabled", "header_content", "header_enabled", "meta_enabled" ]
   },
   "otoroshi.plugins.apikeys.ClientCredentialFlowBody" : {
     "schema" : {
@@ -24818,7 +24828,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "clientId", "scope", "grantType", "bearerKind", "clientSecret" ]
+    "flow" : [ "clientId", "scope", "clientSecret", "grantType", "bearerKind" ]
   },
   "otoroshi.auth.PKCEConfig" : {
     "schema" : {
@@ -27432,7 +27442,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "name", "expiredAt", "simpleLogin", "lastRefresh", "email", "tags", "authConfigId", "profile", "_loc", "randomId", "token", "createdAt", "metadata", "rights" ]
+    "flow" : [ "metadata", "lastRefresh", "profile", "authConfigId", "_loc", "token", "tags", "createdAt", "expiredAt", "randomId", "simpleLogin", "rights", "name", "email" ]
   },
   "otoroshi.auth.GroupFilter" : {
     "schema" : {
@@ -27471,13 +27481,19 @@
   },
   "otoroshi.next.models.NgPluginInstance" : {
     "schema" : {
+      "include" : {
+        "label" : "include",
+        "type" : "string",
+        "array" : true,
+        "format" : null
+      },
       "debug" : {
         "label" : "debug",
         "type" : "bool"
       },
-      "config" : {
-        "label" : "config",
-        "type" : "object"
+      "plugin" : {
+        "label" : "plugin",
+        "type" : "string"
       },
       "exclude" : {
         "label" : "exclude",
@@ -27485,22 +27501,25 @@
         "array" : true,
         "format" : null
       },
-      "include" : {
-        "label" : "include",
-        "type" : "string",
-        "array" : true,
-        "format" : null
+      "plugin_index" : {
+        "label" : "plugin_index",
+        "type" : "object",
+        "format" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : { },
+        "flow" : [ ]
       },
-      "plugin" : {
-        "label" : "plugin",
-        "type" : "string"
+      "config" : {
+        "label" : "config",
+        "type" : "object"
       },
       "enabled" : {
         "label" : "enabled",
         "type" : "bool"
       }
     },
-    "flow" : [ "plugin", "enabled", "config", "debug", "include", "exclude" ]
+    "flow" : [ "include", "debug", "plugin", "exclude", "plugin_index", "config", "enabled" ]
   },
   "otoroshi.models.HealthCheck" : {
     "schema" : {
@@ -27665,7 +27684,7 @@
         "type" : "object"
       }
     },
-    "flow" : [ "name", "expiredAt", "lastRefresh", "email", "tags", "authConfigId", "otoroshiData", "profile", "_loc", "randomId", "token", "createdAt", "metadata", "realm" ]
+    "flow" : [ "metadata", "lastRefresh", "profile", "authConfigId", "_loc", "token", "tags", "expiredAt", "createdAt", "randomId", "name", "realm", "email", "otoroshiData" ]
   },
   "otoroshi.plugins.core.apikeys.CustomHeadersApikeyExtractor" : {
     "schema" : { },
@@ -27734,7 +27753,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "tlsTrustCertsFilePath", "tenant", "uri", "mtlsConfig", "topic", "type", "namespace" ]
+    "flow" : [ "mtlsConfig", "namespace", "tlsTrustCertsFilePath", "topic", "type", "uri", "tenant" ]
   },
   "otoroshi.auth.SAMLProtocolBinding" : {
     "schema" : { },
@@ -28021,7 +28040,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "authorizedCallsPerDay", "remainingCallsPerMonth", "remainingCallsPerSec", "remainingCallsPerDay", "currentCallsPerDay", "currentCallsPerMonth", "authorizedCallsPerSec", "authorizedCallsPerMonth", "currentCallsPerSec" ]
+    "flow" : [ "currentCallsPerSec", "remainingCallsPerSec", "currentCallsPerDay", "authorizedCallsPerDay", "currentCallsPerMonth", "remainingCallsPerMonth", "authorizedCallsPerSec", "authorizedCallsPerMonth", "remainingCallsPerDay" ]
   },
   "otoroshi.next.plugins.JQRequest" : {
     "schema" : {
@@ -28040,6 +28059,39 @@
       }
     },
     "flow" : [ "id" ]
+  },
+  "otoroshi.next.plugins.GraphQLQueryConfig" : {
+    "schema" : {
+      "headers" : {
+        "label" : "headers",
+        "type" : "object"
+      },
+      "method" : {
+        "label" : "method",
+        "type" : "string"
+      },
+      "query" : {
+        "label" : "query",
+        "type" : "string"
+      },
+      "response_filter" : {
+        "label" : "response_filter",
+        "type" : "string"
+      },
+      "response_path" : {
+        "label" : "response_path",
+        "type" : "string"
+      },
+      "url" : {
+        "label" : "url",
+        "type" : "string"
+      },
+      "timeout" : {
+        "label" : "timeout",
+        "type" : "number"
+      }
+    },
+    "flow" : [ "headers", "method", "query", "response_filter", "response_path", "url", "timeout" ]
   },
   "otoroshi.script.plugins.Plugins" : {
     "schema" : {
@@ -28511,7 +28563,7 @@
         "type" : "object"
       }
     },
-    "flow" : [ "transformSettings", "strict", "algoSettings", "token", "type", "verificationSettings" ]
+    "flow" : [ "transformSettings", "algoSettings", "verificationSettings", "type", "strict", "token" ]
   },
   "otoroshi.plugins.mirror.RequestContext" : {
     "schema" : {
@@ -30874,7 +30926,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "method", "url", "ua", "reqId", "from", "headers" ]
+    "flow" : [ "ua", "reqId", "url", "from", "headers", "method" ]
   },
   "otoroshi.plugins.discovery.DiscoveryJobRegistrationId" : {
     "schema" : {
@@ -31694,7 +31746,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "extraMetadata", "accessTokenURL", "desc", "name", "allowEmptyPassword", "groupFilters", "authorizeURL", "rightsOverride", "consumerKey", "callbackURL", "clientId", "ssoProtocolBinding", "profileURL", "serverUrls", "otoroshiRightsField", "emailAttributeName", "validatingCertificates", "basicAuth", "searchBase", "groupRights", "scope", "tags", "singleLogoutProtocolBinding", "accessTokenField", "users", "superAdmins", "sessionMaxAge", "refreshTokens", "issuer", "httpMethod", "signature", "webauthn", "loginUrl", "metadataField", "searchFilter", "apiKeyTagsField", "adminUsername", "otoroshiDataField", "userValidators", "singleLogoutUrl", "emailField", "mtlsConfig", "extractProfileFilter", "userBase", "tokenUrl", "useCookie", "id", "pkce", "requestTokenURL", "authorizeUrl", "_loc", "callbackUrl", "consumerSecret", "usedNameIDAsEmail", "proxy", "apiKeyMetaField", "adminPassword", "singleSignOnUrl", "clientSecret", "useJson", "oidConfig", "claims", "metadata", "validateAssertions", "noWildcardRedirectURI", "extractProfileFilterNot", "nameField", "introspectionUrl", "nameIDFormat", "logoutUrl", "type", "extractProfile", "dataOverride", "userInfoUrl", "jwtVerifier", "readProfileFromToken", "validateSignature", "credentials", "sessionCookieValues" ]
+    "flow" : [ "metadata", "tokenUrl", "allowEmptyPassword", "ssoProtocolBinding", "mtlsConfig", "searchBase", "nameField", "emailField", "type", "issuer", "introspectionUrl", "rightsOverride", "nameIDFormat", "callbackUrl", "clientSecret", "callbackURL", "singleLogoutProtocolBinding", "id", "extraMetadata", "accessTokenField", "searchFilter", "useCookie", "sessionCookieValues", "dataOverride", "validatingCertificates", "apiKeyMetaField", "useJson", "pkce", "userBase", "otoroshiDataField", "_loc", "users", "tags", "adminUsername", "proxy", "extractProfile", "logoutUrl", "oidConfig", "name", "webauthn", "claims", "desc", "profileURL", "groupFilters", "refreshTokens", "otoroshiRightsField", "signature", "credentials", "basicAuth", "validateAssertions", "extractProfileFilterNot", "httpMethod", "metadataField", "consumerSecret", "loginUrl", "scope", "accessTokenURL", "singleSignOnUrl", "groupRights", "consumerKey", "adminPassword", "userInfoUrl", "validateSignature", "clientId", "authorizeUrl", "extractProfileFilter", "authorizeURL", "requestTokenURL", "superAdmins", "apiKeyTagsField", "userValidators", "serverUrls", "jwtVerifier", "sessionMaxAge", "usedNameIDAsEmail", "singleLogoutUrl", "noWildcardRedirectURI", "readProfileFromToken", "emailAttributeName" ]
   },
   "otoroshi.next.plugins.JQResponse" : {
     "schema" : {
@@ -32352,7 +32404,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "template40x", "messages", "templateMaintenance", "template50x", "templateBuild", "serviceId" ]
+    "flow" : [ "template50x", "templateMaintenance", "templateBuild", "serviceId", "messages", "template40x" ]
   },
   "otoroshi.plugins.oidc.OIDCHeaders" : {
     "schema" : { },
@@ -32413,7 +32465,7 @@
         "type" : "object"
       }
     },
-    "flow" : [ "oneMetaKeyIn", "oneTagIn", "allMetaKeysIn", "noneTagIn", "noneMetaKeysIn", "noneMetaIn", "allTagsIn", "allMetaIn", "oneMetaIn" ]
+    "flow" : [ "oneTagIn", "noneMetaKeysIn", "oneMetaIn", "oneMetaKeyIn", "allMetaKeysIn", "noneTagIn", "allTagsIn", "allMetaIn", "noneMetaIn" ]
   },
   "otoroshi.next.plugins.GlobalMaintenanceMode" : {
     "schema" : { },
@@ -32487,7 +32539,7 @@
         "format" : null
       }
     },
-    "flow" : [ "none_meta_keys_in", "none_tag_in", "one_meta_in", "enabled", "none_meta_in", "one_tag_in", "all_tags_in", "one_meta_key_in", "all_meta_in", "all_meta_keys_in" ]
+    "flow" : [ "none_meta_keys_in", "all_meta_keys_in", "all_meta_in", "none_meta_in", "one_tag_in", "enabled", "one_meta_in", "all_tags_in", "one_meta_key_in", "none_tag_in" ]
   },
   "otoroshi.plugins.jobs.kubernetes.KubernetesCertSyncJob" : {
     "schema" : { },
@@ -32694,7 +32746,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "allowClientIdOnly", "clientId", "readOnly", "description", "validUntil", "tags", "dailyQuota", "throttlingQuota", "enabled", "monthlyQuota", "restrictions", "rotation", "authorizedEntities", "_loc", "clientSecret", "constrainedServicesOnly", "clientName", "metadata" ]
+    "flow" : [ "metadata", "clientId", "clientName", "rotation", "description", "restrictions", "readOnly", "_loc", "enabled", "tags", "throttlingQuota", "constrainedServicesOnly", "allowClientIdOnly", "monthlyQuota", "validUntil", "authorizedEntities", "clientSecret", "dailyQuota" ]
   },
   "ByteStreamBody" : {
     "schema" : { },
@@ -32759,7 +32811,7 @@
         "type" : "object"
       }
     },
-    "flow" : [ "method", "body", "path", "status", "headers" ]
+    "flow" : [ "path", "body", "status", "method", "headers" ]
   },
   "otoroshi.next.plugins.JsonToXmlRequest" : {
     "schema" : {
@@ -33319,7 +33371,7 @@
         "flow" : [ "mtls", "loose", "trustAll", "trustedCerts", "certs" ]
       }
     },
-    "flow" : [ "url", "tlsConfig", "kty", "proxy", "headers", "ttl", "type", "timeout" ]
+    "flow" : [ "kty", "headers", "proxy", "type", "ttl", "url", "timeout", "tlsConfig" ]
   },
   "otoroshi.next.plugins.NgApikeyExtractorJwt" : {
     "schema" : {
@@ -33352,7 +33404,42 @@
         "type" : "string"
       }
     },
-    "flow" : [ "header_name", "enabled", "query_name", "include_request_attrs", "key_pair_signed", "cookie_name", "secret_signed" ]
+    "flow" : [ "include_request_attrs", "query_name", "header_name", "key_pair_signed", "secret_signed", "enabled", "cookie_name" ]
+  },
+  "otoroshi.next.plugins.GraphQLQuery" : {
+    "schema" : {
+      "headers" : {
+        "label" : "headers",
+        "type" : "object"
+      },
+      "method" : {
+        "label" : "method",
+        "type" : "string"
+      },
+      "query" : {
+        "label" : "GraphQL query",
+        "type" : "string",
+        "format" : "code",
+        "help" : "The graphql query that will be sent to the graphql endpoint"
+      },
+      "response_filter" : {
+        "label" : "response_filter",
+        "type" : "string"
+      },
+      "response_path" : {
+        "label" : "response_path",
+        "type" : "string"
+      },
+      "url" : {
+        "label" : "url",
+        "type" : "string"
+      },
+      "timeout" : {
+        "label" : "timeout",
+        "type" : "number"
+      }
+    },
+    "flow" : [ "url", "method", "headers", "timeout", "query", "response_filter", "response_path" ]
   },
   "otoroshi.next.plugins.AdditionalHeadersIn" : {
     "schema" : {
@@ -33680,7 +33767,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "validate", "wipe_backend_request", "pass_with_user", "extractors", "routing" ]
+    "flow" : [ "wipe_backend_request", "routing", "extractors", "pass_with_user", "validate" ]
   },
   "otoroshi.next.plugins.NgCorsSettings" : {
     "schema" : {
@@ -33721,7 +33808,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "allow_headers", "allow_methods", "expose_headers", "allow_origin", "max_age", "allow_credentials", "excluded_patterns" ]
+    "flow" : [ "max_age", "allow_headers", "allow_methods", "excluded_patterns", "allow_credentials", "expose_headers", "allow_origin" ]
   },
   "otoroshi.plugins.biscuit.BiscuitConfig" : {
     "schema" : {
@@ -33772,7 +33859,7 @@
         "format" : null
       }
     },
-    "flow" : [ "revocation_ids", "facts", "extractorName", "enforce", "checks", "resources", "extractor", "publicKey", "rules" ]
+    "flow" : [ "checks", "revocation_ids", "extractorName", "resources", "enforce", "extractor", "rules", "publicKey", "facts" ]
   },
   "otoroshi.utils.mailer.MailjetSettings" : {
     "schema" : {
@@ -33888,7 +33975,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "eu", "url", "apiKeyPublic", "domain", "apiKey", "to", "apiKeyPrivate", "headers", "type" ]
+    "flow" : [ "type", "headers", "to", "url", "eu", "apiKey", "domain", "apiKeyPrivate", "apiKeyPublic" ]
   },
   "ErrorTemplateList" : {
     "schema" : { },
@@ -33955,7 +34042,7 @@
         "format" : null
       }
     },
-    "flow" : [ "black_list", "chunked_threshold", "white_list", "compression_level", "buffer_size", "excluded_patterns" ]
+    "flow" : [ "compression_level", "buffer_size", "chunked_threshold", "excluded_patterns", "white_list", "black_list" ]
   },
   "otoroshi.next.plugins.ForceHttpsTraffic" : {
     "schema" : { },
@@ -34267,7 +34354,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "algo_to_backend", "algo_from_backend", "request_header_name", "response_header_name", "version", "state_resp_leeway", "ttl" ]
+    "flow" : [ "state_resp_leeway", "response_header_name", "algo_from_backend", "ttl", "version", "algo_to_backend", "request_header_name" ]
   },
   "otoroshi.next.plugins.wrappers.CompositeWrapper" : {
     "schema" : { },
@@ -34424,7 +34511,7 @@
         "options" : [ "Need", "None", "Want" ]
       }
     },
-    "flow" : [ "name", "sni", "description", "tags", "interface", "enabled", "clientAuth", "tls", "id", "port", "_loc", "metadata", "rules" ]
+    "flow" : [ "metadata", "description", "rules", "interface", "_loc", "enabled", "tags", "sni", "port", "name", "tls", "id", "clientAuth" ]
   },
   "otoroshi.next.plugins.NgHeaderNamesConfig" : {
     "schema" : {
@@ -34567,7 +34654,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "allow_headers", "allow_methods", "expose_headers", "allow_origin", "max_age", "allow_credentials", "excluded_patterns" ]
+    "flow" : [ "max_age", "allow_headers", "allow_methods", "excluded_patterns", "allow_credentials", "expose_headers", "allow_origin" ]
   },
   "otoroshi.models.NetworkLocationMatch" : {
     "schema" : {
@@ -34598,7 +34685,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "provider", "dataCenter", "rack", "region", "type", "zone" ]
+    "flow" : [ "rack", "provider", "dataCenter", "zone", "type", "region" ]
   },
   "otoroshi.plugins.discovery.SelfRegistrationConfig" : {
     "schema" : {
@@ -34646,7 +34733,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "globalTimeout", "path", "callTimeout", "idleTimeout", "connectionTimeout", "callAndStreamTimeout" ]
+    "flow" : [ "path", "callAndStreamTimeout", "callTimeout", "idleTimeout", "globalTimeout", "connectionTimeout" ]
   },
   "otoroshi.models.RestrictionPath" : {
     "schema" : {
@@ -34703,7 +34790,7 @@
         "options" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
       }
     },
-    "flow" : [ "eu", "domain", "apiKey", "to", "type" ]
+    "flow" : [ "eu", "apiKey", "domain", "to", "type" ]
   },
   "otoroshi.next.plugins.Redirection" : {
     "schema" : {
@@ -34743,7 +34830,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "path", "apikey", "enabled", "type", "timeout" ]
+    "flow" : [ "apikey", "type", "enabled", "timeout", "path" ]
   },
   "otoroshi.plugins.clientcert.HasClientCertMatchingApikeyValidator" : {
     "schema" : { },
@@ -34811,7 +34898,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "allowed", "notFound", "enabled", "forbidden", "allowLast" ]
+    "flow" : [ "allowed", "allowLast", "forbidden", "notFound", "enabled" ]
   },
   "otoroshi.next.plugins.DisableHttp10" : {
     "schema" : { },
@@ -35207,7 +35294,7 @@
         "flow" : [ "type", "ratio" ]
       }
     },
-    "flow" : [ "targets", "root", "target_refs", "load_balancing", "health_check", "client", "rewrite" ]
+    "flow" : [ "target_refs", "root", "client", "health_check", "targets", "rewrite", "load_balancing" ]
   },
   "otoroshi.plugins.useragent.UserAgentExtractor" : {
     "schema" : { },
@@ -35312,7 +35399,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "serial", "csrQuery", "cert", "ca", "csr", "key", "caChain" ]
+    "flow" : [ "csr", "csrQuery", "serial", "cert", "caChain", "ca", "key" ]
   },
   "otoroshi.next.models.NgService" : {
     "schema" : {
@@ -35716,7 +35803,7 @@
         "format" : null
       }
     },
-    "flow" : [ "debug_flow", "name", "routes", "description", "tags", "enabled", "export_reporting", "groups", "id", "_loc", "client", "metadata" ]
+    "flow" : [ "debug_flow", "routes", "metadata", "name", "description", "groups", "client", "id", "_loc", "enabled", "export_reporting", "tags" ]
   },
   "Unknown" : {
     "schema" : { },
@@ -35757,7 +35844,11 @@
           },
           "value" : {
             "label" : "value",
-            "type" : "object"
+            "type" : "object",
+            "format" : "code",
+            "props" : {
+              "mode" : "json"
+            }
           }
         },
         "flow" : [ "path", "value" ]
@@ -38594,7 +38685,7 @@
         "format" : null
       }
     },
-    "flow" : [ "desc", "name", "strict", "source", "algoSettings", "tags", "id", "_loc", "strategy", "metadata", "type" ]
+    "flow" : [ "metadata", "algoSettings", "name", "id", "source", "type", "strict", "strategy", "_loc", "desc", "tags" ]
   },
   "otoroshi.plugins.apikeys.ClientCredentialFlowExtractor" : {
     "schema" : { },
@@ -38973,7 +39064,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "strict", "source", "algoSettings", "enabled", "excludedPatterns", "strategy", "type" ]
+    "flow" : [ "excludedPatterns", "algoSettings", "source", "type", "strict", "strategy", "enabled" ]
   },
   "otoroshi.plugins.core.apikeys.JwtApikeyExtractor" : {
     "schema" : { },
@@ -41229,7 +41320,7 @@
         "flow" : [ "enabled", "excludedPatterns", "refs", "config" ]
       }
     },
-    "flow" : [ "localScheme", "targetsLoadBalancing", "privatePatterns", "overrideHost", "healthCheck", "name", "securityExcludedPatterns", "removeHeadersIn", "privateApp", "plugins", "accessValidator", "stripPath", "targets", "detectApiKeySooner", "readOnly", "additionalHeadersOut", "root", "additionalHeaders", "issueCertCA", "description", "transformerRefs", "useNewWSClient", "tags", "apiKeyConstraints", "domain", "missingOnlyHeadersIn", "redirection", "enabled", "secComExcludedPatterns", "secComSettings", "logAnalyticsOnServer", "letsEncrypt", "publicPatterns", "restrictions", "missingOnlyHeadersOut", "sendInfoToken", "redirectToLocal", "maintenanceMode", "authConfigRef", "groups", "paths", "tcpUdpTunneling", "forceHttps", "buildMode", "preRouting", "strictlyPrivate", "clientConfig", "subdomain", "removeHeadersOut", "secComVersion", "cors", "secComAlgoChallengeOtoToBack", "canary", "issueCert", "secComTtl", "clientValidatorRef", "id", "transformerConfig", "xForwardedHeaders", "secComHeaders", "_loc", "gzip", "secComUseSameAlgo", "hosts", "secComAlgoChallengeBackToOto", "userFacing", "chaosConfig", "ipFiltering", "handleLegacyDomain", "metadata", "matchingRoot", "sendOtoroshiHeadersBack", "api", "matchingHeaders", "enforceSecureCommunication", "useAkkaHttpClient", "headersVerification", "secComAlgoInfoToken", "sendStateChallenge", "jwtVerifier", "localHost", "env", "secComInfoTokenVersion", "allowHttp10" ]
+    "flow" : [ "removeHeadersIn", "missingOnlyHeadersOut", "metadata", "tcpUdpTunneling", "cors", "forceHttps", "matchingRoot", "plugins", "letsEncrypt", "useNewWSClient", "chaosConfig", "secComSettings", "detectApiKeySooner", "transformerRefs", "secComAlgoInfoToken", "missingOnlyHeadersIn", "secComAlgoChallengeOtoToBack", "removeHeadersOut", "stripPath", "localHost", "sendOtoroshiHeadersBack", "id", "api", "secComTtl", "secComVersion", "targetsLoadBalancing", "userFacing", "hosts", "restrictions", "readOnly", "secComInfoTokenVersion", "_loc", "enforceSecureCommunication", "tags", "clientValidatorRef", "privateApp", "paths", "domain", "name", "transformerConfig", "subdomain", "maintenanceMode", "secComHeaders", "handleLegacyDomain", "logAnalyticsOnServer", "strictlyPrivate", "description", "buildMode", "targets", "enabled", "additionalHeadersOut", "sendStateChallenge", "root", "additionalHeaders", "issueCertCA", "ipFiltering", "redirection", "redirectToLocal", "headersVerification", "useAkkaHttpClient", "securityExcludedPatterns", "authConfigRef", "preRouting", "canary", "secComExcludedPatterns", "xForwardedHeaders", "apiKeyConstraints", "sendInfoToken", "issueCert", "groups", "privatePatterns", "gzip", "clientConfig", "env", "jwtVerifier", "allowHttp10", "publicPatterns", "secComAlgoChallengeBackToOto", "localScheme", "healthCheck", "matchingHeaders", "overrideHost", "secComUseSameAlgo", "accessValidator" ]
   },
   "otoroshi.plugins.envoy.EnvoyControlPlane" : {
     "schema" : { },
@@ -41291,7 +41382,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "queryName", "enabled", "includeRequestAttributes", "maxJwtLifespanSecs", "headerName", "secretSigned", "keyPairSigned", "cookieName" ]
+    "flow" : [ "headerName", "maxJwtLifespanSecs", "keyPairSigned", "secretSigned", "queryName", "enabled", "cookieName", "includeRequestAttributes" ]
   },
   "otoroshi.models.Proxies" : {
     "schema" : {
@@ -41368,7 +41459,7 @@
         "flow" : [ ]
       }
     },
-    "flow" : [ "clevercloud", "services", "auth", "alertEmails", "jwk", "elastic", "authority", "eventsWebhooks" ]
+    "flow" : [ "auth", "clevercloud", "authority", "elastic", "alertEmails", "services", "eventsWebhooks", "jwk" ]
   },
   "otoroshi.plugins.jobs.kubernetes.KubernetesSupport" : {
     "schema" : { },
@@ -41640,7 +41731,7 @@
         "type" : "object"
       }
     },
-    "flow" : [ "applyTemplate", "eu", "path", "sendEvents", "tlsTrustCertsFilePath", "url", "tenant", "apiKeyPublic", "domain", "truststore", "uri", "ref", "config", "hostValidation", "apiKey", "servers", "to", "mtlsConfig", "version", "apiKeyPrivate", "labels", "clusterUri", "keystore", "maxFileSize", "topic", "headers", "type", "indexSettings", "keyPass", "user", "namespace", "index", "password" ]
+    "flow" : [ "clusterUri", "apiKey", "indexSettings", "mtlsConfig", "tlsTrustCertsFilePath", "apiKeyPrivate", "type", "hostValidation", "path", "password", "ref", "servers", "truststore", "keystore", "sendEvents", "applyTemplate", "tenant", "headers", "index", "maxFileSize", "uri", "version", "url", "labels", "eu", "keyPass", "domain", "namespace", "topic", "apiKeyPublic", "to", "user", "config" ]
   },
   "otoroshi.plugins.cache.ResponseCacheConfig" : {
     "schema" : {
@@ -41776,7 +41867,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "name", "revoked", "subject", "description", "tags", "domain", "ca", "keypair", "letsEncrypt", "autoRenew", "certType", "caRef", "to", "exposed", "id", "_loc", "sans", "client", "from", "valid", "metadata", "privateKey", "selfSigned", "chain", "password" ]
+    "flow" : [ "certType", "metadata", "subject", "letsEncrypt", "keypair", "description", "revoked", "valid", "password", "autoRenew", "exposed", "client", "from", "selfSigned", "id", "ca", "chain", "sans", "_loc", "tags", "privateKey", "caRef", "domain", "name", "to" ]
   },
   "otoroshi.models.Outage" : {
     "schema" : {
@@ -41801,7 +41892,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "duration", "descriptorId", "until", "startedAt", "descriptorName" ]
+    "flow" : [ "descriptorName", "descriptorId", "until", "duration", "startedAt" ]
   },
   "otoroshi.auth.SAMLCredentials" : {
     "schema" : {
@@ -42020,7 +42111,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "accessTokenURL", "desc", "name", "authorizeURL", "rightsOverride", "consumerKey", "callbackURL", "profileURL", "tags", "sessionMaxAge", "httpMethod", "userValidators", "id", "requestTokenURL", "_loc", "consumerSecret", "metadata", "type", "sessionCookieValues" ]
+    "flow" : [ "profileURL", "metadata", "authorizeURL", "requestTokenURL", "sessionCookieValues", "type", "httpMethod", "userValidators", "_loc", "tags", "sessionMaxAge", "consumerSecret", "accessTokenURL", "name", "rightsOverride", "callbackURL", "id", "consumerKey", "desc" ]
   },
   "otoroshi.plugins.izanami.IzanamiCanary" : {
     "schema" : { },
@@ -42279,7 +42370,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "desc", "name", "ssoProtocolBinding", "emailAttributeName", "validatingCertificates", "tags", "singleLogoutProtocolBinding", "sessionMaxAge", "issuer", "signature", "userValidators", "singleLogoutUrl", "id", "_loc", "usedNameIDAsEmail", "singleSignOnUrl", "metadata", "validateAssertions", "nameIDFormat", "type", "validateSignature", "credentials", "sessionCookieValues" ]
+    "flow" : [ "validateSignature", "metadata", "ssoProtocolBinding", "sessionCookieValues", "validatingCertificates", "signature", "credentials", "validateAssertions", "type", "userValidators", "_loc", "issuer", "tags", "sessionMaxAge", "usedNameIDAsEmail", "singleLogoutUrl", "name", "emailAttributeName", "singleSignOnUrl", "nameIDFormat", "singleLogoutProtocolBinding", "id", "desc" ]
   },
   "otoroshi.next.plugins.JQConfig" : {
     "schema" : {
@@ -42357,7 +42448,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "url", "jq_request_filter", "convert_request_body_to_xml", "charset", "preserve_query", "envelope", "jq_response_filter", "action" ]
+    "flow" : [ "convert_request_body_to_xml", "charset", "envelope", "jq_request_filter", "preserve_query", "action", "jq_response_filter", "url" ]
   },
   "otoroshi.next.plugins.XmlToJsonResponse" : {
     "schema" : {
@@ -42789,7 +42880,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "desc", "name", "strict", "source", "algoSettings", "tags", "enabled", "excludedPatterns", "id", "_loc", "strategy", "metadata", "ids", "type" ]
+    "flow" : [ "excludedPatterns", "metadata", "source", "type", "_loc", "enabled", "tags", "algoSettings", "name", "ids", "id", "strict", "strategy", "desc" ]
   },
   "otoroshi.models.LatencyInjectionFaultConfig" : {
     "schema" : {
@@ -43218,7 +43309,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "extraMetadata", "desc", "name", "rightsOverride", "clientId", "otoroshiRightsField", "scope", "tags", "accessTokenField", "superAdmins", "sessionMaxAge", "refreshTokens", "loginUrl", "apiKeyTagsField", "otoroshiDataField", "userValidators", "emailField", "mtlsConfig", "tokenUrl", "useCookie", "id", "pkce", "authorizeUrl", "_loc", "callbackUrl", "proxy", "apiKeyMetaField", "clientSecret", "useJson", "oidConfig", "claims", "metadata", "noWildcardRedirectURI", "nameField", "introspectionUrl", "logoutUrl", "type", "dataOverride", "userInfoUrl", "jwtVerifier", "readProfileFromToken", "sessionCookieValues" ]
+    "flow" : [ "refreshTokens", "metadata", "tokenUrl", "otoroshiRightsField", "mtlsConfig", "nameField", "emailField", "type", "introspectionUrl", "loginUrl", "scope", "rightsOverride", "callbackUrl", "clientSecret", "id", "extraMetadata", "accessTokenField", "userInfoUrl", "clientId", "useCookie", "authorizeUrl", "sessionCookieValues", "dataOverride", "superAdmins", "apiKeyMetaField", "useJson", "pkce", "apiKeyTagsField", "otoroshiDataField", "userValidators", "_loc", "tags", "jwtVerifier", "sessionMaxAge", "proxy", "logoutUrl", "noWildcardRedirectURI", "readProfileFromToken", "oidConfig", "name", "claims", "desc" ]
   },
   "otoroshi.script.PreRoutingRef" : {
     "schema" : {
@@ -43350,7 +43441,7 @@
         "format" : null
       }
     },
-    "flow" : [ "name", "email", "tags", "webauthn", "metadata", "rights", "password" ]
+    "flow" : [ "metadata", "password", "rights", "name", "webauthn", "email", "tags" ]
   },
   "otoroshi.plugins.clientcert.SubIss" : {
     "schema" : {
@@ -43498,7 +43589,7 @@
         "type" : "object"
       }
     },
-    "flow" : [ "certificate", "verifier", "tenant", "apikey", "descriptor", "dataExporter", "service", "team", "backend", "template", "target", "authConfig", "route", "script", "tcpService", "group" ]
+    "flow" : [ "template", "apikey", "dataExporter", "authConfig", "certificate", "tcpService", "team", "descriptor", "script", "target", "route", "verifier", "service", "backend", "tenant", "group" ]
   },
   "otoroshi.plugins.authcallers.BasicAuthCaller" : {
     "schema" : { },
@@ -43577,7 +43668,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "provider", "dc", "dataCenter", "positions", "rack", "region", "type", "zone" ]
+    "flow" : [ "rack", "provider", "dataCenter", "zone", "positions", "type", "region", "dc" ]
   },
   "otoroshi.plugins.loggers.ResponseBodyEvent" : {
     "schema" : {
@@ -43610,7 +43701,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "method", "url", "ua", "reqId", "status", "from", "headers" ]
+    "flow" : [ "status", "headers", "url", "reqId", "from", "ua", "method" ]
   },
   "otoroshi.models.ServiceGroup" : {
     "schema" : {
@@ -43657,7 +43748,7 @@
         "format" : null
       }
     },
-    "flow" : [ "name", "description", "tags", "id", "_loc", "metadata" ]
+    "flow" : [ "metadata", "name", "description", "id", "_loc", "tags" ]
   },
   "otoroshi.next.plugins.MockResponsesConfig" : {
     "schema" : {

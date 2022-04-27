@@ -6,12 +6,14 @@ import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
 
+import otoroshi.utils.syntax.implicits._
+
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import scala.collection.concurrent.TrieMap
 
-case class Form(schema: JsObject, flow: Set[String]) {
+case class Form(schema: JsObject, flow: Seq[String]) {
   def json: JsValue = Json.obj(
     "schema" -> schema,
     "flow"   -> flow
@@ -22,7 +24,7 @@ object Form {
   def fromJson(value: JsValue): Form = {
     Form(
       schema = value.select("schema").as[JsObject],
-      flow = value.select("flow").as[Set[String]]
+      flow = value.select("flow").as[Seq[String]]
     )
   }
 }
@@ -30,15 +32,17 @@ object Form {
 case class OpenApiSchema(
     scanResult: ScanResult,
     raw: JsValue,
-    flattened: TrieMap[String, JsValue],
+    flattened: Map[String, JsValue],
     asForms: Map[String, Form]
 )
+
+case class CustomData(forms: Map[String, Form])
 
 class ClassGraphScanner {
 
   private val logger = Logger("otoroshi-classpath-scanner")
 
-  def scanAndGenerateSchema(scanResult: ScanResult): OpenApiSchema = {
+  def scanAndGenerateSchema(scanResult: ScanResult, customData: CustomData): OpenApiSchema = {
     val (openApiSchema, hasWritten) = new OpenApiGenerator(
       "./conf/routes",
       "./conf/schemas/openapi-cfg.json",
@@ -50,8 +54,8 @@ class ClassGraphScanner {
       scanResult = scanResult,
       write = true
     ).runAndMaybeWrite()
-    val flattenedOpenapiSchema      = new OpenapiToJson(openApiSchema).run()
-    val asForms                     = new FormsGenerator(flattenedOpenapiSchema).run()
+    val flattenedOpenapiSchema = new OpenapiToJson(openApiSchema).run()
+    val asForms                     = new FormsGenerator(flattenedOpenapiSchema).run().applyOn(_ ++ customData.forms)
     val flatFile                    = new File("./conf/schemas/openapi-flat.json")
     val formFile                    = new File("./conf/schemas/openapi-forms.json")
     if (hasWritten || !flatFile.exists()) {
@@ -67,7 +71,7 @@ class ClassGraphScanner {
     OpenApiSchema(
       scanResult = scanResult,
       raw = openApiSchema,
-      flattened = flattenedOpenapiSchema,
+      flattened = flattenedOpenapiSchema.toMap,
       asForms = asForms /*{
         val jsonRaw = Files.readString(formFile.toPath)
         val obj     = Json.parse(jsonRaw).as[JsObject]
@@ -102,7 +106,7 @@ class ClassGraphScanner {
       OpenApiSchema(
         scanResult = scanResult,
         raw = openApiSchema,
-        flattened = flattenedOpenapiSchema,
+        flattened = flattenedOpenapiSchema.toMap,
         asForms = asForms
       )
     }) match {
@@ -130,7 +134,7 @@ class ClassGraphScanner {
       .scan()
     val dev        = env.env == "dev"
     if (dev) {
-      scanAndGenerateSchema(scanResult)
+      scanAndGenerateSchema(scanResult, CustomData(CustomForms.forms))
     } else {
       readSchemaFromFiles(scanResult, env) match {
         case Left(err)  => throw new RuntimeException(err)
