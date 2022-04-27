@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BooleanInput, CodeInput, SelectInput } from '@maif/react-forms';
 import { tryIt, fetchAllApikeys, findAllCertificates } from '../../services/BackOfficeServices';
+import { firstLetterUppercase } from '../../util';
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'];
 
@@ -505,8 +506,6 @@ export const TryIt = ({ route }) => {
     </div>
   );
 };
-
-const firstLetterUppercase = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
 const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, flow, setFlow }) => {
   const [selectedStep, setSelectedStep] = useState(-1);

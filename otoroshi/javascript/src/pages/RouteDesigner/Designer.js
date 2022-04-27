@@ -14,13 +14,15 @@ import {
 } from './Graph';
 import Loader from './Loader';
 import { isEqual } from "lodash";
-import { toUpperCaseLabels, camelToSnake, camelToSnakeFlow, REQUEST_STEPS_FLOW, REQUEST_STEPS_WEIGHT } from '../../util';
+import { toUpperCaseLabels, camelToSnake, camelToSnakeFlow, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
 import { Form, type, format, validate } from '@maif/react-forms';
 import { CodeInput } from '@maif/react-forms';
 import { MarkdownInput } from '@maif/react-forms';
 import { FeedbackButton } from './FeedbackButton';
 import { merge } from 'lodash';
 import { cloneDeep } from 'lodash';
+import { snakeCase } from 'lodash';
+import { camelCase } from 'lodash';
 
 const HeaderNode = ({ selectedNode, text, icon }) => <Dot selectedNode={selectedNode}>
   <div className='flex-column p-1'>
@@ -98,11 +100,8 @@ const NodeElement = ({
   onRemove,
   arrows
 }) => {
-  const { id, name, index, legacy } = element;
-  const highlighted =
-    selectedNode &&
-    selectedNode.id === id &&
-    (selectedNode.plugin_multi_inst ? selectedNode.index === index : true);
+  const { id, name, legacy, nodeId } = element;
+  const highlighted = selectedNode && selectedNode.nodeId === nodeId
 
   return (
     <>
@@ -119,8 +118,8 @@ const NodeElement = ({
         }}
         onClick={(e) => {
           e.stopPropagation();
-          if (onUnsavedChanges) onUnsavedChanges(() => setSelectedNode(element));
-          else setSelectedNode(element);
+          if (onUnsavedChanges) onUnsavedChanges(() => setSelectedNode());
+          else setSelectedNode();
         }}
         highlighted={highlighted}
         arrows={arrows}
@@ -179,34 +178,29 @@ export default ({ value }) => {
   return <Designer routeId={routeId} location={location} value={value} />
 }
 
-const FrontendNode = ({
-  onUp, onDown, onUnsavedChanges, frontend, selectedNode, setSelectedNode, removeNode, arrows
-}) => <div className='main-view relative-container' style={{ flex: 'initial' }}>
-    <NodeElement
-      onUp={onUp}
-      onDown={onDown}
-      onUnsavedChanges={onUnsavedChanges}
-      className="frontend-container-button"
-      element={frontend}
-      selectedNode={selectedNode}
-      setSelectedNode={setSelectedNode}
-      isLast={true}
-      bold={true}
-      onRemove={removeNode}
-      arrows={arrows}
-    />
-    <div
-      className="frontend-button"
-      style={{
-        background:
-          (selectedNode && selectedNode.id === 'Frontend') ?
-            'linear-gradient(to right, rgb(249, 176, 0) 55%, transparent 1%)' :
-            'linear-gradient(to right, rgb(73, 73, 72) 55%, transparent 1%)',
-        opacity: (!selectedNode || (selectedNode && selectedNode.id === 'Frontend')) ? 1 : 0.25
-      }}>
-      <i className="fas fa-user frontend-button-icon" />
-    </div>
+const FrontendNode = ({ onUnsavedChanges, frontend, selectedNode, setSelectedNode, removeNode }) => <div className='main-view relative-container'
+  style={{ flex: 'initial' }}>
+  <NodeElement
+    element={frontend}
+    onUnsavedChanges={onUnsavedChanges}
+    className="frontend-container-button"
+    selectedNode={selectedNode}
+    setSelectedNode={setSelectedNode}
+    bold={true}
+    onRemove={removeNode}
+  />
+  <div
+    className="frontend-button"
+    style={{
+      opacity: (!selectedNode || (selectedNode && selectedNode.id === 'Frontend')) ? 1 : 0.25,
+      background:
+        (selectedNode && selectedNode.id === 'Frontend') ?
+          'linear-gradient(to right, rgb(249, 176, 0) 55%, transparent 1%)' :
+          'linear-gradient(to right, rgb(73, 73, 72) 55%, transparent 1%)'
+    }}>
+    <i className="fas fa-user frontend-button-icon" />
   </div>
+</div>
 
 const Container = ({ children, onClick }) => {
   return <div
@@ -219,23 +213,20 @@ const Container = ({ children, onClick }) => {
   </div>
 }
 
-const BackendNode = ({ selectedNode, onUp, onDown, onUnsavedChanges, backend, setSelectedNode, removeNode, arrows }) => {
+const BackendNode = ({ selectedNode, onUnsavedChanges, backend, setSelectedNode, removeNode }) => {
   return <div
     className="main-view backend-button"
     style={{ opacity: !selectedNode ? 1 : (!selectedNode.id === 'Backend' ? 0.25 : 1) }}>
     <i className="fas fa-bullseye backend-icon" />
     <NodeElement
-      onUp={onUp}
-      onDown={onDown}
-      onUnsavedChanges={onUnsavedChanges}
       element={backend}
+      onUnsavedChanges={onUnsavedChanges}
       selectedNode={(selectedNode && selectedNode.id === 'Backend') ? selectedNode : undefined}
       setSelectedNode={setSelectedNode}
       hideLink={true}
       disableBorder={true}
       bold={true}
       onRemove={removeNode}
-      arrows={arrows}
     />
   </div>
 }
@@ -303,15 +294,10 @@ const PluginsContainer = ({
   </div>
 
 class Designer extends React.Component {
-
   state = {
     backends: [],
     categories: [],
     nodes: [],
-    sortedNodes: {
-      outBound: [],
-      inBound: []
-    },
     plugins: [],
     selectedNode: undefined,
     route: this.props.value,
@@ -326,24 +312,6 @@ class Designer extends React.Component {
     },
     frontend: {},
     backend: {}
-  }
-
-  sortNodes = () => {
-    const n = this.state.nodes.reduce((acc, curr) => {
-      if (this.isOnInBoundSteps(curr))
-        return { ...acc, inBound: [...acc.inBound, curr] }
-      else
-        return { ...acc, outBound: [...acc.outBound, curr] }
-    }, {
-      inBound: [],
-      outBound: []
-    })
-    this.setState({
-      sortedNodes: {
-        inBound: this.sortInputStream(n.inBound),
-        outBound: n.outBound
-      }
-    })
   }
 
   componentDidMount() {
@@ -365,7 +333,7 @@ class Designer extends React.Component {
       nextClient.form(nextClient.ENTITIES.FRONTENDS),
       nextClient.form(nextClient.ENTITIES.BACKENDS),
     ]).then(([backends, route, categories, plugins, oldPlugins, frontendForm, backendForm]) => {
-      const formatedPlugins = [
+      const formattedPlugins = [
         ...plugins,
         ...oldPlugins.map((p) => ({
           ...p,
@@ -379,18 +347,36 @@ class Designer extends React.Component {
           config: plugin.default_config || plugin.defaultConfig,
         }));
 
+      const routePlugins = route.plugins.map(ref => ({
+        ...ref,
+        plugin_index: Object.fromEntries(Object.entries(ref.plugin_index || {}).map(([key, v]) => [firstLetterUppercase(camelCase(key)), v])),
+        ...formattedPlugins.find(p => p.id === ref.plugin || p.id === ref.config.plugin)
+      }))
+      const pluginsWithNodeId = this.generateInternalNodeId(routePlugins)
+
+      const routeWithNodeId = {
+        ...route,
+        plugins: route.plugins.map((plugin, i) => ({
+          ...plugin,
+          nodeId: pluginsWithNodeId[i].nodeId
+        }))
+      }
+
+      const nodes = pluginsWithNodeId.some(p => p.plugin_index) ? pluginsWithNodeId : this.generatedPluginIndex(pluginsWithNodeId)
+
+      console.log(pluginsWithNodeId)
+
       this.setState({
         backends,
-        categories: [
-          ...categories.filter((category) => !['Tunnel', 'Job'].includes(category)),
-          'Ancien plugins',
-        ],
-        route,
-        originalRoute: route,
-        plugins: formatedPlugins.map((p) => ({
+        loading: false,
+        categories: categories.filter((category) => !['Tunnel', 'Job'].includes(category)),
+        route: routeWithNodeId,
+        originalRoute: routeWithNodeId,
+        plugins: formattedPlugins.map((p) => ({
           ...p,
-          selected: p.plugin_multi_inst ? false : route.plugins.find((r) => r.plugin === p.id),
+          selected: p.plugin_multi_inst ? false : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
         })),
+        nodes,
         frontend: {
           ...DEFAULT_FLOW.Frontend,
           ...frontendForm,
@@ -407,15 +393,102 @@ class Designer extends React.Component {
             DEFAULT_FLOW.Backend.config_schema(backendForm.schema)
           ),
           config_flow: DEFAULT_FLOW.Backend.config_flow,
-        },
-        nodes: route.plugins
-          .map((ref, i) => ({
-            ...formatedPlugins.find(p => p.id === ref.plugin || p.id === ref.config.plugin),
-            index: i
-          })),
-        loading: false
-      }, this.sortNodes)
+        }
+      })
     });
+  }
+
+  generateInternalNodeId = nodes => nodes.reduce((acc, node) => [
+    ...acc,
+    {
+      ...node,
+      nodeId: acc.find(n => n.nodeId == node.id) ?
+        `${node.id}-${acc.reduce((a, c) => a + (c.id.startsWith(node.id) ? 1 : 0), 0)}` :
+        node.id
+    }
+  ], [])
+
+  generateNewInternalNodeId = nodeId => `${nodeId}-${this.state.nodes.reduce((a, c) => a + (c.id.startsWith(nodeId) ? 1 : 0), 0)}`
+
+  generatedPluginIndex = plugins => {
+    const getStep = (step, elements, element, pluginSteps) => [...elements[step], pluginSteps.includes(step) ? element : undefined].filter(f => f)
+
+    const pluginsIndexes = plugins.reduce((acc, curr) => {
+      const pluginSteps = curr.plugin_steps || []
+      return {
+        MatchRoute: getStep('MatchRoute', acc, curr, pluginSteps),
+        PreRoute: getStep('PreRoute', acc, curr, pluginSteps),
+        ValidateAccess: getStep('ValidateAccess', acc, curr, pluginSteps),
+        TransformRequest: getStep('TransformRequest', acc, curr, pluginSteps),
+        TransformResponse: getStep('TransformResponse', acc, curr, pluginSteps),
+      }
+    }, {
+      MatchRoute: [],
+      PreRoute: [],
+      ValidateAccess: [],
+      TransformRequest: [],
+      TransformResponse: []
+    })
+
+    const pluginsWithIndex = Object.values(
+      Object.fromEntries(Object.entries(pluginsIndexes)
+        .map(([step, plugins]) => {
+          return [
+            step,
+            plugins.map((plugin, idx) => ({
+              ...plugin,
+              plugin_index: {
+                ...(plugin.plugin_index || {}),
+                [step]: idx
+              }
+            }))
+          ]
+        }))
+    )
+      .flatMap(f => f)
+
+    return _.chain(pluginsWithIndex)
+      .groupBy('nodeId')
+      .map((values, nodeId) => ({
+        nodeId,
+        ...values.reduce((acc, curr) => ({
+          ...acc,
+          plugin_index: {
+            ...acc.plugin_index,
+            ...curr.plugin_index
+          }
+        }))
+      }))
+      .value()
+  }
+
+  calculateIndexFor = node => {
+    const { nodes } = this.state
+    return Object.entries({
+      MatchRoute: nodes
+        .filter(n => n.plugin_index.MatchRoute !== undefined)
+        .sort((a, b) => a.plugin_index.MatchRoute - b.plugin_index.MatchRoute),
+      PreRoute: nodes
+        .filter(n => n.plugin_index.PreRoute !== undefined)
+        .sort((a, b) => a.plugin_index.PreRoute - b.plugin_index.PreRoute),
+      ValidateAccess: nodes
+        .filter(n => n.plugin_index.ValidateAccess !== undefined)
+        .sort((a, b) => a.plugin_index.ValidateAccess - b.plugin_index.ValidateAccess),
+      TransformRequest: nodes
+        .filter(n => n.plugin_index.TransformRequest !== undefined)
+        .sort((a, b) => a.plugin_index.TransformRequest - b.plugin_index.TransformRequest),
+      TransformResponse: nodes
+        .filter(n => n.plugin_index.TransformResponse !== undefined)
+        .sort((a, b) => a.plugin_index.TransformResponse - b.plugin_index.TransformResponse)
+    })
+      .filter(([step, _]) => node.plugin_steps.includes(step))
+      .reduce((pluginIndex, curr) => {
+        const [step, indexes] = curr
+        return {
+          ...pluginIndex,
+          [step]: indexes.length === 0 ? 0 : indexes[indexes.length - 1].plugin_index[step] + 1
+        }
+      }, {})
   }
 
   filterSpecificPlugin = (plugin) =>
@@ -429,29 +502,18 @@ class Designer extends React.Component {
     e.stopPropagation();
 
     const { selectedNode, nodes, plugins, route } = this.state
-
-    const id = selectedNode.id
-    const idx = selectedNode.index
+    const { nodeId, id } = selectedNode
 
     window.newConfirm(`Are you sure to delete this node ?`).then((ok) => {
       if (ok) {
         this.setState({
-          nodes: nodes
-            .filter((node, i) => !(node.id === id && i === idx))
-            .map((node, i) => ({
-              ...node,
-              index: i,
-            })),
-          plugins: plugins.map((plugin) => {
-            if (plugin.id === id) return { ...plugin, selected: undefined };
-            return plugin;
-          }),
+          nodes: nodes.filter(node => node.nodeId !== nodeId),
+          plugins: plugins.map(plugin => ({ ...plugin, selected: plugin.id === id ? undefined : plugin.selected })),
           selectedNode: undefined
         }, () => {
-          this.sortNodes()
-          saveChanges({
+          this.saveChanges({
             ...route,
-            plugins: route.plugins.filter((_, i) => i !== idx),
+            plugins: route.plugins.filter(plugin => plugin.nodeId !== nodeId),
           });
         })
       }
@@ -459,112 +521,96 @@ class Designer extends React.Component {
   };
 
   addNode = (node) => {
+    const nodeId = this.generateNewInternalNodeId(node.id)
+
     const newNode = {
       ...node,
-      index: this.state.nodes.length,
+      nodeId,
+      plugin_index: this.calculateIndexFor({ ...node, nodeId })
     };
 
-    let steps = [...REQUEST_STEPS_FLOW, 'TransformResponse']
-    const newPlugin = {
-      plugin: newNode.legacy ? LEGACY_PLUGINS_WRAPPER[newNode.pluginType] : newNode.id,
-      enabled: node.enabled || true,
-      debug: node.debug || false,
-      include: node.include || [],
-      exclude: node.exclude || [],
-      config: {
-        ...newNode.config,
-        plugin: newNode.legacy ? newNode.id : undefined,
+    const { nodes, plugins, route } = this.state
+
+    this.setState(
+      {
+        selectedNode: newNode,
+        nodes: [...nodes, newNode],
+        plugins: plugins.map(p => ({
+          ...p,
+          selected: p.id === newNode.id ? !p.plugin_multi_inst : p.selected
+        }))
       },
-    }
-
-    let hasChanged = false
-    const newPlugins = this.state.route.plugins.length === 0 ? [newPlugin] : [...this.state.route.plugins.flatMap(curr => {
-      const shouldSkip = (newPlugin.plugin_steps || []).some(s => s === steps[0])
-
-      if (shouldSkip && !hasChanged) {
-        steps = steps.slice(1)
-        hasChanged = true
-        return [newPlugin, curr]
-      } else
-        return curr
-    })]
-
-    const newRoute = {
-      ...this.state.route,
-      plugins: hasChanged ? newPlugins : [...newPlugins, newPlugin]
-    };
-
-    this.setState({
-      plugins: this.state.plugins.map((p) => {
-        if (p.id === newNode.id) p.selected = !p.plugin_multi_inst;
-        return p;
-      }),
-      nodes: [...this.state.nodes, newNode],
-      selectedNode: newNode
-    }, () => {
-      this.sortNodes()
-      this.saveChanges(newRoute)
-    })
+      () => {
+        this.saveChanges({
+          ...route,
+          plugins: [
+            ...route.plugins,
+            {
+              plugin_index: newNode.plugin_index,
+              nodeId: newNode.nodeId,
+              plugin: newNode.legacy ? LEGACY_PLUGINS_WRAPPER[newNode.pluginType] : newNode.id,
+              enabled: node.enabled || true,
+              debug: node.debug || false,
+              include: node.include || [],
+              exclude: node.exclude || [],
+              config: {
+                ...newNode.config,
+                plugin: newNode.legacy ? newNode.id : undefined,
+              }
+            }
+          ]
+        })
+      })
   };
 
-  swap = (aIndex, offset) => {
-    const a = { ...this.state.nodes.find((_, i) => i === aIndex) }
+  swap = (node, step, offset) => {
+    const { nodeId } = node
 
-    let possibilities = []
+    const nodes = this.state.nodes
+      .filter(n => n.plugin_index[step] !== undefined)
+      .sort((a, b) => a.plugin_index[step] - b.plugin_index[step])
 
-    if (this.isOnInBoundSteps(a))
-      possibilities = this.state.sortedNodes.inBound
-    else
-      possibilities = this.state.sortedNodes.outBound
+    const swapIndexNode = nodes.findIndex(n => n.nodeId === nodeId)
 
-    const aPos = possibilities.findIndex(node => node.index === a.index)
-    const b = possibilities.find((_, i) => i === aPos + offset)
-
-    if (b && a) {
-      const changes = { from: 0, to: 0 }
-      this.setState({
-        nodes: this.state.nodes.map((node, i) => {
-          if (node.index === a.index) {
-            changes.from = i
-            return { ...b, index: i }
+    const newNodes = this.state.nodes.map(n => {
+      if (n.nodeId === nodeId)
+        return {
+          ...n,
+          plugin_index: {
+            ...n.plugin_index,
+            [step]: nodes[swapIndexNode + offset].plugin_index[step]
           }
-          else if (node.index === b.index) {
-            changes.to = i
-            return { ...a, index: i }
-          }
-          return { ...node, index: i }
-        }),
-        selectedNode: {
-          ...this.state.selectedNode,
-          index: b.index
         }
-      }, this.sortNodes)
+      else if (n.nodeId === nodes[swapIndexNode + offset].nodeId)
+        return {
+          ...n,
+          plugin_index: {
+            ...n.plugin_index,
+            [step]: node.plugin_index[step]
+          }
+        }
+      return n
+    })
 
-      let sortedPlugins = [...this.state.route.plugins]
-      sortedPlugins[changes.from] = this.state.route.plugins[changes.to]
-      sortedPlugins[changes.to] = this.state.route.plugins[changes.from]
+    this.setState({ nodes: newNodes })
 
-      this.saveChanges({
-        ...this.state.route,
-        plugins: sortedPlugins
-      })
-    }
+    this.saveChanges({
+      ...this.state.route,
+      plugins: this.state.route.plugins.map(plugin => ({
+        ...plugin,
+        plugin_index: newNodes.find(n => n.nodeId === plugin.nodeId)?.plugin_index
+      }))
+    })
   }
 
-  onUp = e => {
+  onUp = (e, node, step) => {
     e.stopPropagation()
-    if (this.state.selectedNode) {
-      const { index } = this.state.selectedNode
-      this.swap(index, -1)
-    }
+    this.swap(node, step, -1)
   }
 
-  onDown = e => {
+  onDown = (e, node, step) => {
     e.stopPropagation()
-    if (this.state.selectedNode) {
-      const { index } = this.state.selectedNode
-      this.swap(index, 1)
-    }
+    this.swap(node, step, 1)
   }
 
   handleSearch = searched => {
@@ -577,14 +623,14 @@ class Designer extends React.Component {
     })
   };
 
-  updatePlugin = (pluginId, index, item, updatedField) => {
+  updatePlugin = (pluginId, nodeId, item) => {
     const { route } = this.state
     return this.saveChanges({
       ...route,
-      frontend: updatedField === 'Frontend' ? item.plugin : route.frontend,
-      backend: updatedField === 'Backend' ? item.plugin : route.backend,
-      plugins: route.plugins.map((plugin, i) => {
-        if ((plugin.plugin === pluginId || plugin.config.plugin === pluginId) && i === index)
+      frontend: pluginId === 'Frontend' ? item.plugin : route.frontend,
+      backend: pluginId === 'Backend' ? item.plugin : route.backend,
+      plugins: route.plugins.map(plugin => {
+        if (plugin.nodeId === nodeId)
           return {
             ...plugin,
             ...item.status,
@@ -597,40 +643,20 @@ class Designer extends React.Component {
   };
 
   saveChanges = (route) => {
-    return nextClient.update(nextClient.ENTITIES.ROUTES, route).then((newRoute) => {
-      this.setState({
-        route: newRoute,
-        originalRoute: newRoute
-      })
-    });
+    return nextClient.update(nextClient.ENTITIES.ROUTES, {
+      ...route,
+      plugins: route.plugins.map(plugin => ({
+        ...plugin,
+        plugin_index: Object.fromEntries(Object.entries(plugin.plugin_index).map(([key, v]) => [snakeCase(key), v]))
+      }))
+    })
+      .then(() => {
+        this.setState({
+          route,
+          originalRoute: route
+        })
+      });
   };
-
-  sortInputStream = (arr) =>
-    Object.values(
-      arr.reduce(
-        (acc, node) => {
-          if (node.plugin_steps.includes('PreRoute'))
-            return {
-              ...acc,
-              PreRoute: [...acc['PreRoute'], node],
-            };
-          else if (node.plugin_steps.includes('ValidateAccess'))
-            return {
-              ...acc,
-              ValidateAccess: [...acc['ValidateAccess'], node],
-            };
-          return {
-            ...acc,
-            TransformRequest: [...acc['TransformRequest'], node],
-          };
-        },
-        {
-          PreRoute: [],
-          ValidateAccess: [],
-          TransformRequest: [],
-        }
-      )
-    ).flat();
 
   onUnsavedChanges = (onConfirm) => {
     if (this.state.changed) {
@@ -642,104 +668,102 @@ class Designer extends React.Component {
     } else onConfirm();
   };
 
-  pluginIsEnabled = (value) => {
-    const index = this.state.nodes.findIndex((p, i) => p.id === value.id && i === value.index)
-    return this.state.route.plugins[index]?.enabled;
-  }
+  isPluginEnabled = (value) => this.state.route.plugins.find(plugin => plugin.nodeId === value.nodeId)?.enabled
 
   renderInBound = () => {
     let steps = [...REQUEST_STEPS_FLOW]
 
-    const { selectedNode, sortedNodes } = this.state
+    const { selectedNode, nodes } = this.state
 
-    return sortedNodes.inBound.map((value, i) => {
-      const showStep = (value.plugin_steps || []).every(s => s !== steps[0])
+    const matchRoute = nodes
+      .filter(n => n.plugin_index.MatchRoute !== undefined)
+      .sort((a, b) => a.plugin_index.MatchRoute - b.plugin_index.MatchRoute)
+    const preRoute = nodes
+      .filter(n => n.plugin_index.PreRoute !== undefined)
+      .sort((a, b) => a.plugin_index.PreRoute - b.plugin_index.PreRoute)
+    const validateAccess = nodes
+      .filter(n => n.plugin_index.ValidateAccess !== undefined)
+      .sort((a, b) => a.plugin_index.ValidateAccess - b.plugin_index.ValidateAccess)
+    const transformRequest = nodes
+      .filter(n => n.plugin_index.TransformRequest !== undefined)
+      .sort((a, b) => a.plugin_index.TransformRequest - b.plugin_index.TransformRequest)
 
-      if (showStep)
-        steps = steps.slice(1)
+    return [matchRoute, preRoute, validateAccess, transformRequest]
+      .map((nodes, i) => {
+        if (nodes.length === 0)
+          return null
 
-      return <>
-        {(showStep || i === 0) && <>
-          <span className='badge bg-warning text-dark' style={{ opacity: !selectedNode ? 1 : 0.25 }}>{steps[0]}</span>
-          <Hr highlighted={!selectedNode} />
-        </>}
-        <NodeElement
-          onUp={this.onUp}
-          onDown={this.onDown}
-          onUnsavedChanges={this.onUnsavedChanges}
-          enabled={this.pluginIsEnabled(value)}
-          element={value}
-          key={`inNodes${i}`}
-          selectedNode={selectedNode}
-          setSelectedNode={n => this.setState({ selectedNode: n })}
-          isLast={sortedNodes.inBound.length - 1 === i}
-          onRemove={this.removeNode}
-          arrows={this.showArrows(value)}
-        />
-      </>
-    })
+        return <>
+          <>
+            <span className='badge bg-warning text-dark' style={{ opacity: !selectedNode ? 1 : 0.25 }}>{steps[i]}</span>
+            <Hr highlighted={!selectedNode} />
+          </>
+          {nodes.map(node => <NodeElement
+            onUp={e => this.onUp(e, node, steps[i])}
+            onDown={e => this.onDown(e, node, steps[i])}
+            onUnsavedChanges={this.onUnsavedChanges}
+            enabled={this.isPluginEnabled(node)}
+            element={node}
+            key={`${node.nodeId}-${i}`}
+            selectedNode={selectedNode}
+            setSelectedNode={() => this.setState({ selectedNode: node })}
+            onRemove={this.removeNode}
+            arrows={this.showArrows(node, steps[i])}
+          />)}
+        </>
+      })
   }
 
   renderOutBound = () => {
-    return this.state.sortedNodes.outBound.map((value, i) => (
-      <NodeElement
-        onUp={this.onUp}
-        onDown={this.onDown}
-        onUnsavedChanges={this.onUnsavedChanges}
-        enabled={this.pluginIsEnabled(value)}
-        element={value}
-        key={`outNodes${i}`}
-        setSelectedNode={n => this.setState({ selectedNode: n })}
-        selectedNode={this.state.selectedNode}
-        isLast={this.state.sortedNodes.outBound.length - 1 === i}
-        onRemove={this.removeNode}
-        arrows={this.showArrows(value)}
-      />
-    ))
+    const responseNodes = this.state.nodes
+      .filter(n => n.plugin_index.TransformResponse !== undefined)
+      .sort((a, b) => b.plugin_index.TransformResponse - a.plugin_index.TransformResponse)
+    return responseNodes
+      .map((node, i) => (
+        <NodeElement
+          onUp={e => this.onDown(e, node, 'TransformResponse')}
+          onDown={e => this.onUp(e, node, 'TransformResponse')}
+          onUnsavedChanges={this.onUnsavedChanges}
+          enabled={this.isPluginEnabled(node)}
+          element={node}
+          key={`${node.nodeId}${i}`}
+          setSelectedNode={() => this.setState({ selectedNode: node })}
+          selectedNode={this.state.selectedNode}
+          onRemove={this.removeNode}
+          arrows={this.showArrows(node, 'TransformResponse')}
+        />
+      ))
   }
 
-  isOnInBoundSteps = plugin => (plugin.plugin_steps || []).some(s => REQUEST_STEPS_FLOW.includes(s))
+  showArrows = (node, step) => {
+    const nodes = this.state.nodes
+      .filter(n => n.plugin_index[step] !== undefined)
+      .sort((a, b) => a.plugin_index[step] - b.plugin_index[step])
 
-  getPluginStepWeights = pluginSteps => Math.max(...pluginSteps.map(o => REQUEST_STEPS_WEIGHT[o]))
+    if (nodes.length === 1)
+      return undefined
+    else {
+      const arrows = {
+        up: node.plugin_index[step] === 0 ? false : true,
+        down: nodes[nodes.length - 1].nodeId !== node.nodeId ? true : false
+      }
 
-  hasSimilarity = (a, b) => a.filter(elem => b.includes(elem))
+      if (step === 'TransformResponse')
+        return {
+          up: arrows.down,
+          down: arrows.up
+        }
 
-  canSwapPluginWith = (a, b) => {
-    if (this.isOnInBoundSteps(a) && this.isOnInBoundSteps(b)) {
-      const aPlugins = a.plugin_steps || []
-      const bPlugins = b.plugin_steps || []
-
-      if (aPlugins.length === 1 && bPlugins.length === 1)
-        return REQUEST_STEPS_WEIGHT[aPlugins[0]] === REQUEST_STEPS_WEIGHT[bPlugins[0]]
-      return this.hasSimilarity(aPlugins, bPlugins) || this.getPluginStepWeights(aPlugins) <= this.getPluginStepWeights(bPlugins)
-    }
-    else
-      return true
-  }
-
-  showArrows = node => {
-    if (!node)
-      return { to: false, down: false }
-
-    const possibilities = this.state.sortedNodes[this.isOnInBoundSteps(node) ? 'inBound' : 'outBound']
-
-    const aPos = possibilities.findIndex(n => n.index === node.index)
-    const up = possibilities[aPos - 1]
-    const down = possibilities[aPos + 1]
-
-    // if (selectedNode && selectedNode.id === node.id)
-    //   console.log(node, aPos, up, down, possibilities)
-
-    return {
-      up: up && !['Frontend', 'Backend'].includes(up.id) && this.canSwapPluginWith(node, up),
-      down: down && !['Frontend', 'Backend'].includes(down.id) && this.canSwapPluginWith(node, down)
+      return arrows
     }
   }
 
   render() {
     const { loading, preview, route, plugins, backends, selectedNode,
-      sortedNodes, originalRoute, frontend, categories,
-      showLegacy, expandAll, searched, backend } = this.state
+      originalRoute, frontend, categories,
+      showLegacy, expandAll, searched, backend, nodes } = this.state
+
+    console.log(nodes)
 
     return <Loader loading={loading} >
       <Container onClick={() => this.onUnsavedChanges(() => {
@@ -798,14 +822,11 @@ class Designer extends React.Component {
                     <HeaderNode text="Request" icon="down" selectedNode={selectedNode} />
                     <Hr highlighted={!selectedNode} />
                     <FrontendNode
-                      onUp={this.onUp}
-                      onDown={this.onDown}
                       onUnsavedChanges={this.onUnsavedChanges}
                       frontend={frontend}
                       selectedNode={selectedNode}
                       removeNode={this.removeNode}
-                      setSelectedNode={n => this.setState({ selectedNode: n })}
-                      arrows={this.showArrows(this.state.frontend)}
+                      setSelectedNode={() => this.setState({ selectedNode: frontend })}
                     />
                     {this.renderInBound()}
                     <Hr highlighted={!selectedNode} flex={true} />
@@ -814,22 +835,17 @@ class Designer extends React.Component {
                     <HeaderNode text="Response" icon="up" selectedNode={selectedNode} />
                     <Hr highlighted={!selectedNode} flex={true} />
                     {this.renderOutBound()}
-                    <Hr highlighted={!selectedNode} />
-                    {sortedNodes.outBound.length > 0 &&
+                    {nodes.find(n => n.plugin_index.TransformResponse !== undefined) &&
                       <span className='badge bg-warning text-dark' style={{ opacity: !selectedNode ? 1 : 0.25 }}>TransformerResponse</span>}
                     <Hr highlighted={!selectedNode} />
                   </OutBoundFlow>
                 </div>
                 <BackendNode
-                  onUp={this.onUp}
                   backend={backend}
-                  onDown={this.onDown}
+                  selectedNode={selectedNode}
+                  setSelectedNode={() => this.setState({ selectedNode: backend })}
                   onUnsavedChanges={this.onUnsavedChanges}
-                  element={this.state.backend}
-                  selectedNode={(selectedNode && selectedNode.id === 'Backend') ? selectedNode : undefined}
-                  setSelectedNode={n => this.setState({ selectedNode: n })}
                   onRemove={this.removeNode}
-                  arrows={this.showArrows(this.state.backend)}
                 />
               </Flow>
               <FormContainer
@@ -851,7 +867,7 @@ class Designer extends React.Component {
           )}
         </div>
       </Container>
-    </Loader >
+    </Loader>
   };
 }
 
@@ -1115,7 +1131,7 @@ function EditView({
       nextClient.fetch(nextClient.ENTITIES.BACKENDS, route.backend_ref).then(setBackendConfigRef);
   }, [route.backend_ref]);
 
-  const { id, flow, config_flow, config_schema, schema, name, index } = selectedNode;
+  const { id, flow, config_flow, config_schema, schema, name, nodeId } = selectedNode;
 
   const isFrontendOrBackend = ['Backend', 'Frontend'].includes(id);
   const isPluginWithConfiguration = Object.keys(config_schema).length > 0;
@@ -1167,13 +1183,11 @@ function EditView({
     formSchema = camelToSnake(formSchema);
     formFlow = formFlow.map((step) => camelToSnakeFlow(step));
 
-    let value = route[selectedNode.field];
+    let value = route[selectedNode.field]; // matching Frontend and Backend case
 
     if (!value) {
       const node =
-        route.plugins.find(
-          (p, i) => (p.plugin === id || p.config.plugin === id) && i === index
-        ) || plugins.find((p) => p.id === id);
+        route.plugins.find(p => p.nodeId === nodeId) // || plugins.find((p) => p.id === id);
       if (node)
         value = {
           plugin: node.config,
@@ -1198,18 +1212,18 @@ function EditView({
     });
 
     toggleJsonFormat(selectedNode.legacy || readOnly);
-  }, [selectedNode.id, selectedNode.index]);
+  }, [selectedNode.nodeId]);
 
   const onValidate = (item) => {
     const newValue = unstringify(item);
+    console.log(newValue)
     return updatePlugin(
-      id,
-      index,
+      nodeId,
+      selectedNode.id,
       {
         plugin: newValue.plugin,
         status: newValue.status,
-      },
-      selectedNode.id
+      }
     ).then(() => {
       setForm({ ...form, value: newValue, originalValue: newValue });
       setDirty(false);
@@ -1218,16 +1232,18 @@ function EditView({
 
   const onJsonInputChange = (value) => {
     validate([], form.schema, value)
-      .then((v) => {
+      .then(() => {
         setErrors([]);
         const originalClonedValue = cloneDeep(form.originalValue)
         delete originalClonedValue.plugin.plugin
 
-        setDirty(!isEqual(originalClonedValue, v));
-        setForm({ ...form, value: merge(form.originalValue, v) });
-        // console.log("onJsonInputChange", originalClonedValue, v, merge(form.originalValue, v))
+        setDirty(!isEqual(originalClonedValue, value));
+        setForm({ ...form, value: merge(form.originalValue, JSON.parse(value)) });
+
+        // console.log(form.originalValue, value, merge(value, form.originalValue))
       })
       .catch((err) => {
+        console.log(err)
         if (err.inner && Array.isArray(err.inner)) {
           setErrors(err.inner.map((r) => r.message));
           setDirty(false);
@@ -1286,7 +1302,11 @@ function EditView({
                 onClick={() => {
                   if (formRef.current)
                     formRef.current.trigger().then((res) => {
-                      if (res) toggleJsonFormat(true);
+                      if (res) {
+                        // TODO - get form value when swapping to json input
+                        //setForm({ ...form, value: formRef.current.rawData() })
+                        toggleJsonFormat(true);
+                      }
                     });
                 }}
                 style={{ backgroundColor: asJsonFormat ? '#f9b000' : '#373735' }}>
@@ -1310,7 +1330,6 @@ function EditView({
                 <>
                   {form.value && (
                     <CodeInput
-                      showGutter={false}
                       mode="json"
                       themeStyle={{
                         maxHeight: readOnly ? '300px' : '-1',

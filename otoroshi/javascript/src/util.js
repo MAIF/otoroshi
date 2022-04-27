@@ -1,3 +1,5 @@
+import { camelCase } from "lodash";
+
 const reservedCamelWords = [
   'isMulti',
   'optionsFrom',
@@ -12,23 +14,16 @@ const reservedCamelWords = [
   'visibleOnCollapse',
 ];
 
-export const REQUEST_STEPS_FLOW = ['PreRoute', 'ValidateAccess', 'TransformRequest']
-export const REQUEST_STEPS_WEIGHT = {
-  PreRoute: 0,
-  ValidateAccess: 1,
-  TransformRequest: 2,
-  TransformResponse: 3
-}
+export const REQUEST_STEPS_FLOW = ['MatchRoute', 'PreRoute', 'ValidateAccess', 'TransformRequest']
 
-export const camelToSnakeCase = (str) =>
-  str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+export const firstLetterUppercase = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
 export const camelToSnake = (obj) => {
   return Object.fromEntries(
     Object.entries(obj).map(([key, value]) => {
       const isFlowField = key === 'flow';
       return [
-        reservedCamelWords.includes(key) ? key : camelToSnakeCase(key),
+        reservedCamelWords.includes(key) ? key : camelCase(key),
         isFlowField
           ? value.map((step) => camelToSnakeFlow(step))
           : typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -45,7 +40,7 @@ export const camelToSnakeFlow = (step) => {
       ...step,
       flow: step.flow.map((f) => camelToSnakeFlow(f)),
     }
-    : camelToSnakeCase(step);
+    : camelCase(step);
 };
 
 export const toUpperCaseLabels = (obj) => {
