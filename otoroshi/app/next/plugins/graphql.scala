@@ -61,8 +61,8 @@ class GraphQLCaller extends NgRequestTransformer {
 
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
-  override def name: String                                = "GraphQL Caller"
-  override def description: Option[String]                 = "This plugin can be used to call GraphQL endpoints and expose it as a REST endpoint".some
+  override def name: String                                = "GraphQL Query"
+  override def description: Option[String]                 = "This plugin can be used to call GraphQL query endpoints and expose it as a REST endpoint".some
   override def defaultConfigObject: Option[NgPluginConfig] = GraphQLCallerConfig(url = "https://some.graphql/endpoint").some
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
