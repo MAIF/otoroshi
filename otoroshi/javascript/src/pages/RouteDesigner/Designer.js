@@ -13,16 +13,10 @@ import {
   PLUGIN_INFORMATIONS_SCHEMA,
 } from './Graph';
 import Loader from './Loader';
-import { isEqual } from "lodash";
-import { toUpperCaseLabels, camelToSnake, camelToSnakeFlow, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
-import { Form, type, format, validate } from '@maif/react-forms';
-import { CodeInput } from '@maif/react-forms';
-import { MarkdownInput } from '@maif/react-forms';
 import { FeedbackButton } from './FeedbackButton';
-import { merge } from 'lodash';
-import { cloneDeep } from 'lodash';
-import { snakeCase } from 'lodash';
-import { camelCase } from 'lodash';
+import { toUpperCaseLabels, camelToSnake, camelToSnakeFlow, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
+import { Form, type, format, validate, CodeInput, MarkdownInput } from '@maif/react-forms';
+import { merge, snakeCase, camelCase, isEqual } from 'lodash';
 
 const HeaderNode = ({ selectedNode, text, icon }) => <Dot selectedNode={selectedNode}>
   <div className='flex-column p-1'>
@@ -143,33 +137,33 @@ const Hr = ({ highlighted = true, flex }) => (
   />
 );
 
-const FormContainer = ({
-  selectedNode, route, saveChanges, setRoute, setSelectedNode, updatePlugin,
-  removeNode, plugins, backends, preview, showPreview, originalRoute, setRef
-}) => <div className="col-sm-8 relative-container" style={{ paddingRight: 0 }}>
-    <UnselectedNode hideText={selectedNode} route={route} />
-    {selectedNode && (
-      <EditView
-        saveChanges={saveChanges}
-        setRoute={setRoute}
-        selectedNode={selectedNode}
-        setSelectedNode={setSelectedNode}
-        updatePlugin={updatePlugin}
-        onRemove={removeNode}
-        route={route}
-        plugins={plugins}
-        backends={backends}
-        hidePreview={() =>
-          showPreview({
-            ...preview,
-            enabled: false,
-          })
-        }
-        showUpdateRouteButton={!isEqual(route, originalRoute)}
-        setRef={setRef}
-      />
-    )}
+const FormContainer = ({ selectedNode, route, preview, showPreview, originalRoute, alertModal, ...props }) => <div
+  className="col-sm-8 relative-container" style={{ paddingRight: 0 }}>
+  <UnselectedNode hideText={selectedNode} route={route} />
+  {selectedNode && (
+    <EditView
+      {...props}
+      route={route}
+      selectedNode={selectedNode}
+      showUpdateRouteButton={!isEqual(route, originalRoute)}
+      hidePreview={() =>
+        showPreview({
+          ...preview,
+          enabled: false,
+        })
+      }
+    />
+  )}
+  {alertModal.show && <Modal {...alertModal} />}
+</div>
+
+const Modal = ({ question, onOk, onCancel }) => <div class="designer-modal d-flex align-items-center justify-content-center flex-column p-3">
+  <h4>{question}</h4>
+  <div class="d-flex ms-auto">
+    <button type="button" class="btn btn-danger me-1" onClick={onCancel}>Cancel</button>
+    <button type="button" class="btn btn-success" onClick={onOk}>Delete</button>
   </div>
+</div>
 
 export default ({ value }) => {
   const { routeId } = useParams();
@@ -213,37 +207,35 @@ const Container = ({ children, onClick }) => {
   </div>
 }
 
-const BackendNode = ({ selectedNode, onUnsavedChanges, backend, setSelectedNode, removeNode }) => {
+const BackendNode = ({ selectedNode, backend, ...props }) => {
   return <div
     className="main-view backend-button"
     style={{ opacity: !selectedNode ? 1 : (!selectedNode.id === 'Backend' ? 0.25 : 1) }}>
     <i className="fas fa-bullseye backend-icon" />
     <NodeElement
       element={backend}
-      onUnsavedChanges={onUnsavedChanges}
       selectedNode={(selectedNode && selectedNode.id === 'Backend') ? selectedNode : undefined}
-      setSelectedNode={setSelectedNode}
       hideLink={true}
       disableBorder={true}
       bold={true}
-      onRemove={removeNode}
+      {...props}
     />
   </div>
 }
 
-const InBoundFlow = ({ children }) => <div className="col-sm-6 flex-column">
+const InBoundFlow = props => <div className="col-sm-6 flex-column">
   <div className="main-view">
-    {children}
+    {props.children}
   </div>
 </div>
 
-const OutBoundFlow = ({ children }) => <div className="col-sm-6 pe-3 flex-column">
+const OutBoundFlow = props => <div className="col-sm-6 pe-3 flex-column">
   <div className="main-view">
-    {children}
+    {props.children}
   </div>
 </div>
 
-const Flow = ({ children }) => <div className="col-sm-4 pe-3 d-flex flex-column">{children}</div>
+const Flow = props => <div className="col-sm-4 pe-3 d-flex flex-column">{props.children}</div>
 
 const PluginsContainer = ({
   handleSearch, showLegacy, setShowLegacy, onExpandAll,
@@ -253,7 +245,7 @@ const PluginsContainer = ({
       <SearchBar handleSearch={handleSearch} />
       <div className='plugins-action-container mb-2'>
         <button type="button" className="btn btn-sm btn-warning text-light plugins-action" style={{ marginRight: 5 }}
-          onClick={(e) => {
+          onClick={() => {
             window.localStorage.setItem('io.otoroshi.next.designer.showLegacy', String(!showLegacy));
             setShowLegacy(!showLegacy);
           }}>
@@ -311,7 +303,10 @@ class Designer extends React.Component {
       enabled: false
     },
     frontend: {},
-    backend: {}
+    backend: {},
+    alertModal: {
+      show: false
+    }
   }
 
   componentDidMount() {
@@ -501,23 +496,39 @@ class Designer extends React.Component {
   removeNode = e => {
     e.stopPropagation();
 
-    const { selectedNode, nodes, plugins, route } = this.state
-    const { nodeId, id } = selectedNode
+    this.setState({
+      alertModal: {
+        show: true,
+        question: `Delete this node ?`,
+        onCancel: e => {
+          e.stopPropagation()
+          this.setState({
+            alertModal: {
+              show: false
+            }
+          })
+        },
+        onOk: e => {
+          e.stopPropagation()
+          const { selectedNode, nodes, plugins, route } = this.state
+          const { nodeId, id } = selectedNode
 
-    window.newConfirm(`Are you sure to delete this node ?`).then((ok) => {
-      if (ok) {
-        this.setState({
-          nodes: nodes.filter(node => node.nodeId !== nodeId),
-          plugins: plugins.map(plugin => ({ ...plugin, selected: plugin.id === id ? undefined : plugin.selected })),
-          selectedNode: undefined
-        }, () => {
-          this.saveChanges({
-            ...route,
-            plugins: route.plugins.filter(plugin => plugin.nodeId !== nodeId),
-          });
-        })
+          this.setState({
+            nodes: nodes.filter(node => node.nodeId !== nodeId),
+            plugins: plugins.map(plugin => ({ ...plugin, selected: plugin.id === id ? undefined : plugin.selected })),
+            selectedNode: undefined,
+            alertModal: {
+              show: false
+            }
+          }, () => {
+            this.saveChanges({
+              ...route,
+              plugins: route.plugins.filter(plugin => plugin.nodeId !== nodeId),
+            });
+          })
+        }
       }
-    });
+    })
   };
 
   addNode = (node) => {
@@ -659,13 +670,32 @@ class Designer extends React.Component {
   };
 
   onUnsavedChanges = (onConfirm) => {
-    if (this.state.changed) {
-      window
-        .newConfirm(`Are you sure to leave this configuration without save your changes ?`)
-        .then((ok) => {
-          if (ok) onConfirm();
-        });
-    } else onConfirm();
+    if (this.state.changed)
+      this.setState({
+        alertModal: {
+          show: true,
+          question: 'Quit editing ? Changes you made so far will not be saved',
+          onCancel: e => {
+            e.stopPropagation()
+            this.setState({
+              alertModal: {
+                show: false
+              }
+            })
+          },
+          onOk: e => {
+            e.stopPropagation();
+            this.setState({
+              alertModal: {
+                show: false
+              }
+            })
+            onConfirm()
+          }
+        }
+      })
+    else
+      onConfirm();
   };
 
   isPluginEnabled = (value) => this.state.route.plugins.find(plugin => plugin.nodeId === value.nodeId)?.enabled
@@ -706,7 +736,10 @@ class Designer extends React.Component {
             element={node}
             key={`${node.nodeId}-${i}`}
             selectedNode={selectedNode}
-            setSelectedNode={() => this.setState({ selectedNode: node })}
+            setSelectedNode={() => {
+              if (!this.state.alertModal.show)
+                this.setState({ selectedNode: node })
+            }}
             onRemove={this.removeNode}
             arrows={this.showArrows(node, steps[i])}
           />)}
@@ -727,7 +760,10 @@ class Designer extends React.Component {
           enabled={this.isPluginEnabled(node)}
           element={node}
           key={`${node.nodeId}${i}`}
-          setSelectedNode={() => this.setState({ selectedNode: node })}
+          setSelectedNode={() => {
+            if (!this.state.alertModal.show)
+              this.setState({ selectedNode: node })
+          }}
           selectedNode={this.state.selectedNode}
           onRemove={this.removeNode}
           arrows={this.showArrows(node, 'TransformResponse')}
@@ -760,18 +796,20 @@ class Designer extends React.Component {
 
   render() {
     const { loading, preview, route, plugins, backends, selectedNode,
-      originalRoute, frontend, categories,
+      originalRoute, frontend, categories, alertModal,
       showLegacy, expandAll, searched, backend, nodes } = this.state
 
-    console.log(route)
-
     return <Loader loading={loading} >
-      <Container onClick={() => this.onUnsavedChanges(() => {
-        this.setState({
-          changed: false,
-          selectedNode: undefined
-        })
-      })} >
+      <Container onClick={() => {
+        if (!this.state.alertModal.show) {
+          this.onUnsavedChanges(() => {
+            this.setState({
+              changed: false,
+              selectedNode: undefined
+            })
+          })
+        }
+      }}>
         <PluginsContainer
           handleSearch={this.handleSearch}
           showLegacy={showLegacy}
@@ -807,7 +845,10 @@ class Designer extends React.Component {
               readOnly={true}
               setRoute={r => this.setState({ route: r })}
               selectedNode={preview.element}
-              setSelectedNode={n => this.setState({ selectedNode: n })}
+              setSelectedNode={n => {
+                if (!this.state.alertModal.show)
+                  this.setState({ selectedNode: n })
+              }}
               updatePlugin={this.updatePlugin}
               onRemove={this.removeNode}
               route={route}
@@ -826,7 +867,10 @@ class Designer extends React.Component {
                       frontend={frontend}
                       selectedNode={selectedNode}
                       removeNode={this.removeNode}
-                      setSelectedNode={() => this.setState({ selectedNode: frontend })}
+                      setSelectedNode={() => {
+                        if (!this.state.alertModal.show)
+                          this.setState({ selectedNode: frontend })
+                      }}
                     />
                     {this.renderInBound()}
                     <Hr highlighted={!selectedNode} flex={true} />
@@ -843,7 +887,10 @@ class Designer extends React.Component {
                 <BackendNode
                   backend={backend}
                   selectedNode={selectedNode}
-                  setSelectedNode={() => this.setState({ selectedNode: backend })}
+                  setSelectedNode={() => {
+                    if (!this.state.alertModal.show)
+                      this.setState({ selectedNode: backend })
+                  }}
                   onUnsavedChanges={this.onUnsavedChanges}
                   onRemove={this.removeNode}
                 />
@@ -853,15 +900,24 @@ class Designer extends React.Component {
                 route={route}
                 saveChanges={this.saveChanges}
                 setRoute={n => this.setState({ route: n })}
-                setSelectedNode={n => this.setState({ selectedNode: n })}
+                setSelectedNode={n => {
+                  if (!this.state.alertModal.show)
+                    this.setState({ selectedNode: n })
+                }}
                 updatePlugin={this.updatePlugin}
                 removeNode={this.removeNode}
                 plugins={plugins}
                 backends={backends}
                 preview={preview}
-                showPreview={p => this.setState({ preview: p })}
+                showPreview={element => this.setState({
+                  preview: {
+                    ...this.state.preview,
+                    element
+                  }
+                })}
                 originalRoute={originalRoute}
                 setRef={e => this.setState({ changed: e })}
+                alertModal={alertModal}
               />
             </div>
           )}
@@ -1187,8 +1243,7 @@ function EditView({
     let value = route[selectedNode.field]; // matching Frontend and Backend case
 
     if (!value) {
-      const node =
-        route.plugins.find(p => p.nodeId === nodeId) // || plugins.find((p) => p.id === id);
+      const node = route.plugins.find(p => p.nodeId === nodeId) || plugins.find((p) => p.id === id);
       if (node)
         value = {
           plugin: node.config,
@@ -1214,8 +1269,6 @@ function EditView({
 
     toggleJsonFormat(selectedNode.legacy || readOnly);
   }, [selectedNode.nodeId]);
-
-  console.log(form.originalValue, form.value, isDirty)
 
   const onValidate = (item) => {
     const newValue = unstringify(item);
@@ -1250,7 +1303,9 @@ function EditView({
       });
   };
 
-  if (Object.keys(form.schema).length === 0 || !form.value) return null;
+  console.log(form)
+  // if (Object.keys(form.schema).length === 0 || !form.value)
+  //   return null;
 
   // console.log("SCHEMA", form.schema)
   // console.log("VALUE", unstringify(form.value))

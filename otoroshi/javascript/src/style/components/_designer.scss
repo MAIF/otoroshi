@@ -446,4 +446,14 @@
         margin-bottom: 5;
         margin-top: 3;
     }
+
+    .designer-modal {
+        position: absolute;
+        z-index: 100;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #494948f2;
+    }
 }
