@@ -1107,6 +1107,7 @@ function EditView({
   const [isDirty, setDirty] = useState(showUpdateRouteButton);
 
   useEffect(() => {
+    console.log('set dirtry from useeffect', showUpdateRouteButton)
     setDirty(showUpdateRouteButton);
   }, [showUpdateRouteButton]);
 
@@ -1214,6 +1215,8 @@ function EditView({
     toggleJsonFormat(selectedNode.legacy || readOnly);
   }, [selectedNode.nodeId]);
 
+  console.log(form.originalValue, form.value, isDirty)
+
   const onValidate = (item) => {
     const newValue = unstringify(item);
     return updatePlugin(
@@ -1225,6 +1228,7 @@ function EditView({
       }
     ).then(() => {
       setForm({ ...form, value: newValue, originalValue: newValue });
+      console.log('set dirty from onValidate', false)
       setDirty(false);
     });
   };
@@ -1233,13 +1237,9 @@ function EditView({
     validate([], form.schema, value)
       .then(() => {
         setErrors([]);
-        const originalClonedValue = cloneDeep(form.originalValue)
-        delete originalClonedValue.plugin.plugin
-
-        setDirty(!isEqual(originalClonedValue, value));
+        console.log('set dirty from onJsonInputChange', !isEqual(form.originalValue, JSON.parse(value)))
+        setDirty(!isEqual(form.originalValue, JSON.parse(value)));
         setForm({ ...form, value: merge(form.originalValue, JSON.parse(value)) });
-
-        // console.log(form.originalValue, value, merge(value, form.originalValue))
       })
       .catch((err) => {
         console.log(err)
@@ -1387,8 +1387,10 @@ function EditView({
                     watch: () => {
                       if (formRef.current) {
                         const formState = formRef.current.methods.formState.isDirty;
-                        if (formState !== isDirty)
+                        if (formState !== isDirty) {
+                          console.log("set dirty from form", formState)
                           setDirty(formState);
+                        }
                       }
                     },
                   }}
