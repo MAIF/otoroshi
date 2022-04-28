@@ -159,7 +159,7 @@ const FormContainer = ({ selectedNode, route, preview, showPreview, originalRout
   {alertModal.show && <Modal {...alertModal} />}
 </div>
 
-const Modal = ({ question, onOk, onCancel }) => <div class="designer-modal d-flex align-items-center justify-content-center flex-column p-3">
+const Modal = ({ question, onOk, onCancel }) => <div class="designer-modal d-flex align-items-center justify-content-start flex-column p-3 pt-4">
   <h4>{question}</h4>
   <div class="d-flex ms-auto">
     <button type="button" class="btn btn-danger me-1" onClick={onCancel}>Cancel</button>
@@ -624,7 +624,6 @@ class Designer extends React.Component {
         ]
       }
     });
-    // console.log(newRoute);
     this.setState(
       {
         selectedNode: null,
@@ -904,9 +903,6 @@ class Designer extends React.Component {
       originalRoute, frontend, categories, alertModal,
       showLegacy, expandAll, searched, backend, nodes } = this.state
 
-    console.log(route)
-    // console.log(plugins);
-
     const patterns = [
       {
         config: {},
@@ -984,8 +980,6 @@ class Designer extends React.Component {
         }
       }
     ];
-
-    console.log(this.state.hiddenSteps)
 
     return <Loader loading={loading} >
       <Container onClick={() => {
@@ -1327,6 +1321,72 @@ const convertTransformer = (obj) => {
   }, {});
 };
 
+const EditViewHeader = ({ icon, name, id, onCloseForm }) =>
+  <div className="group-header d-flex-between editor-view-informations">
+    <div className="d-flex-between">
+      <i className={`fas fa-${icon || 'bars'} group-icon designer-group-header-icon editor-view-icon`} />
+      <span className="editor-view-text">{name || id}</span>
+    </div>
+    <div className="d-flex me-1">
+      <button
+        className="btn btn-sm"
+        type="button"
+        style={{ minWidth: '36px' }}
+        onClick={onCloseForm}>
+        <i className="fas fa-times" style={{ color: '#fff' }} />
+      </button>
+    </div>
+  </div>
+
+const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonClick }) => <div className={`d-flex justify-content-end ${asJsonFormat ? 'mb-3' : ''}`}>
+  <button
+    className="btn btn-sm toggle-form-buttons mt-3"
+    disabled={errors && errors.length > 0}
+    onClick={onFormClick}
+    style={{ backgroundColor: asJsonFormat ? '#373735' : '#f9b000' }}>
+    FORM
+  </button>
+  <button
+    className="btn btn-sm mx-1 toggle-form-buttons mt-3"
+    onClick={onRawJsonClick}
+    style={{ backgroundColor: asJsonFormat ? '#f9b000' : '#373735' }}>
+    RAW JSON
+  </button>
+</div>
+
+const EditViewJsonEditor = ({ readOnly, value, onChange, errors }) => <>
+  {/* {value.toString().length > 0 && ( */}
+  <CodeInput
+    mode="json"
+    themeStyle={{
+      maxHeight: readOnly ? '300px' : '-1',
+      minHeight: '100px',
+      width: '100%',
+    }}
+    value={value}
+    onChange={onChange}
+  />
+  {/* )} */}
+  {errors && <div>
+    {(errors || []).map((error, idx) => (
+      <div className="mt-3 ps-3"
+        style={{ borderLeft: '2px solid #D5443F' }}
+        key={`errror${idx}`}>
+        {error}
+      </div>
+    ))}
+  </div>}
+</>
+
+const EditViewReadOnlyActions = ({ onCancel, onOk }) => <div className="d-flex justify-content-end mt-3">
+  <button className="btn btn-sm btn-danger me-1" onClick={onCancel}>
+    Cancel
+  </button>
+  <button className="btn btn-sm btn-save" onClick={onOk}>
+    Add to flow
+  </button>
+</div>
+
 function EditView({
   selectedNode,
   setSelectedNode,
@@ -1455,6 +1515,8 @@ function EditView({
     toggleJsonFormat(selectedNode.legacy || readOnly);
   }, [selectedNode.nodeId]);
 
+  console.log(form.value)
+
   const onValidate = (item) => {
     const newValue = unstringify(item);
     return updatePlugin(
@@ -1485,179 +1547,93 @@ function EditView({
       });
   };
 
-  console.log(form)
+  const showActions = !selectedNode.legacy && !readOnly && 'Backend' !== id
+  const notOnBackendNode = !usingExistingBackend || id !== 'Backend'
 
-  return (
-    <>
-      <div
-        id="form"
-        onClick={(e) => e.stopPropagation()}
-        className="plugins-stack editor-view"
-        style={{ top: offset }}>
-        <div className="group-header d-flex-between editor-view-informations">
-          <div className="d-flex-between">
-            <i
-              className={`fas fa-${plugin.icon || 'bars'
-                } group-icon designer-group-header-icon editor-view-icon`}
-            />
-            <span className="editor-view-text">{name || id}</span>
-          </div>
-          <div className="d-flex me-1">
-            <button
-              className="btn btn-sm"
-              style={{ minWidth: '36px' }}
-              onClick={() => {
-                setSelectedNode(undefined);
-                hidePreview();
-              }}>
-              <i className="fas fa-times" style={{ color: '#fff' }} />
-            </button>
-          </div>
-        </div>
-        <div
-          style={{
-            backgroundColor: '#494949',
-          }}>
-          <Description text={selectedNode.description} legacy={selectedNode.legacy} steps={selectedNode.plugin_steps || []} />
-          {!selectedNode.legacy && !readOnly && 'Backend' !== id && (
-            <div className={`d-flex justify-content-end ${asJsonFormat ? 'mb-3' : ''}`}>
-              <button
-                className="btn btn-sm toggle-form-buttons mt-3"
-                disabled={errors && errors.length > 0}
-                onClick={() => toggleJsonFormat(false)}
-                style={{ backgroundColor: asJsonFormat ? '#373735' : '#f9b000' }}>
-                FORM
-              </button>
-              <button
-                className="btn btn-sm mx-1 toggle-form-buttons mt-3"
-                onClick={() => {
-                  if (formRef.current)
-                    formRef.current.trigger()
-                      .then((res) => {
-                        if (res) {
-                          // TODO - get form value when swapping to json input
-                          //setForm({ ...form, value: formRef.current.rawData() })
-                          toggleJsonFormat(true);
-                        }
-                      })
-                  else
-                    toggleJsonFormat(true);
-                }}
-                style={{ backgroundColor: asJsonFormat ? '#f9b000' : '#373735' }}>
-                RAW JSON
-              </button>
-            </div>
-          )}
-          {id === 'Backend' && (
-            <BackendSelector
-              backends={backends}
-              setUsingExistingBackend={setUsingExistingBackend}
-              setRoute={setRoute}
-              usingExistingBackend={usingExistingBackend}
-              route={route}
-            />
-          )}
-          {!usingExistingBackend || id !== 'Backend' ? (
-            <div className="editor-view-form">
-              {asJsonFormat ? (
-                <>
-                  {form.value && (
-                    <CodeInput
-                      mode="json"
-                      themeStyle={{
-                        maxHeight: readOnly ? '300px' : '-1',
-                        width: '100%',
-                      }}
-                      value={stringify(form.value)}
-                      onChange={onJsonInputChange}
-                    />
-                  )}
-                  {errors && (
-                    <div>
-                      {(errors || []).map((error, idx) => (
-                        <div
-                          style={{
-                            borderLeft: '2px solid #D5443F',
-                          }}
-                          className="mt-3 ps-3"
-                          key={`errror${idx}`}>
-                          {error}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {readOnly ? (
-                    <div className="d-flex justify-content-end mt-3">
-                      <button
-                        className="btn btn-sm btn-danger me-1"
-                        onClick={() => {
-                          setSelectedNode(undefined);
-                          hidePreview();
-                        }}>
-                        Cancel
-                      </button>
-                      <button
-                        className="btn btn-sm btn-save"
-                        onClick={() => {
-                          hidePreview();
-                          addNode(selectedNode);
-                        }}>
-                        Add to flow
-                      </button>
-                    </div>
-                  ) : (
-                    <Actions
-                      showUpdateRouteButton={isDirty}
-                      valid={() => onValidate(form.value)}
-                      selectedNode={selectedNode}
-                      onRemove={onRemove}
-                    />
-                  )}
-                </>
-              ) : (
-                <Form
-                  ref={formRef}
-                  options={{
-                    watch: () => {
-                      if (formRef.current) {
-                        const formState = formRef.current.methods.formState.isDirty;
-                        if (formState !== isDirty) {
-                          setDirty(formState);
-                        }
-                      }
-                    },
-                  }}
-                  value={unstringify(form.value)}
-                  schema={form.schema}
-                  flow={form.flow}
-                  onSubmit={onValidate}
-                  footer={({ valid }) => {
-                    return <Actions
-                      showUpdateRouteButton={isDirty}
-                      valid={valid}
-                      selectedNode={selectedNode}
-                      onRemove={onRemove}
-                    />
-                  }}
-                />
-              )}
-            </div>
-          ) : (
-            <div className="p-3">
-              <FeedbackButton
-                text="Update the plugin"
-                icon={() => <i className="fas fa-paper-plane" />}
-                onPress={saveChanges}
-              />
-            </div>
-          )}
-        </div>
-        {usingExistingBackend && id === 'Backend' && !selectedNode.default && (
-          <RemoveComponent onRemove={onRemove} />
-        )}
-      </div>
-    </>
-  );
+  return <div id="form" onClick={(e) => e.stopPropagation()} className="plugins-stack editor-view" style={{ top: offset }}>
+    <EditViewHeader icon={plugin.icon} name={name} id={id} onCloseForm={() => {
+      setSelectedNode(undefined);
+      hidePreview();
+    }} />
+    <div style={{ backgroundColor: '#494949' }}>
+      <Description text={selectedNode.description} legacy={selectedNode.legacy} steps={selectedNode.plugin_steps || []} />
+      {showActions && <EditViewFormatActions
+        asJsonFormat={asJsonFormat} errors={errors}
+        onFormClick={() => toggleJsonFormat(false)}
+        onRawJsonClick={() => {
+          if (formRef.current)
+            formRef.current.trigger().then((res) => {
+              if (res) {
+                setForm({ ...form, value: formRef.current.methods.data() })
+                toggleJsonFormat(true);
+              }
+            })
+          else
+            toggleJsonFormat(true);
+        }}
+      />}
+      <BackendSelector
+        enabled={id === 'Backend'}
+        backends={backends}
+        setUsingExistingBackend={setUsingExistingBackend}
+        setRoute={setRoute}
+        usingExistingBackend={usingExistingBackend}
+        route={route}
+      />
+      {notOnBackendNode && <div className="editor-view-form">
+        {asJsonFormat && <>
+          <EditViewJsonEditor
+            readOnly={readOnly}
+            value={form.value}
+            onChange={onJsonInputChange}
+            errors={errors} />
+          {readOnly ? <EditViewReadOnlyActions
+            onCancel={() => {
+              setSelectedNode(undefined);
+              hidePreview();
+            }}
+            onOk={() => {
+              hidePreview();
+              addNode(selectedNode);
+            }} />
+            : <Actions
+              showUpdateRouteButton={isDirty}
+              valid={() => onValidate(form.value)}
+              selectedNode={selectedNode}
+              onRemove={onRemove}
+            />}
+        </>}
+        {!asJsonFormat && <Form
+          ref={formRef}
+          value={unstringify(form.value)}
+          schema={form.schema}
+          flow={form.flow}
+          onSubmit={onValidate}
+          options={{
+            watch: () => {
+              if (formRef.current) {
+                const formState = Object.keys(formRef.current.methods.formState.dirtyFields).length > 0;
+                setDirty(formState);
+              }
+            }
+          }}
+          footer={({ valid }) => <Actions
+            showUpdateRouteButton={isDirty}
+            valid={valid}
+            selectedNode={selectedNode}
+            onRemove={onRemove}
+          />}
+        />}
+      </div>}
+      {!notOnBackendNode && <div className="p-3">
+        <FeedbackButton
+          text="Update the plugin"
+          icon={() => <i className="fas fa-paper-plane" />}
+          onPress={saveChanges}
+        />
+      </div>}
+    </div>
+  </div>
 }
 
 const stringify = (item) => (typeof item === 'object' ? JSON.stringify(item, null, 2) : item);
@@ -1686,13 +1662,14 @@ const Actions = ({ selectedNode, onRemove, valid, showUpdateRouteButton }) => (
 );
 
 const BackendSelector = ({
+  enabled,
   setUsingExistingBackend,
   setRoute,
   usingExistingBackend,
   route,
   backends,
 }) => {
-  return <div className="backend-selector">
+  return enabled && <div className="backend-selector">
     <div className={`d-flex ${usingExistingBackend ? 'mb-3' : ''}`}>
       <button
         className="btn btn-sm new-backend-button"
