@@ -17,7 +17,6 @@ import { FeedbackButton } from './FeedbackButton';
 import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
 import { SelectInput, Form, type, format, validate, CodeInput, MarkdownInput } from '@maif/react-forms';
 import { merge, snakeCase, camelCase, isEqual } from 'lodash';
-import { BackendForm } from '../BackendsPage'
 
 const HeaderNode = ({ selectedNode, text, icon }) => <Dot selectedNode={selectedNode}>
   <div className='flex-column p-1'>
@@ -61,8 +60,10 @@ const Dot = ({
       e.stopPropagation();
       if (onClick) onClick(e);
     }}>
-    {enabled !== undefined && <Status value={enabled} />}
-    {legacy !== undefined && <Legacy value={legacy} />}
+    <div className="d-flex status-dots">
+      {enabled !== undefined && <Status value={enabled} />}
+      {legacy !== undefined && <Legacy value={legacy} />}
+    </div>
     {icon && <i className={`fas fa-${icon} dot-icon`} />}
     {children && children}
 
@@ -208,21 +209,21 @@ const Container = ({ children, onClick }) => {
   </div>
 }
 
-const BackendNode = ({ selectedNode, backend, ...props }) => {
-  return <div
-    className="main-view backend-button"
-    style={{ opacity: !selectedNode ? 1 : (!selectedNode.id === 'Backend' ? 0.25 : 1) }}>
-    <i className="fas fa-bullseye backend-icon" />
-    <NodeElement
-      element={backend}
-      selectedNode={(selectedNode && selectedNode.id === 'Backend') ? selectedNode : undefined}
-      hideLink={true}
-      disableBorder={true}
-      bold={true}
-      {...props}
-    />
-  </div>
-}
+const BackendNode = ({ selectedNode, backend, ...props }) => <div
+  className="main-view backend-button"
+  style={{
+    opacity: !selectedNode ? 1 : (selectedNode.nodeId === 'Backend' ? 1 : 0.25)
+  }}>
+  <i className="fas fa-bullseye backend-icon" />
+  <NodeElement
+    element={backend}
+    selectedNode={selectedNode}
+    hideLink={true}
+    disableBorder={true}
+    bold={true}
+    {...props}
+  />
+</div>
 
 const InBoundFlow = props => <div className="col-sm-6 flex-column">
   <div className="main-view">
@@ -379,6 +380,7 @@ class Designer extends React.Component {
             ...DEFAULT_FLOW.Frontend.config_schema,
           }),
           config_flow: DEFAULT_FLOW.Frontend.config_flow,
+          nodeId: 'Frontend'
         },
         backend: {
           ...DEFAULT_FLOW.Backend,
@@ -387,6 +389,7 @@ class Designer extends React.Component {
             DEFAULT_FLOW.Backend.config_schema(backendForm.schema)
           ),
           config_flow: DEFAULT_FLOW.Backend.config_flow,
+          nodeId: 'Backend'
         }
       })
     });
@@ -1156,7 +1159,6 @@ function EditView({
     flow: [],
     value: undefined,
   });
-  const [backendConfigRef, setBackendConfigRef] = useState();
   const formRef = useRef();
 
   const [offset, setOffset] = useState(0);
@@ -1182,11 +1184,6 @@ function EditView({
       window.removeEventListener('scroll', onScroll);
     };
   }, []);
-
-  useEffect(() => {
-    if (route.backend_ref)
-      nextClient.fetch(nextClient.ENTITIES.BACKENDS, route.backend_ref).then(setBackendConfigRef);
-  }, [route.backend_ref]);
 
   const { id, flow, config_flow, config_schema, schema, name, nodeId } = selectedNode;
 
@@ -1363,7 +1360,6 @@ function EditView({
           {id === 'Backend' && (
             <BackendSelector
               backends={backends}
-              setBackendConfigRef={setBackendConfigRef}
               setUsingExistingBackend={setUsingExistingBackend}
               setRoute={setRoute}
               usingExistingBackend={usingExistingBackend}
@@ -1457,15 +1453,6 @@ function EditView({
             </div>
           ) : (
             <div className="p-3">
-              {backendConfigRef && (
-                <BackendForm
-                  hideActionButton={true}
-                  isCreation={false}
-                  value={backendConfigRef}
-                  style={{ maxWidth: '100%' }}
-                  foldable={true}
-                />
-              )}
               <FeedbackButton
                 text="Update the plugin"
                 icon={() => <i className="fas fa-paper-plane" />}
@@ -1508,7 +1495,6 @@ const Actions = ({ selectedNode, onRemove, valid, showUpdateRouteButton }) => (
 );
 
 const BackendSelector = ({
-  setBackendConfigRef,
   setUsingExistingBackend,
   setRoute,
   usingExistingBackend,
@@ -1520,7 +1506,6 @@ const BackendSelector = ({
       <button
         className="btn btn-sm new-backend-button"
         onClick={() => {
-          setBackendConfigRef(undefined);
           setUsingExistingBackend(false);
         }}
         style={{ backgroundColor: usingExistingBackend ? '#494849' : '#f9b000' }}>
