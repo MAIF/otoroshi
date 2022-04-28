@@ -13,6 +13,14 @@ import {
   PLUGIN_INFORMATIONS_SCHEMA,
 } from './Graph';
 import Loader from './Loader';
+<<<<<<< HEAD
+=======
+import { add, isEqual } from "lodash";
+import { toUpperCaseLabels, camelToSnake, camelToSnakeFlow, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
+import { Form, type, format, validate } from '@maif/react-forms';
+import { CodeInput } from '@maif/react-forms';
+import { MarkdownInput } from '@maif/react-forms';
+>>>>>>> Add patterns
 import { FeedbackButton } from './FeedbackButton';
 import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
 import { SelectInput, Form, type, format, validate, CodeInput, MarkdownInput } from '@maif/react-forms';
@@ -573,6 +581,63 @@ class Designer extends React.Component {
       })
   };
 
+  clearPlugins = () => {
+    const newRoute = this.state.route;
+    newRoute.plugins = [];
+    this.setState({ route: newRoute, nodes: [] });
+    this.saveChanges({ ...newRoute });
+  }
+
+  addNodes = (new_nodes) => {
+    const { nodes, plugins, route } = this.state
+    const newPlugins = [ ...plugins ];
+    let newNodes = [ ...nodes ];
+    let newRoute = { ...route };
+    new_nodes.filter(node => !!node).map(node => {
+      const nodeId = this.generateNewInternalNodeId(node.id)
+      const newNode = {
+        ...node,
+        nodeId,
+        plugin_index: node.plugin_index
+      };
+      newNodes = [ ...newNodes, newNode ];
+      newRoute = {
+        ...newRoute,
+        plugins: [
+          ...newRoute.plugins,
+          {
+            plugin_index: newNode.plugin_index,
+            nodeId: newNode.nodeId,
+            plugin: newNode.legacy ? LEGACY_PLUGINS_WRAPPER[newNode.pluginType] : newNode.id,
+            enabled: (node.enabled === false) ? false : true,
+            debug: node.debug || false,
+            include: node.include || [],
+            exclude: node.exclude || [],
+            config: {
+              ...newNode.config,
+              plugin: newNode.legacy ? newNode.id : undefined,
+            }
+          }
+        ]
+      }
+    });
+    // console.log(newRoute);
+    this.setState(
+      {
+        selectedNode: null,
+        nodes: newNodes,
+        route: newRoute,
+        plugins: newPlugins.map(p => ({
+          ...p,
+          selected: false
+        }))
+      },
+      () => {
+        this.saveChanges({ ...newRoute }).then(() => console.log("pattern added "));
+      }
+    )
+  }
+
   swap = (node, step, offset) => {
     const { nodeId } = node
 
@@ -800,6 +865,90 @@ class Designer extends React.Component {
       originalRoute, frontend, categories, alertModal,
       showLegacy, expandAll, searched, backend, nodes } = this.state
 
+<<<<<<< HEAD
+=======
+    // console.log(route)
+    // console.log(plugins);
+
+    const patterns = [
+      {
+        config: {},
+        config_flow: [],
+        config_schema: {},
+        default_config: {},
+        description: "Add all the plugins you would find in a classic service descriptor",
+        id: "cp:otoroshi.next.plugins.ClassicPluginsPatterns",
+        name: "Classic plugins",
+        on_request: false,
+        on_response: false,
+        plugin_categories: ['Patterns'],
+        plugin_multi_inst: false,
+        plugin_steps: [],
+        plugin_tags: [],
+        plugin_type: "ng",
+        plugin_visibility: "userland",
+        shortcut: () => {
+          function findPlugin(id) {
+            return plugins.filter(p => p.id === id)[0];
+          }      
+          this.addNodes([
+            // pre route
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.Redirection'),             plugin_index: { PreRoute: 0 }},
+            { enabled: true , ...findPlugin('cp:otoroshi.next.plugins.ForceHttpsTraffic'),       plugin_index: { PreRoute: 1 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.BuildMode'),               plugin_index: { PreRoute: 2 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.MaintenanceMode'),         plugin_index: { PreRoute: 3 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.Cors'),                    plugin_index: { PreRoute: 4, TransformResponse: 6 }},
+            // validate access
+            { enabled: true , ...findPlugin('cp:otoroshi.next.plugins.DisableHttp10'),           plugin_index: { ValidateAccess: 0 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.IpAddressAllowedList'),    plugin_index: { ValidateAccess: 1 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.IpAddressBlockList'),      plugin_index: { ValidateAccess: 2 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.ReadOnlyCalls'),           plugin_index: { ValidateAccess: 3 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.ApikeyCalls'),             plugin_index: { ValidateAccess: 4, MatchRoute: 0, TransformRequest: 7 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.JwtVerification'),         plugin_index: { ValidateAccess: 5, TransformRequest: 6 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.AuthModule'),              plugin_index: { ValidateAccess: 6 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.RoutingRestrictions'),     plugin_index: { ValidateAccess: 7 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.HeadersValidation'),       plugin_index: { ValidateAccess: 8 }},
+            // TransformRequest
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.AdditionalHeadersIn'),     plugin_index: { TransformRequest: 0 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.MissingHeadersIn'),        plugin_index: { TransformRequest: 1 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.RemoveHeadersIn'),         plugin_index: { TransformRequest: 2 }},
+            { enabled: true , ...findPlugin('cp:otoroshi.next.plugins.OverrideHost'),            plugin_index: { TransformRequest: 3 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.XForwardedHeaders'),       plugin_index: { TransformRequest: 4 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiInfos'),           plugin_index: { TransformRequest: 5 }},
+            // TransformResponse
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.AdditionalHeadersOut'),    plugin_index: { TransformResponse: 0 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.MissingHeadersOut'),       plugin_index: { TransformResponse: 1 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.RemoveHeadersOut'),        plugin_index: { TransformResponse: 2 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.SendOtoroshiHeadersBack'), plugin_index: { TransformResponse: 3 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiChallenge'),       plugin_index: { TransformResponse: 4, TransformRequest: 8 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.GzipResponseCompressor'),  plugin_index: { TransformResponse: 7 }},
+
+          ])
+        }
+      },
+      {
+        config: {},
+        config_flow: [],
+        config_schema: {},
+        default_config: {},
+        description: "Clear all plugins",
+        id: "cp:otoroshi.next.plugins.ClearPluginsPatterns",
+        name: "Clear plugins",
+        on_request: false,
+        on_response: false,
+        plugin_categories: ['Patterns'],
+        plugin_multi_inst: false,
+        plugin_steps: [],
+        plugin_tags: [],
+        plugin_type: "ng",
+        plugin_visibility: "userland",
+        shortcut: () => {
+          this.clearPlugins();
+        }
+      }
+    ];
+
+>>>>>>> Add patterns
     return <Loader loading={loading} >
       <Container onClick={() => {
         if (!this.state.alertModal.show) {
@@ -818,8 +967,8 @@ class Designer extends React.Component {
           onExpandAll={() => this.setState({ expandAll: !expandAll })}
           expandAll={expandAll}
           searched={searched}
-          plugins={plugins}
-          categories={categories}
+          plugins={[...plugins, ...patterns]}
+          categories={[...categories, 'Patterns']}
           addNode={this.addNode}
           showPreview={element => this.setState({
             preview: {
@@ -933,7 +1082,11 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
     className="element"
     onClick={(e) => {
       e.stopPropagation();
-      showPreview(element);
+      if (element.shortcut) {
+        element.shortcut(element);
+      } else {
+        showPreview(element);
+      }
     }}>
     <div className="d-flex-between element-text">
       <div>
@@ -944,8 +1097,12 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
         className={`fas fa-${element.plugin_multi_inst ? 'plus' : 'arrow-right'} element-arrow`}
         onClick={(e) => {
           e.stopPropagation();
-          hidePreview();
-          addNode(element);
+          if (element.shortcut) {
+            element.shortcut(element);
+          } else {
+            hidePreview();
+            addNode(element);
+          }
         }}
       />
     </div>
