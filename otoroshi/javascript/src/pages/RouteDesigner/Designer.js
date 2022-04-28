@@ -308,6 +308,13 @@ class Designer extends React.Component {
     backend: {},
     alertModal: {
       show: false
+    },
+    hiddenSteps: {
+      MatchRoute: true,
+      PreRoute: true,
+      ValidateAccess: true,
+      TransformRequest: true,
+      TransformResponse: true
     }
   }
 
@@ -585,8 +592,8 @@ class Designer extends React.Component {
 
   addNodes = (new_nodes) => {
     const { nodes, plugins, route } = this.state
-    const newPlugins = [ ...plugins ];
-    let newNodes = [ ...nodes ];
+    const newPlugins = [...plugins];
+    let newNodes = [...nodes];
     let newRoute = { ...route };
     new_nodes.filter(node => !!node).map(node => {
       const nodeId = this.generateNewInternalNodeId(node.id)
@@ -595,7 +602,7 @@ class Designer extends React.Component {
         nodeId,
         plugin_index: node.plugin_index
       };
-      newNodes = [ ...newNodes, newNode ];
+      newNodes = [...newNodes, newNode];
       newRoute = {
         ...newRoute,
         plugins: [
@@ -764,7 +771,7 @@ class Designer extends React.Component {
   renderInBound = () => {
     let steps = [...REQUEST_STEPS_FLOW]
 
-    const { selectedNode, nodes } = this.state
+    const { selectedNode, nodes, hiddenSteps } = this.state
 
     const matchRoute = nodes
       .filter(n => n.plugin_index.MatchRoute !== undefined)
@@ -786,10 +793,25 @@ class Designer extends React.Component {
 
         return <>
           <>
-            <span className='badge bg-warning text-dark' style={{ opacity: !selectedNode ? 1 : 0.25 }}>{steps[i]}</span>
+            <span
+              className='badge bg-warning text-dark'
+              style={{
+                opacity: selectedNode ? .25 : hiddenSteps[steps[i]] ? 1 : .75,
+                cursor: 'pointer'
+              }}
+              onClick={() => {
+                this.setState({
+                  hiddenSteps: {
+                    ...hiddenSteps,
+                    [steps[i]]: !hiddenSteps[steps[i]]
+                  }
+                })
+              }}>
+              {steps[i]}
+            </span>
             <Hr highlighted={!selectedNode} />
           </>
-          {nodes.map(node => <NodeElement
+          {hiddenSteps[steps[i]] && nodes.map(node => <NodeElement
             onUp={e => this.onUp(e, node, steps[i])}
             onDown={e => this.onDown(e, node, steps[i])}
             onUnsavedChanges={this.onUnsavedChanges}
@@ -812,7 +834,7 @@ class Designer extends React.Component {
     const responseNodes = this.state.nodes
       .filter(n => n.plugin_index.TransformResponse !== undefined)
       .sort((a, b) => b.plugin_index.TransformResponse - a.plugin_index.TransformResponse)
-    return responseNodes
+    return this.state.hiddenSteps.TransformResponse && responseNodes
       .map((node, i) => (
         <NodeElement
           onUp={e => this.onDown(e, node, 'TransformResponse')}
@@ -830,6 +852,27 @@ class Designer extends React.Component {
           arrows={this.showArrows(node, 'TransformResponse')}
         />
       ))
+  }
+
+  transformResponseBadge = () => {
+    const { nodes, hiddenSteps, selectedNode } = this.state
+    return nodes.find(n => n.plugin_index.TransformResponse !== undefined) &&
+      <span
+        className='badge bg-warning text-dark'
+        style={{
+          opacity: selectedNode ? .25 : hiddenSteps.TransformResponse ? 1 : .75,
+          cursor: 'pointer'
+        }}
+        onClick={() => {
+          this.setState({
+            hiddenSteps: {
+              ...hiddenSteps,
+              'TransformResponse': !hiddenSteps.TransformResponse
+            }
+          })
+        }}>
+        TransformResponse
+      </span>
   }
 
   showArrows = (node, step) => {
@@ -883,38 +926,38 @@ class Designer extends React.Component {
         shortcut: () => {
           function findPlugin(id) {
             return plugins.filter(p => p.id === id)[0];
-          }      
+          }
           this.addNodes([
             // pre route
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.Redirection'),             plugin_index: { PreRoute: 0 }},
-            { enabled: true , ...findPlugin('cp:otoroshi.next.plugins.ForceHttpsTraffic'),       plugin_index: { PreRoute: 1 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.BuildMode'),               plugin_index: { PreRoute: 2 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.MaintenanceMode'),         plugin_index: { PreRoute: 3 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.Cors'),                    plugin_index: { PreRoute: 4, TransformResponse: 6 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.Redirection'), plugin_index: { PreRoute: 0 } },
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.ForceHttpsTraffic'), plugin_index: { PreRoute: 1 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.BuildMode'), plugin_index: { PreRoute: 2 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.MaintenanceMode'), plugin_index: { PreRoute: 3 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.Cors'), plugin_index: { PreRoute: 4, TransformResponse: 6 } },
             // validate access
-            { enabled: true , ...findPlugin('cp:otoroshi.next.plugins.DisableHttp10'),           plugin_index: { ValidateAccess: 0 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.IpAddressAllowedList'),    plugin_index: { ValidateAccess: 1 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.IpAddressBlockList'),      plugin_index: { ValidateAccess: 2 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.ReadOnlyCalls'),           plugin_index: { ValidateAccess: 3 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.ApikeyCalls'),             plugin_index: { ValidateAccess: 4, MatchRoute: 0, TransformRequest: 7 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.JwtVerification'),         plugin_index: { ValidateAccess: 5, TransformRequest: 6 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.AuthModule'),              plugin_index: { ValidateAccess: 6 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.RoutingRestrictions'),     plugin_index: { ValidateAccess: 7 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.HeadersValidation'),       plugin_index: { ValidateAccess: 8 }},
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.DisableHttp10'), plugin_index: { ValidateAccess: 0 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.IpAddressAllowedList'), plugin_index: { ValidateAccess: 1 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.IpAddressBlockList'), plugin_index: { ValidateAccess: 2 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.ReadOnlyCalls'), plugin_index: { ValidateAccess: 3 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.ApikeyCalls'), plugin_index: { ValidateAccess: 4, MatchRoute: 0, TransformRequest: 7 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.JwtVerification'), plugin_index: { ValidateAccess: 5, TransformRequest: 6 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.AuthModule'), plugin_index: { ValidateAccess: 6 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.RoutingRestrictions'), plugin_index: { ValidateAccess: 7 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.HeadersValidation'), plugin_index: { ValidateAccess: 8 } },
             // TransformRequest
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.AdditionalHeadersIn'),     plugin_index: { TransformRequest: 0 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.MissingHeadersIn'),        plugin_index: { TransformRequest: 1 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.RemoveHeadersIn'),         plugin_index: { TransformRequest: 2 }},
-            { enabled: true , ...findPlugin('cp:otoroshi.next.plugins.OverrideHost'),            plugin_index: { TransformRequest: 3 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.XForwardedHeaders'),       plugin_index: { TransformRequest: 4 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiInfos'),           plugin_index: { TransformRequest: 5 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.AdditionalHeadersIn'), plugin_index: { TransformRequest: 0 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.MissingHeadersIn'), plugin_index: { TransformRequest: 1 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.RemoveHeadersIn'), plugin_index: { TransformRequest: 2 } },
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.OverrideHost'), plugin_index: { TransformRequest: 3 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.XForwardedHeaders'), plugin_index: { TransformRequest: 4 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiInfos'), plugin_index: { TransformRequest: 5 } },
             // TransformResponse
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.AdditionalHeadersOut'),    plugin_index: { TransformResponse: 0 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.MissingHeadersOut'),       plugin_index: { TransformResponse: 1 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.RemoveHeadersOut'),        plugin_index: { TransformResponse: 2 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.SendOtoroshiHeadersBack'), plugin_index: { TransformResponse: 3 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiChallenge'),       plugin_index: { TransformResponse: 4, TransformRequest: 8 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.GzipResponseCompressor'),  plugin_index: { TransformResponse: 7 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.AdditionalHeadersOut'), plugin_index: { TransformResponse: 0 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.MissingHeadersOut'), plugin_index: { TransformResponse: 1 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.RemoveHeadersOut'), plugin_index: { TransformResponse: 2 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.SendOtoroshiHeadersBack'), plugin_index: { TransformResponse: 3 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiChallenge'), plugin_index: { TransformResponse: 4, TransformRequest: 8 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.GzipResponseCompressor'), plugin_index: { TransformResponse: 7 } },
 
           ])
         }
@@ -940,6 +983,8 @@ class Designer extends React.Component {
         }
       }
     ];
+
+    console.log(this.state.hiddenSteps)
 
     return <Loader loading={loading} >
       <Container onClick={() => {
@@ -1021,8 +1066,7 @@ class Designer extends React.Component {
                     <HeaderNode text="Response" icon="up" selectedNode={selectedNode} />
                     <Hr highlighted={!selectedNode} flex={true} />
                     {this.renderOutBound()}
-                    {nodes.find(n => n.plugin_index.TransformResponse !== undefined) &&
-                      <span className='badge bg-warning text-dark' style={{ opacity: !selectedNode ? 1 : 0.25 }}>TransformResponse</span>}
+                    {this.transformResponseBadge()}
                     <Hr highlighted={!selectedNode} />
                   </OutBoundFlow>
                 </div>
