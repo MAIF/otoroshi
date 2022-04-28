@@ -45,13 +45,6 @@ export const LEGACY_PLUGINS_WRAPPER = {
   'request-handler': '',
 };
 
-const PROTOCOLS = {
-  http: 'http',
-  https: 'https',
-  udp: 'udp',
-  tcp: 'tcp',
-};
-
 export const DEFAULT_FLOW = {
   Frontend: {
     id: 'Frontend',
@@ -68,7 +61,7 @@ export const DEFAULT_FLOW = {
         label: 'Domains'
       },
     },
-    config_flow: ['domains', 'stripPath', 'exact', 'headers', 'methods', 'query'],
+    config_flow: ['domains', 'strip_path', 'exact', 'headers', 'methods', 'query'],
   },
   Backend: {
     id: 'Backend',
@@ -109,7 +102,7 @@ export const DEFAULT_FLOW = {
             const hostname = getValue(`${entry}.hostname`);
             const root = getValue('plugin.root');
             if (port && hostname && root) {
-              console.log(`http${port === 443 ? 's' : ''}://${hostname}${root}`);
+              // console.log(`http${port === 443 ? 's' : ''}://${hostname}${root}`);
               setValue(
                 `${entry}.custom_target`,
                 `http${port === 443 ? 's' : ''}://${hostname}${root}`
@@ -147,7 +140,7 @@ export const DEFAULT_FLOW = {
                   ...value,
                   visible: {
                     ref: 'plugin',
-                    test: (v, idx) => !!v.targets[idx]?.value?.expert_mode,
+                    test: (v, idx) => !!v.targets[idx]?.value?.expert_mode
                   },
                 },
               ];
@@ -174,11 +167,11 @@ export const DEFAULT_FLOW = {
     config_flow: [
       'root',
       'targets',
-      'healthCheck',
-      'targetRefs',
+      'health_check',
+      'target_refs',
       'client',
       'rewrite',
-      'loadBalancing',
+      'load_balancing',
     ],
   },
 };

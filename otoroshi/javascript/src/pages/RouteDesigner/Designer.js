@@ -14,9 +14,10 @@ import {
 } from './Graph';
 import Loader from './Loader';
 import { FeedbackButton } from './FeedbackButton';
-import { toUpperCaseLabels, camelToSnake, camelToSnakeFlow, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
-import { Form, type, format, validate, CodeInput, MarkdownInput } from '@maif/react-forms';
+import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
+import { SelectInput, Form, type, format, validate, CodeInput, MarkdownInput } from '@maif/react-forms';
 import { merge, snakeCase, camelCase, isEqual } from 'lodash';
+import { BackendForm } from '../BackendsPage'
 
 const HeaderNode = ({ selectedNode, text, icon }) => <Dot selectedNode={selectedNode}>
   <div className='flex-column p-1'>
@@ -359,8 +360,6 @@ class Designer extends React.Component {
 
       const nodes = pluginsWithNodeId.some(p => Object.keys(p.plugin_index || {}).length > 0) ? pluginsWithNodeId : this.generatedPluginIndex(pluginsWithNodeId)
 
-      console.log(pluginsWithNodeId)
-
       this.setState({
         backends,
         loading: false,
@@ -640,6 +639,7 @@ class Designer extends React.Component {
       ...route,
       frontend: pluginId === 'Frontend' ? item.plugin : route.frontend,
       backend: pluginId === 'Backend' ? item.plugin : route.backend,
+      backend_ref: undefined,
       plugins: route.plugins.map(plugin => {
         if (plugin.nodeId === nodeId)
           return {
@@ -653,7 +653,8 @@ class Designer extends React.Component {
     });
   };
 
-  saveChanges = (route) => {
+  saveChanges = r => {
+    const route = r || this.state.route
     return nextClient.update(nextClient.ENTITIES.ROUTES, {
       ...route,
       plugins: route.plugins.map(plugin => ({
@@ -880,7 +881,7 @@ class Designer extends React.Component {
                     <Hr highlighted={!selectedNode} flex={true} />
                     {this.renderOutBound()}
                     {nodes.find(n => n.plugin_index.TransformResponse !== undefined) &&
-                      <span className='badge bg-warning text-dark' style={{ opacity: !selectedNode ? 1 : 0.25 }}>TransformerResponse</span>}
+                      <span className='badge bg-warning text-dark' style={{ opacity: !selectedNode ? 1 : 0.25 }}>TransformResponse</span>}
                     <Hr highlighted={!selectedNode} />
                   </OutBoundFlow>
                 </div>
@@ -1163,7 +1164,6 @@ function EditView({
   const [isDirty, setDirty] = useState(showUpdateRouteButton);
 
   useEffect(() => {
-    console.log('set dirtry from useeffect', showUpdateRouteButton)
     setDirty(showUpdateRouteButton);
   }, [showUpdateRouteButton]);
 
@@ -1232,13 +1232,10 @@ function EditView({
             format: format.form,
             label: null,
             schema: { ...convertTransformer(config_schema) },
-            flow: [...(config_flow || flow)].map((step) => camelToSnakeFlow(step)),
+            flow: [...(config_flow || flow)]
           },
         };
     }
-
-    formSchema = camelToSnake(formSchema);
-    formFlow = formFlow.map((step) => camelToSnakeFlow(step));
 
     let value = route[selectedNode.field]; // matching Frontend and Backend case
 
@@ -1281,7 +1278,6 @@ function EditView({
       }
     ).then(() => {
       setForm({ ...form, value: newValue, originalValue: newValue });
-      console.log('set dirty from onValidate', false)
       setDirty(false);
     });
   };
@@ -1290,12 +1286,10 @@ function EditView({
     validate([], form.schema, value)
       .then(() => {
         setErrors([]);
-        console.log('set dirty from onJsonInputChange', !isEqual(form.originalValue, JSON.parse(value)))
         setDirty(!isEqual(form.originalValue, JSON.parse(value)));
         setForm({ ...form, value: merge(form.originalValue, JSON.parse(value)) });
       })
       .catch((err) => {
-        console.log(err)
         if (err.inner && Array.isArray(err.inner)) {
           setErrors(err.inner.map((r) => r.message));
           setDirty(false);
@@ -1304,11 +1298,6 @@ function EditView({
   };
 
   console.log(form)
-  // if (Object.keys(form.schema).length === 0 || !form.value)
-  //   return null;
-
-  // console.log("SCHEMA", form.schema)
-  // console.log("VALUE", unstringify(form.value))
 
   return (
     <>
@@ -1342,7 +1331,7 @@ function EditView({
             backgroundColor: '#494949',
           }}>
           <Description text={selectedNode.description} legacy={selectedNode.legacy} steps={selectedNode.plugin_steps || []} />
-          {!selectedNode.legacy && !readOnly && (
+          {!selectedNode.legacy && !readOnly && 'Backend' !== id && (
             <div className={`d-flex justify-content-end ${asJsonFormat ? 'mb-3' : ''}`}>
               <button
                 className="btn btn-sm toggle-form-buttons mt-3"
@@ -1355,13 +1344,16 @@ function EditView({
                 className="btn btn-sm mx-1 toggle-form-buttons mt-3"
                 onClick={() => {
                   if (formRef.current)
-                    formRef.current.trigger().then((res) => {
-                      if (res) {
-                        // TODO - get form value when swapping to json input
-                        //setForm({ ...form, value: formRef.current.rawData() })
-                        toggleJsonFormat(true);
-                      }
-                    });
+                    formRef.current.trigger()
+                      .then((res) => {
+                        if (res) {
+                          // TODO - get form value when swapping to json input
+                          //setForm({ ...form, value: formRef.current.rawData() })
+                          toggleJsonFormat(true);
+                        }
+                      })
+                  else
+                    toggleJsonFormat(true);
                 }}
                 style={{ backgroundColor: asJsonFormat ? '#f9b000' : '#373735' }}>
                 RAW JSON
@@ -1443,7 +1435,6 @@ function EditView({
                       if (formRef.current) {
                         const formState = formRef.current.methods.formState.isDirty;
                         if (formState !== isDirty) {
-                          console.log("set dirty from form", formState)
                           setDirty(formState);
                         }
                       }
@@ -1468,6 +1459,7 @@ function EditView({
             <div className="p-3">
               {backendConfigRef && (
                 <BackendForm
+                  hideActionButton={true}
                   isCreation={false}
                   value={backendConfigRef}
                   style={{ maxWidth: '100%' }}
@@ -1475,7 +1467,7 @@ function EditView({
                 />
               )}
               <FeedbackButton
-                text="Update the plugin configuration"
+                text="Update the plugin"
                 icon={() => <i className="fas fa-paper-plane" />}
                 onPress={saveChanges}
               />
@@ -1522,18 +1514,14 @@ const BackendSelector = ({
   usingExistingBackend,
   route,
   backends,
-}) => (
-  <div className="backend-selector">
+}) => {
+  return <div className="backend-selector">
     <div className={`d-flex ${usingExistingBackend ? 'mb-3' : ''}`}>
       <button
         className="btn btn-sm new-backend-button"
         onClick={() => {
           setBackendConfigRef(undefined);
           setUsingExistingBackend(false);
-          setRoute({
-            ...route,
-            backend_ref: undefined,
-          });
         }}
         style={{ backgroundColor: usingExistingBackend ? '#494849' : '#f9b000' }}>
         Create a new backend
@@ -1562,7 +1550,7 @@ const BackendSelector = ({
       />
     )}
   </div>
-);
+}
 
 const Description = ({ text, steps, legacy }) => {
   const [showMore, setShowMore] = useState(false);

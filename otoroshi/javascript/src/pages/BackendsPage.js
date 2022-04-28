@@ -3,8 +3,8 @@ import { useHistory, useParams, Link, Switch, Route, useRouteMatch } from 'react
 import { nextClient } from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
 import { Location } from '../components/Location';
-import { constraints, Form, format, type } from '@maif/react-forms';
-import { camelToSnake, camelToSnakeFlow, toUpperCaseLabels } from '../util';
+import { Form, format, type } from '@maif/react-forms';
+import { toUpperCaseLabels } from '../util';
 
 export const BackendsPage = ({ setTitle }) => {
   const params = useParams();
@@ -74,7 +74,7 @@ export const BackendsPage = ({ setTitle }) => {
   );
 };
 
-export const BackendForm = ({ isCreation, value, onSubmit, foldable, style = {} }) => {
+export const BackendForm = ({ isCreation, value, onSubmit, foldable, hideActionButton, style = {} }) => {
   const ref = useRef();
   const [show, setShow] = useState(!foldable);
 
@@ -154,8 +154,8 @@ export const BackendForm = ({ isCreation, value, onSubmit, foldable, style = {} 
 
   useEffect(() => {
     nextClient.form(nextClient.ENTITIES.BACKENDS).then((res) => {
-      const formSchema = camelToSnake(toUpperCaseLabels(res.schema));
-      const formFlow = res.flow.map((step) => camelToSnakeFlow(step));
+      const formSchema = toUpperCaseLabels(res.schema);
+      const formFlow = res.flow
 
       setForm({
         schema: {
@@ -205,11 +205,11 @@ export const BackendForm = ({ isCreation, value, onSubmit, foldable, style = {} 
             onError={(e) => console.log(e)}
             footer={() => null}
           />
-          <button
+          {!hideActionButton && <button
             className="btn btn-success btn-block mt-3"
             onClick={() => ref.current.handleSubmit()}>
             {isCreation ? 'Create the backend' : 'Update the backend'}
-          </button>
+          </button>}
         </>
       )}
     </div>
