@@ -591,10 +591,11 @@ class Designer extends React.Component {
   }
 
   addNodes = (new_nodes) => {
-    const { nodes, plugins, route } = this.state
-    const newPlugins = [...plugins];
-    let newNodes = [...nodes];
-    let newRoute = { ...route };
+    const { plugins, route } = this.state
+
+    let newNodes = [];
+    let newRoute = { ...route, plugins: [] };
+
     new_nodes.filter(node => !!node).map(node => {
       const nodeId = this.generateNewInternalNodeId(node.id)
       const newNode = {
@@ -629,9 +630,9 @@ class Designer extends React.Component {
         selectedNode: null,
         nodes: newNodes,
         route: newRoute,
-        plugins: newPlugins.map(p => ({
+        plugins: plugins.map(p => ({
           ...p,
-          selected: false
+          selected: route.plugins.find(plugin => plugin.id === p.id) ? (p.plugin_multi_inst ? false : true) : false
         }))
       },
       () => {
@@ -903,7 +904,7 @@ class Designer extends React.Component {
       originalRoute, frontend, categories, alertModal,
       showLegacy, expandAll, searched, backend, nodes } = this.state
 
-    // console.log(route)
+    console.log(route)
     // console.log(plugins);
 
     const patterns = [
