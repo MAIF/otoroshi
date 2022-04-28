@@ -490,7 +490,7 @@ export class TopBar extends Component {
     return (
       <nav className="navbar navbar-expand-md fixed-top">
         <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
-          <div className="d-flex flex-column flex-md-row position-relative position-md-absolute top-md-0 w-100">
+          <div className="d-flex flex-column flex-md-row top-md-0 w-100">
             <div className="col-12 col-md-2 px-2 mb-2 mb-md-0 d-flex justify-content-between justify-content-lg-center align-items-center navbar-header">
               <button
                 className="btn btn-menu ms-3 navbar-toggler"
@@ -583,7 +583,7 @@ export class TopBar extends Component {
             </form>
           </div>
 
-          <div className="d-flex flex-grow-1 my-1 my-md-0" style={{ zIndex: 1001 }}>
+          <div className="d-flex flex-grow-1 my-1 my-md-0 position-relative position-md-absolute end-0">
             <div
               className="d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0"
               style={{ height: 52 }}>
