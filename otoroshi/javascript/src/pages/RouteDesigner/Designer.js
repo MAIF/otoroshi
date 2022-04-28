@@ -13,14 +13,11 @@ import {
   PLUGIN_INFORMATIONS_SCHEMA,
 } from './Graph';
 import Loader from './Loader';
-<<<<<<< HEAD
-=======
 import { add, isEqual } from "lodash";
 import { toUpperCaseLabels, camelToSnake, camelToSnakeFlow, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
 import { Form, type, format, validate } from '@maif/react-forms';
 import { CodeInput } from '@maif/react-forms';
 import { MarkdownInput } from '@maif/react-forms';
->>>>>>> Add patterns
 import { FeedbackButton } from './FeedbackButton';
 import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
 import { SelectInput, Form, type, format, validate, CodeInput, MarkdownInput } from '@maif/react-forms';
@@ -865,8 +862,6 @@ class Designer extends React.Component {
       originalRoute, frontend, categories, alertModal,
       showLegacy, expandAll, searched, backend, nodes } = this.state
 
-<<<<<<< HEAD
-=======
     // console.log(route)
     // console.log(plugins);
 
@@ -948,7 +943,6 @@ class Designer extends React.Component {
       }
     ];
 
->>>>>>> Add patterns
     return <Loader loading={loading} >
       <Container onClick={() => {
         if (!this.state.alertModal.show) {
