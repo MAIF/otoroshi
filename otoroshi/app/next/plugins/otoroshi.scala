@@ -22,45 +22,97 @@ import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class NgOtoroshiChallengeConfig(raw: JsValue) extends NgPluginConfig {
-  lazy val secComVersion: SecComVersion       =
-    SecComVersion(raw.select("version").asOpt[String].getOrElse("V2")).getOrElse(SecComVersion.V2)
-  lazy val secComTtl: FiniteDuration          = raw.select("ttl").asOpt[Long].map(_.seconds).getOrElse(30.seconds)
-  lazy val requestHeaderName: Option[String]  = raw.select("request_header_name").asOpt[String]
-  lazy val responseHeaderName: Option[String] = raw.select("response_header_name").asOpt[String]
-  lazy val algoOtoToBackend: AlgoSettings     = AlgoSettings
-    .fromJson(raw.select("algo_to_backend").asOpt[JsObject].getOrElse(Json.obj()))
-    .getOrElse(HSAlgoSettings(512, "secret", false))
-  lazy val algoBackendToOto: AlgoSettings     = AlgoSettings
-    .fromJson(raw.select("algo_from_backend").asOpt[JsObject].getOrElse(Json.obj()))
-    .getOrElse(HSAlgoSettings(512, "secret", false))
-  lazy val stateRespLeeway: Int               = raw.select("state_resp_leeway").asOpt[Int].getOrElse(10)
-  def json: JsObject                          = Json.obj(
-    "version"              -> secComVersion.json,
-    "ttl"                  -> secComTtl.toSeconds,
-    "request_header_name"  -> requestHeaderName,
-    "response_header_name" -> responseHeaderName,
-    "algo_to_backend"      -> algoOtoToBackend.asJson,
-    "algo_from_backend"    -> algoBackendToOto.asJson,
-    "state_resp_leeway"    -> stateRespLeeway
-  )
+case class NgOtoroshiChallengeConfig(
+  secComVersion: SecComVersion,
+  secComTtl: FiniteDuration,
+  requestHeaderName: Option[String],
+  responseHeaderName: Option[String],
+  algoOtoToBackend: AlgoSettings,
+  algoBackendToOto: AlgoSettings,
+  stateRespLeeway: Int
+) extends NgPluginConfig {
+  def json: JsObject = NgOtoroshiChallengeConfig.format.writes(this).asObject
 }
 
-case class NgOtoroshiInfoConfig(raw: JsValue) extends NgPluginConfig {
-  lazy val secComVersion: SecComInfoTokenVersion = SecComInfoTokenVersion(
-    raw.select("version").asOpt[String].getOrElse("Latest")
-  ).getOrElse(SecComInfoTokenVersion.Latest)
-  lazy val secComTtl: FiniteDuration             = raw.select("ttl").asOpt[Long].map(_.seconds).getOrElse(30.seconds)
-  lazy val headerName: Option[String]            = raw.select("header_name").asOpt[String]
-  lazy val algo: AlgoSettings                    = AlgoSettings
-    .fromJson(raw.select("algo").asOpt[JsObject].getOrElse(Json.obj()))
-    .getOrElse(HSAlgoSettings(512, "secret", false))
-  def json: JsObject                             = Json.obj(
-    "version"     -> secComVersion.json,
-    "ttl"         -> secComTtl.toSeconds,
-    "header_name" -> headerName,
-    "algo"        -> algo.asJson
-  )
+object NgOtoroshiChallengeConfig {
+  def apply(raw: JsValue): NgOtoroshiChallengeConfig = format.reads(raw).get
+  val format = new Format[NgOtoroshiChallengeConfig] {
+    override def reads(raw: JsValue): JsResult[NgOtoroshiChallengeConfig] = Try {
+      lazy val secComVersion: SecComVersion       =
+        SecComVersion(raw.select("version").asOpt[String].getOrElse("V2")).getOrElse(SecComVersion.V2)
+      lazy val secComTtl: FiniteDuration          = raw.select("ttl").asOpt[Long].map(_.seconds).getOrElse(30.seconds)
+      lazy val requestHeaderName: Option[String]  = raw.select("request_header_name").asOpt[String]
+      lazy val responseHeaderName: Option[String] = raw.select("response_header_name").asOpt[String]
+      lazy val algoOtoToBackend: AlgoSettings     = AlgoSettings
+        .fromJson(raw.select("algo_to_backend").asOpt[JsObject].getOrElse(Json.obj()))
+        .getOrElse(HSAlgoSettings(512, "secret", false))
+      lazy val algoBackendToOto: AlgoSettings     = AlgoSettings
+        .fromJson(raw.select("algo_from_backend").asOpt[JsObject].getOrElse(Json.obj()))
+        .getOrElse(HSAlgoSettings(512, "secret", false))
+      lazy val stateRespLeeway: Int               = raw.select("state_resp_leeway").asOpt[Int].getOrElse(10)
+      NgOtoroshiChallengeConfig(
+        secComVersion = secComVersion,
+        secComTtl = secComTtl,
+        requestHeaderName = requestHeaderName,
+        responseHeaderName = responseHeaderName,
+        algoOtoToBackend = algoOtoToBackend,
+        algoBackendToOto = algoBackendToOto,
+        stateRespLeeway = stateRespLeeway,
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage())
+      case Success(value) => JsSuccess(value)
+    }
+    override def writes(o: NgOtoroshiChallengeConfig): JsValue = Json.obj(
+      "version"              -> o.secComVersion.json,
+      "ttl"                  -> o.secComTtl.toSeconds,
+      "request_header_name"  -> o.requestHeaderName,
+      "response_header_name" -> o.responseHeaderName,
+      "algo_to_backend"      -> o.algoOtoToBackend.asJson,
+      "algo_from_backend"    -> o.algoBackendToOto.asJson,
+      "state_resp_leeway"    -> o.stateRespLeeway
+    )
+  }
+}
+
+case class NgOtoroshiInfoConfig(
+  secComVersion: SecComInfoTokenVersion,
+  secComTtl: FiniteDuration,
+  headerName: Option[String],
+  algo: AlgoSettings,
+) extends NgPluginConfig {
+  def json: JsObject = NgOtoroshiInfoConfig.format.writes(this).asObject
+}
+
+object NgOtoroshiInfoConfig {
+  def apply(raw: JsValue): NgOtoroshiInfoConfig = NgOtoroshiInfoConfig.format.reads(raw).get
+  val format = new Format[NgOtoroshiInfoConfig] {
+    override def reads(raw: JsValue): JsResult[NgOtoroshiInfoConfig] = Try {
+      lazy val secComVersion: SecComInfoTokenVersion = SecComInfoTokenVersion(
+        raw.select("version").asOpt[String].getOrElse("Latest")
+      ).getOrElse(SecComInfoTokenVersion.Latest)
+      lazy val secComTtl: FiniteDuration             = raw.select("ttl").asOpt[Long].map(_.seconds).getOrElse(30.seconds)
+      lazy val headerName: Option[String]            = raw.select("header_name").asOpt[String]
+      lazy val algo: AlgoSettings                    = AlgoSettings
+        .fromJson(raw.select("algo").asOpt[JsObject].getOrElse(Json.obj()))
+        .getOrElse(HSAlgoSettings(512, "secret", false))
+      NgOtoroshiInfoConfig(
+        secComVersion = secComVersion,
+        secComTtl = secComTtl,
+        headerName = headerName,
+        algo = algo,
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage())
+      case Success(value) => JsSuccess(value)
+    }
+    override def writes(o: NgOtoroshiInfoConfig): JsValue = Json.obj(
+      "version"     -> o.secComVersion.json,
+      "ttl"         -> o.secComTtl.toSeconds,
+      "header_name" -> o.headerName,
+      "algo"        -> o.algo.asJson
+    )
+  }
 }
 
 object NgOtoroshiChallengeKeys {

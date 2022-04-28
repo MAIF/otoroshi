@@ -35844,11 +35844,7 @@
           },
           "value" : {
             "label" : "value",
-            "type" : "object",
-            "format" : "code",
-            "props" : {
-              "mode" : "json"
-            }
+            "type" : "object"
           }
         },
         "flow" : [ "path", "value" ]
