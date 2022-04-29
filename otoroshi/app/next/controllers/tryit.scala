@@ -4,7 +4,8 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import otoroshi.actions.BackOfficeActionAuth
 import otoroshi.env.Env
-import otoroshi.next.models.{NgRoute, NgTarget, NgTlsConfig}
+import otoroshi.models.EntityLocationSupport
+import otoroshi.next.models.{NgRoute, NgService, NgTarget, NgTlsConfig}
 import otoroshi.next.plugins.ForceHttpsTraffic
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.utils.syntax.implicits._
@@ -29,7 +30,7 @@ class TryItController(
     Accumulator.source[ByteString].map(Right.apply)
   }
 
-  def call() = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+  def call(entity: Option[String] = None) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val requestId                = UUID.randomUUID().toString
       env.proxyState.enableReportFor(requestId)
@@ -49,12 +50,33 @@ class TryItController(
         }
       }
 
-      val routeFromIdOpt   = jsonBody.select("route_id").asOpt[String].flatMap(id => env.proxyState.route(id))
-      val routeFromJsonOpt =
-        jsonBody.select("route").asOpt[String].flatMap(json => NgRoute.fmt.reads(json.parseJson).asOpt)
-      val maybeRoute       = routeFromIdOpt.orElse(routeFromJsonOpt)
-      val routeFromId      = routeFromIdOpt.flatMap(_.frontend.domains.map(_.domain).headOption)
-      val routeFromJson    = routeFromJsonOpt.flatMap(_.frontend.domains.map(_.domain).headOption)
+      val isServiceTryIt = entity.contains("service")
+
+      val routeFromIdOpt: Option[Either[NgService, NgRoute]] = jsonBody.select("route_id").asOpt[String].flatMap(id => if (isServiceTryIt) {
+        env.proxyState.allNgServices().find(_.id == id).map(e => Left(e))
+      } else {
+        env.proxyState.route(id).map(e => Right(e))
+      })
+      val routeFromJsonOpt: Option[Either[NgService, NgRoute]] =
+        jsonBody.select("route").asOpt[String].flatMap(json => {
+          if(isServiceTryIt)
+            NgService.fmt.reads(json.parseJson).asOpt.map(e => Left(e))
+          else
+            NgRoute.fmt.reads(json.parseJson).asOpt.map(e => Right(e))
+        })
+      val maybeRoute                  = routeFromIdOpt.orElse(routeFromJsonOpt)
+      val routeFromId: Option[String] = routeFromIdOpt.flatMap {
+        case Left(ngService: NgService) =>
+          jsonBody.select("frontend_idx").asOpt[Int] match {
+            case Some(idx) => ngService.routes.lift(idx).flatMap(_.frontend.domains.map(_.domain).headOption)
+            case _ => ngService.routes.headOption.flatMap(_.frontend.domains.map(_.domain).headOption)
+          }
+        case Right(ngRoute: NgRoute) => ngRoute.frontend.domains.map(_.domain).headOption
+      }
+      val routeFromJson: Option[String] = routeFromJsonOpt.flatMap {
+        case Left(ngService: NgService) => ngService.routes.headOption.flatMap(_.frontend.domains.map(_.domain).headOption)
+        case Right(ngRoute: NgRoute) => ngRoute.frontend.domains.map(_.domain).headOption
+      }
 
       routeFromId.orElse(routeFromJson) match {
         case None           => InternalServerError(Json.obj("error" -> "route not found !")).vfuture
@@ -63,7 +85,10 @@ class TryItController(
             "Otoroshi-Try-It-Request-Id" -> requestId,
             "Host"                       -> hostname
           )
-          val isHttps   = maybeRoute.exists(_.plugins.hasPlugin[ForceHttpsTraffic])
+          val isHttps   = maybeRoute.exists {
+            case Left(ngService: NgService) => ngService.plugins.hasPlugin[ForceHttpsTraffic]
+            case Right(ngRoute: NgRoute) => ngRoute.plugins.hasPlugin[ForceHttpsTraffic]
+          }
           val url       =
             if (isHttps) s"https://${hostname}:${env.httpsPort}${path}" else s"http://${hostname}:${env.port}${path}"
           val target    = NgTarget(

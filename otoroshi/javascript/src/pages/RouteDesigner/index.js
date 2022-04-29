@@ -89,7 +89,3 @@ export default (props) => {
     </Switch>
   );
 };
-
-const NotImplementedYet = () => (
-  <h2>Not implemented yet !</h2>
-)

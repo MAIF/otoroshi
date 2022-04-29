@@ -1,11 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { createTooltip } from '../../tooltips';
 
 export default ({ route }) => {
-  const serviceId = route.id;
-  const env = 'prod';
-  const pathname = window.location.pathname;
+  const { pathname } = useLocation()
   const base = `/bo/dashboard/routes/${route.id}/`;
   const className = (part) => (`${base}${part}` === pathname ? 'active' : '');
   return (

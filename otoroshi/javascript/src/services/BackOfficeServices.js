@@ -174,8 +174,8 @@ export function allServices(env, group) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-    ? `/bo/api/proxy/api/services?filter.groups=${group}`
-    : `/bo/api/proxy/api/services`;
+      ? `/bo/api/proxy/api/services?filter.groups=${group}`
+      : `/bo/api/proxy/api/services`;
   return fetch(url, {
     method: 'GET',
     credentials: 'include',
@@ -1785,8 +1785,8 @@ export function createResources(resources) {
   }).then((r) => r.json());
 }
 
-export function tryIt(content) {
-  return fetch('/bo/api/tryit', {
+export function tryIt(content, entity) {
+  return fetch(`/bo/api/tryit?entity=${entity}`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -1815,6 +1815,7 @@ export const nextClient = {
     ROUTES: 'routes',
     BACKENDS: 'backends',
     FRONTENDS: 'frontends',
+    SERVICES: 'services'
   },
   find: (entity) => fetchWrapper(`/${entity}`),
   create: (entity, content) => fetchWrapper(`/${entity}`, 'POST', content),

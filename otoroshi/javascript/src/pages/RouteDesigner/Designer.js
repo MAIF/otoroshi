@@ -142,10 +142,23 @@ const Hr = ({ highlighted = true, flex }) => (
   />
 );
 
-const FormContainer = ({ selectedNode, route, preview, showPreview, originalRoute, alertModal, ...props }) => <div
+const ServiceView = ({ route }) => {
+  return <div
+    onClick={(e) => e.stopPropagation()}
+    className="plugins-stack editor-view">
+    <span>You are on a unnamed module. You can navigate on the list of frontends/backends to edit them.</span>
+
+    <Link className='btn btn-sm btn-success' to={`/unnamed/${route.id}/routes`}>
+      Edit the list
+    </Link>
+  </div>
+}
+
+const FormContainer = ({ selectedNode, route, preview, showPreview, originalRoute, alertModal, serviceMode, ...props }) => <div
   className="col-sm-8 relative-container" style={{ paddingRight: 0 }}>
   <UnselectedNode hideText={selectedNode} route={route} clearPlugins={props.clearPlugins} />
-  {selectedNode && (
+  {serviceMode && !['Frontend', 'Backend'].includes(selectedNode.id) && <ServiceView />}
+  {selectedNode && !serviceMode && (
     <EditView
       {...props}
       route={route}
@@ -174,7 +187,7 @@ export default ({ value }) => {
   const { routeId } = useParams();
   const location = useLocation();
 
-  return <Designer routeId={routeId} location={location} value={value} />
+  return <Designer routeId={routeId} location={location} value={value} serviceMode={location.pathname.includes('unnamed')} />
 }
 
 const FrontendNode = ({ onUnsavedChanges, frontend, selectedNode, setSelectedNode, removeNode }) => <div className='main-view relative-container'
@@ -379,13 +392,21 @@ class Designer extends React.Component {
   loadData = () => {
     Promise.all([
       nextClient.find(nextClient.ENTITIES.BACKENDS),
-      nextClient.fetch(nextClient.ENTITIES.ROUTES, this.props.routeId),
+      nextClient.fetch(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES, this.props.routeId),
       getCategories(),
       getPlugins(),
       getOldPlugins(),
       nextClient.form(nextClient.ENTITIES.FRONTENDS),
       nextClient.form(nextClient.ENTITIES.BACKENDS),
     ]).then(([backends, route, categories, plugins, oldPlugins, frontendForm, backendForm]) => {
+      if (route.error) {
+        this.setState({
+          loading: false,
+          notFound: true
+        })
+        return
+      }
+
       const formattedPlugins = [
         ...plugins,
         ...oldPlugins.map((p) => ({
@@ -823,7 +844,7 @@ class Designer extends React.Component {
 
   saveChanges = r => {
     const route = r || this.state.route
-    return nextClient.update(nextClient.ENTITIES.ROUTES, {
+    return nextClient.update(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES, {
       ...route,
       plugins: route.plugins.map(plugin => ({
         ...plugin,
@@ -1006,11 +1027,15 @@ class Designer extends React.Component {
   render() {
     const { loading, preview, route, plugins, backends, selectedNode,
       originalRoute, frontend, categories, alertModal,
-      showLegacy, expandAll, searched, backend, nodes } = this.state
+      showLegacy, expandAll, searched, backend, serviceMode } = this.state
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins)
 
-    return <Loader loading={loading} >
+    // TODO - better error display
+    if (!loading && this.state.notFound)
+      return <h1>Route not found</h1>
+
+    return <Loader loading={loading}>
       <Container onClick={() => {
         if (!this.state.alertModal.show) {
           this.onUnsavedChanges(() => {
@@ -1106,6 +1131,7 @@ class Designer extends React.Component {
                 />
               </Flow>
               <FormContainer
+                serviceMode={serviceMode}
                 clearPlugins={this.clearPlugins}
                 selectedNode={selectedNode}
                 route={route}
@@ -1589,7 +1615,8 @@ function EditView({
       hidePreview();
     }} />
     <div style={{ backgroundColor: '#494949' }}>
-      <Description text={selectedNode.description} legacy={selectedNode.legacy} steps={selectedNode.plugin_steps || []} />
+      {selectedNode.description &&
+        <Description text={selectedNode.description} legacy={selectedNode.legacy} steps={selectedNode.plugin_steps || []} />}
       {showActions && <EditViewFormatActions
         asJsonFormat={asJsonFormat} errors={errors}
         onFormClick={() => toggleJsonFormat(false)}
@@ -1755,9 +1782,9 @@ const Description = ({ text, steps, legacy }) => {
   return (
     <>
       <MarkdownInput className="form-description" readOnly={true} preview={true} value={content} />
-      <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
+      {steps.length > 0 && <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
         active on {steps.map((step, i) => <span className="badge bg-warning text-dark" style={{ marginLeft: 5 }} key={`steps-${i}`}>{step}</span>)}
-      </div>
+      </div>}
       {legacy && (
         <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
           this plugin is a <span className="badge bg-info text-dark" style={{ marginLeft: 5 }}>legacy plugin</span>

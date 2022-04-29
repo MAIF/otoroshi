@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BooleanInput, CodeInput, SelectInput } from '@maif/react-forms';
 import { tryIt, fetchAllApikeys, findAllCertificates } from '../../services/BackOfficeServices';
 import { firstLetterUppercase } from '../../util';
+import { useLocation } from 'react-router-dom';
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'];
 
@@ -10,10 +11,11 @@ const CONTENT_TYPE = ['text', 'javascript', 'json', 'html', 'xml'];
 const roundNsTo = (ns) => Number.parseFloat(round(ns) / 1000000).toFixed(3);
 const round = (num) => Math.round((num + Number.EPSILON) * 100000) / 100000;
 
-export const TryIt = ({ route }) => {
+export const TryIt = ({ route, serviceMode }) => {
   const [selectedTab, setSelectedTab] = useState('Headers');
   const [selectedResponseTab, setSelectedResponseTab] = useState('Report');
   const [headersStatus, setHeadersStatus] = useState('down');
+  const { pathname } = useLocation()
 
   const [search, setSearch] = useState('');
   const [unit, setUnit] = useState('ms');
@@ -68,7 +70,7 @@ export const TryIt = ({ route }) => {
           ([k, _]) => k.length > 0
         )
       ),
-    })
+    }, pathname.includes('unnamed') ? 'service' : 'route')
       .then((res) => {
         setRawResponse(res);
         return res.json();
@@ -121,15 +123,15 @@ export const TryIt = ({ route }) => {
       ),
       ...(format === 'basic'
         ? {
-            'authorization-header': {
-              key: apikeyHeader || request.apikeyHeader,
-              value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-            },
-          }
+          'authorization-header': {
+            key: apikeyHeader || request.apikeyHeader,
+            value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+          },
+        }
         : {
-            'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
-            'Otoroshi-Client-Secret': { key: 'Otoroshi-Client-Secret', value: clientSecret },
-          }),
+          'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
+          'Otoroshi-Client-Secret': { key: 'Otoroshi-Client-Secret', value: clientSecret },
+        }),
     };
   };
 
@@ -531,9 +533,9 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
     search.length <= 0
       ? true
       : step.task.includes(search) ||
-        [...(step?.ctx?.plugins || [])].find((plugin) =>
-          search.length <= 0 ? true : plugin.name.includes(search)
-        );
+      [...(step?.ctx?.plugins || [])].find((plugin) =>
+        search.length <= 0 ? true : plugin.name.includes(search)
+      );
 
   const isPluginNameMatchingSearch = (plugin) =>
     search.length <= 0 ? true : plugin.name.includes(search);
@@ -553,8 +555,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
       return unit === 'ms'
         ? roundNsTo(report.duration_ns)
         : unit === 'ns'
-        ? report.duration_ns
-        : 100;
+          ? report.duration_ns
+          : 100;
     else {
       const value = [...steps]
         .filter(isOnFlow)
@@ -563,8 +565,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
           const userPluginsFlow =
             step.ctx && step.ctx.plugins
               ? [...(step.ctx?.plugins || [])]
-                  .filter(isPluginNameMatchingSearch)
-                  .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
+                .filter(isPluginNameMatchingSearch)
+                .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
               : 0;
 
           if (flow === 'user')
@@ -620,9 +622,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
         </div>
         <div
           onClick={() => setSelectedStep(-1)}
-          className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${
-            informations.state === 'Successful' ? 'success' : 'danger'
-          }`}>
+          className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${informations.state === 'Successful' ? 'success' : 'danger'
+            }`}>
           <span>Report</span>
           <span>
             {reportDuration()} {unit}
@@ -644,15 +645,13 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                     setSelectedPlugin(-1);
                     setSelectedStep(step.task);
                   }}
-                  className={`d-flex-between mt-1 px-3 py-2 report-step ${
-                    step.task === selectedStep ? 'btn-dark' : ''
-                  }`}>
+                  className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep ? 'btn-dark' : ''
+                    }`}>
                   <div className="d-flex align-items-center">
                     {displaySubList && (
                       <i
-                        className={`fas fa-chevron-${
-                          step.open || flow === 'user' ? 'down' : 'right'
-                        } me-1`}
+                        className={`fas fa-chevron-${step.open || flow === 'user' ? 'down' : 'right'
+                          } me-1`}
                         onClick={() =>
                           setSteps(
                             steps.map((s) =>
@@ -669,8 +668,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                       {unit === 'ms'
                         ? roundNsTo(step.duration_ns)
                         : unit === 'ns'
-                        ? step.duration_ns
-                        : percentage}{' '}
+                          ? step.duration_ns
+                          : percentage}{' '}
                       {unit}
                     </span>
                   )}
@@ -692,18 +691,17 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                           key={plugin.name}
                           style={{ width: 'calc(100% - 12px)', marginLeft: '12px' }}
                           onClick={() => setSelectedPlugin(plugin.name)}
-                          className={`d-flex-between mt-1 px-3 py-2 report-step ${
-                            step.task === selectedStep && plugin.name === selectedPlugin
-                              ? 'btn-dark'
-                              : ''
-                          }`}>
+                          className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep && plugin.name === selectedPlugin
+                            ? 'btn-dark'
+                            : ''
+                            }`}>
                           <span>{firstLetterUppercase(pluginName)}</span>
                           <span style={{ maxWidth: '100px', textAlign: 'right' }}>
                             {unit === 'ms'
                               ? roundNsTo(plugin.duration_ns)
                               : unit === 'ns'
-                              ? plugin.duration_ns
-                              : pluginPercentage}{' '}
+                                ? plugin.duration_ns
+                                : pluginPercentage}{' '}
                             {unit}
                           </span>
                         </div>
@@ -723,8 +721,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                 ? informations
                 : steps.find((t) => t.task === selectedStep)
               : steps
-                  .find((t) => t.task === selectedStep)
-                  ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
+                .find((t) => t.task === selectedStep)
+                ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
             null,
             4
           )}

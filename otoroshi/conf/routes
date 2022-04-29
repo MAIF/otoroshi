@@ -83,7 +83,7 @@ POST    /bo/api/saml/_fetchConfig                             otoroshi.controlle
 PUT    /bo/api/backoffice/flags                               otoroshi.controllers.BackOfficeController.writeFlags()
 GET    /bo/api/backoffice/flags                               otoroshi.controllers.BackOfficeController.getFlags()
 
-POST   /bo/api/tryit                                          otoroshi.next.controllers.TryItController.call()
+POST   /bo/api/tryit                                          otoroshi.next.controllers.TryItController.call(entity: Option[String])
 
 # Admin API proxy
 GET     /bo/api/proxy/*path                                   otoroshi.controllers.BackOfficeController.proxyAdminApi(path)

@@ -128,7 +128,7 @@ object NgService {
       NgService(
         location = otoroshi.models.EntityLocation.readFromKey(json),
         id = json.select("id").as[String],
-        name = json.select("id").as[String],
+        name = json.select("name").as[String],
         description = json.select("description").asOpt[String].getOrElse(""),
         tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
