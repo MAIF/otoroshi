@@ -507,11 +507,18 @@ object NgTarget {
     )
   }
   def readFrom(obj: JsValue): NgTarget = {
+    val hostname =  obj.select("hostname").as[String]
+    val port = obj.select("port").as[Int]
+    val ipAddress = obj.select("ip_address").asOpt[String].filterNot(_.trim.isEmpty)
+    val fallbackIp = ipAddress.map(ip => s"@$ip").getOrElse("")
+    val tls = obj.select("tls").asOpt[Boolean].getOrElse(false)
+    val scheme = if (tls) "https://" else "http://"
+    val fallbackId = s"${scheme}${hostname}${fallbackIp}:${port}"
     NgTarget(
-      id = obj.select("id").as[String],
-      hostname = obj.select("hostname").as[String],
-      port = obj.select("port").as[Int],
-      tls = obj.select("tls").asOpt[Boolean].getOrElse(false),
+      id = obj.select("id").asOpt[String].getOrElse(fallbackId),
+      hostname = hostname,
+      port = port,
+      tls = tls,
       weight = obj.select("weight").asOpt[Int].getOrElse(1),
       tlsConfig = obj.select("tls_config").asOpt(NgTlsConfig.format).getOrElse(NgTlsConfig()),
       protocol = (obj \ "protocol")
@@ -520,7 +527,7 @@ object NgTarget {
         .map(s => HttpProtocol.apply(s))
         .getOrElse(HttpProtocols.`HTTP/1.1`),
       predicate = (obj \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
-      ipAddress = (obj \ "ip_address").asOpt[String].filterNot(_.trim.isEmpty)
+      ipAddress = ipAddress
     )
   }
   val fmt                                  = new Format[NgTarget] {
