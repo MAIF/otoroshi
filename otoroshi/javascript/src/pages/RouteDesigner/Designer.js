@@ -320,12 +320,58 @@ class Designer extends React.Component {
   }
 
   componentDidMount() {
+    this.patchStyle(true)
     this.loadData()
+  }
+
+  componentWillUnmount() {
+    this.patchStyle(false)
   }
 
   componentDidUpdate(prevProps) {
     if (prevProps.location.pathname !== this.props.location.pathname)
       this.loadData()
+  }
+
+  loadHiddenStepsFromLocalStorage = route => {
+    const data = localStorage.getItem('hidden_steps')
+    if (data) {
+      try {
+        const hiddenSteps = JSON.parse(data)
+        if (hiddenSteps[route.id]) {
+          this.setState({
+            hiddenSteps: hiddenSteps[route.id]
+          })
+        }
+      } catch (_) { }
+    }
+  }
+
+  storeHiddenStepsToLocalStorage = newHiddenSteps => {
+    const data = localStorage.getItem('hidden_steps')
+    if (data) {
+      try {
+        const hiddenSteps = JSON.parse(data)
+        localStorage.setItem('hidden_steps', JSON.stringify({
+          ...hiddenSteps,
+          [this.state.route.id]: newHiddenSteps
+        }))
+      } catch (_) { }
+    } else {
+      localStorage.setItem('hidden_steps', JSON.stringify({
+        [this.state.route.id]: newHiddenSteps
+      }))
+    }
+  }
+
+  patchStyle = applyPatch => {
+    if (applyPatch) {
+      document.getElementsByClassName('main')[0].classList.add('patch-main');
+      [...document.getElementsByClassName('row')].map(r => r.classList.add('patch-row', 'g-0'))
+    } else {
+      document.getElementsByClassName('main')[0].classList.remove('patch-main');
+      [...document.getElementsByClassName('row')].map(r => r.classList.remove('patch-row', 'g-0'))
+    }
   }
 
   loadData = () => {
@@ -366,6 +412,8 @@ class Designer extends React.Component {
           nodeId: pluginsWithNodeId[i].nodeId
         }))
       }
+
+      this.loadHiddenStepsFromLocalStorage(routeWithNodeId)
 
       const nodes = pluginsWithNodeId.some(p => Object.keys(p.plugin_index || {}).length > 0) ? pluginsWithNodeId : this.generatedPluginIndex(pluginsWithNodeId)
 
@@ -643,7 +691,7 @@ class Designer extends React.Component {
 
   setNodes = (new_nodes) => {
     const { nodes, plugins, route } = this.state
-    const newPlugins = [ ...plugins ];
+    const newPlugins = [...plugins];
     let newNodes = [];
     let newRoute = { ...route, plugins: [] };
     new_nodes.filter(node => !!node).map(node => {
@@ -653,7 +701,7 @@ class Designer extends React.Component {
         nodeId,
         plugin_index: node.plugin_index
       };
-      newNodes = [ ...newNodes, newNode ];
+      newNodes = [...newNodes, newNode];
       newRoute = {
         ...newRoute,
         plugins: [
@@ -851,11 +899,13 @@ class Designer extends React.Component {
                 cursor: 'pointer'
               }}
               onClick={() => {
+                const hidden_steps = {
+                  ...hiddenSteps,
+                  [steps[i]]: !hiddenSteps[steps[i]]
+                }
+                this.storeHiddenStepsToLocalStorage(hidden_steps)
                 this.setState({
-                  hiddenSteps: {
-                    ...hiddenSteps,
-                    [steps[i]]: !hiddenSteps[steps[i]]
-                  }
+                  hiddenSteps: hidden_steps
                 })
               }}>
               {steps[i]}
@@ -915,11 +965,13 @@ class Designer extends React.Component {
           cursor: 'pointer'
         }}
         onClick={() => {
+          const hidden_steps = {
+            ...hiddenSteps,
+            'TransformResponse': !hiddenSteps.TransformResponse
+          }
+          this.storeHiddenStepsToLocalStorage(hidden_steps)
           this.setState({
-            hiddenSteps: {
-              ...hiddenSteps,
-              'TransformResponse': !hiddenSteps.TransformResponse
-            }
+            hiddenSteps: hidden_steps
           })
         }}>
         TransformResponse
@@ -974,7 +1026,7 @@ class Designer extends React.Component {
         shortcut: () => {
           function findPlugin(id) {
             return plugins.filter(p => p.id === id)[0];
-          }      
+          }
           this.setNodes([
             // pre route
             { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.Redirection'), plugin_index: { PreRoute: 0 } },
@@ -1029,25 +1081,25 @@ class Designer extends React.Component {
         shortcut: () => {
           function findPlugin(id) {
             return plugins.filter(p => p.id === id)[0];
-          }      
+          }
           this.setNodes([
             // pre route
-            { enabled: true , ...findPlugin('cp:otoroshi.next.plugins.ForceHttpsTraffic'),       plugin_index: { PreRoute: 1 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.Cors'),                    plugin_index: { PreRoute: 4, TransformResponse: 6 }},
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.ForceHttpsTraffic'), plugin_index: { PreRoute: 1 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.Cors'), plugin_index: { PreRoute: 4, TransformResponse: 6 } },
             // validate access
-            { enabled: true , ...findPlugin('cp:otoroshi.next.plugins.DisableHttp10'),           plugin_index: { ValidateAccess: 0 }},
-            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.ApikeyCalls'),              plugin_index: { ValidateAccess: 4, MatchRoute: 0, TransformRequest: 7 }},
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.DisableHttp10'), plugin_index: { ValidateAccess: 0 } },
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.ApikeyCalls'), plugin_index: { ValidateAccess: 4, MatchRoute: 0, TransformRequest: 7 } },
             // TransformRequest
-            { enabled: false , ...findPlugin('cp:otoroshi.next.plugins.OverrideHost'),           plugin_index: { TransformRequest: 3 }},
-            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.XForwardedHeaders'),        plugin_index: { TransformRequest: 4 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiInfos'),           plugin_index: { TransformRequest: 5 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OverrideHost'), plugin_index: { TransformRequest: 3 } },
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.XForwardedHeaders'), plugin_index: { TransformRequest: 4 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiInfos'), plugin_index: { TransformRequest: 5 } },
             // TransformResponse
-            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.SendOtoroshiHeadersBack'),  plugin_index: { TransformResponse: 3 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiChallenge'),       plugin_index: { TransformResponse: 4, TransformRequest: 8 }},
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.SendOtoroshiHeadersBack'), plugin_index: { TransformResponse: 3 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiChallenge'), plugin_index: { TransformResponse: 4, TransformRequest: 8 } },
 
           ])
         }
-      }, 
+      },
       {
         config: {},
         config_flow: [],
@@ -1067,21 +1119,21 @@ class Designer extends React.Component {
         shortcut: () => {
           function findPlugin(id) {
             return plugins.filter(p => p.id === id)[0];
-          }      
+          }
           this.setNodes([
             // pre route
-            { enabled: true , ...findPlugin('cp:otoroshi.next.plugins.ForceHttpsTraffic'),       plugin_index: { PreRoute: 1 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.BuildMode'),               plugin_index: { PreRoute: 2 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.MaintenanceMode'),         plugin_index: { PreRoute: 3 }},
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.ForceHttpsTraffic'), plugin_index: { PreRoute: 1 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.BuildMode'), plugin_index: { PreRoute: 2 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.MaintenanceMode'), plugin_index: { PreRoute: 3 } },
             // validate access
-            { enabled: true , ...findPlugin('cp:otoroshi.next.plugins.DisableHttp10'),           plugin_index: { ValidateAccess: 0 }},
-            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.AuthModule'),               plugin_index: { ValidateAccess: 6 }},
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.DisableHttp10'), plugin_index: { ValidateAccess: 0 } },
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.AuthModule'), plugin_index: { ValidateAccess: 6 } },
             // TransformRequest
-            { enabled: false , ...findPlugin('cp:otoroshi.next.plugins.OverrideHost'),           plugin_index: { TransformRequest: 3 }},
-            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiInfos'),            plugin_index: { TransformRequest: 5 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OverrideHost'), plugin_index: { TransformRequest: 3 } },
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiInfos'), plugin_index: { TransformRequest: 5 } },
             // TransformResponse
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiChallenge'),       plugin_index: { TransformResponse: 4, TransformRequest: 8 }},
-            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.GzipResponseCompressor'),  plugin_index: { TransformResponse: 7 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiChallenge'), plugin_index: { TransformResponse: 4, TransformRequest: 8 } },
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.GzipResponseCompressor'), plugin_index: { TransformResponse: 7 } },
 
           ])
         }
@@ -1165,7 +1217,7 @@ class Designer extends React.Component {
               backends={backends}
             />
           ) : (
-            <div className="row h-100 p-2 me-1 flow-container">
+            <div className="row h-100 p-3 mx-1 flow-container">
               <Flow>
                 <div className="row" style={{ height: '100%' }}>
                   <InBoundFlow>
@@ -1427,8 +1479,8 @@ const UnselectedNode = ({ hideText, route, clearPlugins }) => {
             })}
           </div>
         </div>
-        <div style={{ marginTop: 50 }}>
-          <button type="button" className="btn btn-danger" onClick={clearPlugins}>
+        <div className='d-flex' style={{ marginTop: 50 }}>
+          <button type="button" className="ms-auto btn btn-sm btn-danger" onClick={clearPlugins}>
             <i className="fas fa-trash" /> clear plugins
           </button>
         </div>
@@ -1647,8 +1699,6 @@ function EditView({
 
     toggleJsonFormat(selectedNode.legacy || readOnly);
   }, [selectedNode.nodeId]);
-
-  console.log(form.value)
 
   const onValidate = (item) => {
     const newValue = unstringify(item);

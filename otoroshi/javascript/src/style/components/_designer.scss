@@ -25,8 +25,6 @@
     .h-100 {
         display: flex;
         min-height: calc(100vh - 135px);
-        padding-left: 0 !important;
-        padding-right: 0 !important;
     }
 
     .hide-overflow {
@@ -203,12 +201,12 @@
 
     .plugins-stack {
         -ms-overflow-style: none;
-        /* IE and Edge */
         scrollbar-width: none;
         max-height: 85vh;
         overflow-y: scroll;
     }
 
+    .plugins-stack-column::-webkit-scrollbar,
     .plugins-stack::-webkit-scrollbar {
         display: none;
     }
@@ -252,6 +250,9 @@
     }
 
     .plugins-stack-column {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+        overflow-y: scroll;
         max-height: calc(100vh - 135px);
         padding-left: 0;
         flex: 3;
@@ -324,7 +325,6 @@
 
     .flow-container {
         background: rgb(60, 60, 60);
-        border-radius: 4px;
     }
 
     .backend-selector {
@@ -464,5 +464,14 @@
         border-radius: 4px;
         margin-right: 4px;
         font-weight: bold;
+    }
+
+    .patch-main {
+        padding-right: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    .patch-row {
+        margin-right: 0 !important;
     }
 }

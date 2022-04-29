@@ -65,21 +65,21 @@ export default (props) => {
           if (query) {
             if (query === 'flow' && !isCreation)
               return (
-                <div className="designer row p-0">
+                <div className="designer row ps-3">
                   <Designer {...props} value={value} />
                 </div>
               );
 
             if (query === 'try-it')
               return (
-                <div className="designer row p-0">
+                <div className="designer row ps-3">
                   <TryIt route={value} />
                 </div>
               );
           }
 
           return (
-            <div className="designer row p-0">
+            <div className="designer row ps-3">
               <Informations {...props} isCreation={isCreation} value={value} />
             </div>
           );
