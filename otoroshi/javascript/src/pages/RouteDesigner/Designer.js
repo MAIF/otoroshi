@@ -141,7 +141,7 @@ const Hr = ({ highlighted = true, flex }) => (
 
 const FormContainer = ({ selectedNode, route, preview, showPreview, originalRoute, alertModal, ...props }) => <div
   className="col-sm-8 relative-container" style={{ paddingRight: 0 }}>
-  <UnselectedNode hideText={selectedNode} route={route} />
+  <UnselectedNode hideText={selectedNode} route={route} clearPlugins={props.clearPlugins} />
   {selectedNode && (
     <EditView
       {...props}
@@ -640,6 +640,56 @@ class Designer extends React.Component {
     )
   }
 
+  setNodes = (new_nodes) => {
+    const { nodes, plugins, route } = this.state
+    const newPlugins = [ ...plugins ];
+    let newNodes = [];
+    let newRoute = { ...route, plugins: [] };
+    new_nodes.filter(node => !!node).map(node => {
+      const nodeId = this.generateNewInternalNodeId(node.id)
+      const newNode = {
+        ...node,
+        nodeId,
+        plugin_index: node.plugin_index
+      };
+      newNodes = [ ...newNodes, newNode ];
+      newRoute = {
+        ...newRoute,
+        plugins: [
+          ...newRoute.plugins,
+          {
+            plugin_index: newNode.plugin_index,
+            nodeId: newNode.nodeId,
+            plugin: newNode.legacy ? LEGACY_PLUGINS_WRAPPER[newNode.pluginType] : newNode.id,
+            enabled: (node.enabled === false) ? false : true,
+            debug: node.debug || false,
+            include: node.include || [],
+            exclude: node.exclude || [],
+            config: {
+              ...newNode.config,
+              plugin: newNode.legacy ? newNode.id : undefined,
+            }
+          }
+        ]
+      }
+    });
+    // console.log(newRoute);
+    this.setState(
+      {
+        selectedNode: null,
+        nodes: newNodes,
+        route: newRoute,
+        plugins: newPlugins.map(p => ({
+          ...p,
+          selected: false
+        }))
+      },
+      () => {
+        this.saveChanges({ ...newRoute }).then(() => console.log("pattern added "));
+      }
+    )
+  }
+
   swap = (node, step, offset) => {
     const { nodeId } = node
 
@@ -910,7 +960,7 @@ class Designer extends React.Component {
         config_schema: {},
         default_config: {},
         description: "Add all the plugins you would find in a classic service descriptor",
-        id: "cp:otoroshi.next.plugins.ClassicPluginsPatterns",
+        id: "cp:otoroshi.next.plugins.ClassicPluginsPattern",
         name: "Classic plugins",
         on_request: false,
         on_response: false,
@@ -923,8 +973,8 @@ class Designer extends React.Component {
         shortcut: () => {
           function findPlugin(id) {
             return plugins.filter(p => p.id === id)[0];
-          }
-          this.addNodes([
+          }      
+          this.setNodes([
             // pre route
             { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.Redirection'), plugin_index: { PreRoute: 0 } },
             { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.ForceHttpsTraffic'), plugin_index: { PreRoute: 1 } },
@@ -964,9 +1014,9 @@ class Designer extends React.Component {
         config_flow: [],
         config_schema: {},
         default_config: {},
-        description: "Clear all plugins",
-        id: "cp:otoroshi.next.plugins.ClearPluginsPatterns",
-        name: "Clear plugins",
+        description: "Add all the plugins you need to expose an api",
+        id: "cp:otoroshi.next.plugins.ExposeApiPattern",
+        name: "Expose an API",
         on_request: false,
         on_response: false,
         plugin_categories: ['Patterns'],
@@ -976,9 +1026,85 @@ class Designer extends React.Component {
         plugin_type: "ng",
         plugin_visibility: "userland",
         shortcut: () => {
-          this.clearPlugins();
+          function findPlugin(id) {
+            return plugins.filter(p => p.id === id)[0];
+          }      
+          this.setNodes([
+            // pre route
+            { enabled: true , ...findPlugin('cp:otoroshi.next.plugins.ForceHttpsTraffic'),       plugin_index: { PreRoute: 1 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.Cors'),                    plugin_index: { PreRoute: 4, TransformResponse: 6 }},
+            // validate access
+            { enabled: true , ...findPlugin('cp:otoroshi.next.plugins.DisableHttp10'),           plugin_index: { ValidateAccess: 0 }},
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.ApikeyCalls'),              plugin_index: { ValidateAccess: 4, MatchRoute: 0, TransformRequest: 7 }},
+            // TransformRequest
+            { enabled: false , ...findPlugin('cp:otoroshi.next.plugins.OverrideHost'),           plugin_index: { TransformRequest: 3 }},
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.XForwardedHeaders'),        plugin_index: { TransformRequest: 4 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiInfos'),           plugin_index: { TransformRequest: 5 }},
+            // TransformResponse
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.SendOtoroshiHeadersBack'),  plugin_index: { TransformResponse: 3 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiChallenge'),       plugin_index: { TransformResponse: 4, TransformRequest: 8 }},
+
+          ])
         }
-      }
+      }, 
+      {
+        config: {},
+        config_flow: [],
+        config_schema: {},
+        default_config: {},
+        description: "Add all the plugins you need to expose a webapp with authentication",
+        id: "cp:otoroshi.next.plugins.AuthWebappPattern",
+        name: "Expose webapp with auth.",
+        on_request: false,
+        on_response: false,
+        plugin_categories: ['Patterns'],
+        plugin_multi_inst: false,
+        plugin_steps: [],
+        plugin_tags: [],
+        plugin_type: "ng",
+        plugin_visibility: "userland",
+        shortcut: () => {
+          function findPlugin(id) {
+            return plugins.filter(p => p.id === id)[0];
+          }      
+          this.setNodes([
+            // pre route
+            { enabled: true , ...findPlugin('cp:otoroshi.next.plugins.ForceHttpsTraffic'),       plugin_index: { PreRoute: 1 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.BuildMode'),               plugin_index: { PreRoute: 2 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.MaintenanceMode'),         plugin_index: { PreRoute: 3 }},
+            // validate access
+            { enabled: true , ...findPlugin('cp:otoroshi.next.plugins.DisableHttp10'),           plugin_index: { ValidateAccess: 0 }},
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.AuthModule'),               plugin_index: { ValidateAccess: 6 }},
+            // TransformRequest
+            { enabled: false , ...findPlugin('cp:otoroshi.next.plugins.OverrideHost'),           plugin_index: { TransformRequest: 3 }},
+            { enabled: true, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiInfos'),            plugin_index: { TransformRequest: 5 }},
+            // TransformResponse
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.OtoroshiChallenge'),       plugin_index: { TransformResponse: 4, TransformRequest: 8 }},
+            { enabled: false, ...findPlugin('cp:otoroshi.next.plugins.GzipResponseCompressor'),  plugin_index: { TransformResponse: 7 }},
+
+          ])
+        }
+      },
+      // {
+      //   config: {},
+      //   config_flow: [],
+      //   config_schema: {},
+      //   default_config: {},
+      //   description: "Clear all plugins",
+      //   id: "cp:otoroshi.next.plugins.ClearPluginsPattern",
+      //   name: "Clear plugins",
+      //   on_request: false,
+      //   on_response: false,
+      //   plugin_categories: ['Patterns'],
+      //   plugin_multi_inst: false,
+      //   plugin_steps: [],
+      //   plugin_tags: [],
+      //   plugin_type: "ng",
+      //   plugin_visibility: "userland",
+      //   shortcut: () => {
+      //     this.clearPlugins();
+      //   }
+      // }
     ];
 
     return <Loader loading={loading} >
@@ -1077,6 +1203,7 @@ class Designer extends React.Component {
                 />
               </Flow>
               <FormContainer
+                clearPlugins={this.clearPlugins}
                 selectedNode={selectedNode}
                 route={route}
                 saveChanges={this.saveChanges}
@@ -1228,7 +1355,7 @@ const read = (value, path) => {
   return read(value[keys[0]], keys.slice(1).join('.'));
 };
 
-const UnselectedNode = ({ hideText, route }) => {
+const UnselectedNode = ({ hideText, route, clearPlugins }) => {
   if (route && route.frontend && route.backend && !hideText) {
     const frontend = route.frontend;
     const backend = route.backend;
@@ -1298,6 +1425,11 @@ const UnselectedNode = ({ hideText, route }) => {
               );
             })}
           </div>
+        </div>
+        <div style={{ marginTop: 50 }}>
+          <button type="button" className="btn btn-danger" onClick={clearPlugins}>
+            <i className="fas fa-trash" /> clear plugins
+          </button>
         </div>
       </>
     );
