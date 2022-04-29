@@ -300,6 +300,16 @@
         padding: 0 12px 12px;
     }
 
+    .editor-view-form button:first-child {
+        color: #fff;
+        border: 1px solid;
+        border-color: #5cb85c;
+        background: none;
+        padding: 0.25rem 0.5rem;
+        font-size: .875rem;
+        border-radius: 0.2rem;
+    }
+
     .editor-view {
         position: absolute;
         z-index: 100;
