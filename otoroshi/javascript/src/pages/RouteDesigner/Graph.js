@@ -51,9 +51,7 @@ export const DEFAULT_FLOW = {
     icon: 'user',
     plugin_steps: ['PreRoute'],
     description: 'Exposition',
-    default: true,
     field: 'frontend',
-    onInputStream: true,
     config_schema: {
       domains: {
         type: type.string,
@@ -63,58 +61,34 @@ export const DEFAULT_FLOW = {
     },
     config_flow: ['domains', 'strip_path', 'exact', 'headers', 'methods', 'query'],
   },
-  Backend: {
+  Backend: parentNode => ({
     id: 'Backend',
     icon: 'bullseye',
     group: 'Targets',
-    default: true,
-    onTargetStream: true,
     field: 'backend',
     config_schema: (generatedSchema) => ({
       ...generatedSchema,
       targets: {
         ...generatedSchema.targets,
-        onAfterChange: ({ setValue, entry, previousValue, value, getValue }) => {
-          if (value && previousValue) {
-            const target = value.custom_target;
+        onAfterChange: ({ setValue, entry, getValue }) => {
+          let port = getValue(`${entry}.port`)
+          port = port ? `:${port}` : ''
+          const hostname = getValue(`${entry}.hostname`) || ''
+          const isSecured = getValue(`${entry}.tls`)
 
-            if (target && previousValue.custom_target && target !== previousValue.custom_target) {
-              const parts = target.split('://');
-
-              if (parts.length > 1) {
-                const afterScheme = parts[1];
-                const afterSchemeParts = afterScheme.split('/');
-
-                const hostname = afterSchemeParts.shift();
-                setValue(`${entry}.hostname`, hostname);
-
-                const pathname = '/' + afterSchemeParts.join('/');
-                setValue('plugin.root', pathname);
-              }
-            } else if (value.hostname !== previousValue.hostname) {
-              const parts = (target || '').split('://');
-              const scheme = parts.length > 1 ? `${parts[0]}://` : '';
-              const hostname = value.hostname || '';
-              setValue(`${entry}.custom_target`, `${scheme}${hostname}`);
-            }
-          } else {
-            const port = getValue(`${entry}.port`);
-            const hostname = getValue(`${entry}.hostname`);
-            const root = getValue('plugin.root');
-            if (port && hostname && root) {
-              // console.log(`http${port === 443 ? 's' : ''}://${hostname}${root}`);
-              setValue(
-                `${entry}.custom_target`,
-                `http${port === 443 ? 's' : ''}://${hostname}${root}`
-              );
-            }
-          }
+          setValue(
+            `${entry}.custom_target`,
+            `${isSecured ? 'HTTPS' : 'HTTP'}@${hostname}@${port}`
+          );
         },
         schema: {
           custom_target: {
             label: 'Target',
             type: 'string',
-            constraints: [{ type: 'required' }],
+            disabled: true,
+            render: ({ value }) => <div className='d-flex'>
+              {value.split('@').map((v, i) => <span className="target_information" key={i}>{v}</span>)}
+            </div>
           },
           expert_mode: {
             type: 'bool',
@@ -139,7 +113,7 @@ export const DEFAULT_FLOW = {
                 {
                   ...value,
                   visible: {
-                    ref: 'plugin',
+                    ref: parentNode,
                     test: (v, idx) => !!v.targets[idx]?.value?.expert_mode
                   },
                 },
@@ -149,7 +123,7 @@ export const DEFAULT_FLOW = {
           hostname: {
             ...generatedSchema.targets.schema.hostname,
             visible: {
-              ref: 'plugin',
+              ref: parentNode,
               test: (v, idx) => !!v.targets[idx]?.value?.expert_mode,
             },
             constraints: [
@@ -173,5 +147,5 @@ export const DEFAULT_FLOW = {
       'rewrite',
       'load_balancing',
     ],
-  },
+  })
 };

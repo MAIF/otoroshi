@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom'
 import { useParams, useLocation } from 'react-router';
 import {
   nextClient,
@@ -21,7 +22,7 @@ import { merge, snakeCase, camelCase, isEqual } from 'lodash';
 const HeaderNode = ({ selectedNode, text, icon }) => <Dot selectedNode={selectedNode}>
   <div className='flex-column p-1'>
     <i className={`fas fa-arrow-${icon}`} style={{ color: '#fff' }} />
-    <span>{text}</span>
+    <span style={{ color: '#fff' }}>{text}</span>
   </div>
 </Dot>
 
@@ -390,12 +391,12 @@ class Designer extends React.Component {
           nodeId: 'Frontend'
         },
         backend: {
-          ...DEFAULT_FLOW.Backend,
+          ...DEFAULT_FLOW.Backend('plugin'),
           ...backendForm,
           config_schema: toUpperCaseLabels(
-            DEFAULT_FLOW.Backend.config_schema(backendForm.schema)
+            DEFAULT_FLOW.Backend('plugin').config_schema(backendForm.schema)
           ),
-          config_flow: DEFAULT_FLOW.Backend.config_flow,
+          config_flow: DEFAULT_FLOW.Backend('plugin').config_flow,
           nodeId: 'Backend'
         }
       })
@@ -1625,12 +1626,15 @@ function EditView({
           />}
         />}
       </div>}
-      {!notOnBackendNode && <div className="p-3">
+      {!notOnBackendNode && <div className="d-flex justify-content-end p-3">
         <FeedbackButton
           text="Update the plugin"
           icon={() => <i className="fas fa-paper-plane" />}
           onPress={saveChanges}
         />
+        {route.backend_ref && <Link className='btn btn-sm btn-success ms-2' to={`/backends/${route.backend_ref}/`}>
+          Edit this backend
+        </Link>}
       </div>}
     </div>
   </div>

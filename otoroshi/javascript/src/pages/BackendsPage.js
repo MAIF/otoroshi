@@ -5,6 +5,8 @@ import { Table } from '../components/inputs';
 import { Location } from '../components/Location';
 import { Form, format, type } from '@maif/react-forms';
 import { toUpperCaseLabels } from '../util';
+import { FeedbackButton } from './RouteDesigner/FeedbackButton';
+import { DEFAULT_FLOW } from './RouteDesigner/Graph';
 
 export const BackendsPage = ({ setTitle }) => {
   const params = useParams();
@@ -23,7 +25,7 @@ export const BackendsPage = ({ setTitle }) => {
         formFlow={null}
         columns={[{ title: 'Name', content: (item) => item.name }]}
         fetchItems={() => nextClient.find(nextClient.ENTITIES.BACKENDS)}
-        deleteItem={() => nextClient.remove(nextClient.ENTITIES.BACKENDS)}
+        deleteItem={item => nextClient.remove(nextClient.ENTITIES.BACKENDS, item)}
         showActions={true}
         showLink={false}
         extractKey={(item) => item.id}
@@ -74,8 +76,9 @@ export const BackendsPage = ({ setTitle }) => {
   );
 };
 
-export const BackendForm = ({ isCreation, value, onSubmit, foldable, hideActionButton, style = {} }) => {
+export const BackendForm = ({ isCreation, value, foldable, style = {} }) => {
   const ref = useRef();
+  const history = useHistory();
   const [show, setShow] = useState(!foldable);
 
   const [form, setForm] = useState({
@@ -95,12 +98,6 @@ export const BackendForm = ({ isCreation, value, onSubmit, foldable, hideActionB
     description: {
       label: 'Description',
       type: type.string,
-    },
-    backend: {
-      label: 'Backend',
-      help: '',
-      type: type.object,
-      format: format.form,
     },
     metadata: {
       type: type.object,
@@ -152,24 +149,26 @@ export const BackendForm = ({ isCreation, value, onSubmit, foldable, hideActionB
     },
   ];
 
+  // TODO - surcharger le schema du backend pour pas que ça pointe tout le temps sur plugin. mais backend.
+
   useEffect(() => {
     nextClient.form(nextClient.ENTITIES.BACKENDS).then((res) => {
-      const formSchema = toUpperCaseLabels(res.schema);
-      const formFlow = res.flow
-
       setForm({
         schema: {
           ...schema,
           backend: {
-            ...schema.backend,
-            schema: formSchema,
-            flow: formFlow,
+            type: 'object',
+            format: 'form',
+            schema: toUpperCaseLabels(DEFAULT_FLOW.Backend('backend').config_schema(res.schema)),
+            flow: DEFAULT_FLOW.Backend('backend').config_flow,
           },
         },
-        flow,
+        flow
       });
     });
   }, []);
+
+  console.log(form, value)
 
   return (
     <div
@@ -195,21 +194,30 @@ export const BackendForm = ({ isCreation, value, onSubmit, foldable, hideActionB
             flow={form.flow}
             value={value}
             ref={ref}
-            onSubmit={(item) => {
-              if (isCreation)
-                nextClient
-                  .create(nextClient.ENTITIES.BACKENDS, item)
-                  .then(() => history.push(`/backends`));
-              else nextClient.update(nextClient.ENTITIES.BACKENDS, item);
-            }}
             onError={(e) => console.log(e)}
-            footer={() => null}
+            onSubmit={() => { }}
+            footer={() => <FeedbackButton
+              className="d-flex ms-auto my-3"
+              text={isCreation ? 'Create the backend' : 'Update the backend'}
+              icon={() => <i className="fas fa-paper-plane" />}
+              onPress={() => ref.current.trigger()
+                .then(res => {
+                  if (res) {
+                    if (isCreation)
+                      nextClient
+                        .create(nextClient.ENTITIES.BACKENDS, ref.current.methods.data())
+                        .then(() => history.push(`/backends`));
+                    else
+                      nextClient.update(nextClient.ENTITIES.BACKENDS, ref.current.methods.data())
+                        .then(r => {
+                          if (r.error)
+                            throw r.error_description
+                        })
+                  } else
+                    throw ""
+                })}
+            />}
           />
-          {!hideActionButton && <button
-            className="btn btn-success btn-block mt-3"
-            onClick={() => ref.current.handleSubmit()}>
-            {isCreation ? 'Create the backend' : 'Update the backend'}
-          </button>}
         </>
       )}
     </div>
