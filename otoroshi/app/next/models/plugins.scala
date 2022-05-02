@@ -23,6 +23,7 @@ case class PluginIndex(
   transformResponse: Option[Int] = None,
   matchRoute: Option[Int] = None,
   handlesTunnel: Option[Int] = None,
+  callBackend: Option[Int] = None,
 ) {
   def json: JsValue = PluginIndex.format.writes(this)
 }
@@ -38,6 +39,7 @@ object PluginIndex {
         transformResponse = json.select("transform_response").asOpt[Int],
         matchRoute = json.select("match_route").asOpt[Int],
         handlesTunnel = json.select("handles_tunnel").asOpt[Int],
+        callBackend = json.select("call_backend").asOpt[Int],
       )
     } match {
       case Failure(e) => JsError(e.getMessage())
@@ -434,4 +436,22 @@ case class NgContextualPlugins(
     val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.handlesTunnel.isDefined))
     plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.handlesTunnel.get.compareTo(b.instance.pluginIndex.get.handlesTunnel.get) < 0) ++ plsWithoutIndex
   }
+
+  lazy val hasTunnelHandlerPlugin = tunnelHandlerPlugins.nonEmpty
+  lazy val tunnelHandlerPlugin = tunnelHandlerPlugins.head
+  lazy val tunnelHandlerPluginOption = tunnelHandlerPlugins.headOption
+
+  lazy val backendCallPlugins = {
+    val pls = allPlugins
+      .map(inst => (inst, inst.getPlugin[NgBackendCall]))
+      .collect { case (inst, Some(plugin)) =>
+        NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+      }
+    val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.callBackend.isDefined))
+    plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.callBackend.get.compareTo(b.instance.pluginIndex.get.callBackend.get) < 0) ++ plsWithoutIndex
+  }
+
+  lazy val hasBackendCallPlugin = backendCallPlugins.nonEmpty
+  lazy val backendCallPlugin = backendCallPlugins.head
+  lazy val backendCallPluginOption = backendCallPlugins.headOption
 }

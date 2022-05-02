@@ -6,34 +6,28 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.models.NgTarget
 import otoroshi.next.plugins.api._
+import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
-import play.api.mvc.Result
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Either
 
-class Http2Caller extends NgRequestTransformer {
+class Http2Caller extends NgBackendCall {
 
-  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def useDelegates: Boolean             = false
+  override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgInternal
-
   override def multiInstance: Boolean            = false
-  override def isTransformRequestAsync: Boolean  = true
-  override def isTransformResponseAsync: Boolean = true
-
-  override def transformsRequest: Boolean  = true
-  override def transformsResponse: Boolean = true
 
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
-  override def transformRequest(
-      ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
-    val hasBody = ctx.request.theHasBody
-    val bodyF   = if (hasBody) ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _) else ByteString.empty.vfuture
-    bodyF.map { bodyRaw =>
+  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val hasBody = ctx.rawRequest.theHasBody
+    val bodyF   = if (hasBody) ctx.request.body.runFold(ByteString.empty)(_ ++ _) else ByteString.empty.vfuture
+    bodyF.flatMap { bodyRaw =>
       val target = NgTarget(
         id = "http2-client-proxy",
         hostname = "127.0.0.1",
@@ -45,10 +39,10 @@ class Http2Caller extends NgRequestTransformer {
       val base64body = bodyRaw.decodeBase64
       val body       = Json
         .obj(
-          "method"  -> ctx.otoroshiRequest.method,
-          "url"     -> ctx.otoroshiRequest.url,
-          "headers" -> ctx.otoroshiRequest.headers, // TODO: add cookies
-          "target"  -> ctx.otoroshiRequest.backend
+          "method"  -> ctx.request.method,
+          "url"     -> ctx.request.url,
+          "headers" -> ctx.request.headers, // TODO: add cookies
+          "target"  -> ctx.request.backend
             .map(b =>
               b.json.asObject.applyOn { obj =>
                 val tls_config = b.tlsConfig.copy(
@@ -72,36 +66,20 @@ class Http2Caller extends NgRequestTransformer {
         }
         .stringify
         .byteString
-      val newRequest = ctx.otoroshiRequest.copy(
-        url = s"http://127.0.0.1:${env.http2ClientProxyPort}/http2_request",
-        method = "POST",
-        headers = Map(
+      env.Ws
+        .url(s"http://127.0.0.1:${env.http2ClientProxyPort}/http2_request")
+        .withMethod("POST")
+        .withHttpHeaders(
           "Host"           -> "127.0.0.1:8555",
           "Content-Type"   -> "application/json",
           "Content-Length" -> (body.size - 0).toString
-        ),
-        cookies = Seq.empty,
-        version = ctx.otoroshiRequest.version,
-        clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain,
-        backend = Some(target),
-        body = Source(body.grouped(16 * 1024).toList)
-      )
-      newRequest.right
-    }
-  }
-
-  override def transformResponse(
-      ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
-    ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-      val body    = Json.parse(bodyRaw.utf8String)
-      val bodyOut = ByteString(body.select("body").asString).decodeBase64
-      NgPluginHttpResponse(
-        status = body.select("status").asInt,
-        headers = body.select("headers").as[Map[String, String]],
-        cookies = Seq.empty, // TODO: handle cookies
-        body = Source(bodyOut.grouped(16 * 1024).toList)
-      ).right
+        )
+        .withBody(Source(body.grouped(16 * 1024).toList))
+        .execute().map { resp =>
+          val body    = resp.json
+          val bodyOut = ByteString(body.select("body").asString).decodeBase64
+          bodyResponse(body.select("status").asInt, body.select("headers").as[Map[String, String]], Source(bodyOut.grouped(16 * 1024).toList))
+        }
     }
   }
 }

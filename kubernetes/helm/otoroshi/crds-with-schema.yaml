@@ -993,20 +993,20 @@ spec:
                 type: "object"
                 properties:
                   excludedPatterns:
-                    description: "???"
+                    description: "Excluded paths"
                     type: "array"
                     items:
                       type: "string"
                   refs:
-                    description: "???"
+                    description: "Enabled plugins"
                     type: "array"
                     items:
                       type: "string"
                   config:
-                    description: "???"
+                    description: "pre-routing plugins configuration"
                     type: "object"
                   enabled:
-                    description: "???"
+                    description: "pre-routing plugins enabled"
                     type: "boolean"
               canary:
                 description: "Canary settings"
@@ -1822,20 +1822,20 @@ spec:
                 type: "object"
                 properties:
                   excludedPatterns:
-                    description: "???"
+                    description: "Excluded paths"
                     type: "array"
                     items:
                       type: "string"
                   refs:
-                    description: "???"
+                    description: "Enabled plugins"
                     type: "array"
                     items:
                       type: "string"
                   config:
-                    description: "???"
+                    description: "Access validator plugins configuration"
                     type: "object"
                   enabled:
-                    description: "???"
+                    description: "Access validator plugins enabled"
                     type: "boolean"
 ---
 apiVersion: "apiextensions.k8s.io/v1"
@@ -4902,8 +4902,7 @@ spec:
     schema:
       openAPIV3Schema:
         type: "object"
-        description: "A routing primitive representing how a request is matched and\
-          \ where the request is forwarded"
+        description: "???"
         properties:
           apiVersion:
             description: "APIVersion defines the versioned schema of this representation\
@@ -4919,27 +4918,26 @@ spec:
             type: "object"
           spec:
             type: "object"
-            description: "A routing primitive representing how a request is matched\
-              \ and where the request is forwarded"
+            description: "???"
             properties:
               metadata:
                 type: "object"
                 additionalProperties:
                   type: "string"
-                description: "The metadata of the route"
+                description: "???"
               backend_ref:
-                description: "The backend id of the route (if one)"
+                description: "???"
                 type: "string"
               groups:
                 type: "array"
                 items:
                   type: "string"
-                description: "The groups of the route"
+                description: "???"
               description:
-                description: "The description of the route"
+                description: "???"
                 type: "string"
               _loc:
-                description: "The location of the route"
+                description: "???"
                 type: "object"
                 properties:
                   teams:
@@ -4951,25 +4949,24 @@ spec:
                     description: "Organization of the current entity"
                     type: "string"
               enabled:
-                description: "Is the route enabled"
+                description: "???"
                 type: "boolean"
               export_reporting:
-                description: "Export the execution reporting through standard data\
-                  \ exporter"
+                description: "???"
                 type: "boolean"
               tags:
                 type: "array"
                 items:
                   type: "string"
-                description: "The tags of the route"
+                description: "???"
               debug_flow:
-                description: "Enable report debugging"
+                description: "???"
                 type: "boolean"
               name:
-                description: "The name of the route"
+                description: "???"
                 type: "string"
               backend:
-                description: "The backend of the route"
+                description: "???"
                 type: "object"
                 properties:
                   target_refs:
@@ -5207,10 +5204,10 @@ spec:
                         type: "number"
                         format: "double"
               id:
-                description: "The ud of the route"
+                description: "???"
                 type: "string"
               frontend:
-                description: "The frontend of the route"
+                description: "???"
                 type: "object"
                 properties:
                   headers:
@@ -5749,7 +5746,7 @@ spec:
     schema:
       openAPIV3Schema:
         type: "object"
-        description: "???"
+        description: "An otoroshi plugins stored as scala code in the otoroshi datastore"
         properties:
           apiVersion:
             description: "APIVersion defines the versioned schema of this representation\
@@ -5765,27 +5762,28 @@ spec:
             type: "object"
           spec:
             type: "object"
-            description: "???"
+            description: "An otoroshi plugins stored as scala code in the otoroshi\
+              \ datastore"
             properties:
               metadata:
                 type: "object"
                 additionalProperties:
                   type: "string"
-                description: "???"
+                description: "Entity metadata"
               code:
-                description: "???"
+                description: "The code of the script"
                 type: "string"
               name:
-                description: "???"
+                description: "The name of the script"
                 type: "string"
               id:
-                description: "???"
+                description: "The id of the script"
                 type: "string"
               type:
                 description: "Plugin kind"
                 type: "string"
               _loc:
-                description: "???"
+                description: "Entity location"
                 type: "object"
                 properties:
                   teams:
@@ -5800,7 +5798,7 @@ spec:
                 type: "array"
                 items:
                   type: "string"
-                description: "???"
+                description: "Entity tags"
               desc:
-                description: "???"
+                description: "The description of the script"
                 type: "string"

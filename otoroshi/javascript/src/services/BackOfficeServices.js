@@ -1822,6 +1822,7 @@ export const nextClient = {
   update: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
   fetch: (entity, entityId) => fetchWrapper(`/${entity}/${entityId}`),
   remove: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'DELETE'),
+  deleteById: (entity, id) => fetchWrapper(`/${entity}/${id}`, 'DELETE'),
   template: (entity) => fetchWrapper(`/${entity}/_template`),
   form: (entity) => fetchWrapper(`/${entity}/_form`),
 };

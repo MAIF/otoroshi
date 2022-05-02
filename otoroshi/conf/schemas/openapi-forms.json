@@ -28060,39 +28060,6 @@
     },
     "flow" : [ "id" ]
   },
-  "otoroshi.next.plugins.GraphQLQueryConfig" : {
-    "schema" : {
-      "headers" : {
-        "label" : "headers",
-        "type" : "object"
-      },
-      "method" : {
-        "label" : "method",
-        "type" : "string"
-      },
-      "query" : {
-        "label" : "query",
-        "type" : "string"
-      },
-      "response_filter" : {
-        "label" : "response_filter",
-        "type" : "string"
-      },
-      "response_path" : {
-        "label" : "response_path",
-        "type" : "string"
-      },
-      "url" : {
-        "label" : "url",
-        "type" : "string"
-      },
-      "timeout" : {
-        "label" : "timeout",
-        "type" : "number"
-      }
-    },
-    "flow" : [ "headers", "method", "query", "response_filter", "response_path", "url", "timeout" ]
-  },
   "otoroshi.script.plugins.Plugins" : {
     "schema" : {
       "config" : {

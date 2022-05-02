@@ -49,8 +49,8 @@ export const DEFAULT_FLOW = {
   Frontend: {
     id: 'Frontend',
     icon: 'user',
-    plugin_steps: ['PreRoute'],
-    description: 'Exposition',
+    plugin_steps: [],
+    description: null,
     field: 'frontend',
     config_schema: {
       domains: {

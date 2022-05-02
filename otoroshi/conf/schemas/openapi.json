@@ -17164,7 +17164,7 @@
         "properties" : { }
       },
       "otoroshi.next.models.NgRouteDataStore" : {
-        "description" : "???",
+        "description" : "The datastore for routes",
         "type" : "object",
         "properties" : { }
       },
@@ -19498,7 +19498,7 @@
         "properties" : { }
       },
       "otoroshi.next.plugins.GraphQLQueryConfig" : {
-        "description" : "???",
+        "description" : "Configuration for the GraphQLQuery plugin",
         "type" : "object",
         "properties" : {
           "response_path" : {
@@ -19507,10 +19507,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The optional json path to select in response"
           },
           "url" : {
-            "description" : "???",
+            "description" : "URL of the graphql endpoint",
             "type" : "string"
           },
           "response_filter" : {
@@ -19519,26 +19519,26 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "JQ filter applied on the response"
           },
           "headers" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Headers to pass to the graphql call"
           },
           "timeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Timeout for the call (in ms)",
             "type" : "integer"
           },
           "query" : {
-            "description" : "???",
+            "description" : "Graphql query to pass to the graphql call",
             "type" : "string"
           },
           "method" : {
-            "description" : "???",
+            "description" : "Method for the graphql call",
             "type" : "string"
           }
         }
@@ -21278,27 +21278,27 @@
         "properties" : { }
       },
       "otoroshi.next.models.NgRoute" : {
-        "description" : "???",
+        "description" : "A routing primitive representing how a request is matched and where the request is forwarded",
         "type" : "object",
         "properties" : {
           "debug_flow" : {
-            "description" : "???",
+            "description" : "Enable report debugging",
             "type" : "boolean"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "Is the route enabled",
             "type" : "boolean"
           },
           "name" : {
-            "description" : "???",
+            "description" : "The name of the route",
             "type" : "string"
           },
           "id" : {
-            "description" : "???",
+            "description" : "The ud of the route",
             "type" : "string"
           },
           "export_reporting" : {
-            "description" : "???",
+            "description" : "Export the execution reporting through standard data exporter",
             "type" : "boolean"
           },
           "metadata" : {
@@ -21306,14 +21306,14 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The metadata of the route"
           },
           "frontend" : {
-            "description" : "???",
+            "description" : "The frontend of the route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgFrontend"
           },
           "_loc" : {
-            "description" : "???",
+            "description" : "The location of the route",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "tags" : {
@@ -21321,14 +21321,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The tags of the route"
           },
           "groups" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "The groups of the route"
           },
           "backend_ref" : {
             "oneOf" : [ {
@@ -21336,14 +21336,14 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The backend id of the route (if one)"
           },
           "description" : {
-            "description" : "???",
+            "description" : "The description of the route",
             "type" : "string"
           },
           "backend" : {
-            "description" : "???",
+            "description" : "The backend of the route",
             "$ref" : "#/components/schemas/otoroshi.next.models.NgBackend"
           }
         }
@@ -23834,7 +23834,7 @@
         "properties" : { }
       },
       "otoroshi.next.plugins.GraphQLQuery" : {
-        "description" : "???",
+        "description" : "Plugin to read data from GraphQL endpoints",
         "type" : "object",
         "properties" : {
           "response_path" : {
@@ -23843,10 +23843,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The optional json path to select in response"
           },
           "url" : {
-            "description" : "???",
+            "description" : "URL of the graphql endpoint",
             "type" : "string"
           },
           "response_filter" : {
@@ -23855,26 +23855,26 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "JQ filter applied on the response"
           },
           "headers" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Headers to pass to the graphql call"
           },
           "timeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Timeout for the call (in ms)",
             "type" : "integer"
           },
           "query" : {
-            "description" : "???",
+            "description" : "Graphql query to pass to the graphql call",
             "type" : "string"
           },
           "method" : {
-            "description" : "???",
+            "description" : "Method for the graphql call",
             "type" : "string"
           }
         }
