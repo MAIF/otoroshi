@@ -1,12 +1,15 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { Form, type, constraints, format } from '@maif/react-forms';
 import { Location } from '../../components/Location';
 import { nextClient } from '../../services/BackOfficeServices';
 import { useHistory } from 'react-router-dom';
+import { useEntityFromURI } from '../../util';
 
-export const Informations = (props) => {
+export const Informations = ({ isCreation, value, setValue }) => {
   const ref = useRef();
   const history = useHistory();
+
+  const { capitalize, lowercase, fetchName, link } = useEntityFromURI()
 
   const schema = {
     id: {
@@ -15,9 +18,9 @@ export const Informations = (props) => {
     },
     name: {
       type: type.string,
-      label: 'Route name',
-      placeholder: 'Your route name',
-      help: 'The name of your route. Only for debug and human readability purposes.',
+      label: `${capitalize} name`,
+      placeholder: `Your ${lowercase} name`,
+      help: `The name of your ${lowercase}. Only for debug and human readability purposes.`,
       constraints: [constraints.required()],
     },
     enabled: {
@@ -105,30 +108,35 @@ export const Informations = (props) => {
         schema={schema}
         flow={flow}
         value={
-          props.isCreation
+          isCreation
             ? {
-                ...props.value,
-                name: '',
-                description: '',
-              }
-            : props.value
+              ...value,
+              name: '',
+              description: '',
+            }
+            : value
         }
         ref={ref}
         onSubmit={(item) => {
-          if (props.isCreation)
+          if (isCreation) {
             nextClient
-              .create(nextClient.ENTITIES.ROUTES, item)
-              .then(() => history.push(`/routes/${item.id}?tab=flow`));
-          else nextClient.update(nextClient.ENTITIES.ROUTES, item);
+              .create(nextClient.ENTITIES[fetchName], item)
+              .then(() => history.push(`/${link}/${item.id}?tab=flow`));
+          } else
+            nextClient.update(nextClient.ENTITIES[fetchName], item)
+              .then(res => {
+                if (!res.error)
+                  setValue(res)
+              })
         }}
         footer={() => null}
       />
       <div className="d-flex align-items-center justify-content-end mt-3">
-        <button className="btn btn-sm btn-danger" onClick={() => history.push('/routes')}>
+        <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${link}`)}>
           Cancel
         </button>
         <button className="btn btn-sm btn-save ms-1" onClick={() => ref.current.handleSubmit()}>
-          {props.isCreation ? 'Create the route' : 'Update the route'}
+          {isCreation ? `Create the ${lowercase}` : `Update the ${lowercase}`}
         </button>
       </div>
     </div>

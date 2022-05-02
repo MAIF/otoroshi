@@ -8,7 +8,7 @@ import moment from 'moment';
 
 import { OtoDatePicker } from '../components/datepicker';
 
-import DesignerSidebar from './RouteDesigner/DesignerSidebar'
+import DesignerSidebar from './RouteDesigner/Sidebar'
 
 export class ServiceAnalyticsPage extends Component {
   state = {

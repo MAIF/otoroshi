@@ -6,7 +6,7 @@ import { ServiceSidebar } from '../components/ServiceSidebar';
 import faker from 'faker';
 import { Restrictions } from '../components/Restrictions';
 
-import DesignerSidebar from './RouteDesigner/DesignerSidebar'
+import DesignerSidebar from './RouteDesigner/Sidebar'
 
 const Both = ({ label, rawValue }) => (
   <div className="row mb-3">

@@ -41,7 +41,6 @@ import { TcpServicesPage } from '../pages/TcpServicesPage';
 import { ProvidersDashboardPage } from '../pages/ProvidersDashboardPage';
 import { ResourceLoaderPage } from '../pages/ResourceLoaderPage';
 import RouteDesignerPage from '../pages/RouteDesigner';
-import { RoutesPage } from '../pages/RoutesDesigner';
 import { BackendsPage } from '../pages/BackendsPage';
 
 import { TopBar } from '../components/TopBar';
@@ -259,7 +258,7 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/unnamed"
                           component={(props) => (
-                            <RoutesPage
+                            <RouteDesignerPage
                               globalEnv={this.state.env}
                               setTitle={(t) => DynamicTitle.setContent(t)}
                               getTitle={() => DynamicTitle.getContent()}

@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import { LiveStatTiles } from '../components/LiveStatTiles';
-import DesignerSidebar from './RouteDesigner/DesignerSidebar'
+import DesignerSidebar from './RouteDesigner/Sidebar'
 
 export class ServiceLiveStatsPage extends Component {
   state = {

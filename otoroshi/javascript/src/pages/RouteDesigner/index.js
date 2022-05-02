@@ -2,90 +2,96 @@ import React, { useEffect, useState } from 'react';
 import { Route, Switch, useLocation, useParams, useRouteMatch } from 'react-router-dom';
 import { nextClient } from '../../services/BackOfficeServices';
 import Designer from './Designer';
-import { Informations } from './Informations';
 import { TryIt } from './TryIt';
-import Routes from './Routes';
-import DesignerSidebar from './DesignerSidebar';
+import Services from '../RoutesDesigner/Services';
+import Routes from './Routes'
+import { Informations } from './Informations';
+import DesignerSidebar from './Sidebar';
 
 import { ServiceEventsPage } from '../ServiceEventsPage';
 import { ServiceLiveStatsPage } from '../ServiceLiveStatsPage';
 import { ServiceHealthPage } from '../ServiceHealthPage';
 import { ServiceAnalyticsPage } from '../ServiceAnalyticsPage';
 import { ServiceApiKeysPage } from '../ServiceApiKeysPage';
+import { useEntityFromURI } from '../../util';
 
 export default (props) => {
-  const match = useRouteMatch();
-  const { search } = useLocation();
-  const query = new URLSearchParams(search).get('tab');
+    const match = useRouteMatch();
+    const { search } = useLocation();
+    const entity = useEntityFromURI()
+    const query = new URLSearchParams(search).get('tab');
 
-  useEffect(() => {
-    props.setTitle('Routes');
-  }, []);
+    useEffect(() => {
+        props.setTitle(entity.capitalize);
+    }, []);
 
-  useEffect(() => {
-    const value = null;
-    if (query) {
-      if (query === 'flow') {
-        props.setTitle('Designer');
-      }
-      if (query === 'try-it') {
-        props.setTitle('Test route');
-      }
-      if (query === 'informations') {
-        props.setTitle('Informations');
-      }
-    }
-  }, [search]);
+    useEffect(() => {
+        if (query) {
+            props.setTitle({
+                flow: 'Designer',
+                'try-it': 'Test routes',
+                informations: 'Informations',
+                routes: 'Frontends - Backends'
+            }[query]);
+        }
+    }, [search]);
 
-  return (
-    <Switch>
-      <Route exact path={`${match.url}/:routeId/health`}    component={(p) => <ServiceHealthPage    setSidebarContent={props.setSidebarContent} setTitle={props.setTitle} {...p.match} />} />
-      <Route exact path={`${match.url}/:routeId/analytics`} component={(p) => <ServiceAnalyticsPage setSidebarContent={props.setSidebarContent} setTitle={props.setTitle} {...p.match} />} />
-      <Route exact path={`${match.url}/:routeId/apikeys`}   component={(p) => <ServiceApiKeysPage   setSidebarContent={props.setSidebarContent} setTitle={props.setTitle} {...p.match} />} />
-      <Route exact path={`${match.url}/:routeId/stats`}     component={(p) => <ServiceLiveStatsPage setSidebarContent={props.setSidebarContent} setTitle={props.setTitle} {...p.match} />} />
-      <Route exact path={`${match.url}/:routeId/events`}    component={(p) => <ServiceEventsPage    setSidebarContent={props.setSidebarContent} setTitle={props.setTitle} {...p.match} />} />
-      <Route
-        exact
-        path={`${match.url}/:routeId`}
-        component={() => {
-          const p = useParams();
-          const isCreation = p.routeId === 'new';
-          const [value, setValue] = useState({});
+    return (
+        <Switch>
+            {[
+                { path: `${match.url}/:routeId/health`, component: ServiceHealthPage },
+                { path: `${match.url}/:routeId/analytics`, component: ServiceAnalyticsPage },
+                { path: `${match.url}/:routeId/apikeys`, component: ServiceApiKeysPage },
+                { path: `${match.url}/:routeId/stats`, component: ServiceLiveStatsPage },
+                { path: `${match.url}/:routeId/events`, component: ServiceEventsPage }
+            ].map((route, i) => {
+                const Component = route.component;
+                <Route
+                    exact
+                    key={`route${i}`}
+                    path={route.path}
+                    component={(p) => <Component setSidebarContent={props.setSidebarContent} setTitle={props.setTitle} {...p.match} />} />
+            })}
+            <Route
+                exact
+                path={`${match.url}/:routeId`}
+                component={() => {
+                    const p = useParams();
+                    const isCreation = p.routeId === 'new';
+                    const [value, setValue] = useState({});
 
-          useEffect(() => {
-            if (p.routeId === 'new') {
-              nextClient.template(nextClient.ENTITIES.ROUTES).then(setValue);
-            } else nextClient.fetch(nextClient.ENTITIES.ROUTES, p.routeId).then(setValue);
-          }, [p.routeId]);
+                    useEffect(() => {
+                        if (p.routeId === 'new') {
+                            nextClient.template(nextClient.ENTITIES[entity.fetchName]).then(setValue);
+                        } else nextClient.fetch(nextClient.ENTITIES[entity.fetchName], p.routeId).then(setValue);
+                    }, [p.routeId]);
 
-          useEffect(() => {
-            if (value && value.id) props.setSidebarContent(<DesignerSidebar route={value} />);
-          }, [value]);
+                    useEffect(() => {
+                        if (value && value.id)
+                            props.setSidebarContent(<DesignerSidebar route={value} />);
+                    }, [value]);
 
-          if (query) {
-            if (query === 'flow' && !isCreation)
-              return (
-                <div className="designer row ps-3">
-                  <Designer {...props} value={value} />
-                </div>
-              );
+                    const divs = [
+                        { predicate: query && query === 'flow' && !isCreation, render: () => <Designer {...props} value={value} /> },
+                        { predicate: query && query === 'try-it', render: () => <TryIt route={value} /> },
+                        { predicate: query && query === 'routes', render: () => <Services service={value} /> }
+                    ]
 
-            if (query === 'try-it')
-              return (
-                <div className="designer row ps-3">
-                  <TryIt route={value} />
-                </div>
-              );
-          }
+                    const component = divs.filter(p => p.predicate)
 
-          return (
-            <div className="designer row ps-3">
-              <Informations {...props} isCreation={isCreation} value={value} />
-            </div>
-          );
-        }}
-      />
-      <Route component={Routes} />
-    </Switch>
-  );
+                    if (component.length > 0)
+                        return <div className="designer row ps-3">
+                            {component[0].render()}
+                        </div>
+
+                    return (
+                        <div className="designer row ps-3">
+                            <Informations {...props} isCreation={isCreation} value={value} setValue={setValue} />
+                        </div>
+                    );
+                }}
+            />
+            <Route component={Routes} />
+        </Switch>
+    );
 };

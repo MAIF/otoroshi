@@ -5,7 +5,7 @@ import { Histogram } from '../components/recharts';
 import { BooleanInput } from '../components/inputs';
 import { Uptime, formatPercentage } from '../components/Status';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import DesignerSidebar from './RouteDesigner/DesignerSidebar'
+import DesignerSidebar from './RouteDesigner/Sidebar'
 
 import 'antd/dist/antd.css';
 

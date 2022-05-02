@@ -8,7 +8,7 @@ import queryString from 'query-string';
 
 import { OtoDatePicker } from '../components/datepicker';
 
-import DesignerSidebar from './RouteDesigner/DesignerSidebar'
+import DesignerSidebar from './RouteDesigner/Sidebar'
 
 function readableType(contentType) {
   if (contentType.indexOf('text/html') > -1) {

@@ -1,3 +1,6 @@
+import React from 'react'
+import { useLocation } from "react-router-dom";
+
 export const REQUEST_STEPS_FLOW = ['MatchRoute', 'PreRoute', 'ValidateAccess', 'TransformRequest']
 
 export const firstLetterUppercase = (str) => str.charAt(0).toUpperCase() + str.slice(1);
@@ -23,3 +26,28 @@ export const toUpperCaseLabels = (obj) => {
     };
   }, {});
 };
+
+export function useQuery() {
+  const { search } = useLocation();
+  return React.useMemo(() => new URLSearchParams(search), [search]);
+}
+
+export const useEntityFromURI = () => {
+  const { pathname } = useLocation()
+
+  let entity = 'routes'
+  try {
+    entity = pathname.split('/')[1]
+  } catch (_) { }
+
+  const isRouteInstance = entity === 'routes'
+
+  return {
+    isRouteInstance,
+    capitalizePlural: isRouteInstance ? 'Routes' : 'Services',
+    capitalize: isRouteInstance ? 'Route' : 'Service',
+    lowercase: isRouteInstance ? 'route' : 'service',
+    fetchName: isRouteInstance ? 'ROUTES' : 'SERVICES',
+    link: isRouteInstance ? 'routes' : 'unnamed'
+  }
+}
