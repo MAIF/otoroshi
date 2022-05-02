@@ -156,7 +156,7 @@ const ServiceView = ({ route }) => {
 
 const FormContainer = ({ selectedNode, route, preview, showPreview, originalRoute, alertModal, serviceMode, ...props }) => <div
   className="col-sm-8 relative-container" style={{ paddingRight: 0 }}>
-  <UnselectedNode hideText={selectedNode} route={route} clearPlugins={props.clearPlugins} />
+  <UnselectedNode hideText={selectedNode} route={route} clearPlugins={props.clearPlugins} deleteRoute={props.deleteRoute} />
   {serviceMode && !['Frontend', 'Backend'].includes(selectedNode.id) && <ServiceView />}
   {selectedNode && !serviceMode && (
     <EditView
@@ -240,6 +240,24 @@ const BackendNode = ({ selectedNode, backend, ...props }) => <div
     {...props}
   />
 </div>
+
+const BackendCallNode = ({ selectedNode, backendCall, isPluginEnabled, ...props }) => (
+  <div
+    className="main-view backend-call-button"
+    style={{
+      opacity: !selectedNode ? 1 : (selectedNode.id === backendCall.id ? 1 : 0.25)
+    }}>
+    <NodeElement
+      element={backendCall}
+      selectedNode={selectedNode}
+      hideLink={props.hideLink}
+      disableBorder={false}
+      bold={false}
+      enabled={isPluginEnabled(backendCall)}
+      {...props}
+    />
+  </div>
+)
 
 const InBoundFlow = props => <div className="col-sm-6 flex-column">
   <div className="main-view">
@@ -662,6 +680,12 @@ class Designer extends React.Component {
     this.saveChanges({ ...newRoute });
   }
 
+  deleteRoute = () => {
+    nextClient.deleteById(nextClient.ENTITIES.ROUTES, this.state.route.id).then(() => {
+      window.location = '/bo/dashboard/routes'
+    })
+  }
+
   addNodes = (new_nodes) => {
     const { plugins, route } = this.state
 
@@ -1029,9 +1053,24 @@ class Designer extends React.Component {
       originalRoute, frontend, categories, alertModal,
       showLegacy, expandAll, searched, backend, serviceMode } = this.state
 
+    const backendCallInst = (route && route.plugins) ? route.plugins.filter(p => {
+      const id = p.plugin;
+      const pluginDef = plugins.filter(pl => pl.id === id)[0];
+      if (pluginDef) {
+        return pluginDef.plugin_steps.indexOf('CallBackend') > -1;
+      } else {
+        return null;
+      }
+    })[0] : null; 
+
+    const backendCallDef = backendCallInst ? plugins.filter(pl => pl.id === backendCallInst.plugin)[0] : null;
+    const backendCall = (backendCallInst && backendCallDef) ? { ...backendCallDef, ...backendCallInst } : null;
+
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins)
 
-    // TODO - better error display
+    console.log('selectedNode', selectedNode)
+
+    // TODO - better error display  
     if (!loading && this.state.notFound)
       return <h1>Route not found</h1>
 
@@ -1119,6 +1158,35 @@ class Designer extends React.Component {
                     <Hr highlighted={!selectedNode} />
                   </OutBoundFlow>
                 </div>
+                {backendCall && <>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                    <span
+                      className='badge bg-warning text-dark'
+                      style={{
+                        width: '100%',
+                        opacity: !selectedNode ? 1 : .25,
+                        cursor: 'pointer'
+                      }}>
+                      CallBackend
+                    </span>
+                    <Hr highlighted={!selectedNode} />
+                  </div>
+                  <BackendCallNode
+                    isPluginEnabled={this.isPluginEnabled}
+                    backendCall={backendCall}
+                    selectedNode={selectedNode}
+                    hideLink={!backendCall.plugin_backend_call_delegates}
+                    setSelectedNode={() => {
+                      if (!this.state.alertModal.show)
+                        this.setState({ selectedNode: backendCall })
+                    }}
+                    onUnsavedChanges={this.onUnsavedChanges}
+                    onRemove={this.removeNode}
+                  />
+                  {!backendCall.plugin_backend_call_delegates && (
+                    <div style={{ height: 10 }}></div>
+                  )}
+                </>}
                 <BackendNode
                   backend={backend}
                   selectedNode={selectedNode}
@@ -1133,6 +1201,7 @@ class Designer extends React.Component {
               <FormContainer
                 serviceMode={serviceMode}
                 clearPlugins={this.clearPlugins}
+                deleteRoute={this.deleteRoute}
                 selectedNode={selectedNode}
                 route={route}
                 saveChanges={this.saveChanges}
@@ -1284,7 +1353,7 @@ const read = (value, path) => {
   return read(value[keys[0]], keys.slice(1).join('.'));
 };
 
-const UnselectedNode = ({ hideText, route, clearPlugins }) => {
+const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
   if (route && route.frontend && route.backend && !hideText) {
     const frontend = route.frontend;
     const backend = route.backend;
@@ -1355,10 +1424,21 @@ const UnselectedNode = ({ hideText, route, clearPlugins }) => {
             })}
           </div>
         </div>
-        <div className='d-flex' style={{ marginTop: 50 }}>
-          <button type="button" className="ms-auto btn btn-sm btn-danger" onClick={clearPlugins}>
-            <i className="fas fa-trash" /> clear plugins
-          </button>
+        <div className='d-flex' style={{ marginTop: 50, justifyContent: 'space-between' }}>
+          <div className="btn-group">
+            <button type="button" className="ms-auto btn btn-sm btn-danger" onClick={clearPlugins}>
+              <i className="fas fa-ban" /> clear plugins
+            </button>
+          </div>
+          <div className="btn-group">
+            <Link className="ms-auto btn btn-sm btn-info" to="/routes">
+              <i className="fas fa-arrow-left" /> back to routes
+            </Link>
+            <button type="button" className="ms-auto btn btn-sm btn-danger" onClick={deleteRoute}>
+              <i className="fas fa-trash" /> delete route
+            </button>
+          </div>
+          
         </div>
       </>
     );
@@ -1781,7 +1861,7 @@ const Description = ({ text, steps, legacy }) => {
 
   return (
     <>
-      <MarkdownInput className="form-description" readOnly={true} preview={true} value={content} />
+      {(content && content.toLowerCase() !== '...') && <MarkdownInput className="form-description" readOnly={true} preview={true} value={content} />}
       {steps.length > 0 && <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
         active on {steps.map((step, i) => <span className="badge bg-warning text-dark" style={{ marginLeft: 5 }} key={`steps-${i}`}>{step}</span>)}
       </div>}

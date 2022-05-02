@@ -132,12 +132,17 @@ export const Informations = ({ isCreation, value, setValue }) => {
         footer={() => null}
       />
       <div className="d-flex align-items-center justify-content-end mt-3">
-        <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${link}`)}>
-          Cancel
-        </button>
-        <button className="btn btn-sm btn-save ms-1" onClick={() => ref.current.handleSubmit()}>
-          {isCreation ? `Create the ${lowercase}` : `Update the ${lowercase}`}
-        </button>
+        <div className="btn-group">
+          <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${link}`)}>
+            <i className="fas fa-times" /> Cancel
+          </button>
+          {!isCreation && <button className="btn btn-sm btn-danger" onClick={() => nextClient.deleteById(nextClient.ENTITIES[fetchName], value.id).then(() => history.push(`/${link}`))}>
+            <i className="fas fa-trash" /> Delete
+          </button>}
+          <button className="btn btn-sm btn-save" onClick={() => ref.current.handleSubmit()}>
+            <i className="fas fa-save" /> {isCreation ? `Create the ${lowercase}` : `Update the ${lowercase}`}
+          </button>
+        </div>
       </div>
     </div>
   );

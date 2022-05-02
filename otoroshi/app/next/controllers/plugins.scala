@@ -2,19 +2,7 @@ package otoroshi.next.controllers
 
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.next.plugins.api.{
-  NgAccessValidator,
-  NgNamedPlugin,
-  NgPluginCategory,
-  NgPluginVisibility,
-  NgPreRouting,
-  NgRequestSink,
-  NgRequestSinkContext,
-  NgRequestTransformer,
-  NgRouteMatcher,
-  NgStep,
-  NgTunnelHandler
-}
+import otoroshi.next.plugins.api.{NgAccessValidator, NgBackendCall, NgNamedPlugin, NgPluginCategory, NgPluginVisibility, NgPreRouting, NgRequestSink, NgRequestSinkContext, NgRequestTransformer, NgRouteMatcher, NgStep, NgTunnelHandler}
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
 
@@ -98,6 +86,7 @@ class NgPluginsController(
         "plugin_steps"      -> JsArray(plugin.steps.map(_.json)),
         "plugin_tags"       -> JsArray(plugin.tags.map(JsString.apply)),
         "plugin_multi_inst" -> plugin.multiInstance,
+        "plugin_backend_call_delegates"  -> (if (plugin.isInstanceOf[NgBackendCall]) plugin.asInstanceOf[NgBackendCall].useDelegates else false),
         "on_request"        -> onRequest,
         "on_response"       -> onResponse
       )
