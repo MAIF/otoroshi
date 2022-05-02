@@ -9,7 +9,7 @@ import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser}
 import otoroshi.next.models.{NgPluginInstance, NgRoute, NgTarget}
-import otoroshi.next.proxy.{NgExecutionReport, NgReportPluginSequence, NgReportPluginSequenceItem}
+import otoroshi.next.proxy.{NgExecutionReport, NgProxyEngineError, NgReportPluginSequence, NgReportPluginSequenceItem}
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
 import otoroshi.utils.TypedMap
@@ -26,7 +26,7 @@ import java.security.cert.X509Certificate
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success, Try}
+import scala.util.{Either, Failure, Success, Try}
 
 object NgPluginHelper {
   def pluginId[A](implicit ct: ClassTag[A]): String = s"cp:${ct.runtimeClass.getName}"
@@ -116,6 +116,7 @@ case class NgPluginHttpResponse(
   lazy val isChunked: Boolean               = transferEncoding.exists(h => h.toLowerCase().contains("chunked"))
   lazy val contentType: Option[String]      = header("Content-Type")
   lazy val contentLengthStr: Option[String] = header("Content-Length")
+  lazy val contentLength: Option[Long]       = contentLengthStr.map(_.toLong)
   lazy val hasLength: Boolean               = contentLengthStr.isDefined
   def header(name: String): Option[String]  = headers.get(name).orElse(headers.get(name.toLowerCase()))
   def asResult: Result = {
@@ -222,6 +223,7 @@ object NgStep       {
   case object TransformResponse extends NgStep { def name: String = "TransformResponse" }
   case object MatchRoute        extends NgStep { def name: String = "MatchRoute"        }
   case object HandlesTunnel     extends NgStep { def name: String = "HandlesTunnel"     }
+  case object CallBackend       extends NgStep { def name: String = "CallBackend"       }
 
   val all = Seq(
     Sink,
@@ -230,7 +232,8 @@ object NgStep       {
     TransformRequest,
     TransformResponse,
     MatchRoute,
-    HandlesTunnel
+    HandlesTunnel,
+    CallBackend
   )
 }
 
@@ -459,7 +462,7 @@ case class NgTransformerRequestContext(
 }
 
 case class NgTransformerResponseContext(
-    response: WSResponse,
+    response: Option[WSResponse],
     rawResponse: NgPluginHttpResponse,
     otoroshiResponse: NgPluginHttpResponse,
     snowflake: String,
@@ -688,6 +691,56 @@ trait NgTunnelHandler extends NgNamedPlugin with NgAccessValidator {
     }
   }
   def handle(ctx: NgTunnelHandlerContext)(implicit env: Env, ec: ExecutionContext): Flow[Message, Message, _]
+}
+
+case class NgbBackendCallContext(
+  snowflake: String,
+  rawRequest: RequestHeader,
+  request: NgPluginHttpRequest,
+  route: NgRoute,
+  backend: NgTarget,
+  user: Option[PrivateAppsUser],
+  apikey: Option[ApiKey],
+  config: JsValue,
+  globalConfig: JsValue,
+  attrs: TypedMap,
+) extends NgCachedConfigContext {
+  def json: JsValue = Json.obj(
+    "snowflake" -> snowflake,
+    // "route" -> route.json,
+    "backend" -> backend.json,
+    "apikey"           -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
+    "user"             -> user.map(_.lightJson).getOrElse(JsNull).as[JsValue],
+    "raw_request"   -> JsonHelpers.requestToJson(rawRequest),
+    "config"    -> config,
+    "global_config" -> globalConfig,
+    "attrs"     -> attrs.json
+  )
+}
+
+case class BackendCallResponse(response: NgPluginHttpResponse, rawResponse: Option[WSResponse]) {
+
+  import otoroshi.utils.http.Implicits._
+
+  def status: Int = rawResponse.map(_.status).getOrElse(response.status)
+  def contentLengthStr: Option[String] = rawResponse.flatMap(_.contentLengthStr).orElse(response.contentLengthStr)
+  def contentLength: Option[Long] = rawResponse.map(_.contentLength).getOrElse(response.contentLength)
+  def headers: Map[String, Seq[String]] = rawResponse.map(_.headers).getOrElse(response.headers.mapValues(v => Seq(v)))
+  def header(name: String): Option[String] = rawResponse.map(_.header(name)).getOrElse(response.headers.getIgnoreCase(name))
+  def isChunked(): Option[Boolean]  = rawResponse.map(_.isChunked()).getOrElse(response.isChunked.some)
+}
+
+trait NgBackendCall extends NgNamedPlugin {
+  def useDelegates: Boolean
+  def bodyResponse(status: Int, headers: Map[String, String], body: Source[ByteString, _]): Either[NgProxyEngineError, BackendCallResponse] = {
+    BackendCallResponse(
+      NgPluginHttpResponse(status, headers, Seq.empty, body),
+      None,
+    ).right[NgProxyEngineError]
+  }
+  def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    delegates()
+  }
 }
 
 class NgMergedRequestTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgRequestTransformer]])

@@ -46,10 +46,10 @@ case class StateRespInvalid(
     env: Env
 ) {
 
-  def errorMessage(resp: WSResponse): String =
-    s"error while talking with backend service - ${reason} - ${exchangePayload(resp)}"
+  def errorMessage(status: Int, headers: Map[String, String]): String =
+    s"error while talking with backend service - ${reason} - ${exchangePayload(status, headers)}"
 
-  def exchangePayload(resp: WSResponse): JsValue = {
+  def exchangePayload(status: Int, headers: Map[String, String]): JsValue = {
     Json.obj(
       "reason"                           -> reason,
       "expected_token_issuer"            -> env.Headers.OtoroshiIssuer,
@@ -72,9 +72,9 @@ case class StateRespInvalid(
         "headers" -> req.headers.toSimpleMap
       ),
       "response"                         -> Json.obj(
-        "status"           -> resp.status,
+        "status"           -> status,
         "raw_state_header" -> JsString(stateResp.getOrElse("--")),
-        "headers"          -> resp.headers.mapValues(_.last)
+        "headers"          -> headers
       )
     )
   }

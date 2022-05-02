@@ -1,15 +1,17 @@
 package otoroshi.next.plugins
 
 import akka.stream.Materializer
+import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
+import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 
-import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Either, Failure, Success, Try}
 
 case class StaticResponseConfig(status: Int = 200, headers: Map[String, String] = Map.empty, body: String = "")
     extends NgPluginConfig {
@@ -36,8 +38,9 @@ object StaticResponseConfig {
   }
 }
 
-class StaticResponse extends NgRequestTransformer {
+class StaticResponse extends NgBackendCall {
 
+  override def useDelegates: Boolean                       = false
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def name: String                                = "Static Response"
@@ -46,25 +49,15 @@ class StaticResponse extends NgRequestTransformer {
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
-  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
 
-  override def transformsResponse: Boolean = false
-  override def transformsError: Boolean    = false
-
-  override def isTransformRequestAsync: Boolean = false
-
-  override def transformRequestSync(
-      ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config           = ctx.cachedConfig(internalName)(StaticResponseConfig.format).getOrElse(StaticResponseConfig())
-    val contentType      =
-      config.headers.get("Content-Type").orElse(config.headers.get("content-type")).getOrElse("application/json")
-    val headers          = config.headers.filterNot(_._1.toLowerCase() == "content-type")
     val body: ByteString = config.body match {
       case str if str.startsWith("Base64(") => str.substring(7).init.byteString.decodeBase64
       case str                              => str.byteString
     }
-    Left(Results.Status(config.status)(body).withHeaders(headers.toSeq: _*).as(contentType))
+    bodyResponse(config.status, config.headers, Source.single(body)).future
   }
 }
 
@@ -129,8 +122,9 @@ object MockResponsesConfig {
   }
 }
 
-class MockResponses extends NgRequestTransformer {
+class MockResponses extends NgBackendCall {
 
+  override def useDelegates: Boolean                       = true
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def name: String                                = "Mock Responses"
@@ -139,22 +133,15 @@ class MockResponses extends NgRequestTransformer {
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
-  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
 
-  override def transformsResponse: Boolean = false
-  override def transformsError: Boolean    = false
-
-  override def isTransformRequestAsync: Boolean = false
-
-  override def transformRequestSync(
-      ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(MockResponsesConfig.format).getOrElse(MockResponsesConfig())
-    config.responses.filter(_.method.toLowerCase == ctx.otoroshiRequest.method.toLowerCase).find { resp =>
-      resp.path.wildcard.matches(ctx.otoroshiRequest.path)
+    config.responses.filter(_.method.toLowerCase == ctx.request.method.toLowerCase).find { resp =>
+      resp.path.wildcard.matches(ctx.request.path)
     } match {
-      case None if !config.passThrough => Left(Results.NotFound(Json.obj("error" -> "resource not found !")))
-      case None if config.passThrough  => Left(Results.NotFound(Json.obj("error" -> "resource not found !")))
+      case None if !config.passThrough => bodyResponse(404, Map("Content-Type" -> "application/json"), Source.single(Json.obj("error" -> "resource not found !").stringify.byteString)).future
+      case None if config.passThrough  => delegates()
       case Some(response)              => {
         val contentType      = response.headers
           .get("Content-Type")
@@ -165,7 +152,7 @@ class MockResponses extends NgRequestTransformer {
           case str if str.startsWith("Base64(") => str.substring(7).init.byteString.decodeBase64
           case str                              => str.byteString
         }
-        Left(Results.Status(response.status)(body).withHeaders(headers.toSeq: _*).as(contentType))
+        bodyResponse(response.status, response.headers, Source.single(body)).future
       }
     }
   }

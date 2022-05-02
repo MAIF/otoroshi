@@ -1,15 +1,16 @@
 package otoroshi.next.plugins
 
 import akka.stream.Materializer
+import akka.stream.scaladsl.Source
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
+import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
-import play.api.mvc.{Result, Results}
 
-import scala.concurrent.duration.{DurationInt, DurationLong}
+import scala.concurrent.duration.DurationLong
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 import scala.util._
@@ -55,23 +56,20 @@ object GraphQLQueryConfig {
   }
 }
 
-class GraphQLQuery extends NgRequestTransformer {
+class GraphQLQuery extends NgBackendCall {
 
   private val library = ImmutableJqLibrary.of()
 
+  override def useDelegates: Boolean                       = false
   override def multiInstance: Boolean                      = true
-  override def core: Boolean                               = true
+  override def core: Boolean                               = false
   override def name: String                                = "GraphQL Query"
   override def description: Option[String]                 = "This plugin can be used to call GraphQL query endpoints and expose it as a REST endpoint".some
   override def defaultConfigObject: Option[NgPluginConfig] = GraphQLQueryConfig(url = "https://some.graphql/endpoint").some
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
-  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
-
-  override def transformsResponse: Boolean = false
-  override def transformsError: Boolean    = false
-  override def isTransformRequestAsync: Boolean = true
+  override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
 
   def applyJq(payload: JsValue, filter: String): Either[JsValue, JsValue] = {
     val request  = ImmutableJqRequest
@@ -90,11 +88,11 @@ class GraphQLQuery extends NgRequestTransformer {
     }
   }
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(GraphQLQueryConfig.format).getOrElse(GraphQLQueryConfig(url = "https://some.graphql/endpoint"))
     val query = GlobalExpressionLanguage.apply(
       value = config.query,
-      req = ctx.request.some,
+      req = ctx.rawRequest.some,
       service = ctx.route.legacy.some,
       apiKey = ctx.apikey,
       user = ctx.user,
@@ -112,14 +110,14 @@ class GraphQLQuery extends NgRequestTransformer {
         if (resp.status == 200) {
           val partialBody = resp.json.atPath(config.responsePath.getOrElse("$")).asOpt[JsValue].getOrElse(JsNull)
           config.responseFilter match {
-            case None => Left(Results.Status(200)(partialBody).as("application/json"))
+            case None => bodyResponse(200, Map("Content-Type" -> "application/json"), Source.single(partialBody.stringify.byteString))
             case Some(filter) => applyJq(partialBody, filter) match {
-              case Left(error) => Left(Results.Status(500)(error).as("application/json"))
-              case Right(resp) => Left(Results.Status(200)(resp).as("application/json"))
+              case Left(error) => bodyResponse(500, Map("Content-Type" -> "application/json"), Source.single(error.stringify.byteString))
+              case Right(resp) => bodyResponse(200, Map("Content-Type" -> "application/json"), Source.single(resp.stringify.byteString))
             }
           }
         } else {
-          Left(Results.Status(resp.status)(resp.body).as(resp.contentType))
+          bodyResponse(resp.status, Map("Content-Type" -> resp.contentType), resp.bodyAsSource)
         }
       }
   }

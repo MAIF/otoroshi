@@ -371,7 +371,7 @@ class ProxyEngine() extends RequestHandler {
                          finalRequest <-
                            callRequestTransformer(snowflake, request, request.body, route, backend, ctxPlugins)
                          _             = report.markDoneAndStart("call-backend")
-                         response     <- callBackend(snowflake, request, finalRequest, route, backend)
+                         response     <- callBackend(snowflake, noBackendCallerPlugin = false, request, finalRequest, route, backend, ctxPlugins)
                          _             = report.markDoneAndStart("transform-response")
                          finalResp    <-
                            callResponseTransformer(snowflake, request, response, route, backend, ctxPlugins)
@@ -2454,10 +2454,12 @@ class ProxyEngine() extends RequestHandler {
 
   def callBackend(
       snowflake: String,
+      noBackendCallerPlugin: Boolean,
       rawRequest: Request[Source[ByteString, _]],
       request: NgPluginHttpRequest,
       route: NgRoute,
-      backend: NgTarget
+      backend: NgTarget,
+      plugins: NgContextualPlugins
   )(implicit
       ec: ExecutionContext,
       env: Env,
@@ -2465,72 +2467,97 @@ class ProxyEngine() extends RequestHandler {
       globalConfig: GlobalConfig,
       attrs: TypedMap,
       mat: Materializer
-  ): FEither[NgProxyEngineError, WSResponse] = {
-    val contentLengthIn: Option[Long]                  = request.contentLengthStr
-      .orElse(rawRequest.contentLengthStr)
-      .map(_.toLong)
-    val counterIn                                      = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
-    counterIn.addAndGet(contentLengthIn.getOrElse(0L))
-    val (currentReqHasBody, shouldInjectContentLength) = request.hasBodyWithoutLength
-    val wsCookiesIn                                    = request.cookies
-    val finalTarget: Target                            = request.backend.getOrElse(backend).toTarget
-    attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> finalTarget)
-    val clientConfig     = route.backend.client
-    val clientReq        = route.useAkkaHttpClient match {
-      case _ if finalTarget.mtlsConfig.mtls =>
-        env.gatewayClient.akkaUrlWithTarget(
-          UrlSanitizer.sanitize(request.url),
-          finalTarget,
-          clientConfig.legacy
-        )
-      case true                             =>
-        env.gatewayClient.akkaUrlWithTarget(
-          UrlSanitizer.sanitize(request.url),
-          finalTarget,
-          clientConfig.legacy
-        )
-      case false                            =>
-        env.gatewayClient.urlWithTarget(
-          UrlSanitizer.sanitize(request.url),
-          finalTarget,
-          clientConfig.legacy
-        )
-    }
-    val host             = request.headers.get("Host").orElse(request.headers.get("host")).getOrElse(rawRequest.theHost)
-    val extractedTimeout =
-      route.backend.client.legacy.extractTimeout(rawRequest.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
-    val builder          = clientReq
-      .withRequestTimeout(extractedTimeout)
-      .withFailureIndicator(fakeFailureIndicator)
-      .withMethod(request.method)
-      .withHttpHeaders(request.headers.filterNot(_._1.toLowerCase == "cookie").+("Host" -> host).toSeq: _*)
-      .withCookies(wsCookiesIn: _*)
-      .withFollowRedirects(false)
-      .withMaybeProxyServer(
-        route.backend.client.proxy.orElse(globalConfig.proxies.services)
+  ): FEither[NgProxyEngineError, BackendCallResponse] = {
+    if (!noBackendCallerPlugin && plugins.hasBackendCallPlugin) {
+      val pluginInstance = plugins.backendCallPlugin
+      val ctx = NgbBackendCallContext(
+        snowflake = snowflake,
+        rawRequest = rawRequest,
+        request = request,
+        route = route,
+        backend = backend,
+        apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+        user = attrs.get(otoroshi.plugins.Keys.UserKey),
+        config = pluginInstance.instance.config.json,
+        globalConfig = globalConfig.plugins.config,
+        attrs = attrs,
       )
-    val theBody          = request.body
-    // because writeableOf_WsBody always add a 'Content-Type: application/octet-stream' header
-    val builderWithBody  = if (currentReqHasBody) {
-      if (shouldInjectContentLength) {
-        builder.addHttpHeaders("Content-Length" -> "0").withBody(theBody)
-      } else {
-        builder.withBody(theBody)
-      }
+      FEither.fromEitherT(
+        pluginInstance.plugin.callBackend(ctx, () => callBackend(snowflake, noBackendCallerPlugin = true, rawRequest, request, route, backend, plugins).value)
+      )
     } else {
-      builder
-    }
+      val finalTarget: Target = request.backend.getOrElse(backend).toTarget
+      attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> finalTarget)
+      val contentLengthIn: Option[Long] = request.contentLengthStr
+        .orElse(rawRequest.contentLengthStr)
+        .map(_.toLong)
+      val counterIn = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
+      counterIn.addAndGet(contentLengthIn.getOrElse(0L))
+      val (currentReqHasBody, shouldInjectContentLength) = request.hasBodyWithoutLength
+      val wsCookiesIn = request.cookies
+      val clientConfig = route.backend.client
+      val clientReq = route.useAkkaHttpClient match {
+        case _ if finalTarget.mtlsConfig.mtls =>
+          env.gatewayClient.akkaUrlWithTarget(
+            UrlSanitizer.sanitize(request.url),
+            finalTarget,
+            clientConfig.legacy
+          )
+        case true =>
+          env.gatewayClient.akkaUrlWithTarget(
+            UrlSanitizer.sanitize(request.url),
+            finalTarget,
+            clientConfig.legacy
+          )
+        case false =>
+          env.gatewayClient.urlWithTarget(
+            UrlSanitizer.sanitize(request.url),
+            finalTarget,
+            clientConfig.legacy
+          )
+      }
+      val host = request.headers.get("Host").orElse(request.headers.get("host")).getOrElse(rawRequest.theHost)
+      val extractedTimeout =
+        route.backend.client.legacy.extractTimeout(rawRequest.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
+      val builder = clientReq
+        .withRequestTimeout(extractedTimeout)
+        .withFailureIndicator(fakeFailureIndicator)
+        .withMethod(request.method)
+        .withHttpHeaders(request.headers.filterNot(_._1.toLowerCase == "cookie").+("Host" -> host).toSeq: _*)
+        .withCookies(wsCookiesIn: _*)
+        .withFollowRedirects(false)
+        .withMaybeProxyServer(
+          route.backend.client.proxy.orElse(globalConfig.proxies.services)
+        )
+      val theBody = request.body
+      // because writeableOf_WsBody always add a 'Content-Type: application/octet-stream' header
+      val builderWithBody = if (currentReqHasBody) {
+        if (shouldInjectContentLength) {
+          builder.addHttpHeaders("Content-Length" -> "0").withBody(theBody)
+        } else {
+          builder.withBody(theBody)
+        }
+      } else {
+        builder
+      }
 
-    report.markOverheadIn()
-    FEither.fright(builderWithBody.stream().andThen { case Success(_) =>
-      report.startOverheadOut()
-    })
+      report.markOverheadIn()
+      val fu: Future[BackendCallResponse] = builderWithBody.stream().map(response => BackendCallResponse(NgPluginHttpResponse(
+        status = response.status,
+        headers = response.headers.mapValues(_.last),
+        cookies = response.cookies,
+        body = response.bodyAsSource
+      ), response.some)).andThen { case Success(_) =>
+        report.startOverheadOut()
+      }
+      FEither.fright(fu)
+    }
   }
 
   def callResponseTransformer(
       snowflake: String,
       rawRequest: Request[Source[ByteString, _]],
-      response: WSResponse,
+      response: BackendCallResponse,
       route: NgRoute,
       backend: NgTarget,
       plugins: NgContextualPlugins
@@ -2543,18 +2570,18 @@ class ProxyEngine() extends RequestHandler {
       mat: Materializer
   ): FEither[NgProxyEngineError, NgPluginHttpResponse] = {
 
-    val rawResponse      = NgPluginHttpResponse(
+    val rawResponse      = response.response.copy() /*NgPluginHttpResponse(
       status = response.status,
       headers = response.headers.mapValues(_.last),
       cookies = response.cookies,
       body = response.bodyAsSource
-    )
-    val otoroshiResponse = NgPluginHttpResponse(
+    )*/
+    val otoroshiResponse = response.response.copy() /*NgPluginHttpResponse(
       status = response.status,
       headers = response.headers.mapValues(_.last),
       cookies = response.cookies,
       body = response.bodyAsSource
-    )
+    )*/
 
     val all_plugins = plugins.transformerPluginsThatTransformsResponse
     if (all_plugins.nonEmpty) {
@@ -2589,7 +2616,7 @@ class ProxyEngine() extends RequestHandler {
       val __ctx    = NgTransformerResponseContext(
         snowflake = snowflake,
         request = rawRequest,
-        response = response,
+        response = response.rawResponse,
         rawResponse = rawResponse,
         otoroshiResponse = otoroshiResponse,
         apikey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
@@ -2735,7 +2762,7 @@ class ProxyEngine() extends RequestHandler {
   def streamResponse(
       snowflake: String,
       rawRequest: Request[Source[ByteString, _]],
-      rawResponse: WSResponse,
+      rawResponse: BackendCallResponse,
       response: NgPluginHttpResponse,
       route: NgRoute,
       backend: NgTarget
@@ -3037,7 +3064,7 @@ class ProxyEngine() extends RequestHandler {
   def triggerProxyDone(
       snowflake: String,
       rawRequest: Request[Source[ByteString, _]],
-      rawResponse: WSResponse,
+      rawResponse: BackendCallResponse,
       request: NgPluginHttpRequest,
       response: NgPluginHttpResponse,
       route: NgRoute,

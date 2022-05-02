@@ -314,7 +314,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
     }
     respEith match {
       case Left(stateRespInvalid) => {
-        ctx.response.ignore()
+        ctx.response.foreach(_.ignore())
         if (
           ctx.otoroshiResponse.status == 404 && ctx.otoroshiResponse.headers
             .get("X-CleverCloudUpgrade")
@@ -338,13 +338,13 @@ class OtoroshiChallenge extends NgRequestTransformer {
             )
             .map(Left.apply)
         } else if (isUp) {
-          logger.error(stateRespInvalid.errorMessage(ctx.response))
+          logger.error(stateRespInvalid.errorMessage(ctx.response.map(_.status).getOrElse(ctx.rawResponse.status), ctx.response.map(_.headers.mapValues(_.last)).getOrElse(ctx.rawResponse.headers)))
           val extraInfos    = ctx.attrs
             .get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey)
             .map(_.as[JsObject])
             .getOrElse(Json.obj())
           val newExtraInfos =
-            extraInfos ++ Json.obj("stateRespInvalid" -> stateRespInvalid.exchangePayload(ctx.response))
+            extraInfos ++ Json.obj("stateRespInvalid" -> stateRespInvalid.exchangePayload(ctx.response.map(_.status).getOrElse(ctx.rawResponse.status), ctx.response.map(_.headers.mapValues(_.last)).getOrElse(ctx.rawResponse.headers)))
           ctx.attrs.put(otoroshi.plugins.Keys.GatewayEventExtraInfosKey -> newExtraInfos)
           Errors
             .craftResponseResult(

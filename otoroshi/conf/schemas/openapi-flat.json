@@ -11990,44 +11990,6 @@
     "type" : "object",
     "properties" : { }
   },
-  "otoroshi.next.plugins.GraphQLQueryConfig" : {
-    "description" : "???",
-    "type" : "object",
-    "properties" : {
-      "headers" : {
-        "type" : "object",
-        "additionalProperties" : {
-          "type" : "string"
-        },
-        "description" : "???"
-      },
-      "method" : {
-        "description" : "???",
-        "type" : "string"
-      },
-      "query" : {
-        "description" : "???",
-        "type" : "string"
-      },
-      "response_filter" : {
-        "description" : "???",
-        "type" : "string"
-      },
-      "response_path" : {
-        "description" : "???",
-        "type" : "string"
-      },
-      "url" : {
-        "description" : "???",
-        "type" : "string"
-      },
-      "timeout" : {
-        "format" : "int64",
-        "description" : "???",
-        "type" : "integer"
-      }
-    }
-  },
   "otoroshi.plugins.oidc.OIDCThirdPartyApiKeyConfigMode" : {
     "description" : "Internal api",
     "type" : "object",
@@ -29648,44 +29610,6 @@
     "description" : "The name ID Format to use for the subject",
     "type" : "object",
     "properties" : { }
-  },
-  "otoroshi.next.plugins.GraphQLQuery" : {
-    "description" : "???",
-    "type" : "object",
-    "properties" : {
-      "headers" : {
-        "type" : "object",
-        "additionalProperties" : {
-          "type" : "string"
-        },
-        "description" : "???"
-      },
-      "method" : {
-        "description" : "???",
-        "type" : "string"
-      },
-      "query" : {
-        "description" : "???",
-        "type" : "string"
-      },
-      "response_filter" : {
-        "description" : "???",
-        "type" : "string"
-      },
-      "response_path" : {
-        "description" : "???",
-        "type" : "string"
-      },
-      "url" : {
-        "description" : "???",
-        "type" : "string"
-      },
-      "timeout" : {
-        "format" : "int64",
-        "description" : "???",
-        "type" : "integer"
-      }
-    }
   },
   "otoroshi.models.ZoneMatch" : {
     "description" : "Match a target if in the same zone",
