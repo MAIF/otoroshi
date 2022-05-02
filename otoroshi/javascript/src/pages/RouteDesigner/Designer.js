@@ -156,7 +156,7 @@ const ServiceView = ({ route }) => {
 
 const FormContainer = ({ selectedNode, route, preview, showPreview, originalRoute, alertModal, serviceMode, ...props }) => <div
   className="col-sm-8 relative-container" style={{ paddingRight: 0 }}>
-  <UnselectedNode hideText={selectedNode} route={route} clearPlugins={props.clearPlugins} deleteRoute={props.deleteRoute} />
+  <UnselectedNode hideText={selectedNode} route={route} clearPlugins={props.clearPlugins} saveRoute={props.saveRoute} deleteRoute={props.deleteRoute} />
   {serviceMode && !['Frontend', 'Backend'].includes(selectedNode.id) && <ServiceView />}
   {selectedNode && !serviceMode && (
     <EditView
@@ -681,8 +681,12 @@ class Designer extends React.Component {
   }
 
   deleteRoute = () => {
-    nextClient.deleteById(nextClient.ENTITIES.ROUTES, this.state.route.id).then(() => {
-      window.location = '/bo/dashboard/routes'
+    window.newConfirm('are you sure you want to delete this route ?', (ok) => {
+      if (ok) {
+        nextClient.deleteById(nextClient.ENTITIES.ROUTES, this.state.route.id).then(() => {
+          window.location = '/bo/dashboard/routes'
+        })
+      }
     })
   }
 
@@ -1068,8 +1072,6 @@ class Designer extends React.Component {
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins)
 
-    console.log('selectedNode', selectedNode)
-
     // TODO - better error display  
     if (!loading && this.state.notFound)
       return <h1>Route not found</h1>
@@ -1202,6 +1204,7 @@ class Designer extends React.Component {
                 serviceMode={serviceMode}
                 clearPlugins={this.clearPlugins}
                 deleteRoute={this.deleteRoute}
+                saveRoute={this.saveChanges}
                 selectedNode={selectedNode}
                 route={route}
                 saveChanges={this.saveChanges}
@@ -1353,7 +1356,7 @@ const read = (value, path) => {
   return read(value[keys[0]], keys.slice(1).join('.'));
 };
 
-const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
+const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute, saveRoute }) => {
   if (route && route.frontend && route.backend && !hideText) {
     const frontend = route.frontend;
     const backend = route.backend;
@@ -1436,6 +1439,9 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
             </Link>
             <button type="button" className="ms-auto btn btn-sm btn-danger" onClick={deleteRoute}>
               <i className="fas fa-trash" /> delete route
+            </button>
+            <button type="button" className="ms-auto btn btn-sm btn-success" onClick={saveRoute}>
+              <i className="fas fa-save" /> save route
             </button>
           </div>
           
