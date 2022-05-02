@@ -348,6 +348,16 @@
         color: #fff;
     }
 
+    .new-backend-button:first-child {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    .new-backend-button:last-child {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+
     .status-dots {
         position: absolute;
         top: 3px;
@@ -483,5 +493,34 @@
 
     .patch-row {
         margin-right: 0 !important;
+    }
+
+    h3 {
+        margin: 0 !important;
+    }
+
+    .route-item {
+        flex: 1;
+        border-radius: 4px;
+        background-color: #494948;
+    }
+
+    .route-forms-form {
+        background-color: $fondBody;
+        border-radius: 4px;
+        height: fit-content;
+    }
+
+    .route-forms-title {
+        color: #fff;
+        margin-bottom: 0;
+    }
+
+    .route-forms-header {
+        border-bottom: 1px solid #373735;
+    }
+
+    div[role*="button"] svg {
+        fill: #494849;
     }
 }

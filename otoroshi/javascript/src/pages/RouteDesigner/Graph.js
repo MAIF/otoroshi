@@ -58,6 +58,13 @@ export const DEFAULT_FLOW = {
         array: true,
         label: 'Domains'
       },
+      methods: {
+        type: 'string',
+        format: "select",
+        isMulti: true,
+        label: "methods",
+        options: ["GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+      }
     },
     config_flow: ['domains', 'strip_path', 'exact', 'headers', 'methods', 'query'],
   },

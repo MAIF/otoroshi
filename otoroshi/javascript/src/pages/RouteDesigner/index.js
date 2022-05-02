@@ -31,7 +31,7 @@ export default (props) => {
                 flow: 'Designer',
                 'try-it': 'Test routes',
                 informations: 'Informations',
-                routes: 'Frontends - Backends'
+                routes: 'Routes'
             }[query]);
         }
     }, [search]);
@@ -58,12 +58,13 @@ export default (props) => {
                 component={() => {
                     const p = useParams();
                     const isCreation = p.routeId === 'new';
-                    const [value, setValue] = useState({});
+                    const [value, setValue] = useState();
 
                     useEffect(() => {
                         if (p.routeId === 'new') {
                             nextClient.template(nextClient.ENTITIES[entity.fetchName]).then(setValue);
-                        } else nextClient.fetch(nextClient.ENTITIES[entity.fetchName], p.routeId).then(setValue);
+                        } else
+                            nextClient.fetch(nextClient.ENTITIES[entity.fetchName], p.routeId).then(setValue);
                     }, [p.routeId]);
 
                     useEffect(() => {
@@ -74,7 +75,7 @@ export default (props) => {
                     const divs = [
                         { predicate: query && query === 'flow' && !isCreation, render: () => <Designer {...props} value={value} /> },
                         { predicate: query && query === 'try-it', render: () => <TryIt route={value} /> },
-                        { predicate: query && query === 'routes', render: () => <Services service={value} /> }
+                        { predicate: query && query === 'routes', render: () => value && <Services service={value} /> }
                     ]
 
                     const component = divs.filter(p => p.predicate)
