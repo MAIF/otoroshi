@@ -96,7 +96,13 @@ object RequestImplicits {
     @inline
     def theIpAddress(implicit env: Env): String = {
       if (env.datastores.globalConfigDataStore.latestSafe.exists(_.trustXForwarded)) {
-        requestHeader.headers.get("X-Forwarded-For").getOrElse(requestHeader.remoteAddress)
+        requestHeader.headers.get("X-Forwarded-For").map { rawHeader =>
+          if (rawHeader.nonEmpty && rawHeader.contains(",")) {
+            rawHeader.split(",").map(_.trim).headOption.getOrElse(rawHeader)
+          } else {
+            rawHeader
+          }
+        }.getOrElse(requestHeader.remoteAddress)
       } else {
         requestHeader.remoteAddress
       }
