@@ -7,6 +7,7 @@ import { DEFAULT_FLOW } from '../RouteDesigner/Graph';
 import { toUpperCaseLabels } from '../../util';
 import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import { SelectInput } from '@maif/react-forms';
+import { isEqual } from 'lodash';
 import { CodeInput } from '@maif/react-forms';
 
 const HTTP_COLORS = {
@@ -19,22 +20,30 @@ const HTTP_COLORS = {
     OPTIONS: '#9b59b6'
 }
 
-const FolderFrontend = ({ frontend, domain, open }) => {
-    const methods = (frontend.methods && frontend.methods.length > 0) ?
+const Methods = ({ frontend }) => {
+    const hasMethods = frontend.methods && frontend.methods.length > 0
+    const methods = hasMethods ?
         frontend.methods.map((m, i) => <span key={`frontendmethod-${i}`} className={`badge me-1`} style={{ backgroundColor: HTTP_COLORS[m] }}>{m}</span>) :
         [<span className="badge bg-dark">ALL</span>];
+    return (
+        <div className="d-flex-between">
+            {methods.map((method, i) => <div key={`method${i}`} style={{ minWidth: 34 }}>{method}</div>)}
+        </div>
+    );
+}
+
+const Uri = ({ frontend, domain }) => {
     const exact = frontend.exact;
     const end = exact ? '' : (domain.indexOf('/') < 0 ? '/*' : '*');
     const start = 'http://'
     return (
         <div className="d-flex-between">
-            {methods.map((method, i) => <div key={`${domain}method${i}`} style={{ minWidth: 34 }}>{method}</div>)}
             <span className='flex ms-2' style={{ fontFamily: 'monospace' }}>{start}{domain}{end}</span>
         </div>
     );
 }
 
-const SaveButton = ({ isDirty, saveChanges, disablePadding }) => <div className={`d-flex justify-content-end ${disablePadding ? '' : 'pt-3'}`}>
+const SaveButton = ({ isDirty, saveChanges, disablePadding }) => <div className={`d-flex align-items-center justify-content-end ${disablePadding ? '' : 'pt-3'}`}>
     <FeedbackButton
         text="Update the route"
         disabled={!isDirty.frontend && !isDirty.backend && !isDirty.backendRef}
@@ -60,7 +69,22 @@ const BackendSelector = ({ setExistingBackend, usingExistingBackend }) => <div c
     </button>
 </div>
 
-const RouteForms = ({ frontend, backend, backend_ref, updateRoute, index }) => {
+const SimpleAdvancedSelector = ({ setLevel, level }) => <div className="d-flex">
+    <button
+        className="btn btn-sm new-backend-button"
+        onClick={() => setLevel('simple')}
+        style={{ backgroundColor: level === 'advanced' ? '#494849' : '#f9b000' }}>
+        Simple
+    </button>
+    <button
+        className="btn btn-sm new-backend-button"
+        onClick={() => setLevel('advanced')}
+        style={{ backgroundColor: level === 'advanced' ? '#f9b000' : '#494849' }}>
+        Advanced
+    </button>
+</div>
+
+const RouteForms = ({ frontend, backend, backend_ref, updateRoute }) => {
     const frontendRef = useRef()
     const backendRef = useRef()
 
@@ -77,6 +101,7 @@ const RouteForms = ({ frontend, backend, backend_ref, updateRoute, index }) => {
     const [backends, setBackends] = useState([])
     const [usingExistingBackend, setExistingBackend] = useState(false)
     const [usingJsonView, setJsonView] = useState(false)
+    const [level, setLevel] = useState('simple')
 
     useEffect(() => {
         Promise.all([
@@ -114,17 +139,11 @@ const RouteForms = ({ frontend, backend, backend_ref, updateRoute, index }) => {
     }, [])
 
     useEffect(() => {
-        setFrontend({
-            ...frontend,
-            level: 'simple'
-        })
+        setFrontend(frontend)
     }, [frontend])
 
     useEffect(() => {
-        setBackend({
-            ...backend,
-            level: 'simple'
-        })
+        setBackend(backend)
     }, [backend])
 
     useEffect(() => {
@@ -136,12 +155,15 @@ const RouteForms = ({ frontend, backend, backend_ref, updateRoute, index }) => {
             frontendRef.current.trigger(),
             backendRef.current.trigger()
         ]).then(([resFrontend, resBackend]) => {
-            if (resFrontend && resBackend)
-                return updateRoute(index, {
-                    frontend: frontendRef.current.methods.data(),
-                    backend: backendRef.current.methods.data(),
+            if (resFrontend && resBackend) {
+                const f = frontendRef.current.methods.data()
+                const b = backendRef.current.methods.data()
+                return updateRoute({
+                    frontend: usingJsonView ? f.frontend : f,
+                    backend: usingJsonView ? b.backend : b,
                     backend_ref: usingExistingBackend ? backendRefValue : null
                 })
+            }
             else
                 return Promise.reject()
         })
@@ -151,7 +173,21 @@ const RouteForms = ({ frontend, backend, backend_ref, updateRoute, index }) => {
         return null
 
     return <div className='p-2'>
-        {!usingJsonView && <div className='d-flex mt-3'>
+        <div className='d-flex justify-content-end'>
+            <div className='d-flex p-2' style={{ backgroundColor: "#373735", borderRadius: '4px' }}>
+                {!usingJsonView && <SimpleAdvancedSelector setLevel={setLevel} level={level} />}
+                <button className='btn btn-sm mx-1' style={{ backgroundColor: "#f9b000" }} onClick={() => {
+                    if (usingJsonView && (isDirty.frontend || isDirty.backend)) {
+                        setFrontend(frontendRef.current.methods.data().frontend)
+                        setBackend(frontendRef.current.methods.data().backend)
+                    }
+                    setJsonView(!usingJsonView)
+                }}>
+                    {usingJsonView ? 'Form view' : 'Advanced json'}
+                </button>
+            </div>
+        </div>
+        <div className='d-flex mt-3'>
             <div className='flex p-3 route-forms-form'>
                 <h5 className='route-forms-title'>Frontend</h5>
                 <RouteForm
@@ -161,7 +197,8 @@ const RouteForms = ({ frontend, backend, backend_ref, updateRoute, index }) => {
                     customRef={frontendRef}
                     value={frontendValue}
                     schema={schemas.frontend.config_schema}
-                    flow={schemas.frontend[frontendValue.level || 'simple'].config_flow}
+                    flow={schemas.frontend[level].config_flow}
+                    usingJsonView={usingJsonView}
                 />
                 <SaveButton isDirty={isDirty} saveChanges={saveChanges} />
             </div>
@@ -176,7 +213,6 @@ const RouteForms = ({ frontend, backend, backend_ref, updateRoute, index }) => {
                         label=""
                         onChange={b => {
                             if (b !== backendRefValue) {
-                                console.log('Set dirty from select')
                                 setDirty({
                                     ...isDirty,
                                     backendRef: true
@@ -196,52 +232,52 @@ const RouteForms = ({ frontend, backend, backend_ref, updateRoute, index }) => {
                     customRef={backendRef}
                     value={backendValue}
                     schema={schemas.backend.config_schema}
-                    flow={schemas.backend[backendValue.level || 'simple'].config_flow}
+                    flow={schemas.backend[level].config_flow}
+                    usingJsonView={usingJsonView}
                 />}
             </div>
-        </div>}
-        {usingJsonView && <CodeInput
-            mode="json"
-            themeStyle={{
-                maxHeight: '-1',
-                minHeight: '100px',
-                width: '100%'
-            }}
-            value={{
-                frontendValue,
-                backendValue,
-                backendRefValue
-            }}
-            onChange={e => { }}
-        />}
+        </div>
         <div className='d-flex justify-content-end pt-3'>
-            <button className='btn btn-sm btn-success' onClick={() => setJsonView(!usingJsonView)}>
-                {usingJsonView ? 'SIMPLE VIEW' : 'ADVANCED JSON'}
-            </button>
             <SaveButton isDirty={isDirty} saveChanges={saveChanges} disablePadding={true} />
         </div>
     </div>
 }
 
-const RouteForm = React.memo(({ isDirty, dirtyField, customRef, value, schema, flow, setDirty }) => <Form
-    ref={customRef}
-    value={value}
-    schema={schema}
-    flow={flow}
-    footer={() => null}
-    options={{
-        watch: () => {
-            if (customRef.current) {
-                const formState = Object.keys(customRef.current.methods.formState.dirtyFields).length > 0;
-                console.log('Set dirty from customRef')
-                setDirty({
-                    ...isDirty(),
-                    [dirtyField]: formState
-                });
+const RouteForm = React.memo(({ isDirty, dirtyField, customRef, value, schema, flow, setDirty, usingJsonView }) =>
+    <Form
+        ref={customRef}
+        value={usingJsonView ? {
+            [dirtyField]: value
+        } : value}
+        schema={usingJsonView ? {
+            [dirtyField]: {
+                type: 'json',
+                format: 'code',
+                label: null
             }
-        }
-    }}
-/>, (prev, next) => prev.value === next.value)
+        } : schema}
+        flow={usingJsonView ? [dirtyField] : flow}
+        footer={() => null}
+        options={{
+            watch: () => {
+                if (customRef.current) {
+                    const formState = Object.keys(customRef.current.methods.formState.dirtyFields).length > 0;
+                    if (usingJsonView)
+                        setDirty({
+                            ...isDirty(),
+                            [dirtyField]: !isEqual(value, customRef.current.methods.data()[dirtyField])
+                        })
+                    else
+                        setDirty({
+                            ...isDirty(),
+                            [dirtyField]: formState
+                        });
+                }
+            }
+        }}
+    />, (prev, next) => prev.value === next.value &&
+        prev.usingJsonView === next.usingJsonView &&
+        prev.flow === next.flow)
 
 const DeleteMessage = ({ onCancel, onConfirm }) => (
     <div class="d-flex align-items-center justify-content-start flex-column p-3">
@@ -265,11 +301,11 @@ const Route = props => {
             padding: '6px',
             paddingBottom: open ? '8px' : '6px'
         }}>
-            <div className='flex-column'>
-                {frontend.domains.map(domain => <FolderFrontend
-                    frontend={frontend}
-                    domain={domain}
-                    open={open} />)}
+            <div className='d-flex-between'>
+                <Methods frontend={frontend} />
+                <div className='flex-column'>
+                    {frontend.domains.map(domain => <Uri frontend={frontend} domain={domain} />)}
+                </div>
             </div>
             <div className='d-flex'>
                 {open && <button className='btn btn-sm btn-danger me-2' onClick={() => {
@@ -286,7 +322,10 @@ const Route = props => {
         </div>
         {onRemoving && <DeleteMessage onCancel={() => {
             setRemoving(false)
-        }} onConfirm={props.removeRoute} />}
+        }} onConfirm={() => {
+            setRemoving(false)
+            props.removeRoute()
+        }} />}
         {open && !onRemoving && <RouteForms {...props} />}
     </div>
 
@@ -306,13 +345,20 @@ export default ({ service }) => {
     }, [service.id])
 
     const updateRoute = (index, item) => {
+        let r = routes.map((route, i) => {
+            if (i === index)
+                return item
+            return route
+        })
+
+        if (routes.length === 0)
+            r = [item]
+        else if (index >= routes.length)
+            r = [...routes, item]
+
         return nextClient.update(nextClient.ENTITIES.SERVICES, {
             ...service,
-            routes: routes.length === 0 ? [item] : index >= routes.length ? [...routes, item] : routes.map((route, i) => {
-                if (i === index)
-                    return item
-                return route
-            })
+            routes: r
         })
             .then(s => setRoutes(s.routes))
     }
@@ -322,6 +368,7 @@ export default ({ service }) => {
             ...service,
             routes: routes.filter((_, i) => i !== idx)
         })
+            .then(() => setRoutes(routes.filter((_, i) => i !== idx)))
     }
 
     return (
@@ -334,14 +381,28 @@ export default ({ service }) => {
                 <i className='fas fa-road me-2' />
                 Create a new route
             </button>
-            <div className=''>
+            <div>
+                {/* <div className='flex'>
+                    <CodeInput
+                        mode="json"
+                        themeStyle={{
+                            maxHeight: '-1',
+                            minHeight: '100px',
+                            width: '100%',
+                        }}
+                        value={routes}
+                        onChange={e => { }}
+                    />
+                </div>
+                <div className='flex'> */}
                 {routes.map((route, i) => <Route
                     {...route}
                     key={route.id} i
                     ndex={i}
-                    updateRoute={updateRoute}
+                    updateRoute={item => updateRoute(i, item)}
                     removeRoute={() => removeRoute(i)} />
                 )}
+                {/* </div> */}
             </div>
         </div>
     )
