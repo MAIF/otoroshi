@@ -18,6 +18,7 @@ import { FeedbackButton } from './FeedbackButton';
 import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
 import { SelectInput, Form, type, format, validate, CodeInput, MarkdownInput } from '@maif/react-forms';
 import { merge, snakeCase, camelCase, isEqual } from 'lodash';
+import { HTTP_COLORS } from '../RoutesDesigner/Services'
 
 import { getPluginsPatterns } from './patterns';
 
@@ -250,7 +251,7 @@ const BackendCallNode = ({ selectedNode, backendCall, isPluginEnabled, ...props 
     <NodeElement
       element={backendCall}
       selectedNode={selectedNode}
-      hideLink={props.hideLink}
+      hideLink={false}
       disableBorder={false}
       bold={false}
       enabled={isPluginEnabled(backendCall)}
@@ -1057,18 +1058,28 @@ class Designer extends React.Component {
       originalRoute, frontend, categories, alertModal,
       showLegacy, expandAll, searched, backend, serviceMode } = this.state
 
-    const backendCallInst = (route && route.plugins) ? route.plugins.filter(p => {
+    //const backendCallInst = (route && route.plugins) ? route.plugins.filter(p => {
+    //  const id = p.plugin;
+    //  const pluginDef = plugins.filter(pl => pl.id === id)[0];
+    //  if (pluginDef) {
+    //    return pluginDef.plugin_steps.indexOf('CallBackend') > -1;
+    //  } else {
+    //    return null;
+    //  }
+    //})[0] : null; 
+    //const backendCallDef = backendCallInst ? plugins.filter(pl => pl.id === backendCallInst.plugin)[0] : null;
+    //const backendCall = (backendCallInst && backendCallDef) ? { ...backendCallDef, ...backendCallInst } : null;
+
+    const backendCallNodes = (route && route.plugins) ? route.plugins.map(p => {
       const id = p.plugin;
       const pluginDef = plugins.filter(pl => pl.id === id)[0];
       if (pluginDef) {
-        return pluginDef.plugin_steps.indexOf('CallBackend') > -1;
-      } else {
-        return null;
+        if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
+          return { ...p, ...pluginDef }
+        }
       }
-    })[0] : null; 
-
-    const backendCallDef = backendCallInst ? plugins.filter(pl => pl.id === backendCallInst.plugin)[0] : null;
-    const backendCall = (backendCallInst && backendCallDef) ? { ...backendCallDef, ...backendCallInst } : null;
+      return null;
+    }).filter(p => !!p) : [];  
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins)
 
@@ -1160,7 +1171,7 @@ class Designer extends React.Component {
                     <Hr highlighted={!selectedNode} />
                   </OutBoundFlow>
                 </div>
-                {backendCall && <>
+                {backendCallNodes.length > 0 && <>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
                     <span
                       className='badge bg-warning text-dark'
@@ -1173,19 +1184,21 @@ class Designer extends React.Component {
                     </span>
                     <Hr highlighted={!selectedNode} />
                   </div>
-                  <BackendCallNode
+                  {backendCallNodes.map(node => <BackendCallNode
+                    key={node.id}
                     isPluginEnabled={this.isPluginEnabled}
-                    backendCall={backendCall}
+                    backendCall={node}
                     selectedNode={selectedNode}
-                    hideLink={!backendCall.plugin_backend_call_delegates}
+                    hideLink={!node.plugin_backend_call_delegates}
                     setSelectedNode={() => {
-                      if (!this.state.alertModal.show)
-                        this.setState({ selectedNode: backendCall })
+                      if (!this.state.alertModal.show) {
+                        this.setState({ selectedNode: node })
+                      }
                     }}
                     onUnsavedChanges={this.onUnsavedChanges}
                     onRemove={this.removeNode}
-                  />
-                  {!backendCall.plugin_backend_call_delegates && (
+                  />)}
+                  {false && !backendCall.plugin_backend_call_delegates && (
                     <div style={{ height: 10 }}></div>
                   )}
                 </>}
@@ -1361,7 +1374,7 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute, saveRoute 
     const frontend = route.frontend;
     const backend = route.backend;
     const allMethods = (frontend.methods && frontend.methods.length > 0) ?
-      frontend.methods.map((m, i) => <span key={`frontendmethod-${i}`} className="badge bg-success">{m}</span>) :
+      frontend.methods.map((m, i) => <span key={`frontendmethod-${i}`} className={`badge me-1`} style={{ backgroundColor: HTTP_COLORS[m] }}>{m}</span>) :
       [<span className="badge bg-success">ALL</span>];
     return (
       <>
@@ -1440,7 +1453,7 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute, saveRoute 
             <button type="button" className="ms-auto btn btn-sm btn-danger" onClick={deleteRoute}>
               <i className="fas fa-trash" /> delete route
             </button>
-            <button type="button" className="ms-auto btn btn-sm btn-success" onClick={saveRoute}>
+            <button type="button" className="ms-auto btn btn-sm btn-success" onClick={e => saveRoute(route)}>
               <i className="fas fa-save" /> save route
             </button>
           </div>

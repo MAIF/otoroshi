@@ -10,7 +10,7 @@ import { SelectInput } from '@maif/react-forms';
 import { isEqual } from 'lodash';
 import { CodeInput } from '@maif/react-forms';
 
-const HTTP_COLORS = {
+export const HTTP_COLORS = {
     GET: 'rgb(52, 170, 182)',
     POST: 'rgb(117, 189, 93)',
     DELETE: 'rgb(238, 106, 86)',
