@@ -60,6 +60,18 @@ export class TopBar extends Component {
           value: 'Routes',
         });
         options.push({
+          action: () => (window.location.href = '/bo/dashboard/route-compositions'),
+          env: <span className="fas fa-road" />,
+          label: 'Route compositions',
+          value: 'compositions',
+        });
+        options.push({
+          action: () => (window.location.href = '/bo/dashboard/route-aggregations'),
+          env: <span className="fas fa-road" />,
+          label: 'Route aggregations',
+          value: 'aggregations',
+        });
+        options.push({
           action: () => (window.location.href = '/bo/dashboard/backends'),
           env: <span className="fas fa-microchip" />,
           label: 'Backends',

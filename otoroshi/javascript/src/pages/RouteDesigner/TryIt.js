@@ -70,7 +70,7 @@ export const TryIt = ({ route, serviceMode }) => {
           ([k, _]) => k.length > 0
         )
       ),
-    }, pathname.includes('unnamed') ? 'service' : 'route')
+    }, pathname.includes('route-compositions') ? 'service' : 'route')
       .then((res) => {
         setRawResponse(res);
         return res.json();

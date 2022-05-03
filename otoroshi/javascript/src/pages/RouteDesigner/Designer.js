@@ -18,7 +18,7 @@ import { FeedbackButton } from './FeedbackButton';
 import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
 import { SelectInput, Form, type, format, validate, CodeInput, MarkdownInput } from '@maif/react-forms';
 import { merge, snakeCase, camelCase, isEqual } from 'lodash';
-import { HTTP_COLORS } from '../RoutesDesigner/Services'
+import { HTTP_COLORS } from './RouteComposition'
 
 import { getPluginsPatterns } from './patterns';
 
@@ -147,9 +147,9 @@ const ServiceView = ({ route }) => {
   return <div
     onClick={(e) => e.stopPropagation()}
     className="plugins-stack editor-view">
-    <span>You are on a unnamed module. You can navigate on the list of frontends/backends to edit them.</span>
+    <span>You are on a route composition. You can navigate on the list of frontends/backends to edit them.</span>
 
-    <Link className='btn btn-sm btn-success' to={`/unnamed/${route.id}/routes`}>
+    <Link className='btn btn-sm btn-success' to={`/route-compositions/${route.id}/routes`}>
       Edit the list
     </Link>
   </div>
@@ -158,7 +158,7 @@ const ServiceView = ({ route }) => {
 const FormContainer = ({ selectedNode, route, preview, showPreview, originalRoute, alertModal, serviceMode, ...props }) => <div
   className="col-sm-8 relative-container" style={{ paddingRight: 0 }}>
   <UnselectedNode hideText={selectedNode} route={route} clearPlugins={props.clearPlugins} saveRoute={props.saveRoute} deleteRoute={props.deleteRoute} />
-  {serviceMode && !['Frontend', 'Backend'].includes(selectedNode.id) && <ServiceView />}
+  {serviceMode && ['Frontend', 'Backend'].includes(selectedNode.id) && <ServiceView />}
   {selectedNode && !serviceMode && (
     <EditView
       {...props}
@@ -188,7 +188,7 @@ export default ({ value }) => {
   const { routeId } = useParams();
   const location = useLocation();
 
-  return <Designer routeId={routeId} location={location} value={value} serviceMode={location.pathname.includes('unnamed')} />
+  return <Designer routeId={routeId} location={location} value={value} serviceMode={location.pathname.includes('route-compositions')} />
 }
 
 const FrontendNode = ({ onUnsavedChanges, frontend, selectedNode, setSelectedNode, removeNode }) => <div className='main-view relative-container'

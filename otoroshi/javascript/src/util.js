@@ -44,10 +44,10 @@ export const useEntityFromURI = () => {
 
   return {
     isRouteInstance,
-    capitalizePlural: isRouteInstance ? 'Routes' : 'Services',
-    capitalize: isRouteInstance ? 'Route' : 'Service',
-    lowercase: isRouteInstance ? 'route' : 'service',
+    capitalizePlural: isRouteInstance ? 'Routes' : 'Route Compositions',
+    capitalize: isRouteInstance ? 'Route' : 'Route Composition',
+    lowercase: isRouteInstance ? 'route' : 'route composition',
     fetchName: isRouteInstance ? 'ROUTES' : 'SERVICES',
-    link: isRouteInstance ? 'routes' : 'unnamed'
+    link: isRouteInstance ? 'routes' : 'route-compositions'
   }
 }

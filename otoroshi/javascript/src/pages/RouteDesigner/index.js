@@ -3,7 +3,7 @@ import { Route, Switch, useLocation, useParams, useRouteMatch } from 'react-rout
 import { nextClient } from '../../services/BackOfficeServices';
 import Designer from './Designer';
 import { TryIt } from './TryIt';
-import Services from '../RoutesDesigner/Services';
+import RouteCompositions from './RouteComposition';
 import Routes from './Routes'
 import { Informations } from './Informations';
 import DesignerSidebar from './Sidebar';
@@ -75,7 +75,7 @@ export default (props) => {
                     const divs = [
                         { predicate: query && query === 'flow' && !isCreation, render: () => <Designer {...props} value={value} /> },
                         { predicate: query && query === 'try-it', render: () => <TryIt route={value} /> },
-                        { predicate: query && query === 'routes', render: () => value && <Services service={value} /> }
+                        { predicate: query && query === 'routes', render: () => value && <RouteCompositions service={value} /> }
                     ]
 
                     const component = divs.filter(p => p.predicate)
