@@ -316,7 +316,7 @@ object DataExporterConfigMigrationJob {
     implicit val mat = env.otoroshiMaterializer
 
     val alertDataExporterConfigFiltering     = DataExporterConfigFiltering(
-      include = Seq(Json.obj("@type" -> Json.obj("$regex" -> "Alert*")))
+      include = Seq(Json.obj("@type" -> Json.obj("$regex" -> "Alert.*")))
     )
     val analyticsDataExporterConfigFiltering = DataExporterConfigFiltering(
       include = Seq()
