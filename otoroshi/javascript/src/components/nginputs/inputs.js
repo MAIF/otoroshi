@@ -304,6 +304,9 @@ export class NgArrayRenderer extends Component {
 }
 
 export class NgObjectRenderer extends Component {
+
+  // state = { values: this.props.value ? Object.keys(this.props.value).map(key => ({ key, value: this.props.value[key] })) : [] }
+
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
@@ -312,8 +315,10 @@ export class NgObjectRenderer extends Component {
       <LabelAndInput {...this.props}>
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           {this.props.value &&
+            // this.state.values.map(raw => {
+            //   const { key, value } = raw;
             Object.keys(this.props.value)
-              .map((key) => [key, this.props.key])
+              .map((key) => [key, this.props.value[key]])
               .map((raw, idx) => {
                 const [key, value] = raw;
                 return (
