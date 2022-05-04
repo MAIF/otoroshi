@@ -280,11 +280,11 @@ const RouteForm = React.memo(({ isDirty, dirtyField, customRef, value, schema, f
         prev.flow === next.flow)
 
 const DeleteMessage = ({ onCancel, onConfirm }) => (
-    <div class="d-flex align-items-center justify-content-start flex-column p-3">
+    <div className="d-flex align-items-center justify-content-start flex-column p-3">
         <h4>Delete this route ?</h4>
-        <div class="d-flex">
-            <button type="button" class="btn btn-danger me-1" onClick={onCancel}>Cancel</button>
-            <button type="button" class="btn btn-success" onClick={onConfirm}>Delete</button>
+        <div className="d-flex">
+            <button type="button" className="btn btn-danger me-1" onClick={onCancel}>Cancel</button>
+            <button type="button" className="btn btn-success" onClick={onConfirm}>Delete</button>
         </div>
     </div>
 )
@@ -308,7 +308,7 @@ const Route = props => {
                 </div>
             </div>
             <div className='d-flex'>
-                {open && <button className='btn btn-sm btn-danger me-2' onClick={() => {
+                {<button className='btn btn-sm btn-danger me-2' onClick={() => {
                     setOpen(true)
                     setRemoving(true)
                 }}>
@@ -371,15 +371,90 @@ export default ({ service }) => {
             .then(() => setRoutes(routes.filter((_, i) => i !== idx)))
     }
 
+    const importOpenApi = () => {
+
+      function OpenapiImport(props) {
+        const [state, setState] = useState({ openapi: 'https://maif.github.io/otoroshi/manual/code/openapi.json', domain: 'oto-api-next-gen.oto.tools' });
+        return (
+          <>
+            <div className="modal-body">
+              <form className="form-horizontal">
+                <div>
+                  <div className="row mb-3">
+                    <label className="col-xs-12 col-sm-2 col-form-label">
+                      Openapi URL 
+                    </label>
+                    <div className="col-sm-10">
+                      <input type="text" className="form-control" value={state.openapi} onChange={e => setState({ ...state, openapi: e.target.value })} />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div className="row mb-3">
+                    <label className="col-xs-12 col-sm-2 col-form-label">
+                      Exposed domain
+                    </label>
+                    <div className="col-sm-10">
+                    <input type="text" className="form-control" value={state.domain} onChange={e => setState({ ...state, domain: e.target.value })} />
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-danger" onClick={props.cancel}>
+                Close
+              </button>
+              <button
+                type="button"
+                className="btn btn-success"
+                onClick={(e) => props.ok(state)}>
+                Ok
+              </button>
+            </div>
+          </>
+        );
+      }
+
+      window.popup(
+        'Import routes from openapi',
+        (ok, cancel) => <OpenapiImport ok={ok} cancel={cancel} />,
+        { __style: { width: '100%' } }
+      ).then(body => {
+        if (body) {
+          fetch('/bo/api/proxy/api/experimental/services/_openapi', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+          }).then(r => r.json()).then(imported => {
+            const routes = [...routes, ...imported.routes];
+            nextClient.update(nextClient.ENTITIES.SERVICES, {
+              ...service,
+              routes
+            }).then(s => setRoutes(s.routes))
+          })
+        }
+      });
+    }
+
     return (
         <div>
             <button className='btn btn-sm btn-success' onClick={() => {
-                const newItem = { ...templates?.routes[0] }
-                updateRoute(routes.length, newItem)
-                    .then(() => setRoutes([...routes, newItem]))
+              const newItem = { ...templates?.routes[0] }
+              updateRoute(routes.length, newItem)
+                .then(() => setRoutes([...routes, newItem]))
             }}>
-                <i className='fas fa-road me-2' />
-                Create a new route
+              <i className='fas fa-road me-2' />
+              Create a new route
+            </button>
+            <button className="btn btn-sm btn-success" style={{ marginLeft: 10 }} onClick={() => {
+              importOpenApi();
+            }}>
+              <i className='fas fa-file-code me-2' />
+              Import routes from openapi
             </button>
             <div>
                 {/* <div className='flex'>
