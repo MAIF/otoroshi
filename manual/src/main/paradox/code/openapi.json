@@ -17677,27 +17677,27 @@
         }
       },
       "otoroshi.next.plugins.ApikeyCalls" : {
-        "description" : "???",
+        "description" : "Plugin to use apikeys",
         "type" : "object",
         "properties" : {
           "extractors" : {
-            "description" : "???",
+            "description" : "Configuration of the apikey extraction modes",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractors"
           },
           "pass_with_user" : {
-            "description" : "???",
+            "description" : "Let the request pass if a user is connected",
             "type" : "boolean"
           },
           "wipe_backend_request" : {
-            "description" : "???",
+            "description" : "Removes the apikeys from the request to not forward it to the backend",
             "type" : "boolean"
           },
           "validate" : {
-            "description" : "???",
+            "description" : "Enabled quotas validation",
             "type" : "boolean"
           },
           "routing" : {
-            "description" : "???",
+            "description" : "Use apikey for routing",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyMatcher"
           }
         }
@@ -19674,7 +19674,7 @@
         }
       },
       "otoroshi.next.plugins.NgApikeyMatcher" : {
-        "description" : "???",
+        "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
           "none_meta_keys_in" : {
@@ -19682,38 +19682,38 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on none metadata keys being present"
           },
           "all_meta_keys_in" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on all metadata keys being present"
           },
           "all_meta_in" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on all metadata being present"
           },
           "none_meta_in" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on none metadata being present"
           },
           "one_tag_in" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on one tag being present"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "Tags and metadata matching enabled",
             "type" : "boolean"
           },
           "one_meta_in" : {
@@ -19721,28 +19721,28 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on none metadata being present"
           },
           "all_tags_in" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on all tags being present"
           },
           "one_meta_key_in" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on one metadata being present"
           },
           "none_tag_in" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Matching on none tags being present"
           }
         }
       },
@@ -20101,11 +20101,11 @@
         }
       },
       "otoroshi.next.plugins.NgApikeyExtractorCustomHeaders" : {
-        "description" : "???",
+        "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "Is it enabled",
             "type" : "boolean"
           },
           "client_id_header_name" : {
@@ -20114,7 +20114,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Header name to extract client id"
           },
           "client_secret_header_name" : {
             "oneOf" : [ {
@@ -20122,7 +20122,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Header name to extract client secret"
           }
         }
       },
@@ -22156,11 +22156,11 @@
         }
       },
       "otoroshi.next.plugins.NgApikeyExtractorBasic" : {
-        "description" : "???",
+        "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "Is it enabled",
             "type" : "boolean"
           },
           "header_name" : {
@@ -22169,7 +22169,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The name of the header to extract"
           },
           "query_name" : {
             "oneOf" : [ {
@@ -22177,7 +22177,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The name of the query param to extract"
           }
         }
       },
@@ -25485,7 +25485,7 @@
         "properties" : { }
       },
       "otoroshi.next.plugins.NgApikeyExtractorJwt" : {
-        "description" : "???",
+        "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
           "cookie_name" : {
@@ -25494,10 +25494,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The name of the cookies to extract"
           },
           "key_pair_signed" : {
-            "description" : "???",
+            "description" : "Is it asymmetricaly signed",
             "type" : "boolean"
           },
           "query_name" : {
@@ -25506,18 +25506,18 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The name of the query param to extract"
           },
           "secret_signed" : {
-            "description" : "???",
+            "description" : "Is it symmetricaly signed",
             "type" : "boolean"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "Is it enabled",
             "type" : "boolean"
           },
           "include_request_attrs" : {
-            "description" : "???",
+            "description" : "Does the jwt token need to include current request attributes to work",
             "type" : "boolean"
           },
           "header_name" : {
@@ -25526,7 +25526,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The name of the header to extract"
           }
         }
       },
@@ -25834,7 +25834,7 @@
         "description" : "The representation of a form to configure a plugin or an entity"
       },
       "otoroshi.next.plugins.NgApikeyExtractorClientId" : {
-        "description" : "???",
+        "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
           "header_name" : {
@@ -25843,7 +25843,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The name of the header to extract"
           },
           "query_name" : {
             "oneOf" : [ {
@@ -25851,10 +25851,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The name of the query param to extract"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "Is it enabled",
             "type" : "boolean"
           }
         }
@@ -27467,23 +27467,23 @@
         "description" : "no value object, used to represent a None option value"
       },
       "otoroshi.next.plugins.NgApikeyExtractors" : {
-        "description" : "???",
+        "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
           "basic" : {
-            "description" : "???",
+            "description" : "basic auth extractor config.",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractorBasic"
           },
           "custom_headers" : {
-            "description" : "???",
+            "description" : "custom headers extractor config.",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractorCustomHeaders"
           },
           "client_id" : {
-            "description" : "???",
+            "description" : "client id only extractor config.",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractorClientId"
           },
           "jwt" : {
-            "description" : "???",
+            "description" : "jwt extractor config.",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractorJwt"
           }
         }
@@ -27754,27 +27754,27 @@
         "properties" : { }
       },
       "otoroshi.next.plugins.NgApikeyCallsConfig" : {
-        "description" : "???",
+        "description" : "Configuration for ApikeyCalls",
         "type" : "object",
         "properties" : {
           "extractors" : {
-            "description" : "???",
+            "description" : "Configuration of the apikey extraction modes",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyExtractors"
           },
           "pass_with_user" : {
-            "description" : "???",
+            "description" : "Let the request pass if a user is connected",
             "type" : "boolean"
           },
           "wipe_backend_request" : {
-            "description" : "???",
+            "description" : "Removes the apikeys from the request to not forward it to the backend",
             "type" : "boolean"
           },
           "validate" : {
-            "description" : "???",
+            "description" : "Enabled quotas validation",
             "type" : "boolean"
           },
           "routing" : {
-            "description" : "???",
+            "description" : "Use apikey for routing",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyMatcher"
           }
         }
