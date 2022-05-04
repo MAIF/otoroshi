@@ -896,10 +896,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>for instance if you want to change the default domain and use something like <code>otoroshi.mydomain.org</code>, then start otoroshi like </p>
 <pre class="prettyprint"><code class="language-sh">java -Dotoroshi.domain=mydomain.org -jar otoroshi.jar
 </code></pre><div class="callout warning "><div class="callout-title">Warning</div>
-<p>Otoroshi cannot be accessed using <code>http://127.0.0.1:8080</code> or <code>http://localhost:8080</code> because Otoroshi uses Otoroshi to serve it&rsquo;s own UI and API. When otoroshi starts with an empty database, it will create a service descriptor for that using <code>otoroshi.domain</code> and the settings listed on this page and in the here that serve Otoroshi API and UI on <code>http://otoroshi-api.${otoroshi.domain}</code> and <code>http://otoroshi.${otoroshi.domain}</code>. Once the descriptor is saved in database, if you want to change <code>otoroshi.domain</code>, you&rsquo;ll have to edit the descriptor in the database or restart Otoroshi with an empty database.</p></div>
+<p>Otoroshi cannot be accessed using <code>http://127.0.0.1:8080</code> or <code>http://localhost:8080</code> because Otoroshi uses Otoroshi to serve it&rsquo;s own UI and API. When otoroshi starts with an empty database, it will create a service descriptor for that using <code>otoroshi.domain</code> and the settings listed on this page and in the here that serve Otoroshi API and UI on <code>http://otoroshi-api.${otoroshi.domain}</code> and <code>http://otoroshi.${otoroshi.domain}</code>. Once the descriptor is saved in database, if you want to change <code>otoroshi.domain</code>, you&rsquo;ll have to edit the descriptor in the database or restart Otoroshi with an empty database.</p></div><div class="callout warning "><div class="callout-title">Warning</div>
+<p>if your otoroshi instance runs behind a reverse proxy (L4 / L7) or inside a docker container where exposed ports (that you will use to access otoroshi) are not the same that the ones configured in otoroshi (<code>http.port</code> and <code>https.port</code>), you&rsquo;ll have to configure otoroshi exposed port to avoid bad redirection URLs when using authentication modules and other otoroshi tools. To do that, just set the values of the exposed ports in <code>otoroshi.exposed-ports.http = $theExposedHttpPort</code> (OTOROSHI_EXPOSED_PORTS_HTTP) and <code>otoroshi.exposed-ports.https = $theExposedHttpsPort</code> (OTOROSHI_EXPOSED_PORTS_HTTPS)</p></div>
 <h2><a href="#setup-your-configuration-file" name="setup-your-configuration-file" class="anchor"><span class="anchor-link"></span></a>Setup your configuration file</h2>
 <p>There is a lot of things you can configure in Otoroshi. By default, Otoroshi provides a configuration that should be enough for testing purpose. But you&rsquo;ll likely need to update this configuration when you&rsquo;ll need to move into production.</p>
-<p>In this page, any configuration property can be set at runtime using a <code>-D</code> flag when launching Otoroshi like</p>
+<p>In this page, any configuration property can be set at runtime using a <code>-D</code> flag when launching Otoroshi like </p>
 <pre class="prettyprint"><code class="language-sh">java -Dhttp.port=8080 -jar otoroshi.jar
 </code></pre>
 <p>or</p>
@@ -1071,7 +1072,6 @@ play.http {
   exposed-ports {
     http = ${?APP_EXPOSED_PORTS_HTTP} # the exposed http port for otoroshi (when in a container or behind a proxy)
     http = ${?OTOROSHI_EXPOSED_PORTS_HTTP} # the exposed http port for otoroshi (when in a container or behind a proxy)
-    http = ${?OTOROSHI_EXPOSED_PORTS_HTTP} # the exposed http port for otoroshi (when in a container or behind a proxy
     https = ${?APP_EXPOSED_PORTS_HTTPS} # the exposed https port for otoroshi (when in a container or behind a proxy
     https = ${?OTOROSHI_EXPOSED_PORTS_HTTPS} # the exposed https port for otoroshi (when in a container or behind a proxy
   }
@@ -2409,7 +2409,6 @@ akka { # akka specific configuration
   exposed-ports {
     http = ${?APP_EXPOSED_PORTS_HTTP} # the exposed http port for otoroshi (when in a container or behind a proxy)
     http = ${?OTOROSHI_EXPOSED_PORTS_HTTP} # the exposed http port for otoroshi (when in a container or behind a proxy)
-    http = ${?OTOROSHI_EXPOSED_PORTS_HTTP} # the exposed http port for otoroshi (when in a container or behind a proxy
     https = ${?APP_EXPOSED_PORTS_HTTPS} # the exposed https port for otoroshi (when in a container or behind a proxy
     https = ${?OTOROSHI_EXPOSED_PORTS_HTTPS} # the exposed https port for otoroshi (when in a container or behind a proxy
   }
