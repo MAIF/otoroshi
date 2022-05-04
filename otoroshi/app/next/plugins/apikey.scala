@@ -41,7 +41,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
   override def defaultConfigObject: Option[NgPluginConfig] = NgApikeyCallsConfig().some
 
   override def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean = {
-    val config = configCache.get(ctx.route.id, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
+    val config = configCache.get(ctx.route.cacheableId, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
     if (config.routing.enabled) {
       if (config.routing.hasNoRoutingConstraints) {
         true
@@ -66,7 +66,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
   }
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val config    = configCache.get(ctx.route.id, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
+    val config    = configCache.get(ctx.route.cacheableId, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
     val maybeUser = ctx.attrs.get(otoroshi.plugins.Keys.UserKey)
     (config.passWithUser match {
       case true  =>
@@ -85,7 +85,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
       ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
         case None if config.validate && !pass => {
           // Here are 2 + 12 datastore calls to handle quotas
-          val routeId = ctx.route.originalRouteId.getOrElse(ctx.route.id) // handling route groups
+          val routeId = ctx.route.cacheableId // handling route groups
           ApiKeyHelper.passWithApiKeyFromCache(ctx.request, config.legacy, ctx.attrs, routeId).map {
             case Left(result)  => NgAccess.NgDenied(result)
             case Right(apikey) =>
@@ -101,7 +101,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
-    val config = configCache.get(ctx.route.id, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
+    val config = configCache.get(ctx.route.cacheableId, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
     if (config.wipeBackendRequest) {
       ctx.attrs.get(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey) match {
         case Some(ApikeyTuple(_, _, _, Some(location))) => {

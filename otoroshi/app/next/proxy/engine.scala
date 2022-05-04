@@ -1798,11 +1798,11 @@ class ProxyEngine() extends RequestHandler {
       FEither(
         env.circuitBeakersHolder
           .get(
-            route.id + cachedPath,
+            route.cacheableId + cachedPath,
             () => new ServiceDescriptorCircuitBreaker()
           )
           .callGenNg[Result](
-            route.id,
+            route.cacheableId,
             route.name,
             route.backend.allTargets.map(_.toTarget),
             route.backend.loadBalancing,
@@ -1839,7 +1839,7 @@ class ProxyEngine() extends RequestHandler {
               trackingId,
               request,
               targets,
-              route.id
+              route.cacheableId
             )
         }
       //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
@@ -2021,11 +2021,11 @@ class ProxyEngine() extends RequestHandler {
       FEither(
         env.circuitBeakersHolder
           .get(
-            route.id + cachedPath,
+            route.cacheableId + cachedPath,
             () => new ServiceDescriptorCircuitBreaker()
           )
           .callGenNg[Flow[PlayWSMessage, PlayWSMessage, _]](
-            route.id,
+            route.cacheableId,
             route.name,
             route.backend.allTargets.map(_.toTarget),
             route.backend.loadBalancing,
@@ -2062,7 +2062,7 @@ class ProxyEngine() extends RequestHandler {
               trackingId,
               request,
               targets,
-              route.id
+              route.cacheableId
             )
         }
       //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
@@ -2969,9 +2969,9 @@ class ProxyEngine() extends RequestHandler {
       )
       route.backend.loadBalancing match {
         case BestResponseTime            =>
-          BestResponseTime.incrementAverage(route.id, backend.toTarget, duration)
+          BestResponseTime.incrementAverage(route.cacheableId, backend.toTarget, duration)
         case WeightedBestResponseTime(_) =>
-          BestResponseTime.incrementAverage(route.id, backend.toTarget, duration)
+          BestResponseTime.incrementAverage(route.cacheableId, backend.toTarget, duration)
         case _                           =>
       }
       val fromLbl               =
@@ -3122,9 +3122,9 @@ class ProxyEngine() extends RequestHandler {
       )
       route.backend.loadBalancing match {
         case BestResponseTime            =>
-          BestResponseTime.incrementAverage(route.id, backend.toTarget, duration)
+          BestResponseTime.incrementAverage(route.cacheableId, backend.toTarget, duration)
         case WeightedBestResponseTime(_) =>
-          BestResponseTime.incrementAverage(route.id, backend.toTarget, duration)
+          BestResponseTime.incrementAverage(route.cacheableId, backend.toTarget, duration)
         case _                           =>
       }
       val fromLbl                        =

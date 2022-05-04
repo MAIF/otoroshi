@@ -95,7 +95,7 @@ case class NgTreeRouter(
   def findRoute(request: RequestHeader, attrs: TypedMap)(implicit env: Env): Option[NgMatchedRoute] = {
     find(request.theDomain, request.thePath)
       .flatMap { routes =>
-        val routeIds = routes.routes.map(_.id)
+        val routeIds = routes.routes.map(_.cacheableId)
         attrs.put(otoroshi.next.plugins.Keys.MatchedRoutesKey -> routeIds)
         routes.find((r, matchedPath, pathParams, noMoreSegments) =>
           r.matches(

@@ -146,7 +146,7 @@ class NgProxyState(env: Env) {
   def allTargets(): Seq[StoredNgTarget]   = ngtargets.values.toSeq
 
   def updateRoutes(values: Seq[NgRoute]): Unit = {
-    routes.addAll(values.map(v => (v.id, v))).remAll(routes.keySet.toSeq.diff(values.map(_.id)))
+    routes.addAll(values.map(v => (v.cacheableId, v))).remAll(routes.keySet.toSeq.diff(values.map(_.cacheableId)))
     val routesByDomainRaw: Map[String, Seq[NgRoute]] = values
       .flatMap(r => r.frontend.domains.map(d => NgRouteDomainAndPathWrapper(r, d.domain, d.path)))
       .filterNot(_.domain.contains("*"))

@@ -44,6 +44,7 @@ case class NgRoute(
 ) extends EntityLocationSupport {
 
   def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.routeDataStore.set(this)
+  lazy val cacheableId: String = originalRouteId.getOrElse(id)
   override def internalId: String                                      = id
   override def theName: String                                         = name
   override def theDescription: String                                  = description

@@ -16,14 +16,14 @@ case class NgPluginInstanceConfig(raw: JsObject = Json.obj()) extends AnyVal {
 }
 
 case class PluginIndex(
-  sink: Option[Int] = None,
-  preRoute: Option[Int] = None,
-  validateAccess: Option[Int] = None,
-  transformRequest: Option[Int] = None,
-  transformResponse: Option[Int] = None,
-  matchRoute: Option[Int] = None,
-  handlesTunnel: Option[Int] = None,
-  callBackend: Option[Int] = None,
+  sink: Option[Double] = None,
+  preRoute: Option[Double] = None,
+  validateAccess: Option[Double] = None,
+  transformRequest: Option[Double] = None,
+  transformResponse: Option[Double] = None,
+  matchRoute: Option[Double] = None,
+  handlesTunnel: Option[Double] = None,
+  callBackend: Option[Double] = None,
 ) {
   def json: JsValue = PluginIndex.format.writes(this)
 }
@@ -32,14 +32,14 @@ object PluginIndex {
   val format = new Format[PluginIndex] {
     override def reads(json: JsValue): JsResult[PluginIndex] = Try {
       PluginIndex(
-        sink = json.select("sink").asOpt[Int],
-        preRoute = json.select("pre_route").asOpt[Int],
-        validateAccess = json.select("validate_access").asOpt[Int],
-        transformRequest = json.select("transform_request").asOpt[Int],
-        transformResponse = json.select("transform_response").asOpt[Int],
-        matchRoute = json.select("match_route").asOpt[Int],
-        handlesTunnel = json.select("handles_tunnel").asOpt[Int],
-        callBackend = json.select("call_backend").asOpt[Int],
+        sink = json.select("sink").asOpt[Int].map(_.toDouble).orElse(json.select("sink").asOpt[Double]),
+        preRoute = json.select("pre_route").asOpt[Int].map(_.toDouble).orElse(json.select("pre_route").asOpt[Double]),
+        validateAccess = json.select("validate_access").asOpt[Int].map(_.toDouble).orElse(json.select("validate_access").asOpt[Double]),
+        transformRequest = json.select("transform_request").asOpt[Int].map(_.toDouble).orElse(json.select("transform_request").asOpt[Double]),
+        transformResponse = json.select("transform_response").asOpt[Int].map(_.toDouble).orElse(json.select("transform_response").asOpt[Double]),
+        matchRoute = json.select("match_route").asOpt[Int].map(_.toDouble).orElse(json.select("match_route").asOpt[Double]),
+        handlesTunnel = json.select("handles_tunnel").asOpt[Int].map(_.toDouble).orElse(json.select("handles_tunnel").asOpt[Double]),
+        callBackend = json.select("call_backend").asOpt[Int].map(_.toDouble).orElse(json.select("call_backend").asOpt[Double]),
       )
     } match {
       case Failure(e) => JsError(e.getMessage())
@@ -228,6 +228,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 }
 
 object NgPlugins {
+  def empty: NgPlugins = NgPlugins(Seq.empty)
   def readFrom(lookup: JsLookupResult): NgPlugins = {
     lookup.asOpt[JsArray] match {
       case None      => NgPlugins(Seq.empty)

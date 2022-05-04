@@ -300,7 +300,9 @@ case class NgBackend(
       targetRefs = targetRefs,
       root = root,
       rewrite = rewrite,
-      loadBalancing = loadBalancing
+      loadBalancing = loadBalancing,
+      overridePlugins = false,
+      plugins = NgPlugins.empty
     )
   }
 }
@@ -336,7 +338,9 @@ case class NgMinimalBackend(
     targetRefs: Seq[String],
     root: String,
     rewrite: Boolean,
-    loadBalancing: LoadBalancing
+    loadBalancing: LoadBalancing,
+    overridePlugins: Boolean,
+    plugins: NgPlugins,
 ) {
   // I know it's not ideal but we'll go with it for now !
   lazy val allTargets: Seq[NgTarget] = targets ++ targetRefs
@@ -351,7 +355,11 @@ case class NgMinimalBackend(
     "root"           -> root,
     "rewrite"        -> rewrite,
     "load_balancing" -> loadBalancing.toJson
-  )
+  ).applyOnIf(overridePlugins) { obj =>
+    obj ++ Json.obj("override_plugins" -> overridePlugins)
+  }.applyOnIf(plugins.slots.nonEmpty) { obj =>
+    obj ++ Json.obj("plugins" -> plugins.json)
+  }
   def toBackend(client: NgClientConfig, healthCheck: Option[HealthCheck]) = {
     NgBackend(
       targets = targets,
@@ -366,7 +374,7 @@ case class NgMinimalBackend(
 }
 
 object NgMinimalBackend {
-  def empty: NgMinimalBackend                            = NgMinimalBackend(Seq.empty, Seq.empty, "/", false, RoundRobin)
+  def empty: NgMinimalBackend                            = NgMinimalBackend(Seq.empty, Seq.empty, "/", false, RoundRobin, false, NgPlugins.empty)
   def readFrom(lookup: JsLookupResult): NgMinimalBackend = readFromJson(lookup.as[JsValue])
   def readFromJson(lookup: JsValue): NgMinimalBackend = {
     lookup.asOpt[JsObject] match {
@@ -377,6 +385,8 @@ object NgMinimalBackend {
           targetRefs = obj.select("target_refs").asOpt[Seq[String]].getOrElse(Seq.empty),
           root = obj.select("root").asOpt[String].getOrElse("/"),
           rewrite = obj.select("rewrite").asOpt[Boolean].getOrElse(false),
+          overridePlugins = obj.select("override_plugins").asOpt[Boolean].getOrElse(false),
+          plugins = NgPlugins.readFrom(obj.select("plugins")),
           loadBalancing = LoadBalancing.format
             .reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj()))
             .getOrElse(RoundRobin)

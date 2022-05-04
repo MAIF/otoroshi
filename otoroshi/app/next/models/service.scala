@@ -93,12 +93,15 @@ case class NgService(
       routes.zipWithIndex.map { case (route, idx) =>
         NgRoute(
           location = location,
-          id = id + "-" + idx,
+          id = id,
           name = name + " - " + route.frontend.methods
             .mkString(", ") + " - " + route.frontend.domains.map(_.path).mkString(", "),
           description = description,
           tags = tags,
-          metadata = metadata ++ Map("otoroshi-core-original-route-id" -> id),
+          metadata = metadata ++ Map(
+            "otoroshi-core-original-route-id" -> id,
+            "otoroshi-core-cacheable-route-id" -> s"$id-$idx",
+          ),
           enabled = enabled,
           debugFlow = debugFlow,
           exportReporting = exportReporting,
@@ -106,7 +109,7 @@ case class NgService(
           frontend = route.frontend,
           backend = route.backend.toBackend(client, None),
           backendRef = route.backendRef,
-          plugins = plugins
+          plugins = if (route.backend.overridePlugins) route.backend.plugins else NgPlugins(route.backend.plugins.slots ++ plugins.slots)
         )
       }
     } else {
@@ -192,7 +195,9 @@ object NgService {
             targetRefs = Seq.empty,
             root = "/",
             rewrite = false,
-            loadBalancing = RoundRobin
+            loadBalancing = RoundRobin,
+            overridePlugins = false,
+            plugins = NgPlugins.empty
           )
         )
       }

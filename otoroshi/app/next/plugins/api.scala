@@ -21,7 +21,6 @@ import play.api.libs.json._
 import play.api.libs.ws.{WSCookie, WSResponse}
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
 
-import java.lang.reflect.TypeVariable
 import java.security.cert.X509Certificate
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
@@ -278,7 +277,7 @@ trait NgCachedConfigContext {
   def route: NgRoute
   def config: JsValue
   def cachedConfig[A](plugin: String)(reads: Reads[A]): Option[A] = Try {
-    val key = s"${route.id}::${plugin}"
+    val key = s"${route.cacheableId}::${plugin}"
     NgCachedConfigContext.cache.getIfPresent(key) match {
       case None    =>
         reads.reads(config) match {
@@ -292,7 +291,7 @@ trait NgCachedConfigContext {
   }.toOption.flatten
 
   def cachedConfigFn[A](plugin: String)(reads: JsValue => Option[A]): Option[A] = Try {
-    val key = s"${route.id}::${plugin}"
+    val key = s"${route.cacheableId}::${plugin}"
     NgCachedConfigContext.cache.getIfPresent(key) match {
       case None    =>
         reads(config) match {

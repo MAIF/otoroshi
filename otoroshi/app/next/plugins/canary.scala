@@ -118,7 +118,7 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
       }
       canaryId
     }
-    env.datastores.canaryDataStore.isCanary(ctx.route.id, trackingId, config.traffic, reqNumber, gconfig).fast.map {
+    env.datastores.canaryDataStore.isCanary(ctx.route.cacheableId, trackingId, config.traffic, reqNumber, gconfig).fast.map {
       case false => Right(Done)
       case true  =>
         val backends = NgBackend(
