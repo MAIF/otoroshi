@@ -374,7 +374,7 @@ export default ({ service }) => {
     const importOpenApi = () => {
 
       function OpenapiImport(props) {
-        const [state, setState] = useState({ openapi: 'https://maif.github.io/otoroshi/manual/code/openapi.json', domain: 'oto-api-next-gen.oto.tools' });
+        const [state, setState] = useState({ openapi: '', domain: '' });
         return (
           <>
             <div className="modal-body">
