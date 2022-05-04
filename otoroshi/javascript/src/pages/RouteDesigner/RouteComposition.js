@@ -38,7 +38,7 @@ const Uri = ({ frontend, domain }) => {
     const start = 'http://'
     return (
         <div className="d-flex-between">
-            <span className='flex ms-2' style={{ fontFamily: 'monospace' }}>{start}{domain}{end}</span>
+            <span className='flex ms-2' style={{ fontFamily: 'monospace' }}>{start}{domain}{end} {frontend.exact && <span className="badge me-1" style={{ backgroundColor: '#A3A3A3' }}>EXACT</span>}</span>
         </div>
     );
 }
