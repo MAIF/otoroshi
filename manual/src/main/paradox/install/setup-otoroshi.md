@@ -125,11 +125,15 @@ Otoroshi cannot be accessed using `http://127.0.0.1:8080` or `http://localhost:8
 Once the descriptor is saved in database, if you want to change `otoroshi.domain`, you'll have to edit the descriptor in the database or restart Otoroshi with an empty database.
 @@@
 
+@@@ warning
+if your otoroshi instance runs behind a reverse proxy (L4 / L7) or inside a docker container where exposed ports (that you will use to access otoroshi) are not the same that the ones configured in otoroshi (`http.port` and `https.port`), you'll have to configure otoroshi exposed port to avoid bad redirection URLs when using authentication modules and other otoroshi tools. To do that, just set the values of the exposed ports in `otoroshi.exposed-ports.http = $theExposedHttpPort` (OTOROSHI_EXPOSED_PORTS_HTTP) and `otoroshi.exposed-ports.https = $theExposedHttpsPort` (OTOROSHI_EXPOSED_PORTS_HTTPS)
+@@@
+
 ## Setup your configuration file
 
 There is a lot of things you can configure in Otoroshi. By default, Otoroshi provides a configuration that should be enough for testing purpose. But you'll likely need to update this configuration when you'll need to move into production.
 
-In this page, any configuration property can be set at runtime using a `-D` flag when launching Otoroshi like
+In this page, any configuration property can be set at runtime using a `-D` flag when launching Otoroshi like 
 
 ```sh
 java -Dhttp.port=8080 -jar otoroshi.jar
