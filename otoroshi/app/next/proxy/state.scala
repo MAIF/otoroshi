@@ -289,6 +289,7 @@ class NgProxyStateLoaderJob extends Job {
           metadata = Map.empty,
           enabled = true,
           debugFlow = true,
+          capture = false,
           exportReporting = false,
           frontend = NgFrontend(
             domains = Seq(NgDomainAndPath(s"${idx}-generated-next-gen.oto.tools")),
@@ -356,6 +357,7 @@ class NgProxyStateLoaderJob extends Job {
           tags = Seq.empty,
           metadata = Map.empty,
           enabled = true,
+          capture = false,
           debugFlow = true,
           exportReporting = false,
           frontend = NgFrontend(
@@ -418,6 +420,7 @@ class NgProxyStateLoaderJob extends Job {
           tags = Seq.empty,
           metadata = Map.empty,
           enabled = true,
+          capture = false,
           debugFlow = true,
           exportReporting = false,
           frontend = NgFrontend(
@@ -479,6 +482,7 @@ class NgProxyStateLoaderJob extends Job {
           tags = Seq.empty,
           metadata = Map.empty,
           enabled = true,
+          capture = false,
           debugFlow = true,
           exportReporting = false,
           frontend = NgFrontend(

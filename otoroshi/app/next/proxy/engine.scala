@@ -12,6 +12,7 @@ import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway._
 import otoroshi.models._
+import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.models._
 import otoroshi.next.plugins.Keys
 import otoroshi.next.plugins.api._
@@ -34,6 +35,7 @@ import play.api.libs.ws.WSResponse
 import play.api.mvc.Results.Status
 import play.api.mvc._
 
+import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -49,6 +51,7 @@ case class ProxyEngineConfig(
     debug: Boolean,
     debugHeaders: Boolean,
     applyLegacyChecks: Boolean,
+    capture: Boolean,
     routingStrategy: RoutingStrategy
 ) {
   lazy val useTree: Boolean = routingStrategy == RoutingStrategy.Tree
@@ -61,6 +64,7 @@ case class ProxyEngineConfig(
     "export_reporting"    -> exportReporting,
     "apply_legacy_checks" -> applyLegacyChecks,
     "debug"               -> debug,
+    "capture"             -> capture,
     "debug_headers"       -> debugHeaders,
     "routing_strategy"    -> routingStrategy.json
   )
@@ -77,6 +81,7 @@ object ProxyEngineConfig {
     debug = false,
     debugHeaders = false,
     applyLegacyChecks = true,
+    capture = false,
     routingStrategy = RoutingStrategy.Tree
   )
   def parse(config: JsValue, env: Env): ProxyEngineConfig = {
@@ -110,6 +115,7 @@ object ProxyEngineConfig {
       )
       .getOrElse(false)
     val debug             = config.select("debug").asOpt[Boolean].getOrElse(false)
+    val capture           = config.select("capture").asOpt[Boolean].getOrElse(false)
     val debugHeaders      = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
     ProxyEngineConfig(
       enabled = enabled,
@@ -119,6 +125,7 @@ object ProxyEngineConfig {
       pluginMerge = pluginMerge,
       exportReporting = exportReporting,
       debug = debug,
+      capture = capture,
       debugHeaders = debugHeaders,
       applyLegacyChecks = applyLegacyChecks,
       routingStrategy = RoutingStrategy.parse(routingStrategy)
@@ -284,7 +291,7 @@ class ProxyEngine() extends RequestHandler {
     val tryItId                                                                                        = request.headers.get("Otoroshi-Try-It-Request-Id")
     val tryIt                                                                                          = tryItId.exists(id => env.proxyState.isReportEnabledFor(id))
     val requestId                                                                                      = IdGenerator.uuid
-    val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, debug, debugHeaders, _, _) = _config
+    val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, debug, debugHeaders, _, _, _) = _config
     val useTree                                                                                        = _config.useTree
     implicit val report                                                                                = NgExecutionReport(requestId, reporting)
     report.start("start-handling")
@@ -320,11 +327,11 @@ class ProxyEngine() extends RequestHandler {
       _         <- handleConcurrentRequest(request)
       _          = report.markDoneAndStart("find-route")
       route     <- findRoute(useTree, request, request.body, global_plugins__, tryIt)
-      config     = route.metadata.get("otoroshi-core-apply-legacy-checks") match {
+      config     = (route.metadata.get("otoroshi-core-apply-legacy-checks") match {
                      case Some("false") => _config.copy(applyLegacyChecks = false)
                      case Some("true")  => _config.copy(applyLegacyChecks = true)
                      case _             => _config
-                   }
+                   }).applyOnIf(route.capture)(_.copy(capture = true))
       _          = report.markDoneAndStart("compute-plugins")
       gplugs     = global_plugins__.applyOnIf(
                      env.http2ClientProxyEnabled && route.backend.targets.forall(_.protocol == HttpProtocols.`HTTP/2.0`)
@@ -371,12 +378,12 @@ class ProxyEngine() extends RequestHandler {
                          finalRequest <-
                            callRequestTransformer(snowflake, request, request.body, route, backend, ctxPlugins)
                          _             = report.markDoneAndStart("call-backend")
-                         response     <- callBackend(snowflake, noBackendCallerPlugin = false, request, finalRequest, route, backend, ctxPlugins)
+                         response     <- callBackend(snowflake, noBackendCallerPlugin = false, request, finalRequest, route, backend, ctxPlugins, config)
                          _             = report.markDoneAndStart("transform-response")
                          finalResp    <-
                            callResponseTransformer(snowflake, request, response, route, backend, ctxPlugins)
                          _             = report.markDoneAndStart("stream-response")
-                         clientResp   <- streamResponse(snowflake, request, response, finalResp, route, backend)
+                         clientResp   <- streamResponse(snowflake, request, response, finalResp, route, backend, config)
                          _             = report.markDoneAndStart("trigger-analytics")
                          _            <- triggerProxyDone(snowflake, request, response, finalRequest, finalResp, route, backend, sb)
                        } yield clientResp
@@ -460,7 +467,7 @@ class ProxyEngine() extends RequestHandler {
     val tryItId                                                                         = request.headers.get("Otoroshi-Try-It-Request-Id")
     val tryIt                                                                           = tryItId.exists(id => env.proxyState.isReportEnabledFor(id))
     val requestId                                                                       = IdGenerator.uuid
-    val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, _, _, _, _) = _config
+    val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, _, _, _, _, _) = _config
     val useTree                                                                         = _config.useTree
     implicit val report                                                                 = NgExecutionReport(requestId, reporting)
 
@@ -2459,7 +2466,8 @@ class ProxyEngine() extends RequestHandler {
       request: NgPluginHttpRequest,
       route: NgRoute,
       backend: NgTarget,
-      plugins: NgContextualPlugins
+      plugins: NgContextualPlugins,
+      engineConfig: ProxyEngineConfig,
   )(implicit
       ec: ExecutionContext,
       env: Env,
@@ -2483,7 +2491,7 @@ class ProxyEngine() extends RequestHandler {
         attrs = attrs,
       )
       FEither.fromEitherT(
-        pluginInstance.plugin.callBackend(ctx, () => callBackend(snowflake, noBackendCallerPlugin = true, rawRequest, request, route, backend, plugins).value)
+        pluginInstance.plugin.callBackend(ctx, () => callBackend(snowflake, noBackendCallerPlugin = true, rawRequest, request, route, backend, plugins, engineConfig).value)
       )
     } else {
       val finalTarget: Target = request.backend.getOrElse(backend).toTarget
@@ -2529,7 +2537,15 @@ class ProxyEngine() extends RequestHandler {
         .withMaybeProxyServer(
           route.backend.client.proxy.orElse(globalConfig.proxies.services)
         )
-      val theBody = request.body
+      val theBody = request.body.applyOnIf(request.hasBody && engineConfig.capture) { source =>
+        var requestChunks = ByteString("")
+        source.map { chunk =>
+          requestChunks = requestChunks ++ chunk
+          chunk
+        }.alsoTo(Sink.onComplete {
+          case _ => attrs.put(otoroshi.plugins.Keys.CaptureRequestBodyKey -> requestChunks)
+        })
+      }
       // because writeableOf_WsBody always add a 'Content-Type: application/octet-stream' header
       val builderWithBody = if (currentReqHasBody) {
         if (shouldInjectContentLength) {
@@ -2765,7 +2781,8 @@ class ProxyEngine() extends RequestHandler {
       rawResponse: BackendCallResponse,
       response: NgPluginHttpResponse,
       route: NgRoute,
-      backend: NgTarget
+      backend: NgTarget,
+      engineConfig: ProxyEngineConfig,
   )(implicit
       ec: ExecutionContext,
       env: Env,
@@ -2862,7 +2879,15 @@ class ProxyEngine() extends RequestHandler {
       }
       .applyOnIf(!isHttp10)(_.filterNot(h => h._1.toLowerCase() == "content-length"))
       .toSeq
-    val theBody                        = response.body /*.map { bs =>
+    val theBody                        = response.body.applyOnIf(engineConfig.capture) { source =>
+      var responseChunks = ByteString("")
+      source.map { chunk =>
+        responseChunks = responseChunks ++ chunk
+        chunk
+      }.alsoTo(Sink.onComplete {
+        case _ => TrafficCaptureEvent(route, rawRequest, response, responseChunks, attrs).toAnalytics()
+      })
+    } /*.map { bs =>
       counterOut.addAndGet(bs.length)
       bs
     }*/

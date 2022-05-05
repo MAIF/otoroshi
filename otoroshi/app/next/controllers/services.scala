@@ -156,6 +156,7 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
       tags = Seq.empty,
       metadata = Map.empty,
       enabled = true,
+      capture = false,
       debugFlow = false,
       exportReporting = false,
       groups = Seq("default"),

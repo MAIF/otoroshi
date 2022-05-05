@@ -910,6 +910,35 @@ const possibleExporterConfigFormValues = {
       },
     },
   },
+  goreplayfile: {
+    flow: ['path', 'maxFileSize', 'captureRequests', 'captureResponses'],
+    schema: {
+      path: {
+        type: 'string',
+        props: { label: 'File path', placeholder: 'path for the file' },
+      },
+      maxFileSize: {
+        type: 'number',
+        props: {
+          label: 'Max file size',
+          placeholder: 'Max size in bytes for a file',
+          suffix: 'bytes',
+        },
+      },
+      captureRequests: {
+        type: 'bool',
+        props: {
+          label: 'Capture Requests',
+        },
+      },
+      captureResponses: {
+        type: 'bool',
+        props: {
+          label: 'Capture Responses',
+        },
+      },
+    },
+  },
   console: {
     flow: [],
     schema: {},

@@ -17,6 +17,7 @@ import otoroshi.events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
 import otoroshi.models._
 import org.joda.time.DateTime
 import otoroshi.models.{DataExporterConfig, Exporter, ExporterRef, FileSettings}
+import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
 import otoroshi.security.IdGenerator
@@ -112,6 +113,8 @@ sealed trait DataExporter {
 
   def project(event: JsValue): JsValue
 
+  def sendWithSource(events: Seq[JsValue], rawEvents: Seq[OtoroshiEvent]): Future[ExportResult] = send(events)
+
   def send(events: Seq[JsValue]): Future[ExportResult]
 
   def publish(event: OtoroshiEvent): Unit
@@ -181,13 +184,15 @@ object DataExporter {
       val stream = Source
         .queue[OtoroshiEvent](configUnsafe.bufferSize, OverflowStrategy.dropHead)
         .filter(_ => configOpt.exists(_.enabled))
-        .mapAsync(configUnsafe.jsonWorkers)(event => event.toEnrichedJson)
-        .filter(event => accept(event))
-        .map(event => project(event))
+        .mapAsync(configUnsafe.jsonWorkers)(event => event.toEnrichedJson.map(js => (js, event)))
+        .filter { case (event, _) => accept(event) }
+        .map { case (event, rawEvent) => (project(event), rawEvent) }
         .groupedWithin(configUnsafe.groupSize, configUnsafe.groupDuration)
         .filterNot(_.isEmpty)
-        .mapAsync(configUnsafe.sendWorkers) { events =>
-          Try(send(events).recover { case e: Throwable =>
+        .mapAsync(configUnsafe.sendWorkers) { items =>
+          val events = items.map(_._1)
+          val rawEvents = items.map(_._2)
+          Try(sendWithSource(events, rawEvents).recover { case e: Throwable =>
             val message = s"error while sending events on ${id} of kind ${this.getClass.getName}"
             logger.error(message, e)
             withQueue { queue => events.foreach(e => queue.offer(RetryEvent(e))) }
@@ -624,6 +629,46 @@ object Exporters {
         } getOrElse {
           FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
         }
+      }
+    }
+  }
+
+  class GoReplayFileAppenderExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+    extends DefaultDataExporter(config)(ec, env) {
+
+    override def send(events: Seq[JsValue]): Future[ExportResult] = throw new RuntimeException("send is not supported !!!")
+
+    override def sendWithSource(__events: Seq[JsValue], rawEvents: Seq[OtoroshiEvent]): Future[ExportResult] = {
+      exporter[GoReplayFileSettings].map { exporterConfig =>
+        val path = Paths.get(exporterConfig.path.replace("{day}", DateTime.now().toString("yyyy-MM-dd")))
+        val file = path.toFile
+        if (!file.exists()) {
+          file.createNewFile()
+        } else {
+          if (file.length() > exporterConfig.maxFileSize) {
+            val parts    = file.getName.split("\\.")
+            val filename = parts.head
+            val ext      = parts.last
+            file.renameTo(new File(file.getParent, filename + "." + System.currentTimeMillis() + "." + ext))
+            file.createNewFile()
+          }
+        }
+
+        val fileIsNotEmpty = file.length() > 0 && rawEvents.nonEmpty
+        val prefix         = if (fileIsNotEmpty) "\r\n" else ""
+
+        val contentToAppend = rawEvents.collect {
+          case evt: TrafficCaptureEvent => evt.toGoReplayFormat(
+            exporterConfig.captureRequests,
+            exporterConfig.captureResponses,
+          )
+        }.mkString("")
+
+        Files.write(path, (prefix + contentToAppend).getBytes, StandardOpenOption.APPEND)
+
+        FastFuture.successful(ExportResult.ExportResultSuccess)
+      } getOrElse {
+        FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
       }
     }
   }

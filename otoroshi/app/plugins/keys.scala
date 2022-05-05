@@ -1,5 +1,7 @@
 package otoroshi.plugins
 
+import akka.util.ByteString
+
 import java.util.concurrent.atomic.AtomicLong
 import otoroshi.models.{ApiKey, ApiKeyRotationInfo, PrivateAppsUser, RemainingQuotas, Target}
 import org.joda.time.DateTime
@@ -17,6 +19,7 @@ object Keys {
   val UserAgentInfoKey         = TypedKey[JsValue]("otoroshi.plugins.UserAgentInfo")
   val ExtraAnalyticsDataKey    = TypedKey[JsValue]("otoroshi.plugins.ExtraAnalyticsData")
 
+  val CaptureRequestBodyKey        = TypedKey[ByteString]("otoroshi.core.CaptureRequestBody")
   val RequestTimestampKey          = TypedKey[DateTime]("otoroshi.core.RequestTimestamp")
   val RequestStartKey              = TypedKey[Long]("otoroshi.core.RequestStart")
   val RequestWebsocketKey          = TypedKey[Boolean]("otoroshi.core.RequestWebsocket")

@@ -5464,6 +5464,10 @@
         "array" : true,
         "format" : null
       },
+      "override_plugins" : {
+        "label" : "override_plugins",
+        "type" : "bool"
+      },
       "root" : {
         "label" : "root",
         "type" : "string"
@@ -5627,7 +5631,7 @@
         "flow" : [ "type", "ratio" ]
       }
     },
-    "flow" : [ "target_refs", "root", "targets", "rewrite", "load_balancing" ]
+    "flow" : [ "target_refs", "override_plugins", "root", "targets", "rewrite", "load_balancing" ]
   },
   "otoroshi.utils.letsencrypt.LetsEncryptSettings" : {
     "schema" : {
@@ -9330,6 +9334,10 @@
             "label" : "backend_ref",
             "type" : "string"
           },
+          "capture" : {
+            "label" : "capture",
+            "type" : "bool"
+          },
           "groups" : {
             "label" : "groups",
             "type" : "string",
@@ -9731,7 +9739,7 @@
             "flow" : [ "headers", "methods", "query", "exact", "domains", "strip_path" ]
           }
         },
-        "flow" : [ "metadata", "backend_ref", "groups", "description", "_loc", "enabled", "export_reporting", "tags", "debug_flow", "name", "backend", "id", "frontend" ]
+        "flow" : [ "metadata", "backend_ref", "capture", "groups", "description", "_loc", "enabled", "export_reporting", "tags", "debug_flow", "name", "backend", "id", "frontend" ]
       },
       "no_more_segments" : {
         "label" : "no_more_segments",
@@ -9799,6 +9807,10 @@
             "label" : "backend_ref",
             "type" : "string"
           },
+          "capture" : {
+            "label" : "capture",
+            "type" : "bool"
+          },
           "groups" : {
             "label" : "groups",
             "type" : "string",
@@ -10200,7 +10212,7 @@
             "flow" : [ "headers", "methods", "query", "exact", "domains", "strip_path" ]
           }
         },
-        "flow" : [ "metadata", "backend_ref", "groups", "description", "_loc", "enabled", "export_reporting", "tags", "debug_flow", "name", "backend", "id", "frontend" ]
+        "flow" : [ "metadata", "backend_ref", "capture", "groups", "description", "_loc", "enabled", "export_reporting", "tags", "debug_flow", "name", "backend", "id", "frontend" ]
       },
       "domain" : {
         "label" : "domain",
@@ -10385,6 +10397,10 @@
       "backend_ref" : {
         "label" : "backend_ref",
         "type" : "string"
+      },
+      "capture" : {
+        "label" : "capture",
+        "type" : "bool"
       },
       "groups" : {
         "label" : "groups",
@@ -10787,7 +10803,7 @@
         "flow" : [ "headers", "methods", "query", "exact", "domains", "strip_path" ]
       }
     },
-    "flow" : [ "metadata", "backend_ref", "groups", "description", "_loc", "enabled", "export_reporting", "tags", "debug_flow", "name", "backend", "id", "frontend" ]
+    "flow" : [ "metadata", "backend_ref", "capture", "groups", "description", "_loc", "enabled", "export_reporting", "tags", "debug_flow", "name", "backend", "id", "frontend" ]
   },
   "otoroshi.next.plugins.NgApikeyExtractors" : {
     "schema" : {
@@ -19636,6 +19652,58 @@
         "array" : true,
         "format" : "form",
         "schema" : {
+          "metadata" : {
+            "label" : "metadata",
+            "type" : "object"
+          },
+          "capture" : {
+            "label" : "capture",
+            "type" : "bool"
+          },
+          "description" : {
+            "label" : "description",
+            "type" : "string"
+          },
+          "groups" : {
+            "label" : "groups",
+            "type" : "string",
+            "array" : true,
+            "format" : null
+          },
+          "_loc" : {
+            "label" : "_loc",
+            "type" : "object",
+            "format" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "teams" : {
+                "label" : "teams",
+                "type" : "string",
+                "array" : true,
+                "format" : null
+              },
+              "tenant" : {
+                "label" : "tenant",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "teams", "tenant" ]
+          },
+          "enabled" : {
+            "label" : "enabled",
+            "type" : "bool"
+          },
+          "export_reporting" : {
+            "label" : "export_reporting",
+            "type" : "bool"
+          },
+          "tags" : {
+            "label" : "tags",
+            "type" : "string",
+            "array" : true,
+            "format" : null
+          },
           "debug_flow" : {
             "label" : "debug_flow",
             "type" : "bool"
@@ -19662,6 +19730,10 @@
                     "type" : "string",
                     "array" : true,
                     "format" : null
+                  },
+                  "override_plugins" : {
+                    "label" : "override_plugins",
+                    "type" : "bool"
                   },
                   "root" : {
                     "label" : "root",
@@ -19826,7 +19898,7 @@
                     "flow" : [ "type", "ratio" ]
                   }
                 },
-                "flow" : [ "target_refs", "root", "targets", "rewrite", "load_balancing" ]
+                "flow" : [ "target_refs", "override_plugins", "root", "targets", "rewrite", "load_balancing" ]
               },
               "frontend" : {
                 "label" : "frontend",
@@ -19869,23 +19941,9 @@
             },
             "flow" : [ "backend_ref", "backend", "frontend" ]
           },
-          "metadata" : {
-            "label" : "metadata",
-            "type" : "object"
-          },
           "name" : {
             "label" : "name",
             "type" : "string"
-          },
-          "description" : {
-            "label" : "description",
-            "type" : "string"
-          },
-          "groups" : {
-            "label" : "groups",
-            "type" : "string",
-            "array" : true,
-            "format" : null
           },
           "client" : {
             "label" : "client",
@@ -20000,43 +20058,9 @@
           "id" : {
             "label" : "id",
             "type" : "string"
-          },
-          "_loc" : {
-            "label" : "_loc",
-            "type" : "object",
-            "format" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "teams" : {
-                "label" : "teams",
-                "type" : "string",
-                "array" : true,
-                "format" : null
-              },
-              "tenant" : {
-                "label" : "tenant",
-                "type" : "string"
-              }
-            },
-            "flow" : [ "teams", "tenant" ]
-          },
-          "enabled" : {
-            "label" : "enabled",
-            "type" : "bool"
-          },
-          "export_reporting" : {
-            "label" : "export_reporting",
-            "type" : "bool"
-          },
-          "tags" : {
-            "label" : "tags",
-            "type" : "string",
-            "array" : true,
-            "format" : null
           }
         },
-        "flow" : [ "debug_flow", "name", "description", "groups", "id", "enabled", "export_reporting", "tags", "routes", "metadata", "client", "_loc" ]
+        "flow" : [ "capture", "description", "groups", "enabled", "export_reporting", "tags", "debug_flow", "name", "id", "metadata", "_loc", "routes", "client" ]
       },
       "jwtVerifiers" : {
         "label" : "jwtVerifiers",
@@ -20994,6 +21018,10 @@
             "label" : "backend_ref",
             "type" : "string"
           },
+          "capture" : {
+            "label" : "capture",
+            "type" : "bool"
+          },
           "groups" : {
             "label" : "groups",
             "type" : "string",
@@ -21395,7 +21423,7 @@
             "flow" : [ "headers", "methods", "query", "exact", "domains", "strip_path" ]
           }
         },
-        "flow" : [ "backend_ref", "groups", "description", "enabled", "export_reporting", "tags", "debug_flow", "name", "id", "metadata", "_loc", "backend", "frontend" ]
+        "flow" : [ "backend_ref", "capture", "groups", "description", "enabled", "export_reporting", "tags", "debug_flow", "name", "id", "metadata", "_loc", "backend", "frontend" ]
       },
       "serviceDescriptors" : {
         "label" : "serviceDescriptors",
@@ -27782,6 +27810,10 @@
             "array" : true,
             "format" : null
           },
+          "override_plugins" : {
+            "label" : "override_plugins",
+            "type" : "bool"
+          },
           "root" : {
             "label" : "root",
             "type" : "string"
@@ -27945,7 +27977,7 @@
             "flow" : [ "type", "ratio" ]
           }
         },
-        "flow" : [ "target_refs", "root", "targets", "rewrite", "load_balancing" ]
+        "flow" : [ "target_refs", "override_plugins", "root", "targets", "rewrite", "load_balancing" ]
       },
       "frontend" : {
         "label" : "frontend",
@@ -28059,6 +28091,39 @@
       }
     },
     "flow" : [ "id" ]
+  },
+  "otoroshi.next.plugins.GraphQLQueryConfig" : {
+    "schema" : {
+      "headers" : {
+        "label" : "headers",
+        "type" : "object"
+      },
+      "method" : {
+        "label" : "method",
+        "type" : "string"
+      },
+      "query" : {
+        "label" : "query",
+        "type" : "string"
+      },
+      "response_filter" : {
+        "label" : "response_filter",
+        "type" : "string"
+      },
+      "response_path" : {
+        "label" : "response_path",
+        "type" : "string"
+      },
+      "url" : {
+        "label" : "url",
+        "type" : "string"
+      },
+      "timeout" : {
+        "label" : "timeout",
+        "type" : "number"
+      }
+    },
+    "flow" : [ "headers", "method", "query", "response_filter", "response_path", "url", "timeout" ]
   },
   "otoroshi.script.plugins.Plugins" : {
     "schema" : {
@@ -31744,6 +31809,10 @@
             "label" : "backend_ref",
             "type" : "string"
           },
+          "capture" : {
+            "label" : "capture",
+            "type" : "bool"
+          },
           "groups" : {
             "label" : "groups",
             "type" : "string",
@@ -32145,7 +32214,7 @@
             "flow" : [ "headers", "methods", "query", "exact", "domains", "strip_path" ]
           }
         },
-        "flow" : [ "backend_ref", "groups", "description", "enabled", "export_reporting", "tags", "debug_flow", "name", "id", "metadata", "_loc", "backend", "frontend" ]
+        "flow" : [ "backend_ref", "capture", "groups", "description", "enabled", "export_reporting", "tags", "debug_flow", "name", "id", "metadata", "_loc", "backend", "frontend" ]
       },
       "no_more_segments" : {
         "label" : "no_more_segments",
@@ -35370,6 +35439,58 @@
   },
   "otoroshi.next.models.NgService" : {
     "schema" : {
+      "metadata" : {
+        "label" : "metadata",
+        "type" : "object"
+      },
+      "capture" : {
+        "label" : "capture",
+        "type" : "bool"
+      },
+      "description" : {
+        "label" : "description",
+        "type" : "string"
+      },
+      "groups" : {
+        "label" : "groups",
+        "type" : "string",
+        "array" : true,
+        "format" : null
+      },
+      "_loc" : {
+        "label" : "_loc",
+        "type" : "object",
+        "format" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "teams" : {
+            "label" : "teams",
+            "type" : "string",
+            "array" : true,
+            "format" : null
+          },
+          "tenant" : {
+            "label" : "tenant",
+            "type" : "string"
+          }
+        },
+        "flow" : [ "teams", "tenant" ]
+      },
+      "enabled" : {
+        "label" : "enabled",
+        "type" : "bool"
+      },
+      "export_reporting" : {
+        "label" : "export_reporting",
+        "type" : "bool"
+      },
+      "tags" : {
+        "label" : "tags",
+        "type" : "string",
+        "array" : true,
+        "format" : null
+      },
       "debug_flow" : {
         "label" : "debug_flow",
         "type" : "bool"
@@ -35396,6 +35517,10 @@
                 "type" : "string",
                 "array" : true,
                 "format" : null
+              },
+              "override_plugins" : {
+                "label" : "override_plugins",
+                "type" : "bool"
               },
               "root" : {
                 "label" : "root",
@@ -35560,7 +35685,7 @@
                 "flow" : [ "type", "ratio" ]
               }
             },
-            "flow" : [ "target_refs", "root", "targets", "rewrite", "load_balancing" ]
+            "flow" : [ "target_refs", "override_plugins", "root", "targets", "rewrite", "load_balancing" ]
           },
           "frontend" : {
             "label" : "frontend",
@@ -35603,23 +35728,9 @@
         },
         "flow" : [ "backend_ref", "backend", "frontend" ]
       },
-      "metadata" : {
-        "label" : "metadata",
-        "type" : "object"
-      },
       "name" : {
         "label" : "name",
         "type" : "string"
-      },
-      "description" : {
-        "label" : "description",
-        "type" : "string"
-      },
-      "groups" : {
-        "label" : "groups",
-        "type" : "string",
-        "array" : true,
-        "format" : null
       },
       "client" : {
         "label" : "client",
@@ -35734,43 +35845,9 @@
       "id" : {
         "label" : "id",
         "type" : "string"
-      },
-      "_loc" : {
-        "label" : "_loc",
-        "type" : "object",
-        "format" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "teams" : {
-            "label" : "teams",
-            "type" : "string",
-            "array" : true,
-            "format" : null
-          },
-          "tenant" : {
-            "label" : "tenant",
-            "type" : "string"
-          }
-        },
-        "flow" : [ "teams", "tenant" ]
-      },
-      "enabled" : {
-        "label" : "enabled",
-        "type" : "bool"
-      },
-      "export_reporting" : {
-        "label" : "export_reporting",
-        "type" : "bool"
-      },
-      "tags" : {
-        "label" : "tags",
-        "type" : "string",
-        "array" : true,
-        "format" : null
       }
     },
-    "flow" : [ "debug_flow", "routes", "metadata", "name", "description", "groups", "client", "id", "_loc", "enabled", "export_reporting", "tags" ]
+    "flow" : [ "metadata", "capture", "description", "groups", "_loc", "enabled", "export_reporting", "tags", "debug_flow", "routes", "name", "client", "id" ]
   },
   "Unknown" : {
     "schema" : { },

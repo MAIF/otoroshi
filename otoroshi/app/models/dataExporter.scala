@@ -3,29 +3,11 @@ package otoroshi.models
 import akka.stream.scaladsl.{Sink, Source}
 import com.google.common.hash.Hashing
 import otoroshi.env.Env
-import otoroshi.events.Exporters.{
-  ConsoleExporter,
-  CustomExporter,
-  ElasticExporter,
-  FileAppenderExporter,
-  GenericMailerExporter,
-  KafkaExporter,
-  MetricsExporter,
-  PulsarExporter,
-  WebhookExporter
-}
+import otoroshi.events.Exporters.{ConsoleExporter, CustomExporter, ElasticExporter, FileAppenderExporter, GenericMailerExporter, GoReplayFileAppenderExporter, KafkaExporter, MetricsExporter, PulsarExporter, WebhookExporter}
 import otoroshi.events._
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
-import otoroshi.utils.mailer.{
-  ConsoleMailerSettings,
-  GenericMailerSettings,
-  MailerSettings,
-  MailgunSettings,
-  MailjetSettings,
-  NoneMailerSettings,
-  SendgridSettings
-}
+import otoroshi.utils.mailer.{ConsoleMailerSettings, GenericMailerSettings, MailerSettings, MailgunSettings, MailjetSettings, NoneMailerSettings, SendgridSettings}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
@@ -57,6 +39,16 @@ case class FileSettings(path: String, maxFileSize: Int = 10 * 1024 * 1024) exten
     Json.obj(
       "path"        -> path,
       "maxFileSize" -> maxFileSize
+    )
+}
+
+case class GoReplayFileSettings(path: String, maxFileSize: Int = 10 * 1024 * 1024, captureRequests: Boolean, captureResponses: Boolean) extends Exporter {
+  override def toJson: JsValue =
+    Json.obj(
+      "path"        -> path,
+      "maxFileSize" -> maxFileSize,
+      "captureRequests" -> captureRequests,
+      "captureResponses" -> captureResponses
     )
 }
 
@@ -146,6 +138,13 @@ object DataExporterConfig {
             case "pulsar"  => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
             case "file"    =>
               FileSettings((json \ "config" \ "path").as[String], (json \ "config" \ "maxFileSize").as[Int])
+            case "goreplayfile"    =>
+              GoReplayFileSettings(
+                (json \ "config" \ "path").as[String],
+                (json \ "config" \ "maxFileSize").as[Int],
+                (json \ "config" \ "captureRequests").asOpt[Boolean].getOrElse(true),
+                (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),
+              )
             case "mailer"  => MailerSettings.format.reads((json \ "config").as[JsObject]).get
             case "custom"  => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])
             case "console" => ConsoleSettings()
@@ -186,6 +185,10 @@ object DataExporterConfigType {
     def name: String = "file"
   }
 
+  case object GoReplayFile extends DataExporterConfigType {
+    def name: String = "file"
+  }
+
   case object Mailer extends DataExporterConfigType {
     def name: String = "mailer"
   }
@@ -213,6 +216,7 @@ object DataExporterConfigType {
       case "elastic" => Elastic
       case "webhook" => Webhook
       case "file"    => File
+      case "goreplayfile" => GoReplayFile
       case "mailer"  => Mailer
       case "none"    => None
       case "custom"  => Custom
@@ -260,6 +264,7 @@ case class DataExporterConfig(
       case c: ElasticAnalyticsConfig => new ElasticExporter(this)
       case c: Webhook                => new WebhookExporter(this)
       case c: FileSettings           => new FileAppenderExporter(this)
+      case c: GoReplayFileSettings   => new GoReplayFileAppenderExporter(this)
       case c: NoneMailerSettings     => new GenericMailerExporter(this)
       case c: ConsoleMailerSettings  => new GenericMailerExporter(this)
       case c: MailjetSettings        => new GenericMailerExporter(this)

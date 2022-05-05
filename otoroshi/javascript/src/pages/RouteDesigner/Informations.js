@@ -27,6 +27,10 @@ export const Informations = ({ isCreation, value, setValue }) => {
       type: type.bool,
       label: 'Route enabled',
     },
+    capture: {
+      type: type.bool,
+      label: 'Capture route traffic',
+    },
     debug_flow: {
       type: type.bool,
       label: 'Debug the flow',
@@ -93,6 +97,7 @@ export const Informations = ({ isCreation, value, setValue }) => {
     'enabled',
     'debug_flow',
     'export_reporting',
+    'capture',
     'description',
     'groups',
     {

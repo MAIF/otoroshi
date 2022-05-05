@@ -11,7 +11,10 @@ http.createServer(function (req, res) {
   });
 
   req.on('end', () => {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.writeHead(200, { 
+      'Content-Type': 'application/json',
+      'Set-Cookie': 'foo=bar'
+    });
     res.write(JSON.stringify({ headers: req.headers, method: req.method, path: req.url, body: data }));
     res.end();
   });

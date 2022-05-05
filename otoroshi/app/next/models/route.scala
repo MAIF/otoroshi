@@ -34,6 +34,7 @@ case class NgRoute(
     metadata: Map[String, String],
     enabled: Boolean,
     debugFlow: Boolean,
+    capture: Boolean,
     exportReporting: Boolean,
     groups: Seq[String] = Seq("default"),
     frontend: NgFrontend,
@@ -59,6 +60,7 @@ case class NgRoute(
     "enabled"          -> enabled,
     "debug_flow"       -> debugFlow,
     "export_reporting" -> exportReporting,
+    "capture"          -> capture,
     "groups"           -> groups,
     "frontend"         -> frontend.json,
     "backend"          -> backend.json,
@@ -581,6 +583,7 @@ object NgRoute {
     metadata = Map.empty,
     enabled = true,
     debugFlow = true,
+    capture = false,
     exportReporting = false,
     groups = Seq("default"),
     frontend = NgFrontend(
@@ -661,6 +664,7 @@ object NgRoute {
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
         debugFlow = json.select("debug_flow").asOpt[Boolean].getOrElse(false),
+        capture = json.select("capture").asOpt[Boolean].getOrElse(false),
         exportReporting = json.select("export_reporting").asOpt[Boolean].getOrElse(false),
         groups = json.select("groups").asOpt[Seq[String]].getOrElse(Seq("default")),
         frontend = NgFrontend.readFrom(json.select("frontend")),
@@ -715,6 +719,7 @@ object NgRoute {
         },
       enabled = service.enabled,
       debugFlow = debug,
+      capture = service.metadata.get("otoroshi-core-capture").contains("true"),
       exportReporting = service.metadata.get("otoroshi-core-export-reporting").contains("true"),
       frontend = NgFrontend(
         domains = {

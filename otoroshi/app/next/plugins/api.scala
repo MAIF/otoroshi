@@ -1,7 +1,7 @@
 package otoroshi.next.plugins.api
 
 import akka.Done
-import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
@@ -111,6 +111,7 @@ case class NgPluginHttpResponse(
     cookies: Seq[WSCookie] = Seq.empty[WSCookie],
     body: Source[ByteString, _]
 ) {
+  lazy val statusText: String = StatusCodes.getForKey(status).map(_.reason()).getOrElse("NONE")
   lazy val transferEncoding: Option[String] = header("Transfer-Encoding")
   lazy val isChunked: Boolean               = transferEncoding.exists(h => h.toLowerCase().contains("chunked"))
   lazy val contentType: Option[String]      = header("Content-Type")

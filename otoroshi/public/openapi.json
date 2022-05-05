@@ -18185,16 +18185,16 @@
         }
       },
       "otoroshi.models.FileSettings" : {
-        "description" : "Settings for a file data exporter",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "path" : {
-            "description" : "File path",
+            "description" : "???",
             "type" : "string"
           },
           "maxFileSize" : {
             "format" : "int32",
-            "description" : "Max file size in bytes",
+            "description" : "???",
             "type" : "integer"
           },
           "type" : {
@@ -19139,7 +19139,7 @@
         }
       },
       "otoroshi.models.ConsoleSettings" : {
-        "description" : "Data exporter that will log everything to the console",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "type" : {
@@ -19410,7 +19410,7 @@
         "properties" : { }
       },
       "otoroshi.models.DataExporterConfigFiltering" : {
-        "description" : "Settings to match otoroshi events",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "include" : {
@@ -19418,14 +19418,14 @@
             "items" : {
               "type" : "object"
             },
-            "description" : "Exclude the events matching one of those filters"
+            "description" : "???"
           },
           "exclude" : {
             "type" : "array",
             "items" : {
               "type" : "object"
             },
-            "description" : "Include the events matching one of those filters"
+            "description" : "???"
           }
         }
       },
@@ -21323,6 +21323,10 @@
             },
             "description" : "The tags of the route"
           },
+          "capture" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
           "groups" : {
             "type" : "array",
             "items" : {
@@ -21615,11 +21619,11 @@
         "properties" : { }
       },
       "otoroshi.models.ExporterRef" : {
-        "description" : "Reference to a data exporter",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "ref" : {
-            "description" : "Script id",
+            "description" : "???",
             "type" : "string"
           },
           "type" : {
@@ -21628,7 +21632,7 @@
             "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
           },
           "config" : {
-            "description" : "Script config",
+            "description" : "???",
             "type" : "object"
           }
         }
@@ -23655,6 +23659,10 @@
           "id" : {
             "description" : "The id of the service",
             "type" : "string"
+          },
+          "capture" : {
+            "description" : "???",
+            "type" : "boolean"
           },
           "description" : {
             "description" : "The description of the service",
@@ -26030,38 +26038,38 @@
         "properties" : { }
       },
       "otoroshi.models.DataExporterConfig" : {
-        "description" : "Module to export otoroshi specific events to whatever destination you want",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "desc" : {
-            "description" : "Description",
+            "description" : "???",
             "type" : "string"
           },
           "_loc" : {
-            "description" : "location",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "bufferSize" : {
             "format" : "int32",
-            "description" : "buffer size",
+            "description" : "???",
             "type" : "integer"
           },
           "jsonWorkers" : {
             "format" : "int32",
-            "description" : "nb workers",
+            "description" : "???",
             "type" : "integer"
           },
           "groupDuration" : {
-            "description" : "duration",
+            "description" : "???",
             "type" : "number"
           },
           "groupSize" : {
             "format" : "int32",
-            "description" : "Group size",
+            "description" : "???",
             "type" : "integer"
           },
           "type" : {
-            "description" : "Type of data exporter",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType"
           },
           "tags" : {
@@ -26069,19 +26077,19 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "Entity tags"
+            "description" : "???"
           },
           "sendWorkers" : {
             "format" : "int32",
-            "description" : "send workers",
+            "description" : "???",
             "type" : "integer"
           },
           "id" : {
-            "description" : "Id",
+            "description" : "???",
             "type" : "string"
           },
           "name" : {
-            "description" : "Name",
+            "description" : "???",
             "type" : "string"
           },
           "metadata" : {
@@ -26089,22 +26097,22 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "Metadata"
+            "description" : "???"
           },
           "config" : {
-            "description" : "Data Exporter config",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.models.Exporter"
           },
           "projection" : {
-            "description" : "projection",
+            "description" : "???",
             "type" : "object"
           },
           "enabled" : {
-            "description" : "Boolean",
+            "description" : "???",
             "type" : "boolean"
           },
           "filtering" : {
-            "description" : "filtering",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigFiltering"
           }
         }
@@ -26323,7 +26331,7 @@
         }
       },
       "otoroshi.models.MetricsSettings" : {
-        "description" : "Settings for metrics labels",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "type" : {
@@ -26336,7 +26344,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "Exposed labels"
+            "description" : "???"
           }
         }
       },
@@ -26413,11 +26421,11 @@
         }
       },
       "otoroshi.events.PulsarConfig" : {
-        "description" : "Settings for connection to a pulsar cluster",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "mtlsConfig" : {
-            "description" : "TLS config to access the cluster",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
           },
           "tlsTrustCertsFilePath" : {
@@ -26426,14 +26434,14 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "Trusted cert path"
+            "description" : "???"
           },
           "namespace" : {
-            "description" : "Pulsar namespace",
+            "description" : "???",
             "type" : "string"
           },
           "topic" : {
-            "description" : "Pulsar topic",
+            "description" : "???",
             "type" : "string"
           },
           "type" : {
@@ -26442,11 +26450,11 @@
             "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
           },
           "uri" : {
-            "description" : "Pulsar cluster url",
+            "description" : "???",
             "type" : "string"
           },
           "tenant" : {
-            "description" : "Pulsar tenant",
+            "description" : "???",
             "type" : "string"
           }
         }
@@ -27459,6 +27467,34 @@
           "url" : {
             "description" : "Sender URL",
             "type" : "string"
+          }
+        }
+      },
+      "otoroshi.models.GoReplayFileSettings" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "path" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "captureRequests" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "maxFileSize" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "type" : {
+            "description" : "the kind of exporter",
+            "type" : "string",
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+          },
+          "captureResponses" : {
+            "description" : "???",
+            "type" : "boolean"
           }
         }
       },
