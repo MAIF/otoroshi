@@ -655,7 +655,6 @@ object Exporters {
         }
 
         val fileIsNotEmpty = file.length() > 0 && rawEvents.nonEmpty
-        val prefix         = if (fileIsNotEmpty) "\r\n" else ""
 
         val contentToAppend = rawEvents.collect {
           case evt: TrafficCaptureEvent => evt.toGoReplayFormat(
@@ -664,7 +663,7 @@ object Exporters {
           )
         }.mkString("")
 
-        Files.write(path, (prefix + contentToAppend).getBytes, StandardOpenOption.APPEND)
+        Files.write(path, contentToAppend.getBytes, StandardOpenOption.APPEND)
 
         FastFuture.successful(ExportResult.ExportResultSuccess)
       } getOrElse {

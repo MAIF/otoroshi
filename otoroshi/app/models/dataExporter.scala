@@ -3,22 +3,18 @@ package otoroshi.models
 import akka.stream.scaladsl.{Sink, Source}
 import com.google.common.hash.Hashing
 import otoroshi.env.Env
-import otoroshi.events.Exporters.{ConsoleExporter, CustomExporter, ElasticExporter, FileAppenderExporter, GenericMailerExporter, GoReplayFileAppenderExporter, KafkaExporter, MetricsExporter, PulsarExporter, WebhookExporter}
+import otoroshi.events.Exporters._
 import otoroshi.events._
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
-import otoroshi.utils.mailer.{ConsoleMailerSettings, GenericMailerSettings, MailerSettings, MailgunSettings, MailjetSettings, NoneMailerSettings, SendgridSettings}
+import otoroshi.utils.mailer._
 import play.api.Logger
 import play.api.libs.json._
-import otoroshi.security.IdGenerator
-import otoroshi.utils.mailer.MailerSettings
 
+import java.nio.charset.StandardCharsets
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import otoroshi.utils.syntax.implicits._
-
-import java.nio.charset.StandardCharsets
 
 trait Exporter {
   def toJson: JsValue
@@ -186,7 +182,7 @@ object DataExporterConfigType {
   }
 
   case object GoReplayFile extends DataExporterConfigType {
-    def name: String = "file"
+    def name: String = "goreplayfile"
   }
 
   case object Mailer extends DataExporterConfigType {
@@ -211,18 +207,18 @@ object DataExporterConfigType {
 
   def parse(str: String): DataExporterConfigType =
     str.toLowerCase() match {
-      case "kafka"   => Kafka
-      case "pulsar"  => Pulsar
-      case "elastic" => Elastic
-      case "webhook" => Webhook
-      case "file"    => File
+      case "kafka"        => Kafka
+      case "pulsar"       => Pulsar
+      case "elastic"      => Elastic
+      case "webhook"      => Webhook
+      case "file"         => File
       case "goreplayfile" => GoReplayFile
-      case "mailer"  => Mailer
-      case "none"    => None
-      case "custom"  => Custom
-      case "console" => Console
-      case "metrics" => Metrics
-      case _         => None
+      case "mailer"       => Mailer
+      case "none"         => None
+      case "custom"       => Custom
+      case "console"      => Console
+      case "metrics"      => Metrics
+      case _              => None
     }
 }
 
@@ -280,8 +276,6 @@ case class DataExporterConfig(
 }
 
 object DataExporterConfigMigrationJob {
-
-  import otoroshi.utils.syntax.implicits._
 
   def cleanupGlobalConfig(env: Env): Future[Unit] = {
     implicit val ev = env

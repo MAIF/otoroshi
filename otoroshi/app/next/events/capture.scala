@@ -6,10 +6,16 @@ import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api.NgPluginHttpResponse
+import otoroshi.next.utils.JsonHelpers
 import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
+import otoroshi.utils.syntax.implicits.BetterJsReadable
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.RequestHeader
+
+object TrafficCaptureEvent {
+  val strippedHeaders = Seq("Remote-Address", "Timeout-Access", "Raw-Request-URI", "Tls-Session-Info").map(_.toLowerCase())
+}
 
 case class TrafficCaptureEvent(route: NgRoute, request: RequestHeader, response: NgPluginHttpResponse, responseChunks: ByteString, attrs: TypedMap) extends AnalyticEvent {
 
@@ -31,10 +37,14 @@ case class TrafficCaptureEvent(route: NgRoute, request: RequestHeader, response:
         System.lineSeparator(),
         s"${request.method.toUpperCase()} ${request.uri} ${request.version}",
         System.lineSeparator(),
-        request.headers.toSimpleMap.map { case (key, value) => s"${key}: ${value}${System.lineSeparator()}" }.mkString(""),
+        request.headers.toSimpleMap
+          .filterNot { case (key, _) => TrafficCaptureEvent.strippedHeaders.contains(key.toLowerCase) }
+          .map { case (key, value) => s"${key}: ${value}${System.lineSeparator()}" }.mkString(""),
         System.lineSeparator(),
         attrs.get(otoroshi.plugins.Keys.CaptureRequestBodyKey).map(_.utf8String).getOrElse(""),
         System.lineSeparator(),
+        s"🐵🙈🙉",
+        System.lineSeparator()
       )
       event = event ++ requestEvent
     }
@@ -77,20 +87,14 @@ case class TrafficCaptureEvent(route: NgRoute, request: RequestHeader, response:
         "id" -> route.id,
         "name" -> route.name
       ),
-      "request"     -> Json.obj(
-        "method" -> request.method,
-        "path" -> request.uri,
-        "http_version" -> request.version,
+      "request"     -> (JsonHelpers.requestToJson(request).asObject ++ Json.obj(
         "body" -> inputBody,
-        "headers" -> request.headers.toSimpleMap
-      ),
-      "response" -> Json.obj(
-        "status" -> response.status,
+      )),
+      "response" -> (response.json.asObject ++ Json.obj(
         "status_txt" -> response.statusText,
         "http_version" -> request.version,
-        "headers" -> response.headers,
         "body" -> responseChunks.utf8String
-      )
+      ))
     )
   }
 }
