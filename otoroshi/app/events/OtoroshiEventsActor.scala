@@ -654,10 +654,8 @@ object Exporters {
           }
         }
 
-        val fileIsNotEmpty = file.length() > 0 && rawEvents.nonEmpty
-
         val contentToAppend = rawEvents.collect {
-          case evt: TrafficCaptureEvent => evt.toGoReplayFormat(
+          case evt: TrafficCaptureEvent if exporterConfig.methods.isEmpty || exporterConfig.methods.contains(evt.request.method) => evt.toGoReplayFormat(
             exporterConfig.captureRequests,
             exporterConfig.captureResponses,
           )

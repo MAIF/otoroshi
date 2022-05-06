@@ -911,7 +911,7 @@ const possibleExporterConfigFormValues = {
     },
   },
   goreplayfile: {
-    flow: ['path', 'maxFileSize', 'captureRequests', 'captureResponses'],
+    flow: ['path', 'maxFileSize', 'captureRequests', 'captureResponses', 'methods'],
     schema: {
       path: {
         type: 'string',
@@ -937,6 +937,13 @@ const possibleExporterConfigFormValues = {
           label: 'Capture Responses',
         },
       },
+      methods: {
+        type: 'array',
+        props: {
+          label: 'HTTP methods',
+          help: 'filter only the http methods you want to capture. If none specified, all will be captured !'
+        }
+      }
     },
   },
   console: {

@@ -38,13 +38,20 @@ case class FileSettings(path: String, maxFileSize: Int = 10 * 1024 * 1024) exten
     )
 }
 
-case class GoReplayFileSettings(path: String, maxFileSize: Int = 10 * 1024 * 1024, captureRequests: Boolean, captureResponses: Boolean) extends Exporter {
+case class GoReplayFileSettings(
+  path: String,
+  maxFileSize: Int = 10 * 1024 * 1024,
+  captureRequests: Boolean,
+  captureResponses: Boolean,
+  methods: Seq[String],
+) extends Exporter {
   override def toJson: JsValue =
     Json.obj(
       "path"        -> path,
       "maxFileSize" -> maxFileSize,
       "captureRequests" -> captureRequests,
-      "captureResponses" -> captureResponses
+      "captureResponses" -> captureResponses,
+      "methods" -> JsArray(methods.map(JsString.apply))
     )
 }
 
@@ -140,6 +147,7 @@ object DataExporterConfig {
                 (json \ "config" \ "maxFileSize").as[Int],
                 (json \ "config" \ "captureRequests").asOpt[Boolean].getOrElse(true),
                 (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),
+                (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty),
               )
             case "mailer"  => MailerSettings.format.reads((json \ "config").as[JsObject]).get
             case "custom"  => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])

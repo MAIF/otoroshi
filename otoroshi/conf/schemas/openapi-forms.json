@@ -30996,6 +30996,39 @@
     },
     "flow" : [ "path", "type", "enabled" ]
   },
+  "otoroshi.models.GoReplayFileSettings" : {
+    "schema" : {
+      "path" : {
+        "label" : "path",
+        "type" : "string"
+      },
+      "captureRequests" : {
+        "label" : "captureRequests",
+        "type" : "bool"
+      },
+      "methods" : {
+        "label" : "methods",
+        "type" : "string",
+        "array" : true,
+        "format" : null
+      },
+      "maxFileSize" : {
+        "label" : "maxFileSize",
+        "type" : "number"
+      },
+      "type" : {
+        "label" : "type",
+        "type" : "string",
+        "format" : "select",
+        "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+      },
+      "captureResponses" : {
+        "label" : "captureResponses",
+        "type" : "bool"
+      }
+    },
+    "flow" : [ "path", "captureRequests", "methods", "maxFileSize", "type", "captureResponses" ]
+  },
   "Empty" : {
     "schema" : { },
     "flow" : [ ]
