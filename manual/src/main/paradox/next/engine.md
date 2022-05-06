@@ -625,6 +625,59 @@ this feature can have actual impact on CPU and RAM consumption
     "client_cert_chain": null,
     "body": "{\"foo\":\"bar\"}"
   },
+  "backend_request": {
+    "url": "http://localhost:3000/",
+    "method": "POST",
+    "headers": {
+      "Host": "localhost",
+      "Accept": "*/*",
+      "Cookie": "fifoo=fibar",
+      "User-Agent": "curl/7.64.1",
+      "Content-Type": "application/json",
+      "Content-Length": "13"
+    },
+    "version": "HTTP/1.1",
+    "client_cert_chain": null,
+    "cookies": [
+      {
+        "name": "fifoo",
+        "value": "fibar",
+        "domain": null,
+        "path": "/",
+        "maxAge": null,
+        "secure": false,
+        "httpOnly": true
+      }
+    ],
+    "id": "152260631569472064900000",
+    "int_id": 33,
+    "body": "{\"foo\":\"bar\"}"
+  },
+  "backend_response": {
+    "status": 200,
+    "headers": {
+      "Date": "Fri, 06 May 2022 09:20:01 GMT",
+      "Connection": "keep-alive",
+      "Set-Cookie": "foo=bar",
+      "Content-Type": "application/json",
+      "Transfer-Encoding": "chunked"
+    },
+    "cookies": [
+      {
+        "name": "foo",
+        "value": "bar",
+        "domain": null,
+        "path": null,
+        "maxAge": null,
+        "secure": false,
+        "httpOnly": false
+      }
+    ],
+    "id": "152260631569472064900000",
+    "status_txt": "OK",
+    "http_version": "HTTP/1.1",
+    "body": "{\"headers\":{\"host\":\"localhost\",\"accept\":\"*/*\",\"user-agent\":\"curl/7.64.1\",\"content-type\":\"application/json\",\"cookie\":\"fifoo=fibar\",\"content-length\":\"13\"},\"method\":\"POST\",\"path\":\"/\",\"body\":\"{\\\"foo\\\":\\\"bar\\\"}\"}"
+  },
   "response": {
     "id": "152250645825034725600000",
     "status": 200,
