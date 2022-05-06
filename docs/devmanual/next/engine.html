@@ -798,14 +798,105 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h2><a href="#debugging" name="debugging" class="anchor"><span class="anchor-link"></span></a>Debugging</h2>
 <p>with the new reporting capabilities, the new engine also have debugging capabilities built in. In you enable the <code>debug_flow</code> flag on a route (or service), the resulting <code>RequestFlowReport</code> will be enriched with contextual informations between each plugins of the route plugin pipeline</p><div class="callout note "><div class="callout-title">Note</div>
 <p>you can also use the <code>Try it</code> feature of the new route designer UI to get debug reports automatically for a specific call</p></div>
+<h2><a href="#http-traffic-capture" name="http-traffic-capture" class="anchor"><span class="anchor-link"></span></a>HTTP traffic capture</h2>
+<p>using the <code>capture</code> flag, a <code>TrafficCaptureEvent</code> is generated for each http request/response. This event will contains request and response body. Those events can be exported using <a href="../entities/data-exporters.html">data exporters</a> as usual. You can also use the <a href="../entities/data-exporters.html#goreplay-file">GoReplay file exporter</a> that is specifically designed to ingest those events and create <a href="https://goreplay.org/">GoReplay</a> files (<code>.gor</code>)</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>this feature can have actual impact on CPU and RAM consumption</p></div>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;@id&quot;: &quot;d5998b0c4-cb08-43e6-9921-27472c7a56e0&quot;,
+  &quot;@timestamp&quot;: 1651828801115,
+  &quot;@type&quot;: &quot;TrafficCaptureEvent&quot;,
+  &quot;@product&quot;: &quot;otoroshi&quot;,
+  &quot;@serviceId&quot;: &quot;route_2b2670879-131c-423d-b755-470c7b1c74b1&quot;,
+  &quot;@service&quot;: &quot;test-server&quot;,
+  &quot;@env&quot;: &quot;prod&quot;,
+  &quot;route&quot;: {
+    &quot;id&quot;: &quot;route_2b2670879-131c-423d-b755-470c7b1c74b1&quot;,
+    &quot;name&quot;: &quot;test-server&quot;
+  },
+  &quot;request&quot;: {
+    &quot;id&quot;: &quot;152250645825034725600000&quot;,
+    &quot;int_id&quot;: 115,
+    &quot;method&quot;: &quot;POST&quot;,
+    &quot;headers&quot;: {
+      &quot;Host&quot;: &quot;test-server-next-gen.oto.tools:9999&quot;,
+      &quot;Accept&quot;: &quot;*/*&quot;,
+      &quot;Cookie&quot;: &quot;fifoo=fibar&quot;,
+      &quot;User-Agent&quot;: &quot;curl/7.64.1&quot;,
+      &quot;Content-Type&quot;: &quot;application/json&quot;,
+      &quot;Content-Length&quot;: &quot;13&quot;,
+      &quot;Remote-Address&quot;: &quot;127.0.0.1:57660&quot;,
+      &quot;Timeout-Access&quot;: &quot;&lt;function1&gt;&quot;,
+      &quot;Raw-Request-URI&quot;: &quot;/&quot;,
+      &quot;Tls-Session-Info&quot;: &quot;Session(1651828041285|SSL_NULL_WITH_NULL_NULL)&quot;
+    },
+    &quot;cookies&quot;: [
+      {
+        &quot;name&quot;: &quot;fifoo&quot;,
+        &quot;value&quot;: &quot;fibar&quot;,
+        &quot;path&quot;: &quot;/&quot;,
+        &quot;domain&quot;: null,
+        &quot;http_only&quot;: true,
+        &quot;max_age&quot;: null,
+        &quot;secure&quot;: false,
+        &quot;same_site&quot;: null
+      }
+    ],
+    &quot;tls&quot;: false,
+    &quot;uri&quot;: &quot;/&quot;,
+    &quot;path&quot;: &quot;/&quot;,
+    &quot;version&quot;: &quot;HTTP/1.1&quot;,
+    &quot;has_body&quot;: true,
+    &quot;remote&quot;: &quot;127.0.0.1&quot;,
+    &quot;client_cert_chain&quot;: null,
+    &quot;body&quot;: &quot;{\&quot;foo\&quot;:\&quot;bar\&quot;}&quot;
+  },
+  &quot;response&quot;: {
+    &quot;id&quot;: &quot;152250645825034725600000&quot;,
+    &quot;status&quot;: 200,
+    &quot;headers&quot;: {
+      &quot;Date&quot;: &quot;Fri, 06 May 2022 09:20:01 GMT&quot;,
+      &quot;Connection&quot;: &quot;keep-alive&quot;,
+      &quot;Set-Cookie&quot;: &quot;foo=bar&quot;,
+      &quot;Content-Type&quot;: &quot;application/json&quot;,
+      &quot;Transfer-Encoding&quot;: &quot;chunked&quot;
+    },
+    &quot;cookies&quot;: [
+      {
+        &quot;name&quot;: &quot;foo&quot;,
+        &quot;value&quot;: &quot;bar&quot;,
+        &quot;domain&quot;: null,
+        &quot;path&quot;: null,
+        &quot;maxAge&quot;: null,
+        &quot;secure&quot;: false,
+        &quot;httpOnly&quot;: false
+      }
+    ],
+    &quot;status_txt&quot;: &quot;OK&quot;,
+    &quot;http_version&quot;: &quot;HTTP/1.1&quot;,
+    &quot;body&quot;: &quot;{\&quot;headers\&quot;:{\&quot;host\&quot;:\&quot;localhost\&quot;,\&quot;accept\&quot;:\&quot;*/*\&quot;,\&quot;user-agent\&quot;:\&quot;curl/7.64.1\&quot;,\&quot;content-type\&quot;:\&quot;application/json\&quot;,\&quot;cookie\&quot;:\&quot;fifoo=fibar\&quot;,\&quot;content-length\&quot;:\&quot;13\&quot;},\&quot;method\&quot;:\&quot;POST\&quot;,\&quot;path\&quot;:\&quot;/\&quot;,\&quot;body\&quot;:\&quot;{\\\&quot;foo\\\&quot;:\\\&quot;bar\\\&quot;}\&quot;}&quot;
+  },
+  &quot;user-agent-details&quot;: null,
+  &quot;origin-details&quot;: null,
+  &quot;instance-number&quot;: 0,
+  &quot;instance-name&quot;: &quot;dev&quot;,
+  &quot;instance-zone&quot;: &quot;local&quot;,
+  &quot;instance-region&quot;: &quot;local&quot;,
+  &quot;instance-dc&quot;: &quot;local&quot;,
+  &quot;instance-provider&quot;: &quot;local&quot;,
+  &quot;instance-rack&quot;: &quot;local&quot;,
+  &quot;cluster-mode&quot;: &quot;Leader&quot;,
+  &quot;cluster-name&quot;: &quot;otoroshi-leader-9hnv5HUXpbCZD7Ee&quot;
+}
+</code></pre>
 <h2><a href="#openapi-import" name="openapi-import" class="anchor"><span class="anchor-link"></span></a>openapi import</h2>
-<p>as the new router offers possibility to match exactly on a single path and a single method, and with the help of the <code>service</code> entity, it is now pretty easy to import openapi document as <code>service</code> entities. To do that, a new api has been made available to perform the translation. Be aware that this api <strong>DOES NOT</strong> save the entity and just return the result of the translation.</p>
+<p>as the new router offers possibility to match exactly on a single path and a single method, and with the help of the <code>service</code> entity, it is now pretty easy to import openapi document as <code>service</code> entities. To do that, a new api has been made available to perform the translation. Be aware that this api <strong>DOES NOT</strong> save the entity and just return the result of the translation. </p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST \
   -H &#39;Content-Type: application/json&#39; \
   -u admin-api-apikey-id:admin-api-apikey-secret \
   &#39;http://otoroshi-api.oto.tools:8080/api/experimental/services/_openapi&#39; \
   -d &#39;{&quot;domain&quot;:&quot;oto-api-proxy.oto.tools&quot;,&quot;openapi&quot;:&quot;https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json&quot;}&#39;
-</code></pre>
+</code></pre><div class="centered-img">
+<img src="../imgs/route_comp_openapi_import.png" /></div>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../next/secrets.html">Secrets management</a></p>
 </div>
@@ -827,6 +918,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../next/engine.html#using-legacy-plugins" class="header">Using legacy plugins</a></li>
     <li><a href="../next/engine.html#reporting" class="header">Reporting</a></li>
     <li><a href="../next/engine.html#debugging" class="header">Debugging</a></li>
+    <li><a href="../next/engine.html#http-traffic-capture" class="header">HTTP traffic capture</a></li>
     <li><a href="../next/engine.html#openapi-import" class="header">openapi import</a></li>
   </ul></li>
 </ul>
