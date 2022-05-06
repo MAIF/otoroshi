@@ -425,6 +425,15 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>File path</code>: path where the logs will be write</li>
   <li><code>Max file size</code>: when size is reached, Otoroshi will create a new file postfixed by the current timestamp</li>
 </ul>
+<h2><a href="#goreplay-file" name="goreplay-file" class="anchor"><span class="anchor-link"></span></a>GoReplay file</h2>
+<p>With this kind of exporter, every matching event will be sent to a <code>.gor</code> file compatible with <a href="https://goreplay.org/">GoReplay</a>. </p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>this exporter will only be able to catch <code>TrafficCaptureEvent</code>. Those events are created when a route (or the global config) of the <a href="../next/engine.html">next gen proxy engine</a> is setup to capture traffic using the <code>capture</code> flag.</p></div>
+<ul>
+  <li><code>File path</code>: path where the logs will be write</li>
+  <li><code>Max file size</code>: when size is reached, Otoroshi will create a new file postfixed by the current timestamp</li>
+  <li><code>Capture requests</code>: capture http requests in the <code>.gor</code> file</li>
+  <li><code>Capture responses</code>: capture http responses in the <code>.gor</code> file</li>
+</ul>
 <h2><a href="#console" name="console" class="anchor"><span class="anchor-link"></span></a>Console</h2>
 <p>Nothing to add. The events will be write on the standard output.</p>
 <h2><a href="#custom" name="custom" class="anchor"><span class="anchor-link"></span></a>Custom</h2>
@@ -458,6 +467,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/data-exporters.html#kafka" class="header">Kafka</a></li>
     <li><a href="../entities/data-exporters.html#mailer" class="header">Mailer</a></li>
     <li><a href="../entities/data-exporters.html#file" class="header">File</a></li>
+    <li><a href="../entities/data-exporters.html#goreplay-file" class="header">GoReplay file</a></li>
     <li><a href="../entities/data-exporters.html#console" class="header">Console</a></li>
     <li><a href="../entities/data-exporters.html#custom" class="header">Custom</a></li>
     <li><a href="../entities/data-exporters.html#metrics" class="header">Metrics</a></li>
