@@ -75,6 +75,7 @@ case class TrafficCaptureEvent(route: NgRoute, request: RequestHeader, response:
 
   override def toJson(implicit env: Env): JsValue = {
     val inputBody = attrs.get(otoroshi.plugins.Keys.CaptureRequestBodyKey).map(_.utf8String).getOrElse("")
+    val id = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse("").padTo(24, "0").mkString("")
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(timestamp),
@@ -88,9 +89,12 @@ case class TrafficCaptureEvent(route: NgRoute, request: RequestHeader, response:
         "name" -> route.name
       ),
       "request"     -> (JsonHelpers.requestToJson(request).asObject ++ Json.obj(
-        "body" -> inputBody,
+        "id" -> id,
+        "int_id" -> request.id,
+         "body" -> inputBody,
       )),
       "response" -> (response.json.asObject ++ Json.obj(
+        "id" -> id,
         "status_txt" -> response.statusText,
         "http_version" -> request.version,
         "body" -> responseChunks.utf8String

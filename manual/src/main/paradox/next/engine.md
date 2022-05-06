@@ -567,9 +567,106 @@ with the new reporting capabilities, the new engine also have debugging capabili
 you can also use the `Try it` feature of the new route designer UI to get debug reports automatically for a specific call
 @@@
 
+## HTTP traffic capture
+
+using the `capture` flag, a `TrafficCaptureEvent` is generated for each http request/response. This event will contains request and response body. Those events can be exported using @ref:[data exporters](../entities/data-exporters.md) as usual. You can also use the @ref:[GoReplay file exporter](../entities/data-exporters.md#goreplay-file) that is specifically designed to ingest those events and create [GoReplay](https://goreplay.org/) files (`.gor`)
+
+@@@ warning
+this feature can have actual impact on CPU and RAM consumption
+@@@
+
+```json
+{
+  "@id": "d5998b0c4-cb08-43e6-9921-27472c7a56e0",
+  "@timestamp": 1651828801115,
+  "@type": "TrafficCaptureEvent",
+  "@product": "otoroshi",
+  "@serviceId": "route_2b2670879-131c-423d-b755-470c7b1c74b1",
+  "@service": "test-server",
+  "@env": "prod",
+  "route": {
+    "id": "route_2b2670879-131c-423d-b755-470c7b1c74b1",
+    "name": "test-server"
+  },
+  "request": {
+    "id": "152250645825034725600000",
+    "int_id": 115,
+    "method": "POST",
+    "headers": {
+      "Host": "test-server-next-gen.oto.tools:9999",
+      "Accept": "*/*",
+      "Cookie": "fifoo=fibar",
+      "User-Agent": "curl/7.64.1",
+      "Content-Type": "application/json",
+      "Content-Length": "13",
+      "Remote-Address": "127.0.0.1:57660",
+      "Timeout-Access": "<function1>",
+      "Raw-Request-URI": "/",
+      "Tls-Session-Info": "Session(1651828041285|SSL_NULL_WITH_NULL_NULL)"
+    },
+    "cookies": [
+      {
+        "name": "fifoo",
+        "value": "fibar",
+        "path": "/",
+        "domain": null,
+        "http_only": true,
+        "max_age": null,
+        "secure": false,
+        "same_site": null
+      }
+    ],
+    "tls": false,
+    "uri": "/",
+    "path": "/",
+    "version": "HTTP/1.1",
+    "has_body": true,
+    "remote": "127.0.0.1",
+    "client_cert_chain": null,
+    "body": "{\"foo\":\"bar\"}"
+  },
+  "response": {
+    "id": "152250645825034725600000",
+    "status": 200,
+    "headers": {
+      "Date": "Fri, 06 May 2022 09:20:01 GMT",
+      "Connection": "keep-alive",
+      "Set-Cookie": "foo=bar",
+      "Content-Type": "application/json",
+      "Transfer-Encoding": "chunked"
+    },
+    "cookies": [
+      {
+        "name": "foo",
+        "value": "bar",
+        "domain": null,
+        "path": null,
+        "maxAge": null,
+        "secure": false,
+        "httpOnly": false
+      }
+    ],
+    "status_txt": "OK",
+    "http_version": "HTTP/1.1",
+    "body": "{\"headers\":{\"host\":\"localhost\",\"accept\":\"*/*\",\"user-agent\":\"curl/7.64.1\",\"content-type\":\"application/json\",\"cookie\":\"fifoo=fibar\",\"content-length\":\"13\"},\"method\":\"POST\",\"path\":\"/\",\"body\":\"{\\\"foo\\\":\\\"bar\\\"}\"}"
+  },
+  "user-agent-details": null,
+  "origin-details": null,
+  "instance-number": 0,
+  "instance-name": "dev",
+  "instance-zone": "local",
+  "instance-region": "local",
+  "instance-dc": "local",
+  "instance-provider": "local",
+  "instance-rack": "local",
+  "cluster-mode": "Leader",
+  "cluster-name": "otoroshi-leader-9hnv5HUXpbCZD7Ee"
+}
+```
+
 ## openapi import
 
-as the new router offers possibility to match exactly on a single path and a single method, and with the help of the `service` entity, it is now pretty easy to import openapi document as `service` entities. To do that, a new api has been made available to perform the translation. Be aware that this api **DOES NOT** save the entity and just return the result of the translation.
+as the new router offers possibility to match exactly on a single path and a single method, and with the help of the `service` entity, it is now pretty easy to import openapi document as `service` entities. To do that, a new api has been made available to perform the translation. Be aware that this api **DOES NOT** save the entity and just return the result of the translation. 
 
 ```sh
 curl -X POST \
@@ -579,5 +676,7 @@ curl -X POST \
   -d '{"domain":"oto-api-proxy.oto.tools","openapi":"https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json"}'
 ```
 
-
+@@@ div { .centered-img }
+<img src="../imgs/route_comp_openapi_import.png" />
+@@@
 

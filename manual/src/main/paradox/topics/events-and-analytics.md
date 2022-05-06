@@ -166,3 +166,13 @@ You can also get some aggregated metrics. The analytics page can be accessed fro
 @@@ div { .centered-img }
 <img src="../imgs/service-analytics.png" />
 @@@
+
+## New proxy engine
+
+### Debug reporting
+
+when using the @ref:[new proxy engine](../next/engine.md), when a route or the global config. enables traffic capture using the `debug_flow` flag, events of type `RequestFlowReport` are generated
+
+### Traffic capture
+
+when using the @ref:[new proxy engine](../next/engine.md), when a route or the global config. enables traffic capture using the `capture` flag, events of type `TrafficCaptureEvent` are generated. It contains everything that compose otoroshi input http request and output http responses
