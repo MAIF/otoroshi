@@ -203,6 +203,19 @@ Nothing to add. The events will be write on the standard output.
 * `File path`: path where the logs will be write 
 * `Max file size`: when size is reached, Otoroshi will create a new file postfixed by the current timestamp
 
+## GoReplay file
+
+With this kind of exporter, every matching event will be sent to a `.gor` file compatible with [GoReplay](https://goreplay.org/). 
+
+@@@ warning
+this exporter will only be able to catch `TrafficCaptureEvent`. Those events are created when a route (or the global config) of the @ref:[next gen proxy engine](../next/engine.md) is setup to capture traffic using the `capture` flag.
+@@@
+
+* `File path`: path where the logs will be write 
+* `Max file size`: when size is reached, Otoroshi will create a new file postfixed by the current timestamp
+* `Capture requests`: capture http requests in the `.gor` file
+* `Capture responses`: capture http responses in the `.gor` file
+
 ## Console 
 
 Nothing to add. The events will be write on the standard output.
