@@ -1566,6 +1566,8 @@
     "otoroshi.models.GoReplayFileSettings.maxFileSize": "???",
     "otoroshi.models.GoReplayFileSettings.methods": "???",
     "otoroshi.models.GoReplayFileSettings.path": "???",
+    "otoroshi.models.GoReplayFileSettings.preferBackendRequest": "???",
+    "otoroshi.models.GoReplayFileSettings.preferBackendResponse": "???",
     "otoroshi.models.HSAlgoSettings.base64": "The secret is base64 encoded",
     "otoroshi.models.HSAlgoSettings.secret": "HMAC secret",
     "otoroshi.models.HSAlgoSettings.size": "Size for SHA function",

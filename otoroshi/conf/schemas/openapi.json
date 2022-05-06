@@ -27499,7 +27499,15 @@
             "type" : "string",
             "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
           },
+          "preferBackendRequest" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
           "captureResponses" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "preferBackendResponse" : {
             "description" : "???",
             "type" : "boolean"
           }

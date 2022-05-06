@@ -383,7 +383,7 @@ class ProxyEngine() extends RequestHandler {
                          finalResp    <-
                            callResponseTransformer(snowflake, request, response, route, backend, ctxPlugins)
                          _             = report.markDoneAndStart("stream-response")
-                         clientResp   <- streamResponse(snowflake, request, response, finalResp, route, backend, config)
+                         clientResp   <- streamResponse(snowflake, request, finalRequest, response, finalResp, route, backend, config)
                          _             = report.markDoneAndStart("trigger-analytics")
                          _            <- triggerProxyDone(snowflake, request, response, finalRequest, finalResp, route, backend, sb)
                        } yield clientResp
@@ -2778,6 +2778,7 @@ class ProxyEngine() extends RequestHandler {
   def streamResponse(
       snowflake: String,
       rawRequest: Request[Source[ByteString, _]],
+      request: NgPluginHttpRequest,
       rawResponse: BackendCallResponse,
       response: NgPluginHttpResponse,
       route: NgRoute,
@@ -2885,7 +2886,7 @@ class ProxyEngine() extends RequestHandler {
         responseChunks = responseChunks ++ chunk
         chunk
       }.alsoTo(Sink.onComplete {
-        case _ => TrafficCaptureEvent(route, rawRequest, response, responseChunks, attrs).toAnalytics()
+        case _ => TrafficCaptureEvent(route, rawRequest, request, rawResponse.response, response, responseChunks, attrs).toAnalytics()
       })
     } /*.map { bs =>
       counterOut.addAndGet(bs.length)

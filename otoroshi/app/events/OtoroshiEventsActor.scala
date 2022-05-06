@@ -658,6 +658,8 @@ object Exporters {
           case evt: TrafficCaptureEvent if exporterConfig.methods.isEmpty || exporterConfig.methods.contains(evt.request.method) => evt.toGoReplayFormat(
             exporterConfig.captureRequests,
             exporterConfig.captureResponses,
+            exporterConfig.preferBackendRequest,
+            exporterConfig.preferBackendResponse,
           )
         }.mkString("")
 
