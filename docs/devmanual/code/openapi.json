@@ -27482,6 +27482,13 @@
             "description" : "???",
             "type" : "boolean"
           },
+          "methods" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
           "maxFileSize" : {
             "format" : "int32",
             "description" : "???",
