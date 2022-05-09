@@ -3411,6 +3411,7 @@ The next time a request hits the `api.foo.bar` domain, the new engine will handl
   "apply_legacy_checks" : true,
   "debug" : false,
   "capture" : false,
+  "captureMaxEntitySize" : 10485760,
   "debug_headers" : false,
   "routing_strategy" : "tree"
 }
