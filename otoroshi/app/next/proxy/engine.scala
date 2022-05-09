@@ -52,6 +52,7 @@ case class ProxyEngineConfig(
     debugHeaders: Boolean,
     applyLegacyChecks: Boolean,
     capture: Boolean,
+    captureMaxEntitySize: Long,
     routingStrategy: RoutingStrategy
 ) {
   lazy val useTree: Boolean = routingStrategy == RoutingStrategy.Tree
@@ -65,6 +66,7 @@ case class ProxyEngineConfig(
     "apply_legacy_checks" -> applyLegacyChecks,
     "debug"               -> debug,
     "capture"             -> capture,
+    "captureMaxEntitySize" -> captureMaxEntitySize,
     "debug_headers"       -> debugHeaders,
     "routing_strategy"    -> routingStrategy.json
   )
@@ -82,6 +84,7 @@ object ProxyEngineConfig {
     debugHeaders = false,
     applyLegacyChecks = true,
     capture = false,
+    captureMaxEntitySize = 10 * 1024 * 1024,
     routingStrategy = RoutingStrategy.Tree
   )
   def parse(config: JsValue, env: Env): ProxyEngineConfig = {
@@ -116,6 +119,7 @@ object ProxyEngineConfig {
       .getOrElse(false)
     val debug             = config.select("debug").asOpt[Boolean].getOrElse(false)
     val capture           = config.select("capture").asOpt[Boolean].getOrElse(false)
+    val captureMaxEntitySize: Long = config.select("captureMaxEntitySize").asOpt[Long].getOrElse(10 * 1024 * 1024)
     val debugHeaders      = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
     ProxyEngineConfig(
       enabled = enabled,
@@ -126,6 +130,7 @@ object ProxyEngineConfig {
       exportReporting = exportReporting,
       debug = debug,
       capture = capture,
+      captureMaxEntitySize = captureMaxEntitySize,
       debugHeaders = debugHeaders,
       applyLegacyChecks = applyLegacyChecks,
       routingStrategy = RoutingStrategy.parse(routingStrategy)
@@ -291,7 +296,7 @@ class ProxyEngine() extends RequestHandler {
     val tryItId                                                                                        = request.headers.get("Otoroshi-Try-It-Request-Id")
     val tryIt                                                                                          = tryItId.exists(id => env.proxyState.isReportEnabledFor(id))
     val requestId                                                                                      = IdGenerator.uuid
-    val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, debug, debugHeaders, _, _, _) = _config
+    val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, debug, debugHeaders, _, _, _, _) = _config
     val useTree                                                                                        = _config.useTree
     implicit val report                                                                                = NgExecutionReport(requestId, reporting)
     report.start("start-handling")
@@ -467,7 +472,7 @@ class ProxyEngine() extends RequestHandler {
     val tryItId                                                                         = request.headers.get("Otoroshi-Try-It-Request-Id")
     val tryIt                                                                           = tryItId.exists(id => env.proxyState.isReportEnabledFor(id))
     val requestId                                                                       = IdGenerator.uuid
-    val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, _, _, _, _, _) = _config
+    val ProxyEngineConfig(_, _, _, reporting, pluginMerge, exportReporting, _, _, _, _, _, _) = _config
     val useTree                                                                         = _config.useTree
     implicit val report                                                                 = NgExecutionReport(requestId, reporting)
 
@@ -2540,7 +2545,9 @@ class ProxyEngine() extends RequestHandler {
       val theBody = request.body.applyOnIf(request.hasBody && engineConfig.capture) { source =>
         var requestChunks = ByteString("")
         source.map { chunk =>
-          requestChunks = requestChunks ++ chunk
+          if ((requestChunks.size + chunk.size) <= engineConfig.captureMaxEntitySize) {
+            requestChunks = requestChunks ++ chunk
+          }
           chunk
         }.alsoTo(Sink.onComplete {
           case _ => attrs.put(otoroshi.plugins.Keys.CaptureRequestBodyKey -> requestChunks)
@@ -2883,7 +2890,9 @@ class ProxyEngine() extends RequestHandler {
     val theBody                        = response.body.applyOnIf(engineConfig.capture) { source =>
       var responseChunks = ByteString("")
       source.map { chunk =>
-        responseChunks = responseChunks ++ chunk
+        if ((responseChunks.size + chunk.size) <= engineConfig.captureMaxEntitySize) {
+          responseChunks = responseChunks ++ chunk
+        }
         chunk
       }.alsoTo(Sink.onComplete {
         case _ => TrafficCaptureEvent(route, rawRequest, request, rawResponse.response, response, responseChunks, attrs).toAnalytics()

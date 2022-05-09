@@ -27490,7 +27490,7 @@
             "description" : "???"
           },
           "maxFileSize" : {
-            "format" : "int32",
+            "format" : "int64",
             "description" : "???",
             "type" : "integer"
           },

@@ -46197,6 +46197,11 @@
         "description" : "???",
         "type" : "string"
       },
+      "maxEntitySize" : {
+        "format" : "int64",
+        "description" : "???",
+        "type" : "integer"
+      },
       "captureRequests" : {
         "description" : "???",
         "type" : "boolean"
@@ -46209,7 +46214,7 @@
         "description" : "???"
       },
       "maxFileSize" : {
-        "format" : "int32",
+        "format" : "int64",
         "description" : "???",
         "type" : "integer"
       },

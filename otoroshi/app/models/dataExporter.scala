@@ -40,7 +40,7 @@ case class FileSettings(path: String, maxFileSize: Int = 10 * 1024 * 1024) exten
 
 case class GoReplayFileSettings(
   path: String,
-  maxFileSize: Int = 10 * 1024 * 1024,
+  maxFileSize: Long = 10 * 1024 * 1024,
   captureRequests: Boolean,
   captureResponses: Boolean,
   preferBackendRequest: Boolean,
@@ -148,7 +148,7 @@ object DataExporterConfig {
             case "goreplayfile"    =>
               GoReplayFileSettings(
                 (json \ "config" \ "path").as[String],
-                (json \ "config" \ "maxFileSize").as[Int],
+                (json \ "config" \ "maxFileSize").asOpt[Long].getOrElse(10 * 1024 * 1024),
                 (json \ "config" \ "captureRequests").asOpt[Boolean].getOrElse(true),
                 (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "preferBackendRequest").asOpt[Boolean].getOrElse(false),
