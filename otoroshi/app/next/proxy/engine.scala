@@ -84,7 +84,7 @@ object ProxyEngineConfig {
     debugHeaders = false,
     applyLegacyChecks = true,
     capture = false,
-    captureMaxEntitySize = 10 * 1024 * 1024,
+    captureMaxEntitySize = 4 * 1024 * 1024,
     routingStrategy = RoutingStrategy.Tree
   )
   def parse(config: JsValue, env: Env): ProxyEngineConfig = {
@@ -119,7 +119,7 @@ object ProxyEngineConfig {
       .getOrElse(false)
     val debug             = config.select("debug").asOpt[Boolean].getOrElse(false)
     val capture           = config.select("capture").asOpt[Boolean].getOrElse(false)
-    val captureMaxEntitySize: Long = config.select("captureMaxEntitySize").asOpt[Long].getOrElse(10 * 1024 * 1024)
+    val captureMaxEntitySize: Long = config.select("captureMaxEntitySize").asOpt[Long].getOrElse(4 * 1024 * 1024)
     val debugHeaders      = config.select("debug_headers").asOpt[Boolean].getOrElse(false)
     ProxyEngineConfig(
       enabled = enabled,

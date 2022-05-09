@@ -15,6 +15,7 @@ http.createServer(function (req, res) {
       'Content-Type': 'application/json',
       'Set-Cookie': 'foo=bar'
     });
+    console.log('booom !')
     res.write(JSON.stringify({ headers: req.headers, method: req.method, path: req.url, body: data }));
     res.end();
   });
