@@ -158,9 +158,9 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
         NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
     val (plsWithIndexAll, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(p => p.transformRequest.isDefined || p.transformResponse.isDefined))
-    val plsReq = plsWithIndexAll.filter(_.plugin.transformsRequest).sortWith((a, b) => a.instance.pluginIndex.get.transformRequest.get.compareTo(b.instance.pluginIndex.get.transformRequest.get) < 0)
-    val plsResp = plsWithIndexAll.filter(_.plugin.transformsResponse).sortWith((a, b) => a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0)
-    val plsErr = plsWithIndexAll.filter(_.plugin.transformsError).sortWith((a, b) => a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0)
+    val plsReq = plsWithIndexAll.filter(v => v.instance.pluginIndex.exists(_.transformRequest.isDefined) && v.plugin.transformsRequest).sortWith((a, b) => a.instance.pluginIndex.get.transformRequest.get.compareTo(b.instance.pluginIndex.get.transformRequest.get) < 0)
+    val plsResp = plsWithIndexAll.filter(v => v.instance.pluginIndex.exists(_.transformResponse.isDefined) && v.plugin.transformsResponse).sortWith((a, b) => a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0)
+    val plsErr = plsWithIndexAll.filter(v => v.instance.pluginIndex.exists(_.transformResponse.isDefined) && v.plugin.transformsError).sortWith((a, b) => a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0)
     plsReq ++ plsResp ++ plsErr ++ plsWithoutIndex
   }
 
@@ -275,9 +275,9 @@ case class NgContextualPlugins(
         NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
     val (plsWithIndexAll, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(p => p.transformRequest.isDefined || p.transformResponse.isDefined))
-    val plsReq = plsWithIndexAll.filter(_.plugin.transformsRequest).sortWith((a, b) => a.instance.pluginIndex.get.transformRequest.get.compareTo(b.instance.pluginIndex.get.transformRequest.get) < 0)
-    val plsResp = plsWithIndexAll.filter(_.plugin.transformsResponse).sortWith((a, b) => a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0)
-    val plsErr = plsWithIndexAll.filter(_.plugin.transformsError).sortWith((a, b) => a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0)
+    val plsReq = plsWithIndexAll.filter(v => v.instance.pluginIndex.exists(_.transformRequest.isDefined) && v.plugin.transformsRequest).sortWith((a, b) => a.instance.pluginIndex.get.transformRequest.get.compareTo(b.instance.pluginIndex.get.transformRequest.get) < 0)
+    val plsResp = plsWithIndexAll.filter(v => v.instance.pluginIndex.exists(_.transformResponse.isDefined) && v.plugin.transformsResponse).sortWith((a, b) => a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0)
+    val plsErr = plsWithIndexAll.filter(v => v.instance.pluginIndex.exists(_.transformResponse.isDefined) && v.plugin.transformsError).sortWith((a, b) => a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0)
     plsReq ++ plsResp ++ plsErr ++ plsWithoutIndex
   }
 

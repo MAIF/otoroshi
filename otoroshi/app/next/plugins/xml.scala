@@ -315,7 +315,7 @@ class SOAPAction extends NgBackendCall {
   def transformResponseBody(body: String, config: SOAPActionConfig): Either[String, String] = {
     config.jqResponseFilter match {
       case None         => body.right
-      case Some(filter) => {
+      case Some(filter) => Try {
         val response = ImmutableJqRequest
           .builder()
           .lib(library)
@@ -328,6 +328,9 @@ class SOAPAction extends NgBackendCall {
         } else {
           response.getOutput.right
         }
+      } match {
+        case Failure(e) => Left(Json.obj("error" -> e.getMessage).stringify)
+        case Success(r) => r
       }
     }
   }
@@ -335,7 +338,7 @@ class SOAPAction extends NgBackendCall {
   def transformRequestBody(body: String, config: SOAPActionConfig): Either[String, String] = {
     config.jqRequestFilter match {
       case None         => body.right
-      case Some(filter) => {
+      case Some(filter) => Try {
         val response = ImmutableJqRequest
           .builder()
           .lib(library)
@@ -348,6 +351,9 @@ class SOAPAction extends NgBackendCall {
         } else {
           response.getOutput.right
         }
+      } match {
+        case Failure(e) => Left(Json.obj("error" -> e.getMessage).stringify)
+        case Success(r) => r
       }
     }
   }
@@ -371,7 +377,7 @@ class SOAPAction extends NgBackendCall {
     }
     bodyF.flatMap {
       case Left(err) => bodyResponse(500, Map("Content-Type" -> "application/json"), Source.single(Json.parse(err).stringify.byteString)).future
-      case Right(body) =>
+      case Right(body) => {
         val soapEnvelop: String = el(config.envelope, body, ctx, env)
         val operation = config.action
         val url = config.url.getOrElse(s"${ctx.route.backend.targets.head.baseUrl}${ctx.route.backend.root}")
@@ -428,6 +434,7 @@ class SOAPAction extends NgBackendCall {
               }
             }
           }
+      }
     }
   }
 }
