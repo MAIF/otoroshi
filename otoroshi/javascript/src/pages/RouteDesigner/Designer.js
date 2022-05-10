@@ -157,10 +157,6 @@ const FormContainer = ({ selectedNode, route, preview, showPreview, originalRout
 
   const isOnFrontendBackend = selectedNode && ['Frontend', 'Backend'].includes(selectedNode.id)
 
-  console.log(serviceMode)
-
-  console.log(isOnFrontendBackend)
-
   return <div
     className="col-sm-8 relative-container" style={{ paddingRight: 0 }}>
     <UnselectedNode hideText={selectedNode} route={route} {...props} />
