@@ -94,7 +94,6 @@ const NodeElement = ({
   disableBorder,
   style,
   enabled,
-  onUnsavedChanges,
   onUp,
   onDown,
   onRemove,
@@ -118,8 +117,7 @@ const NodeElement = ({
         }}
         onClick={(e) => {
           e.stopPropagation();
-          if (onUnsavedChanges) onUnsavedChanges(() => setSelectedNode());
-          else setSelectedNode();
+          setSelectedNode();
         }}
         highlighted={highlighted}
         arrows={arrows}
@@ -155,26 +153,35 @@ const ServiceView = ({ route }) => {
   </div>
 }
 
-const FormContainer = ({ selectedNode, route, preview, showPreview, originalRoute, alertModal, serviceMode, ...props }) => <div
-  className="col-sm-8 relative-container" style={{ paddingRight: 0 }}>
-  <UnselectedNode hideText={selectedNode} route={route} clearPlugins={props.clearPlugins} saveRoute={props.saveRoute} deleteRoute={props.deleteRoute} />
-  {serviceMode && ['Frontend', 'Backend'].includes(selectedNode.id) && <ServiceView />}
-  {selectedNode && !serviceMode && (
-    <EditView
-      {...props}
-      route={route}
-      selectedNode={selectedNode}
-      showUpdateRouteButton={!isEqual(route, originalRoute)}
-      hidePreview={() =>
-        showPreview({
-          ...preview,
-          enabled: false,
-        })
-      }
-    />
-  )}
-  {alertModal.show && <Modal {...alertModal} />}
-</div>
+const FormContainer = ({ selectedNode, route, preview, showPreview, originalRoute, alertModal, serviceMode, ...props }) => {
+
+  const isOnFrontendBackend = selectedNode && ['Frontend', 'Backend'].includes(selectedNode.id)
+
+  console.log(serviceMode)
+
+  console.log(isOnFrontendBackend)
+
+  return <div
+    className="col-sm-8 relative-container" style={{ paddingRight: 0 }}>
+    <UnselectedNode hideText={selectedNode} route={route} {...props} />
+    {serviceMode && isOnFrontendBackend && <ServiceView route={route} />}
+    {selectedNode && (!serviceMode || (serviceMode && !isOnFrontendBackend)) && (
+      <EditView
+        {...props}
+        route={route}
+        selectedNode={selectedNode}
+        showUpdateRouteButton={!isEqual(route, originalRoute)}
+        hidePreview={() =>
+          showPreview({
+            ...preview,
+            enabled: false,
+          })
+        }
+      />
+    )}
+    {alertModal.show && <Modal {...alertModal} />}
+  </div>
+}
 
 const Modal = ({ question, onOk, onCancel }) => <div class="designer-modal d-flex align-items-center justify-content-start flex-column p-3 pt-4">
   <h4>{question}</h4>
@@ -191,11 +198,10 @@ export default ({ value }) => {
   return <Designer routeId={routeId} location={location} value={value} serviceMode={location.pathname.includes('route-compositions')} />
 }
 
-const FrontendNode = ({ onUnsavedChanges, frontend, selectedNode, setSelectedNode, removeNode }) => <div className='main-view relative-container'
+const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) => <div className='main-view relative-container'
   style={{ flex: 'initial' }}>
   <NodeElement
     element={frontend}
-    onUnsavedChanges={onUnsavedChanges}
     className="frontend-container-button"
     selectedNode={selectedNode}
     setSelectedNode={setSelectedNode}
@@ -888,35 +894,6 @@ class Designer extends React.Component {
       });
   };
 
-  onUnsavedChanges = (onConfirm) => {
-    if (this.state.changed)
-      this.setState({
-        alertModal: {
-          show: true,
-          question: 'Quit editing ? Changes you made so far will not be saved',
-          onCancel: e => {
-            e.stopPropagation()
-            this.setState({
-              alertModal: {
-                show: false
-              }
-            })
-          },
-          onOk: e => {
-            e.stopPropagation();
-            this.setState({
-              alertModal: {
-                show: false
-              }
-            })
-            onConfirm()
-          }
-        }
-      })
-    else
-      onConfirm();
-  };
-
   isPluginEnabled = (value) => this.state.route.plugins.find(plugin => plugin.nodeId === value.nodeId)?.enabled
 
   renderInBound = () => {
@@ -967,7 +944,6 @@ class Designer extends React.Component {
           {hiddenSteps[steps[i]] && nodes.map(node => <NodeElement
             onUp={e => this.onUp(e, node, steps[i])}
             onDown={e => this.onDown(e, node, steps[i])}
-            onUnsavedChanges={this.onUnsavedChanges}
             enabled={this.isPluginEnabled(node)}
             element={node}
             key={`${node.nodeId}-${i}`}
@@ -992,7 +968,6 @@ class Designer extends React.Component {
         <NodeElement
           onUp={e => this.onDown(e, node, 'TransformResponse')}
           onDown={e => this.onUp(e, node, 'TransformResponse')}
-          onUnsavedChanges={this.onUnsavedChanges}
           enabled={this.isPluginEnabled(node)}
           element={node}
           key={`${node.nodeId}${i}`}
@@ -1056,7 +1031,9 @@ class Designer extends React.Component {
   render() {
     const { loading, preview, route, plugins, backends, selectedNode,
       originalRoute, frontend, categories, alertModal,
-      showLegacy, expandAll, searched, backend, serviceMode } = this.state
+      showLegacy, expandAll, searched, backend } = this.state
+
+    const { serviceMode } = this.props;
 
     //const backendCallInst = (route && route.plugins) ? route.plugins.filter(p => {
     //  const id = p.plugin;
@@ -1079,7 +1056,7 @@ class Designer extends React.Component {
         }
       }
       return null;
-    }).filter(p => !!p) : [];  
+    }).filter(p => !!p) : [];
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins)
 
@@ -1089,14 +1066,10 @@ class Designer extends React.Component {
 
     return <Loader loading={loading}>
       <Container onClick={() => {
-        if (!this.state.alertModal.show) {
-          this.onUnsavedChanges(() => {
-            this.setState({
-              changed: false,
-              selectedNode: undefined
-            })
-          })
-        }
+        this.setState({
+          changed: false,
+          selectedNode: undefined
+        })
       }}>
         <PluginsContainer
           handleSearch={this.handleSearch}
@@ -1151,7 +1124,6 @@ class Designer extends React.Component {
                     <HeaderNode text="Request" icon="down" selectedNode={selectedNode} />
                     <Hr highlighted={!selectedNode} />
                     <FrontendNode
-                      onUnsavedChanges={this.onUnsavedChanges}
                       frontend={frontend}
                       selectedNode={selectedNode}
                       removeNode={this.removeNode}
@@ -1195,7 +1167,6 @@ class Designer extends React.Component {
                         this.setState({ selectedNode: node })
                       }
                     }}
-                    onUnsavedChanges={this.onUnsavedChanges}
                     onRemove={this.removeNode}
                   />)}
                   {false && !backendCall.plugin_backend_call_delegates && (
@@ -1209,7 +1180,6 @@ class Designer extends React.Component {
                     if (!this.state.alertModal.show)
                       this.setState({ selectedNode: backend })
                   }}
-                  onUnsavedChanges={this.onUnsavedChanges}
                   onRemove={this.removeNode}
                 />
               </Flow>
@@ -1245,7 +1215,7 @@ class Designer extends React.Component {
           )}
         </div>
       </Container>
-    </Loader>
+    </Loader >
   };
 }
 
@@ -1457,7 +1427,7 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute, saveRoute 
               <i className="fas fa-save" /> save route
             </button>
           </div>
-          
+
         </div>
       </>
     );
@@ -1547,66 +1517,72 @@ const EditViewReadOnlyActions = ({ onCancel, onOk }) => <div className="d-flex j
   </button>
 </div>
 
-function EditView({
-  selectedNode,
-  setSelectedNode,
-  route,
-  onRemove,
-  plugins,
-  updatePlugin,
-  setRoute,
-  backends,
-  readOnly,
-  addNode,
-  hidePreview,
-  showUpdateRouteButton,
-  saveChanges,
-  setRef,
-}) {
-  const [usingExistingBackend, setUsingExistingBackend] = useState(route.backend_ref);
-  const [asJsonFormat, toggleJsonFormat] = useState(selectedNode.legacy || readOnly);
-  const [form, setForm] = useState({
-    schema: {},
-    flow: [],
-    value: undefined,
-  });
-  const formRef = useRef();
+class EditView extends React.Component {
 
-  const [offset, setOffset] = useState(0);
-  const [errors, setErrors] = useState([]);
-  const [isDirty, setDirty] = useState(showUpdateRouteButton);
+  state = {
+    usingExistingBackend: this.props.route.backend_ref,
+    asJsonFormat: this.props.selectedNode.legacy || this.props.readOnly,
+    form: {
+      schema: {},
+      flow: [],
+      value: undefined,
+    },
+    offset: 0,
+    errors: [],
+    isDirty: this.props.showUpdateRouteButton
+  }
 
-  useEffect(() => {
-    setDirty(showUpdateRouteButton);
-  }, [showUpdateRouteButton]);
+  formRef = React.createRef()
 
-  useEffect(() => {
-    if (setRef && typeof setRef === 'function') setRef(isDirty);
-  }, [isDirty]);
+  componentDidMount() {
+    this.getDirtyFromProps()
+    this.manageScrolling()
+    this.loadForm()
+  }
 
-  useEffect(() => {
-    const onScroll = () => setOffset(window.pageYOffset);
-    window.removeEventListener('scroll', onScroll);
-    window.addEventListener('scroll', onScroll, { passive: true });
+  componentDidUpdate(prevProps) {
+    if (this.props.showUpdateRouteButton !== prevProps.showUpdateRouteButton)
+      this.getDirtyFromProps()
 
-    onScroll();
+    if (this.props.selectedNode.id !== prevProps.selectedNode.id)
+      this.loadForm()
+  }
 
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-    };
-  }, []);
+  manageScrolling = () => {
+    window.removeEventListener('scroll', this.onScroll);
+    window.addEventListener('scroll', this.onScroll, { passive: true });
 
-  const { id, flow, config_flow, config_schema, schema, name, nodeId } = selectedNode;
+    this.onScroll();
+  }
 
-  const isFrontendOrBackend = ['Backend', 'Frontend'].includes(id);
-  const isPluginWithConfiguration = Object.keys(config_schema).length > 0;
+  onScroll = () => {
+    this.setState({
+      offset: window.pageYOffset
+    })
+  }
 
-  const plugin =
-    isFrontendOrBackend ?
-      DEFAULT_FLOW[id] :
-      plugins.find((element) => element.id === id || element.id.endsWith(id))
+  componentWillUnmount() {
+    window.removeEventListener('scroll', this.onScroll);
+  }
 
-  useEffect(() => {
+  getDirtyFromProps = dirty => {
+    const { setRef, showUpdateRouteButton } = this.props
+    this.setState({
+      isDirty: dirty || showUpdateRouteButton
+    }, () => {
+      if (setRef && typeof setRef === 'function')
+        setRef(this.state.isDirty);
+    })
+  }
+
+  loadForm = () => {
+    const { selectedNode, plugins, route, readOnly } = this.props;
+
+    const { id, flow, config_flow, config_schema, schema, nodeId } = selectedNode;
+
+    const isFrontendOrBackend = ['Backend', 'Frontend'].includes(id);
+    const isPluginWithConfiguration = Object.keys(config_schema).length > 0;
+
     let formSchema = schema || config_schema;
     let formFlow = [
       isFrontendOrBackend ? undefined : 'status',
@@ -1624,8 +1600,8 @@ function EditView({
     if (config_schema) {
       formSchema = {
         status: {
-          type: type.object,
-          format: format.form,
+          type: 'object',
+          format: 'form',
           collapsable: true,
           collapsed: isPluginWithConfiguration,
           label: 'Informations',
@@ -1636,8 +1612,8 @@ function EditView({
         formSchema = {
           ...formSchema,
           plugin: {
-            type: type.object,
-            format: format.form,
+            type: 'object',
+            format: 'form',
             label: null,
             schema: { ...convertTransformer(config_schema) },
             flow: [...(config_flow || flow)]
@@ -1665,19 +1641,23 @@ function EditView({
       };
     }
 
-    setForm({
-      schema: formSchema,
-      flow: formFlow,
-      value,
-      originalValue: value,
+    this.setState({
+      form: {
+        schema: formSchema,
+        flow: formFlow,
+        value,
+        originalValue: value,
+      },
+      asJsonFormat: selectedNode.legacy || readOnly
     });
+  }
 
-    toggleJsonFormat(selectedNode.legacy || readOnly);
-  }, [selectedNode.nodeId]);
+  onValidate = (item) => {
+    const { selectedNode } = this.props
+    const { nodeId } = selectedNode;
 
-  const onValidate = (item) => {
     const newValue = unstringify(item);
-    return updatePlugin(
+    return this.props.updatePlugin(
       nodeId,
       selectedNode.id,
       {
@@ -1685,117 +1665,161 @@ function EditView({
         status: newValue.status,
       }
     ).then(() => {
-      setForm({ ...form, value: newValue, originalValue: newValue });
-      setDirty(false);
+      this.setState({
+        form: {
+          ...this.state.form,
+          value: newValue,
+          originalValue: newValue
+        },
+        isDirty: false
+      })
     });
   };
 
-  const onJsonInputChange = (value) => {
+  onJsonInputChange = (value) => {
+    const { form } = this.state
     validate([], form.schema, value)
       .then(() => {
-        setErrors([]);
-        setDirty(!isEqual(form.originalValue, JSON.parse(value)));
-        setForm({ ...form, value: merge(form.originalValue, JSON.parse(value)) });
+        this.setState({
+          errors: [],
+          isDirty: !isEqual(form.originalValue, JSON.parse(value)),
+          form: {
+            ...form,
+            value: merge(form.originalValue, JSON.parse(value))
+          }
+        })
       })
       .catch((err) => {
         if (err.inner && Array.isArray(err.inner)) {
-          setErrors(err.inner.map((r) => r.message));
-          setDirty(false);
+          this.setState({
+            errors: err.inner.map((r) => r.message),
+            isDirty: false
+          })
         }
       });
   };
 
-  const showActions = !selectedNode.legacy && !readOnly && 'Backend' !== id
-  const notOnBackendNode = !usingExistingBackend || id !== 'Backend'
+  toggleJsonFormat = value => {
+    this.setState({
+      asJsonFormat: value
+    })
+  }
 
-  return <div id="form" onClick={(e) => e.stopPropagation()} className="plugins-stack editor-view" style={{ top: offset }}>
-    <EditViewHeader icon={plugin.icon} name={name} id={id} onCloseForm={() => {
-      setSelectedNode(undefined);
-      hidePreview();
-    }} />
-    <div style={{ backgroundColor: '#494949' }}>
-      {selectedNode.description &&
-        <Description text={selectedNode.description} legacy={selectedNode.legacy} steps={selectedNode.plugin_steps || []} />}
-      {showActions && <EditViewFormatActions
-        asJsonFormat={asJsonFormat} errors={errors}
-        onFormClick={() => toggleJsonFormat(false)}
-        onRawJsonClick={() => {
-          if (formRef.current)
-            formRef.current.trigger().then((res) => {
-              if (res) {
-                setForm({ ...form, value: formRef.current.methods.data() })
-                toggleJsonFormat(true);
-              }
+  render() {
+    const {
+      selectedNode, setSelectedNode,
+      route, setRoute,
+      onRemove, backends, readOnly, addNode,
+      hidePreview, saveChanges
+    } = this.props
+
+    const { id, name, icon } = selectedNode
+    const { usingExistingBackend, form, offset, asJsonFormat, errors, isDirty } = this.state
+
+    const showActions = !selectedNode.legacy && !readOnly && 'Backend' !== id
+    const notOnBackendNode = !usingExistingBackend || id !== 'Backend'
+
+    if (form.flow.length === 0 && Object.keys(form.schema).length === 0)
+      return null
+
+    return <div id="form" onClick={(e) => e.stopPropagation()} className="plugins-stack editor-view" style={{ top: offset }}>
+      <EditViewHeader icon={icon} name={name} id={id} onCloseForm={() => {
+        setSelectedNode(undefined);
+        hidePreview();
+      }} />
+      <div style={{ backgroundColor: '#494949' }}>
+        {selectedNode.description &&
+          <Description text={selectedNode.description} legacy={selectedNode.legacy} steps={selectedNode.plugin_steps || []} />}
+        {showActions && <EditViewFormatActions
+          asJsonFormat={asJsonFormat} errors={errors}
+          onFormClick={() => this.toggleJsonFormat(false)}
+          onRawJsonClick={() => {
+            if (this.formRef.current)
+              this.formRef.current.validate()
+                .then(() => {
+                  this.setState({
+                    form: {
+                      ...form,
+                      value: this.formRef.current.state.intervalValue
+                    }
+                  })
+                  this.toggleJsonFormat(true);
+                })
+            else
+              this.toggleJsonFormat(true);
+          }}
+        />}
+        <BackendSelector
+          enabled={id === 'Backend'}
+          backends={backends}
+          setUsingExistingBackend={e => {
+            this.setState({
+              usingExistingBackend: e
             })
-          else
-            toggleJsonFormat(true);
-        }}
-      />}
-      <BackendSelector
-        enabled={id === 'Backend'}
-        backends={backends}
-        setUsingExistingBackend={setUsingExistingBackend}
-        setRoute={setRoute}
-        usingExistingBackend={usingExistingBackend}
-        route={route}
-      />
-      {notOnBackendNode && <div className="editor-view-form">
-        {asJsonFormat && <>
-          <EditViewJsonEditor
-            readOnly={readOnly}
-            value={form.value}
-            onChange={onJsonInputChange}
-            errors={errors} />
-          {readOnly ? <EditViewReadOnlyActions
-            onCancel={() => {
-              setSelectedNode(undefined);
-              hidePreview();
+          }}
+          setRoute={setRoute}
+          usingExistingBackend={usingExistingBackend}
+          route={route}
+        />
+        {notOnBackendNode && <div className="editor-view-form">
+          {asJsonFormat && <>
+            <EditViewJsonEditor
+              readOnly={readOnly}
+              value={form.value}
+              onChange={this.onJsonInputChange}
+              errors={errors} />
+            {readOnly ? <EditViewReadOnlyActions
+              onCancel={() => {
+                setSelectedNode(undefined);
+                hidePreview();
+              }}
+              onOk={() => {
+                hidePreview();
+                addNode(selectedNode);
+              }} />
+              : <Actions
+                showUpdateRouteButton={isDirty}
+                valid={() => this.onValidate(form.value)}
+                selectedNode={selectedNode}
+                onRemove={onRemove}
+              />}
+          </>}
+          {!asJsonFormat && <Form
+            ref={this.formRef}
+            value={unstringify(form.value)}
+            schema={form.schema}
+            flow={form.flow}
+            onSubmit={this.onValidate}
+            options={{
+              // hideLogs: true,
+              // autosubmit: true,
+              watch: () => {
+                if (this.formRef && this.formRef.current) {
+                  this.getDirtyFromProps(this.formRef.current.isDirty())
+                }
+              }
             }}
-            onOk={() => {
-              hidePreview();
-              addNode(selectedNode);
-            }} />
-            : <Actions
+            footer={({ valid }) => <Actions
               showUpdateRouteButton={isDirty}
-              valid={() => onValidate(form.value)}
+              valid={valid}
               selectedNode={selectedNode}
               onRemove={onRemove}
             />}
-        </>}
-        {!asJsonFormat && <Form
-          ref={formRef}
-          value={unstringify(form.value)}
-          schema={form.schema}
-          flow={form.flow}
-          onSubmit={onValidate}
-          options={{
-            watch: () => {
-              if (formRef.current) {
-                const formState = Object.keys(formRef.current.methods.formState.dirtyFields).length > 0;
-                setDirty(formState);
-              }
-            }
-          }}
-          footer={({ valid }) => <Actions
-            showUpdateRouteButton={isDirty}
-            valid={valid}
-            selectedNode={selectedNode}
-            onRemove={onRemove}
           />}
-        />}
-      </div>}
-      {!notOnBackendNode && <div className="d-flex justify-content-end p-3">
-        <FeedbackButton
-          text="Update the plugin"
-          icon={() => <i className="fas fa-paper-plane" />}
-          onPress={saveChanges}
-        />
-        {route.backend_ref && <Link className='btn btn-sm btn-success ms-2' to={`/backends/${route.backend_ref}/`}>
-          Edit this backend
-        </Link>}
-      </div>}
+        </div>}
+        {!notOnBackendNode && <div className="d-flex justify-content-end p-3">
+          <FeedbackButton
+            text="Update the plugin"
+            icon={() => <i className="fas fa-paper-plane" />}
+            onPress={saveChanges}
+          />
+          {route.backend_ref && <Link className='btn btn-sm btn-success ms-2' to={`/backends/${route.backend_ref}/`}>
+            Edit this backend
+          </Link>}
+        </div>}
+      </div>
     </div>
-  </div>
+  }
 }
 
 const stringify = (item) => (typeof item === 'object' ? JSON.stringify(item, null, 2) : item);

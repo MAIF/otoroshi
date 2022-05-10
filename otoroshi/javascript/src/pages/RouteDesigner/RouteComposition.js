@@ -69,21 +69,6 @@ const BackendSelector = ({ setExistingBackend, usingExistingBackend }) => <div c
     </button>
 </div>
 
-const SimpleAdvancedSelector = ({ setLevel, level }) => <div className="d-flex">
-    <button
-        className="btn btn-sm new-backend-button"
-        onClick={() => setLevel('simple')}
-        style={{ backgroundColor: level === 'advanced' ? '#494849' : '#f9b000' }}>
-        Simple
-    </button>
-    <button
-        className="btn btn-sm new-backend-button"
-        onClick={() => setLevel('advanced')}
-        style={{ backgroundColor: level === 'advanced' ? '#f9b000' : '#494849' }}>
-        Advanced
-    </button>
-</div>
-
 const RouteForms = ({ frontend, backend, backend_ref, updateRoute }) => {
     const frontendRef = useRef()
     const backendRef = useRef()
@@ -101,7 +86,6 @@ const RouteForms = ({ frontend, backend, backend_ref, updateRoute }) => {
     const [backends, setBackends] = useState([])
     const [usingExistingBackend, setExistingBackend] = useState(false)
     const [usingJsonView, setJsonView] = useState(false)
-    const [level, setLevel] = useState('simple')
 
     useEffect(() => {
         Promise.all([
@@ -111,24 +95,14 @@ const RouteForms = ({ frontend, backend, backend_ref, updateRoute }) => {
         ]).then(([frontendForm, backendForm, backends]) => {
             setSchemas({
                 frontend: {
-                    simple: {
-                        config_flow: ['domains', 'methods']
-                    },
-                    advanced: {
-                        config_flow: DEFAULT_FLOW.Frontend.config_flow
-                    },
+                    config_flow: DEFAULT_FLOW.Frontend.config_flow,
                     config_schema: toUpperCaseLabels({
                         ...frontendForm.schema,
                         ...DEFAULT_FLOW.Frontend.config_schema,
                     })
                 },
                 backend: {
-                    simple: {
-                        config_flow: ['root', 'targets']
-                    },
-                    advanced: {
-                        config_flow: DEFAULT_FLOW.Backend('').config_flow
-                    },
+                    config_flow: DEFAULT_FLOW.Backend('').config_flow,
                     config_schema: toUpperCaseLabels(
                         DEFAULT_FLOW.Backend('').config_schema(backendForm.schema)
                     )
@@ -151,21 +125,10 @@ const RouteForms = ({ frontend, backend, backend_ref, updateRoute }) => {
     }, [backend_ref])
 
     const saveChanges = () => {
-        return Promise.all([
-            frontendRef.current.trigger(),
-            backendRef.current.trigger()
-        ]).then(([resFrontend, resBackend]) => {
-            if (resFrontend && resBackend) {
-                const f = frontendRef.current.methods.data()
-                const b = backendRef.current.methods.data()
-                return updateRoute({
-                    frontend: usingJsonView ? f.frontend : f,
-                    backend: usingJsonView ? b.backend : b,
-                    backend_ref: usingExistingBackend ? backendRefValue : null
-                })
-            }
-            else
-                return Promise.reject()
+        return updateRoute({
+            frontend: frontendValue,
+            backend: backendValue,
+            backend_ref: usingExistingBackend ? backendRefValue : null
         })
     }
 
@@ -175,12 +138,7 @@ const RouteForms = ({ frontend, backend, backend_ref, updateRoute }) => {
     return <div className='p-2'>
         <div className='d-flex justify-content-end'>
             <div className='d-flex p-2' style={{ backgroundColor: "#373735", borderRadius: '4px' }}>
-                {!usingJsonView && <SimpleAdvancedSelector setLevel={setLevel} level={level} />}
                 <button className='btn btn-sm mx-1' style={{ backgroundColor: "#f9b000" }} onClick={() => {
-                    if (usingJsonView && (isDirty.frontend || isDirty.backend)) {
-                        setFrontend(frontendRef.current.methods.data().frontend)
-                        setBackend(frontendRef.current.methods.data().backend)
-                    }
                     setJsonView(!usingJsonView)
                 }}>
                     {usingJsonView ? 'Form view' : 'Advanced json'}
@@ -191,13 +149,14 @@ const RouteForms = ({ frontend, backend, backend_ref, updateRoute }) => {
             <div className='flex p-3 route-forms-form'>
                 <h5 className='route-forms-title'>Frontend</h5>
                 <RouteForm
+                    onSubmit={e => setFrontend(e.frontend ? e.frontend : e)}
                     isDirty={() => isDirty}
                     dirtyField="frontend"
                     setDirty={setDirty}
                     customRef={frontendRef}
                     value={frontendValue}
                     schema={schemas.frontend.config_schema}
-                    flow={schemas.frontend[level].config_flow}
+                    flow={schemas.frontend.config_flow}
                     usingJsonView={usingJsonView}
                 />
                 <SaveButton isDirty={isDirty} saveChanges={saveChanges} />
@@ -226,13 +185,14 @@ const RouteForms = ({ frontend, backend, backend_ref, updateRoute }) => {
                 </div>}
 
                 {!usingExistingBackend && <RouteForm
+                    onSubmit={e => setBackend(e.backend ? e.backend : e)}
                     isDirty={() => isDirty}
                     setDirty={setDirty}
                     dirtyField="backend"
                     customRef={backendRef}
                     value={backendValue}
                     schema={schemas.backend.config_schema}
-                    flow={schemas.backend[level].config_flow}
+                    flow={schemas.backend.config_flow}
                     usingJsonView={usingJsonView}
                 />}
             </div>
@@ -243,7 +203,7 @@ const RouteForms = ({ frontend, backend, backend_ref, updateRoute }) => {
     </div>
 }
 
-const RouteForm = React.memo(({ isDirty, dirtyField, customRef, value, schema, flow, setDirty, usingJsonView }) =>
+const RouteForm = React.memo(({ isDirty, dirtyField, customRef, value, schema, flow, setDirty, usingJsonView, onSubmit }) =>
     <Form
         ref={customRef}
         value={usingJsonView ? {
@@ -258,20 +218,17 @@ const RouteForm = React.memo(({ isDirty, dirtyField, customRef, value, schema, f
         } : schema}
         flow={usingJsonView ? [dirtyField] : flow}
         footer={() => null}
+        onSubmit={onSubmit}
         options={{
+            autosubmit: true,
             watch: () => {
                 if (customRef.current) {
-                    const formState = Object.keys(customRef.current.methods.formState.dirtyFields).length > 0;
-                    if (usingJsonView)
-                        setDirty({
-                            ...isDirty(),
-                            [dirtyField]: !isEqual(value, customRef.current.methods.data()[dirtyField])
-                        })
-                    else
-                        setDirty({
-                            ...isDirty(),
-                            [dirtyField]: formState
-                        });
+                    const formState = customRef.current.isDirty()
+                    console.log(formState)
+                    setDirty({
+                        ...isDirty(),
+                        [dirtyField]: formState
+                    });
                 }
             }
         }}
@@ -373,88 +330,88 @@ export default ({ service }) => {
 
     const importOpenApi = () => {
 
-      function OpenapiImport(props) {
-        const [state, setState] = useState({ openapi: '', domain: '' });
-        return (
-          <>
-            <div className="modal-body">
-              <form className="form-horizontal">
-                <div>
-                  <div className="row mb-3">
-                    <label className="col-xs-12 col-sm-2 col-form-label">
-                      Openapi URL 
-                    </label>
-                    <div className="col-sm-10">
-                      <input type="text" className="form-control" value={state.openapi} onChange={e => setState({ ...state, openapi: e.target.value })} />
+        function OpenapiImport(props) {
+            const [state, setState] = useState({ openapi: '', domain: '' });
+            return (
+                <>
+                    <div className="modal-body">
+                        <form className="form-horizontal">
+                            <div>
+                                <div className="row mb-3">
+                                    <label className="col-xs-12 col-sm-2 col-form-label">
+                                        Openapi URL
+                                    </label>
+                                    <div className="col-sm-10">
+                                        <input type="text" className="form-control" value={state.openapi} onChange={e => setState({ ...state, openapi: e.target.value })} />
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="row mb-3">
+                                    <label className="col-xs-12 col-sm-2 col-form-label">
+                                        Exposed domain
+                                    </label>
+                                    <div className="col-sm-10">
+                                        <input type="text" className="form-control" value={state.domain} onChange={e => setState({ ...state, domain: e.target.value })} />
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
                     </div>
-                  </div>
-                </div>
-                <div>
-                  <div className="row mb-3">
-                    <label className="col-xs-12 col-sm-2 col-form-label">
-                      Exposed domain
-                    </label>
-                    <div className="col-sm-10">
-                    <input type="text" className="form-control" value={state.domain} onChange={e => setState({ ...state, domain: e.target.value })} />
+                    <div className="modal-footer">
+                        <button type="button" className="btn btn-danger" onClick={props.cancel}>
+                            Close
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-success"
+                            onClick={(e) => props.ok(state)}>
+                            Ok
+                        </button>
                     </div>
-                  </div>
-                </div>
-              </form>
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-danger" onClick={props.cancel}>
-                Close
-              </button>
-              <button
-                type="button"
-                className="btn btn-success"
-                onClick={(e) => props.ok(state)}>
-                Ok
-              </button>
-            </div>
-          </>
-        );
-      }
-
-      window.popup(
-        'Import routes from openapi',
-        (ok, cancel) => <OpenapiImport ok={ok} cancel={cancel} />,
-        { __style: { width: '100%' } }
-      ).then(body => {
-        if (body) {
-          fetch('/bo/api/proxy/api/experimental/services/_openapi', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(body)
-          }).then(r => r.json()).then(imported => {
-            const routes = [...routes, ...imported.routes];
-            nextClient.update(nextClient.ENTITIES.SERVICES, {
-              ...service,
-              routes
-            }).then(s => setRoutes(s.routes))
-          })
+                </>
+            );
         }
-      });
+
+        window.popup(
+            'Import routes from openapi',
+            (ok, cancel) => <OpenapiImport ok={ok} cancel={cancel} />,
+            { __style: { width: '100%' } }
+        ).then(body => {
+            if (body) {
+                fetch('/bo/api/proxy/api/experimental/services/_openapi', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                }).then(r => r.json()).then(imported => {
+                    const routes = [...routes, ...imported.routes];
+                    nextClient.update(nextClient.ENTITIES.SERVICES, {
+                        ...service,
+                        routes
+                    }).then(s => setRoutes(s.routes))
+                })
+            }
+        });
     }
 
     return (
         <div>
             <button className='btn btn-sm btn-success' onClick={() => {
-              const newItem = { ...templates?.routes[0] }
-              updateRoute(routes.length, newItem)
-                .then(() => setRoutes([...routes, newItem]))
+                const newItem = { ...templates?.routes[0] }
+                updateRoute(routes.length, newItem)
+                    .then(() => setRoutes([...routes, newItem]))
             }}>
-              <i className='fas fa-road me-2' />
-              Create a new route
+                <i className='fas fa-road me-2' />
+                Create a new route
             </button>
             <button className="btn btn-sm btn-success" style={{ marginLeft: 10 }} onClick={() => {
-              importOpenApi();
+                importOpenApi();
             }}>
-              <i className='fas fa-file-code me-2' />
-              Import routes from openapi
+                <i className='fas fa-file-code me-2' />
+                Import routes from openapi
             </button>
             <div>
                 {/* <div className='flex'>

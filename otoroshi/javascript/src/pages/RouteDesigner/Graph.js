@@ -94,7 +94,7 @@ export const DEFAULT_FLOW = {
             type: 'string',
             disabled: true,
             render: ({ value }) => <div className='d-flex'>
-              {value.split('@').map((v, i) => <span className="target_information" key={i}>{v}</span>)}
+              {value?.split('@').map((v, i) => <span className="target_information" key={i}>{v}</span>)}
             </div>
           },
           expert_mode: {
@@ -121,7 +121,9 @@ export const DEFAULT_FLOW = {
                   ...value,
                   visible: {
                     ref: parentNode,
-                    test: (v, idx) => !!v.targets[idx]?.value?.expert_mode
+                    test: (v, idx) => {
+                      return !!v.targets[idx]?.expert_mode
+                    }
                   },
                 },
               ];
@@ -131,7 +133,7 @@ export const DEFAULT_FLOW = {
             ...generatedSchema.targets.schema.hostname,
             visible: {
               ref: parentNode,
-              test: (v, idx) => !!v.targets[idx]?.value?.expert_mode,
+              test: (v, idx) => !!v.targets[idx]?.expert_mode,
             },
             constraints: [
               {

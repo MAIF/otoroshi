@@ -4,6 +4,7 @@ import { Location } from '../../components/Location';
 import { nextClient } from '../../services/BackOfficeServices';
 import { useHistory } from 'react-router-dom';
 import { useEntityFromURI } from '../../util';
+import { merge } from 'lodash';
 
 export const Informations = ({ isCreation, value, setValue }) => {
   const ref = useRef();
@@ -123,12 +124,13 @@ export const Informations = ({ isCreation, value, setValue }) => {
         }
         ref={ref}
         onSubmit={(item) => {
+          const newItem = merge(value, item)
           if (isCreation) {
             nextClient
-              .create(nextClient.ENTITIES[fetchName], item)
-              .then(() => history.push(`/${link}/${item.id}?tab=flow`));
+              .create(nextClient.ENTITIES[fetchName], newItem)
+              .then(() => history.push(`/${link}/${newItem.id}?tab=flow`));
           } else
-            nextClient.update(nextClient.ENTITIES[fetchName], item)
+            nextClient.update(nextClient.ENTITIES[fetchName], newItem)
               .then(res => {
                 if (!res.error)
                   setValue(res)
