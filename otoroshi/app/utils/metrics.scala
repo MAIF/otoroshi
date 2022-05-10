@@ -226,12 +226,14 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
     }
   }
 
-  private val objectMapper = new ObjectMapper()
-  objectMapper.registerModule(new MetricsModule(TimeUnit.SECONDS, TimeUnit.MILLISECONDS, false))
-
-  private val prometheus = new CustomCollector(metricRegistry, jmxRegistry)
+  private val objectMapper = {
+    val om = new ObjectMapper()
+    om.registerModule(new MetricsModule(TimeUnit.SECONDS, TimeUnit.MILLISECONDS, false))
+    om
+  }
 
   def prometheusExport(filter: Option[String] = None): String = {
+    val prometheus = new CustomCollector(metricRegistry, jmxRegistry)
     filter match {
       case None       => {
         val writer = new StringWriter()
