@@ -126,7 +126,7 @@ export default (props) => {
                     const component = divs.filter(p => p.predicate)
 
                     if (component.length > 0)
-                        return <div className="designer row ps-3">
+                        return <div className="designer row">
                             {component[0].render()}
                         </div>
 

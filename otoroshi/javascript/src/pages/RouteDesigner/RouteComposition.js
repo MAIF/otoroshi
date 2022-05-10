@@ -236,19 +236,8 @@ const RouteForm = React.memo(({ isDirty, dirtyField, customRef, value, schema, f
         prev.usingJsonView === next.usingJsonView &&
         prev.flow === next.flow)
 
-const DeleteMessage = ({ onCancel, onConfirm }) => (
-    <div className="d-flex align-items-center justify-content-start flex-column p-3">
-        <h4>Delete this route ?</h4>
-        <div className="d-flex">
-            <button type="button" className="btn btn-danger me-1" onClick={onCancel}>Cancel</button>
-            <button type="button" className="btn btn-success" onClick={onConfirm}>Delete</button>
-        </div>
-    </div>
-)
-
 const Route = props => {
     const [open, setOpen] = useState(false)
-    const [onRemoving, setRemoving] = useState(false)
     const { frontend } = props
 
     return <div
@@ -265,10 +254,7 @@ const Route = props => {
                 </div>
             </div>
             <div className='d-flex'>
-                {<button className='btn btn-sm btn-danger me-2' onClick={() => {
-                    setOpen(true)
-                    setRemoving(true)
-                }}>
+                {<button className='btn btn-sm btn-danger me-2' onClick={props.removeRoute}>
                     <i className="fas fa-trash" />
                 </button>}
                 <button className='btn btn-sm' style={{ background: '#f9b000', borderColor: '#f9b000' }}
@@ -277,13 +263,7 @@ const Route = props => {
                 </button>
             </div>
         </div>
-        {onRemoving && <DeleteMessage onCancel={() => {
-            setRemoving(false)
-        }} onConfirm={() => {
-            setRemoving(false)
-            props.removeRoute()
-        }} />}
-        {open && !onRemoving && <RouteForms {...props} />}
+        {open && <RouteForms {...props} />}
     </div>
 
 }
@@ -291,6 +271,7 @@ const Route = props => {
 export default ({ service }) => {
     const [routes, setRoutes] = useState([])
     const [templates, setTemplates] = useState({})
+    const [shouldUpdateRoutes, setUpdatesRoutes] = useState(false)
 
     useEffect(() => {
         nextClient.template(nextClient.ENTITIES.SERVICES)
@@ -313,19 +294,19 @@ export default ({ service }) => {
         else if (index >= routes.length)
             r = [...routes, item]
 
-        return nextClient.update(nextClient.ENTITIES.SERVICES, {
-            ...service,
-            routes: r
-        })
-            .then(s => setRoutes(s.routes))
+        setUpdatesRoutes(!isEqual(r, service.routes))
+        setRoutes(r)
     }
 
+    const saveRoute = () => nextClient.update(nextClient.ENTITIES.SERVICES, {
+        ...service,
+        routes
+    })
+
     const removeRoute = idx => {
-        return nextClient.update(nextClient.ENTITIES.SERVICES, {
-            ...service,
-            routes: routes.filter((_, i) => i !== idx)
-        })
-            .then(() => setRoutes(routes.filter((_, i) => i !== idx)))
+        const newRoutes = routes.filter((_, i) => i !== idx)
+        setRoutes(newRoutes)
+        setUpdatesRoutes(!isEqual(newRoutes, service.routes))
     }
 
     const importOpenApi = () => {
@@ -399,34 +380,29 @@ export default ({ service }) => {
 
     return (
         <div>
-            <button className='btn btn-sm btn-success' onClick={() => {
-                const newItem = { ...templates?.routes[0] }
-                updateRoute(routes.length, newItem)
-                    .then(() => setRoutes([...routes, newItem]))
-            }}>
-                <i className='fas fa-road me-2' />
-                Create a new route
-            </button>
-            <button className="btn btn-sm btn-success" style={{ marginLeft: 10 }} onClick={() => {
-                importOpenApi();
-            }}>
-                <i className='fas fa-file-code me-2' />
-                Import routes from openapi
-            </button>
+            <div className='d-flex mb-3'>
+                <button className='btn btn-sm btn-success' onClick={() => {
+                    const newItem = { ...templates?.routes[0] }
+                    updateRoute(routes.length, newItem)
+                }}>
+                    <i className='fas fa-road me-1' />
+                    Create a new route
+                </button>
+                <button className="btn btn-sm btn-success mx-1" style={{ marginLeft: 10 }} onClick={() => {
+                    importOpenApi();
+                }}>
+                    <i className='fas fa-file-code me-1' />
+                    Import routes from openapi
+                </button>
+                <FeedbackButton
+                    className="ms-auto"
+                    disabled={!shouldUpdateRoutes}
+                    text="Save routes"
+                    icon={() => <i className='fas fa-paper-plane' />}
+                    onPress={saveRoute}
+                />
+            </div>
             <div>
-                {/* <div className='flex'>
-                    <CodeInput
-                        mode="json"
-                        themeStyle={{
-                            maxHeight: '-1',
-                            minHeight: '100px',
-                            width: '100%',
-                        }}
-                        value={routes}
-                        onChange={e => { }}
-                    />
-                </div>
-                <div className='flex'> */}
                 {routes.map((route, i) => <Route
                     {...route}
                     key={route.id} i
@@ -434,7 +410,6 @@ export default ({ service }) => {
                     updateRoute={item => updateRoute(i, item)}
                     removeRoute={() => removeRoute(i)} />
                 )}
-                {/* </div> */}
             </div>
         </div>
     )
