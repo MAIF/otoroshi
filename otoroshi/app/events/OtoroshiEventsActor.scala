@@ -425,8 +425,8 @@ object Exporters {
     }
   }
 
-  class MetricsExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+  class MetricsExporter(_config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(_config)(ec, env) {
 
     private def incGlobalOtoroshiMetrics(
         duration: Long,
@@ -492,9 +492,9 @@ object Exporters {
       }
     }
 
-    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+    override def send(events: Seq[JsValue]): Future[ExportResult] = exporter[MetricsSettings].map { exporterConfig =>
 
-      val labels       = (config.config.toJson \ "labels").as[Map[String, String]]
+      val labels       = exporterConfig.labels // (config.config.toJson \ "labels").as[Map[String, String]]
       val sortedLabels = labels.partition(_._1.contains("."))
 
       events.foreach { event =>
@@ -557,7 +557,7 @@ object Exporters {
       }
 
       FastFuture.successful(ExportResult.ExportResultSuccess)
-    }
+    }.getOrElse(ExportResult.ExportResultFailure("Bad config.").vfuture)
   }
 
   class CustomExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)

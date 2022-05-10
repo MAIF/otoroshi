@@ -247,8 +247,8 @@ class JQResponse extends NgRequestTransformer {
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
 
   override def transformsError: Boolean    = false
-  override def transformsRequest: Boolean  = true
-  override def transformsResponse: Boolean = false
+  override def transformsRequest: Boolean  = false
+  override def transformsResponse: Boolean = true
 
   override def transformResponse(
       ctx: NgTransformerResponseContext

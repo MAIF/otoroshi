@@ -18311,7 +18311,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "JQ filter for response"
+            "description" : "???"
           }
         }
       },
@@ -19614,7 +19614,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "JQ filter to transform request body"
+            "description" : "???"
           }
         }
       },
@@ -19828,7 +19828,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "JQ filter to transform response body"
+            "description" : "???"
           }
         }
       },
@@ -27219,7 +27219,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "JQ filter for request"
+            "description" : "???"
           }
         }
       },
