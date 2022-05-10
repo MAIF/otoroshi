@@ -244,19 +244,7 @@ class BackOfficeAppContainer extends Component {
                           }
                         />
                         <Route
-                          path="/routes"
-                          component={(props) => (
-                            <RouteDesignerPage
-                              globalEnv={this.state.env}
-                              setTitle={(t) => DynamicTitle.setContent(t)}
-                              getTitle={() => DynamicTitle.getContent()}
-                              setSidebarContent={(c) => DynamicSidebar.setContent(c)}
-                              {...props}
-                            />
-                          )}
-                        />
-                        <Route
-                          path="/route-compositions"
+                          path={["/routes", "/route-compositions"]}
                           component={(props) => (
                             <RouteDesignerPage
                               globalEnv={this.state.env}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Route, Switch, useLocation, useParams, useRouteMatch } from 'react-router-dom';
+import { Link, Route, Switch, useLocation, useParams, useRouteMatch } from 'react-router-dom';
 import { nextClient } from '../../services/BackOfficeServices';
 import Designer from './Designer';
 import { TryIt } from './TryIt';
@@ -23,6 +23,10 @@ export default (props) => {
 
     useEffect(() => {
         props.setTitle(entity.capitalize);
+
+        patchStyle(true)
+
+        return () => patchStyle(false)
     }, []);
 
     useEffect(() => {
@@ -35,6 +39,16 @@ export default (props) => {
             }[query]);
         }
     }, [search]);
+
+    const patchStyle = applyPatch => {
+        if (applyPatch) {
+          document.getElementsByClassName('main')[0].classList.add('patch-main');
+          [...document.getElementsByClassName('row')].map(r => r.classList.add('patch-row', 'g-0'))
+        } else {
+          document.getElementsByClassName('main')[0].classList.remove('patch-main');
+          [...document.getElementsByClassName('row')].map(r => r.classList.remove('patch-row', 'g-0'))
+        }
+      }
 
     return (
         <Switch>
@@ -68,8 +82,39 @@ export default (props) => {
                     }, [p.routeId]);
 
                     useEffect(() => {
-                        if (value && value.id)
+                        if (value && value.id) {
                             props.setSidebarContent(<DesignerSidebar route={value} />);
+
+                            props.setTitle(() => <div className='page-header d-flex align-item-center justify-content-between ms-0 mb-3'>
+                                <h3 className='flex' style={{ margin: 0 }}>
+                                    {{
+                                        flow: 'Designer',
+                                        'try-it': 'Test routes',
+                                        informations: 'Informations',
+                                        routes: 'Routes'
+                                    }[query]}
+                                </h3>
+                                <div className='d-flex align-item-center justify-content-between flex'>
+                                    {[
+                                        { to: `/${entity.link}/${value.id}?tab=informations`, icon: 'fa-file-alt', title: 'Informations', tab: 'informations' },
+                                        { to: `/${entity.link}/${value.id}?tab=routes`, icon: 'fa-road', title: 'Routes', tab: 'routes', enabled: ['route-compositions'] },
+                                        { to: `/${entity.link}/${value.id}?tab=flow`, icon: 'fa-pencil-ruler', title: 'Designer', tab: 'flow' },
+                                        { to: `/${entity.link}/${value.id}?tab=try-it`, icon: 'fa-vials', title: 'Tester', tab: 'try-it' },
+                                    ].map(({ to, icon, title, tooltip, tab }) => (
+                                        <Link
+                                            to={to}
+                                            {...(tooltip || {})}
+                                            className="btn btn-sm toggle-form-buttons ms-2" key={title}
+                                            style={{
+                                                backgroundColor: tab === query ? '#f9b000' : '#494948',
+                                                color: '#fff'
+                                            }}>
+                                            <i className={`fas ${icon}`} /> {title}
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>)
+                        }
                     }, [value]);
 
                     const divs = [

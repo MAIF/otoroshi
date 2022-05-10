@@ -145,9 +145,9 @@ const ServiceView = ({ route }) => {
   return <div
     onClick={(e) => e.stopPropagation()}
     className="plugins-stack editor-view">
-    <span>You are on a route composition. You can navigate on the list of frontends/backends to edit them.</span>
+    <p>You are on a route composition. You can navigate on the list of frontends/backends to edit them.</p>
 
-    <Link className='btn btn-sm btn-success' to={`/route-compositions/${route.id}/routes`}>
+    <Link className='btn btn-sm btn-success' to={`/route-compositions/${route.id}?tab=routes`}>
       Edit the list
     </Link>
   </div>
@@ -356,12 +356,7 @@ class Designer extends React.Component {
   }
 
   componentDidMount() {
-    this.patchStyle(true)
     this.loadData()
-  }
-
-  componentWillUnmount() {
-    this.patchStyle(false)
   }
 
   componentDidUpdate(prevProps) {
@@ -397,16 +392,6 @@ class Designer extends React.Component {
       localStorage.setItem('hidden_steps', JSON.stringify({
         [this.state.route.id]: newHiddenSteps
       }))
-    }
-  }
-
-  patchStyle = applyPatch => {
-    if (applyPatch) {
-      document.getElementsByClassName('main')[0].classList.add('patch-main');
-      [...document.getElementsByClassName('row')].map(r => r.classList.add('patch-row', 'g-0'))
-    } else {
-      document.getElementsByClassName('main')[0].classList.remove('patch-main');
-      [...document.getElementsByClassName('row')].map(r => r.classList.remove('patch-row', 'g-0'))
     }
   }
 

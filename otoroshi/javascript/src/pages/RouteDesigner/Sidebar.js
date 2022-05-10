@@ -4,10 +4,6 @@ import { createTooltip } from '../../tooltips';
 import { useEntityFromURI, useQuery } from '../../util';
 
 const LINKS = (entity, route) => [
-  { to: `/${entity}/${route.id}?tab=informations`, icon: 'fa-file-alt', title: 'Informations', tab: 'informations' },
-  { to: `/${entity}/${route.id}?tab=routes`, icon: 'fa-road', title: 'Routes', tab: 'routes', enabled: ['route-compositions'] },
-  { to: `/${entity}/${route.id}?tab=flow`, icon: 'fa-pencil-ruler', title: 'Designer', tab: 'flow' },
-  { to: `/${entity}/${route.id}?tab=try-it`, icon: 'fa-vials', title: 'Tester', tab: 'try-it' },
   { to: `/${entity}/${route.id}/health`, icon: 'fa-heart', title: 'Health', tooltip: { ...createTooltip(`Show healthcheck report`) } },
   { to: `/${entity}/${route.id}/stats`, icon: 'fa-chart-bar', title: 'Live metrics', tooltip: { ...createTooltip(`Show live metrics report`) } },
   { to: `/${entity}/${route.id}/analytics`, icon: 'fa-signal', title: 'Analytics', tooltip: { ...createTooltip(`Show analytics report`) } },

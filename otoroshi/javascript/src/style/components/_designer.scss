@@ -486,15 +486,6 @@
         font-weight: bold;
     }
 
-    .patch-main {
-        padding-right: 0 !important;
-        padding-right: 0 !important;
-    }
-
-    .patch-row {
-        margin-right: 0 !important;
-    }
-
     h3 {
         margin: 0 !important;
     }
@@ -523,4 +514,13 @@
     div[role*="button"] svg {
         fill: #494849;
     }
+}
+
+.patch-main {
+    padding-right: 12px !important;
+    padding-left: 12px !important;
+}
+
+.patch-row {
+    margin-right: 0 !important;
 }
