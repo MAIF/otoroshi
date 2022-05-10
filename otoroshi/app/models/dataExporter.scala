@@ -7,6 +7,7 @@ import otoroshi.events.Exporters._
 import otoroshi.events._
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
+import otoroshi.storage.drivers.inmemory.S3Configuration
 import otoroshi.utils.mailer._
 import play.api.Logger
 import play.api.libs.json._
@@ -38,6 +39,22 @@ case class FileSettings(path: String, maxFileSize: Int = 10 * 1024 * 1024) exten
     )
 }
 
+case class S3ExporterSettings(config: S3Configuration) extends Exporter {
+  override def toJson: JsValue = config.json
+}
+
+object S3ExporterSettings {
+  val format = new Format[S3ExporterSettings] {
+    override def reads(json: JsValue): JsResult[S3ExporterSettings] = Try {
+      S3Configuration.format.reads(json).map(c => S3ExporterSettings(c)).get
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+    override def writes(o: S3ExporterSettings): JsValue = o.toJson
+  }
+}
+
 case class GoReplayFileSettings(
   path: String,
   maxFileSize: Long = 10 * 1024 * 1024,
@@ -51,6 +68,25 @@ case class GoReplayFileSettings(
     Json.obj(
       "path"        -> path,
       "maxFileSize" -> maxFileSize,
+      "captureRequests" -> captureRequests,
+      "captureResponses" -> captureResponses,
+      "preferBackendRequest" -> preferBackendRequest,
+      "preferBackendResponse" -> preferBackendResponse,
+      "methods" -> JsArray(methods.map(JsString.apply))
+    )
+}
+
+case class GoReplayS3Settings(
+  s3: S3Configuration,
+  captureRequests: Boolean,
+  captureResponses: Boolean,
+  preferBackendRequest: Boolean,
+  preferBackendResponse: Boolean,
+  methods: Seq[String],
+) extends Exporter {
+  override def toJson: JsValue =
+    Json.obj(
+      "s3"        -> s3.json,
       "captureRequests" -> captureRequests,
       "captureResponses" -> captureResponses,
       "preferBackendRequest" -> preferBackendRequest,
@@ -145,6 +181,16 @@ object DataExporterConfig {
             case "pulsar"  => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
             case "file"    =>
               FileSettings((json \ "config" \ "path").as[String], (json \ "config" \ "maxFileSize").as[Int])
+            case "s3"    =>
+              (json \ "config").as(S3ExporterSettings.format)
+            case "goreplays3"    => GoReplayS3Settings(
+              (json \ "config" \ "s3").as(S3Configuration.format),
+              (json \ "config" \ "captureRequests").asOpt[Boolean].getOrElse(true),
+              (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),
+              (json \ "config" \ "preferBackendRequest").asOpt[Boolean].getOrElse(false),
+              (json \ "config" \ "preferBackendResponse").asOpt[Boolean].getOrElse(false),
+              (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty),
+            )
             case "goreplayfile"    =>
               GoReplayFileSettings(
                 (json \ "config" \ "path").as[String],
@@ -199,6 +245,14 @@ object DataExporterConfigType {
     def name: String = "goreplayfile"
   }
 
+  case object S3File extends DataExporterConfigType {
+    def name: String = "s3"
+  }
+
+  case object GoReplayS3 extends DataExporterConfigType {
+    def name: String = "goreplays3"
+  }
+
   case object Mailer extends DataExporterConfigType {
     def name: String = "mailer"
   }
@@ -227,6 +281,8 @@ object DataExporterConfigType {
       case "webhook"      => Webhook
       case "file"         => File
       case "goreplayfile" => GoReplayFile
+      case "goreplays3"   => GoReplayS3
+      case "s3"           => S3File
       case "mailer"       => Mailer
       case "none"         => None
       case "custom"       => Custom
@@ -274,7 +330,9 @@ case class DataExporterConfig(
       case c: ElasticAnalyticsConfig => new ElasticExporter(this)
       case c: Webhook                => new WebhookExporter(this)
       case c: FileSettings           => new FileAppenderExporter(this)
+      case c: S3ExporterSettings     => new S3Exporter(this)
       case c: GoReplayFileSettings   => new GoReplayFileAppenderExporter(this)
+      case c: GoReplayS3Settings     => new GoReplayS3Exporter(this)
       case c: NoneMailerSettings     => new GenericMailerExporter(this)
       case c: ConsoleMailerSettings  => new GenericMailerExporter(this)
       case c: MailjetSettings        => new GenericMailerExporter(this)

@@ -2,7 +2,6 @@ package otoroshi.storage.drivers.inmemory
 
 import akka.NotUsed
 import akka.actor.Cancellable
-import akka.actor.Status.Success
 import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.alpakka.s3.headers.CannedAcl
@@ -17,7 +16,7 @@ import otoroshi.utils.SchedulerHelper
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.json._
 import play.api.libs.ws.SourceBody
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
@@ -30,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util._
 import scala.util.hashing.MurmurHash3
 
 sealed trait PersistenceKind
@@ -337,7 +337,52 @@ case class S3Configuration(
     v4auth: Boolean = true,
     writeEvery: FiniteDuration,
     acl: CannedAcl
-)
+) {
+  def json: JsValue = Json.obj(
+    "bucket" -> bucket,
+    "endpoint" -> endpoint,
+    "region" -> region,
+    "access" -> access,
+    "secret" -> secret,
+    "key" -> key,
+    "chunkSize" -> chunkSize,
+    "v4auth" -> v4auth,
+    "writeEvery" -> writeEvery.toMillis,
+    "acl" -> acl.value,
+  )
+}
+
+object S3Configuration {
+  val format = new Format[S3Configuration] {
+    override def reads(json: JsValue): JsResult[S3Configuration] = Try {
+      S3Configuration(
+        bucket = json.select("bucket").asOpt[String].getOrElse(""),
+        endpoint = json.select("endpoint").asOpt[String].getOrElse(""),
+        region = json.select("region").asOpt[String].getOrElse("eu-west-1"),
+        access = json.select("access").asOpt[String].getOrElse("secret"),
+        secret = json.select("secret").asOpt[String].getOrElse("secret"),
+        key = json.select("key").asOpt[String].map(p => if (p.startsWith("/")) p.tail else p).getOrElse(""),
+        chunkSize = json.select("chunkSize").asOpt[Int].getOrElse(8388608),
+        v4auth = json.select("v4auth").asOpt[Boolean].getOrElse(true),
+        writeEvery = json.select("writeEvery").asOpt[Long].map(v => v.millis).getOrElse(1.minute),
+        acl = json.select("acl").asOpt[String].map {
+          case "AuthenticatedRead"      => CannedAcl.AuthenticatedRead
+          case "AwsExecRead"            => CannedAcl.AwsExecRead
+          case "BucketOwnerFullControl" => CannedAcl.BucketOwnerFullControl
+          case "BucketOwnerRead"        => CannedAcl.BucketOwnerRead
+          case "Private"                => CannedAcl.Private
+          case "PublicRead"             => CannedAcl.PublicRead
+          case "PublicReadWrite"        => CannedAcl.PublicReadWrite
+          case _                        => CannedAcl.Private
+        }.getOrElse(CannedAcl.Private),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+    override def writes(o: S3Configuration): JsValue = o.json
+  }
+}
 
 class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 

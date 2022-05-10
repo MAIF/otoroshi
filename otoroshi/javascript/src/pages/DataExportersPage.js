@@ -910,8 +910,200 @@ const possibleExporterConfigFormValues = {
       },
     },
   },
+  s3: {
+    flow: [
+      'bucket',
+      'endpoint',
+      'region',
+      'access',
+      'secret',
+      'key',
+      'chunkSize',
+      'v4auth',
+      'writeEvery',
+      'acl',
+    ],
+    schema: {
+      'bucket': {
+        type: 'string',
+        props: {
+          label: 'S3 bucket name',
+        },
+      },
+      'endpoint': {
+        type: 'string',
+        props: {
+          label: 'S3 endpoint',
+        },
+      },
+      'region': {
+        type: 'string',
+        props: {
+          label: 'S3 region',
+        },
+      },
+      'access': {
+        type: 'string',
+        props: {
+          label: 'S3 access key',
+        },
+      },
+      'secret': {
+        type: 'string',
+        props: {
+          label: 'S3 Secret',
+        },
+      },
+      'key': {
+        type: 'string',
+        props: {
+          label: 'File key',
+        },
+      },
+      'chunkSize': {
+        type: 'number',
+        props: {
+          label: 'Chunk size',
+        },
+      },
+      'v4auth': {
+        type: 'bool',
+        props: {
+          label: 'V4 Auth',
+        },
+      },
+      'writeEvery': {
+        type: 'number',
+        props: {
+          label: 'Write every',
+          suffix: 'millis.'
+        },
+      },
+      'acl': {
+        type: 'string',
+        props: {
+          label: 'S3 file ACL',
+        },
+      }
+    },
+  },
+  goreplays3: {
+    flow: [
+      's3.bucket',
+      's3.endpoint',
+      's3.region',
+      's3.access',
+      's3.secret',
+      's3.key',
+      's3.chunkSize',
+      's3.v4auth',
+      's3.writeEvery',
+      's3.acl',
+      'captureRequests', 
+      'captureResponses', 
+      'preferBackendRequest', 
+      'preferBackendResponse', 
+      'methods'
+    ],
+    schema: {
+      's3.bucket': {
+        type: 'string',
+        props: {
+          label: 'S3 bucket name',
+        },
+      },
+      's3.endpoint': {
+        type: 'string',
+        props: {
+          label: 'S3 endpoint',
+        },
+      },
+      's3.region': {
+        type: 'string',
+        props: {
+          label: 'S3 region',
+        },
+      },
+      's3.access': {
+        type: 'string',
+        props: {
+          label: 'S3 access key',
+        },
+      },
+      's3.secret': {
+        type: 'string',
+        props: {
+          label: 'S3 Secret',
+        },
+      },
+      's3.key': {
+        type: 'string',
+        props: {
+          label: 'File key',
+        },
+      },
+      's3.chunkSize': {
+        type: 'number',
+        props: {
+          label: 'Chunk size',
+        },
+      },
+      's3.v4auth': {
+        type: 'bool',
+        props: {
+          label: 'V4 Auth',
+        },
+      },
+      's3.writeEvery': {
+        type: 'number',
+        props: {
+          label: 'Write every',
+          suffix: 'millis.'
+        },
+      },
+      's3.acl': {
+        type: 'string',
+        props: {
+          label: 'S3 file ACL',
+        },
+      },
+      captureRequests: {
+        type: 'bool',
+        props: {
+          label: 'Capture Requests',
+        },
+      },
+      captureResponses: {
+        type: 'bool',
+        props: {
+          label: 'Capture Responses',
+        },
+      },
+      methods: {
+        type: 'array',
+        props: {
+          label: 'HTTP methods',
+          help: 'filter only the http methods you want to capture. If none specified, all will be captured !'
+        }
+      },
+      preferBackendRequest: {
+        type: 'bool',
+        props: {
+          label: 'Capture backend requests',
+          help: 'instead on frontend requests'
+        },
+      },
+      preferBackendResponse: {
+        type: 'bool',
+        props: {
+          label: 'Capture backend responses',
+          help: 'instead on frontend responses'
+        },
+      },
+    },
+  },
   goreplayfile: {
-    flow: ['path', 'maxFileSize', 'captureRequests', 'captureResponses', 'methods'],
+    flow: ['path', 'maxFileSize', 'captureRequests', 'captureResponses', 'preferBackendRequest', 'preferBackendResponse', 'methods'],
     schema: {
       path: {
         type: 'string',
@@ -935,6 +1127,20 @@ const possibleExporterConfigFormValues = {
         type: 'bool',
         props: {
           label: 'Capture Responses',
+        },
+      },
+      preferBackendRequest: {
+        type: 'bool',
+        props: {
+          label: 'Capture backend requests',
+          help: 'instead on frontend requests'
+        },
+      },
+      preferBackendResponse: {
+        type: 'bool',
+        props: {
+          label: 'Capture backend responses',
+          help: 'instead on frontend responses'
         },
       },
       methods: {

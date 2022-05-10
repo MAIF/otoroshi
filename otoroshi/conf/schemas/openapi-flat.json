@@ -11639,6 +11639,60 @@
     "type" : "object",
     "properties" : { }
   },
+  "otoroshi.models.S3ExporterSettings" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "type" : {
+        "description" : "the kind of exporter",
+        "type" : "string",
+        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+      },
+      "config" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "writeEvery" : {
+            "description" : "???",
+            "type" : "number"
+          },
+          "chunkSize" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "bucket" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "key" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "endpoint" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "v4auth" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "access" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "secret" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "region" : {
+            "description" : "???",
+            "type" : "string"
+          }
+        }
+      }
+    }
+  },
   "otoroshi.plugins.jobs.kubernetes.ClientSupport" : {
     "description" : "Internal api",
     "type" : "object",
@@ -12403,6 +12457,49 @@
       },
       "desc" : {
         "description" : "The description of the script",
+        "type" : "string"
+      }
+    }
+  },
+  "otoroshi.storage.drivers.inmemory.S3Configuration" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "writeEvery" : {
+        "description" : "???",
+        "type" : "number"
+      },
+      "chunkSize" : {
+        "format" : "int32",
+        "description" : "???",
+        "type" : "integer"
+      },
+      "bucket" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "key" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "endpoint" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "v4auth" : {
+        "description" : "???",
+        "type" : "boolean"
+      },
+      "access" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "secret" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "region" : {
+        "description" : "???",
         "type" : "string"
       }
     }
@@ -37085,6 +37182,83 @@
     "type" : "object",
     "properties" : { }
   },
+  "otoroshi.models.GoReplayS3Settings" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "s3" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "writeEvery" : {
+            "description" : "???",
+            "type" : "number"
+          },
+          "chunkSize" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "bucket" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "key" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "endpoint" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "v4auth" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "access" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "secret" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "region" : {
+            "description" : "???",
+            "type" : "string"
+          }
+        }
+      },
+      "captureRequests" : {
+        "description" : "???",
+        "type" : "boolean"
+      },
+      "methods" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "type" : {
+        "description" : "the kind of exporter",
+        "type" : "string",
+        "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+      },
+      "preferBackendRequest" : {
+        "description" : "???",
+        "type" : "boolean"
+      },
+      "captureResponses" : {
+        "description" : "???",
+        "type" : "boolean"
+      },
+      "preferBackendResponse" : {
+        "description" : "???",
+        "type" : "boolean"
+      }
+    }
+  },
   "otoroshi.utils.ConcurrentMutableTypedMap" : {
     "description" : "A concurrent map with typed keys",
     "type" : "object",
@@ -46196,11 +46370,6 @@
       "path" : {
         "description" : "???",
         "type" : "string"
-      },
-      "maxEntitySize" : {
-        "format" : "int64",
-        "description" : "???",
-        "type" : "integer"
       },
       "captureRequests" : {
         "description" : "???",

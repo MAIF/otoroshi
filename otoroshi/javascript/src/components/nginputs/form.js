@@ -424,3 +424,85 @@ export class NgFormState extends Component {
     return <>{this.props.children(this.state.value, this.onChange)}</>;
   }
 }
+
+export class NgManagedState extends Component {
+
+  state = { 
+    value: this.props.defaultValue || {}, 
+    firstValue: this.props.defaultValue || {}, 
+    lastValue: this.props.defaultValue || {}, 
+    validation: { valid: true },
+    isDirty: false,
+  };
+
+  onChange = (value, validation) => {
+    const isDirty = !_.isEqual(lastValue, value);
+    this.setState({ value, validation, isDirty }, () => {
+      if (this.props.onValidationChange) {
+        this.props.onValidationChange(validation);
+      }
+      if (this.props.onValueChange) {
+        this.props.onValueChange(value);
+      }
+    });
+  };
+
+  onSubmit = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const { validation, isDirty, value } = this.state;
+    if (isDirty && validation.valid) {
+      this.setState({ lastValue: value, isDirty: false }, () => {
+        if (this.props.onSubmit) {
+          this.props.onSubmit(value);
+        }
+      })
+    }
+  }
+
+  onReset = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const { lastValue } = this.state;
+    this.setState({ value: lastValue, lastValue, isDirty: false });
+  }
+
+  resetButton = () => {
+    let ResetButton = <button type="button" className="btn btn-danger"  disabled={this.state.isDirty} onClick={this.onReset}>Reset</button>;
+    if (this.props.noReset) {
+      ResetButton = null;
+    }
+    if (this.props.resetButton) {
+      ResetButton = this.props.resetButton(this.onReset, this.state.isDirty);
+    }
+    return ResetButton
+  }
+
+  submitButton = () => {
+    let SubmitButton = <button type="button" className="btn btn-success" disabled={this.state.isDirty} onClick={this.onSubmit}>Submit</button>;
+    if (this.props.noSubmit) {
+      SubmitButton = null;
+    }
+    if (this.props.submitButton) {
+      SubmitButton = this.props.submitButton(this.onSubmit, this.state.isDirty);
+    }
+    return SubmitButton
+  }
+
+  render() {
+    const resetButton = this.resetButton();
+    return (
+      <div style={this.props.style || { display: 'flex', flexDirection: 'column', width: '100%' }}>
+        <NgForm 
+          style={this.props.formStyle}
+          flow={this.props.flow} 
+          schema={this.props.schema} 
+          value={this.state.value} 
+          onChange={this.onChange} 
+        />
+        <div className="btn-group">
+          {resetButton}
+          {submitButton}
+        </div>
+      </div>
+    )
+  }
+}

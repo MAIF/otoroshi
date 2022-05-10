@@ -19390,6 +19390,21 @@
         "type" : "object",
         "properties" : { }
       },
+      "otoroshi.models.S3ExporterSettings" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "description" : "the kind of exporter",
+            "type" : "string",
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+          },
+          "config" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.storage.drivers.inmemory.S3Configuration"
+          }
+        }
+      },
       "otoroshi.plugins.jobs.kubernetes.ClientSupport" : {
         "description" : "Internal api",
         "type" : "object",
@@ -19889,6 +19904,49 @@
           "type" : {
             "description" : "Plugin type",
             "$ref" : "#/components/schemas/otoroshi.script.PluginType"
+          }
+        }
+      },
+      "otoroshi.storage.drivers.inmemory.S3Configuration" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "writeEvery" : {
+            "description" : "???",
+            "type" : "number"
+          },
+          "chunkSize" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "bucket" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "key" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "endpoint" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "v4auth" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "access" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "secret" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "region" : {
+            "description" : "???",
+            "type" : "string"
           }
         }
       },
@@ -25582,6 +25640,44 @@
         "description" : "Plugin to add X-Forwarded headers in a request",
         "type" : "object",
         "properties" : { }
+      },
+      "otoroshi.models.GoReplayS3Settings" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "s3" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.storage.drivers.inmemory.S3Configuration"
+          },
+          "captureRequests" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "methods" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "type" : {
+            "description" : "the kind of exporter",
+            "type" : "string",
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+          },
+          "preferBackendRequest" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "captureResponses" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "preferBackendResponse" : {
+            "description" : "???",
+            "type" : "boolean"
+          }
+        }
       },
       "otoroshi.utils.ConcurrentMutableTypedMap" : {
         "description" : "A concurrent map with typed keys",

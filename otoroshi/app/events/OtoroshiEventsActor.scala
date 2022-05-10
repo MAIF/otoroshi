@@ -2,13 +2,15 @@ package otoroshi.events
 
 import java.io.File
 import java.nio.file.{Files, Paths, StandardOpenOption}
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import akka.Done
 import akka.actor.{Actor, Props}
+import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
+import akka.stream.alpakka.s3.scaladsl.S3
+import akka.stream.alpakka.s3.{ApiVersion, MemoryBufferType, MetaHeaders, S3Attributes, S3Settings}
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
-import akka.stream.{OverflowStrategy, QueueOfferResult}
+import akka.stream.{Attributes, OverflowStrategy, QueueOfferResult}
 import com.sksamuel.pulsar4s.Producer
 import com.spotify.metrics.core.MetricId
 import otoroshi.env.Env
@@ -21,6 +23,7 @@ import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
 import otoroshi.security.IdGenerator
+import otoroshi.storage.drivers.inmemory.S3Configuration
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
@@ -30,7 +33,11 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 import otoroshi.utils.syntax.implicits._
+import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.regions.providers.AwsRegionProvider
 
+import java.util.concurrent.Executors
 import scala.collection.JavaConverters._
 
 object OtoroshiEventsActorSupervizer {
@@ -633,6 +640,10 @@ object Exporters {
     }
   }
 
+  object FileWriting {
+    val blockingEc = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
+  }
+
   class GoReplayFileAppenderExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
     extends DefaultDataExporter(config)(ec, env) {
 
@@ -643,6 +654,7 @@ object Exporters {
         val path = Paths.get(exporterConfig.path.replace("{day}", DateTime.now().toString("yyyy-MM-dd")))
         val file = path.toFile
         if (!file.exists()) {
+          file.getParentFile.mkdirs()
           file.createNewFile()
         } else {
           if (file.length() > exporterConfig.maxFileSize) {
@@ -663,9 +675,9 @@ object Exporters {
           )
         }.mkString("")
 
-        Files.write(path, contentToAppend.getBytes, StandardOpenOption.APPEND)
-
-        FastFuture.successful(ExportResult.ExportResultSuccess)
+        Future.apply(Files.write(path, contentToAppend.getBytes, StandardOpenOption.APPEND))(FileWriting.blockingEc).map { _ =>
+          ExportResult.ExportResultSuccess
+        }
       } getOrElse {
         FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
       }
@@ -679,6 +691,7 @@ object Exporters {
         val path = Paths.get(exporterConfig.path.replace("{day}", DateTime.now().toString("yyyy-MM-dd")))
         val file = path.toFile
         if (!file.exists()) {
+          file.getParentFile.mkdirs()
           file.createNewFile()
         } else {
           if (file.length() > exporterConfig.maxFileSize) {
@@ -686,6 +699,7 @@ object Exporters {
             val filename = parts.head
             val ext      = parts.last
             file.renameTo(new File(file.getParent, filename + "." + System.currentTimeMillis() + "." + ext))
+            file.getParentFile.mkdirs()
             file.createNewFile()
           }
         }
@@ -695,12 +709,196 @@ object Exporters {
 
         val contentToAppend = events.map(Json.stringify).mkString("\r\n")
 
-        Files.write(path, (prefix + contentToAppend).getBytes, StandardOpenOption.APPEND)
-
-        FastFuture.successful(ExportResult.ExportResultSuccess)
+        Future.apply(Files.write(path, (prefix + contentToAppend).getBytes, StandardOpenOption.APPEND))(FileWriting.blockingEc).map { _ =>
+          ExportResult.ExportResultSuccess
+        }
       } getOrElse {
         FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
       }
+    }
+  }
+
+  class S3Exporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+    extends DefaultDataExporter(config)(ec, env) {
+
+    val lastS3Write = new AtomicLong(0L)
+
+    def computeKey(conf: S3Configuration): String = {
+      (conf.key + "-" + env.clusterConfig.name + ".json").replace("{day}", DateTime.now().toString("yyyy-MM-dd"))
+    }
+
+    def s3ClientSettingsAttrs(conf: S3Configuration): Attributes = {
+      val awsCredentials = StaticCredentialsProvider.create(
+        AwsBasicCredentials.create(conf.access, conf.secret)
+      )
+      val settings = S3Settings(
+        bufferType = MemoryBufferType,
+        credentialsProvider = awsCredentials,
+        s3RegionProvider = new AwsRegionProvider {
+          override def getRegion: Region = Region.of(conf.region)
+        },
+        listBucketApiVersion = ApiVersion.ListBucketVersion2
+      ).withEndpointUrl(conf.endpoint)
+      S3Attributes.settings(settings)
+    }
+
+    def writeToS3(conf: S3Configuration): Future[Unit] = {
+      val key = computeKey(conf)
+      val path = Paths.get(System.getProperty("java.io.tmpdir") + "/" + key)
+      val url = s"${conf.endpoint}/${key}?v4=${conf.v4auth}&region=${conf.region}&acl=${conf.acl.value}&bucket=${conf.bucket}"
+      val wholeContent = Files.readString(path).byteString
+      val ctype = ContentTypes.`application/json`
+      val meta  = MetaHeaders(Map("content-type" -> "application/json"))
+      val sink  = S3
+        .multipartUpload(
+          bucket = conf.bucket,
+          key = key,
+          contentType = ctype,
+          metaHeaders = meta,
+          cannedAcl = conf.acl,
+          chunkingParallelism = 1
+        )
+        .withAttributes(s3ClientSettingsAttrs(conf))
+      logger.debug(s"writing state to $url")
+      lastS3Write.set(System.currentTimeMillis())
+      Source(wholeContent.grouped(16 * 1024).toList)
+        .toMat(sink)(Keep.right)
+        .run()(env.analyticsMaterializer)
+        .map(_ => ())
+    }
+
+    override def send(evts: Seq[JsValue]): Future[ExportResult] = {
+      exporter[S3ExporterSettings].map { exporterConfig =>
+        val conf = exporterConfig.config
+
+        val key = computeKey(conf)
+        val path = Paths.get(System.getProperty("java.io.tmpdir") + "/" + key)
+        val file = path.toFile
+        if (!file.exists()) {
+          file.getParentFile.mkdirs()
+          file.createNewFile()
+        }
+
+        val fileIsNotEmpty = file.length() > 0 && evts.nonEmpty
+        val prefix         = if (fileIsNotEmpty) "\r\n" else ""
+        val contentToAppend = evts.map(Json.stringify).mkString("\r\n")
+        val shouldWriteToS3 = (lastS3Write.get() + conf.writeEvery.toMillis) < System.currentTimeMillis()
+        if (shouldWriteToS3) {
+          Future.apply(Files.write(path, (prefix + contentToAppend).getBytes, StandardOpenOption.APPEND))(FileWriting.blockingEc).map { _ =>
+            writeToS3(conf)
+            ExportResult.ExportResultSuccess
+          }
+        } else {
+          Future.apply(Files.write(path, (prefix + contentToAppend).getBytes, StandardOpenOption.APPEND))(FileWriting.blockingEc).map { _ =>
+            ExportResult.ExportResultSuccess
+          }
+        }
+      } getOrElse {
+        FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+      }
+    }
+
+    override def stop(): Future[Unit] = {
+      exporter[S3ExporterSettings].map { exporterConfig =>
+        val conf = exporterConfig.config
+        writeToS3(conf)
+      } getOrElse ().vfuture
+    }
+  }
+
+  class GoReplayS3Exporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+    extends DefaultDataExporter(config)(ec, env) {
+
+    val lastS3Write = new AtomicLong(0L)
+
+    def computeKey(conf: S3Configuration): String = {
+      (conf.key + "-" + env.clusterConfig.name + ".gor").replace("{day}", DateTime.now().toString("yyyy-MM-dd"))
+    }
+
+    def s3ClientSettingsAttrs(conf: S3Configuration): Attributes = {
+      val awsCredentials = StaticCredentialsProvider.create(
+        AwsBasicCredentials.create(conf.access, conf.secret)
+      )
+      val settings = S3Settings(
+        bufferType = MemoryBufferType,
+        credentialsProvider = awsCredentials,
+        s3RegionProvider = new AwsRegionProvider {
+          override def getRegion: Region = Region.of(conf.region)
+        },
+        listBucketApiVersion = ApiVersion.ListBucketVersion2
+      ).withEndpointUrl(conf.endpoint)
+      S3Attributes.settings(settings)
+    }
+
+    def writeToS3(conf: S3Configuration): Future[Unit] = {
+      val key = computeKey(conf)
+      val path = Paths.get(System.getProperty("java.io.tmpdir") + "/" + key)
+      val url = s"${conf.endpoint}/${key}?v4=${conf.v4auth}&region=${conf.region}&acl=${conf.acl.value}&bucket=${conf.bucket}"
+      val wholeContent = Files.readString(path).byteString
+      val ctype = ContentTypes.`application/json`
+      val meta  = MetaHeaders(Map("content-type" -> "application/json"))
+      val sink  = S3
+        .multipartUpload(
+          bucket = conf.bucket,
+          key = key,
+          contentType = ctype,
+          metaHeaders = meta,
+          cannedAcl = conf.acl,
+          chunkingParallelism = 1
+        )
+        .withAttributes(s3ClientSettingsAttrs(conf))
+      logger.debug(s"writing state to $url")
+      lastS3Write.set(System.currentTimeMillis())
+      Source(wholeContent.grouped(16 * 1024).toList)
+        .toMat(sink)(Keep.right)
+        .run()(env.analyticsMaterializer)
+        .map(_ => ())
+    }
+
+    override def send(events: Seq[JsValue]): Future[ExportResult] = throw new RuntimeException("send is not supported !!!")
+
+    override def sendWithSource(__events: Seq[JsValue], rawEvents: Seq[OtoroshiEvent]): Future[ExportResult] = {
+      exporter[GoReplayS3Settings].map { exporterConfig =>
+
+        val conf = exporterConfig.s3
+        val key = computeKey(conf)
+        val path = Paths.get(System.getProperty("java.io.tmpdir") + "/" + key)
+        val file = path.toFile
+        if (!file.exists()) {
+          file.getParentFile.mkdirs()
+          file.createNewFile()
+        }
+
+        val contentToAppend = rawEvents.collect {
+          case evt: TrafficCaptureEvent if exporterConfig.methods.isEmpty || exporterConfig.methods.contains(evt.request.method) => evt.toGoReplayFormat(
+            exporterConfig.captureRequests,
+            exporterConfig.captureResponses,
+            exporterConfig.preferBackendRequest,
+            exporterConfig.preferBackendResponse,
+          )
+        }.mkString("")
+
+        val shouldWriteToS3 = (lastS3Write.get() + conf.writeEvery.toMillis) < System.currentTimeMillis()
+        if (shouldWriteToS3) {
+          Future.apply(Files.write(path, contentToAppend.getBytes, StandardOpenOption.APPEND))(FileWriting.blockingEc).map { _ =>
+            writeToS3(conf)
+            ExportResult.ExportResultSuccess
+          }
+        } else {
+          Future.apply(Files.write(path, contentToAppend.getBytes, StandardOpenOption.APPEND))(FileWriting.blockingEc).map { _ =>
+            ExportResult.ExportResultSuccess
+          }
+        }
+      } getOrElse {
+        FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+      }
+    }
+
+    override def stop(): Future[Unit] = {
+      exporter[GoReplayS3Settings].map { exporterConfig =>
+        val conf = exporterConfig.s3
+        writeToS3(conf)
+      } getOrElse ().vfuture
     }
   }
 }
