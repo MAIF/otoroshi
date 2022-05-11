@@ -580,8 +580,9 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
     }
   };
 
+  const spaces = _.range(0, 50).map(i => '          ').join('')
   return (
-    <div className="d-flex mt-3">
+    <div className="d-flex mt-3 tryit-columns">
       <div className="main-view me-2" style={{ flex: 0.5, minWidth: '250px' }}>
         <div
           onClick={() => setSelectedStep(-1)}
@@ -711,7 +712,7 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
             );
           })}
       </div>
-      <div className="main-view">
+      <div className="main-view tryit-right-column">
         <CodeInput
           readOnly={true}
           width="100%"
@@ -725,7 +726,7 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                 ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
             null,
             4
-          )}
+          ) + '\n' + spaces}
         />
       </div>
     </div>
