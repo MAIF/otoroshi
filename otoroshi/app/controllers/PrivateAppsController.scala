@@ -58,10 +58,10 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
         val cipher: Cipher = Cipher.getInstance("AES")
         cipher.init(Cipher.DECRYPT_MODE, secret)
         val sessionId      = new String(cipher.doFinal(sessionIdBytes))
-        env.datastores.rawDataStore.get(s"${env.rootScheme}:self-service:sessions:$sessionId").flatMap {
+        env.datastores.rawDataStore.get(s"${env.storageRoot}:self-service:sessions:$sessionId").flatMap {
           case None             => NotFound(Json.obj("error" -> s"session not found")).future
           case Some(sessionRaw) => {
-            env.datastores.rawDataStore.pttl(s"${env.rootScheme}:self-service:sessions:$sessionId").flatMap { ttl =>
+            env.datastores.rawDataStore.pttl(s"${env.storageRoot}:self-service:sessions:$sessionId").flatMap { ttl =>
               val session  = Json.parse(sessionRaw.utf8String)
               val username = (session \ "username").as[String]
               val id       = (session \ "auth").as[String]
@@ -97,7 +97,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
     val sessionId = IdGenerator.token(32)
     env.datastores.rawDataStore
       .set(
-        s"${env.rootScheme}:self-service:sessions:$sessionId",
+        s"${env.storageRoot}:self-service:sessions:$sessionId",
         ByteString(
           Json.stringify(
             Json.obj(
