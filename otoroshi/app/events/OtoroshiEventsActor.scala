@@ -5,7 +5,6 @@ import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import akka.Done
 import akka.actor.{Actor, Props}
-import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.model.{ContentType, ContentTypes}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.alpakka.s3.scaladsl.S3
