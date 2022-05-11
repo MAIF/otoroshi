@@ -7,11 +7,28 @@ import { Form, format, type } from '@maif/react-forms';
 import { toUpperCaseLabels } from '../util';
 import { FeedbackButton } from './RouteDesigner/FeedbackButton';
 import { DEFAULT_FLOW } from './RouteDesigner/Graph';
+import { isEqual, merge } from 'lodash';
 
 export const BackendsPage = ({ setTitle }) => {
   const params = useParams();
   const history = useHistory();
   const match = useRouteMatch();
+
+  useEffect(() => {
+    patchStyle(true)
+
+    return () => patchStyle(false)
+  }, []);
+
+  const patchStyle = applyPatch => {
+    if (applyPatch) {
+      document.getElementsByClassName('main')[0].classList.add('patch-main');
+      [...document.getElementsByClassName('row')].map(r => r.classList.add('patch-row', 'g-0'))
+    } else {
+      document.getElementsByClassName('main')[0].classList.remove('patch-main');
+      [...document.getElementsByClassName('row')].map(r => r.classList.remove('patch-row', 'g-0'))
+    }
+  }
 
   const BackendsTable = () => (
     <div className="designer">
@@ -63,10 +80,8 @@ export const BackendsPage = ({ setTitle }) => {
           }, [p.routebackendIdId]);
 
           return (
-            <div style={{ padding: '7px 15px 0 0' }} className="designer row">
-              <div className="col-sm-11" style={{ paddingLeft: 0 }}>
-                <BackendForm isCreation={isCreation} value={value} />
-              </div>
+            <div className="designer row">
+              <BackendForm isCreation={isCreation} value={value} setTitle={setTitle} />
             </div>
           );
         }}
@@ -76,15 +91,16 @@ export const BackendsPage = ({ setTitle }) => {
   );
 };
 
-export const BackendForm = ({ isCreation, value, foldable, style = {} }) => {
-  const ref = useRef();
+export const BackendForm = ({ isCreation, value, setTitle }) => {
   const history = useHistory();
-  const [show, setShow] = useState(!foldable);
-
   const [form, setForm] = useState({
     schema: {},
-    flow: [],
+    flow: []
   });
+
+  const [state, setState] = useState({ ...value })
+
+  useEffect(() => setState({ ...value }), [value])
 
   const schema = {
     id: {
@@ -149,7 +165,16 @@ export const BackendForm = ({ isCreation, value, foldable, style = {} }) => {
     },
   ];
 
-  // TODO - surcharger le schema du backend pour pas que ça pointe tout le temps sur plugin. mais backend.
+  useEffect(() => {
+    setTitle(() => <div className='page-header d-flex align-item-center justify-content-between ms-0 mb-3'>
+      <h4 className='flex' style={{ margin: 0 }}>
+        {state.name || 'Backend'}
+      </h4>
+      <div className='d-flex align-item-center justify-content-between flex'>
+        {saveButton(false)}
+      </div>
+    </div>)
+  }, [state])
 
   useEffect(() => {
     nextClient.form(nextClient.ENTITIES.BACKENDS).then((res) => {
@@ -158,6 +183,7 @@ export const BackendForm = ({ isCreation, value, foldable, style = {} }) => {
           ...schema,
           backend: {
             type: 'object',
+            label: null,
             format: 'form',
             schema: toUpperCaseLabels(DEFAULT_FLOW.Backend('backend').config_schema(res.schema)),
             flow: DEFAULT_FLOW.Backend('backend').config_flow,
@@ -168,58 +194,37 @@ export const BackendForm = ({ isCreation, value, foldable, style = {} }) => {
     });
   }, []);
 
-  console.log(form, value)
+  const saveButton = (withMargin = true) => <FeedbackButton
+    className={withMargin ? "d-flex ms-auto my-3 me-none" : ""}
+    disabled={isEqual(state, value)}
+    text={isCreation ? 'Create the backend' : 'Update the backend'}
+    icon={() => <i className="fas fa-paper-plane" />}
+    onPress={update}
+  />
 
-  return (
-    <div
-      className="designer-form"
-      style={{
-        ...style,
-        minHeight: show ? 'calc(100vh - 85px)' : 'initial',
-      }}>
-      <div className="d-flex align-items-center my-1">
-        {foldable && (
-          <i
-            className={`me-2 fas fa-chevron-${show ? 'up' : 'right'}`}
-            style={{ fontSize: '20px', color: '#eee', cursor: 'pointer' }}
-            onClick={() => setShow(!show)}
-          />
-        )}
-        <h4 style={{ margin: foldable ? 0 : 'inherit' }}>{value.name || 'Backend'}</h4>
-      </div>
-      {show && (
-        <>
-          <Form
-            schema={form.schema}
-            flow={form.flow}
-            value={value}
-            ref={ref}
-            onError={(e) => console.log(e)}
-            onSubmit={() => { }}
-            footer={() => <FeedbackButton
-              className="d-flex ms-auto my-3"
-              text={isCreation ? 'Create the backend' : 'Update the backend'}
-              icon={() => <i className="fas fa-paper-plane" />}
-              onPress={() => ref.current.trigger()
-                .then(res => {
-                  if (res) {
-                    if (isCreation)
-                      nextClient
-                        .create(nextClient.ENTITIES.BACKENDS, ref.current.methods.data())
-                        .then(() => history.push(`/backends`));
-                    else
-                      nextClient.update(nextClient.ENTITIES.BACKENDS, ref.current.methods.data())
-                        .then(r => {
-                          if (r.error)
-                            throw r.error_description
-                        })
-                  } else
-                    throw ""
-                })}
-            />}
-          />
-        </>
-      )}
-    </div>
-  );
+  const update = () => {
+    if (isCreation)
+      return nextClient
+        .create(nextClient.ENTITIES.BACKENDS, state)
+        .then(() => history.push(`/backends`));
+    else
+      return nextClient.update(nextClient.ENTITIES.BACKENDS, state)
+        .then(r => {
+          if (r.error)
+            throw r.error_description
+        })
+  }
+
+  if (!state || Object.keys(state).length === 0)
+    return null
+
+  return <Form
+    schema={form.schema}
+    flow={form.flow}
+    value={state}
+    onError={(e) => console.log(e)}
+    options={{ autosubmit: true }}
+    onSubmit={item => setState({ ...merge({ ...value }, item) })}
+    footer={saveButton}
+  />
 };

@@ -77,14 +77,14 @@ export const DEFAULT_FLOW = {
       ...generatedSchema,
       targets: {
         ...generatedSchema.targets,
-        onAfterChange: ({ setValue, entry, getValue }) => {
-          let port = getValue(`${entry}.port`)
+        onAfterChange: ({ onChange, getFieldValue }) => {
+          let port = getFieldValue('port')
           port = port ? `:${port}` : ''
-          const hostname = getValue(`${entry}.hostname`) || ''
-          const isSecured = getValue(`${entry}.tls`)
+          const hostname = getFieldValue('hostname') || ''
+          const isSecured = getFieldValue('tls')
 
-          setValue(
-            `${entry}.custom_target`,
+          onChange(
+            'custom_target',
             `${isSecured ? 'HTTPS' : 'HTTP'}@${hostname}@${port}`
           );
         },

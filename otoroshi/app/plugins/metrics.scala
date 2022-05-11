@@ -368,7 +368,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
     val start: Long    = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).getOrElse(0L)
     val duration: Long = System.currentTimeMillis() - start
     val config         = ctx.configFor("PrometheusServiceMetrics")
-    val includeUri     = true //(config \ "includeUri").asOpt[Boolean].getOrElse(false)
+    val includeUri     = (config \ "includeUri").asOpt[Boolean].getOrElse(false)
 
     requestCounterGlobal.inc()
     reqDurationGlobal.observe(duration)

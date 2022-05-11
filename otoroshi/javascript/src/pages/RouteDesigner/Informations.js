@@ -147,28 +147,26 @@ export const Informations = ({ isCreation, value, setValue, setSaveButton }) => 
 
   console.log(informations.enabled, value.enabled)
 
-  return (
-    <div className="designer-form">
-      <Form
-        schema={schema}
-        flow={flow}
-        value={informations}
-        options={{ autosubmit: true }}
-        onError={e => console.log(e)}
-        onSubmit={(item) => setInformations({ ...merge({ ...value }, item) })}
-        footer={() => null}
-      />
-      <div className="d-flex align-items-center justify-content-end mt-3">
-        <div className="btn-group">
-          <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${link}`)}>
-            <i className="fas fa-times" /> Cancel
-          </button>
-          {!isCreation && <button className="btn btn-sm btn-danger" onClick={() => nextClient.deleteById(nextClient.ENTITIES[fetchName], value.id).then(() => history.push(`/${link}`))}>
-            <i className="fas fa-trash" /> Delete
-          </button>}
-          {saveButton()}
-        </div>
+  return <>
+    <Form
+      schema={schema}
+      flow={flow}
+      value={informations}
+      options={{ autosubmit: true }}
+      onError={e => console.log(e)}
+      onSubmit={(item) => setInformations({ ...merge({ ...value }, item) })}
+      footer={() => null}
+    />
+    <div className="d-flex align-items-center justify-content-end mt-3">
+      <div className="btn-group">
+        <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${link}`)}>
+          <i className="fas fa-times" /> Cancel
+        </button>
+        {!isCreation && <button className="btn btn-sm btn-danger" onClick={() => nextClient.deleteById(nextClient.ENTITIES[fetchName], value.id).then(() => history.push(`/${link}`))}>
+          <i className="fas fa-trash" /> Delete
+        </button>}
+        {saveButton()}
       </div>
     </div>
-  );
+  </>
 };

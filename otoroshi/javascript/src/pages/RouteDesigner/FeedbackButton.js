@@ -8,6 +8,7 @@ export function FeedbackButton({
   feedbackTimeout = 1500,
   className,
   disabled,
+  style = {}
 }) {
   const [uploading, setUploading] = useState(false);
   const [result, onResult] = useState('waiting');
@@ -51,6 +52,7 @@ export function FeedbackButton({
     <button
       disabled={disabled}
       className={`btn btn-sm me-2 ${color} ${className || ''}`}
+      style={{ ...style }}
       onClick={() => {
         if (!uploading && waiting) {
           setUploading(true);
