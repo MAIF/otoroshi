@@ -504,7 +504,7 @@ class AuthController(
                               Redirect(userRedirect).removingFromSession("bousr", "bo-redirect-after-login")
                             }
                           case Some(logoutUrl) =>
-                            val userRedirect      = redirect.getOrElse(s"http://${request.theHost}/")
+                            val userRedirect      = redirect.getOrElse(s"${request.theProtocol}://${request.theHost}/")
                             val actualRedirectUrl =
                               logoutUrl.replace("${redirect}", URLEncoder.encode(userRedirect, "UTF-8"))
                             ctx.user.delete().map { _ =>

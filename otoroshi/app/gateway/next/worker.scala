@@ -719,7 +719,7 @@ class OtoroshiRequestHandler(
                               cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
                                 env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
                               }
-                              val finalRedirect = req.getQueryString("redirect").getOrElse(s"${req.theProtocol}${req.theHost}")
+                              val finalRedirect = req.getQueryString("redirect").getOrElse(s"${req.theProtocol}://${req.theHost}")
                               val redirectTo    =
                                 env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
                                   .confidentialAppLogout()
@@ -733,7 +733,7 @@ class OtoroshiRequestHandler(
                               cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
                                 env.datastores.privateAppsUserDataStore.findById(id).map(_.foreach(_.delete()))
                               }
-                              val finalRedirect     = req.getQueryString("redirect").getOrElse(s"${req.theProtocol}${req.theHost}")
+                              val finalRedirect     = req.getQueryString("redirect").getOrElse(s"${req.theProtocol}://${req.theHost}")
                               val redirectTo        =
                                 env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
                                   .confidentialAppLogout()
