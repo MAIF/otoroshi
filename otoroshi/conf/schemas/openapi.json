@@ -18193,7 +18193,7 @@
             "type" : "string"
           },
           "maxFileSize" : {
-            "format" : "int32",
+            "format" : "int64",
             "description" : "???",
             "type" : "integer"
           },
@@ -19394,6 +19394,11 @@
         "description" : "???",
         "type" : "object",
         "properties" : {
+          "maxFileSize" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
           "type" : {
             "description" : "the kind of exporter",
             "type" : "string",
@@ -25659,6 +25664,11 @@
               "type" : "string"
             },
             "description" : "???"
+          },
+          "maxFileSize" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
           },
           "type" : {
             "description" : "the kind of exporter",

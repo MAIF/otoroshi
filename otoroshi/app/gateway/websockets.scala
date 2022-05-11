@@ -206,7 +206,7 @@ class WebSocketHandler()(implicit env: Env) {
     promise.future.andThen {
       case Success(resp) => {
         val duration = System.currentTimeMillis() - start
-        // logger.trace(s"[$snowflake] Call forwarded in $duration ms. with $overhead ms overhead for (${req.version}, http://${req.host}${req.relativeUri} => $url, $from)")
+        // logger.trace(s"[$snowflake] Call forwarded in $duration ms. with $overhead ms overhead for (${req.version}, ${req.theProtocol}://${req.host}${req.relativeUri} => $url, $from)")
         descriptor
           .updateMetrics(duration, overhead, counterIn.get(), counterOut.get(), 0, globalConfig)
           .andThen { case Failure(e) =>

@@ -9,6 +9,7 @@ import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
 import otoroshi.storage.drivers.inmemory.S3Configuration
 import otoroshi.utils.mailer._
+import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 
@@ -31,7 +32,7 @@ object Exporter {
 
 case class DataExporterConfigFiltering(include: Seq[JsObject] = Seq.empty, exclude: Seq[JsObject] = Seq.empty)
 
-case class FileSettings(path: String, maxFileSize: Int = 10 * 1024 * 1024) extends Exporter {
+case class FileSettings(path: String, maxFileSize: Long = 10L * 1024L * 1024L) extends Exporter {
   override def toJson: JsValue =
     Json.obj(
       "path"        -> path,
@@ -39,14 +40,17 @@ case class FileSettings(path: String, maxFileSize: Int = 10 * 1024 * 1024) exten
     )
 }
 
-case class S3ExporterSettings(config: S3Configuration) extends Exporter {
-  override def toJson: JsValue = config.json
+case class S3ExporterSettings(maxFileSize: Long = 10L * 1024L * 1024L, config: S3Configuration) extends Exporter {
+  override def toJson: JsValue = config.json.asObject ++ Json.obj("maxFileSize" -> maxFileSize)
 }
 
 object S3ExporterSettings {
   val format = new Format[S3ExporterSettings] {
     override def reads(json: JsValue): JsResult[S3ExporterSettings] = Try {
-      S3Configuration.format.reads(json).map(c => S3ExporterSettings(c)).get
+      S3ExporterSettings(
+        maxFileSize = json.select("maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
+        config = S3Configuration.format.reads(json).get
+      )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(e) => JsSuccess(e)
@@ -57,7 +61,7 @@ object S3ExporterSettings {
 
 case class GoReplayFileSettings(
   path: String,
-  maxFileSize: Long = 10 * 1024 * 1024,
+  maxFileSize: Long = 10L * 1024L * 1024L,
   captureRequests: Boolean,
   captureResponses: Boolean,
   preferBackendRequest: Boolean,
@@ -78,6 +82,7 @@ case class GoReplayFileSettings(
 
 case class GoReplayS3Settings(
   s3: S3Configuration,
+  maxFileSize: Long = 10L * 1024L * 1024L,
   captureRequests: Boolean,
   captureResponses: Boolean,
   preferBackendRequest: Boolean,
@@ -180,11 +185,12 @@ object DataExporterConfig {
             case "kafka"   => KafkaConfig.format.reads((json \ "config").as[JsObject]).get
             case "pulsar"  => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
             case "file"    =>
-              FileSettings((json \ "config" \ "path").as[String], (json \ "config" \ "maxFileSize").as[Int])
+              FileSettings((json \ "config" \ "path").as[String], (json \ "config" \ "maxFileSize").as[Long])
             case "s3"    =>
               (json \ "config").as(S3ExporterSettings.format)
             case "goreplays3"    => GoReplayS3Settings(
               (json \ "config" \ "s3").as(S3Configuration.format),
+              (json \ "config" \ "maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
               (json \ "config" \ "captureRequests").asOpt[Boolean].getOrElse(true),
               (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),
               (json \ "config" \ "preferBackendRequest").asOpt[Boolean].getOrElse(false),
@@ -194,7 +200,7 @@ object DataExporterConfig {
             case "goreplayfile"    =>
               GoReplayFileSettings(
                 (json \ "config" \ "path").as[String],
-                (json \ "config" \ "maxFileSize").asOpt[Long].getOrElse(10 * 1024 * 1024),
+                (json \ "config" \ "maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
                 (json \ "config" \ "captureRequests").asOpt[Boolean].getOrElse(true),
                 (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "preferBackendRequest").asOpt[Boolean].getOrElse(false),

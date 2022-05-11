@@ -850,6 +850,7 @@ class Env(
     // geoloc.stop()
     // ua.stop()
     healthCheckerActor ! PoisonPill
+    otoroshiEventsActor ! StopExporters
     otoroshiEventsActor ! PoisonPill
     Option(ahcStats.get()).foreach(_.cancel())
     Option(internalAhcStats.get()).foreach(_.cancel())

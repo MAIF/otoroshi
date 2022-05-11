@@ -256,7 +256,7 @@ object IpStackGeolocationHelper {
         case Some(details) => FastFuture.successful(details)
         case None          => {
           env.Ws // no need for mtls here
-            .url(s"http://api.ipstack.com/$ip?access_key=$apikey&format=1")
+            .url(s"https://api.ipstack.com/$ip?access_key=$apikey&format=1")
             .withFollowRedirects(false)
             .withRequestTimeout(timeout.millis)
             .get()

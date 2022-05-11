@@ -912,6 +912,7 @@ const possibleExporterConfigFormValues = {
   },
   s3: {
     flow: [
+      'maxFileSize',
       'bucket',
       'endpoint',
       'region',
@@ -924,6 +925,14 @@ const possibleExporterConfigFormValues = {
       'acl',
     ],
     schema: {
+      maxFileSize: {
+        type: 'number',
+        props: {
+          label: 'Max file size',
+          placeholder: 'Max size in bytes for a file',
+          suffix: 'bytes',
+        },
+      },
       'bucket': {
         type: 'string',
         props: {
@@ -999,6 +1008,7 @@ const possibleExporterConfigFormValues = {
       's3.v4auth',
       's3.writeEvery',
       's3.acl',
+      'maxFileSize',
       'captureRequests', 
       'captureResponses', 
       'preferBackendRequest', 
@@ -1006,6 +1016,14 @@ const possibleExporterConfigFormValues = {
       'methods'
     ],
     schema: {
+      maxFileSize: {
+        type: 'number',
+        props: {
+          label: 'Max file size',
+          placeholder: 'Max size in bytes for a file',
+          suffix: 'bytes',
+        },
+      },
       's3.bucket': {
         type: 'string',
         props: {
