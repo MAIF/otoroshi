@@ -46,6 +46,7 @@ object OtoroshiEventsActorSupervizer {
 }
 
 case object StartExporters
+case object StopExporters
 case object UpdateExporters
 
 class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
@@ -60,6 +61,7 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
 
   override def receive: Receive = {
     case StartExporters     => start()
+    case StopExporters      => stop()
     case UpdateExporters    => updateExporters()
     case evt: OtoroshiEvent =>
       dataExporters.foreach { case (_, exporter) => exporter.publish(evt) }
@@ -97,6 +99,16 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
 
   def start(): Unit = {
     updateExporters()
+  }
+
+  def stop(): Unit = {
+    env.proxyState.allDataExporters().vfuture.map { exporters =>
+      for {
+        _ <- Future.sequence(dataExporters.map {
+          case (key, c) =>  c.stopExporter()
+        })
+      } yield ()
+    }
   }
 }
 
