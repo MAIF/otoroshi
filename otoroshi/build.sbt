@@ -57,9 +57,9 @@ lazy val scalaLangVersion    = "2.12.13"
 // lazy val scalaLangVersion = "2.13.2"
 // * https://github.com/propensive/kaleidoscope/issues/24
 // * https://github.com/risksense/ipaddr/issues/11
-lazy val metricsVersion      = "4.1.18"
+lazy val metricsVersion      = "4.1.31"
 lazy val acme4jVersion       = "2.11"
-lazy val prometheusVersion   = "0.10.0"
+lazy val prometheusVersion   = "0.15.0"
 lazy val playJsonVersion     = "2.8.1"
 lazy val webAuthnVersion     = "1.7.0" // breaks jackson modules at 1.7.0
 lazy val kubernetesVersion   = "8.0.2"
@@ -82,7 +82,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka"               %% "akka-stream-kafka"              % "2.0.7",
   "com.lightbend.akka"              %% "akka-stream-alpakka-s3"         % "2.0.2",
   "com.typesafe.akka"               %% "akka-http-xml"                  % "10.1.15",
-  "com.spotify.metrics"              % "semantic-metrics-core"          % "1.1.7",
+  "com.spotify.metrics"              % "semantic-metrics-core"          % "1.1.11",
 //  "io.dropwizard.metrics"    % "metrics-jvm"                 % metricsVersion,    // Apache 2.0
   "io.dropwizard.metrics"            % "metrics-jmx"                    % metricsVersion, // Apache 2.0
   "io.dropwizard.metrics"            % "metrics-json"                   % metricsVersion, // Apache 2.0

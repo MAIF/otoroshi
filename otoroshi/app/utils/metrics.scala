@@ -5,17 +5,13 @@ import akka.http.scaladsl.util.FastFuture
 import otoroshi.cluster.{ClusterMode, StatsView}
 import com.codahale.metrics.jmx.JmxReporter
 import com.codahale.metrics.json.MetricsModule
-import com.codahale.metrics.jvm.{
-  GarbageCollectorMetricSet,
-  JvmAttributeGaugeSet,
-  MemoryUsageGaugeSet,
-  ThreadStatesGaugeSet
-}
+import com.codahale.metrics.jvm.{GarbageCollectorMetricSet, JvmAttributeGaugeSet, MemoryUsageGaugeSet, ThreadStatesGaugeSet}
 import com.codahale.metrics.{MetricRegistry, _}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}
 import com.spotify.metrics.jvm.{CpuGaugeSet, FileDescriptorGaugeSet}
 import io.prometheus.client.CollectorRegistry
+import io.prometheus.client.dropwizard.DropwizardExports
 import otoroshi.env.Env
 import otoroshi.events.StatsDReporter
 import io.prometheus.client.exporter.common.TextFormat
@@ -226,7 +222,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
     }
   }
 
-  private val prometheus = new CustomCollector(metricRegistry, jmxRegistry)
+  // private val prometheus = new CustomCollector(metricRegistry, jmxRegistry)
 
   private val objectMapper = {
     val om = new ObjectMapper()
@@ -235,6 +231,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   }
 
   def prometheusExport(filter: Option[String] = None): String = {
+    val prometheus = new CustomCollector(metricRegistry, jmxRegistry)
     filter match {
       case None       => {
         val writer = new StringWriter()
