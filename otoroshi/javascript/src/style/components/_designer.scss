@@ -524,3 +524,23 @@
 .patch-row {
     margin-right: 0 !important;
 }
+
+.main-view .cm-editor {
+    width: 100%;
+    height: 100%;
+}
+
+.tryit-columns {
+    width: 100%;
+    height: 100%;
+}
+
+.tryit-right-column {
+    width: 100%;
+    height: 100% !important;
+}
+
+.tryit-right-column :first-child {
+    width: 100%;
+    height: 100%;
+}
