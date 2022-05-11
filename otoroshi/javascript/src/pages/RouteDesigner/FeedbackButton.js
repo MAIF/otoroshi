@@ -50,7 +50,7 @@ export function FeedbackButton({
   return (
     <button
       disabled={disabled}
-      className={`btn btn-sm ${color} ${className || ''}`}
+      className={`btn btn-sm me-2 ${color} ${className || ''}`}
       onClick={() => {
         if (!uploading && waiting) {
           setUploading(true);
@@ -69,10 +69,9 @@ export function FeedbackButton({
             });
         }
       }}>
-      {text}
-      <div
+      <div className='me-1'
         style={{
-          width: '20px',
+          width: '16px',
           display: 'inline-block',
         }}>
         {waiting && !uploading && <Icon />}
@@ -107,6 +106,7 @@ export function FeedbackButton({
           />
         )}
       </div>
+      {text}
     </button>
   );
 }

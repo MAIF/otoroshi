@@ -279,7 +279,7 @@ export default ({ service }) => {
     }, [])
 
     useEffect(() => {
-        setRoutes(service.routes)
+        setRoutes(service.routes || [])
     }, [service.id])
 
     const updateRoute = (index, item) => {

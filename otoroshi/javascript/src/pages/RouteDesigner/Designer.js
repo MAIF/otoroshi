@@ -153,12 +153,11 @@ const ServiceView = ({ route }) => {
   </div>
 }
 
-const FormContainer = ({ selectedNode, route, preview, showPreview, originalRoute, alertModal, serviceMode, ...props }) => {
+const FormContainer = ({ selectedNode, route, preview, showPreview, alertModal, serviceMode, ...props }) => {
 
   const isOnFrontendBackend = selectedNode && ['Frontend', 'Backend'].includes(selectedNode.id)
 
-  return <div
-    className="col-sm-8 relative-container" style={{ paddingRight: 0 }}>
+  return <div className="col-sm-8 relative-container flex-column flow-container p-3" style={{ paddingRight: 0 }}>
     <UnselectedNode hideText={selectedNode} route={route} {...props} />
     {serviceMode && isOnFrontendBackend && <ServiceView route={route} />}
     {selectedNode && (!serviceMode || (serviceMode && !isOnFrontendBackend)) && (
@@ -166,7 +165,6 @@ const FormContainer = ({ selectedNode, route, preview, showPreview, originalRout
         {...props}
         route={route}
         selectedNode={selectedNode}
-        showUpdateRouteButton={!isEqual(route, originalRoute)}
         hidePreview={() =>
           showPreview({
             ...preview,
@@ -187,11 +185,16 @@ const Modal = ({ question, onOk, onCancel }) => <div class="designer-modal d-fle
   </div>
 </div>
 
-export default ({ value }) => {
+export default ({ value, setSaveButton }) => {
   const { routeId } = useParams();
   const location = useLocation();
 
-  return <Designer routeId={routeId} location={location} value={value} serviceMode={location.pathname.includes('route-compositions')} />
+  return <Designer routeId={routeId}
+    location={location}
+    value={value}
+    setSaveButton={setSaveButton}
+    pathname={location.pathname}
+    serviceMode={location.pathname.includes('route-compositions')} />
 }
 
 const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) => <div className='main-view relative-container'
@@ -274,7 +277,7 @@ const OutBoundFlow = props => <div className="col-sm-6 pe-3 flex-column">
   </div>
 </div>
 
-const Flow = props => <div className="col-sm-4 pe-3 d-flex flex-column">{props.children}</div>
+const Flow = props => <div className="col-sm-4 pe-3 pb-1 d-flex flex-column">{props.children}</div>
 
 const PluginsContainer = ({
   handleSearch, showLegacy, setShowLegacy, onExpandAll,
@@ -331,13 +334,12 @@ class Designer extends React.Component {
     nodes: [],
     plugins: [],
     selectedNode: undefined,
-    route: this.props.value,
-    originalRoute: this.props.value,
+    route: { ...this.props.value },
+    originalRoute: { ...this.props.value },
     loading: true,
     searched: '',
     expandAll: false,
     showLegacy: (window.localStorage.getItem('io.otoroshi.next.designer.showLegacy') || 'true') === 'true',
-    changed: false,
     preview: {
       enabled: false
     },
@@ -357,11 +359,25 @@ class Designer extends React.Component {
 
   componentDidMount() {
     this.loadData()
+
+    this.injectSaveButton()
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.location.pathname !== this.props.location.pathname)
+    if (prevProps.location.pathname !== this.props.location.pathname) {
       this.loadData()
+      this.injectSaveButton()
+    }
+  }
+
+  injectSaveButton = () => {
+    this.props.setSaveButton(<FeedbackButton
+      className="ms-2"
+      onPress={this.saveRoute}
+      text="Save route"
+      disabled={isEqual(this.state.route, this.state.originalRoute)}
+      icon={(() => <i className='fas fa-paper-plane' />)}
+    />)
   }
 
   loadHiddenStepsFromLocalStorage = route => {
@@ -450,8 +466,8 @@ class Designer extends React.Component {
         backends,
         loading: false,
         categories: categories.filter((category) => !['Tunnel', 'Job'].includes(category)),
-        route: routeWithNodeId,
-        originalRoute: routeWithNodeId,
+        route: { ...routeWithNodeId },
+        originalRoute: { ...routeWithNodeId },
         plugins: formattedPlugins.map((p) => ({
           ...p,
           selected: p.plugin_multi_inst ? false : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
@@ -581,7 +597,8 @@ class Designer extends React.Component {
     !EXCLUDED_PLUGINS.ids.includes(plugin.id.replace('cp:', ''));
 
   removeNode = e => {
-    e.stopPropagation();
+    if (e && typeof e.stopPropagation === 'function')
+      e.stopPropagation();
 
     this.setState({
       alertModal: {
@@ -608,7 +625,7 @@ class Designer extends React.Component {
               show: false
             }
           }, () => {
-            this.saveChanges({
+            this.updateRoute({
               ...route,
               plugins: route.plugins.filter(plugin => plugin.nodeId !== nodeId),
             });
@@ -639,7 +656,7 @@ class Designer extends React.Component {
         }))
       },
       () => {
-        this.saveChanges({
+        this.updateRoute({
           ...route,
           plugins: [
             ...route.plugins,
@@ -665,7 +682,7 @@ class Designer extends React.Component {
     const newRoute = this.state.route;
     newRoute.plugins = [];
     this.setState({ route: newRoute, nodes: [] });
-    this.saveChanges({ ...newRoute });
+    this.updateRoute({ ...newRoute });
   }
 
   deleteRoute = () => {
@@ -723,7 +740,7 @@ class Designer extends React.Component {
         }))
       },
       () => {
-        this.saveChanges({ ...newRoute }).then(() => console.log("pattern added "));
+        this.updateRoute({ ...newRoute }).then(() => console.log("pattern added "));
       }
     )
   }
@@ -761,7 +778,6 @@ class Designer extends React.Component {
         ]
       }
     });
-    // console.log(newRoute);
     this.setState(
       {
         selectedNode: null,
@@ -773,7 +789,7 @@ class Designer extends React.Component {
         }))
       },
       () => {
-        this.saveChanges({ ...newRoute }).then(() => console.log("pattern added "));
+        this.updateRoute({ ...newRoute }).then(() => console.log("pattern added "));
       }
     )
   }
@@ -809,7 +825,7 @@ class Designer extends React.Component {
 
     this.setState({ nodes: newNodes })
 
-    this.saveChanges({
+    this.updateRoute({
       ...this.state.route,
       plugins: this.state.route.plugins.map(plugin => ({
         ...plugin,
@@ -840,11 +856,10 @@ class Designer extends React.Component {
 
   updatePlugin = (nodeId, pluginId, item) => {
     const { route } = this.state
-    return this.saveChanges({
+    return this.updateRoute({
       ...route,
       frontend: pluginId === 'Frontend' ? item.plugin : route.frontend,
       backend: pluginId === 'Backend' ? item.plugin : route.backend,
-      backend_ref: undefined,
       plugins: route.plugins.map(plugin => {
         if (plugin.nodeId === nodeId)
           return {
@@ -858,8 +873,8 @@ class Designer extends React.Component {
     });
   };
 
-  saveChanges = r => {
-    const route = r || this.state.route
+  saveRoute = () => {
+    const { route } = this.state
     return nextClient.update(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES, {
       ...route,
       plugins: route.plugins.map(plugin => ({
@@ -869,11 +884,18 @@ class Designer extends React.Component {
     })
       .then(() => {
         this.setState({
-          route,
-          originalRoute: route
+          originalRoute: { ...route }
         })
+        this.injectSaveButton()
       });
-  };
+  }
+
+  updateRoute = r => new Promise(resolve => {
+    this.setState({ route: r }, () => {
+      this.injectSaveButton()
+      resolve()
+    })
+  })
 
   isPluginEnabled = (value) => this.state.route.plugins.find(plugin => plugin.nodeId === value.nodeId)?.enabled
 
@@ -1048,7 +1070,6 @@ class Designer extends React.Component {
     return <Loader loading={loading}>
       <Container onClick={() => {
         this.setState({
-          changed: false,
           selectedNode: undefined
         })
       }}>
@@ -1091,14 +1112,12 @@ class Designer extends React.Component {
                 if (!this.state.alertModal.show)
                   this.setState({ selectedNode: n })
               }}
-              updatePlugin={this.updatePlugin}
-              onRemove={this.removeNode}
               route={route}
               plugins={plugins}
               backends={backends}
             />
           ) : (
-            <div className="row h-100 p-3 mx-1 flow-container">
+            <div className="row h-100 mx-1">
               <Flow>
                 <div className="row" style={{ height: '100%' }}>
                   <InBoundFlow>
@@ -1168,17 +1187,17 @@ class Designer extends React.Component {
                 serviceMode={serviceMode}
                 clearPlugins={this.clearPlugins}
                 deleteRoute={this.deleteRoute}
-                saveRoute={this.saveChanges}
+                updateRoute={this.updateRoute}
+                saveRoute={this.saveRoute}
                 selectedNode={selectedNode}
                 route={route}
-                saveChanges={this.saveChanges}
                 setRoute={n => this.setState({ route: n })}
                 setSelectedNode={n => {
                   if (!this.state.alertModal.show)
                     this.setState({ selectedNode: n })
                 }}
                 updatePlugin={this.updatePlugin}
-                removeNode={this.removeNode}
+                onRemove={this.removeNode}
                 plugins={plugins}
                 backends={backends}
                 preview={preview}
@@ -1189,8 +1208,8 @@ class Designer extends React.Component {
                   }
                 })}
                 originalRoute={originalRoute}
-                setRef={e => this.setState({ changed: e })}
                 alertModal={alertModal}
+                disabledSaveButton={isEqual(route, originalRoute)}
               />
             </div>
           )}
@@ -1292,7 +1311,6 @@ const SearchBar = ({ handleSearch }) => (
         style={{
           paddingLeft: '6px',
           width: '100%',
-          // backgroundColor: '#fff',
           display: 'flex',
           alignItems: 'center',
         }}>
@@ -1391,24 +1409,19 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute, saveRoute 
             })}
           </div>
         </div>
-        <div className='d-flex' style={{ marginTop: 50, justifyContent: 'space-between' }}>
-          <div className="btn-group">
-            <button type="button" className="ms-auto btn btn-sm btn-danger" onClick={clearPlugins}>
-              <i className="fas fa-ban" /> clear plugins
-            </button>
-          </div>
-          <div className="btn-group">
-            <Link className="ms-auto btn btn-sm btn-info" to="/routes">
-              <i className="fas fa-arrow-left" /> back to routes
-            </Link>
-            <button type="button" className="ms-auto btn btn-sm btn-danger" onClick={deleteRoute}>
-              <i className="fas fa-trash" /> delete route
-            </button>
-            <button type="button" className="ms-auto btn btn-sm btn-success" onClick={e => saveRoute(route)}>
-              <i className="fas fa-save" /> save route
-            </button>
-          </div>
+        <div className='d-flex-between mt-3 flex align-items-end'>
+          <Link className="btn btn-sm btn-info" to="/routes">
+            <i className="fas fa-arrow-left" /> Back to routes
+          </Link>
 
+          <div>
+            <button type="button" className="btn btn-sm btn-danger me-1" onClick={clearPlugins}>
+              Clear plugins
+            </button>
+            <button type="button" className="btn btn-sm btn-danger" onClick={deleteRoute}>
+              <i className="fas fa-trash" /> Delete route
+            </button>
+          </div>
         </div>
       </>
     );
@@ -1509,22 +1522,17 @@ class EditView extends React.Component {
       value: undefined,
     },
     offset: 0,
-    errors: [],
-    isDirty: this.props.showUpdateRouteButton
+    errors: []
   }
 
   formRef = React.createRef()
 
   componentDidMount() {
-    this.getDirtyFromProps()
     this.manageScrolling()
     this.loadForm()
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.showUpdateRouteButton !== prevProps.showUpdateRouteButton)
-      this.getDirtyFromProps()
-
     if (this.props.selectedNode.id !== prevProps.selectedNode.id)
       this.loadForm()
   }
@@ -1544,16 +1552,6 @@ class EditView extends React.Component {
 
   componentWillUnmount() {
     window.removeEventListener('scroll', this.onScroll);
-  }
-
-  getDirtyFromProps = dirty => {
-    const { setRef, showUpdateRouteButton } = this.props
-    this.setState({
-      isDirty: dirty || showUpdateRouteButton
-    }, () => {
-      if (setRef && typeof setRef === 'function')
-        setRef(this.state.isDirty);
-    })
   }
 
   loadForm = () => {
@@ -1633,11 +1631,10 @@ class EditView extends React.Component {
     });
   }
 
-  onValidate = (item) => {
+  onValidate = (newValue) => {
     const { selectedNode } = this.props
     const { nodeId } = selectedNode;
 
-    const newValue = unstringify(item);
     return this.props.updatePlugin(
       nodeId,
       selectedNode.id,
@@ -1645,16 +1642,7 @@ class EditView extends React.Component {
         plugin: newValue.plugin,
         status: newValue.status,
       }
-    ).then(() => {
-      this.setState({
-        form: {
-          ...this.state.form,
-          value: newValue,
-          originalValue: newValue
-        },
-        isDirty: false
-      })
-    });
+    )
   };
 
   onJsonInputChange = (value) => {
@@ -1662,19 +1650,14 @@ class EditView extends React.Component {
     validate([], form.schema, value)
       .then(() => {
         this.setState({
-          errors: [],
-          isDirty: !isEqual(form.originalValue, JSON.parse(value)),
-          form: {
-            ...form,
-            value: merge(form.originalValue, JSON.parse(value))
-          }
+          errors: []
         })
+        this.onValidate(JSON.parse(value))
       })
       .catch((err) => {
         if (err.inner && Array.isArray(err.inner)) {
           this.setState({
-            errors: err.inner.map((r) => r.message),
-            isDirty: false
+            errors: err.inner.map((r) => r.message)
           })
         }
       });
@@ -1691,11 +1674,11 @@ class EditView extends React.Component {
       selectedNode, setSelectedNode,
       route, setRoute,
       onRemove, backends, readOnly, addNode,
-      hidePreview, saveChanges
+      hidePreview, disabledSaveButton, saveRoute
     } = this.props
 
     const { id, name, icon } = selectedNode
-    const { usingExistingBackend, form, offset, asJsonFormat, errors, isDirty } = this.state
+    const { usingExistingBackend, form, offset, asJsonFormat, errors } = this.state
 
     const showActions = !selectedNode.legacy && !readOnly && 'Backend' !== id
     const notOnBackendNode = !usingExistingBackend || id !== 'Backend'
@@ -1718,12 +1701,6 @@ class EditView extends React.Component {
             if (this.formRef.current)
               this.formRef.current.validate()
                 .then(() => {
-                  this.setState({
-                    form: {
-                      ...form,
-                      value: this.formRef.current.state.intervalValue
-                    }
-                  })
                   this.toggleJsonFormat(true);
                 })
             else
@@ -1759,30 +1736,22 @@ class EditView extends React.Component {
                 addNode(selectedNode);
               }} />
               : <Actions
-                showUpdateRouteButton={isDirty}
-                valid={() => this.onValidate(form.value)}
+                disabledSaveButton={disabledSaveButton}
+                valid={saveRoute}
                 selectedNode={selectedNode}
                 onRemove={onRemove}
               />}
           </>}
           {!asJsonFormat && <Form
             ref={this.formRef}
-            value={unstringify(form.value)}
+            value={form.value}
             schema={form.schema}
             flow={form.flow}
             onSubmit={this.onValidate}
-            options={{
-              // hideLogs: true,
-              // autosubmit: true,
-              watch: () => {
-                if (this.formRef && this.formRef.current) {
-                  this.getDirtyFromProps(this.formRef.current.isDirty())
-                }
-              }
-            }}
-            footer={({ valid }) => <Actions
-              showUpdateRouteButton={isDirty}
-              valid={valid}
+            options={{ autosubmit: true }}
+            footer={() => <Actions
+              disabledSaveButton={disabledSaveButton}
+              valid={saveRoute}
               selectedNode={selectedNode}
               onRemove={onRemove}
             />}
@@ -1790,9 +1759,9 @@ class EditView extends React.Component {
         </div>}
         {!notOnBackendNode && <div className="d-flex justify-content-end p-3">
           <FeedbackButton
-            text="Update the plugin"
+            text="Save"
             icon={() => <i className="fas fa-paper-plane" />}
-            onPress={saveChanges}
+            onPress={saveRoute}
           />
           {route.backend_ref && <Link className='btn btn-sm btn-success ms-2' to={`/backends/${route.backend_ref}/`}>
             Edit this backend
@@ -1803,25 +1772,13 @@ class EditView extends React.Component {
   }
 }
 
-const stringify = (item) => (typeof item === 'object' ? JSON.stringify(item, null, 2) : item);
-const unstringify = (item) => {
-  if (typeof item === 'object') return item;
-  else {
-    try {
-      return JSON.parse(item);
-    } catch (_) {
-      return item;
-    }
-  }
-};
-
-const Actions = ({ selectedNode, onRemove, valid, showUpdateRouteButton }) => (
+const Actions = ({ selectedNode, onRemove, valid, disabledSaveButton }) => (
   <div className="d-flex mt-4 justify-content-end">
-    {!selectedNode.default && <RemoveComponent onRemove={onRemove} />}
+    {!['Frontend', 'Backend'].includes(selectedNode.id) && <RemoveComponent onRemove={onRemove} />}
     <FeedbackButton
-      text="Update route"
+      text="Save"
       className="ms-2"
-      disabled={!showUpdateRouteButton}
+      disabled={disabledSaveButton}
       icon={() => <i className="far fa-paper-plane" />}
       onPress={valid}
     />
@@ -1907,7 +1864,7 @@ const Description = ({ text, steps, legacy }) => {
 };
 
 const RemoveComponent = ({ onRemove }) => (
-  <button className="btn btn-sm btn-danger" onClick={onRemove}>
+  <button className="btn btn-sm btn-danger" type="button" onClick={onRemove}>
     <i className="fas fa-trash me-2"></i>
     Remove this component
   </button>
