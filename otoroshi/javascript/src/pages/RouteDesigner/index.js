@@ -44,7 +44,7 @@ const Manager = ({ query, entity, ...props }) => {
                     }[query]}
                 </h4>
                 <div className='d-flex align-item-center justify-content-between flex'>
-                    {[
+                    {!isCreation && [
                         { to: `/${entity.link}/${value.id}?tab=informations`, icon: 'fa-file-alt', title: 'Informations', tab: 'informations' },
                         { to: `/${entity.link}/${value.id}?tab=routes`, icon: 'fa-road', title: 'Routes', tab: 'routes', enabled: ['route-compositions'] },
                         { to: `/${entity.link}/${value.id}?tab=flow`, icon: 'fa-pencil-ruler', title: 'Designer', tab: 'flow' },
@@ -88,7 +88,11 @@ const Manager = ({ query, entity, ...props }) => {
 
     return (
         <div className="designer row ps-3">
-            <Informations {...props} isCreation={isCreation} value={value} setValue={setValue} />
+            <Informations {...props}
+                isCreation={isCreation}
+                value={value}
+                setValue={setValue}
+                setSaveButton={setSaveButton} />
         </div>
     );
 }
@@ -101,7 +105,6 @@ export default (props) => {
 
     useEffect(() => {
         props.setTitle(entity.capitalize);
-
         patchStyle(true)
 
         return () => patchStyle(false)

@@ -1,16 +1,50 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Form, type, constraints, format } from '@maif/react-forms';
 import { Location } from '../../components/Location';
 import { nextClient } from '../../services/BackOfficeServices';
 import { useHistory } from 'react-router-dom';
 import { useEntityFromURI } from '../../util';
-import { merge } from 'lodash';
+import { isEqual, merge } from 'lodash';
+import { FeedbackButton } from './FeedbackButton';
 
-export const Informations = ({ isCreation, value, setValue }) => {
-  const ref = useRef();
+export const Informations = ({ isCreation, value, setValue, setSaveButton }) => {
   const history = useHistory();
+  const [informations, setInformations] = useState({ ...value })
 
   const { capitalize, lowercase, fetchName, link } = useEntityFromURI()
+
+  useEffect(() => {
+    console.log("load state from props")
+    setInformations({ ...value })
+  }, [value])
+
+  useEffect(() => {
+    setSaveButton(saveButton())
+  }, [informations])
+
+  const saveButton = () => {
+    return <FeedbackButton
+      className="ms-2"
+      onPress={saveRoute}
+      text={isCreation ? 'Create route' : 'Save route'}
+      disabled={isEqual(informations, value)}
+      icon={(() => <i className='fas fa-paper-plane' />)}
+    />
+  }
+
+  const saveRoute = () => {
+    console.log('save route')
+    if (isCreation) {
+      return nextClient
+        .create(nextClient.ENTITIES[fetchName], informations)
+        .then(() => history.push(`/${link}/${informations.id}?tab=flow`));
+    } else
+      return nextClient.update(nextClient.ENTITIES[fetchName], informations)
+        .then(res => {
+          if (!res.error)
+            setValue(res)
+        })
+  }
 
   const schema = {
     id: {
@@ -108,34 +142,20 @@ export const Informations = ({ isCreation, value, setValue }) => {
     },
   ];
 
+  if (!informations || !value)
+    return null
+
+  console.log(informations.enabled, value.enabled)
+
   return (
     <div className="designer-form">
       <Form
         schema={schema}
         flow={flow}
-        value={
-          isCreation
-            ? {
-              ...value,
-              name: '',
-              description: '',
-            }
-            : value
-        }
-        ref={ref}
-        onSubmit={(item) => {
-          const newItem = merge(value, item)
-          if (isCreation) {
-            nextClient
-              .create(nextClient.ENTITIES[fetchName], newItem)
-              .then(() => history.push(`/${link}/${newItem.id}?tab=flow`));
-          } else
-            nextClient.update(nextClient.ENTITIES[fetchName], newItem)
-              .then(res => {
-                if (!res.error)
-                  setValue(res)
-              })
-        }}
+        value={informations}
+        options={{ autosubmit: true }}
+        onError={e => console.log(e)}
+        onSubmit={(item) => setInformations({ ...merge({ ...value }, item) })}
         footer={() => null}
       />
       <div className="d-flex align-items-center justify-content-end mt-3">
@@ -146,9 +166,7 @@ export const Informations = ({ isCreation, value, setValue }) => {
           {!isCreation && <button className="btn btn-sm btn-danger" onClick={() => nextClient.deleteById(nextClient.ENTITIES[fetchName], value.id).then(() => history.push(`/${link}`))}>
             <i className="fas fa-trash" /> Delete
           </button>}
-          <button className="btn btn-sm btn-save" onClick={() => ref.current.handleSubmit()}>
-            <i className="fas fa-save" /> {isCreation ? `Create the ${lowercase}` : `Update the ${lowercase}`}
-          </button>
+          {saveButton()}
         </div>
       </div>
     </div>
