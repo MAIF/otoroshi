@@ -104,20 +104,14 @@ export default (props) => {
     const query = new URLSearchParams(search).get('tab');
 
     useEffect(() => {
-        props.setTitle(entity.capitalize);
         patchStyle(true)
 
         return () => patchStyle(false)
     }, []);
 
     useEffect(() => {
-        if (query) {
-            props.setTitle({
-                flow: 'Designer',
-                'try-it': 'Test routes',
-                informations: 'Informations',
-                routes: 'Routes'
-            }[query]);
+        if (!query) {
+            props.setTitle('Routes');
         }
     }, [search]);
 
@@ -138,20 +132,16 @@ export default (props) => {
                 { path: `${match.url}/:routeId/analytics`, component: ServiceAnalyticsPage },
                 { path: `${match.url}/:routeId/apikeys`, component: ServiceApiKeysPage },
                 { path: `${match.url}/:routeId/stats`, component: ServiceLiveStatsPage },
-                { path: `${match.url}/:routeId/events`, component: ServiceEventsPage }
-            ].map((route, i) => {
-                const Component = route.component;
-                <Route
+                { path: `${match.url}/:routeId/events`, component: ServiceEventsPage },
+                { path: `${match.url}/:routeId`, component: () => <Manager query={query} {...props} entity={entity} /> }
+            ].map(({ path, component }) => {
+                const Component = component;
+                return <Route
                     exact
-                    key={`route${i}`}
-                    path={route.path}
+                    key={path}
+                    path={path}
                     component={(p) => <Component setSidebarContent={props.setSidebarContent} setTitle={props.setTitle} {...p.match} />} />
             })}
-            <Route
-                exact
-                path={`${match.url}/:routeId`}
-                children={() => <Manager query={query} {...props} entity={entity} />}
-            />
             <Route component={Routes} />
         </Switch>
     );

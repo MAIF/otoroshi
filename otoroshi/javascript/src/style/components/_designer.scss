@@ -24,7 +24,7 @@
 
     .h-100 {
         display: flex;
-        min-height: calc(100vh - 135px);
+        min-height: calc(100vh - 162px);
     }
 
     .hide-overflow {
@@ -253,7 +253,7 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
         overflow-y: scroll;
-        max-height: calc(100vh - 135px);
+        max-height: calc(100vh - 162px);
         padding-left: 0;
         flex: 3;
         margin-right: calc(var(--bs-gutter-x) * 1);

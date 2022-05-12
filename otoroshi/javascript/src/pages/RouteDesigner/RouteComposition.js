@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
-import { Form } from '@maif/react-forms';
+import { Form, SelectInput } from '@maif/react-forms';
 import { nextClient } from '../../services/BackOfficeServices';
-import { useRef } from 'react';
 import { DEFAULT_FLOW } from './Graph';
 import { toUpperCaseLabels } from '../../util';
 import { FeedbackButton } from './FeedbackButton';
-import { SelectInput } from '@maif/react-forms';
 import { isEqual } from 'lodash';
-import { CodeInput } from '@maif/react-forms';
 
 export const HTTP_COLORS = {
     GET: 'rgb(52, 170, 182)',

@@ -16,8 +16,8 @@ import {
 import Loader from './Loader';
 import { FeedbackButton } from './FeedbackButton';
 import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
-import { SelectInput, Form, type, format, validate, CodeInput, MarkdownInput } from '@maif/react-forms';
-import { merge, snakeCase, camelCase, isEqual } from 'lodash';
+import { SelectInput, Form, validate, CodeInput, MarkdownInput } from '@maif/react-forms';
+import { snakeCase, camelCase, isEqual } from 'lodash';
 import { HTTP_COLORS } from './RouteComposition'
 
 import { getPluginsPatterns } from './patterns';
@@ -1224,11 +1224,7 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
     className="element"
     onClick={(e) => {
       e.stopPropagation();
-      if (element.shortcut) {
-        element.shortcut(element);
-      } else {
-        showPreview(element);
-      }
+      showPreview(element);
     }}>
     <div className="d-flex-between element-text">
       <div>
@@ -1240,7 +1236,7 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
         onClick={(e) => {
           e.stopPropagation();
           if (element.shortcut) {
-            element.shortcut(element);
+            element.shortcut();
           } else {
             hidePreview();
             addNode(element);
@@ -1479,18 +1475,21 @@ const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonCli
 </div>
 
 const EditViewJsonEditor = ({ readOnly, value, onChange, errors }) => <>
-  {/* {value.toString().length > 0 && ( */}
-  <CodeInput
-    mode="json"
-    themeStyle={{
-      maxHeight: readOnly ? '300px' : '-1',
-      minHeight: '100px',
-      width: '100%',
-    }}
-    value={value}
-    onChange={onChange}
-  />
-  {/* )} */}
+  {value && value.toString().length > 0 && (
+    <CodeInput
+      mode="json"
+      themeStyle={{
+        maxHeight: readOnly ? '300px' : '-1',
+        minHeight: '100px',
+        width: '100%',
+      }}
+      value={value}
+      onChange={e => {
+        if (!readOnly)
+          onChange(e)
+      }}
+    />
+  )}
   {errors && <div>
     {(errors || []).map((error, idx) => (
       <div className="mt-3 ps-3"
@@ -1733,7 +1732,10 @@ class EditView extends React.Component {
               }}
               onOk={() => {
                 hidePreview();
-                addNode(selectedNode);
+                if (selectedNode.shortcut)
+                  selectedNode.shortcut(selectedNode);
+                else
+                  addNode(selectedNode);
               }} />
               : <Actions
                 disabledSaveButton={disabledSaveButton}

@@ -1893,7 +1893,7 @@
 
 "@maif/react-forms@github:MAIF/react-forms#v2":
   version "1.0.49"
-  resolved "https://codeload.github.com/MAIF/react-forms/tar.gz/c22f9a9160238c86b0d4dfbfc2e30f48532531a8"
+  resolved "https://codeload.github.com/MAIF/react-forms/tar.gz/aee4c803f195a36b93f02c54dd2f824b1630c1f9"
   dependencies:
     "@codemirror/basic-setup" "^0.19.1"
     "@codemirror/lang-html" "^0.19.4"

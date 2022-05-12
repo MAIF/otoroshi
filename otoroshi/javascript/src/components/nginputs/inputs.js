@@ -3,8 +3,7 @@ import _ from 'lodash';
 import Select from 'react-select';
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
 
-import { SingleLineCode } from '@maif/react-forms';
-import { CodeInput } from '@maif/react-forms';
+import { SingleLineCode, CodeInput } from '@maif/react-forms';
 
 function LabelAndInput(_props) {
   const schema = _props.schema || {};

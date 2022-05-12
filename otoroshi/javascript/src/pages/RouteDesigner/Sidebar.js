@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import { createTooltip } from '../../tooltips';
 import { useEntityFromURI, useQuery } from '../../util';
 
@@ -13,18 +13,17 @@ const LINKS = (entity, route) => [
 
 export default ({ route }) => {
   const query = useQuery()
+  const history = useHistory()
+  const entity = useEntityFromURI()
+
   const currentTab = query.get('tab')
   const isActive = tab => currentTab === tab ? 'active' : '';
 
-  const entity = useEntityFromURI()
-
   return (
     <ul className="nav flex-column nav-sidebar">
-      <li className="nav-item">
+      <li className="nav-item" onClick={() => history.push(`/${entity.link}/${route.id}?tab=flow`)} style={{ cursor: 'pointer' }}>
         <h3>
-          <span>
-            <span className="fas fa-server" /> {route.name}
-          </span>
+          <span className="fas fa-road" /> {route.name}
         </h3>
       </li>
       {LINKS(entity.link, route).map(({ to, icon, title, tooltip, tab }) => (

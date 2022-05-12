@@ -14,7 +14,6 @@ export const Informations = ({ isCreation, value, setValue, setSaveButton }) => 
   const { capitalize, lowercase, fetchName, link } = useEntityFromURI()
 
   useEffect(() => {
-    console.log("load state from props")
     setInformations({ ...value })
   }, [value])
 
@@ -33,7 +32,6 @@ export const Informations = ({ isCreation, value, setValue, setSaveButton }) => 
   }
 
   const saveRoute = () => {
-    console.log('save route')
     if (isCreation) {
       return nextClient
         .create(nextClient.ENTITIES[fetchName], informations)
@@ -145,15 +143,12 @@ export const Informations = ({ isCreation, value, setValue, setSaveButton }) => 
   if (!informations || !value)
     return null
 
-  console.log(informations.enabled, value.enabled)
-
   return <>
     <Form
       schema={schema}
       flow={flow}
       value={informations}
       options={{ autosubmit: true }}
-      onError={e => console.log(e)}
       onSubmit={(item) => setInformations({ ...merge({ ...value }, item) })}
       footer={() => null}
     />
