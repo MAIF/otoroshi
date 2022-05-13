@@ -20,13 +20,19 @@ import akka.http.scaladsl.model.Uri
 case class NgMinimalRoute(
     frontend: NgFrontend,
     backend: NgMinimalBackend,
-    backendRef: Option[String] = None
+    backendRef: Option[String] = None,
+    overridePlugins: Boolean,
+    plugins: NgPlugins,
 ) {
   def json: JsValue = Json.obj(
     "frontend"    -> frontend.json,
     "backend"     -> backend.json,
-    "backend_ref" -> backendRef.map(JsString.apply).getOrElse(JsNull).as[JsValue]
-  )
+    "backend_ref" -> backendRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+  ).applyOnIf(overridePlugins) { obj =>
+    obj ++ Json.obj("override_plugins" -> overridePlugins)
+  }.applyOnIf(plugins.slots.nonEmpty) { obj =>
+    obj ++ Json.obj("plugins" -> plugins.json)
+  }
 }
 
 object NgMinimalRoute {
@@ -41,7 +47,9 @@ object NgMinimalRoute {
           case None    => NgMinimalBackend.readFrom(json.select("backend"))
           case Some(r) => refBackend.minimalBackend
         },
-        backendRef = ref
+        backendRef = ref,
+        overridePlugins = json.select("override_plugins").asOpt[Boolean].getOrElse(false),
+        plugins = NgPlugins.readFrom(json.select("plugins")),
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -112,7 +120,7 @@ case class NgService(
           frontend = route.frontend,
           backend = route.backend.toBackend(client, None),
           backendRef = route.backendRef,
-          plugins = if (route.backend.overridePlugins) route.backend.plugins else NgPlugins(route.backend.plugins.slots ++ plugins.slots)
+          plugins = if (route.overridePlugins) route.plugins else NgPlugins(route.plugins.slots ++ plugins.slots)
         )
       }
     } else {
@@ -200,9 +208,9 @@ object NgService {
             root = "/",
             rewrite = false,
             loadBalancing = RoundRobin,
-            overridePlugins = false,
-            plugins = NgPlugins.empty
-          )
+          ),
+          overridePlugins = false,
+          plugins = NgPlugins.empty,
         )
       }
       NgService(

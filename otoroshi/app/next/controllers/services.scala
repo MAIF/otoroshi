@@ -184,9 +184,9 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
             root = "/",
             rewrite = false,
             loadBalancing = RoundRobin,
-            overridePlugins = false,
-            plugins = NgPlugins.empty
-          )
+          ),
+          overridePlugins = false,
+          plugins = NgPlugins.empty,
         )
       ),
       plugins = NgPlugins(
