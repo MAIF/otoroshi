@@ -16,8 +16,8 @@ import {
 import Loader from './Loader';
 import { FeedbackButton } from './FeedbackButton';
 import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
-import { SelectInput, Form, validate, CodeInput, MarkdownInput } from '@maif/react-forms';
-import { snakeCase, camelCase, isEqual } from 'lodash';
+import { SelectInput, Form, validate, CodeInput, MarkdownInput, BooleanInput } from '@maif/react-forms';
+import { snakeCase, camelCase, isEqual, over } from 'lodash';
 import { HTTP_COLORS } from './RouteComposition'
 
 import { getPluginsPatterns } from './patterns';
@@ -180,7 +180,7 @@ const Modal = ({ question, onOk, onCancel }) => <div class="designer-modal d-fle
   </div>
 </div>
 
-export default ({ value, setSaveButton, ...props }) => {
+export default ({ value, setSaveButton, setMenu, ...props }) => {
   const { routeId } = useParams();
   const location = useLocation();
 
@@ -192,6 +192,7 @@ export default ({ value, setSaveButton, ...props }) => {
     location={location}
     value={value}
     setSaveButton={setSaveButton}
+    setMenu={setMenu}
     pathname={location.pathname}
     serviceMode={location.pathname.includes('route-compositions')} />
 }
@@ -359,12 +360,14 @@ class Designer extends React.Component {
   componentDidMount() {
     this.loadData()
     this.injectSaveButton()
+    this.injectNavbarMenu()
   }
 
   componentDidUpdate(prevProps) {
     if (prevProps.location.pathname !== this.props.location.pathname) {
       this.loadData()
       this.injectSaveButton()
+      this.injectNavbarMenu()
     }
   }
 
@@ -376,6 +379,29 @@ class Designer extends React.Component {
       disabled={isEqual(this.state.route, this.state.originalRoute)}
       icon={(() => <i className='fas fa-paper-plane' />)}
     />)
+  }
+
+  injectNavbarMenu = () => {
+    this.props.setMenu(<li>
+      <div className="px-3 d-flex align-items-center pb-2" style={{ color: "#fff" }}>
+        <span className="me-3 mt-2">Override route plugins</span> {/* mt-2 to fix the form lib css ...*/}
+        <BooleanInput
+          value={this.state.route?.overridePlugins}
+          onChange={overridePlugins => {
+            console.log(overridePlugins)
+            this.setState({
+              route: {
+                ...this.state.route,
+                overridePlugins
+              }
+            }, () => {
+              this.injectNavbarMenu()
+              this.injectSaveButton()
+            });
+          }}
+        />
+      </div>
+    </li>)
   }
 
   loadHiddenStepsFromLocalStorage = route => {
@@ -499,7 +525,7 @@ class Designer extends React.Component {
           config_flow: DEFAULT_FLOW.Backend('plugin').config_flow,
           nodeId: 'Backend'
         }
-      })
+      }, this.injectNavbarMenu)
     });
   }
 

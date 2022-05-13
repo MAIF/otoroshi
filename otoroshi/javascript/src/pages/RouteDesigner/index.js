@@ -27,6 +27,7 @@ const Manager = ({ query, entity, ...props }) => {
 
     const [value, setValue] = useState();
     const [saveButton, setSaveButton] = useState(null)
+    const [menu, setMenu] = useState()
 
     useEffect(() => {
         if (p.routeId === 'new') {
@@ -55,33 +56,63 @@ const Manager = ({ query, entity, ...props }) => {
                         { to: `/${entity.link}/${value.id}?tab=informations`, icon: 'fa-file-alt', title: 'Informations', tab: 'informations', enabled: () => !isOnViewPlugins },
                         { to: `/${entity.link}/${value.id}?tab=routes`, icon: 'fa-road', title: 'Routes', tab: 'routes', enabled: () => ['route-compositions'].includes(entity.link) },
                         { to: `/${entity.link}/${value.id}?tab=flow`, icon: 'fa-pencil-ruler', title: 'Designer', tab: 'flow', enabled: () => !isOnViewPlugins },
-                        { to: `/${entity.link}/${value.id}?tab=try-it`, icon: 'fa-vials', title: 'Tester', tab: 'try-it', enabled: () => !isOnViewPlugins }
+                        { to: `/${entity.link}/${value.id}?tab=try-it`, icon: 'fa-vials', title: 'Tester', tab: 'try-it', enabled: () => !isOnViewPlugins },
+                        {
+                            icon: 'fa-cog',
+                            onClick: () => { },
+                            enabled: () => isOnViewPlugins,
+                            dropdown: true,
+                            props: {
+                                id: "designer-menu",
+                                'data-bs-toggle': "dropdown",
+                                'data-bs-auto-close': "outside",
+                                'aria-expanded': "false"
+                            }
+                        }
                     ]
                         .filter(link => !link.enabled || link.enabled())
-                        .map(({ to, icon, title, tooltip, tab, onClick }) => (
-                            <button
-                                onClick={onClick ? onClick : () => {
-                                    if (query !== tab || viewPlugins)
-                                        history.push(to)
-                                }}
-                                {...(tooltip || {})}
-                                className="btn btn-sm toggle-form-buttons ms-2"
-                                key={title}
-                                style={{
-                                    backgroundColor: tab === query ? '#f9b000' : '#494948',
-                                    color: '#fff'
-                                }}>
-                                <i className={`fas ${icon}`} /> {title}
-                            </button>
+                        .map(({ to, icon, title, tooltip, tab, onClick, dropdown, props = {} }) => (
+                            <div className={`ms-2 ${dropdown ? 'dropdown dropstart' : ''}`}>
+                                <button
+                                    key={title}
+                                    type="button"
+                                    className={`btn btn-sm toggle-form-buttons d-flex align-items-center ${dropdown ? 'dropdown-toggle' : ''}`}
+                                    onClick={onClick ? onClick : () => {
+                                        if (query !== tab || viewPlugins)
+                                            history.push(to)
+                                    }}
+                                    {...(tooltip || {})}
+                                    style={{
+                                        backgroundColor: tab === query ? '#f9b000' : '#494948',
+                                        color: '#fff',
+                                        height: '100%'
+                                    }}
+                                    {...props}
+                                >
+                                    <i className={`fas ${icon} ${title ? 'me-2' : ''}`}
+                                        style={{ fontSize: '1.33333em' }} /> {title}
+                                </button>
+                                {dropdown && <ul class="dropdown-menu" aria-labelledby="designer-menu" style={{
+                                    overflow: "initial",
+                                    height: "initial",
+                                    minWidth: '300px',
+                                    background: "rgb(73, 73, 72)"
+                                }} onClick={e => e.stopPropagation()}>
+                                    {menu}
+                                </ul>}
+                            </div>
                         ))}
                     {saveButton}
                 </div>
-            </div>)
+            </div >)
         }
-    }, [value, saveButton]);
+    }, [value, saveButton, menu]);
 
     const divs = [
-        { predicate: query && ['flow', 'route_plugins'].includes(query) && !isCreation, render: () => <Designer {...props} value={value} setSaveButton={setSaveButton} viewPlugins={viewPlugins} /> },
+        {
+            predicate: query && ['flow', 'route_plugins'].includes(query) && !isCreation, render: () => <Designer {...props} value={value}
+                setSaveButton={setSaveButton} viewPlugins={viewPlugins} setMenu={setMenu} />
+        },
         { predicate: query && query === 'try-it', render: () => <TryIt route={value} /> },
         {
             predicate: query && query === 'routes', render: () => value &&
