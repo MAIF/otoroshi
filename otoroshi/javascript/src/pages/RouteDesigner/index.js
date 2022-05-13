@@ -58,9 +58,9 @@ const Manager = ({ query, entity, ...props }) => {
                         { to: `/${entity.link}/${value.id}?tab=flow`, icon: 'fa-pencil-ruler', title: 'Designer', tab: 'flow', enabled: () => !isOnViewPlugins },
                         { to: `/${entity.link}/${value.id}?tab=try-it`, icon: 'fa-vials', title: 'Tester', tab: 'try-it', enabled: () => !isOnViewPlugins },
                         {
-                            title: 'Route configuration',
+                            title: 'Parameters',
                             onClick: () => { },
-                            enabled: () => isOnViewPlugins,
+                            enabled: () => isOnViewPlugins || query == 'flow',
                             dropdown: true,
                             props: {
                                 id: "designer-menu",
@@ -95,8 +95,9 @@ const Manager = ({ query, entity, ...props }) => {
                                 {dropdown && <ul class="dropdown-menu" aria-labelledby="designer-menu" style={{
                                     overflow: "initial",
                                     height: "initial",
-                                    minWidth: '300px',
-                                    background: "rgb(73, 73, 72)"
+                                    minWidth: '420px',
+                                    background: "rgb(73, 73, 72)",
+                                    border: '1px solid'
                                 }} onClick={e => e.stopPropagation()}>
                                     {menu}
                                 </ul>}

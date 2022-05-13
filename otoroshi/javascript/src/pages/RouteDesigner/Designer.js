@@ -279,6 +279,15 @@ const OutBoundFlow = props => <div className="col-sm-6 pe-3 flex-column">
 
 const Flow = props => <div className="col-sm-4 pe-3 pb-1 d-flex flex-column">{props.children}</div>
 
+const MenuContainer = ({ children }) => <li className='p-2 px-3'>
+  <h4 className='pb-2' style={{
+    borderBottom: "1px solid"
+  }}>Advanced</h4>
+  <div className="d-flex flex-column" style={{ color: "#fff" }}>
+    {children}
+  </div>
+</li>
+
 const PluginsContainer = ({
   handleSearch, showLegacy, setShowLegacy, onExpandAll,
   expandAll, searched, plugins, categories, addNode, showPreview, hidePreview }) => <div className="plugins-stack-column">
@@ -381,27 +390,41 @@ class Designer extends React.Component {
     />)
   }
 
+  injectOverrideRoutePluginsForm = () => <MenuContainer>
+    <span className="me-3 mt-2">Override route plugins</span> {/* mt-2 to fix the form lib css ...*/}
+    <BooleanInput
+      value={this.state.route?.overridePlugins}
+      onChange={overridePlugins => {
+        console.log(overridePlugins)
+        this.setState({
+          route: {
+            ...this.state.route,
+            overridePlugins
+          }
+        }, () => {
+          this.injectNavbarMenu()
+          this.injectSaveButton()
+        });
+      }}
+    />
+  </MenuContainer>
+
+  injectDefaultMenu = () => <MenuContainer>
+    <div className='d-flex-between'>
+      <button type="button" className="btn btn-sm btn-danger me-1" onClick={this.clearPlugins}>
+        Clear plugins
+      </button>
+      <button type="button" className="btn btn-sm btn-danger" onClick={this.deleteRoute}>
+        <i className="fas fa-trash" /> Delete route
+      </button>
+    </div>
+  </MenuContainer>
+
   injectNavbarMenu = () => {
-    this.props.setMenu(<li>
-      <div className="px-3 d-flex align-items-center pb-2" style={{ color: "#fff" }}>
-        <span className="me-3 mt-2">Override route plugins</span> {/* mt-2 to fix the form lib css ...*/}
-        <BooleanInput
-          value={this.state.route?.overridePlugins}
-          onChange={overridePlugins => {
-            console.log(overridePlugins)
-            this.setState({
-              route: {
-                ...this.state.route,
-                overridePlugins
-              }
-            }, () => {
-              this.injectNavbarMenu()
-              this.injectSaveButton()
-            });
-          }}
-        />
-      </div>
-    </li>)
+    if (this.props.viewPlugins && this.props.viewPlugins !== -1)
+      this.props.setMenu(this.injectOverrideRoutePluginsForm())
+    else
+      this.props.setMenu(this.injectDefaultMenu())
   }
 
   loadHiddenStepsFromLocalStorage = route => {
@@ -445,7 +468,7 @@ class Designer extends React.Component {
       nextClient.form(nextClient.ENTITIES.FRONTENDS),
       nextClient.form(nextClient.ENTITIES.BACKENDS),
     ]).then(([backends, r, categories, plugins, oldPlugins, frontendForm, backendForm]) => {
-      let route = this.props.viewPlugins ? {
+      let route = (this.props.viewPlugins !== null && this.props.viewPlugins !== -1) ? {
         ...r,
         overridePlugins: true,
         plugins: [],
@@ -1465,15 +1488,6 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
           <Link className="btn btn-sm btn-info" to="/routes">
             <i className="fas fa-arrow-left" /> Back to routes
           </Link>
-
-          <div>
-            <button type="button" className="btn btn-sm btn-danger me-1" onClick={clearPlugins}>
-              Clear plugins
-            </button>
-            <button type="button" className="btn btn-sm btn-danger" onClick={deleteRoute}>
-              <i className="fas fa-trash" /> Delete route
-            </button>
-          </div>
         </div>
       </>
     );
