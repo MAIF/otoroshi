@@ -195,7 +195,7 @@ export const BackendForm = ({ isCreation, value, setTitle }) => {
   }, []);
 
   const saveButton = (withMargin = true) => <FeedbackButton
-    className={withMargin ? "d-flex ms-auto my-3 me-none" : ""}
+    className={withMargin ? "d-flex ms-auto my-3" : ""}
     disabled={isEqual(state, value)}
     text={isCreation ? 'Create the backend' : 'Update the backend'}
     icon={() => <i className="fas fa-paper-plane" />}

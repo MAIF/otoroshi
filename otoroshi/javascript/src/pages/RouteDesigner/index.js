@@ -19,6 +19,11 @@ const Manager = ({ query, entity, ...props }) => {
     const p = useParams();
     const isCreation = p.routeId === 'new';
     const history = useHistory()
+    const { url } = useRouteMatch()
+
+    const rawViewPlugins = new URLSearchParams(location.search).get('view_plugins')
+    const viewPlugins = rawViewPlugins !== null ? Number(rawViewPlugins) : -1
+    const isOnViewPlugins = viewPlugins !== -1 & query === "route_plugins"
 
     const [value, setValue] = useState();
     const [saveButton, setSaveButton] = useState(null)
@@ -40,21 +45,23 @@ const Manager = ({ query, entity, ...props }) => {
                         flow: 'Designer',
                         'try-it': 'Test routes',
                         informations: 'Informations',
-                        routes: 'Routes'
+                        routes: 'Routes',
+                        'route_plugins': 'Route plugins'
                     }[query]}
                 </h4>
                 <div className='d-flex align-item-center justify-content-between flex'>
                     {!isCreation && [
-                        { to: `/${entity.link}/${value.id}?tab=informations`, icon: 'fa-file-alt', title: 'Informations', tab: 'informations' },
-                        { to: `/${entity.link}/${value.id}?tab=routes`, icon: 'fa-road', title: 'Routes', tab: 'routes', enabled: ['route-compositions'] },
-                        { to: `/${entity.link}/${value.id}?tab=flow`, icon: 'fa-pencil-ruler', title: 'Designer', tab: 'flow' },
-                        { to: `/${entity.link}/${value.id}?tab=try-it`, icon: 'fa-vials', title: 'Tester', tab: 'try-it' },
+                        { onClick: () => history.replace(`${url}?tab=routes&view_plugins=${viewPlugins}`), icon: 'fa-arrow-left', title: 'Back to route', enabled: () => isOnViewPlugins },
+                        { to: `/${entity.link}/${value.id}?tab=informations`, icon: 'fa-file-alt', title: 'Informations', tab: 'informations', enabled: () => !isOnViewPlugins },
+                        { to: `/${entity.link}/${value.id}?tab=routes`, icon: 'fa-road', title: 'Routes', tab: 'routes', enabled: () => ['route-compositions'].includes(entity.link) },
+                        { to: `/${entity.link}/${value.id}?tab=flow`, icon: 'fa-pencil-ruler', title: 'Designer', tab: 'flow', enabled: () => !isOnViewPlugins },
+                        { to: `/${entity.link}/${value.id}?tab=try-it`, icon: 'fa-vials', title: 'Tester', tab: 'try-it', enabled: () => !isOnViewPlugins }
                     ]
-                        .filter(link => !link.enabled || link.enabled.includes(entity))
-                        .map(({ to, icon, title, tooltip, tab }) => (
+                        .filter(link => !link.enabled || link.enabled())
+                        .map(({ to, icon, title, tooltip, tab, onClick }) => (
                             <button
-                                onClick={() => {
-                                    if (query !== tab)
+                                onClick={onClick ? onClick : () => {
+                                    if (query !== tab || viewPlugins)
                                         history.push(to)
                                 }}
                                 {...(tooltip || {})}
@@ -74,9 +81,12 @@ const Manager = ({ query, entity, ...props }) => {
     }, [value, saveButton]);
 
     const divs = [
-        { predicate: query && query === 'flow' && !isCreation, render: () => <Designer {...props} value={value} setSaveButton={setSaveButton} /> },
+        { predicate: query && ['flow', 'route_plugins'].includes(query) && !isCreation, render: () => <Designer {...props} value={value} setSaveButton={setSaveButton} viewPlugins={viewPlugins} /> },
         { predicate: query && query === 'try-it', render: () => <TryIt route={value} /> },
-        { predicate: query && query === 'routes', render: () => value && <RouteCompositions service={value} /> }
+        {
+            predicate: query && query === 'routes', render: () => value &&
+                <RouteCompositions service={value} setSaveButton={setSaveButton} setService={setValue} viewPlugins={viewPlugins} />
+        }
     ]
 
     const component = divs.filter(p => p.predicate)

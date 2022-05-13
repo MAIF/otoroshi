@@ -141,25 +141,20 @@ const Hr = ({ highlighted = true, flex }) => (
   />
 );
 
-const ServiceView = ({ route }) => {
+const ServiceView = () => {
   return <div
     onClick={(e) => e.stopPropagation()}
     className="plugins-stack editor-view">
-    <p>You are on a route composition. You can navigate on the list of frontends/backends to edit them.</p>
-
-    <Link className='btn btn-sm btn-success' to={`/route-compositions/${route.id}?tab=routes`}>
-      Edit the list
-    </Link>
+    <p>You are on a route composition. You can click to the routes button on the navbar to edit the frontends/backends.</p>
   </div>
 }
 
 const FormContainer = ({ selectedNode, route, preview, showPreview, alertModal, serviceMode, ...props }) => {
-
   const isOnFrontendBackend = selectedNode && ['Frontend', 'Backend'].includes(selectedNode.id)
 
   return <div className="col-sm-8 relative-container flex-column flow-container p-3" style={{ paddingRight: 0 }}>
     <UnselectedNode hideText={selectedNode} route={route} {...props} />
-    {serviceMode && isOnFrontendBackend && <ServiceView route={route} />}
+    {serviceMode && isOnFrontendBackend && <ServiceView />}
     {selectedNode && (!serviceMode || (serviceMode && !isOnFrontendBackend)) && (
       <EditView
         {...props}
@@ -185,11 +180,15 @@ const Modal = ({ question, onOk, onCancel }) => <div class="designer-modal d-fle
   </div>
 </div>
 
-export default ({ value, setSaveButton }) => {
+export default ({ value, setSaveButton, ...props }) => {
   const { routeId } = useParams();
   const location = useLocation();
 
-  return <Designer routeId={routeId}
+  const viewPlugins = new URLSearchParams(location.search).get('view_plugins')
+
+  return <Designer
+    viewPlugins={props.viewPlugins || viewPlugins}
+    routeId={routeId}
     location={location}
     value={value}
     setSaveButton={setSaveButton}
@@ -334,8 +333,8 @@ class Designer extends React.Component {
     nodes: [],
     plugins: [],
     selectedNode: undefined,
-    route: { ...this.props.value },
-    originalRoute: { ...this.props.value },
+    route: null,
+    originalRoute: null,
     loading: true,
     searched: '',
     expandAll: false,
@@ -359,7 +358,6 @@ class Designer extends React.Component {
 
   componentDidMount() {
     this.loadData()
-
     this.injectSaveButton()
   }
 
@@ -420,7 +418,16 @@ class Designer extends React.Component {
       getOldPlugins(),
       nextClient.form(nextClient.ENTITIES.FRONTENDS),
       nextClient.form(nextClient.ENTITIES.BACKENDS),
-    ]).then(([backends, route, categories, plugins, oldPlugins, frontendForm, backendForm]) => {
+    ]).then(([backends, r, categories, plugins, oldPlugins, frontendForm, backendForm]) => {
+      let route = this.props.viewPlugins ? {
+        ...r,
+        overridePlugins: true,
+        plugins: [],
+        ...r.routes[~~this.props.viewPlugins]?.backend
+      } : r
+
+      //
+
       if (route.error) {
         this.setState({
           loading: false,
@@ -874,14 +881,37 @@ class Designer extends React.Component {
   };
 
   saveRoute = () => {
-    const { route } = this.state
-    return nextClient.update(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES, {
-      ...route,
-      plugins: route.plugins.map(plugin => ({
-        ...plugin,
-        plugin_index: Object.fromEntries(Object.entries(plugin.plugin_index || this.state.nodes.find(n => n.nodeId === plugin.nodeId)?.plugin_index || {}).map(([key, v]) => [snakeCase(key), v]))
-      }))
-    })
+    const { route, originalRoute } = this.state
+
+    let newRoute
+
+    if (this.props.viewPlugins !== null && this.props.viewPlugins !== -1) {
+      newRoute = {
+        ...originalRoute,
+        routes: originalRoute.routes.map((r, i) => {
+          if (String(i) === String(this.props.viewPlugins))
+            return {
+              ...r,
+              backend: {
+                ...r.backend,
+                plugins: route.plugins,
+                overridePlugins: route.overridePlugins
+              }
+            }
+          else
+            return r
+        })
+      }
+    } else {
+      newRoute = {
+        ...route,
+        plugins: route.plugins.map(plugin => ({
+          ...plugin,
+          plugin_index: Object.fromEntries(Object.entries(plugin.plugin_index || this.state.nodes.find(n => n.nodeId === plugin.nodeId)?.plugin_index || {}).map(([key, v]) => [snakeCase(key), v]))
+        }))
+      }
+    }
+    return nextClient.update(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES, newRoute)
       .then(() => {
         this.setState({
           originalRoute: { ...route }
@@ -1334,7 +1364,7 @@ const read = (value, path) => {
   return read(value[keys[0]], keys.slice(1).join('.'));
 };
 
-const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute, saveRoute }) => {
+const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
   if (route && route.frontend && route.backend && !hideText) {
     const frontend = route.frontend;
     const backend = route.backend;

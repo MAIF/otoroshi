@@ -6,6 +6,8 @@ import { DEFAULT_FLOW } from './Graph';
 import { toUpperCaseLabels } from '../../util';
 import { FeedbackButton } from './FeedbackButton';
 import { isEqual } from 'lodash';
+import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
+import Designer from './Designer';
 
 export const HTTP_COLORS = {
     GET: 'rgb(52, 170, 182)',
@@ -40,10 +42,10 @@ const Uri = ({ frontend, domain }) => {
     );
 }
 
-const SaveButton = ({ isDirty, saveChanges, disablePadding }) => <div className={`d-flex align-items-center justify-content-end ${disablePadding ? '' : 'pt-3'}`}>
+const SaveButton = ({ disabled, saveChanges, disablePadding }) => <div className={`d-flex align-items-center justify-content-end ${disablePadding ? '' : 'pt-3'}`}>
     <FeedbackButton
         text="Update the route"
-        disabled={!isDirty.frontend && !isDirty.backend && !isDirty.backendRef}
+        disabled={disabled}
         icon={() => <i className="fas fa-paper-plane" />}
         onPress={saveChanges}
     />
@@ -52,7 +54,8 @@ const SaveButton = ({ isDirty, saveChanges, disablePadding }) => <div className=
 const BackendSelector = ({ setExistingBackend, usingExistingBackend }) => <div className="d-flex mt-2">
     <button
         className="btn btn-sm new-backend-button"
-        onClick={() => {
+        onClick={e => {
+            e.stopPropagation()
             setExistingBackend(false);
         }}
         style={{ backgroundColor: usingExistingBackend ? '#494849' : '#f9b000' }}>
@@ -60,149 +63,156 @@ const BackendSelector = ({ setExistingBackend, usingExistingBackend }) => <div c
     </button>
     <button
         className="btn btn-sm new-backend-button"
-        onClick={() => setExistingBackend(true)}
+        onClick={e => {
+            e.stopPropagation();
+            setExistingBackend(true)
+        }}
         style={{ backgroundColor: usingExistingBackend ? '#f9b000' : '#494849' }}>
         Select an existing backend
     </button>
 </div>
 
-const RouteForms = ({ frontend, backend, backend_ref, updateRoute }) => {
-    const frontendRef = useRef()
-    const backendRef = useRef()
+class RouteForms extends React.Component {
+    state = {
+        frontend: null,
+        backend: null,
+        backendRef: null,
+        schemas: null,
+        backends: [],
+        usingExistingBackend: false,
+        usingJsonView: false
+    }
 
-    const [isDirty, setDirty] = useState({
-        frontend: false,
-        backend: false,
-        backendRef: false
-    })
-    const [frontendValue, setFrontend] = useState(frontend)
-    const [backendValue, setBackend] = useState(backend)
-    const [backendRefValue, setBackendRef] = useState(backend_ref)
+    componentDidMount() {
+        const { frontend, backend, backend_ref } = this.props
+        this.setState({
+            frontend,
+            backend,
+            backendRef: backend_ref
+        })
 
-    const [schemas, setSchemas] = useState()
-    const [backends, setBackends] = useState([])
-    const [usingExistingBackend, setExistingBackend] = useState(false)
-    const [usingJsonView, setJsonView] = useState(false)
-
-    useEffect(() => {
         Promise.all([
             nextClient.form(nextClient.ENTITIES.FRONTENDS),
             nextClient.form(nextClient.ENTITIES.BACKENDS),
             nextClient.find(nextClient.ENTITIES.BACKENDS)
         ]).then(([frontendForm, backendForm, backends]) => {
-            setSchemas({
-                frontend: {
-                    config_flow: DEFAULT_FLOW.Frontend.config_flow,
-                    config_schema: toUpperCaseLabels({
-                        ...frontendForm.schema,
-                        ...DEFAULT_FLOW.Frontend.config_schema,
-                    })
+            this.setState({
+                schemas: {
+                    frontend: {
+                        config_flow: DEFAULT_FLOW.Frontend.config_flow,
+                        config_schema: toUpperCaseLabels({
+                            ...frontendForm.schema,
+                            ...DEFAULT_FLOW.Frontend.config_schema,
+                        })
+                    },
+                    backend: {
+                        config_flow: DEFAULT_FLOW.Backend('').config_flow,
+                        config_schema: toUpperCaseLabels(
+                            DEFAULT_FLOW.Backend('').config_schema(backendForm.schema)
+                        )
+                    }
                 },
-                backend: {
-                    config_flow: DEFAULT_FLOW.Backend('').config_flow,
-                    config_schema: toUpperCaseLabels(
-                        DEFAULT_FLOW.Backend('').config_schema(backendForm.schema)
-                    )
-                }
+                backends
             })
-            setBackends(backends)
-        })
-    }, [])
-
-    useEffect(() => {
-        setFrontend(frontend)
-    }, [frontend])
-
-    useEffect(() => {
-        setBackend(backend)
-    }, [backend])
-
-    useEffect(() => {
-        setBackendRef(backend_ref)
-    }, [backend_ref])
-
-    const saveChanges = () => {
-        return updateRoute({
-            frontend: frontendValue,
-            backend: backendValue,
-            backend_ref: usingExistingBackend ? backendRefValue : null
         })
     }
 
-    if (!schemas)
-        return null
+    componentDidUpdate(prevProps) {
+        if (this.props.frontend !== prevProps.frontend)
+            this.setState({ frontend: this.props.frontend })
+        else if (this.props.backend !== prevProps.backend)
+            this.setState({ backend: this.props.backend })
+        else if (this.props.backend_ref !== prevProps.backend_ref)
+            this.setState({ backendRef: this.props.backend_ref })
+    }
 
-    return <div className='p-2'>
-        <div className='d-flex justify-content-end'>
-            <div className='d-flex p-2' style={{ backgroundColor: "#373735", borderRadius: '4px' }}>
-                <button className='btn btn-sm mx-1' style={{ backgroundColor: "#f9b000" }} onClick={() => {
-                    setJsonView(!usingJsonView)
+    saveChanges = () => this.props.updateRoute({
+        frontend: this.state.frontend,
+        backend: this.state.backend,
+        backend_ref: this.state.usingExistingBackend ? this.state.backendRef : null
+    })
+
+    disabledSaveButton = () => {
+        const { originalRoute } = this.props
+        const { frontend, backend, backendRef } = this.state
+
+        return isEqual(originalRoute?.frontend, frontend) &&
+            isEqual(originalRoute?.backend, backend) &&
+            isEqual(originalRoute?.backend_ref, backendRef)
+    }
+
+    render() {
+        const { frontend, backend, schemas, backendRef, usingJsonView, usingExistingBackend, backends } = this.state
+        const { saveRoute } = this.props
+
+        if (!schemas)
+            return null
+
+        return <div className='p-2'>
+            <div className='d-flex justify-content-end'>
+                <button className='btn btn-sm mx-1' style={{ backgroundColor: "#f9b000", color: "#fff" }} onClick={e => {
+                    e.stopPropagation()
+                    this.setState({
+                        usingJsonView: !usingJsonView
+                    })
                 }}>
                     {usingJsonView ? 'Form view' : 'Advanced json'}
                 </button>
             </div>
-        </div>
-        <div className='d-flex mt-3'>
-            <div className='flex p-3 route-forms-form'>
-                <h5 className='route-forms-title'>Frontend</h5>
-                <RouteForm
-                    onSubmit={e => setFrontend(e.frontend ? e.frontend : e)}
-                    isDirty={() => isDirty}
-                    dirtyField="frontend"
-                    setDirty={setDirty}
-                    customRef={frontendRef}
-                    value={frontendValue}
-                    schema={schemas.frontend.config_schema}
-                    flow={schemas.frontend.config_flow}
-                    usingJsonView={usingJsonView}
-                />
-                <SaveButton isDirty={isDirty} saveChanges={saveChanges} />
-            </div>
-            <div className='flex ms-1 p-3 route-forms-form'>
-                <h5 className='route-forms-title'>Backend</h5>
-                <BackendSelector setExistingBackend={setExistingBackend} usingExistingBackend={usingExistingBackend} />
-                {usingExistingBackend && <div className='mt-3'>
-                    <SelectInput
-                        id="backend_select"
-                        value={backendRefValue}
-                        placeholder="Select an existing backend"
-                        label=""
-                        onChange={b => {
-                            if (b !== backendRefValue) {
-                                setDirty({
-                                    ...isDirty,
-                                    backendRef: true
-                                })
-                            }
-                            setBackendRef(b)
-                        }}
-                        possibleValues={backends}
-                        transformer={(item) => ({ label: item.name, value: item.id })}
+            <div className='d-flex mt-3'>
+                <div className='flex p-3 route-forms-form'>
+                    <h5 className='route-forms-title'>Frontend</h5>
+                    <RouteForm
+                        onSubmit={e => this.setState({ frontend: e.frontend ? e.frontend : e }, this.saveChanges)}
+                        dirtyField="frontend"
+                        value={frontend}
+                        schema={schemas.frontend.config_schema}
+                        flow={schemas.frontend.config_flow}
+                        usingJsonView={usingJsonView}
                     />
-                </div>}
+                    <SaveButton
+                        disabled={this.disabledSaveButton()}
+                        saveChanges={saveRoute} />
+                </div>
+                <div className='flex ms-1 p-3 route-forms-form'>
+                    <h5 className='route-forms-title'>Backend</h5>
+                    <BackendSelector setExistingBackend={e => this.setState({ usingExistingBackend: e })} usingExistingBackend={usingExistingBackend} />
+                    {usingExistingBackend && <div className='mt-3'>
+                        <SelectInput
+                            id="backend_select"
+                            value={backendRef}
+                            placeholder="Select an existing backend"
+                            label=""
+                            onChange={e => this.setState({
+                                backendRef: e
+                            }, this.saveChanges)}
+                            possibleValues={backends}
+                            transformer={(item) => ({ label: item.name, value: item.id })}
+                        />
+                    </div>}
 
-                {!usingExistingBackend && <RouteForm
-                    onSubmit={e => setBackend(e.backend ? e.backend : e)}
-                    isDirty={() => isDirty}
-                    setDirty={setDirty}
-                    dirtyField="backend"
-                    customRef={backendRef}
-                    value={backendValue}
-                    schema={schemas.backend.config_schema}
-                    flow={schemas.backend.config_flow}
-                    usingJsonView={usingJsonView}
-                />}
+                    {!usingExistingBackend && <RouteForm
+                        onSubmit={e => this.setState({ backend: e.backend ? e.backend : e }, this.saveChanges)}
+                        dirtyField="backend"
+                        value={backend}
+                        schema={schemas.backend.config_schema}
+                        flow={schemas.backend.config_flow}
+                        usingJsonView={usingJsonView}
+                    />}
+                </div>
             </div>
-        </div>
-        <div className='d-flex justify-content-end pt-3'>
-            <SaveButton isDirty={isDirty} saveChanges={saveChanges} disablePadding={true} />
-        </div>
-    </div>
+            <div className='d-flex justify-content-end pt-3'>
+                <SaveButton
+                    disabled={this.disabledSaveButton()}
+                    saveChanges={saveRoute}
+                    disablePadding={true} />
+            </div>
+        </div >
+    }
 }
 
-const RouteForm = React.memo(({ isDirty, dirtyField, customRef, value, schema, flow, setDirty, usingJsonView, onSubmit }) =>
+const RouteForm = React.memo(({ dirtyField, value, schema, flow, usingJsonView, onSubmit }) =>
     <Form
-        ref={customRef}
         value={usingJsonView ? {
             [dirtyField]: value
         } : value}
@@ -216,25 +226,16 @@ const RouteForm = React.memo(({ isDirty, dirtyField, customRef, value, schema, f
         flow={usingJsonView ? [dirtyField] : flow}
         footer={() => null}
         onSubmit={onSubmit}
-        options={{
-            autosubmit: true,
-            watch: () => {
-                if (customRef.current) {
-                    const formState = customRef.current.isDirty()
-                    console.log(formState)
-                    setDirty({
-                        ...isDirty(),
-                        [dirtyField]: formState
-                    });
-                }
-            }
-        }}
+        options={{ autosubmit: true }}
     />, (prev, next) => prev.value === next.value &&
         prev.usingJsonView === next.usingJsonView &&
         prev.flow === next.flow)
 
 const Route = props => {
-    const [open, setOpen] = useState(false)
+    const history = useHistory()
+    const { url } = useRouteMatch()
+
+    const [open, setOpen] = useState((props.viewPlugins !== undefined && String(props.viewPlugins) === String(props.index)) || false)
     const { frontend } = props
 
     return <div
@@ -251,21 +252,37 @@ const Route = props => {
                 </div>
             </div>
             <div className='d-flex'>
-                {<button className='btn btn-sm btn-danger me-2' onClick={props.removeRoute}>
+                {open && <button className='btn btn-sm btn-success me-2' onClick={e => {
+                    e.stopPropagation()
+                    history.replace(`${url}?tab=route_plugins&view_plugins=${props.index}`);
+                }}>
+                    <i className='fas fa-pencil-ruler' />
+                </button>}
+                {open && <button className='btn btn-sm btn-danger me-2' onClick={e => {
+                    e.stopPropagation()
+                    props.removeRoute(e)
+                }}>
                     <i className="fas fa-trash" />
                 </button>}
                 <button className='btn btn-sm' style={{ background: '#f9b000', borderColor: '#f9b000' }}
-                    onClick={() => setOpen(!open)} >
+                    onClick={() => {
+                        const newState = !open
+                        setOpen(newState)
+
+                        const url = new URL(window.location);
+                        url.searchParams.set("view_plugins", newState ? props.index : null);
+                        window.history.pushState({}, "", url);
+                    }}>
                     <i className={`fas fa-chevron-${open ? 'up' : 'down'}`} />
                 </button>
             </div>
         </div>
         {open && <RouteForms {...props} />}
-    </div>
+    </div >
 
 }
 
-export default ({ service }) => {
+export default ({ service, setSaveButton, setService, viewPlugins }) => {
     const [routes, setRoutes] = useState([])
     const [templates, setTemplates] = useState({})
     const [shouldUpdateRoutes, setUpdatesRoutes] = useState(false)
@@ -276,8 +293,19 @@ export default ({ service }) => {
     }, [])
 
     useEffect(() => {
-        setRoutes(service.routes || [])
+        console.log("set routes from useEffect")
+        setRoutes([...service.routes || []])
     }, [service.id])
+
+    useEffect(() => {
+        setSaveButton(<FeedbackButton
+            className="ms-2"
+            disabled={!shouldUpdateRoutes}
+            text="Save routes"
+            icon={() => <i className='fas fa-paper-plane' />}
+            onPress={saveRoute}
+        />)
+    }, [shouldUpdateRoutes, routes])
 
     const updateRoute = (index, item) => {
         let r = routes.map((route, i) => {
@@ -291,18 +319,25 @@ export default ({ service }) => {
         else if (index >= routes.length)
             r = [...routes, item]
 
+        console.log(r, service.routes)
         setUpdatesRoutes(!isEqual(r, service.routes))
-        setRoutes(r)
+        setRoutes([...r])
     }
 
-    const saveRoute = () => nextClient.update(nextClient.ENTITIES.SERVICES, {
-        ...service,
-        routes
-    })
+    const saveRoute = () => {
+        return nextClient.update(nextClient.ENTITIES.SERVICES, {
+            ...service,
+            routes: routes
+        })
+            .then(res => {
+                setUpdatesRoutes(false)
+                setService(res)
+            })
+    }
 
     const removeRoute = idx => {
         const newRoutes = routes.filter((_, i) => i !== idx)
-        setRoutes(newRoutes)
+        setRoutes([...newRoutes])
         setUpdatesRoutes(!isEqual(newRoutes, service.routes))
     }
 
@@ -337,13 +372,19 @@ export default ({ service }) => {
                         </form>
                     </div>
                     <div className="modal-footer">
-                        <button type="button" className="btn btn-danger" onClick={props.cancel}>
+                        <button type="button" className="btn btn-danger" onClick={e => {
+                            e.stopPropagation()
+                            props.cancel(e)
+                        }}>
                             Close
                         </button>
                         <button
                             type="button"
                             className="btn btn-success"
-                            onClick={(e) => props.ok(state)}>
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                props.ok(state)
+                            }}>
                             Ok
                         </button>
                     </div>
@@ -376,7 +417,7 @@ export default ({ service }) => {
     }
 
     return (
-        <div>
+        <div className='h-100 flex-column'>
             <div className='d-flex mb-3'>
                 <button className='btn btn-sm btn-success' onClick={() => {
                     const newItem = { ...templates?.routes[0] }
@@ -391,21 +432,17 @@ export default ({ service }) => {
                     <i className='fas fa-file-code me-1' />
                     Import routes from openapi
                 </button>
-                <FeedbackButton
-                    className="ms-auto"
-                    disabled={!shouldUpdateRoutes}
-                    text="Save routes"
-                    icon={() => <i className='fas fa-paper-plane' />}
-                    onPress={saveRoute}
-                />
             </div>
             <div>
                 {routes.map((route, i) => <Route
                     {...route}
-                    key={route.id} i
-                    ndex={i}
+                    key={route.id}
+                    index={i}
+                    originalRoute={service.routes[i]}
                     updateRoute={item => updateRoute(i, item)}
-                    removeRoute={() => removeRoute(i)} />
+                    removeRoute={() => removeRoute(i)}
+                    saveRoute={saveRoute}
+                    viewPlugins={viewPlugins} />
                 )}
             </div>
         </div>
