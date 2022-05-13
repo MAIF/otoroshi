@@ -473,6 +473,9 @@ object Exporters {
         .histogramUpdate(MetricId.build("otoroshi.requests.data.in.bytes").tagged("serviceName", "otoroshi"), dataIn)
       env.metrics
         .histogramUpdate(MetricId.build("otoroshi.requests.data.out.bytes").tagged("serviceName", "otoroshi"), dataOut)
+      val perSec = env.metrics.getMeanCallsOf(s"otoroshi.requests.per.sec")
+      env.metrics
+        .histogramUpdate(MetricId.build(s"otoroshi.requests.per.sec").tagged("serviceName", "otoroshi"), perSec.toInt)
     }
 
     // @tailrec
@@ -518,6 +521,7 @@ object Exporters {
             val overheadWoCb = (event \ "overheadWoCb").asOpt[Long].getOrElse(0L)
             val cbDuration   = (event \ "cbDuration").asOpt[Long].getOrElse(0L)
             val overhead     = (event \ "overhead").asOpt[Long].getOrElse(0L)
+            val serviceId    = (event \ "@serviceId").asOpt[String].getOrElse("global")
 
             var tags: Map[String, String] = Map()
 
@@ -561,6 +565,9 @@ object Exporters {
               .histogramUpdate(MetricId.build(s"otoroshi.service.requests.data.in.bytes").tagged(tags.asJava), dataIn)
             env.metrics
               .histogramUpdate(MetricId.build(s"otoroshi.service.requests.data.out.bytes").tagged(tags.asJava), dataOut)
+            val perSec = env.metrics.getMeanCallsOf(s"otoroshi.service.requests.per.sec.${serviceId}")
+            env.metrics
+              .histogramUpdate(MetricId.build(s"otoroshi.service.requests.per.sec").tagged(tags.asJava), perSec.toInt)
           } match {
             case Failure(e) => logger.error("error while collection tags", e)
             case _          =>
