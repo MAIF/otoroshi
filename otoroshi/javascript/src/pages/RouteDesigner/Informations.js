@@ -6,6 +6,7 @@ import { useHistory } from 'react-router-dom';
 import { useEntityFromURI } from '../../util';
 import { isEqual, merge } from 'lodash';
 import { FeedbackButton } from './FeedbackButton';
+import { Collapse } from '../../components/inputs/Collapse';
 
 export const Informations = ({ isCreation, value, setValue, setSaveButton }) => {
   const history = useHistory();
@@ -152,16 +153,33 @@ export const Informations = ({ isCreation, value, setValue, setSaveButton }) => 
       onSubmit={(item) => setInformations({ ...merge({ ...value }, item) })}
       footer={() => null}
     />
-    <div className="d-flex align-items-center justify-content-end mt-3">
-      <div className="btn-group">
-        <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${link}`)}>
-          <i className="fas fa-times" /> Cancel
-        </button>
-        {!isCreation && <button className="btn btn-sm btn-danger" onClick={() => nextClient.deleteById(nextClient.ENTITIES[fetchName], value.id).then(() => history.push(`/${link}`))}>
-          <i className="fas fa-trash" /> Delete
-        </button>}
-        {saveButton()}
+    {!isCreation && <Collapse
+      collapsed={false}
+      initCollapsed={false}
+      label="Delete this route"
+      lineEnd={true}>
+      <div className="row mb-3">
+        <label className="col-xs-12 col-sm-2 col-form-label" />
+        <div className="col-sm-10">
+          <button className="btn btn-sm btn-danger me-3" onClick={() => {
+            window.newConfirm('Are you sure you want to delete that route ?')
+              .then((ok) => {
+                if (ok) {
+                  nextClient.deleteById(nextClient.ENTITIES[fetchName], value.id).then(() => history.push(`/${link}`))
+                }
+              })
+          }}>
+            <i className="fas fa-trash" /> Delete
+          </button>
+        </div>
       </div>
+    </Collapse>
+    }
+    <div className="d-flex align-items-center justify-content-end mt-3">
+      <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${link}`)}>
+        <i className="fas fa-times" /> Cancel
+      </button>
+      {saveButton()}
     </div>
   </>
 };

@@ -25,6 +25,7 @@ export class TopBar extends Component {
     env: {
       clusterRole: 'off',
     },
+    dropdownStatus: 'closed'
   };
 
   searchServicesOptions = (query) => {
@@ -460,6 +461,7 @@ export class TopBar extends Component {
     if (!this.mounted) {
       this.mounted = true;
       document.addEventListener('keydown', this.listenToSlash, false);
+      document.addEventListener('click', this.onClick, false)
     }
     BackOfficeServices.env().then((env) => {
       this.setState({ env });
@@ -474,7 +476,17 @@ export class TopBar extends Component {
     if (this.mounted) {
       this.mounted = false;
       document.removeEventListener('keydown', this.listenToSlash);
+      document.removeEventListener('click', this.onClick)
     }
+  }
+
+  onClick = e => {
+    if (!document.getElementById('dropdown').contains(e.target) &&
+      !document.getElementById('cog').contains(e.target) &&
+      this.state.dropdownStatus === 'open')
+      this.setState({
+        dropdownStatus: 'closed'
+      })
   }
 
   brandName = () => {
@@ -637,13 +649,16 @@ export class TopBar extends Component {
               <div className="dropdown mx-2">
                 <i
                   className="fas fa-cog"
-                  role="button"
-                  id="dropdownMenuParams"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
+                  id="cog"
+                  onClick={e => {
+                    e.stopPropagation()
+                    console.log(this.state.dropdownStatus === 'closed' ? 'open' : 'closed')
+                    this.setState({ dropdownStatus: this.state.dropdownStatus === 'closed' ? 'open' : 'closed' })
+                  }}
                 />
                 <ul
-                  className="dropdown-menu dropdown-menu-end"
+                  id="dropdown"
+                  className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''} py-2 pb-4`}
                   aria-labelledby="dropdownMenuParams">
                   {/*<li>
                     <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>

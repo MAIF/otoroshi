@@ -58,7 +58,7 @@ const Manager = ({ query, entity, ...props }) => {
                         { to: `/${entity.link}/${value.id}?tab=flow`, icon: 'fa-pencil-ruler', title: 'Designer', tab: 'flow', enabled: () => !isOnViewPlugins },
                         { to: `/${entity.link}/${value.id}?tab=try-it`, icon: 'fa-vials', title: 'Tester', tab: 'try-it', enabled: () => !isOnViewPlugins },
                         {
-                            title: 'Parameters',
+                            title: 'Actions',
                             onClick: () => { },
                             enabled: () => isOnViewPlugins || query == 'flow',
                             dropdown: true,

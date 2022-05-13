@@ -414,9 +414,6 @@ class Designer extends React.Component {
       <button type="button" className="btn btn-sm btn-danger me-1" onClick={this.clearPlugins}>
         Clear plugins
       </button>
-      <button type="button" className="btn btn-sm btn-danger" onClick={this.deleteRoute}>
-        <i className="fas fa-trash" /> Delete route
-      </button>
     </div>
   </MenuContainer>
 
