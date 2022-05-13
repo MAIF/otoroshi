@@ -5,7 +5,7 @@ import { nextClient } from '../../services/BackOfficeServices';
 import { DEFAULT_FLOW } from './Graph';
 import { toUpperCaseLabels } from '../../util';
 import { FeedbackButton } from './FeedbackButton';
-import { isEqual } from 'lodash';
+import { isEqual, merge } from 'lodash';
 import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
 import Designer from './Designer';
 
@@ -127,8 +127,8 @@ class RouteForms extends React.Component {
     }
 
     saveChanges = () => this.props.updateRoute({
-        frontend: this.state.frontend,
-        backend: this.state.backend,
+        frontend: merge({ ...this.props.frontend }, { ...this.state.frontend }),
+        backend: merge({ ...this.props.backend }, { ...this.state.backend }),
         backend_ref: this.state.usingExistingBackend ? this.state.backendRef : null
     })
 
@@ -236,7 +236,7 @@ const Route = props => {
     const { url } = useRouteMatch()
 
     const [open, setOpen] = useState((props.viewPlugins !== undefined && String(props.viewPlugins) === String(props.index)) || false)
-    const { frontend } = props
+    const { frontend, backend } = props
 
     return <div
         className='route-item my-2'
@@ -251,7 +251,8 @@ const Route = props => {
                     {frontend.domains.map(domain => <Uri frontend={frontend} domain={domain} />)}
                 </div>
             </div>
-            <div className='d-flex'>
+            <div className='d-flex-between'>
+                {backend?.plugins?.length > 0 && <span className='badge bg-dark me-2'>custom plugins</span>}
                 {open && <button className='btn btn-sm btn-success me-2' onClick={e => {
                     e.stopPropagation()
                     history.replace(`${url}?tab=route_plugins&view_plugins=${props.index}`);

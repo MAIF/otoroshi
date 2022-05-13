@@ -58,7 +58,7 @@ const Manager = ({ query, entity, ...props }) => {
                         { to: `/${entity.link}/${value.id}?tab=flow`, icon: 'fa-pencil-ruler', title: 'Designer', tab: 'flow', enabled: () => !isOnViewPlugins },
                         { to: `/${entity.link}/${value.id}?tab=try-it`, icon: 'fa-vials', title: 'Tester', tab: 'try-it', enabled: () => !isOnViewPlugins },
                         {
-                            icon: 'fa-cog',
+                            title: 'Route configuration',
                             onClick: () => { },
                             enabled: () => isOnViewPlugins,
                             dropdown: true,
@@ -89,8 +89,8 @@ const Manager = ({ query, entity, ...props }) => {
                                     }}
                                     {...props}
                                 >
-                                    <i className={`fas ${icon} ${title ? 'me-2' : ''}`}
-                                        style={{ fontSize: '1.33333em' }} /> {title}
+                                    {icon && <i className={`fas ${icon} ${title ? 'me-2' : ''}`}
+                                        style={{ fontSize: '1.33333em' }} />} {title}
                                 </button>
                                 {dropdown && <ul class="dropdown-menu" aria-labelledby="designer-menu" style={{
                                     overflow: "initial",
