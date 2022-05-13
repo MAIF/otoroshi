@@ -230,6 +230,12 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
     om
   }
 
+  def getMeanCallsOf(name: String): Double = {
+    val meter = jmxRegistry.meter(name)
+    meter.mark()
+    meter.getMeanRate
+  }
+
   def prometheusExport(filter: Option[String] = None): String = {
     val prometheus = new CustomCollector(metricRegistry, jmxRegistry)
     filter match {
