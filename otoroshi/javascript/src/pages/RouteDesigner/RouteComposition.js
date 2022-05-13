@@ -1,13 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import { Form, SelectInput } from '@maif/react-forms';
 import { nextClient } from '../../services/BackOfficeServices';
 import { DEFAULT_FLOW } from './Graph';
 import { toUpperCaseLabels } from '../../util';
 import { FeedbackButton } from './FeedbackButton';
-import { isEqual, merge } from 'lodash';
-import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
-import Designer from './Designer';
+import { isEqual, merge, cloneDeep } from 'lodash';
+import { useHistory, useRouteMatch } from 'react-router-dom';
 
 export const HTTP_COLORS = {
     GET: 'rgb(52, 170, 182)',
@@ -84,7 +83,7 @@ class RouteForms extends React.Component {
     }
 
     componentDidMount() {
-        const { frontend, backend, backend_ref } = this.props
+        const { frontend, backend, backend_ref } = this.props.route
         this.setState({
             frontend,
             backend,
@@ -118,27 +117,34 @@ class RouteForms extends React.Component {
     }
 
     componentDidUpdate(prevProps) {
-        if (this.props.frontend !== prevProps.frontend)
-            this.setState({ frontend: this.props.frontend })
-        else if (this.props.backend !== prevProps.backend)
-            this.setState({ backend: this.props.backend })
-        else if (this.props.backend_ref !== prevProps.backend_ref)
-            this.setState({ backendRef: this.props.backend_ref })
+        const { frontend, backend, backend_ref } = this.props.route;
+        if (frontend !== prevProps.route.frontend)
+            this.setState({ frontend: frontend })
+        else if (backend !== prevProps.route.backend)
+            this.setState({ backend: backend })
+        else if (backend_ref !== prevProps.route.backend_ref)
+            this.setState({ backendRef: backend_ref })
     }
 
     saveChanges = () => this.props.updateRoute({
-        frontend: merge({ ...this.props.frontend }, { ...this.state.frontend }),
-        backend: merge({ ...this.props.backend }, { ...this.state.backend }),
-        backend_ref: this.state.usingExistingBackend ? this.state.backendRef : null
+        ...merge(
+            { ...this.props.route },
+            {
+                frontend: merge({ ...this.props.route.frontend }, { ...this.state.frontend }),
+                backend: merge({ ...this.props.route.backend }, { ...this.state.backend }),
+                backend_ref: this.state.usingExistingBackend ? this.state.backendRef : null
+            }
+        )
     })
 
     disabledSaveButton = () => {
         const { originalRoute } = this.props
         const { frontend, backend, backendRef } = this.state
 
-        return isEqual(originalRoute?.frontend, frontend) &&
-            isEqual(originalRoute?.backend, backend) &&
-            isEqual(originalRoute?.backend_ref, backendRef)
+        console.log(originalRoute.frontend, frontend)
+        return isEqual(originalRoute.frontend, frontend) &&
+            isEqual(originalRoute.backend, backend) &&
+            isEqual(originalRoute.backend_ref, backendRef)
     }
 
     render() {
@@ -236,7 +242,7 @@ const Route = props => {
     const { url } = useRouteMatch()
 
     const [open, setOpen] = useState((props.viewPlugins !== undefined && String(props.viewPlugins) === String(props.index)) || false)
-    const { frontend, backend } = props
+    const { frontend, plugins } = props.route
 
     return <div
         className='route-item my-2'
@@ -252,7 +258,7 @@ const Route = props => {
                 </div>
             </div>
             <div className='d-flex-between'>
-                {backend?.plugins?.length > 0 && <span className='badge bg-dark me-2'>custom plugins</span>}
+                {plugins?.length > 0 && <span className='badge bg-dark me-2'>custom plugins</span>}
                 {open && <button className='btn btn-sm btn-success me-2' onClick={e => {
                     e.stopPropagation()
                     history.replace(`${url}?tab=route_plugins&view_plugins=${props.index}`);
@@ -295,7 +301,7 @@ export default ({ service, setSaveButton, setService, viewPlugins }) => {
 
     useEffect(() => {
         console.log("set routes from useEffect")
-        setRoutes([...service.routes || []])
+        setRoutes(cloneDeep([...service.routes || []]))
     }, [service.id])
 
     useEffect(() => {
@@ -320,7 +326,6 @@ export default ({ service, setSaveButton, setService, viewPlugins }) => {
         else if (index >= routes.length)
             r = [...routes, item]
 
-        console.log(r, service.routes)
         setUpdatesRoutes(!isEqual(r, service.routes))
         setRoutes([...r])
     }
@@ -436,10 +441,10 @@ export default ({ service, setSaveButton, setService, viewPlugins }) => {
             </div>
             <div>
                 {routes.map((route, i) => <Route
-                    {...route}
+                    route={{ ...route }}
                     key={route.id}
                     index={i}
-                    originalRoute={service.routes[i]}
+                    originalRoute={{ ...service.routes[i] }}
                     updateRoute={item => updateRoute(i, item)}
                     removeRoute={() => removeRoute(i)}
                     saveRoute={saveRoute}

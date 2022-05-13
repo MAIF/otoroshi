@@ -652,7 +652,6 @@ export class TopBar extends Component {
                   id="cog"
                   onClick={e => {
                     e.stopPropagation()
-                    console.log(this.state.dropdownStatus === 'closed' ? 'open' : 'closed')
                     this.setState({ dropdownStatus: this.state.dropdownStatus === 'closed' ? 'open' : 'closed' })
                   }}
                 />

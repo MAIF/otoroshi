@@ -469,10 +469,8 @@ class Designer extends React.Component {
         ...r,
         overridePlugins: true,
         plugins: [],
-        ...r.routes[~~this.props.viewPlugins]?.backend
+        ...r.routes[~~this.props.viewPlugins]
       } : r
-
-      //
 
       if (route.error) {
         this.setState({
@@ -938,11 +936,8 @@ class Designer extends React.Component {
           if (String(i) === String(this.props.viewPlugins))
             return {
               ...r,
-              backend: {
-                ...r.backend,
-                plugins: route.plugins,
-                overridePlugins: route.overridePlugins
-              }
+              plugins: route.plugins,
+              overridePlugins: route.overridePlugins
             }
           else
             return r

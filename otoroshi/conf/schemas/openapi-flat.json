@@ -325,6 +325,10 @@
         "description" : "The backend id of the route (if one)",
         "type" : "string"
       },
+      "override_plugins" : {
+        "description" : "???",
+        "type" : "boolean"
+      },
       "backend" : {
         "description" : "The backend of the route",
         "type" : "object",
@@ -335,10 +339,6 @@
               "type" : "string"
             },
             "description" : "List of NgStoredBackend ids"
-          },
-          "override_plugins" : {
-            "description" : "???",
-            "type" : "boolean"
           },
           "root" : {
             "description" : "The root path of the backend or the full rewrite path",
@@ -6739,7 +6739,7 @@
         "type" : "string"
       },
       "maxFileSize" : {
-        "format" : "int32",
+        "format" : "int64",
         "description" : "???",
         "type" : "integer"
       },
@@ -6937,7 +6937,7 @@
         "type" : "string"
       },
       "maxFileSize" : {
-        "format" : "int32",
+        "format" : "int64",
         "description" : "???",
         "type" : "integer"
       },
@@ -7467,7 +7467,7 @@
     "type" : "object",
     "properties" : {
       "filter" : {
-        "description" : "JQ filter for response",
+        "description" : "???",
         "type" : "string"
       }
     }
@@ -11643,6 +11643,11 @@
     "description" : "???",
     "type" : "object",
     "properties" : {
+      "maxFileSize" : {
+        "format" : "int64",
+        "description" : "???",
+        "type" : "integer"
+      },
       "type" : {
         "description" : "the kind of exporter",
         "type" : "string",
@@ -12154,7 +12159,7 @@
     "type" : "object",
     "properties" : {
       "filter" : {
-        "description" : "JQ filter to transform request body",
+        "description" : "???",
         "type" : "string"
       }
     }
@@ -12367,7 +12372,7 @@
     "type" : "object",
     "properties" : {
       "filter" : {
-        "description" : "JQ filter to transform response body",
+        "description" : "???",
         "type" : "string"
       }
     }
@@ -18133,6 +18138,10 @@
                     "description" : "The backend id of the route (if one)",
                     "type" : "string"
                   },
+                  "override_plugins" : {
+                    "description" : "???",
+                    "type" : "boolean"
+                  },
                   "backend" : {
                     "description" : "The backend of the route",
                     "type" : "object",
@@ -18143,10 +18152,6 @@
                           "type" : "string"
                         },
                         "description" : "List of NgStoredBackend ids"
-                      },
-                      "override_plugins" : {
-                        "description" : "???",
-                        "type" : "boolean"
                       },
                       "root" : {
                         "description" : "The root path of the backend or the full rewrite path",
@@ -22667,7 +22672,7 @@
                   "type" : "string"
                 },
                 "maxFileSize" : {
-                  "format" : "int32",
+                  "format" : "int64",
                   "description" : "???",
                   "type" : "integer"
                 },
@@ -27102,10 +27107,6 @@
         },
         "description" : "List of NgStoredBackend ids"
       },
-      "override_plugins" : {
-        "description" : "???",
-        "type" : "boolean"
-      },
       "root" : {
         "description" : "The root path of the backend or the full rewrite path",
         "type" : "string"
@@ -29209,6 +29210,10 @@
               "description" : "The backend id of the route (if one)",
               "type" : "string"
             },
+            "override_plugins" : {
+              "description" : "???",
+              "type" : "boolean"
+            },
             "backend" : {
               "description" : "The backend of the route",
               "type" : "object",
@@ -29219,10 +29224,6 @@
                     "type" : "string"
                   },
                   "description" : "List of NgStoredBackend ids"
-                },
-                "override_plugins" : {
-                  "description" : "???",
-                  "type" : "boolean"
                 },
                 "root" : {
                   "description" : "The root path of the backend or the full rewrite path",
@@ -37240,6 +37241,11 @@
         },
         "description" : "???"
       },
+      "maxFileSize" : {
+        "format" : "int64",
+        "description" : "???",
+        "type" : "integer"
+      },
       "type" : {
         "description" : "the kind of exporter",
         "type" : "string",
@@ -40702,7 +40708,7 @@
             "type" : "string"
           },
           "maxFileSize" : {
-            "format" : "int32",
+            "format" : "int64",
             "description" : "???",
             "type" : "integer"
           },
@@ -45003,7 +45009,7 @@
     "type" : "object",
     "properties" : {
       "filter" : {
-        "description" : "JQ filter for request",
+        "description" : "???",
         "type" : "string"
       }
     }

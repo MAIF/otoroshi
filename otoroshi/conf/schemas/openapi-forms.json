@@ -1878,6 +1878,47 @@
     "schema" : { },
     "flow" : [ ]
   },
+  "otoroshi.storage.drivers.inmemory.S3Configuration" : {
+    "schema" : {
+      "writeEvery" : {
+        "label" : "writeEvery",
+        "type" : "number"
+      },
+      "chunkSize" : {
+        "label" : "chunkSize",
+        "type" : "number"
+      },
+      "bucket" : {
+        "label" : "bucket",
+        "type" : "string"
+      },
+      "key" : {
+        "label" : "key",
+        "type" : "string"
+      },
+      "endpoint" : {
+        "label" : "endpoint",
+        "type" : "string"
+      },
+      "v4auth" : {
+        "label" : "v4auth",
+        "type" : "bool"
+      },
+      "access" : {
+        "label" : "access",
+        "type" : "string"
+      },
+      "secret" : {
+        "label" : "secret",
+        "type" : "string"
+      },
+      "region" : {
+        "label" : "region",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "writeEvery", "chunkSize", "bucket", "key", "endpoint", "v4auth", "access", "secret", "region" ]
+  },
   "otoroshi.models.Target" : {
     "schema" : {
       "predicate" : {
@@ -5464,10 +5505,6 @@
         "array" : true,
         "format" : null
       },
-      "override_plugins" : {
-        "label" : "override_plugins",
-        "type" : "bool"
-      },
       "root" : {
         "label" : "root",
         "type" : "string"
@@ -5631,7 +5668,7 @@
         "flow" : [ "type", "ratio" ]
       }
     },
-    "flow" : [ "target_refs", "override_plugins", "root", "targets", "rewrite", "load_balancing" ]
+    "flow" : [ "target_refs", "root", "targets", "rewrite", "load_balancing" ]
   },
   "otoroshi.utils.letsencrypt.LetsEncryptSettings" : {
     "schema" : {
@@ -5744,6 +5781,67 @@
   "otoroshi.plugins.mirror.MirroringPlugin" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.models.S3ExporterSettings" : {
+    "schema" : {
+      "maxFileSize" : {
+        "label" : "maxFileSize",
+        "type" : "number"
+      },
+      "type" : {
+        "label" : "type",
+        "type" : "string",
+        "format" : "select",
+        "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+      },
+      "config" : {
+        "label" : "config",
+        "type" : "object",
+        "format" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "writeEvery" : {
+            "label" : "writeEvery",
+            "type" : "number"
+          },
+          "chunkSize" : {
+            "label" : "chunkSize",
+            "type" : "number"
+          },
+          "bucket" : {
+            "label" : "bucket",
+            "type" : "string"
+          },
+          "key" : {
+            "label" : "key",
+            "type" : "string"
+          },
+          "endpoint" : {
+            "label" : "endpoint",
+            "type" : "string"
+          },
+          "v4auth" : {
+            "label" : "v4auth",
+            "type" : "bool"
+          },
+          "access" : {
+            "label" : "access",
+            "type" : "string"
+          },
+          "secret" : {
+            "label" : "secret",
+            "type" : "string"
+          },
+          "region" : {
+            "label" : "region",
+            "type" : "string"
+          }
+        },
+        "flow" : [ "writeEvery", "chunkSize", "bucket", "key", "endpoint", "v4auth", "access", "secret", "region" ]
+      }
+    },
+    "flow" : [ "maxFileSize", "type", "config" ]
   },
   "otoroshi.next.models.NgTlsConfig" : {
     "schema" : {
@@ -5962,6 +6060,89 @@
       }
     },
     "flow" : [ "hostValidation", "servers", "keyPass", "mtlsConfig", "topic", "truststore", "keystore", "sendEvents", "type" ]
+  },
+  "otoroshi.models.GoReplayS3Settings" : {
+    "schema" : {
+      "s3" : {
+        "label" : "s3",
+        "type" : "object",
+        "format" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "writeEvery" : {
+            "label" : "writeEvery",
+            "type" : "number"
+          },
+          "chunkSize" : {
+            "label" : "chunkSize",
+            "type" : "number"
+          },
+          "bucket" : {
+            "label" : "bucket",
+            "type" : "string"
+          },
+          "key" : {
+            "label" : "key",
+            "type" : "string"
+          },
+          "endpoint" : {
+            "label" : "endpoint",
+            "type" : "string"
+          },
+          "v4auth" : {
+            "label" : "v4auth",
+            "type" : "bool"
+          },
+          "access" : {
+            "label" : "access",
+            "type" : "string"
+          },
+          "secret" : {
+            "label" : "secret",
+            "type" : "string"
+          },
+          "region" : {
+            "label" : "region",
+            "type" : "string"
+          }
+        },
+        "flow" : [ "writeEvery", "chunkSize", "bucket", "key", "endpoint", "v4auth", "access", "secret", "region" ]
+      },
+      "captureRequests" : {
+        "label" : "captureRequests",
+        "type" : "bool"
+      },
+      "methods" : {
+        "label" : "methods",
+        "type" : "string",
+        "array" : true,
+        "format" : null
+      },
+      "maxFileSize" : {
+        "label" : "maxFileSize",
+        "type" : "number"
+      },
+      "type" : {
+        "label" : "type",
+        "type" : "string",
+        "format" : "select",
+        "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+      },
+      "preferBackendRequest" : {
+        "label" : "preferBackendRequest",
+        "type" : "bool"
+      },
+      "captureResponses" : {
+        "label" : "captureResponses",
+        "type" : "bool"
+      },
+      "preferBackendResponse" : {
+        "label" : "preferBackendResponse",
+        "type" : "bool"
+      }
+    },
+    "flow" : [ "s3", "captureRequests", "methods", "maxFileSize", "type", "preferBackendRequest", "captureResponses", "preferBackendResponse" ]
   },
   "otoroshi.models.GlobalConfig" : {
     "schema" : {
@@ -19718,6 +19899,10 @@
                 "label" : "backend_ref",
                 "type" : "string"
               },
+              "override_plugins" : {
+                "label" : "override_plugins",
+                "type" : "bool"
+              },
               "backend" : {
                 "label" : "backend",
                 "type" : "object",
@@ -19730,10 +19915,6 @@
                     "type" : "string",
                     "array" : true,
                     "format" : null
-                  },
-                  "override_plugins" : {
-                    "label" : "override_plugins",
-                    "type" : "bool"
                   },
                   "root" : {
                     "label" : "root",
@@ -19898,7 +20079,7 @@
                     "flow" : [ "type", "ratio" ]
                   }
                 },
-                "flow" : [ "target_refs", "override_plugins", "root", "targets", "rewrite", "load_balancing" ]
+                "flow" : [ "target_refs", "root", "targets", "rewrite", "load_balancing" ]
               },
               "frontend" : {
                 "label" : "frontend",
@@ -19939,7 +20120,7 @@
                 "flow" : [ "headers", "methods", "query", "exact", "domains", "strip_path" ]
               }
             },
-            "flow" : [ "backend_ref", "backend", "frontend" ]
+            "flow" : [ "backend_ref", "override_plugins", "backend", "frontend" ]
           },
           "name" : {
             "label" : "name",
@@ -27797,6 +27978,10 @@
         "label" : "backend_ref",
         "type" : "string"
       },
+      "override_plugins" : {
+        "label" : "override_plugins",
+        "type" : "bool"
+      },
       "backend" : {
         "label" : "backend",
         "type" : "object",
@@ -27809,10 +27994,6 @@
             "type" : "string",
             "array" : true,
             "format" : null
-          },
-          "override_plugins" : {
-            "label" : "override_plugins",
-            "type" : "bool"
           },
           "root" : {
             "label" : "root",
@@ -27977,7 +28158,7 @@
             "flow" : [ "type", "ratio" ]
           }
         },
-        "flow" : [ "target_refs", "override_plugins", "root", "targets", "rewrite", "load_balancing" ]
+        "flow" : [ "target_refs", "root", "targets", "rewrite", "load_balancing" ]
       },
       "frontend" : {
         "label" : "frontend",
@@ -28018,7 +28199,7 @@
         "flow" : [ "headers", "methods", "query", "exact", "domains", "strip_path" ]
       }
     },
-    "flow" : [ "backend_ref", "backend", "frontend" ]
+    "flow" : [ "backend_ref", "override_plugins", "backend", "frontend" ]
   },
   "otoroshi.ssl.pki.models.GenKeyPairQuery" : {
     "schema" : {
@@ -31022,12 +31203,20 @@
         "format" : "select",
         "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
       },
+      "preferBackendRequest" : {
+        "label" : "preferBackendRequest",
+        "type" : "bool"
+      },
       "captureResponses" : {
         "label" : "captureResponses",
         "type" : "bool"
+      },
+      "preferBackendResponse" : {
+        "label" : "preferBackendResponse",
+        "type" : "bool"
       }
     },
-    "flow" : [ "path", "captureRequests", "methods", "maxFileSize", "type", "captureResponses" ]
+    "flow" : [ "path", "captureRequests", "methods", "maxFileSize", "type", "preferBackendRequest", "captureResponses", "preferBackendResponse" ]
   },
   "Empty" : {
     "schema" : { },
@@ -35538,6 +35727,10 @@
             "label" : "backend_ref",
             "type" : "string"
           },
+          "override_plugins" : {
+            "label" : "override_plugins",
+            "type" : "bool"
+          },
           "backend" : {
             "label" : "backend",
             "type" : "object",
@@ -35550,10 +35743,6 @@
                 "type" : "string",
                 "array" : true,
                 "format" : null
-              },
-              "override_plugins" : {
-                "label" : "override_plugins",
-                "type" : "bool"
               },
               "root" : {
                 "label" : "root",
@@ -35718,7 +35907,7 @@
                 "flow" : [ "type", "ratio" ]
               }
             },
-            "flow" : [ "target_refs", "override_plugins", "root", "targets", "rewrite", "load_balancing" ]
+            "flow" : [ "target_refs", "root", "targets", "rewrite", "load_balancing" ]
           },
           "frontend" : {
             "label" : "frontend",
@@ -35759,7 +35948,7 @@
             "flow" : [ "headers", "methods", "query", "exact", "domains", "strip_path" ]
           }
         },
-        "flow" : [ "backend_ref", "backend", "frontend" ]
+        "flow" : [ "backend_ref", "override_plugins", "backend", "frontend" ]
       },
       "name" : {
         "label" : "name",

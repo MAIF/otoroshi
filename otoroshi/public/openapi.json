@@ -17392,14 +17392,6 @@
         "description" : "A route representation with it's minimal attributes",
         "type" : "object",
         "properties" : {
-          "frontend" : {
-            "description" : "The frontend of the route",
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgFrontend"
-          },
-          "backend" : {
-            "description" : "The backend of the route",
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgMinimalBackend"
-          },
           "backend_ref" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
@@ -17407,6 +17399,18 @@
               "type" : "string"
             } ],
             "description" : "The backend id of the route (if one)"
+          },
+          "frontend" : {
+            "description" : "The frontend of the route",
+            "$ref" : "#/components/schemas/otoroshi.next.models.NgFrontend"
+          },
+          "override_plugins" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "backend" : {
+            "description" : "The backend of the route",
+            "$ref" : "#/components/schemas/otoroshi.next.models.NgMinimalBackend"
           }
         }
       },
@@ -22794,10 +22798,6 @@
         "description" : "A backend representation with it's minimal attributes",
         "type" : "object",
         "properties" : {
-          "override_plugins" : {
-            "description" : "???",
-            "type" : "boolean"
-          },
           "root" : {
             "description" : "The root path of the backend or the full rewrite path",
             "type" : "string"
