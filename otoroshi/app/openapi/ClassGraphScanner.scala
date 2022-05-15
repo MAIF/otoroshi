@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import scala.collection.concurrent.TrieMap
 
-case class Form(schema: JsObject, flow: Seq[String]) {
+case class Form(schema: JsObject, flow: Seq[String] = Seq.empty) {
   def json: JsValue = Json.obj(
     "schema" -> schema,
     "flow"   -> flow

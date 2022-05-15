@@ -154,7 +154,11 @@ libraryDependencies ++= Seq(
     "org.apache.logging.log4j"
   ),
   "org.iq80.leveldb"                 % "leveldb"                        % "0.12",
-  "org.apache.logging.log4j"         % "log4j-api"                      % "2.17.1"
+  "org.apache.logging.log4j"         % "log4j-api"                      % "2.17.1",
+  "org.sangria-graphql"             %% "sangria"                        % "3.0.0",
+  "org.sangria-graphql"             %% "sangria-play-json"              % "2.0.1" excludeAll ExclusionRule(
+    organization = "com.typesafe.play"
+  ) // TODO - check if needed
 )
 
 scalacOptions ++= Seq(

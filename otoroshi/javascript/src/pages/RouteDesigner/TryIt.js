@@ -13,7 +13,7 @@ const round = (num) => Math.round((num + Number.EPSILON) * 100000) / 100000;
 
 export const TryIt = ({ route, serviceMode }) => {
   const [selectedTab, setSelectedTab] = useState('Headers');
-  const [selectedResponseTab, setSelectedResponseTab] = useState('Report');
+  const [selectedResponseTab, setSelectedResponseTab] = useState('Body');
   const [headersStatus, setHeadersStatus] = useState('down');
   const { pathname } = useLocation()
 

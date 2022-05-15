@@ -67,6 +67,22 @@ object CustomForms {
           |    "type" : "number"
           |  }
           |}""".stripMargin).asObject
-      )
+      ),
+    "otoroshi.next.plugins.GraphQLBackend" -> Form(
+      flow = Seq("schema", "initialData"),
+      schema = Json.parse(
+        """{
+          |  "schema" : {
+          |    "label" : "Schema",
+          |    "type" : "string",
+          |    "format": "code"
+          |  },
+          |  "initialData": {
+          |     "label": "Initial data",
+          |     "type": "object",
+          |     "format": "code"
+          |  }
+          |}""".stripMargin).asObject
+    )
   )
 }

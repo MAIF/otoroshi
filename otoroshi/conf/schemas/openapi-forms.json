@@ -34354,6 +34354,16 @@
     },
     "flow" : [ "teams", "tenant" ]
   },
+  "otoroshi.next.plugins.GraphQLBackend" : {
+    "schema" : {
+      "schema" : {
+        "label" : "Schema",
+        "type" : "object",
+        "format" : "code"
+      }
+    },
+    "flow" : [ "schema" ]
+  },
   "otoroshi.utils.mailer.NoneMailerSettings" : {
     "schema" : {
       "type" : {
@@ -38948,6 +38958,19 @@
       }
     },
     "flow" : [ "metadata", "algoSettings", "name", "id", "source", "type", "strict", "strategy", "_loc", "desc", "tags" ]
+  },
+  "otoroshi.next.plugins.GraphQLBackendConfig" : {
+    "schema" : {
+      "schema" : {
+        "label" : "schema",
+        "type" : "string"
+      },
+      "initial_data" : {
+        "label" : "initial_data",
+        "type" : "object"
+      }
+    },
+    "flow" : [ "schema", "initial_data" ]
   },
   "otoroshi.plugins.apikeys.ClientCredentialFlowExtractor" : {
     "schema" : { },

@@ -4633,8 +4633,7 @@ spec:
     schema:
       openAPIV3Schema:
         type: "object"
-        description: "Module to export otoroshi specific events to whatever destination\
-          \ you want"
+        description: "???"
         properties:
           apiVersion:
             description: "APIVersion defines the versioned schema of this representation\
@@ -4650,19 +4649,18 @@ spec:
             type: "object"
           spec:
             type: "object"
-            description: "Module to export otoroshi specific events to whatever destination\
-              \ you want"
+            description: "???"
             properties:
               metadata:
                 type: "object"
                 additionalProperties:
                   type: "string"
-                description: "Metadata"
+                description: "???"
               type:
                 description: "Type of data exporter"
                 type: "string"
               _loc:
-                description: "location"
+                description: "???"
                 type: "object"
                 properties:
                   teams:
@@ -4674,49 +4672,49 @@ spec:
                     description: "Organization of the current entity"
                     type: "string"
               enabled:
-                description: "Boolean"
+                description: "???"
                 type: "boolean"
               groupDuration:
-                description: "duration"
+                description: "???"
                 type: "number"
               tags:
                 type: "array"
                 items:
                   type: "string"
-                description: "Entity tags"
+                description: "???"
               jsonWorkers:
                 format: "int32"
-                description: "nb workers"
+                description: "???"
                 type: "integer"
               name:
-                description: "Name"
+                description: "???"
                 type: "string"
               groupSize:
                 format: "int32"
-                description: "Group size"
+                description: "???"
                 type: "integer"
               id:
-                description: "Id"
+                description: "???"
                 type: "string"
               projection:
-                description: "projection"
+                description: "???"
                 type: "object"
               filtering:
-                description: "filtering"
+                description: "???"
                 type: "object"
                 properties:
                   include:
                     type: "array"
                     items:
                       type: "object"
-                    description: "Exclude the events matching one of those filters"
+                    description: "???"
                   exclude:
                     type: "array"
                     items:
                       type: "object"
-                    description: "Include the events matching one of those filters"
+                    description: "???"
               config:
-                description: "Data Exporter config"
+                description: "???"
                 type: "object"
                 properties:
                   clusterUri:
@@ -4760,7 +4758,7 @@ spec:
                           type: "string"
                         description: "Trusted cert. ids"
                   tlsTrustCertsFilePath:
-                    description: "Trusted cert path"
+                    description: "???"
                     type: "string"
                   apiKeyPrivate:
                     description: "Private key"
@@ -4772,13 +4770,13 @@ spec:
                     description: "Enabled TLS hostname validation"
                     type: "boolean"
                   path:
-                    description: "File path"
+                    description: "???"
                     type: "string"
                   password:
                     description: "Elastic password"
                     type: "string"
                   ref:
-                    description: "Script id"
+                    description: "???"
                     type: "string"
                   servers:
                     type: "array"
@@ -4798,7 +4796,7 @@ spec:
                     description: "Enable template creation/update"
                     type: "boolean"
                   tenant:
-                    description: "Pulsar tenant"
+                    description: "???"
                     type: "string"
                   headers:
                     type: "object"
@@ -4809,11 +4807,11 @@ spec:
                     description: "Index name"
                     type: "string"
                   maxFileSize:
-                    format: "int32"
-                    description: "Max file size in bytes"
+                    format: "int64"
+                    description: "???"
                     type: "integer"
                   uri:
-                    description: "Pulsar cluster url"
+                    description: "???"
                     type: "string"
                   version:
                     description: "Version of Elasticsearch"
@@ -4825,7 +4823,7 @@ spec:
                     type: "object"
                     additionalProperties:
                       type: "string"
-                    description: "Exposed labels"
+                    description: "???"
                   eu:
                     description: "European tenant"
                     type: "boolean"
@@ -4836,10 +4834,10 @@ spec:
                     description: "Mailgun domain"
                     type: "string"
                   namespace:
-                    description: "Pulsar namespace"
+                    description: "???"
                     type: "string"
                   topic:
-                    description: "Pulsar topic"
+                    description: "???"
                     type: "string"
                   apiKeyPublic:
                     description: "Public key"
@@ -4860,18 +4858,18 @@ spec:
                     description: "Elasticsearch user"
                     type: "string"
                   config:
-                    description: "Script config"
+                    description: "???"
                     type: "object"
               sendWorkers:
                 format: "int32"
-                description: "send workers"
+                description: "???"
                 type: "integer"
               desc:
-                description: "Description"
+                description: "???"
                 type: "string"
               bufferSize:
                 format: "int32"
-                description: "buffer size"
+                description: "???"
                 type: "integer"
 ---
 apiVersion: "apiextensions.k8s.io/v1"
@@ -4902,7 +4900,8 @@ spec:
     schema:
       openAPIV3Schema:
         type: "object"
-        description: "???"
+        description: "A routing primitive representing how a request is matched and\
+          \ where the request is forwarded"
         properties:
           apiVersion:
             description: "APIVersion defines the versioned schema of this representation\
@@ -4918,26 +4917,30 @@ spec:
             type: "object"
           spec:
             type: "object"
-            description: "???"
+            description: "A routing primitive representing how a request is matched\
+              \ and where the request is forwarded"
             properties:
               metadata:
                 type: "object"
                 additionalProperties:
                   type: "string"
-                description: "???"
+                description: "The metadata of the route"
               backend_ref:
-                description: "???"
+                description: "The backend id of the route (if one)"
                 type: "string"
+              capture:
+                description: "???"
+                type: "boolean"
               groups:
                 type: "array"
                 items:
                   type: "string"
-                description: "???"
+                description: "The groups of the route"
               description:
-                description: "???"
+                description: "The description of the route"
                 type: "string"
               _loc:
-                description: "???"
+                description: "The location of the route"
                 type: "object"
                 properties:
                   teams:
@@ -4949,24 +4952,25 @@ spec:
                     description: "Organization of the current entity"
                     type: "string"
               enabled:
-                description: "???"
+                description: "Is the route enabled"
                 type: "boolean"
               export_reporting:
-                description: "???"
+                description: "Export the execution reporting through standard data\
+                  \ exporter"
                 type: "boolean"
               tags:
                 type: "array"
                 items:
                   type: "string"
-                description: "???"
+                description: "The tags of the route"
               debug_flow:
-                description: "???"
+                description: "Enable report debugging"
                 type: "boolean"
               name:
-                description: "???"
+                description: "The name of the route"
                 type: "string"
               backend:
-                description: "???"
+                description: "The backend of the route"
                 type: "object"
                 properties:
                   target_refs:
@@ -5204,10 +5208,10 @@ spec:
                         type: "number"
                         format: "double"
               id:
-                description: "???"
+                description: "The ud of the route"
                 type: "string"
               frontend:
-                description: "???"
+                description: "The frontend of the route"
                 type: "object"
                 properties:
                   headers:
@@ -5283,6 +5287,46 @@ spec:
             type: "object"
             description: "A composition of multiple routes with the same plugins"
             properties:
+              metadata:
+                type: "object"
+                additionalProperties:
+                  type: "string"
+                description: "The metadata of the service"
+              capture:
+                description: "???"
+                type: "boolean"
+              description:
+                description: "The description of the service"
+                type: "string"
+              groups:
+                type: "array"
+                items:
+                  type: "string"
+                description: "The groups of the service"
+              _loc:
+                description: "The location of the service"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
+              enabled:
+                description: "Is the service enabled"
+                type: "boolean"
+              export_reporting:
+                description: "Export the execution reporting through standard data\
+                  \ exporter"
+                type: "boolean"
+              tags:
+                type: "array"
+                items:
+                  type: "string"
+                description: "The tags of the service"
               debug_flow:
                 description: "Enable report debugging"
                 type: "boolean"
@@ -5295,6 +5339,9 @@ spec:
                     backend_ref:
                       description: "The backend id of the route (if one)"
                       type: "string"
+                    override_plugins:
+                      description: "???"
+                      type: "boolean"
                     backend:
                       description: "The backend of the route"
                       type: "object"
@@ -5447,22 +5494,9 @@ spec:
                         strip_path:
                           description: "Is path stripped from backend request"
                           type: "boolean"
-              metadata:
-                type: "object"
-                additionalProperties:
-                  type: "string"
-                description: "The metadata of the service"
               name:
                 description: "The name of the service"
                 type: "string"
-              description:
-                description: "The description of the service"
-                type: "string"
-              groups:
-                type: "array"
-                items:
-                  type: "string"
-                description: "The groups of the service"
               client:
                 description: "The client config of the service"
                 type: "object"
@@ -5571,30 +5605,6 @@ spec:
               id:
                 description: "The id of the service"
                 type: "string"
-              _loc:
-                description: "The location of the service"
-                type: "object"
-                properties:
-                  teams:
-                    description: "Teams of the current entity"
-                    type: "array"
-                    items:
-                      type: "string"
-                  tenant:
-                    description: "Organization of the current entity"
-                    type: "string"
-              enabled:
-                description: "Is the service enabled"
-                type: "boolean"
-              export_reporting:
-                description: "Export the execution reporting through standard data\
-                  \ exporter"
-                type: "boolean"
-              tags:
-                type: "array"
-                items:
-                  type: "string"
-                description: "The tags of the service"
 ---
 apiVersion: "apiextensions.k8s.io/v1"
 kind: "CustomResourceDefinition"

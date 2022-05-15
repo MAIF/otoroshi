@@ -9,6 +9,12 @@ import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
+import sangria.ast.Document
+import sangria.execution.{ExceptionHandler, Executor, HandledException}
+import sangria.macros.LiteralGraphQLStringContext
+import sangria.parser.QueryParser
+import sangria.schema.{AstSchemaBuilder, FieldResolver, InstanceCheck, Schema}
+import sangria.marshalling.playJson._
 
 import scala.concurrent.duration.DurationLong
 import scala.concurrent.{ExecutionContext, Future}
@@ -122,3 +128,108 @@ class GraphQLQuery extends NgBackendCall {
       }
   }
 }
+
+
+case class GraphQLBackendConfig(
+                               schema: String,
+                               initialData: Option[JsValue] = None
+                             ) extends NgPluginConfig {
+  def json: JsValue = GraphQLBackendConfig.format.writes(this)
+}
+
+object GraphQLBackendConfig {
+  val format = new Format[GraphQLBackendConfig] {
+    override def reads(json: JsValue): JsResult[GraphQLBackendConfig] = Try {
+      println("read")
+      println(json.select("initialData"))
+      println("read end")
+      GraphQLBackendConfig(
+        schema = json.select("schema").as[String],
+        initialData = json.select("initialData").asOpt[JsObject]
+      )
+    }  match {
+      case Failure(ex)    => JsError(ex.getMessage())
+      case Success(value) => JsSuccess(value)
+    }
+
+    override def writes(o: GraphQLBackendConfig): JsValue = Json.obj(
+      "schema" -> o.schema,
+      "initialData" -> o.initialData.getOrElse(JsNull).as[JsValue]
+    )
+  }
+}
+
+
+class GraphQLBackend extends NgBackendCall {
+
+  private val DEFAULT_GRAPHQL_SCHEMA = """
+   type User {
+     name: String!
+     firstname: String!
+   }
+  """.stripMargin
+
+  override def useDelegates: Boolean                       = false
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = false
+  override def name: String                                = "GraphQL Backend"
+  override def description: Option[String]                 = "This plugin can be used to create a GraphQL schema".some
+  override def defaultConfigObject: Option[NgPluginConfig] = GraphQLBackendConfig(
+    schema = DEFAULT_GRAPHQL_SCHEMA
+  ).some
+
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
+  override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
+
+  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val config = ctx.cachedConfig("internalName")(GraphQLBackendConfig.format).getOrElse(GraphQLBackendConfig(schema = DEFAULT_GRAPHQL_SCHEMA))
+    val query = gql"""
+    {
+      users {
+          firstname
+          name
+      }
+    }
+  """
+
+    val exceptionHandler = ExceptionHandler(
+      onException = {
+        case (marshaller, throwable) => HandledException(throwable.getMessage)
+      }
+    )
+
+    QueryParser.parse(config.schema) match {
+      case Failure(exception) => bodyResponse(400, Map("Content-Type" -> "application/json"), Source.single(Json.obj("error" ->  exception.getMessage).stringify.byteString)).future
+      case Success(astDocument: Document) =>
+        val builder = AstSchemaBuilder.resolverBased[Unit](
+          InstanceCheck.field[Unit, JsValue],
+          FieldResolver.defaultInput[Unit, JsValue]
+        )
+
+        val astSchema = Schema.buildFromAst(astDocument, builder.validateSchemaWithException(astDocument))
+
+        println(config)
+
+        Executor.execute(
+          astSchema,
+          query,
+          root = config.initialData.map(_.as[JsObject]).getOrElse(JsObject.empty),
+          exceptionHandler = exceptionHandler
+        )
+          .map(res => {
+              val response = Json.toJson(res)
+
+              bodyResponse(200,
+                Map("Content-Type" -> "application/json"),
+                Source.single(response.stringify.byteString)
+              )
+          })
+    }
+  }
+}
+
+
+
+
+
